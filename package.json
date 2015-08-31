@@ -1,0 +1,24 @@
+{
+  "name": "ironman-s3",
+  "version": "0.0.1",
+  "description": "S3 connector",
+  "main": "lib/server.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scality/IronMan-S3.git"
+  },
+  "keywords": [
+    "s3",
+    "cloud",
+    "server"
+  ],
+  "author": "Giorgio Regni",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/scality/IronMan-S3/issues"
+  },
+  "homepage": "https://github.com/scality/IronMan-S3#readme"
+}
