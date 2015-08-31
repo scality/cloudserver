@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/scality/IronMan-S3/issues"
   },
-  "homepage": "https://github.com/scality/IronMan-S3#readme"
+  "homepage": "https://github.com/scality/IronMan-S3#readme",
+  "dependencies": {
+    "jsutils": "giorgioregni/jsutils",
+    "node-simple-router": "giorgioregni/node-simple-router"
+  }
 }
