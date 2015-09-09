@@ -24,8 +24,5 @@
   "dependencies": {
     "jsutils": "giorgioregni/jsutils",
     "node-simple-router": "giorgioregni/node-simple-router"
-  },
-  "devDependencies": {
-    "sinon": "^1.16.1"
   }
 }
