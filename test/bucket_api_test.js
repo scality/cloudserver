@@ -60,15 +60,15 @@ describe("bucket API for getting, putting and deleting objects in a bucket",func
 describe('bucket API for getting a subset of objects from a bucket', function() {
 /*	Implementation of AWS GET Bucket (List Objects) functionality
 	Rules:  
-		1) 	Return individual key if key does not contain the delimeter (even if key begins with specified prefix).
-		2)	Return key under common prefix if key begins with prefix and contains delimeter.  All 
+		1) 	Return individual key if key does not contain the delimiter (even if key begins with specified prefix).
+		2)	Return key under common prefix if key begins with prefix and contains delimiter.  All 
 				keys that contain the same substring starting with the prefix and ending with the first 
-				occurrence of the delimeter will be grouped together and appear once under common prefix.  
+				occurrence of the delimiter will be grouped together and appear once under common prefix.  
 				For instance, "key2/sample" and "key2/moreSample" will be 
-				grouped together if prefix is "key" and delimeter is "/".  
+				grouped together if prefix is "key" and delimiter is "/".  
 		3)	If do not specify prefix, return grouped keys under common prefix if they contain 
-				same substring starting at beginning of the key and ending before first occurrence of delimeter.
-		4)	There will be no grouping if no delimeter specified as argument in GETBucketListObjects.		
+				same substring starting at beginning of the key and ending before first occurrence of delimiter.
+		4)	There will be no grouping if no delimiter specified as argument in GETBucketListObjects.		
 		5)	If marker specified, only return keys that occur alphabetically AFTER the marker.
 		6)	If specify maxKeys, only return up to that max.  All keys grouped under common-prefix,
 				will only count as one key to reach maxKeys.  If not all keys returned due to reaching maxKeys, 
@@ -89,12 +89,12 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		});
 	});
 
-	it("should return individual key if key begins with prefix but key does not contain the delimeter", function(done){
-		bucket.PUTObject("key1", "valueWithoutDelimeter", function(){
+	it("should return individual key if key does not contain the delimiter even if key contains prefix", function(done){
+		bucket.PUTObject("key1", "valueWithoutDelimiter", function(){
 			bucket.PUTObject("noMatchKey", "non-matching key", function(){
 				bucket.PUTObject("key1/", "valueWithDelimiter", function(){
 					bucket.GETBucketListObjects("key", null, "/", 10, function(response){
-						expect(response.fetched["key1"]).to.equal("valueWithoutDelimeter");
+						expect(response.fetched["key1"]).to.equal("valueWithoutDelimiter");
 						expect(response.fetched["key1/"]).to.be.undefined;
 						expect(response.attrs.common_prefixes.indexOf("key1/")).to.be.above(-1);
 						expect(response.fetched["noMatchKey"]).to.be.undefined;
@@ -107,7 +107,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 	});
 
 
-	it("should return grouped keys under common prefix if key starts with given prefix and contains given delimeter", function(done){
+	it("should return grouped keys under common prefix if keys start with given prefix and contain given delimiter", function(done){
 		bucket.PUTObject("key/one", "value1", function(){
 			bucket.PUTObject("key/two", "value2", function(){
 				bucket.PUTObject("key/three", "value2", function(){
@@ -121,7 +121,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		});
 	});
 
-	it("should return grouped keys if no prefix given and keys match before delimeter", function(done){
+	it("should return grouped keys if no prefix given and keys match before delimiter", function(done){
 		bucket.PUTObject("noPrefix/one", "value1", function(){
 			bucket.PUTObject("noPrefix/two", "value2", function(){
 				bucket.GETBucketListObjects(null, null, "/", 10, function(response){
@@ -133,34 +133,64 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		});
 	});
 
-	it("should return no grouped keys if no delimeter specified in GETBucketListObjects", function(done){
+	it("should return no grouped keys if no delimiter specified in GETBucketListObjects", function(done){
 		bucket.GETBucketListObjects("key", null, null, 10, function(response){
 			expect(response.attrs.common_prefixes).to.be.undefined;
 			done();
 		});
 	});
 
+	it("should only return keys occurring alphabetically AFTER marker when no delimiter specified", function(done){
+		//This test is currently failing but based on my tests on AWS command line, this test should pass. 
+		 bucket.PUTObject("a", "shouldBeExcluded", function(){
+			bucket.PUTObject("b", "shouldBeIncluded", function(){
+				bucket.GETBucketListObjects(null, "a", null, 10, function(response){
+					expect(response.fetched["b"]).to.equal("shouldBeIncluded");
+					expect(response.fetched["a"]).to.be.undefined;
+					done();
+				});
+			});
+		});
+	});
 
-	it.skip("should only return keys occurring alphabetically AFTER marker", function(done){
-		bucket.GETBucketListObjects("key", "k", "/", 10, function(response){
-			// console.log("response", response);
-			//Geting odd results from testing marker.  Why does the prefix have to be contained in marker?
-			// Couldn't the prefix be "key" and the marker "a", so we would actually pick up everything? 
-			//From the AWS docs, there is nothing saying that the marker necessarily limits the results.
+
+	it("should only return keys occurring alphabetically AFTER marker when delimiter specified", function(done){
+		//This test is currently failing but based on my tests on AWS command line, this test should pass. 
+		bucket.GETBucketListObjects(null, "a", "/", 10, function(response){
+			expect(response.fetched["b"]).to.equal("shouldBeIncluded");
+			expect(response.fetched["a"]).to.be.undefined;
 			done();
 		});
 	});
 
-	it.skip("should return a next_marker if maxKeys reached", function(done){
-		bucket.GETBucketListObjects(null, null, null, 3, function(response){
-			// console.log("response", response);
-			//Not returning a next_marker when no common prefixes.  
-			//Need to complete test.  
+	it("should only return keys occurring alphabetically AFTER marker when delimiter and prefix specified", function(done){
+		//This test is currently failing but based on my tests on AWS command line, this test should pass. 
+		bucket.GETBucketListObjects("b", "a", "/", 10, function(response){
+			expect(response.fetched["b"]).to.equal("shouldBeIncluded");
+			expect(response.fetched["a"]).to.be.undefined;
 			done();
 		});
 	});
-	
- 
+
+	it("should return a next_marker if maxKeys reached", function(done){
+		//This test is currently failing but based on my tests on AWS command line, this test should pass. 
+		 bucket.PUTObject("next/", "shouldBeListed", function(){
+		 	bucket.PUTObject("next/rollUp", "shouldBeRolledUp", function(){
+				bucket.PUTObject("next1/", "shouldBeNextMarker", function(){
+					bucket.GETBucketListObjects("next", null, "/", 1, function(response){
+						console.log("response", response);
+						expect(response.attrs.common_prefixes.indexOf("next/")).to.be.above(-1);
+						expect(response.attrs.common_prefixes.indexOf("next1/")).to.equal(-1);
+						expect(response.attrs.next_marker).to.equal("next1/");
+						expect(response.attrs.truncated).to.be.true;
+						done();
+					});
+				});
+			});
+		});
+	});
+
+
 });
 
 
