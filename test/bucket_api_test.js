@@ -197,6 +197,8 @@ describe("stress test for bucket API", function(){
 
 	this.timeout(200000);
 	var makeid = require("./makeid.js");
+	var shuffle = require("./shuffle.js");
+	var timeDiff = require("./timeDiff.js");
 	var async = require("async");
 	//Test should be of at least 100,000 keys
 	var NUM_KEYS = 100000;
@@ -214,7 +216,7 @@ describe("stress test for bucket API", function(){
 		});
 	});
 
-	it("should put NUM_KEYS keys into bucket and retrieve full list in under MAX_MILLISECONDS", function(done){
+	it("should put " + NUM_KEYS + " keys into bucket and retrieve full list in under " + MAX_MILLISECONDS + " milliseconds", function(done){
     var delimiter = "/";
 		var data = {};
 		var keys = [];
@@ -239,28 +241,24 @@ describe("stress test for bucket API", function(){
 			};
 		};
 
-		//randomize it
+		//Shuffle the keys array so the keys appear in random order
+		shuffle(keys);
 
 		//Start timing
-		var time = process.hrtime();
+		var startTime = process.hrtime();
 
 		async.each(keys, function(item, next){
 			bucket.PUTObject(item, "value", next);
 		}, function(err){
 			if(err){
-				console.error('Error' + err);
+				console.error("Error" + err);
 				expect(err).to.be.undefined;
 				done();
 			} else {
 				bucket.GETBucketListObjects(null, null, '/', 1000, function(response){
-				console.log("response", response);
-				//Stop timing
-				var diff = process.hrtime(time);
-				//var diff = run of function with hrtime return milliseconds.  
-//make funcyion to convert diff into milliseconds.  
-				var seconds = diff[0] * 1000 + (diff[1]/1e9);
-				console.log("seconds", seconds)
-				expect(seconds).to.be.below(MAX_MILLISECONDS);
+				//Stop timing and calculate millisecond time difference
+				var diff = timeDiff(startTime);
+				expect(diff).to.be.below(MAX_MILLISECONDS);
 				expect(response.attrs.common_prefixes.indexOf("dogs/")).to.be.above(-1);
 				expect(response.attrs.common_prefixes.indexOf("cats/")).to.be.above(-1);
 				done();
