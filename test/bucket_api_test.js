@@ -178,7 +178,6 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		 	bucket.PUTObject("next/rollUp", "shouldBeRolledUp", function(){
 				bucket.PUTObject("next1/", "shouldBeNextMarker", function(){
 					bucket.GETBucketListObjects("next", null, "/", 1, function(response){
-						console.log("response", response);
 						expect(response.attrs.common_prefixes.indexOf("next/")).to.be.above(-1);
 						expect(response.attrs.common_prefixes.indexOf("next1/")).to.equal(-1);
 						expect(response.attrs.next_marker).to.equal("next1/");
@@ -190,6 +189,85 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		});
 	});
 
+
+});
+
+
+describe("stress test for bucket API", function(){
+
+	this.timeout(200000);
+	var makeid = require("./makeid.js");
+	var async = require("async");
+	//Test should be of at least 100,000 keys
+	var NUM_KEYS = 100000;
+	//We expect 1,000 puts per second
+	var MAX_MILLISECONDS = NUM_KEYS;
+	var bucket;
+			
+	before(function() {
+	  bucket = new Bucket();
+	});
+
+	after(function(done) {
+		bucket.DELETEBucket(function(){
+			done();
+		});
+	});
+
+	it("should put NUM_KEYS keys into bucket and retrieve full list in under MAX_MILLISECONDS", function(done){
+    var delimiter = "/";
+		var data = {};
+		var keys = [];
+		
+		var prefixes = ["dogs","cats"];
+
+		//Create dictionary entries based on prefixes array
+		for(var i=0; i< prefixes.length; i++){
+			data[prefixes[i]] = [];
+		}
+
+		//Populate dictionary with random key extensions
+		for (var j=0; j<NUM_KEYS; j++){
+			var prefix = prefixes[j % prefixes.length];
+			data[prefix].push(makeid(10));
+		};
+
+		//Populate keys array with all keys including prefixes
+		for(var key in data){
+			for(var k=0; k< data[key].length; k++){
+				keys.push(key + "/" + data[key][k]);
+			};
+		};
+
+		//randomize it
+
+		//Start timing
+		var time = process.hrtime();
+
+		async.each(keys, function(item, next){
+			bucket.PUTObject(item, "value", next);
+		}, function(err){
+			if(err){
+				console.error('Error' + err);
+				expect(err).to.be.undefined;
+				done();
+			} else {
+				bucket.GETBucketListObjects(null, null, '/', 1000, function(response){
+				console.log("response", response);
+				//Stop timing
+				var diff = process.hrtime(time);
+				//var diff = run of function with hrtime return milliseconds.  
+//make funcyion to convert diff into milliseconds.  
+				var seconds = diff[0] * 1000 + (diff[1]/1e9);
+				console.log("seconds", seconds)
+				expect(seconds).to.be.below(MAX_MILLISECONDS);
+				expect(response.attrs.common_prefixes.indexOf("dogs/")).to.be.above(-1);
+				expect(response.attrs.common_prefixes.indexOf("cats/")).to.be.above(-1);
+				done();
+				});
+			};
+		});
+	});
 
 });
 
