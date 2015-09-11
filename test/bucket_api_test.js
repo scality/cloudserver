@@ -214,7 +214,7 @@ describe("stress test for bucket API", function(){
 		});
 	});
 
-	it("should put " + NUM_KEYS + " keys into bucket and retrieve full list in under " + MAX_MILLISECONDS + " milliseconds", function(done){
+	it("should put " + NUM_KEYS + " keys into bucket and retrieve bucket list in under " + MAX_MILLISECONDS + " milliseconds", function(done){
     var delimiter = "/";
 		var data = {};
 		var keys = [];
@@ -253,17 +253,37 @@ describe("stress test for bucket API", function(){
 				expect(err).to.be.undefined;
 				done();
 			} else {
-				bucket.GETBucketListObjects(null, null, '/', 1000, function(response){
+				bucket.GETBucketListObjects(null, null, '/', null, function(response){
 				//Stop timing and calculate millisecond time difference
 				var diff = timeDiff(startTime);
 				expect(diff).to.be.below(MAX_MILLISECONDS);
 				expect(response.CommonPrefixes.indexOf("dogs/")).to.be.above(-1);
 				expect(response.CommonPrefixes.indexOf("cats/")).to.be.above(-1);
-
-				//TODO: Run additional gets to check response.
 				done();
 				});
 			};
+		});
+	});
+
+
+	it("should return all keys as Contents if delimiter does not match and specify NextMarker", function(done){
+		bucket.GETBucketListObjects(null, null, "$", 1000, function(response){
+			expect(response.CommonPrefixes.length).to.equal(0);
+			expect(response.Contents.length).to.equal(1000);
+			expect(response.IsTruncated).to.be.true;
+			expect(response.NextMarker).to.be.a.string;
+			done();
+		});
+	});
+
+	it("should return only keys occurring after specified marker", function(done){
+		bucket.GETBucketListObjects(null, "cz", "/", null, function(response){
+			expect(response.CommonPrefixes.length).to.equal(1);
+			expect(response.CommonPrefixes.indexOf("cats/")).to.equal(-1);
+			expect(response.Contents.length).to.equal(0);
+			expect(response.IsTruncated).to.be.false;
+			expect(response.NextMarker).to.be.undefined;
+			done();
 		});
 	});
 
