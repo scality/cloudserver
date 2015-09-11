@@ -65,7 +65,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 				keys that contain the same substring starting with the prefix and ending with the first 
 				occurrence of the delimiter will be grouped together and appear once under common prefix.  
 				For instance, "key2/sample" and "key2/moreSample" will be 
-				grouped together if prefix is "key" and delimiter is "/".  
+				grouped together under key2/ if prefix is "key" and delimiter is "/".  
 		3)	If do not specify prefix, return grouped keys under common prefix if they contain 
 				same substring starting at beginning of the key and ending before first occurrence of delimiter.
 		4)	There will be no grouping if no delimiter specified as argument in GETBucketListObjects.		
@@ -261,6 +261,8 @@ describe("stress test for bucket API", function(){
 				expect(diff).to.be.below(MAX_MILLISECONDS);
 				expect(response.attrs.common_prefixes.indexOf("dogs/")).to.be.above(-1);
 				expect(response.attrs.common_prefixes.indexOf("cats/")).to.be.above(-1);
+
+				//TODO: Run additional gets to check response.
 				done();
 				});
 			};
