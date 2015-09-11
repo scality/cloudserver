@@ -1,0 +1,22 @@
+{
+  "maxerr"        : 50,       // {int} Maximum error before stopping
+  "bitwise"       : true,     // true: Prohibit bitwise operators (&, |, ^, etc.)
+  "curly"         : true,     // true: Require {} for every new block or scope
+  "eqeqeq"        : true,     // true: Require triple equals (===) for comparison
+  "forin"         : true,     // true: Require filtering for..in loops with obj.hasOwnProperty()
+  "freeze"        : true,     // true: prohibits overwriting prototypes of native objects such as Array, Date etc.
+  "immed"         : true,     // true: Require immediate invocations to be wrapped in parens e.g. `(function () { } ());`
+  "indent"        : 4,        // {int} Number of spaces to use for indentation
+  "newcap"        : false,    // true: Require capitalization of all constructor functions e.g. `new F()`
+  "noempty"       : true,     // true: Prohibit use of empty blocks
+  "nonbsp"        : true,     // true: Prohibit "non-breaking whitespace" characters.
+  "quotmark"      : true,     // Quotation mark consistency: ensure whatever is used is consistent
+  "undef"         : true,     // true: Require all non-global variables to be declared (prevents global leaks)
+  "unused"        : true,     // Unused variables
+  "boss"          : false,    // true: Tolerate assignments where comparisons would be expected
+  "debug"         : false,    // true: Allow debugger statements e.g. browser breakpoints.
+  "evil"          : false,    // true: Tolerate use of `eval` and `new Function()`
+  "laxbreak"      : false,    // true: Tolerate possibly unsafe line breakings
+  "mocha"         : true,     // Mocha
+  "node"          : true      // Node.js
+}
