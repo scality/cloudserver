@@ -6,6 +6,7 @@
   "scripts": {
     "test": "mocha"
   },
+  "engine": "node 4.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scality/IronMan-S3.git"
