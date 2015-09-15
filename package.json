@@ -23,9 +23,10 @@
   },
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
+    "async": "^1.4.2",
+    "crypto": "0.0.3",
     "jsutils": "giorgioregni/jsutils",
-    "node-simple-router": "giorgioregni/node-simple-router",
-    "async": "^1.4.2"
+    "node-simple-router": "giorgioregni/node-simple-router"
   },
   "devDependencies": {
     "chai": "^3.2.0",
