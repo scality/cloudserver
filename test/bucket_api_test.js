@@ -77,6 +77,13 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 				this search so that it can serve as the marker in the next search.  
 				*/
 
+	//DEFAULT_LIMIT used in most tests to have explicit limit
+	var DEFAULT_LIMIT = 10;
+
+	//SMALLLIMIT used to test that truncating and nextMarker is working
+	var SMALL_LIMIT = 1;
+
+	var DELIMITER = "/";
 
 	var bucket;
 			
@@ -94,7 +101,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		bucket.PUTObject("key1", "valueWithoutDelimiter", function(){
 			bucket.PUTObject("noMatchKey", "non-matching key", function(){
 				bucket.PUTObject("key1/", "valueWithDelimiter", function(){
-					bucket.GETBucketListObjects("key", null, "/", 10, function(response){
+					bucket.GETBucketListObjects("key", null, DELIMITER, DEFAULT_LIMIT, function(response){
 						expect(isKeyInContents(response, "key1")).to.be.true;
 						expect(response.CommonPrefixes.indexOf("key1")).to.equal(-1);
 						expect(isKeyInContents(response, "key1/")).to.be.false;
@@ -113,7 +120,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		bucket.PUTObject("key/one", "value1", function(){
 			bucket.PUTObject("key/two", "value2", function(){
 				bucket.PUTObject("key/three", "value2", function(){
-					bucket.GETBucketListObjects("ke", null, "/", 10, function(response){
+					bucket.GETBucketListObjects("ke", null, DELIMITER, DEFAULT_LIMIT, function(response){
 						expect(response.CommonPrefixes.indexOf("key/")).to.be.above(-1);
 						expect(isKeyInContents(response, "key/")).to.be.false;
 						done();
@@ -126,7 +133,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 	it("should return grouped keys if no prefix given and keys match before delimiter", function(done){
 		bucket.PUTObject("noPrefix/one", "value1", function(){
 			bucket.PUTObject("noPrefix/two", "value2", function(){
-				bucket.GETBucketListObjects(null, null, "/", 10, function(response){
+				bucket.GETBucketListObjects(null, null, DELIMITER, DEFAULT_LIMIT, function(response){
 					expect(response.CommonPrefixes.indexOf("noPrefix/")).to.be.above(-1);
 					expect(isKeyInContents(response, "noPrefix")).to.be.false;
 					done();
@@ -136,7 +143,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 	});
 
 	it("should return no grouped keys if no delimiter specified in GETBucketListObjects", function(done){
-		bucket.GETBucketListObjects("key", null, null, 10, function(response){
+		bucket.GETBucketListObjects("key", null, null, DEFAULT_LIMIT, function(response){
 			expect(response.CommonPrefixes.length).to.equal(0);
 			done();
 		});
@@ -145,7 +152,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 	it("should only return keys occurring alphabetically AFTER marker when no delimiter specified", function(done){
 		 bucket.PUTObject("a", "shouldBeExcluded", function(){
 			bucket.PUTObject("b", "shouldBeIncluded", function(){
-				bucket.GETBucketListObjects(null, "a", null, 10, function(response){
+				bucket.GETBucketListObjects(null, "a", null, DEFAULT_LIMIT, function(response){
 					expect(isKeyInContents(response, "b")).to.be.true;
 					expect(isKeyInContents(response, "a")).to.be.false;
 					done();
@@ -156,7 +163,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 
 
 	it("should only return keys occurring alphabetically AFTER marker when delimiter specified", function(done){
-		bucket.GETBucketListObjects(null, "a", "/", 10, function(response){
+		bucket.GETBucketListObjects(null, "a", DELIMITER, DEFAULT_LIMIT, function(response){
 			expect(isKeyInContents(response, "b")).to.be.true;
 			expect(isKeyInContents(response, "a")).to.be.false;
 			done();
@@ -164,7 +171,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 	});
 
 	it("should only return keys occurring alphabetically AFTER marker when delimiter and prefix specified", function(done){
-		bucket.GETBucketListObjects("b", "a", "/", 10, function(response){
+		bucket.GETBucketListObjects("b", "a", DELIMITER, DEFAULT_LIMIT, function(response){
 			expect(isKeyInContents(response, "b")).to.be.true;
 			expect(isKeyInContents(response, "a")).to.be.false;
 			done();
@@ -175,7 +182,7 @@ describe('bucket API for getting a subset of objects from a bucket', function() 
 		 bucket.PUTObject("next/", "shouldBeListed", function(){
 		 	bucket.PUTObject("next/rollUp", "shouldBeRolledUp", function(){
 				bucket.PUTObject("next1/", "shouldBeNextMarker", function(){
-					bucket.GETBucketListObjects("next", null, "/", 1, function(response){
+					bucket.GETBucketListObjects("next", null, DELIMITER, SMALL_LIMIT, function(response){
 						expect(response.CommonPrefixes.indexOf("next/")).to.be.above(-1);
 						expect(response.CommonPrefixes.indexOf("next1/")).to.equal(-1);
 						expect(response.NextMarker).to.equal("next1/");
@@ -202,8 +209,18 @@ describe("stress test for bucket API", function(){
 	var NUM_KEYS = 100000;
 	//We expect 1,000 puts per second
 	var MAX_MILLISECONDS = NUM_KEYS;
-	var bucket;
+	
 	var prefixes = ["dogs","cats","tigers","elephants","monsters"];
+
+	//TESTPREFIX is used to test alphabetical marker so must be string alphabetized before TESTMARKER
+	var TESTPREFIX = prefixes[1];
+	var TESTMARKER = "cz";
+
+	//TESTLIMIT is used to test that setting a limit will result in a truncated result with a nextMarker set
+	var TESTLIMIT = 1000;
+	var DELIMITER = "/";
+	var ODD_DELIMITER = "$";
+	var bucket;
 			
 	before(function() {
 	  bucket = new Bucket();
@@ -216,7 +233,6 @@ describe("stress test for bucket API", function(){
 	});
 
 	it("should put " + NUM_KEYS + " keys into bucket and retrieve bucket list in under " + MAX_MILLISECONDS + " milliseconds", function(done){
-    var delimiter = "/";
 		var data = {};
 		var keys = [];
 		
@@ -234,7 +250,7 @@ describe("stress test for bucket API", function(){
 		//Populate keys array with all keys including prefixes
 		for(var key in data){
 			for(var k=0; k< data[key].length; k++){
-				keys.push(key + "/" + data[key][k]);
+				keys.push(key + DELIMITER + data[key][k]);
 			};
 		};
 
@@ -252,13 +268,13 @@ describe("stress test for bucket API", function(){
 				expect(err).to.be.undefined;
 				done();
 			} else {
-				bucket.GETBucketListObjects(null, null, '/', null, function(response){
+				bucket.GETBucketListObjects(null, null, DELIMITER, null, function(response){
 				//Stop timing and calculate millisecond time difference
 				var diff = timeDiff(startTime);
 				expect(diff).to.be.below(MAX_MILLISECONDS);
 				
 				prefixes.forEach(function(prefix, idx) {
-					expect(response.CommonPrefixes.indexOf(prefix+"/")).to.be.above(-1);
+					expect(response.CommonPrefixes.indexOf(prefix+DELIMITER)).to.be.above(-1);
 				});
 				
 				done();
@@ -269,9 +285,9 @@ describe("stress test for bucket API", function(){
 
 
 	it("should return all keys as Contents if delimiter does not match and specify NextMarker", function(done){
-		bucket.GETBucketListObjects(null, null, "$", 1000, function(response){
+		bucket.GETBucketListObjects(null, null, ODD_DELIMITER, TESTLIMIT, function(response){
 			expect(response.CommonPrefixes.length).to.equal(0);
-			expect(response.Contents.length).to.equal(1000);
+			expect(response.Contents.length).to.equal(TESTLIMIT);
 			expect(response.IsTruncated).to.be.true;
 			expect(response.NextMarker).to.be.a.string;
 			done();
@@ -279,10 +295,9 @@ describe("stress test for bucket API", function(){
 	});
 
 	it("should return only keys occurring after specified marker", function(done){
-		bucket.GETBucketListObjects(null, "cz", "/", null, function(response){
-			console.log(response);
+		bucket.GETBucketListObjects(null, TESTMARKER, DELIMITER, null, function(response){
 			expect(response.CommonPrefixes.length).to.equal(prefixes.length-1);
-			expect(response.CommonPrefixes.indexOf("cats/")).to.equal(-1);
+			expect(response.CommonPrefixes.indexOf(TESTPREFIX)).to.equal(-1);
 			expect(response.Contents.length).to.equal(0);
 			expect(response.IsTruncated).to.be.false;
 			expect(response.NextMarker).to.be.undefined;
