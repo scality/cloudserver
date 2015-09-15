@@ -203,6 +203,7 @@ describe("stress test for bucket API", function(){
 	//We expect 1,000 puts per second
 	var MAX_MILLISECONDS = NUM_KEYS;
 	var bucket;
+	var prefixes = ["dogs","cats","tigers","elephants","monsters"];
 			
 	before(function() {
 	  bucket = new Bucket();
@@ -219,8 +220,6 @@ describe("stress test for bucket API", function(){
 		var data = {};
 		var keys = [];
 		
-		var prefixes = ["dogs","cats"];
-
 		//Create dictionary entries based on prefixes array
 		for(var i=0; i< prefixes.length; i++){
 			data[prefixes[i]] = [];
@@ -257,8 +256,11 @@ describe("stress test for bucket API", function(){
 				//Stop timing and calculate millisecond time difference
 				var diff = timeDiff(startTime);
 				expect(diff).to.be.below(MAX_MILLISECONDS);
-				expect(response.CommonPrefixes.indexOf("dogs/")).to.be.above(-1);
-				expect(response.CommonPrefixes.indexOf("cats/")).to.be.above(-1);
+				
+				prefixes.forEach(function(prefix, idx) {
+					expect(response.CommonPrefixes.indexOf(prefix+"/")).to.be.above(-1);
+				});
+				
 				done();
 				});
 			};
@@ -278,7 +280,8 @@ describe("stress test for bucket API", function(){
 
 	it("should return only keys occurring after specified marker", function(done){
 		bucket.GETBucketListObjects(null, "cz", "/", null, function(response){
-			expect(response.CommonPrefixes.length).to.equal(1);
+			console.log(response);
+			expect(response.CommonPrefixes.length).to.equal(prefixes.length-1);
 			expect(response.CommonPrefixes.indexOf("cats/")).to.equal(-1);
 			expect(response.Contents.length).to.equal(0);
 			expect(response.IsTruncated).to.be.false;
