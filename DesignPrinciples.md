@@ -17,3 +17,6 @@
 5.Tests are more important than the code itself - pertinence is key as well as metrics
 6. Develop in branches, do pull requests, mandatory code review including reviewing the tests and Design.md
 
+## Coding Style:
+
+....
