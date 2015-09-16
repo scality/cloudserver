@@ -23,22 +23,16 @@
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
     "jsutils": "giorgioregni/jsutils",
-<<<<<<< HEAD
-    "node-simple-router": "giorgioregni/node-simple-router"
+    "node-simple-router": "giorgioregni/node-simple-router",
+    "async": "^1.4.2"
   },
   "devDependencies": {
+    "chai": "^3.2.0",
     "gulp": "^3.9.0",
     "gulp-jshint": "^1.11.2",
     "gulp-shell": "^0.4.3"
   },
   "scripts": {
     "postinstall": "gulp precommit-hook"
-=======
-    "node-simple-router": "giorgioregni/node-simple-router",
-    "async": "^1.4.2"
-  },
-    "devDependencies": {
-    "chai": "^3.2.0"
->>>>>>> master
   }
 }
