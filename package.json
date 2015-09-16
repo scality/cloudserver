@@ -26,7 +26,8 @@
     "async": "^1.4.2",
     "crypto": "0.0.3",
     "jsutils": "giorgioregni/jsutils",
-    "node-simple-router": "giorgioregni/node-simple-router"
+    "node-simple-router": "giorgioregni/node-simple-router",
+    "utf8": "^2.1.1"
   },
   "devDependencies": {
     "chai": "^3.2.0",
