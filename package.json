@@ -26,12 +26,11 @@
     "node-simple-router": "giorgioregni/node-simple-router"
   },
   "devDependencies": {
-    "git-guppy": "^1.0.0",
     "gulp": "^3.9.0",
-    "gulp-filter": "^3.0.1",
     "gulp-jshint": "^1.11.2",
-    "guppy-pre-commit": "^0.2.1",
-    "jshint": "^2.8.0",
-    "jshint-stylish": "^2.0.1"
+    "gulp-shell": "^0.4.3"
+  },
+  "scripts": {
+    "postinstall": "gulp precommit-hook"
   }
 }

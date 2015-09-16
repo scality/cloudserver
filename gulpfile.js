@@ -1,24 +1,18 @@
 var gulp = require('gulp'),
-    guppy = require('git-guppy')(gulp),
     jshint = require('gulp-jshint'),
-    stylish = require('jshint-stylish'),
-    gulpFilter = require('gulp-filter');
+    shell = require('gulp-shell');
 
 /* lint all the things! */
 gulp.task('lint', function() {
   return gulp.src('./lib/*.js')
     .pipe(jshint())
-    .pipe(jshint.reporter(stylish));
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
 });
 
-
-/* precommit hook for linting */
-gulp.task('pre-commit', function() {
-  return guppy.stream('pre-commit')
-  .pipe(gulpFilter(['*.js']))
-  .pipe(jshint())
-  .pipe(jshint.reporter(stylish))
-  .pipe(jshint.reporter('fail'));
-});
+/* install pre-commit hook */
+gulp.task('precommit-hook', shell.task([
+  'cp .pre-commit .git/hooks/pre-commit'
+]));
 
 gulp.task('default', ['lint']);
