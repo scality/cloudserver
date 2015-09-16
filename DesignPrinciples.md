@@ -14,6 +14,9 @@
 2. Adhere to our coding style - automated lint
 3. No callback hell - check errors and return early in callbacks
 4. Use Nan for external C/C++ modules - no direct v8
-5.Tests are more important than the code itself - pertinence is key as well as metrics
+5. Tests are more important than the code itself - pertinence is key as well as metrics
 6. Develop in branches, do pull requests, mandatory code review including reviewing the tests and Design.md
 
+## Coding Style:
+
+....
