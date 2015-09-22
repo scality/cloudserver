@@ -58,13 +58,13 @@ If there is no authentication header on the request object, checkAuth determines
 
 ## Implementation of checkAuth
 
-To add an authentication check to any route, include checkAuth as the first function run upon receipt of a request to that route.  The checkAuth function takes three arguments: (a) the request object, (b) the response object and (c) a callback function to handle any error messages or to proceed if authentication is successful.  The checkAuth function returns the callback function with either (i) an error message as the first argument if authentication is unsuccessful or (ii) null as the first argument and "Success" as the second argument if authentication is successful.
+To add an authentication check to any route, include checkAuth as the first function run upon receipt of a request to that route.  The checkAuth function takes two arguments: (a) the request object and (b) a callback function to handle any error messages or to proceed if authentication is successful.  The checkAuth function returns the callback function with either (i) an error message as the first argument if authentication is unsuccessful or (ii) null as the first argument and the user's accessKey as the second argument if authentication is successful.
 
 For instance, if you have a route to get an object, you would include checkAuth as follows:
 
 ```
 router.get("/getObjectRoute", function(request, response){
-	checkAuth(request, response, function(err, success){
+	checkAuth(request, function(err, accessKey){
 		if(err){
 			// Return an error response
 		}
