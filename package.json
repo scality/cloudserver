@@ -4,7 +4,7 @@
   "description": "S3 connector",
   "main": "lib/server.js",
   "scripts": {
-    "test": "mocha"
+    "postinstall": "gulp precommit-hook"
   },
   "engine": "node 4.0.0",
   "repository": {
@@ -27,7 +27,8 @@
     "crypto": "0.0.3",
     "jsutils": "giorgioregni/jsutils",
     "node-simple-router": "giorgioregni/node-simple-router",
-    "utf8": "^2.1.1"
+    "utf8": "^2.1.1",
+    "xml": "^1.0.0"
   },
   "devDependencies": {
     "chai": "^3.2.0",
