@@ -39,13 +39,14 @@ If there is no authentication header on the request object, checkAuth determines
 3) Uses the accessKey to pull the secretKey from database (stored in memory for the time being).
 4) Uses the secretKey to reconstruct the signature:  
     * Builds the stringToSign:
-		``      HTTP-Verb + "\n" +
+		```      
+				HTTP-Verb + "\n" +
 				Content-MD5 + "\n" +
 				Content-Type + "\n" +
 				Date (or Expiration for query Auth) + "\n" +
 				CanonicalizedAmzHeaders +
 				CanonicalizedResource;
-		``
+		```
 	* utf8 encodes the stringToSign
 	* Uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as inputs to create a digest.  
 	* Base64 encodes the digest.  The result is the reconstructed signature.    
@@ -55,6 +56,24 @@ If there is no authentication header on the request object, checkAuth determines
 ## TO BE COMPLETED WITH VERSION 4
 
 
+## Implementation of checkAuth
+
+To add an authentication check to any route, include checkAuth as the first function run upon receipt of a request to that route.  The checkAuth function takes three arguments: (a) the request object, (b) the response object and (c) a callback function to handle any error messages or to proceed if authentication is successful.  The checkAuth function returns the callback function with either (i) an error message as the first argument if authentication is unsuccessful or (ii) null as the first argument and "Success" as the second argument if authentication is successful.
+
+For instance, if you have a route to get an object, you would include checkAuth as follows:
+
+```
+router.get("/getObjectRoute", function(request, response){
+	checkAuth(request, response, function(err, success){
+		if(err){
+			// Return an error response
+		}
+		else {
+			// Continue on with request
+		}
+	})
+})
+```
 
 
 
