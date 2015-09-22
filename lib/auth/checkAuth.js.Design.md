@@ -68,9 +68,7 @@ router.get("/getObjectRoute", function(request, response){
 		if(err){
 			// Return an error response
 		}
-		else {
-			// Continue on with request
-		}
+		// Continue on with request
 	})
 })
 ```
