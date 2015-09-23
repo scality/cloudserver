@@ -27,6 +27,9 @@ describe('canonicalization', function(){
 
   it('should construct a canonicalized resource', function(){
     var REQUEST = {
+      headers: {
+        host: 'bucket.s3.amazonaws.com:80'
+      },
       lowerCaseHeaders: {
         host: 'bucket.s3.amazonaws.com:80'
       },
