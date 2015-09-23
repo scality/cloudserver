@@ -2,7 +2,7 @@
   "name": "ironman-s3",
   "version": "0.0.1",
   "description": "S3 connector",
-  "main": "lib/server.js",
+  "main": "index.js",
   "scripts": {
     "postinstall": "gulp precommit-hook"
   },
