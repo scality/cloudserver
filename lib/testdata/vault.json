@@ -1,0 +1,42 @@
+{
+	"secretKeys": {
+		"accessKey1": "verySecretKey1",
+		"accessKey2": "verySecretKey2"
+	},
+
+
+	"bucketLists": {
+
+		"accessKey1": {
+			"ownerDisplayName": "BucketBaron",
+			"bucketList": [
+				{
+					"name": "SuperBucket",
+					"creationDate": "2006-02-03T16:45:09.000Z"
+				}, 
+				{
+					"name": "SimplyBucket",
+					"creationDate": "2009-02-03T16:42:06.000Z"
+				}, 
+				{	"name": "CharlieBucket",
+					"creationDate": "2015-02-03T16:32:06.000Z"
+				}]
+		},
+
+		"accessKey2": {
+			"ownerDisplayName": "BucketBaller",
+			"bucketList": [
+				{
+					"name": "SomeBucket",
+					"creationDate": "2012-05-03T16:45:09.000Z"
+				}, 
+				{
+					"name": "IceBucket",
+					"creationDate": "2009-02-03T16:42:06.000Z"
+				}]
+		}
+	}
+}
+
+
+
