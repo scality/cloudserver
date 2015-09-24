@@ -4,6 +4,7 @@
   "description": "S3 connector",
   "main": "index.js",
   "scripts": {
+    "test": "mocha",
     "postinstall": "gulp precommit-hook"
   },
   "engine": "node 4.0.0",
@@ -26,6 +27,7 @@
     "async": "^1.4.2",
     "crypto": "0.0.3",
     "jsutils": "giorgioregni/jsutils",
+    "mocha": "^2.3.3",
     "node-simple-router": "giorgioregni/node-simple-router",
     "utf8": "^2.1.1",
     "xml": "^1.0.0"
