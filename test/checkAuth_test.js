@@ -240,10 +240,15 @@ describe("Auth._reconstructSignature",function(){
 
     it('should return an error message if the signatures do not match for v2query auth', function(done){
 
+      //Date.now() provides milliseconds since 1/1/1970.  AWS Expires is in seconds so need to divide by 1000
+      var expires = Date.now() / 1000;
+      var fifteenMinutes = (15 * 60);
+      expires = expires + fifteenMinutes;
+
       var REQUEST = {
         method: "GET",
-        url: "/bucket?AWSAccessKeyId=accessKey1&Expires=5141889120&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D",
-        query: { AWSAccessKeyId: 'accessKey1', Expires: '5141889120', Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
+        url: `/bucket?AWSAccessKeyId=accessKey1&Expires=${expires}&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D`,
+        query: { AWSAccessKeyId: 'accessKey1', Expires: expires, Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
         lowerCaseHeaders: {},
         headers: {}
       };
