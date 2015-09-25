@@ -2,9 +2,6 @@ var chai = require("chai");
 var expect = chai.expect;
 var Auth = require("../lib/auth/checkAuth.js")
 
-//Add tests for:
-
-//timeout
 
 
 describe('canonicalization', function(){
@@ -24,6 +21,18 @@ describe('canonicalization', function(){
 
   });
 
+  it('should return an empty string as the canonicalized header if no amz headers', function (){
+    var LOWERCASEHEADERS = { 
+      date: 'Mon, 21 Sep 2015 22:29:27 GMT',
+      authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
+      host: 's3.amazonaws.com:80',
+      connection: 'Keep-Alive',
+      'user-agent': 'Cyberduck/4.7.2.18004 (Mac OS X/10.10.5) (x86_64)' };
+
+      var canonicalizedHeader = Auth._getCanonicalizedAmzHeaders(LOWERCASEHEADERS);
+
+      expect(canonicalizedHeader).to.equal('');
+  });
 
   it('should construct a canonicalized resource', function(){
     var REQUEST = {
@@ -40,6 +49,23 @@ describe('canonicalization', function(){
     }
     var canonicalizedResource = Auth._getCanonicalizedResource(REQUEST);
     expect(canonicalizedResource).to.equal('bucket/obj?requestPayment=yes,please');
+  });
+
+  it('should return the path as the canonicalized resource if no bucket name, \
+    overriding headers or delete query', function(){
+    var REQUEST = {
+      headers: {
+        host: 's3.amazonaws.com:80'
+      },
+      lowerCaseHeaders: {
+        host: 's3.amazonaws.com:80'
+      },
+      url: '/',
+      query: {
+        'ignore': 'me'}
+    }
+    var canonicalizedResource = Auth._getCanonicalizedResource(REQUEST);
+    expect(canonicalizedResource).to.equal('/');
   });
 
 });
@@ -129,20 +155,125 @@ describe("Auth._reconstructSignature",function(){
   	expect(reconstructedSig).to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
   });
 
-  describe("Auth._checkTimestamp", function(){
+  describe("Auth._checkTimestamp for timecheck in header auth", function(){
 
     it("should return true if the date in the header is more than 15 minutes old", function(){
       var timeStamp = 'Mon Sep 21 2015 17:12:58 GMT-0700 (PDT)';
+      timeStamp = Date.parse(timeStamp);
       var result = Auth._checkTimestamp(timeStamp);
       expect(result).to.be.true;
     });
 
-    it("should return false if the date in the header is less than 15 minutes old", function(){
+    it("should return true if the date in the header is more than 15 minutes in the future", function(){
+      //Note: This test will have to be updated in 2095
+      var timeStamp = 'Mon Sep 25 2095 17:12:58 GMT-0700 (PDT)';
+      timeStamp = Date.parse(timeStamp);
+      var result = Auth._checkTimestamp(timeStamp);
+      expect(result).to.be.true;
+    });
+
+    it("should return false if the date in the header is within 15 minutes of current time", function(){
       var timeStamp = new Date();
       var result = Auth._checkTimestamp(timeStamp);
       expect(result).to.be.false;
     });
 
+  });
+
+
+  describe('Error handling in checkAuth', function() {
+
+    it('should return an error message if no secret key is associated with access key', function(done){
+
+      var DATE = new Date();
+
+      var REQUEST = {
+        method: "GET",
+        headers: { host: 's3.amazonaws.com',
+          'user-agent': 'curl/7.43.0',
+          accept: '*/*',
+          date: DATE,
+          authorization: 'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
+        url: "/bucket",
+      };
+
+      Auth.checkAuth(REQUEST, function(err, success){
+        expect(err).to.equal('Error retrieving key');
+        done();
+      });
+    });
+
+
+    it('should return an error message if no date header is provided with v2header auth check', function(done){
+
+      var REQUEST = {
+        method: "GET",
+        headers: { host: 's3.amazonaws.com',
+          'user-agent': 'curl/7.43.0',
+          accept: '*/*',
+          authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
+        url: "/bucket",
+      };
+
+      Auth.checkAuth(REQUEST, function(err, success){
+        expect(err).to.equal('Missing or invalid date header');
+        done();
+      });
+    });
+
+    it('should return an error message if the Expires query parameter is more than 15 minutes \
+      old with query auth check', function(done){
+
+      var REQUEST = {
+        method: "GET",
+        url: "/bucket?AWSAccessKeyId=accessKey1&Expires=1141889120&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D",
+        query: { AWSAccessKeyId: 'accessKey1', Expires: '1141889120', Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
+        lowerCaseHeaders: {},
+        headers: {}
+      };
+
+      Auth._v2QueryAuthCheck(REQUEST, function(err, success){
+        expect(err).to.equal('RequestTimeTooSkewed: The difference between the request time and the current time is too large');
+        done();
+      });
+    });
+
+    it('should return an error message if the signatures do not match for v2query auth', function(done){
+
+      var REQUEST = {
+        method: "GET",
+        url: "/bucket?AWSAccessKeyId=accessKey1&Expires=5141889120&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D",
+        query: { AWSAccessKeyId: 'accessKey1', Expires: '5141889120', Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
+        lowerCaseHeaders: {},
+        headers: {}
+      };
+
+      Auth._v2QueryAuthCheck(REQUEST, function(err, success){
+        expect(err).to.equal('Access denied');
+        done();
+      });
+    });
+
+
+    it('should return an error message if the signatures do not match for v2header auth', function(done){
+
+      var DATE = new Date();
+
+      var REQUEST = {
+        method: "GET",
+        headers: { host: 's3.amazonaws.com',
+          'user-agent': 'curl/7.43.0',
+          accept: '*/*',
+          date: DATE,
+          authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
+        url: "/bucket",
+      };
+
+      Auth.checkAuth(REQUEST, function(err, success){
+        expect(err).to.equal('Access denied');
+        done();
+      });
+    });    
 
   });
 
