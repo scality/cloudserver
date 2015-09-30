@@ -21,23 +21,25 @@ If there is no authentication header on the request object, checkAuth determines
 
 ## AWS Signature Version 2 using headers
 
-1) Checks to make sure request is not more than 15 minutes old and returns an error if it exceeds the time requirement.
-2) Obtains the accessKey and signature by parsing the string value of the authorization header on the request object. 
+1. Checks to make sure request is not more than 15 minutes old and returns an error if it exceeds the time requirement.
+2. Obtains the accessKey and signature by parsing the string value of the authorization header on the request object. 
 
     See Common Steps for Signature Version 2
 
 
 ## AWS Signature Version 2 using query parameters
 
-1) Checks to make sure the request has not expired by checking the "Expires" query parameter.
-2) Obtains the accessKey from the "AWSAccessKeyID" query parameter and obtains the signature from the "Signature" query parameter.  
+1. Checks to make sure the request has not expired by checking the "Expires" query parameter.
+2. Obtains the accessKey from the "AWSAccessKeyID" query parameter and obtains the signature from the "Signature" query parameter.  
 
     See Common Steps for Signature Version 2
 
 ## Common Steps for Signature Version 2
 
-3) Uses the accessKey to pull the secretKey from database (stored in memory for the time being).
-4) Uses the secretKey to reconstruct the signature:  
+CURRENT IMPLEMENTATION:
+
+1. Uses the accessKey to pull the secretKey from database (stored in memory for the time being).
+2. Uses the secretKey to reconstruct the signature:  
     * Builds the stringToSign:
 		```      
 				HTTP-Verb + "\n" +
@@ -50,8 +52,27 @@ If there is no authentication header on the request object, checkAuth determines
 	* utf8 encodes the stringToSign
 	* Uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as inputs to create a digest.  
 	* Base64 encodes the digest.  The result is the reconstructed signature.    
-5) Checks whether the reconstructed signature matches the signature provided with the request.  If the two signatures match, it means that the requestor had the secretKey in order to properly encode the signature provided so authentication is confirmed.  
+3. Checks whether the reconstructed signature matches the signature provided with the request.  If the two signatures match, it means that the requestor had the secretKey in order to properly encode the signature provided so authentication is confirmed.  
 
+
+TO BE REVISED IMPLEMENTATION:
+
+1. Build the stringToSign:  
+
+		```      
+				HTTP-Verb + "\n" +
+				Content-MD5 + "\n" +
+				Content-Type + "\n" +
+				Date (or Expiration for query Auth) + "\n" +
+				CanonicalizedAmzHeaders +
+				CanonicalizedResource;
+		```
+2. utf8 encode the stringToSign.
+3. Send the encoded stringToSign along with the accesskey to Vault.
+4. Vault pulls the secretKey for the user based on the accessKey.
+5. Vault uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as inputs to create a digest.  
+6. Vault Base64 encodes the digest.  The result is the reconstructed signature. Vault returns the reconstructed signature.
+7. Check whether the reconstructed signature from Vault matches the signature provided with the request.  If the two signatures match, it means that the requestor had the secretKey in order to properly encode the signature provided so authentication is confirmed.
 
 ## TO BE COMPLETED WITH VERSION 4
 
@@ -72,6 +93,5 @@ router.get("/getObjectRoute", function(request, response){
 	})
 })
 ```
-
 
 
