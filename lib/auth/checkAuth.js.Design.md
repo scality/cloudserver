@@ -68,11 +68,12 @@ TO BE REVISED IMPLEMENTATION:
 				CanonicalizedResource;
 		```
 2. utf8 encode the stringToSign.
-3. Send the encoded stringToSign along with the accesskey to Vault.
+3. Send to Vault: (a) the user provided signature, (b) the encoded stringToSign, (c) the user's accesskey.
 4. Vault pulls the secretKey for the user based on the accessKey.
 5. Vault uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as inputs to create a digest.  
-6. Vault Base64 encodes the digest.  The result is the reconstructed signature. Vault returns the reconstructed signature.
-7. Check whether the reconstructed signature from Vault matches the signature provided with the request.  If the two signatures match, it means that the requestor had the secretKey in order to properly encode the signature provided so authentication is confirmed.
+6. Vault Base64 encodes the digest.  The result is the reconstructed signature. 
+7. Vault compares the reconstructed signature with the signature provided by with the request. If the two signatures match, it means that the requestor had the secretKey in order to properly encode the signature provided so authentication is confirmed and Vault returns true.  Otherwise, Vault returns false and the request is rejected.  
+
 
 ## TO BE COMPLETED WITH VERSION 4
 
