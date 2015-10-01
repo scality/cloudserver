@@ -1,6 +1,6 @@
 var chai = require("chai");
 var expect = chai.expect;
-var Bucket = require("../lib/bucket.js");
+var Bucket = require("../lib/bucket_mem.js");
 var utilities = require("../lib/bucket_utilities.js");
 var isKeyInContents = utilities.isKeyInContents;
 
