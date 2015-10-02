@@ -16,7 +16,7 @@
     "server"
   ],
   "author": "Giorgio Regni",
-  "license": "SEE LICENSE IN LICENSE file",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/scality/IronMan-S3/issues"
   },
@@ -33,7 +33,6 @@
     "gulp-shell": "^0.4.3"
   },
   "scripts": {
-    "postinstall": "gulp precommit-hook",
-    "test": "node_modules/.bin/mocha"
+    "postinstall": "gulp precommit-hook"
   }
 }
