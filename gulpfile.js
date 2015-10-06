@@ -12,7 +12,7 @@ gulp.task('lint', function() {
 
 /* install pre-commit hook */
 gulp.task('precommit-hook', shell.task([
-  'cp .pre-commit .git/hooks/pre-commit'
+  'cp .pre-commit .git/hooks/pre-commit 2>/dev/null || :'
 ]));
 
 gulp.task('default', ['lint']);
