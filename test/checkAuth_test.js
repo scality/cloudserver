@@ -189,7 +189,7 @@ describe("Auth._reconstructSignature",function(){
 
       var REQUEST = {
         method: "GET",
-        headers: { host: 's3.amazonaws.com',
+        lowerCaseHeaders: { host: 's3.amazonaws.com',
           'user-agent': 'curl/7.43.0',
           accept: '*/*',
           date: DATE,
@@ -208,7 +208,7 @@ describe("Auth._reconstructSignature",function(){
 
       var REQUEST = {
         method: "GET",
-        headers: { host: 's3.amazonaws.com',
+        lowerCaseHeaders: { host: 's3.amazonaws.com',
           'user-agent': 'curl/7.43.0',
           accept: '*/*',
           authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
@@ -266,12 +266,13 @@ describe("Auth._reconstructSignature",function(){
 
       var REQUEST = {
         method: "GET",
-        headers: { host: 's3.amazonaws.com',
+        lowerCaseHeaders: { host: 's3.amazonaws.com',
           'user-agent': 'curl/7.43.0',
           accept: '*/*',
           date: DATE,
           authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
         url: "/bucket",
+        query: {}
       };
 
       Auth.checkAuth(REQUEST, function(err, success){
