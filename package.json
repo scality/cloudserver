@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "description": "S3 connector",
   "main": "lib/server.js",
-  "scripts": {
-    "test": "mocha"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scality/IronMan-S3.git"
@@ -33,6 +30,7 @@
     "gulp-shell": "^0.4.3"
   },
   "scripts": {
-    "postinstall": "gulp precommit-hook"
-  }
+    "postinstall": "gulp precommit-hook",
+    "test": "node_modules/.bin/mocha" 
+    }
 }
