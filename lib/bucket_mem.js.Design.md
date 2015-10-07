@@ -3,7 +3,7 @@ RATIONALE
 The bucket API will be used for managing buckets behind the S3 interface.
 
 We plan to have only 2 backends using this interface:
-* One production backend that uses paxos and leveldb (TBD elsewhere)
+* One production backend
 * One debug backend purely in memory
 
 One important remark here is that we don't want an abstraction but a duck-typing style interface (different classes MemoryBucket and Bucket having the same methods PUTObject(), GETObject(), etc).
