@@ -126,9 +126,9 @@ describe("bucketPut API",function(){
 	});
 
 
-	it("should create a bucket using bucket name provided in host", function(done){
+	it.only("should create a bucket using bucket name provided in host", function(done){
 
-		const bucketName = 'BucketName1'
+		const bucketName = 'BucketName'
 		const testRequest = {
 			lowerCaseHeaders:
 			   { host: `${bucketName}.s3.amazonaws.com`,
@@ -138,7 +138,8 @@ describe("bucketPut API",function(){
 			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
 			 url: '/',
 			 namespace: 'default',
-			 post: ''
+			 post: '',
+			 headers: {host: `${bucketName}.s3.amazonaws.com`}
 		}
 
 		const testBucketUID = utils.getResourceUID(testRequest.namespace, bucketName);
