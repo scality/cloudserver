@@ -35,6 +35,7 @@ describe("bucketPut API",function(){
 
 	it("should return an error if bucketname is invalid", function(done){
 
+		const tooShortBucketName = 'hi';
 		const testRequest = {
 			lowerCaseHeaders:
 			   { host: '127.0.0.1:8000',
@@ -42,7 +43,7 @@ describe("bucketPut API",function(){
 			     'content-length': '0',
 			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
 			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
-			 url: '/hi',
+			 url: `/${tooShortBucketName}`,
 			 namespace: 'default',
 			 post: ''
 		}
@@ -126,7 +127,7 @@ describe("bucketPut API",function(){
 	});
 
 
-	it.only("should create a bucket using bucket name provided in host", function(done){
+	it("should create a bucket using bucket name provided in host", function(done){
 
 		const bucketName = 'BucketName'
 		const testRequest = {
@@ -145,7 +146,6 @@ describe("bucketPut API",function(){
 		const testBucketUID = utils.getResourceUID(testRequest.namespace, bucketName);
 
 		bucketPut(accessKey, metastore, testRequest, function(err, success) {
-			console.log("err", err)
 			expect(success).to.equal('Bucket created');
 			expect(metastore.buckets[testBucketUID].name).to.equal(bucketName);
 			expect(metastore.buckets[testBucketUID].owner).to.equal(accessKey);
