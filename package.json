@@ -3,10 +3,6 @@
   "version": "0.0.1",
   "description": "S3 connector",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha",
-    "postinstall": "gulp precommit-hook"
-  },
   "engine": "node 4.0.0",
   "repository": {
     "type": "git",
@@ -39,5 +35,9 @@
     "gulp": "^3.9.0",
     "gulp-jshint": "^1.11.2",
     "gulp-shell": "^0.4.3"
-  }
+  },
+  "scripts": {
+    "postinstall": "gulp precommit-hook",
+    "test": "node_modules/.bin/mocha"
+    }
 }
