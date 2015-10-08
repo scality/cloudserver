@@ -5,7 +5,9 @@ const expect = chai.expect;
 const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
 const bucketHead = require('../lib/api/bucketHead.js');
+const objectPut = require('../lib/api/objectPut.js');
 const accessKey = 'accessKey1';
+const namespace = 'default';
 
 describe("bucketPut API",function(){
 	let metastore;
@@ -30,7 +32,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: '/',
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: ''
 		}
 
@@ -47,7 +49,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: `/${tooShortBucketName}`,
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: ''
 		}
 
@@ -63,7 +65,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: '/test1',
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: 'improperxml'
 		}
 
@@ -80,7 +82,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: '/test1',
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: '<Hello></Hello>'
 		}
 
@@ -98,7 +100,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: `/${bucketName}`,
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: ''
 		}
 
@@ -121,7 +123,7 @@ describe("bucketPut API",function(){
 		const testRequest = {
 			lowerCaseHeaders: {},
 			 url: '/',
-			 namespace: 'default',
+			 namespace: namespace,
 			 post: '',
 			 headers: {host: `${bucketName}.s3.amazonaws.com`}
 		}
@@ -139,77 +141,263 @@ describe("bucketPut API",function(){
 	});
 });
 
+describe("bucketHead API",function(){
 
-	describe("bucketHead API",function(){
+	let metastore;
 
-		let metastore;
-
-		beforeEach(function () {
-		   metastore = {
-				  "users": {
-				      "accessKey1": {
-				        "buckets": []
-				      },
-				      "accessKey2": {
-				        "buckets": []
-				      }
-				  },
-				  "buckets": {}
-				}
-		});
-
-
-		it("should return an error if the bucket does not exist", function(done){
-			const bucketName = 'BucketName';
-			const testRequest = {
-				headers: {host: `${bucketName}.s3.amazonaws.com`},
-				url: '/',
-				namespace: 'default'
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
 			}
+	});
 
+
+	it("should return an error if the bucket does not exist", function(done){
+		const bucketName = 'BucketName';
+		const testRequest = {
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace
+		}
+
+		bucketHead(accessKey, metastore, testRequest, function(err, result) {
+			expect(err).to.equal('Bucket does not exist -- 404');
+			done();
+		})
+
+	});
+
+	it("should return an error if user is not authorized", function(done){
+		const bucketName = 'BucketName';
+		const putAccessKey = 'accessKey2';
+		const testRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace
+		}
+
+		bucketPut(putAccessKey, metastore, testRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
 			bucketHead(accessKey, metastore, testRequest, function(err, result) {
-				expect(err).to.equal('Bucket does not exist -- 404');
+				expect(err).to.equal('Action not permitted -- 403');
 				done();
 			})
+		})
+	});
 
-		});
+	it("should return a success message if bucket exists and user is authorized", function(done){
+		const bucketName = 'BucketName';
+		const testRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace
+		}
 
-		it("should return an error if user is not authorized", function(done){
-			const bucketName = 'BucketName';
-			const putAccessKey = 'accessKey2';
-			const testRequest = {
-				lowerCaseHeaders: {},
-				headers: {host: `${bucketName}.s3.amazonaws.com`},
-				url: '/',
-				namespace: 'default'
-			}
-
-			bucketPut(putAccessKey, metastore, testRequest, function(err, success) {
-				expect(success).to.equal('Bucket created');
-				bucketHead(accessKey, metastore, testRequest, function(err, result) {
-					expect(err).to.equal('Action not permitted -- 403');
-					done();
-				})
+		bucketPut(accessKey, metastore, testRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			bucketHead(accessKey, metastore, testRequest, function(err, result) {
+				expect(result).to.equal('Bucket exists and user authorized -- 200');
+				done();
 			})
-		});
-
-		it("should return a success message if bucket exists and user is authorized", function(done){
-			const bucketName = 'BucketName';
-			const testRequest = {
-				lowerCaseHeaders: {},
-				headers: {host: `${bucketName}.s3.amazonaws.com`},
-				url: '/',
-				namespace: 'default'
-			}
-
-			bucketPut(accessKey, metastore, testRequest, function(err, success) {
-				expect(success).to.equal('Bucket created');
-				bucketHead(accessKey, metastore, testRequest, function(err, result) {
-					expect(result).to.equal('Bucket exists and user authorized -- 200');
-					done();
-				})
-			})
-		});
+		})
+	});
 });
+
+
+describe("objectPut API",function(){
+
+	let metastore;
+	let datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+		datastore = {};
+	});
+
+
+	it("should return an error if the bucket does not exist", function(done){
+		const bucketName = 'BucketName';
+		const postBody = 'I am a body';
+		const testRequest = {
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+			post: postBody
+		}
+
+		objectPut(accessKey, datastore, metastore, testRequest, function(err, result) {
+			expect(err).to.equal('Bucket does not exist -- 404');
+			done();
+		})
+	});
+
+
+	it("should return an error if user is not authorized", function(done){
+		const bucketName = 'BucketName';
+		const postBody = 'I am a body';
+		const putAccessKey = 'accessKey2';
+		const testPutBucketRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+		}
+		const testPutObjectRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+			post: postBody
+		}
+
+		bucketPut(putAccessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(err).to.equal('Action not permitted -- 403');
+				done();
+			})
+		})
+	});
+
+
+	it("should return an error if Content MD-5 is invalid", function(done){
+		const bucketName = 'BucketName';
+		const postBody = 'I am a body';
+		const incorrectMD5 = 'asdfwelkjflkjslfjskj993ksjl'
+		const objectName = 'objectName';
+		const testPutBucketRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+		}
+		const testPutObjectRequest = {
+			lowerCaseHeaders: {
+				'content-md5': incorrectMD5
+			},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: `/${objectName}`,
+			namespace: namespace,
+			post: postBody
+		}
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(err).to.equal('Content-MD5 is invalid');
+				done();
+			})
+		})
+	});
+
+	it.skip("should return an error if datastore reports an error back", function(){
+		//TODO: Test to be written once services.putDataStore includes an actual call to 
+		//datastore rather than just the in memory adding of a key/value pair to the datastore
+		//object
+	});
+
+	it.skip("should return an error if metastore reports an error back", function(){
+		//TODO: Test to be written once services.metadataStoreObject includes an actual call to 
+		//datastore rather than just the in memory adding of a key/value pair to the datastore
+		//object
+	});
+
+
+	it("should successfully put an object", function(done){
+		const bucketName = 'BucketName';
+		const postBody = 'I am a body';
+		const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+		const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3'
+		const objectName = 'objectName';
+		const testPutBucketRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+		}
+		const testPutObjectRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace,
+			post: postBody
+		}
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]).to.exist;
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]['content-md5']).to.equal(correctMD5);
+				done();
+			})
+		})
+	});
+	
+
+	it("should successfully put an object with user metadata", function(done){
+		const bucketName = 'BucketName';
+		const postBody = 'I am a body';
+		const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+		const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3'
+		const objectName = 'objectName';
+		const testPutBucketRequest = {
+			lowerCaseHeaders: {},
+			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			url: '/',
+			namespace: namespace,
+		}
+		const testPutObjectRequest = {
+			lowerCaseHeaders: {
+				//Note that Node will collapse common headers into one 
+				//(e.g. "x-amz-meta-test: hi" and "x-amz-meta-test: there" becomes "x-amz-meta-test: hi, there")
+				//Here we are not going through an actual http request so will not collapse properly.  
+				'x-amz-meta-test': 'some metadata',
+				'x-amz-meta-test2': 'some more metadata',
+				'x-amz-meta-test3': 'even more metadata',
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace,
+			post: postBody
+		}
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]).to.exist;
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test']).to.equal('some metadata');
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test2']).to.equal('some more metadata');
+				expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test3']).to.equal('even more metadata');
+				done();
+			})
+		})
+	});
+
+});
+
+
+
+
+
 
 
