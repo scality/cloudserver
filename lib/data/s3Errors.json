@@ -1,0 +1,314 @@
+{
+  "AccessDenied": {
+    "httpCode": 403,
+    "description": "Access Denied"
+  },
+  "AccountProblem": {
+    "httpCode": 403,
+    "description": "There is a problem with your AWS account that prevents the operation from completing successfully. Please use Contact Us."
+  },
+  "AmbiguousGrantByEmailAddress": {
+    "httpCode": 400,
+    "description": "The email address you provided is associated with more than one account."
+  },
+  "BadDigest": {
+    "httpCode": 400,
+    "description": "The Content-MD5 you specified did not match what we received."
+  },
+  "BucketAlreadyExists": {
+    "httpCode": 409,
+    "description": "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again."
+  },
+  "BucketAlreadyOwnedByYou": {
+    "httpCode": 409,
+    "description": "Your previous request to create the named bucket succeeded and you already own it. You get this error in all AWS regions except US Standard, us-east-1. In us-east-1 region, you will get 200 OK, but it is no-op (if bucket exists S3 will not do anything)."
+  },
+  "BucketNotEmpty": {
+    "httpCode": 409,
+    "description": "The bucket you tried to delete is not empty."
+  },
+  "CredentialsNotSupported": {
+    "httpCode": 400,
+    "description": "This request does not support credentials."
+  },
+  "CrossLocationLoggingProhibited": {
+    "httpCode": 403,
+    "description": "Cross-location logging not allowed. Buckets in one geographic location cannot log information to a bucket in another location."
+  },
+  "EntityTooSmall": {
+    "httpCode": 400,
+    "description": "Your proposed upload is smaller than the minimum allowed object size."
+  },
+  "EntityTooLarge": {
+    "httpCode": 400,
+    "description": "Your proposed upload exceeds the maximum allowed object size."
+  },
+  "ExpiredToken": {
+    "httpCode": 400,
+    "description": "The provided token has expired."
+  },
+  "IllegalVersioningConfigurationException": {
+    "httpCode": 400,
+    "description": "Indicates that the versioning configuration specified in the request is invalid."
+  },
+  "IncompleteBody": {
+    "httpCode": 400,
+    "description": "You did not provide the number of bytes specified by the Content-Length HTTP header."
+  },
+  "IncorrectNumberOfFilesInPostRequest": {
+    "httpCode": 400,
+    "description": "POST requires exactly one file upload per request."
+  },
+  "InlineDataTooLarge": {
+    "httpCode": 400,
+    "description": "Inline data exceeds the maximum allowed size."
+  },
+  "InternalError": {
+    "httpCode": 500,
+    "description": "We encountered an internal error. Please try again."
+  },
+  "InvalidAccessKeyId": {
+    "httpCode": 403,
+    "description": "The AWS access key Id you provided does not exist in our records."
+  },
+  "InvalidAddressingHeader": {
+    "httpCode": 400,
+    "description": "You must specify the Anonymous role."
+  },
+  "InvalidArgument": {
+    "httpCode": 400,
+    "description": "Invalid Argument"
+  },
+  "InvalidBucketName": {
+    "httpCode": 400,
+    "description": "The specified bucket is not valid."
+  },
+  "InvalidBucketState": {
+    "httpCode": 409,
+    "description": "The request is not valid with the current state of the bucket."
+  },
+  "InvalidDigest": {
+    "httpCode": 400,
+    "description": "The Content-MD5 you specified is not valid."
+  },
+  "InvalidEncryptionAlgorithmError": {
+    "httpCode": 400,
+    "description": "The encryption request you specified is not valid. The valid value is AES256."
+  },
+  "InvalidLocationConstraint": {
+    "httpCode": 400,
+    "description": "The specified location constraint is not valid."
+  },
+  "InvalidObjectState": {
+    "httpCode": 403,
+    "description": "The operation is not valid for the current state of the object."
+  },
+  "InvalidPart": {
+    "httpCode": 400,
+    "description": "One or more of the specified parts could not be found. The part might not have been uploaded, or the specified entity tag might not have matched the part's entity tag."
+  },
+  "InvalidPartOrder": {
+    "httpCode": 400,
+    "description": "The list of parts was not in ascending order.Parts list must specified in order by part number."
+  },
+  "InvalidPayer": {
+    "httpCode": 403,
+    "description": "All access to this object has been disabled."
+  },
+  "InvalidPolicyDocument": {
+    "httpCode": 400,
+    "description": "The content of the form does not meet the conditions specified in the policy document."
+  },
+  "InvalidRange": {
+    "httpCode": 416,
+    "description": "The requested range cannot be satisfied."
+  },
+  "InvalidRequest": {
+    "httpCode": 400,
+    "description": "SOAP requests must be made over an HTTPS connection."
+  },
+  "InvalidSecurity": {
+    "httpCode": 403,
+    "description": "The provided security credentials are not valid."
+  },
+  "InvalidSOAPRequest": {
+    "httpCode": 400,
+    "description": "The SOAP request body is invalid."
+  },
+  "InvalidStorageClass": {
+    "httpCode": 400,
+    "description": "The storage class you specified is not valid."
+  },
+  "InvalidTargetBucketForLogging": {
+    "httpCode": 400,
+    "description": "The target bucket for logging does not exist, is not owned by you, or does not have the appropriate grants for the log-delivery group."
+  },
+  "InvalidToken": {
+    "httpCode": 400,
+    "description": "The provided token is malformed or otherwise invalid."
+  },
+  "InvalidURI": {
+    "httpCode": 400,
+    "description": "Couldn't parse the specified URI."
+  },
+  "KeyTooLong": {
+    "httpCode": 400,
+    "description": "Your key is too long."
+  },
+  "MalformedACLError": {
+    "httpCode": 400,
+    "description": "The XML you provided was not well-formed or did not validate against our published schema."
+  },
+  "MalformedPOSTRequest": {
+    "httpCode": 400,
+    "description": "The body of your POST request is not well-formed multipart/form-data."
+  },
+  "MalformedXML": {
+    "httpCode": 400,
+    "description": "The XML you provided was not well-formed or did not validate against our published schema."
+  },
+  "MaxMessageLengthExceeded": {
+    "httpCode": 400,
+    "description": "Your request was too big."
+  },
+  "MaxPostPreDataLengthExceededError": {
+    "httpCode": 400,
+    "description": "Your POST request fields preceding the upload file were too large."
+  },
+  "MetadataTooLarge": {
+    "httpCode": 400,
+    "description": "Your metadata headers exceed the maximum allowed metadata size."
+  },
+  "MethodNotAllowed": {
+    "httpCode": 405,
+    "description": "The specified method is not allowed against this resource."
+  },
+  "MissingAttachment": {
+    "httpCode": 400,
+    "description": "A SOAP attachment was expected, but none were found."
+  },
+  "MissingContentLength": {
+    "httpCode": 411,
+    "description": "You must provide the Content-Length HTTP header."
+  },
+  "MissingRequestBodyError": {
+    "httpCode": 400,
+    "description": "Request body is empty"
+  },
+  "MissingSecurityElement": {
+    "httpCode": 400,
+    "description": "The SOAP 1.1 request is missing a security element."
+  },
+  "MissingSecurityHeader": {
+    "httpCode": 400,
+    "description": "Your request is missing a required header."
+  },
+  "NoLoggingStatusForKey": {
+    "httpCode": 400,
+    "description": "There is no such thing as a logging status subresource for a key."
+  },
+  "NoSuchBucket": {
+    "httpCode": 404,
+    "description": "The specified bucket does not exist."
+  },
+  "NoSuchKey": {
+    "httpCode": 404,
+    "description": "The specified key does not exist."
+  },
+  "NoSuchLifecycleConfiguration": {
+    "httpCode": 404,
+    "description": "The lifecycle configuration does not exist."
+  },
+  "NoSuchUpload": {
+    "httpCode": 404,
+    "description": "The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed."
+  },
+  "NoSuchVersion": {
+    "httpCode": 404,
+    "description": "Indicates that the version ID specified in the request does not match an existing version."
+  },
+  "NotImplemented": {
+    "httpCode": 501,
+    "description": "A header you provided implies functionality that is not implemented."
+  },
+  "NotSignedUp": {
+    "httpCode": 403,
+    "description": "Your account is not signed up for the S3 service. You must sign up before you can use S3. "
+  },
+  "NoSuchBucketPolicy": {
+    "httpCode": 404,
+    "description": "The specified bucket does not have a bucket policy."
+  },
+  "OperationAborted": {
+    "httpCode": 409,
+    "description": "A conflicting conditional operation is currently in progress against this resource. Try again."
+  },
+  "PermanentRedirect": {
+    "httpCode": 301,
+    "description": "The bucket you are attempting to access must be addressed using the specified endpoint. Send all future requests to this endpoint."
+  },
+  "PreconditionFailed": {
+    "httpCode": 412,
+    "description": "At least one of the preconditions you specified did not hold."
+  },
+  "Redirect": {
+    "httpCode": 307,
+    "description": "Temporary redirect."
+  },
+  "RestoreAlreadyInProgress": {
+    "httpCode": 409,
+    "description": "Object restore is already in progress."
+  },
+  "RequestIsNotMultiPartContent": {
+    "httpCode": 400,
+    "description": "Bucket POST must be of the enclosure-type multipart/form-data."
+  },
+  "RequestTimeout": {
+    "httpCode": 400,
+    "description": "Your socket connection to the server was not read from or written to within the timeout period."
+  },
+  "RequestTimeTooSkewed": {
+    "httpCode": 403,
+    "description": "The difference between the request time and the server's time is too large."
+  },
+  "RequestTorrentOfBucketError": {
+    "httpCode": 400,
+    "description": "Requesting the torrent file of a bucket is not permitted."
+  },
+  "SignatureDoesNotMatch": {
+    "httpCode": 403,
+    "description": "The request signature we calculated does not match the signature you provided."
+  },
+  "ServiceUnavailable": {
+    "httpCode": 503,
+    "description": "Reduce your request rate."
+  },
+  "SlowDown": {
+    "httpCode": 503,
+    "description": "Reduce your request rate."
+  },
+  "TemporaryRedirect": {
+    "httpCode": 307,
+    "description": "You are being redirected to the bucket while DNS updates."
+  },
+  "TokenRefreshRequired": {
+    "httpCode": 400,
+    "description": "The provided token must be refreshed."
+  },
+  "TooManyBuckets": {
+    "httpCode": 400,
+    "description": "You have attempted to create more buckets than allowed."
+  },
+  "UnexpectedContent": {
+    "httpCode": 400,
+    "description": "This request does not support content."
+  },
+  "UnresolvableGrantByEmailAddress": {
+    "httpCode": 400,
+    "description": "The email address you provided does not match any account on record."
+  },
+  "UserKeyMustBeSpecified": {
+    "httpCode": 400,
+    "description": "The bucket POST must contain the specified field name. If it is specified, check the order of the fields."
+  }
+}
