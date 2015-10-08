@@ -4,23 +4,31 @@ const chai = require("chai");
 const expect = chai.expect;
 const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
-// const Bucket = require("../lib/bucket_mem.js");
-// const utilities = require("../lib/bucket_utilities.js");
+const bucketHead = require('../lib/api/bucketHead.js');
+const accessKey = 'accessKey1';
 
 describe("bucketPut API",function(){
+	let metastore;
 
-	const accessKey = 'accessKey1';
-	const metastore = require('../lib/testdata/metadata.json');	
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			}
+	});
+
 
 	it("should return an error if no bucketname provided", function(done){
 
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: '127.0.0.1:8000',
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: '/',
 			 namespace: 'default',
 			 post: ''
@@ -37,12 +45,7 @@ describe("bucketPut API",function(){
 
 		const tooShortBucketName = 'hi';
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: '127.0.0.1:8000',
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: `/${tooShortBucketName}`,
 			 namespace: 'default',
 			 post: ''
@@ -58,12 +61,7 @@ describe("bucketPut API",function(){
 	it("should return an error if improper xml is provided in request.post", function(done){
 
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: '127.0.0.1:8000',
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: '/test1',
 			 namespace: 'default',
 			 post: 'improperxml'
@@ -80,12 +78,7 @@ describe("bucketPut API",function(){
 	it("should return an error if xml which does not conform to s3 docs is provided in request.post", function(done){
 
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: '127.0.0.1:8000',
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: '/test1',
 			 namespace: 'default',
 			 post: '<Hello></Hello>'
@@ -103,12 +96,7 @@ describe("bucketPut API",function(){
 
 		const bucketName = 'test1'
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: '127.0.0.1:8000',
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: `/${bucketName}`,
 			 namespace: 'default',
 			 post: ''
@@ -131,12 +119,7 @@ describe("bucketPut API",function(){
 
 		const bucketName = 'BucketName'
 		const testRequest = {
-			lowerCaseHeaders:
-			   { host: `${bucketName}.s3.amazonaws.com`,
-			     'accept-encoding': 'identity',
-			     'content-length': '0',
-			     authorization: 'AWS accessKey1:DOiE48Tln2KxFIOWi0iafB7XG90=',
-			     'x-amz-date': 'Wed, 07 Oct 2015 17:38:31 +0000' },
+			lowerCaseHeaders: {},
 			 url: '/',
 			 namespace: 'default',
 			 post: '',
@@ -154,7 +137,79 @@ describe("bucketPut API",function(){
 		})
 
 	});
-	
-
-
 });
+
+
+	describe("bucketHead API",function(){
+
+		let metastore;
+
+		beforeEach(function () {
+		   metastore = {
+				  "users": {
+				      "accessKey1": {
+				        "buckets": []
+				      },
+				      "accessKey2": {
+				        "buckets": []
+				      }
+				  },
+				  "buckets": {}
+				}
+		});
+
+
+		it("should return an error if the bucket does not exist", function(done){
+			const bucketName = 'BucketName';
+			const testRequest = {
+				headers: {host: `${bucketName}.s3.amazonaws.com`},
+				url: '/',
+				namespace: 'default'
+			}
+
+			bucketHead(accessKey, metastore, testRequest, function(err, result) {
+				expect(err).to.equal('Bucket does not exist -- 404');
+				done();
+			})
+
+		});
+
+		it("should return an error if user is not authorized", function(done){
+			const bucketName = 'BucketName';
+			const putAccessKey = 'accessKey2';
+			const testRequest = {
+				lowerCaseHeaders: {},
+				headers: {host: `${bucketName}.s3.amazonaws.com`},
+				url: '/',
+				namespace: 'default'
+			}
+
+			bucketPut(putAccessKey, metastore, testRequest, function(err, success) {
+				expect(success).to.equal('Bucket created');
+				bucketHead(accessKey, metastore, testRequest, function(err, result) {
+					expect(err).to.equal('Action not permitted -- 403');
+					done();
+				})
+			})
+		});
+
+		it("should return a success message if bucket exists and user is authorized", function(done){
+			const bucketName = 'BucketName';
+			const testRequest = {
+				lowerCaseHeaders: {},
+				headers: {host: `${bucketName}.s3.amazonaws.com`},
+				url: '/',
+				namespace: 'default'
+			}
+
+			bucketPut(accessKey, metastore, testRequest, function(err, success) {
+				expect(success).to.equal('Bucket created');
+				bucketHead(accessKey, metastore, testRequest, function(err, result) {
+					expect(result).to.equal('Bucket exists and user authorized -- 200');
+					done();
+				})
+			})
+		});
+});
+
+
