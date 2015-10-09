@@ -1,7 +1,8 @@
 'use strict';
 
-const chai = require("chai");
+const chai = require('chai');
 const expect = chai.expect;
+const crypto = require('crypto');
 const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
 const bucketHead = require('../lib/api/bucketHead.js');
@@ -650,9 +651,9 @@ describe("objectGet API",function(){
 	});
 
 
-	it.skip("should get the object data for large objects", function(done){
-		//NEED to finish and test for big objects.
-		const testBigData = require('./test1MB');
+	it("should get the object data for large objects", function(done){
+		const testBigData = crypto.randomBytes(1000000);
+		const correctBigMD5 = crypto.createHash('md5').update(testBigData).digest('hex');
 
 		const testPutBigObjectRequest = {
 			lowerCaseHeaders: {
@@ -660,7 +661,8 @@ describe("objectGet API",function(){
 			},
 			url: `/${bucketName}/${objectName}`,
 			namespace: namespace,
-			post: testBigData
+			post: testBigData,
+			calculatedMD5: correctBigMD5
 		};
 
 		const testGetRequest = {
@@ -668,15 +670,14 @@ describe("objectGet API",function(){
 			url: `/${bucketName}/${objectName}`,
 			namespace: namespace
 		};
-		const correctBigMD5 = ''
 
 		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
 			expect(success).to.equal('Bucket created');
 			objectPut(accessKey, datastore, metastore, testPutBigObjectRequest, function(err, result) {
 				expect(result).to.equal(correctBigMD5);
 				objectGet(accessKey, datastore, metastore, testGetRequest, function(err, result, responseMetaHeaders) {
-					//TODO: Convert result and testBigData into readable streams (with set chunk size) and compare chunks
-					expect(result).to.equal(testBigData);
+					let resultmd5Hash = crypto.createHash('md5').update(result).digest('hex');
+					expect(resultmd5Hash).to.equal(correctBigMD5);
 					done();
 				})
 			})
@@ -718,7 +719,7 @@ describe("bucketGet API",function(){
 		lowerCaseHeaders: {},
 		url: `/${bucketName}/sub/${objectName1}`,
 		namespace: namespace,
-		post: postBody
+		post: postBody,
 	};
 	const testPutObjectRequest2 = {
 		lowerCaseHeaders: {},
