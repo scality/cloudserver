@@ -335,15 +335,18 @@ describe("objectPut API",function(){
 		const objectName = 'objectName';
 		const testPutBucketRequest = {
 			lowerCaseHeaders: {},
-			headers: {host: `${bucketName}.s3.amazonaws.com`},
+			headers: {
+				host: `${bucketName}.s3.amazonaws.com`
+			},
 			url: '/',
-			namespace: namespace,
+			namespace: namespace
 		}
 		const testPutObjectRequest = {
 			lowerCaseHeaders: {},
 			url: `/${bucketName}/${objectName}`,
 			namespace: namespace,
-			post: postBody
+			post: postBody,
+			calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
 		}
 
 		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
@@ -382,7 +385,8 @@ describe("objectPut API",function(){
 			},
 			url: `/${bucketName}/${objectName}`,
 			namespace: namespace,
-			post: postBody
+			post: postBody,
+			calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
 		}
 
 		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
@@ -442,7 +446,8 @@ describe("objectHead API",function(){
 		},
 		url: `/${bucketName}/${objectName}`,
 		namespace: namespace,
-		post: postBody
+		post: postBody,
+		calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
 	};
 
 
@@ -601,7 +606,8 @@ describe("objectGet API",function(){
 		},
 		url: `/${bucketName}/${objectName}`,
 		namespace: namespace,
-		post: postBody
+		post: postBody,
+		calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
 	};
 
 	it("should get the object metadata", function(done){
