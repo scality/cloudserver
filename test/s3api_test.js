@@ -643,6 +643,40 @@ describe("objectGet API",function(){
 	});
 
 
+	it.skip("should get the object data for large objects", function(done){
+		//NEED to finish and test for big objects.
+		const testBigData = require('./test1MB');
+
+		const testPutBigObjectRequest = {
+			lowerCaseHeaders: {
+				'x-amz-meta-test': 'some metadata'
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace,
+			post: testBigData
+		};
+
+		const testGetRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+		const correctBigMD5 = ''
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutBigObjectRequest, function(err, result) {
+				expect(result).to.equal(correctBigMD5);
+				objectGet(accessKey, datastore, metastore, testGetRequest, function(err, result, responseMetaHeaders) {
+					expect(result).to.equal(postBody);
+					done();
+				})
+			})
+		})		
+	});
+
+
+
 });
 
 
