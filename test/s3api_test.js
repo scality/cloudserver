@@ -11,6 +11,7 @@ const objectPut = require('../lib/api/objectPut.js');
 const objectHead = require('../lib/api/objectHead.js');
 const objectGet = require('../lib/api/objectGet.js');
 const bucketGet = require('../lib/api/bucketGet.js');
+const serviceGet = require('../lib/api/serviceGet.js');
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
@@ -788,9 +789,72 @@ describe("bucketGet API",function(){
 			})
 		})				
 	});
-
 });
 
+
+
+describe("serviceGet API",function(){
+	let metastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			}
+	});
+
+	it("should return the list of buckets owned by the user", function(done){
+
+		const bucketName1 = 'BucketName1';
+		const bucketName2 = 'BucketName2';
+		const bucketName3 = 'BucketName3';
+		const testbucketPutRequest1 = {
+			lowerCaseHeaders: {},
+			 url: '/',
+			 namespace: namespace,
+			 headers: {host: `${bucketName1}.s3.amazonaws.com`}
+		};
+		const testbucketPutRequest2 = {
+			lowerCaseHeaders: {},
+			 url: '/',
+			 namespace: namespace,
+			 headers: {host: `${bucketName2}.s3.amazonaws.com`}
+		};
+		const testbucketPutRequest3 = {
+			lowerCaseHeaders: {},
+			 url: '/',
+			 namespace: namespace,
+			 headers: {host: `${bucketName3}.s3.amazonaws.com`}
+		};
+		const serviceGetRequest = {
+			lowerCaseHeaders: {host: 's3.amazonaws.com'},
+			url: '/',
+		};
+
+		bucketPut(accessKey, metastore, testbucketPutRequest1, function(err, success) {
+			bucketPut(accessKey, metastore, testbucketPutRequest2, function(err, success) {
+				bucketPut(accessKey, metastore, testbucketPutRequest3, function(err, success) {
+					serviceGet(accessKey, metastore, serviceGetRequest, function(err, result) {
+						parseString(result, function (err, result){
+							expect(result.ListAllMyBucketsResult.Buckets[0].Bucket).to.have.length.of(3);
+							expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0]).to.equal(bucketName1);
+							expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[1].Name[0]).to.equal(bucketName2);
+							expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0]).to.equal(bucketName3);
+							done()
+						});
+					});
+				});
+			});
+		});
+	});
+});
 
 
 
