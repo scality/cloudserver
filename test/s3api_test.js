@@ -7,6 +7,7 @@ const bucketPut = require('../lib/api/bucketPut.js');
 const bucketHead = require('../lib/api/bucketHead.js');
 const objectPut = require('../lib/api/objectPut.js');
 const objectHead = require('../lib/api/objectHead.js');
+const objectGet = require('../lib/api/objectGet.js');
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
@@ -436,7 +437,7 @@ describe("objectHead API",function(){
 	const userMetadataValue = 'some metadata';
 	const testPutObjectRequest = {
 		lowerCaseHeaders: {
-			'x-amz-meta-test': 'some metadata'
+			'x-amz-meta-test': userMetadataValue
 		},
 		url: `/${bucketName}/${objectName}`,
 		namespace: namespace,
@@ -536,7 +537,7 @@ describe("objectHead API",function(){
 		})		
 	});
 
-	it("should get the object meta headers", function(done){
+	it("should get the object metadata", function(done){
 		const testGetRequest = {
 			lowerCaseHeaders: {},
 			url: `/${bucketName}/${objectName}`,
@@ -556,9 +557,96 @@ describe("objectHead API",function(){
 		})		
 	});
 
+});
+
+describe("objectGet API",function(){
+
+	let metastore;
+	let datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+		datastore = {};
+	});
+
+	const bucketName = 'BucketName';
+	const postBody = 'I am a body';
+	const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+	const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
+	const objectName = 'objectName';
+	let date = new Date();
+	let laterDate = date.setMinutes(date.getMinutes() + 30);
+	let earlierDate = date.setMinutes(date.getMinutes() - 30);
+	const testPutBucketRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}`,
+		namespace: namespace,
+	};
+	const userMetadataKey = 'x-amz-meta-test';
+	const userMetadataValue = 'some metadata';
+	const testPutObjectRequest = {
+		lowerCaseHeaders: {
+			'x-amz-meta-test': 'some metadata'
+		},
+		url: `/${bucketName}/${objectName}`,
+		namespace: namespace,
+		post: postBody
+	};
+
+	it("should get the object metadata", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectGet(accessKey, datastore, metastore, testGetRequest, function(err, result, responseMetaHeaders) {
+					expect(responseMetaHeaders[userMetadataKey]).to.equal(userMetadataValue);
+					expect(responseMetaHeaders['Etag']).to.equal(correctMD5);
+					done();
+				})
+			})
+		})		
+	});
+
+	it("should get the object data", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectGet(accessKey, datastore, metastore, testGetRequest, function(err, result, responseMetaHeaders) {
+					expect(result).to.equal(postBody);
+					done();
+				})
+			})
+		})		
+	});
 
 
 });
+
+
+
 
 
 
