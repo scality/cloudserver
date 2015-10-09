@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const parseString = require('xml2js').parseString;
 const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
+const bucketDelete = require('../lib/api/bucketDelete.js');
 const bucketHead = require('../lib/api/bucketHead.js');
 const objectPut = require('../lib/api/objectPut.js');
 const objectHead = require('../lib/api/objectHead.js');
@@ -146,6 +147,83 @@ describe("bucketPut API",function(){
 
 	});
 });
+
+describe("bucketDelete API",function(){
+	let metastore, datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+			datastore = {};
+	});
+
+	const bucketName = 'bucketName'
+	const testBucketPutRequest = {
+		lowerCaseHeaders: {},
+		 url: `/${bucketName}`,
+		 namespace: namespace,
+	};
+	const testDeleteRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}`,
+		namespace: namespace
+	};
+
+	it("should return an error if the bucket is not empty", function(done){
+
+		const objectPutRequest = {
+
+		}
+		const postBody = 'I am a body';
+		const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+		const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3'
+		const objectUID = '84c130398c854348bcff8b715f793dc4'
+		const objectName = 'objectName';
+		const testPutObjectRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace,
+			post: postBody,
+			calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+		}
+
+		bucketPut(accessKey, metastore, testBucketPutRequest, function(err, success) {
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				bucketDelete(accessKey, metastore, testDeleteRequest, function(err, response, responseMetaHeaders) {
+					expect(err).to.equal('BucketNotEmpty');
+					expect(metastore.users[accessKey].buckets).to.have.length.of(1);
+					expect(Object.keys(metastore.buckets)).to.have.length.of(1);
+					done();
+				});
+			});
+		});
+	});
+
+
+	it("should delete a bucket", function(done){
+
+		bucketPut(accessKey, metastore, testBucketPutRequest, function(err, success) {
+			bucketDelete(accessKey, metastore, testDeleteRequest, function(err, response, responseMetaHeaders) {
+				expect(response).to.equal('Bucket deleted permanently');
+				expect(metastore.users[accessKey].buckets).to.have.length.of(0);
+				expect(Object.keys(metastore.buckets)).to.have.length.of(0);
+				done();
+			})
+		});
+	});
+
+});
+
+
 
 describe("bucketHead API",function(){
 
