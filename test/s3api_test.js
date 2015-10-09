@@ -8,6 +8,7 @@ const bucketHead = require('../lib/api/bucketHead.js');
 const objectPut = require('../lib/api/objectPut.js');
 const objectHead = require('../lib/api/objectHead.js');
 const objectGet = require('../lib/api/objectGet.js');
+const bucketGet = require('../lib/api/bucketGet.js');
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
@@ -668,16 +669,107 @@ describe("objectGet API",function(){
 			objectPut(accessKey, datastore, metastore, testPutBigObjectRequest, function(err, result) {
 				expect(result).to.equal(correctBigMD5);
 				objectGet(accessKey, datastore, metastore, testGetRequest, function(err, result, responseMetaHeaders) {
-					expect(result).to.equal(postBody);
+					//TODO: Convert result and testBigData into readable streams (with set chunk size) and compare chunks
+					expect(result).to.equal(testBigData);
 					done();
 				})
 			})
 		})		
 	});
+});
 
 
+describe("bucketGet API",function(){
+
+	let metastore;
+	let datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+		datastore = {};
+	});
+
+	const bucketName = 'BucketName';
+	const postBody = 'I am a body';
+	const objectName1 = 'objectName1';
+	const objectName2 = 'objectName2';
+	const testPutBucketRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}`,
+		namespace: namespace,
+	};
+	const testPutObjectRequest1 = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}/sub/${objectName1}`,
+		namespace: namespace,
+		post: postBody
+	};
+	const testPutObjectRequest2 = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}/sub/${objectName2}`,
+		namespace: namespace,
+		post: postBody
+	};
+
+	it.skip("should return the name of the common prefix of common prefix objects \
+		if delimiter and prefix specified", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				host: '/'
+			},
+			url: `/${bucketName}?delimiter=\/&prefix=sub`,
+			namespace: namespace,
+			query: {}
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function(err, result) {
+				objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function(err, result) {
+					bucketGet(accessKey, metastore, testGetRequest, function(err, result) {
+						//expect...
+						done();
+					})
+				})
+			})
+		})		
+	});
+
+	it.skip("should return list of all objects if no delimiter specified", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				host: '/'
+			},
+			url: `/${bucketName}`,
+			namespace: namespace,
+			query: {}
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function(err, result) {
+				objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function(err, result) {
+					bucketGet(accessKey, metastore, testGetRequest, function(err, result) {
+						//expect...
+						done();
+					})
+				})
+			})
+		})				
+	});
 
 });
+
 
 
 
