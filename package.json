@@ -41,6 +41,7 @@
     "gulp-shell": "^0.4.3"
   },
   "scripts": {
+    "start": "node index.js",
     "postinstall": "gulp precommit-hook",
     "test": "node_modules/.bin/mocha" 
     }
