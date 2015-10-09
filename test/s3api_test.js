@@ -3,6 +3,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 const crypto = require('crypto');
+const parseString = require('xml2js').parseString;
 const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
 const bucketHead = require('../lib/api/bucketHead.js');
@@ -708,8 +709,11 @@ describe("bucketGet API",function(){
 
 	const bucketName = 'BucketName';
 	const postBody = 'I am a body';
-	const objectName1 = 'objectName1';
-	const objectName2 = 'objectName2';
+	const prefix = 'sub';
+	const delimiter = '/';
+	const objectName1 = `${prefix}${delimiter}objectName1`;
+	const objectName2 = `${prefix}${delimiter}objectName2`;
+
 	const testPutBucketRequest = {
 		lowerCaseHeaders: {},
 		url: `/${bucketName}`,
@@ -717,42 +721,49 @@ describe("bucketGet API",function(){
 	};
 	const testPutObjectRequest1 = {
 		lowerCaseHeaders: {},
-		url: `/${bucketName}/sub/${objectName1}`,
+		url: `/${bucketName}/${objectName1}`,
 		namespace: namespace,
 		post: postBody,
 	};
 	const testPutObjectRequest2 = {
 		lowerCaseHeaders: {},
-		url: `/${bucketName}/sub/${objectName2}`,
+		url: `/${bucketName}/${objectName2}`,
 		namespace: namespace,
 		post: postBody
 	};
 
-	it.skip("should return the name of the common prefix of common prefix objects \
+	it("should return the name of the common prefix of common prefix objects \
 		if delimiter and prefix specified", function(done){
+		const commonPrefix = `${prefix}${delimiter}`;
 		const testGetRequest = {
 			lowerCaseHeaders: {
 				host: '/'
 			},
 			url: `/${bucketName}?delimiter=\/&prefix=sub`,
 			namespace: namespace,
-			query: {}
+			query: {
+				delimiter: delimiter,
+				prefix: prefix
+			}
 		};
+
 
 		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
 			expect(success).to.equal('Bucket created');
 			objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function(err, result) {
 				objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function(err, result) {
 					bucketGet(accessKey, metastore, testGetRequest, function(err, result) {
-						//expect...
-						done();
+						parseString(result, function (err, result){
+							expect(result.ListBucketResult.CommonPrefixes[0].Prefix[0]).to.equal(commonPrefix);
+							done()
+						})
 					})
 				})
 			})
 		})		
 	});
 
-	it.skip("should return list of all objects if no delimiter specified", function(done){
+	it("should return list of all objects if no delimiter specified", function(done){
 		const testGetRequest = {
 			lowerCaseHeaders: {
 				host: '/'
@@ -767,8 +778,11 @@ describe("bucketGet API",function(){
 			objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function(err, result) {
 				objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function(err, result) {
 					bucketGet(accessKey, metastore, testGetRequest, function(err, result) {
-						//expect...
-						done();
+						parseString(result, function (err, result){
+							expect(result.ListBucketResult.Contents[0].Key[0]).to.equal(objectName1);
+							expect(result.ListBucketResult.Contents[1].Key[0]).to.equal(objectName2);
+							done()
+						})
 					})
 				})
 			})
