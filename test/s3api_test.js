@@ -6,6 +6,7 @@ const utils = require('../lib/utils.js');
 const bucketPut = require('../lib/api/bucketPut.js');
 const bucketHead = require('../lib/api/bucketHead.js');
 const objectPut = require('../lib/api/objectPut.js');
+const objectHead = require('../lib/api/objectHead.js');
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
@@ -328,6 +329,7 @@ describe("objectPut API",function(){
 		const postBody = 'I am a body';
 		const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 		const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3'
+		const objectUID = '84c130398c854348bcff8b715f793dc4'
 		const objectName = 'objectName';
 		const testPutBucketRequest = {
 			lowerCaseHeaders: {},
@@ -348,6 +350,7 @@ describe("objectPut API",function(){
 				expect(result).to.equal(correctMD5);
 				expect(metastore.buckets[bucketUID]['keyMap'][objectName]).to.exist;
 				expect(metastore.buckets[bucketUID]['keyMap'][objectName]['content-md5']).to.equal(correctMD5);
+				expect(datastore[objectUID]).to.equal('I am a body');
 				done();
 			})
 		})
@@ -395,6 +398,167 @@ describe("objectPut API",function(){
 
 });
 
+
+describe("objectHead API",function(){
+
+	let metastore;
+	let datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+		datastore = {};
+	});
+
+	const bucketName = 'BucketName';
+	const postBody = 'I am a body';
+	const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+	const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
+	const objectName = 'objectName';
+	let date = new Date();
+	let laterDate = date.setMinutes(date.getMinutes() + 30);
+	let earlierDate = date.setMinutes(date.getMinutes() - 30);
+	const testPutBucketRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}`,
+		namespace: namespace,
+	};
+	const userMetadataKey = 'x-amz-meta-test';
+	const userMetadataValue = 'some metadata';
+	const testPutObjectRequest = {
+		lowerCaseHeaders: {
+			'x-amz-meta-test': 'some metadata'
+		},
+		url: `/${bucketName}/${objectName}`,
+		namespace: namespace,
+		post: postBody
+	};
+
+
+	it("should return 304 (not modified) if request header includes 'if-modified-since' \
+		and object not modified since specified time", function(done){
+
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				'if-modified-since': laterDate
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectHead(accessKey, metastore, testGetRequest, function(err, success) {
+					expect(err).to.equal('Not modified -- 304');
+					done();
+				})
+			})
+		})
+	});
+	
+
+	it("should return 412 (precondition failed) if request header includes 'if-unmodified-since' and \
+		object has been modified since specified time", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				'if-unmodified-since': earlierDate
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectHead(accessKey, metastore, testGetRequest, function(err, success) {
+					expect(err).to.equal('Precondition failed -- 412');
+					done();
+				})
+			})
+		})
+	});
+
+
+	it("should return 412 (precondition failed) if request header includes 'if-match' and \
+		Etag of object does not match specified Etag", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				'if-match': incorrectMD5
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectHead(accessKey, metastore, testGetRequest, function(err, success) {
+					expect(err).to.equal('Precondition failed -- 412');
+					done();
+				})
+			})
+		})				
+	});
+
+
+	it("should return 304 (not modified) if request header includes 'if-none-match' and \
+		Etag of object does match specified Etag", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {
+				'if-none-match': correctMD5
+			},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectHead(accessKey, metastore, testGetRequest, function(err, success) {
+					expect(err).to.equal('Not modified -- 304');
+					done();
+				})
+			})
+		})		
+	});
+
+	it("should get the object meta headers", function(done){
+		const testGetRequest = {
+			lowerCaseHeaders: {},
+			url: `/${bucketName}/${objectName}`,
+			namespace: namespace
+		};
+
+		bucketPut(accessKey, metastore, testPutBucketRequest, function(err, success) {
+			expect(success).to.equal('Bucket created');
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				expect(result).to.equal(correctMD5);
+				objectHead(accessKey, metastore, testGetRequest, function(err, success) {
+					expect(success[userMetadataKey]).to.equal(userMetadataValue);
+					expect(success['Etag']).to.equal(correctMD5);
+					done();
+				})
+			})
+		})		
+	});
+
+
+
+});
 
 
 
