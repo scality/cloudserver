@@ -11,6 +11,7 @@ const bucketHead = require('../lib/api/bucketHead.js');
 const objectPut = require('../lib/api/objectPut.js');
 const objectHead = require('../lib/api/objectHead.js');
 const objectGet = require('../lib/api/objectGet.js');
+const objectDelete = require('../lib/api/objectDelete.js');
 const bucketGet = require('../lib/api/bucketGet.js');
 const serviceGet = require('../lib/api/serviceGet.js');
 const accessKey = 'accessKey1';
@@ -180,9 +181,6 @@ describe("bucketDelete API",function(){
 
 	it("should return an error if the bucket is not empty", function(done){
 
-		const objectPutRequest = {
-
-		}
 		const postBody = 'I am a body';
 		const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 		const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3'
@@ -762,6 +760,65 @@ describe("objectGet API",function(){
 				})
 			})
 		})		
+	});
+});
+
+
+describe("objectDelete API",function(){
+	let metastore, datastore;
+
+	beforeEach(function () {
+	   metastore = {
+			  "users": {
+			      "accessKey1": {
+			        "buckets": []
+			      },
+			      "accessKey2": {
+			        "buckets": []
+			      }
+			  },
+			  "buckets": {}
+			};
+			datastore = {};
+	});
+
+	const bucketName = 'bucketName'
+	const testBucketPutRequest = {
+		lowerCaseHeaders: {},
+		 url: `/${bucketName}`,
+		 namespace: namespace,
+	};
+	const postBody = 'I am a body';
+	const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+	const objectName = 'objectName';
+	const testPutObjectRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}/${objectName}`,
+		namespace: namespace,
+		post: postBody,
+		calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+	}
+	const testDeleteRequest = {
+		lowerCaseHeaders: {},
+		url: `/${bucketName}/${objectName}`,
+		namespace: namespace
+	};
+
+	it.skip("should set delete markers when versioning enabled", function(done) {
+		//TODO
+	});
+
+	it("should delete an object", function(done){
+
+		bucketPut(accessKey, metastore, testBucketPutRequest, function(err, success) {
+			objectPut(accessKey, datastore, metastore, testPutObjectRequest, function(err, result) {
+				objectDelete(accessKey, datastore, metastore, testDeleteRequest, function(err, response, responseMetaHeaders) {
+					expect(response).to.equal('Object deleted permanently');
+					expect(Object.keys(datastore).length).to.equal(0);
+					done();
+				});
+			});
+		});
 	});
 });
 
