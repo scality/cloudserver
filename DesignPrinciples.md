@@ -2,7 +2,7 @@
 
 1. Why is more important than how, each module must have a design and rationale documentation - Design.md directly in the source under version control
  * Folder get a Design.md
- * If a file is complex or important enough, it can have its own design file: “bucket.js” gets a bucket.js.Design.md
+ * If a file is complex or important enough, it can have its own design file: “bucket_mem.js” gets a bucket_mem.js.Design.md
 2. DRY "Do not repeat yourself”: duplication of code is the root of all evil
 3. Abstraction principle: Never call system functions & external libraries directly - wrap stuff for loosely coupling
 4. Write code for maintainer: it takes days to write code but years to support

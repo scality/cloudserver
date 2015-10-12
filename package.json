@@ -2,7 +2,8 @@
   "name": "ironman-s3",
   "version": "0.0.1",
   "description": "S3 connector",
-  "main": "lib/server.js",
+  "main": "index.js",
+  "engine": "node 4.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scality/IronMan-S3.git"
@@ -19,18 +20,25 @@
   },
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
+    "async": "~1.4.2",
+    "crypto": "~0.0.3",
     "jsutils": "giorgioregni/jsutils",
     "node-simple-router": "giorgioregni/node-simple-router",
-    "async": "^1.4.2"
+    "node-uuid": "^1.4.3",
+    "utf8": "~2.1.1",
+    "xml": "~1.0.0",
+    "xml2js": "~0.4.12"
   },
   "devDependencies": {
+    "mocha": "^2.3.3",
     "chai": "^3.2.0",
     "gulp": "^3.9.0",
     "gulp-jshint": "^1.11.2",
     "gulp-shell": "^0.4.3"
   },
   "scripts": {
+    "start": "node index.js",
     "postinstall": "gulp precommit-hook",
-    "test": "node_modules/.bin/mocha" 
+    "test": "node_modules/.bin/mocha"
     }
 }

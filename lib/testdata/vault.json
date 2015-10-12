@@ -1,0 +1,6 @@
+{
+  "secretKeys": {
+    "accessKey1": "verySecretKey1",
+    "accessKey2": "verySecretKey2"
+  }
+}
