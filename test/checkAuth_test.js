@@ -83,51 +83,51 @@ describe("Auth._reconstructSignature",function () {
                 accept: '*/*',
                             date: 'Fri, 18 Sep 2015 22:57:23 +0000',
                             authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
-                            url: "/bucket",
-                            lowerCaseHeaders: {
-                            date: 'Fri, 18 Sep 2015 22:57:23 +0000',
+            url: "/bucket",
+            lowerCaseHeaders: {
+                                date: 'Fri, 18 Sep 2015 22:57:23 +0000',
                             },
-                            query: {}
-                            };
-                            var SECRET_KEY = "verySecretKey1";
+            query: {}
+        };
+        var SECRET_KEY = "verySecretKey1";
 
-                            var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
-                            expect(reconstructedSig).to.equal("MJNF7AqNapSu32TlBOVkcAxj58c=");
+        var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
+        expect(reconstructedSig).to.equal("MJNF7AqNapSu32TlBOVkcAxj58c=");
+    });
+
+
+    it("should reconstruct the signature for a GET request from CyberDuck", function () {
+            // Based on CyberDuck request
+                                var REQUEST = {
+                method: "GET",
+                headers: { date: 'Mon, 21 Sep 2015 22:29:27 GMT',
+            'x-amz-request-payer': 'requester',
+            authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
+            host: 's3.amazonaws.com:80',
+            connection: 'Keep-Alive',
+            'user-agent': 'Cyberduck/4.7.2.18004 (Mac OS X/10.10.5) (x86_64)' },
+                lowerCaseHeaders: { date: 'Mon, 21 Sep 2015 22:29:27 GMT',
+            'x-amz-request-payer': 'requester',
+            authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
+            host: 's3.amazonaws.com:80',
+            connection: 'Keep-Alive',
+            'user-agent': 'Cyberduck/4.7.2.18004 (Mac OS X/10.10.5) (x86_64)' },
+                url: '/mb/?max-keys=1000&prefix&delimiter=%2F',
+                query: { 'max-keys': '1000', prefix: '', delimiter: '/' }
+            };
+                                var SECRET_KEY = "verySecretKey1";
+
+                                var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
+                                expect(reconstructedSig).to.equal("V8g5UJUFmMzruMqUHVT6ZwvUw+M=");
                             });
 
 
-                            it("should reconstruct the signature for a GET request from CyberDuck", function () {
-            // Based on CyberDuck request
-            var REQUEST = {
-            method: "GET",
-            headers: { date: 'Mon, 21 Sep 2015 22:29:27 GMT',
-            'x-amz-request-payer': 'requester',
-            authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
-            host: 's3.amazonaws.com:80',
-            connection: 'Keep-Alive',
-            'user-agent': 'Cyberduck/4.7.2.18004 (Mac OS X/10.10.5) (x86_64)' },
-            lowerCaseHeaders: { date: 'Mon, 21 Sep 2015 22:29:27 GMT',
-            'x-amz-request-payer': 'requester',
-            authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
-            host: 's3.amazonaws.com:80',
-            connection: 'Keep-Alive',
-            'user-agent': 'Cyberduck/4.7.2.18004 (Mac OS X/10.10.5) (x86_64)' },
-            url: '/mb/?max-keys=1000&prefix&delimiter=%2F',
-            query: { 'max-keys': '1000', prefix: '', delimiter: '/' }
-            };
-            var SECRET_KEY = "verySecretKey1";
 
-            var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
-            expect(reconstructedSig).to.equal("V8g5UJUFmMzruMqUHVT6ZwvUw+M=");
-            });
-
-
-
-            it("should reconstruct the signature for a PUT request from s3cmd", function () {
+    it("should reconstruct the signature for a PUT request from s3cmd", function () {
                 // Based on s3cmd run
                 var REQUEST = {
-                method: "PUT",
-                headers: { host: '127.0.0.1:8000',
+                    method: "PUT",
+                    headers: { host: '127.0.0.1:8000',
                 'accept-encoding': 'identity',
                 authorization: 'AWS accessKey1:fWPcicKn7Fhzfje/0pRTifCxL44=',
                 'content-length': '3941',
@@ -136,8 +136,8 @@ describe("Auth._reconstructSignature",function () {
                 'x-amz-meta-s3cmd-attrs': 'uid:501/gname:staff/uname:lhs/gid:20/mode:33060/mtime:1319136702/atime:1442619138/md5:5e714348185ffe355a76b754f79176d6/ctime:1441840220',
                 'x-amz-now': 'susdr',
                 'x-amz-y': 'what' },
-                url: "/test/obj",
-                lowerCaseHeaders: { host: '127.0.0.1:8000',
+                    url: "/test/obj",
+                    lowerCaseHeaders: { host: '127.0.0.1:8000',
                 'accept-encoding': 'identity',
                 authorization: 'AWS accessKey1:fWPcicKn7Fhzfje/0pRTifCxL44=',
                 'content-length': '3941',
@@ -146,16 +146,16 @@ describe("Auth._reconstructSignature",function () {
                 'x-amz-meta-s3cmd-attrs': 'uid:501/gname:staff/uname:lhs/gid:20/mode:33060/mtime:1319136702/atime:1442619138/md5:5e714348185ffe355a76b754f79176d6/ctime:1441840220',
                 'x-amz-now': 'susdr',
                 'x-amz-y': 'what' },
-                query: {}
+                    query: {}
 
                 };
                 var SECRET_KEY = "verySecretKey1";
 
-var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
-expect(reconstructedSig).to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
+                var reconstructedSig = Auth._reconstructSignature(SECRET_KEY, REQUEST);
+                expect(reconstructedSig).to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
             });
 
-            describe("Auth._checkTimestamp for timecheck in header auth", function () {
+    describe("Auth._checkTimestamp for timecheck in header auth", function () {
 
                 it("should return true if the date in the header is more than 15 minutes old", function () {
                     var timeStamp = 'Mon Sep 21 2015 17:12:58 GMT-0700 (PDT)';
@@ -181,7 +181,7 @@ expect(reconstructedSig).to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
             });
 
 
-            describe('Error handling in checkAuth', function () {
+    describe('Error handling in checkAuth', function () {
 
                 it('should return an error message if no secret key is associated with access key', function (done) {
 
@@ -194,94 +194,94 @@ expect(reconstructedSig).to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
                             accept: '*/*',
                                         date: DATE,
                                         authorization: 'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
-                                        url: "/bucket",
-                                        };
+                        url: "/bucket",
+                    };
 
-                                        Auth.checkAuth(REQUEST, function (err, success) {
-                                        expect(err).to.equal('Error retrieving key');
-                                        done();
+                    Auth.checkAuth(REQUEST, function (err, success) {
+                                            expect(err).to.equal('InvalidAccessKeyId');
+                                            done();
                                         });
-                                        });
+                });
 
 
-                                        it('should return an error message if no date header is provided with v2header auth check', function (done) {
+                it('should return an error message if no date header is provided with v2header auth check', function (done) {
 
-                                        var REQUEST = {
-                                        method: "GET",
-                                        lowerCaseHeaders: { host: 's3.amazonaws.com',
+                                            var REQUEST = {
+                                            method: "GET",
+                                            lowerCaseHeaders: { host: 's3.amazonaws.com',
                                         'user-agent': 'curl/7.43.0',
                                         accept: '*/*',
                                                     authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
-                                                    url: "/bucket",
-                                                    };
+                                            url: "/bucket",
+                                        };
 
-                                                    Auth.checkAuth(REQUEST, function (err, success) {
-                                                    expect(err).to.equal('Missing or invalid date header');
-                                                    done();
+                                            Auth.checkAuth(REQUEST, function (err, success) {
+                                                        expect(err).to.equal('MissingSecurityHeader');
+                                                        done();
                                                     });
-                                                    });
+                                        });
 
-                                                    it('should return an error message if the Expires query parameter is more than 15 minutes \
+                it('should return an error message if the Expires query parameter is more than 15 minutes \
                                                     old with query auth check', function (done) {
 
-                                                    var REQUEST = {
-                                                    method: "GET",
-                                                    url: "/bucket?AWSAccessKeyId=accessKey1&Expires=1141889120&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D",
-                                                    query: { AWSAccessKeyId: 'accessKey1', Expires: '1141889120', Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
-                                                    lowerCaseHeaders: {},
-                                                    headers: {}
+                                                        var REQUEST = {
+                                                        method: "GET",
+                                                        url: "/bucket?AWSAccessKeyId=accessKey1&Expires=1141889120&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D",
+                                                        query: { AWSAccessKeyId: 'accessKey1', Expires: '1141889120', Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
+                                                        lowerCaseHeaders: {},
+                                                        headers: {}
                                                     };
 
-                                                    Auth._v2QueryAuthCheck(REQUEST, function (err, success) {
-                                                    expect(err).to.equal('RequestTimeTooSkewed: The difference between the request time and the current time is too large');
-                                                    done();
+                                                        Auth._v2QueryAuthCheck(REQUEST, function (err, success) {
+                                                        expect(err).to.equal('RequestTimeTooSkewed');
+                                                        done();
                                                     });
                                                     });
 
-                                                    it('should return an error message if the signatures do not match for v2query auth', function (done) {
+                it('should return an error message if the signatures do not match for v2query auth', function (done) {
 
                     // Date.now() provides milliseconds since 1/1/1970.  AWS Expires is in seconds so need to divide by 1000
-                    var expires = Date.now() / 1000;
-                    var fifteenMinutes = (15 * 60);
-                    expires = expires + fifteenMinutes;
+                                                        var expires = Date.now() / 1000;
+                                                        var fifteenMinutes = (15 * 60);
+                                                        expires = expires + fifteenMinutes;
 
-                    var REQUEST = {
-                    method: "GET",
-                    url: `/bucket?AWSAccessKeyId=accessKey1&Expires=${expires}&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D`,
-                    query: { AWSAccessKeyId: 'accessKey1', Expires: expires, Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
-                    lowerCaseHeaders: {},
-                    headers: {}
+                                                        var REQUEST = {
+                        method: "GET",
+                        url: `/bucket?AWSAccessKeyId=accessKey1&Expires=${expires}&Signature=vjbyPxybdZaNmGa%2ByT272YEAiv4%3D`,
+                        query: { AWSAccessKeyId: 'accessKey1', Expires: expires, Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
+                        lowerCaseHeaders: {},
+                        headers: {}
                     };
 
-                    Auth._v2QueryAuthCheck(REQUEST, function (err, success) {
-                    expect(err).to.equal('Access denied');
-                    done();
+                                                        Auth._v2QueryAuthCheck(REQUEST, function (err, success) {
+                        expect(err).to.equal('SignatureDoesNotMatch');
+                        done();
                     });
-                    });
+                                                    });
 
 
-                    it('should return an error message if the signatures do not match for v2header auth', function (done) {
+                it('should return an error message if the signatures do not match for v2header auth', function (done) {
 
-                    var DATE = new Date();
+                        var DATE = new Date();
 
-                    var REQUEST = {
-                    method: "GET",
-                    lowerCaseHeaders: { host: 's3.amazonaws.com',
+                        var REQUEST = {
+                        method: "GET",
+                        lowerCaseHeaders: { host: 's3.amazonaws.com',
                     'user-agent': 'curl/7.43.0',
                     accept: '*/*',
                                 date: DATE,
                                 authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
-                                url: "/bucket",
-                                query: {}
-                                };
+                        url: "/bucket",
+                        query: {}
+                    };
 
-                                Auth.checkAuth(REQUEST, function (err, success) {
-                                expect(err).to.equal('Access denied');
-                                done();
+                        Auth.checkAuth(REQUEST, function (err, success) {
+                                    expect(err).to.equal('SignatureDoesNotMatch');
+                                    done();
                                 });
-                                });
+                    });
 
-                                });
+            });
 
 
-                                });
+});
