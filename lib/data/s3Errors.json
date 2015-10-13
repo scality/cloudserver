@@ -231,6 +231,10 @@
     "httpCode": 501,
     "description": "A header you provided implies functionality that is not implemented."
   },
+  "NotModified": {
+    "httpCode": 304,
+    "description": "Not Modified."
+  },
   "NotSignedUp": {
     "httpCode": 403,
     "description": "Your account is not signed up for the S3 service. You must sign up before you can use S3. "
