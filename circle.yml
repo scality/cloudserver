@@ -1,3 +1,8 @@
 machine:
   node:
     version: 4.1.0
+
+test:
+  override:
+    - npm run --silent lint
+    - npm test
