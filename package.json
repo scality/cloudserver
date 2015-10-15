@@ -44,6 +44,6 @@
     "lint": "node_modules/.bin/eslint $(git ls-files '*.js')",
     "start": "node index.js",
     "postinstall": "gulp precommit-hook",
-    "test": "node_modules/.bin/mocha"
+    "test": "node_modules/.bin/mocha --compilers js:babel/register test"
   }
 }
