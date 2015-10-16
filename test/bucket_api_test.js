@@ -13,7 +13,7 @@ describe("bucket API for getting, putting and deleting objects in a bucket",func
     });
 
     after(function (done) {
-        bucket.DELETEBucket(function () {
+        bucket.deleteBucketMD(function () {
             done();
         });
     });
@@ -25,16 +25,16 @@ describe("bucket API for getting, putting and deleting objects in a bucket",func
     });
 
     it("should be able to add an object to a bucket and get the object by key", function (done) {
-        bucket.PUTObject("sampleKey", "sampleValue", function () {
-            bucket.GETObject("sampleKey", function (err, value, key) {
+        bucket.putObjectMD("sampleKey", "sampleValue", function () {
+            bucket.getObjectMD("sampleKey", function (err, value, key) {
                 expect(value).to.equal("sampleValue");
                 done();
             });
         });
     });
 
-    it("should return an error in response to GETObject when no such key", function (done) {
-        bucket.GETObject("notThere", function (err, value, key) {
+    it("should return an error in response to getObjectMD when no such key", function (done) {
+        bucket.getObjectMD("notThere", function (err, value, key) {
             expect(err).to.be.true;
             expect(value).to.be.undefined;
             done();
@@ -43,9 +43,9 @@ describe("bucket API for getting, putting and deleting objects in a bucket",func
 
     it("should be able to delete an object from a bucket", function (done) {
 
-        bucket.PUTObject("objectToDelete", "valueToDelete", function () {
-            bucket.DELETEObject("objectToDelete", function () {
-                bucket.GETObject("objectToDelete", function (err, value, key) {
+        bucket.putObjectMD("objectToDelete", "valueToDelete", function () {
+            bucket.deleteObjectMD("objectToDelete", function () {
+                bucket.getObjectMD("objectToDelete", function (err, value, key) {
                     expect(err).to.be.true;
                     expect(value).to.be.undefined;
                     done();
@@ -69,7 +69,7 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
         grouped together under key2/ if prefix is "key" and delimiter is "/".
         3)	If do not specify prefix, return grouped keys under common prefix if they contain
         same substring starting at beginning of the key and ending before first occurrence of delimiter.
-        4)	There will be no grouping if no delimiter specified as argument in GETBucketListObjects.
+        4)	There will be no grouping if no delimiter specified as argument in getBucketListObjects.
         5)	If marker specified, only return keys that occur alphabetically AFTER the marker.
         6)	If specify maxKeys, only return up to that max.  All keys grouped under common-prefix,
         will only count as one key to reach maxKeys.  If not all keys returned due to reaching maxKeys,
@@ -92,16 +92,16 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
     });
 
     after(function (done) {
-        bucket.DELETEBucket(function () {
+        bucket.deleteBucketMD(function () {
             done();
         });
     });
 
     it("should return individual key if key does not contain the delimiter even if key contains prefix", function (done) {
-        bucket.PUTObject("key1", "valueWithoutDelimiter", function () {
-            bucket.PUTObject("noMatchKey", "non-matching key", function () {
-                bucket.PUTObject("key1/", "valueWithDelimiter", function () {
-                    bucket.GETBucketListObjects("key", null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
+        bucket.putObjectMD("key1", "valueWithoutDelimiter", function () {
+            bucket.putObjectMD("noMatchKey", "non-matching key", function () {
+                bucket.putObjectMD("key1/", "valueWithDelimiter", function () {
+                    bucket.getBucketListObjects("key", null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
                         expect(isKeyInContents(response, "key1")).to.be.true;
                         expect(response.CommonPrefixes.indexOf("key1")).to.equal(-1);
                         expect(isKeyInContents(response, "key1/")).to.be.false;
@@ -117,10 +117,10 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
 
 
     it("should return grouped keys under common prefix if keys start with given prefix and contain given delimiter", function (done) {
-        bucket.PUTObject("key/one", "value1", function () {
-            bucket.PUTObject("key/two", "value2", function () {
-                bucket.PUTObject("key/three", "value2", function () {
-                    bucket.GETBucketListObjects("ke", null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
+        bucket.putObjectMD("key/one", "value1", function () {
+            bucket.putObjectMD("key/two", "value2", function () {
+                bucket.putObjectMD("key/three", "value2", function () {
+                    bucket.getBucketListObjects("ke", null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
                         expect(response.CommonPrefixes.indexOf("key/")).to.be.above(-1);
                         expect(isKeyInContents(response, "key/")).to.be.false;
                         done();
@@ -131,9 +131,9 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
     });
 
     it("should return grouped keys if no prefix given and keys match before delimiter", function (done) {
-        bucket.PUTObject("noPrefix/one", "value1", function () {
-            bucket.PUTObject("noPrefix/two", "value2", function () {
-                bucket.GETBucketListObjects(null, null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
+        bucket.putObjectMD("noPrefix/one", "value1", function () {
+            bucket.putObjectMD("noPrefix/two", "value2", function () {
+                bucket.getBucketListObjects(null, null, DELIMITER, DEFAULT_LIMIT, function (err, response) {
                     expect(response.CommonPrefixes.indexOf("noPrefix/")).to.be.above(-1);
                     expect(isKeyInContents(response, "noPrefix")).to.be.false;
                     done();
@@ -142,17 +142,17 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
         });
     });
 
-    it("should return no grouped keys if no delimiter specified in GETBucketListObjects", function (done) {
-        bucket.GETBucketListObjects("key", null, null, DEFAULT_LIMIT, function (err, response) {
+    it("should return no grouped keys if no delimiter specified in getBucketListObjects", function (done) {
+        bucket.getBucketListObjects("key", null, null, DEFAULT_LIMIT, function (err, response) {
             expect(response.CommonPrefixes.length).to.equal(0);
             done();
         });
     });
 
     it("should only return keys occurring alphabetically AFTER marker when no delimiter specified", function (done) {
-        bucket.PUTObject("a", "shouldBeExcluded", function () {
-            bucket.PUTObject("b", "shouldBeIncluded", function () {
-                bucket.GETBucketListObjects(null, "a", null, DEFAULT_LIMIT, function (err, response) {
+        bucket.putObjectMD("a", "shouldBeExcluded", function () {
+            bucket.putObjectMD("b", "shouldBeIncluded", function () {
+                bucket.getBucketListObjects(null, "a", null, DEFAULT_LIMIT, function (err, response) {
                     expect(isKeyInContents(response, "b")).to.be.true;
                     expect(isKeyInContents(response, "a")).to.be.false;
                     done();
@@ -163,7 +163,7 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
 
 
     it("should only return keys occurring alphabetically AFTER marker when delimiter specified", function (done) {
-        bucket.GETBucketListObjects(null, "a", DELIMITER, DEFAULT_LIMIT, function (err, response) {
+        bucket.getBucketListObjects(null, "a", DELIMITER, DEFAULT_LIMIT, function (err, response) {
             expect(isKeyInContents(response, "b")).to.be.true;
             expect(isKeyInContents(response, "a")).to.be.false;
             done();
@@ -171,7 +171,7 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
     });
 
     it("should only return keys occurring alphabetically AFTER marker when delimiter and prefix specified", function (done) {
-        bucket.GETBucketListObjects("b", "a", DELIMITER, DEFAULT_LIMIT, function (err, response) {
+        bucket.getBucketListObjects("b", "a", DELIMITER, DEFAULT_LIMIT, function (err, response) {
             expect(isKeyInContents(response, "b")).to.be.true;
             expect(isKeyInContents(response, "a")).to.be.false;
             done();
@@ -179,10 +179,10 @@ describe('bucket API for getting a subset of objects from a bucket', function ()
     });
 
     it("should return a NextMarker if maxKeys reached", function (done) {
-        bucket.PUTObject("next/", "shouldBeListed", function () {
-            bucket.PUTObject("next/rollUp", "shouldBeRolledUp", function () {
-                bucket.PUTObject("next1/", "shouldBeNextMarker", function () {
-                    bucket.GETBucketListObjects("next", null, DELIMITER, SMALL_LIMIT, function (err, response) {
+        bucket.putObjectMD("next/", "shouldBeListed", function () {
+            bucket.putObjectMD("next/rollUp", "shouldBeRolledUp", function () {
+                bucket.putObjectMD("next1/", "shouldBeNextMarker", function () {
+                    bucket.getBucketListObjects("next", null, DELIMITER, SMALL_LIMIT, function (err, response) {
                         expect(response.CommonPrefixes.indexOf("next/")).to.be.above(-1);
                         expect(response.CommonPrefixes.indexOf("next1/")).to.equal(-1);
                         expect(response.NextMarker).to.equal("next1/");
@@ -227,7 +227,7 @@ describe("stress test for bucket API", function () {
     });
 
     after(function (done) {
-        bucket.DELETEBucket(function () {
+        bucket.deleteBucketMD(function () {
             done();
         });
     });
@@ -261,14 +261,14 @@ describe("stress test for bucket API", function () {
         var startTime = process.hrtime();
 
         async.each(keys, function (item, next) {
-            bucket.PUTObject(item, "value", next);
+            bucket.putObjectMD(item, "value", next);
         }, function (err) {
             if (err) {
                 console.error("Error" + err);
                 expect(err).to.be.undefined;
                 done();
             } else {
-                bucket.GETBucketListObjects(null, null, DELIMITER, null, function (err, response) {
+                bucket.getBucketListObjects(null, null, DELIMITER, null, function (err, response) {
                     // Stop timing and calculate millisecond time difference
                     var diff = timeDiff(startTime);
                     expect(diff).to.be.below(MAX_MILLISECONDS);
@@ -285,7 +285,7 @@ describe("stress test for bucket API", function () {
 
 
     it("should return all keys as Contents if delimiter does not match and specify NextMarker", function (done) {
-        bucket.GETBucketListObjects(null, null, ODD_DELIMITER, TESTLIMIT, function (err, response) {
+        bucket.getBucketListObjects(null, null, ODD_DELIMITER, TESTLIMIT, function (err, response) {
             expect(response.CommonPrefixes.length).to.equal(0);
             expect(response.Contents.length).to.equal(TESTLIMIT);
             expect(response.IsTruncated).to.be.true;
@@ -295,7 +295,7 @@ describe("stress test for bucket API", function () {
     });
 
     it("should return only keys occurring after specified marker", function (done) {
-        bucket.GETBucketListObjects(null, TESTMARKER, DELIMITER, null, function (err, response) {
+        bucket.getBucketListObjects(null, TESTMARKER, DELIMITER, null, function (err, response) {
             expect(response.CommonPrefixes.length).to.equal(prefixes.length - 1);
             expect(response.CommonPrefixes.indexOf(TESTPREFIX)).to.equal(-1);
             expect(response.Contents.length).to.equal(0);
