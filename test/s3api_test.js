@@ -1,23 +1,20 @@
-'use strict';
-
-const chai = require('chai');
-const expect = chai.expect;
-const crypto = require('crypto');
-const parseString = require('xml2js').parseString;
-const utils = require('../lib/utils.js');
-const bucketPut = require('../lib/api/bucketPut.js');
-const bucketDelete = require('../lib/api/bucketDelete.js');
-const bucketHead = require('../lib/api/bucketHead.js');
-const objectPut = require('../lib/api/objectPut.js');
-const objectHead = require('../lib/api/objectHead.js');
-const objectGet = require('../lib/api/objectGet.js');
-const objectDelete = require('../lib/api/objectDelete.js');
-const bucketGet = require('../lib/api/bucketGet.js');
-const serviceGet = require('../lib/api/serviceGet.js');
+import {expect} from 'chai';
+import crypto from 'crypto';
+import {parseString} from 'xml2js';
+import utils from '../lib/utils.js';
+import bucketPut from '../lib/api/bucketPut.js';
+import bucketDelete from '../lib/api/bucketDelete.js';
+import bucketHead from '../lib/api/bucketHead.js';
+import objectPut from '../lib/api/objectPut.js';
+import objectHead from '../lib/api/objectHead.js';
+import objectGet from '../lib/api/objectGet.js';
+import objectDelete from '../lib/api/objectDelete.js';
+import bucketGet from '../lib/api/bucketGet.js';
+import serviceGet from '../lib/api/serviceGet.js';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
-describe("bucketPut API",function () {
+describe('bucketPut API', function () {
     let metastore;
 
     beforeEach(function () {
@@ -35,8 +32,7 @@ describe("bucketPut API",function () {
     });
 
 
-    it("should return an error if bucket already exists", function (done) {
-
+    it('should return an error if bucket already exists', function (done) {
         const bucketName = 'BucketName';
         const otherAccessKey = 'accessKey2';
         const testRequest = {
@@ -46,18 +42,16 @@ describe("bucketPut API",function () {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-
-        bucketPut(accessKey, metastore, testRequest, function (err, result) {
-            bucketPut(otherAccessKey, metastore, testRequest, function (err, result) {
-                expect(err).to.equal('BucketAlreadyExists');
-                done();
-            });
+        bucketPut(accessKey, metastore, testRequest, function () {
+            bucketPut(otherAccessKey, metastore, testRequest,
+                    function (err) {
+                        expect(err).to.equal('BucketAlreadyExists');
+                        done();
+                    });
         });
-
     });
 
-    it("should return an error if bucketname is invalid", function (done) {
-
+    it('should return an error if bucketname is invalid', function (done) {
         const tooShortBucketName = 'hi';
         const testRequest = {
             lowerCaseHeaders: {},
@@ -66,114 +60,116 @@ describe("bucketPut API",function () {
             post: ''
         };
 
-        bucketPut(accessKey, metastore, testRequest, function (err, result) {
+        bucketPut(accessKey, metastore, testRequest, function (err) {
             expect(err).to.equal('InvalidBucketName');
             done();
         });
-
     });
 
-    it("should return an error if malformed xml is provided in request.post", function (done) {
-
-        const testRequest = {
-            lowerCaseHeaders: {},
-            url: '/test1',
-            namespace: namespace,
-            post: 'malformedxml'
-        };
-
-        bucketPut(accessKey, metastore, testRequest, function (err, result) {
-            expect(err).to.equal('MalformedXML');
-            done();
+    it('should return an error if malformed xml ' +
+        'is provided in request.post', function (done) {
+            const testRequest = {
+                lowerCaseHeaders: {},
+                url: '/test1',
+                namespace: namespace,
+                post: 'malformedxml'
+            };
+            bucketPut(accessKey, metastore, testRequest, function (err) {
+                expect(err).to.equal('MalformedXML');
+                done();
+            });
         });
 
-    });
 
-
-    it("should return an error if xml which does not conform to s3 docs is provided in request.post", function (done) {
-
-        const testRequest = {
-            lowerCaseHeaders: {},
-            url: '/test1',
-            namespace: namespace,
-            post: '<Hello></Hello>'
-        };
-
-        bucketPut(accessKey, metastore, testRequest, function (err, result) {
-            expect(err).to.equal('MalformedXML');
-            done();
+    it('should return an error if xml which does ' +
+        'not conform to s3 docs is provided in request.post', function (done) {
+            const testRequest = {
+                lowerCaseHeaders: {},
+                url: '/test1',
+                namespace: namespace,
+                post: '<Hello></Hello>'
+            };
+            bucketPut(accessKey, metastore, testRequest,
+                function (err) {
+                    expect(err).to.equal('MalformedXML');
+                    done();
+                });
         });
 
-    });
-
-    it("should return an error if LocationConstraint specified is not valid", function (done) {
-
-        const testRequest = {
-            lowerCaseHeaders: {},
-            url: '/test1',
-            namespace: namespace,
-            post: '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">\
-                 <LocationConstraint>invalidLocation</LocationConstraint>\
-              </CreateBucketConfiguration>'
-        };
-
-        bucketPut(accessKey, metastore, testRequest, function (err, result) {
-            expect(err).to.equal('InvalidLocationConstraint');
-            done();
+    it('should return an error if LocationConstraint ' +
+        'specified is not valid', function (done) {
+            const testRequest = {
+                lowerCaseHeaders: {},
+                url: '/test1',
+                namespace: namespace,
+                post:
+                    '<CreateBucketConfiguration ' +
+                    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                    '<LocationConstraint>invalidLocation</LocationConstraint>'
+                    + '</CreateBucketConfiguration>'
+            };
+            bucketPut(accessKey, metastore, testRequest,
+                function (err) {
+                    expect(err).to.equal('InvalidLocationConstraint');
+                    done();
+                });
         });
 
-    });
+    it('should create a bucket using ' +
+        'bucket name provided in path', function (done) {
+            const bucketName = 'test1';
+            const testRequest = {
+                lowerCaseHeaders: {},
+                url: `/${bucketName}`,
+                namespace: namespace,
+                post: ''
+            };
+            const testBucketUID =
+                utils.getResourceUID(testRequest.namespace, bucketName);
 
-
-    it("should create a bucket using bucket name provided in path", function (done) {
-
-        const bucketName = 'test1';
-        const testRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}`,
-            namespace: namespace,
-            post: ''
-        };
-
-        const testBucketUID = utils.getResourceUID(testRequest.namespace, bucketName);
-
-        bucketPut(accessKey, metastore, testRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            expect(metastore.buckets[testBucketUID].name).to.equal(bucketName);
-            expect(metastore.buckets[testBucketUID].owner).to.equal(accessKey);
-            expect(metastore.users[accessKey].buckets).to.have.length.of.at.least(1);
-            done();
+            bucketPut(accessKey, metastore, testRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    expect(metastore.buckets[testBucketUID].name)
+                        .to.equal(bucketName);
+                    expect(metastore.buckets[testBucketUID].owner)
+                        .to.equal(accessKey);
+                    expect(metastore.users[accessKey].buckets)
+                        .to.have.length.of.at.least(1);
+                    done();
+                });
         });
 
-    });
 
-
-    it("should create a bucket using bucket name provided in host", function (done) {
-
-        const bucketName = 'BucketName';
-        const testRequest = {
-            lowerCaseHeaders: {},
-            url: '/',
-            namespace: namespace,
-            post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
-        };
-
-        const testBucketUID = utils.getResourceUID(testRequest.namespace, bucketName);
-
-        bucketPut(accessKey, metastore, testRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            expect(metastore.buckets[testBucketUID].name).to.equal(bucketName);
-            expect(metastore.buckets[testBucketUID].owner).to.equal(accessKey);
-            expect(metastore.users[accessKey].buckets).to.have.length.of.at.least(1);
-            done();
+    it('should create a bucket using bucket ' +
+        'name provided in host', function (done) {
+            const bucketName = 'BucketName';
+            const testRequest = {
+                lowerCaseHeaders: {},
+                url: '/',
+                namespace: namespace,
+                post: '',
+                headers: {host: `${bucketName}.s3.amazonaws.com`}
+            };
+            const testBucketUID =
+                utils.getResourceUID(testRequest.namespace, bucketName);
+            bucketPut(accessKey, metastore, testRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    expect(metastore.buckets[testBucketUID].name)
+                        .to.equal(bucketName);
+                    expect(metastore.buckets[testBucketUID].owner)
+                        .to.equal(accessKey);
+                    expect(metastore.users[accessKey].buckets)
+                        .to.have.length.of.at.least(1);
+                    done();
+                });
         });
-
-    });
 });
 
-describe("bucketDelete API",function () {
-    let metastore, datastore;
+describe("bucketDelete API", function () {
+    let metastore;
+    let datastore;
 
     beforeEach(function () {
         metastore = {
@@ -202,12 +198,8 @@ describe("bucketDelete API",function () {
         namespace: namespace
     };
 
-    it("should return an error if the bucket is not empty", function (done) {
-
+    it('should return an error if the bucket is not empty', function (done) {
         const postBody = 'I am a body';
-        const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
-        const objectUID = '84c130398c854348bcff8b715f793dc4';
         const objectName = 'objectName';
         const testPutObjectRequest = {
             lowerCaseHeaders: {},
@@ -217,37 +209,43 @@ describe("bucketDelete API",function () {
             calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest, function (err, success) {
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                bucketDelete(accessKey, metastore, testDeleteRequest, function (err, response, responseMetaHeaders) {
-                    expect(err).to.equal('BucketNotEmpty');
-                    expect(metastore.users[accessKey].buckets).to.have.length.of(1);
-                    expect(Object.keys(metastore.buckets)).to.have.length.of(1);
-                    done();
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            function () {
+                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
+                    function () {
+                        bucketDelete(accessKey, metastore, testDeleteRequest,
+                            function (err) {
+                                expect(err).to.equal('BucketNotEmpty');
+                                expect(metastore.users[accessKey]
+                                    .buckets).to.have.length.of(1);
+                                expect(Object.keys(metastore.buckets))
+                                    .to.have.length.of(1);
+                                done();
+                            });
+                    });
+            });
+    });
+
+
+    it('should delete a bucket', function (done) {
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+                function () {
+                    bucketDelete(accessKey, metastore, testDeleteRequest,
+                        function (err, response) {
+                            expect(response).to
+                                .equal('Bucket deleted permanently');
+                            expect(metastore.users[accessKey].buckets)
+                                .to.have.length.of(0);
+                            expect(Object.keys(metastore.buckets))
+                                .to.have.length.of(0);
+                            done();
+                        });
                 });
-            });
-        });
     });
-
-
-    it("should delete a bucket", function (done) {
-
-        bucketPut(accessKey, metastore, testBucketPutRequest, function (err, success) {
-            bucketDelete(accessKey, metastore, testDeleteRequest, function (err, response, responseMetaHeaders) {
-                expect(response).to.equal('Bucket deleted permanently');
-                expect(metastore.users[accessKey].buckets).to.have.length.of(0);
-                expect(Object.keys(metastore.buckets)).to.have.length.of(0);
-                done();
-            });
-        });
-    });
-
 });
 
 
-
-describe("bucketHead API",function () {
-
+describe('bucketHead API', function () {
     let metastore;
 
     beforeEach(function () {
@@ -264,8 +262,7 @@ describe("bucketHead API",function () {
         };
     });
 
-
-    it("should return an error if the bucket does not exist", function (done) {
+    it('should return an error if the bucket does not exist', function (done) {
         const bucketName = 'BucketName';
         const testRequest = {
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -273,14 +270,13 @@ describe("bucketHead API",function () {
             namespace: namespace
         };
 
-        bucketHead(accessKey, metastore, testRequest, function (err, result) {
+        bucketHead(accessKey, metastore, testRequest, function (err) {
             expect(err).to.equal('NoSuchBucket');
             done();
         });
-
     });
 
-    it("should return an error if user is not authorized", function (done) {
+    it('should return an error if user is not authorized', function (done) {
         const bucketName = 'BucketName';
         const putAccessKey = 'accessKey2';
         const testRequest = {
@@ -290,37 +286,41 @@ describe("bucketHead API",function () {
             namespace: namespace
         };
 
-        bucketPut(putAccessKey, metastore, testRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            bucketHead(accessKey, metastore, testRequest, function (err, result) {
-                expect(err).to.equal('AccessDenied');
-                done();
+        bucketPut(putAccessKey, metastore, testRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                bucketHead(accessKey, metastore, testRequest,
+                    function (err) {
+                        expect(err).to.equal('AccessDenied');
+                        done();
+                    });
             });
-        });
     });
 
-    it("should return a success message if bucket exists and user is authorized", function (done) {
-        const bucketName = 'BucketName';
-        const testRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace: namespace
-        };
+    it('should return a success message if ' +
+        'bucket exists and user is authorized', function (done) {
+            const bucketName = 'BucketName';
+            const testRequest = {
+                lowerCaseHeaders: {},
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                url: '/',
+                namespace: namespace
+            };
 
-        bucketPut(accessKey, metastore, testRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            bucketHead(accessKey, metastore, testRequest, function (err, result) {
-                expect(result).to.equal('Bucket exists and user authorized -- 200');
-                done();
-            });
+            bucketPut(accessKey, metastore, testRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    bucketHead(accessKey, metastore, testRequest,
+                        function (err, result) {
+                            expect(result).to.equal(
+                                'Bucket exists and user authorized -- 200');
+                            done();
+                        });
+                });
         });
-    });
 });
 
-
-describe("objectPut API",function () {
-
+describe('objectPut API', function () {
     let metastore;
     let datastore;
 
@@ -340,7 +340,7 @@ describe("objectPut API",function () {
     });
 
 
-    it("should return an error if the bucket does not exist", function (done) {
+    it('should return an error if the bucket does not exist', function (done) {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const testRequest = {
@@ -350,14 +350,14 @@ describe("objectPut API",function () {
             post: postBody
         };
 
-        objectPut(accessKey, datastore, metastore, testRequest, function (err, result) {
-            expect(err).to.equal('NoSuchBucket');
-            done();
-        });
+        objectPut(accessKey, datastore, metastore, testRequest,
+            function (err) {
+                expect(err).to.equal('NoSuchBucket');
+                done();
+            });
     });
 
-
-    it("should return an error if user is not authorized", function (done) {
+    it('should return an error if user is not authorized', function (done) {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const putAccessKey = 'accessKey2';
@@ -375,17 +375,18 @@ describe("objectPut API",function () {
             post: postBody
         };
 
-        bucketPut(putAccessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(err).to.equal('AccessDenied');
-                done();
+        bucketPut(putAccessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
+                    function (err) {
+                        expect(err).to.equal('AccessDenied');
+                        done();
+                    });
             });
-        });
     });
 
-
-    it("should return an error if Content MD-5 is invalid", function (done) {
+    it('should return an error if Content MD-5 is invalid', function (done) {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const incorrectMD5 = 'asdfwelkjflkjslfjskj993ksjl';
@@ -406,29 +407,37 @@ describe("objectPut API",function () {
             post: postBody
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(err).to.equal('InvalidDigest');
-                done();
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err) {
+                        expect(err).to.equal('InvalidDigest');
+                        done();
+                    });
             });
+    });
+
+    it.skip('should return an error if datastore ' +
+        'reports an error back', function () {
+            // TODO: Test to be written once services.putDataStore
+            // includes an actual call to
+            // datastore rather than just the in
+            // memory adding of a key/value pair to the datastore
+            // object
         });
-    });
 
-    it.skip("should return an error if datastore reports an error back", function () {
-        // TODO: Test to be written once services.putDataStore includes an actual call to
-        // datastore rather than just the in memory adding of a key/value pair to the datastore
+    it.skip('should return an error if metastore ' +
+        'reports an error back', function () {
+        // TODO: Test to be written once
+        // services.metadataStoreObject includes an actual call to
+        // datastore rather than just the in
+        // memory adding of a key/value pair to the datastore
         // object
-    });
-
-    it.skip("should return an error if metastore reports an error back", function () {
-        // TODO: Test to be written once services.metadataStoreObject includes an actual call to
-        // datastore rather than just the in memory adding of a key/value pair to the datastore
-        // object
-    });
+        });
 
 
-    it("should successfully put an object", function (done) {
+    it('should successfully put an object', function (done) {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -451,20 +460,27 @@ describe("objectPut API",function () {
             calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]).to.exist;
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]['content-md5']).to.equal(correctMD5);
-                expect(datastore[objectUID]).to.equal('I am a body');
-                done();
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctMD5);
+                        expect(
+                            metastore.buckets[bucketUID].keyMap[objectName])
+                            .to.exist;
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]['content-md5'])
+                                .to.equal(correctMD5);
+                        expect(datastore[objectUID]).to.equal('I am a body');
+                        done();
+                    });
             });
-        });
     });
 
 
-    it("should successfully put an object with user metadata", function (done) {
+    it('should successfully put an object with user metadata', function (done) {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -479,8 +495,10 @@ describe("objectPut API",function () {
         const testPutObjectRequest = {
             lowerCaseHeaders: {
                 // Note that Node will collapse common headers into one
-                // (e.g. "x-amz-meta-test: hi" and "x-amz-meta-test: there" becomes "x-amz-meta-test: hi, there")
-                // Here we are not going through an actual http request so will not collapse properly.
+                // (e.g. "x-amz-meta-test: hi" and "x-amz-meta-test:
+                // there" becomes "x-amz-meta-test: hi, there")
+                // Here we are not going through an actual http
+                // request so will not collapse properly.
                 'x-amz-meta-test': 'some metadata',
                 'x-amz-meta-test2': 'some more metadata',
                 'x-amz-meta-test3': 'even more metadata',
@@ -491,24 +509,34 @@ describe("objectPut API",function () {
             calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]).to.exist;
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test']).to.equal('some metadata');
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test2']).to.equal('some more metadata');
-                expect(metastore.buckets[bucketUID]['keyMap'][objectName]['x-amz-meta-test3']).to.equal('even more metadata');
-                done();
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctMD5);
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]).to.exist;
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]['x-amz-meta-test'])
+                                    .to.equal('some metadata');
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]['x-amz-meta-test2'])
+                                    .to.equal('some more metadata');
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]['x-amz-meta-test3'])
+                                    .to.equal('even more metadata');
+                        done();
+                    });
             });
-        });
     });
-
 });
 
-
-describe("objectHead API",function () {
-
+describe('objectHead API', function () {
     let metastore;
     let datastore;
 
@@ -532,9 +560,9 @@ describe("objectHead API",function () {
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
     const objectName = 'objectName';
-    let date = new Date();
-    let laterDate = date.setMinutes(date.getMinutes() + 30);
-    let earlierDate = date.setMinutes(date.getMinutes() - 30);
+    const date = new Date();
+    const laterDate = date.setMinutes(date.getMinutes() + 30);
+    const earlierDate = date.setMinutes(date.getMinutes() - 30);
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
@@ -553,10 +581,10 @@ describe("objectHead API",function () {
     };
 
 
-    it("should return NotModified if request header includes 'if-modified-since' \
-            and object not modified since specified time", function (done) {
-
-                const testGetRequest = {
+    it('should return NotModified if request header ' +
+        'includes "if-modified-since" and object ' +
+        'not modified since specified time', function (done) {
+            const testGetRequest = {
                 lowerCaseHeaders: {
                     'if-modified-since': laterDate
                 },
@@ -564,111 +592,128 @@ describe("objectHead API",function () {
                 namespace: namespace
             };
 
-                bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest, function (err, result) {
+                            expect(result).to.equal(correctMD5);
+                            objectHead(accessKey, metastore, testGetRequest,
+                                function (err) {
+                                    expect(err).to.equal('NotModified');
+                                    done();
+                                });
+                        });
+                });
+        });
+
+
+    it('should return PreconditionFailed if request header ' +
+        'includes "if-unmodified-since" and object has ' +
+        'been modified since specified time', function (done) {
+            const testGetRequest = {
+                lowerCaseHeaders: {
+                    'if-unmodified-since': earlierDate
+                },
+                url: `/${bucketName}/${objectName}`,
+                namespace: namespace
+            };
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest, function (err, result) {
+                            expect(result).to.equal(correctMD5);
+                            objectHead(accessKey, metastore,
+                                testGetRequest, function (err) {
+                                    expect(err).to.equal('PreconditionFailed');
+                                    done();
+                                });
+                        });
+                });
+        });
+
+
+    it('should return PreconditionFailed if request header ' +
+        'includes "if-match" and Etag of object ' +
+        'does not match specified Etag', function (done) {
+            const testGetRequest = {
+                lowerCaseHeaders: {
+                    'if-match': incorrectMD5
+                },
+                url: `/${bucketName}/${objectName}`,
+                namespace: namespace
+            };
+
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest, function (err, result) {
+                            expect(result).to.equal(correctMD5);
+                            objectHead(accessKey, metastore,
+                                testGetRequest, function (err) {
+                                    expect(err).to.equal('PreconditionFailed');
+                                    done();
+                                });
+                        });
+                });
+        });
+
+
+    it('should return NotModified if request header ' +
+        'includes "if-none-match" and Etag of object does ' +
+        'match specified Etag', function (done) {
+            const testGetRequest = {
+                lowerCaseHeaders: {
+                    'if-none-match': correctMD5
+                },
+                url: `/${bucketName}/${objectName}`,
+                namespace: namespace
+            };
+
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest, function (err, result) {
+                            expect(result).to.equal(correctMD5);
+                            objectHead(accessKey, metastore,
+                                testGetRequest, function (err) {
+                                    expect(err).to.equal('NotModified');
+                                    done();
+                                });
+                        });
+                });
+        });
+
+    it('should get the object metadata', function (done) {
+        const testGetRequest = {
+            lowerCaseHeaders: {},
+            url: `/${bucketName}/${objectName}`,
+            namespace: namespace
+        };
+
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                    expect(result).to.equal(correctMD5);
-                    objectHead(accessKey, metastore, testGetRequest, function (err, success) {
-                        expect(err).to.equal('NotModified');
-                        done();
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctMD5);
+                        objectHead(accessKey, metastore,
+                            testGetRequest, function (err, success) {
+                                expect(success[userMetadataKey])
+                                    .to.equal(userMetadataValue);
+                                expect(success.Etag)
+                                    .to.equal(correctMD5);
+                                done();
+                            });
                     });
-                });
             });
-            });
-
-
-    it("should return PreconditionFailed if request header includes 'if-unmodified-since' and \
-        object has been modified since specified time", function (done) {
-            const testGetRequest = {
-            lowerCaseHeaders: {
-                'if-unmodified-since': earlierDate
-            },
-            url: `/${bucketName}/${objectName}`,
-            namespace: namespace
-        };
-
-            bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                objectHead(accessKey, metastore, testGetRequest, function (err, success) {
-                    expect(err).to.equal('PreconditionFailed');
-                    done();
-                });
-            });
-        });
-        });
-
-
-    it("should return PreconditionFailed if request header includes 'if-match' and \
-        Etag of object does not match specified Etag", function (done) {
-            const testGetRequest = {
-            lowerCaseHeaders: {
-                'if-match': incorrectMD5
-            },
-            url: `/${bucketName}/${objectName}`,
-            namespace: namespace
-        };
-
-            bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                objectHead(accessKey, metastore, testGetRequest, function (err, success) {
-                    expect(err).to.equal('PreconditionFailed');
-                    done();
-                });
-            });
-        });
-        });
-
-
-    it("should return NotModified if request header includes 'if-none-match' and \
-        Etag of object does match specified Etag", function (done) {
-            const testGetRequest = {
-            lowerCaseHeaders: {
-                'if-none-match': correctMD5
-            },
-            url: `/${bucketName}/${objectName}`,
-            namespace: namespace
-        };
-
-            bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                objectHead(accessKey, metastore, testGetRequest, function (err, success) {
-                    expect(err).to.equal('NotModified');
-                    done();
-                });
-            });
-        });
-        });
-
-    it("should get the object metadata", function (done) {
-    const testGetRequest = {
-        lowerCaseHeaders: {},
-        url: `/${bucketName}/${objectName}`,
-        namespace: namespace
-    };
-
-    bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-        expect(success).to.equal('Bucket created');
-        objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-            expect(result).to.equal(correctMD5);
-            objectHead(accessKey, metastore, testGetRequest, function (err, success) {
-                expect(success[userMetadataKey]).to.equal(userMetadataValue);
-                expect(success['Etag']).to.equal(correctMD5);
-                done();
-            });
-        });
     });
 });
 
-});
-
-describe("objectGet API",function () {
-
+describe('objectGet API', function () {
     let metastore;
     let datastore;
 
@@ -690,11 +735,7 @@ describe("objectGet API",function () {
     const bucketName = 'BucketName';
     const postBody = 'I am a body';
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-    const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
     const objectName = 'objectName';
-    let date = new Date();
-    let laterDate = date.setMinutes(date.getMinutes() + 30);
-    let earlierDate = date.setMinutes(date.getMinutes() - 30);
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
@@ -719,42 +760,51 @@ describe("objectGet API",function () {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                objectGet(accessKey, datastore, metastore, testGetRequest, function (err, result, responseMetaHeaders) {
-                    expect(responseMetaHeaders[userMetadataKey]).to.equal(userMetadataValue);
-                    expect(responseMetaHeaders['Etag']).to.equal(correctMD5);
-                    done();
-                });
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctMD5);
+                        objectGet(accessKey, datastore,
+                            metastore, testGetRequest,
+                            function (err, result, responseMetaHeaders) {
+                                expect(responseMetaHeaders[userMetadataKey])
+                                    .to.equal(userMetadataValue);
+                                expect(responseMetaHeaders.Etag)
+                                    .to.equal(correctMD5);
+                                done();
+                            });
+                    });
             });
-        });
     });
 
-    it("should get the object data", function (done) {
+    it('should get the object data', function (done) {
         const testGetRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                expect(result).to.equal(correctMD5);
-                objectGet(accessKey, datastore, metastore, testGetRequest, function (err, result, responseMetaHeaders) {
-                    expect(result).to.equal(postBody);
-                    done();
-                });
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctMD5);
+                        objectGet(accessKey, datastore, metastore,
+                            testGetRequest, function (err, result) {
+                                expect(result).to.equal(postBody);
+                                done();
+                            });
+                    });
             });
-        });
     });
 
-
-    it("should get the object data for large objects", function (done) {
+    it('should get the object data for large objects', function (done) {
         const testBigData = crypto.randomBytes(1000000);
-        const correctBigMD5 = crypto.createHash('md5').update(testBigData).digest('hex');
+        const correctBigMD5 =
+            crypto.createHash('md5').update(testBigData).digest('hex');
 
         const testPutBigObjectRequest = {
             lowerCaseHeaders: {
@@ -772,23 +822,29 @@ describe("objectGet API",function () {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-            expect(success).to.equal('Bucket created');
-            objectPut(accessKey, datastore, metastore, testPutBigObjectRequest, function (err, result) {
-                expect(result).to.equal(correctBigMD5);
-                objectGet(accessKey, datastore, metastore, testGetRequest, function (err, result, responseMetaHeaders) {
-                    let resultmd5Hash = crypto.createHash('md5').update(result).digest('hex');
-                    expect(resultmd5Hash).to.equal(correctBigMD5);
-                    done();
-                });
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            function (err, success) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutBigObjectRequest, function (err, result) {
+                        expect(result).to.equal(correctBigMD5);
+                        objectGet(accessKey, datastore,
+                            metastore, testGetRequest, function (err, result) {
+                                const resultmd5Hash =
+                                    crypto.createHash('md5')
+                                        .update(result).digest('hex');
+                                expect(resultmd5Hash).to.equal(correctBigMD5);
+                                done();
+                            });
+                    });
             });
-        });
     });
 });
 
 
-describe("objectDelete API",function () {
-    let metastore, datastore;
+describe('objectDelete API', function () {
+    let metastore;
+    let datastore;
 
     beforeEach(function () {
         metastore = {
@@ -812,7 +868,6 @@ describe("objectDelete API",function () {
         namespace: namespace,
     };
     const postBody = 'I am a body';
-    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const objectName = 'objectName';
     const testPutObjectRequest = {
         lowerCaseHeaders: {},
@@ -827,27 +882,32 @@ describe("objectDelete API",function () {
         namespace: namespace
     };
 
-    it.skip("should set delete markers when versioning enabled", function (done) {
+    it.skip('should set delete markers ' +
+        'when versioning enabled', function (done) {
         // TODO
-    });
+            done();
+        });
 
-    it("should delete an object", function (done) {
-
-        bucketPut(accessKey, metastore, testBucketPutRequest, function (err, success) {
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest, function (err, result) {
-                objectDelete(accessKey, datastore, metastore, testDeleteRequest, function (err, response, responseMetaHeaders) {
-                    expect(response).to.equal('Object deleted permanently');
-                    expect(Object.keys(datastore).length).to.equal(0);
-                    done();
+    it('should delete an object', function (done) {
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            function () {
+                objectPut(accessKey, datastore,
+                metastore, testPutObjectRequest, function () {
+                    objectDelete(accessKey, datastore, metastore,
+                        testDeleteRequest, function (err, response) {
+                            expect(response)
+                                .to.equal('Object deleted permanently');
+                            expect(Object.keys(datastore)
+                                .length).to.equal(0);
+                            done();
+                        });
                 });
             });
-        });
     });
 });
 
 
-describe("bucketGet API",function () {
-
+describe('bucketGet API', function () {
     let metastore;
     let datastore;
 
@@ -891,10 +951,11 @@ describe("bucketGet API",function () {
         post: postBody
     };
 
-    it("should return the name of the common prefix of common prefix objects \
-            if delimiter and prefix specified", function (done) {
-                const commonPrefix = `${prefix}${delimiter}`;
-                const testGetRequest = {
+    it('should return the name of the common prefix ' +
+        'of common prefix objects if delimiter ' +
+        'and prefix specified', function (done) {
+            const commonPrefix = `${prefix}${delimiter}`;
+            const testGetRequest = {
                 lowerCaseHeaders: {
                     host: '/'
                 },
@@ -907,51 +968,79 @@ describe("bucketGet API",function () {
             };
 
 
-                bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-                expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function (err, result) {
-                    objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function (err, result) {
-                        bucketGet(accessKey, metastore, testGetRequest, function (err, result) {
-                            parseString(result, function (err, result) {
-                                expect(result.ListBucketResult.CommonPrefixes[0].Prefix[0]).to.equal(commonPrefix);
-                                done();
-                            });
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest1, function () {
+                            objectPut(accessKey, datastore,
+                                metastore, testPutObjectRequest2,
+                                function () {
+                                    bucketGet(accessKey, metastore,
+                                        testGetRequest, function (err, result) {
+                                            parseString(result,
+                                                function (err, result) {
+                                                    expect(
+                                                        result
+                                                        .ListBucketResult
+                                                        .CommonPrefixes[0]
+                                                        .Prefix[0])
+                                                        .to
+                                                        .equal(commonPrefix);
+                                                    done();
+                                                });
+                                        });
+                                });
                         });
-                    });
                 });
-            });
-            });
-
-    it("should return list of all objects if no delimiter specified", function (done) {
-    const testGetRequest = {
-        lowerCaseHeaders: {
-            host: '/'
-        },
-        url: `/${bucketName}`,
-        namespace: namespace,
-        query: {}
-    };
-
-    bucketPut(accessKey, metastore, testPutBucketRequest, function (err, success) {
-        expect(success).to.equal('Bucket created');
-        objectPut(accessKey, datastore, metastore, testPutObjectRequest1, function (err, result) {
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest2, function (err, result) {
-                bucketGet(accessKey, metastore, testGetRequest, function (err, result) {
-                    parseString(result, function (err, result) {
-                        expect(result.ListBucketResult.Contents[0].Key[0]).to.equal(objectName1);
-                        expect(result.ListBucketResult.Contents[1].Key[0]).to.equal(objectName2);
-                        done();
-                    });
-                });
-            });
         });
-    });
+
+    it('should return list of all objects if ' +
+        'no delimiter specified', function (done) {
+            const testGetRequest = {
+                lowerCaseHeaders: {
+                    host: '/'
+                },
+                url: `/${bucketName}`,
+                namespace: namespace,
+                query: {}
+            };
+
+            bucketPut(accessKey, metastore, testPutBucketRequest,
+                function (err, success) {
+                    expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore,
+                        metastore, testPutObjectRequest1, function () {
+                            objectPut(accessKey, datastore,
+                                metastore, testPutObjectRequest2, function () {
+                                    bucketGet(accessKey, metastore,
+                                        testGetRequest, function (err, result) {
+                                            parseString(
+                                                result, function (err, result) {
+                                                    expect(
+                                                        result
+                                                            .ListBucketResult
+                                                            .Contents[0]
+                                                            .Key[0])
+                                                            .to
+                                                            .equal(objectName1);
+                                                    expect(
+                                                        result
+                                                            .ListBucketResult
+                                                            .Contents[1]
+                                                            .Key[0])
+                                                            .to
+                                                            .equal(objectName2);
+                                                    done();
+                                                });
+                                        });
+                                });
+                        });
+                });
+        });
 });
-});
 
-
-
-describe("serviceGet API",function () {
+describe('serviceGet API', function () {
     let metastore;
 
     beforeEach(function () {
@@ -968,8 +1057,7 @@ describe("serviceGet API",function () {
         };
     });
 
-    it("should return the list of buckets owned by the user", function (done) {
-
+    it('should return the list of buckets owned by the user', function (done) {
         const bucketName1 = 'BucketName1';
         const bucketName2 = 'BucketName2';
         const bucketName3 = 'BucketName3';
@@ -996,20 +1084,44 @@ describe("serviceGet API",function () {
             url: '/',
         };
 
-        bucketPut(accessKey, metastore, testbucketPutRequest1, function (err, success) {
-            bucketPut(accessKey, metastore, testbucketPutRequest2, function (err, success) {
-                bucketPut(accessKey, metastore, testbucketPutRequest3, function (err, success) {
-                    serviceGet(accessKey, metastore, serviceGetRequest, function (err, result) {
-                        parseString(result, function (err, result) {
-                            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket).to.have.length.of(3);
-                            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0]).to.equal(bucketName1);
-                            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[1].Name[0]).to.equal(bucketName2);
-                            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0]).to.equal(bucketName3);
-                            done();
-                        });
+        bucketPut(accessKey, metastore, testbucketPutRequest1,
+            function () {
+                bucketPut(accessKey, metastore, testbucketPutRequest2,
+                    function () {
+                        bucketPut(accessKey, metastore, testbucketPutRequest3,
+                            function () {
+                                serviceGet(accessKey, metastore,
+                                    serviceGetRequest, function (err, result) {
+                                        parseString(result,
+                                            function (err, result) {
+                                                expect(
+                                                    result
+                                                    .ListAllMyBucketsResult
+                                                    .Buckets[0].Bucket)
+                                                    .to.have.length.of(3);
+                                                expect(
+                                                    result
+                                                    .ListAllMyBucketsResult
+                                                    .Buckets[0].Bucket[0]
+                                                    .Name[0])
+                                                    .to.equal(bucketName1);
+                                                expect(
+                                                    result
+                                                    .ListAllMyBucketsResult
+                                                    .Buckets[0]
+                                                    .Bucket[1].Name[0])
+                                                    .to.equal(bucketName2);
+                                                expect(
+                                                    result
+                                                    .ListAllMyBucketsResult
+                                                    .Buckets[0]
+                                                    .Bucket[2].Name[0])
+                                                    .to.equal(bucketName3);
+                                                done();
+                                            });
+                                    });
+                            });
                     });
-                });
             });
-        });
     });
 });
