@@ -345,6 +345,7 @@ describe('objectPut API', function () {
         const bucketName = 'BucketName';
         const postBody = 'I am a body';
         const testRequest = {
+            lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
             namespace: namespace,
