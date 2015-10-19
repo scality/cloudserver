@@ -4,5 +4,5 @@ machine:
 
 test:
   override:
-    - 'npm run --silent lint 2>/dev/null || :'
+    - npm run --silent lint
     - npm test
