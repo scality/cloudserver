@@ -1,18 +1,12 @@
-module.exports = function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
-
-    // While there remain elements to shuffle...
-    while (0 !== currentIndex) {
-
-        // Pick a remaining element...
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-
-        // And swap it with the current element.
+export default function shuffle(array) {
+    let randomIndex;
+    let temporaryValue;
+    const length = array.length;
+    array.forEach(function (item, currentIndex, array) {
+        randomIndex = Math.floor(Math.random() * length);
         temporaryValue = array[currentIndex];
         array[currentIndex] = array[randomIndex];
         array[randomIndex] = temporaryValue;
-    }
-
+    });
     return array;
-};
+}

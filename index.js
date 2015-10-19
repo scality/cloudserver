@@ -1,1 +1,1 @@
-require('./lib/server.js');
+import './lib/server.js';
