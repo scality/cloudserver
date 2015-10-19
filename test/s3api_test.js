@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import async from 'async';
 import crypto from 'crypto';
 import {parseString} from 'xml2js';
 import utils from '../lib/utils.js';
@@ -968,32 +969,34 @@ describe('bucketGet API', function () {
             };
 
 
-            bucketPut(accessKey, metastore, testPutBucketRequest,
-                function (err, success) {
+            async.waterfall([
+                function waterfall1(next) {
+                    bucketPut(accessKey, metastore, testPutBucketRequest, next);
+                },
+                function waterfall2(success, next) {
                     expect(success).to.equal('Bucket created');
                     objectPut(accessKey, datastore, metastore,
-                        testPutObjectRequest1, function () {
-                            objectPut(accessKey, datastore,
-                                metastore, testPutObjectRequest2,
-                                function () {
-                                    bucketGet(accessKey, metastore,
-                                        testGetRequest, function (err, result) {
-                                            parseString(result,
-                                                function (err, result) {
-                                                    expect(
-                                                        result
-                                                        .ListBucketResult
-                                                        .CommonPrefixes[0]
-                                                        .Prefix[0])
-                                                        .to
-                                                        .equal(commonPrefix);
-                                                    done();
-                                                });
-                                        });
-                                });
-                        });
-                });
+                        testPutObjectRequest1, next);
+                },
+                function waterfall3(result, next) {
+                    objectPut(accessKey, datastore,
+                        metastore, testPutObjectRequest2, next);
+                },
+                function waterfall4(result, next) {
+                    bucketGet(accessKey, metastore,
+                        testGetRequest, next);
+                },
+                function waterfall4(result, next) {
+                    parseString(result, next);
+                }
+            ],
+            function waterfallFinal(err, result) {
+                expect(result.ListBucketResult.CommonPrefixes[0].Prefix[0])
+                    .to.equal(commonPrefix);
+                done();
+            });
         });
+
 
     it('should return list of all objects if ' +
         'no delimiter specified', function (done) {
@@ -1006,37 +1009,35 @@ describe('bucketGet API', function () {
                 query: {}
             };
 
-            bucketPut(accessKey, metastore, testPutBucketRequest,
-                function (err, success) {
+
+            async.waterfall([
+                function waterfall1(next) {
+                    bucketPut(accessKey, metastore, testPutBucketRequest, next);
+                },
+                function waterfall2(success, next) {
                     expect(success).to.equal('Bucket created');
+                    objectPut(accessKey, datastore, metastore,
+                        testPutObjectRequest1, next);
+                },
+                function waterfall3(result, next) {
                     objectPut(accessKey, datastore,
-                        metastore, testPutObjectRequest1, function () {
-                            objectPut(accessKey, datastore,
-                                metastore, testPutObjectRequest2, function () {
-                                    bucketGet(accessKey, metastore,
-                                        testGetRequest, function (err, result) {
-                                            parseString(
-                                                result, function (err, result) {
-                                                    expect(
-                                                        result
-                                                            .ListBucketResult
-                                                            .Contents[0]
-                                                            .Key[0])
-                                                            .to
-                                                            .equal(objectName1);
-                                                    expect(
-                                                        result
-                                                            .ListBucketResult
-                                                            .Contents[1]
-                                                            .Key[0])
-                                                            .to
-                                                            .equal(objectName2);
-                                                    done();
-                                                });
-                                        });
-                                });
-                        });
-                });
+                        metastore, testPutObjectRequest2, next);
+                },
+                function waterfall4(result, next) {
+                    bucketGet(accessKey, metastore,
+                        testGetRequest, next);
+                },
+                function waterfall4(result, next) {
+                    parseString(result, next);
+                }
+            ],
+            function waterfallFinal(err, result) {
+                expect(result.ListBucketResult.Contents[0].Key[0])
+                    .to.equal(objectName1);
+                expect(result.ListBucketResult.Contents[1].Key[0])
+                    .to.equal(objectName2);
+                done();
+            });
         });
 });
 
@@ -1084,44 +1085,33 @@ describe('serviceGet API', function () {
             url: '/',
         };
 
-        bucketPut(accessKey, metastore, testbucketPutRequest1,
-            function () {
-                bucketPut(accessKey, metastore, testbucketPutRequest2,
-                    function () {
-                        bucketPut(accessKey, metastore, testbucketPutRequest3,
-                            function () {
-                                serviceGet(accessKey, metastore,
-                                    serviceGetRequest, function (err, result) {
-                                        parseString(result,
-                                            function (err, result) {
-                                                expect(
-                                                    result
-                                                    .ListAllMyBucketsResult
-                                                    .Buckets[0].Bucket)
-                                                    .to.have.length.of(3);
-                                                expect(
-                                                    result
-                                                    .ListAllMyBucketsResult
-                                                    .Buckets[0].Bucket[0]
-                                                    .Name[0])
-                                                    .to.equal(bucketName1);
-                                                expect(
-                                                    result
-                                                    .ListAllMyBucketsResult
-                                                    .Buckets[0]
-                                                    .Bucket[1].Name[0])
-                                                    .to.equal(bucketName2);
-                                                expect(
-                                                    result
-                                                    .ListAllMyBucketsResult
-                                                    .Buckets[0]
-                                                    .Bucket[2].Name[0])
-                                                    .to.equal(bucketName3);
-                                                done();
-                                            });
-                                    });
-                            });
-                    });
-            });
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testbucketPutRequest1, next);
+            },
+            function waterfall2(result, next) {
+                bucketPut(accessKey, metastore, testbucketPutRequest2, next);
+            },
+            function waterfall3(result, next) {
+                bucketPut(accessKey, metastore, testbucketPutRequest3, next);
+            },
+            function waterfall4(result, next) {
+                serviceGet(accessKey, metastore, serviceGetRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket)
+                .to.have.length.of(3);
+            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0])
+                .to.equal(bucketName1);
+            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[1].Name[0])
+                .to.equal(bucketName2);
+            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0])
+                .to.equal(bucketName3);
+            done();
+        });
     });
 });
