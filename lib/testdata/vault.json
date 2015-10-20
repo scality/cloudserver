@@ -2,5 +2,35 @@
   "secretKeys": {
     "accessKey1": "verySecretKey1",
     "accessKey2": "verySecretKey2"
+    },
+  "accounts": {
+    "sampleaccount1@sampling.com": {
+        "arn": "aws::iam:123456789012:root",
+        "createDate": "",
+        "saltedPwd": "",
+        "pwdlastUsed": "",
+        "pwdCreated": "",
+        "name": "",
+        "shortid": "123456789012",
+        "email": "sampleAccount@sampling.com",
+        "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
+        "secretKeyIdList": [],
+        "aliasList": [],
+        "oidcpdList": []
+    },
+    "sampleaccount2@sampling.com": {
+        "arn": "aws::iam:321456789012:root",
+        "createDate": "",
+        "saltedPwd": "",
+        "pwdlastUsed": "",
+        "pwdCreated": "",
+        "name": "",
+        "shortid": "321456789012",
+        "email": "sampleAccount@sampling.com",
+        "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf",
+        "secretKeyIdList": [],
+        "aliasList": [],
+        "oidcpdList": []
+    }
   }
 }
