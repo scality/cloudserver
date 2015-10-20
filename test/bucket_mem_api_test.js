@@ -281,7 +281,7 @@ describe("stress test for bucket API", function () {
     // We expect 1,000 puts per second
     const maxMilliseconds = numKeys;
 
-    const prefixes = ['dogs','cats','tigers','elephants','monsters'];
+    const prefixes = ['dogs', 'cats', 'tigers', 'elephants', 'monsters'];
 
     // testPrefix is used to test alphabetical marker so
     // must be string alphabetized before testMarker
