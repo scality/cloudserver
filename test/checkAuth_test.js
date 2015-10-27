@@ -48,7 +48,7 @@ describe('canonicalization', function () {
         };
         const canonicalizedResource = Auth._getCanonicalizedResource(request);
         expect(canonicalizedResource).
-            to.equal('bucket/obj?requestPayment=yes,please');
+            to.equal('/bucket/obj?requestPayment=yes,please');
     });
 
     it('should return the path as the canonicalized resource '
