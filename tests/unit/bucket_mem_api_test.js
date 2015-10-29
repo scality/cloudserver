@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import async from 'async';
-import Bucket from '../lib/bucket_mem.js';
-import {isKeyInContents} from '../lib/bucket_utilities.js';
-import makeid from './makeid.js';
-import shuffle from './shuffle.js';
-import timeDiff from './timeDiff.js';
+import Bucket from '../../lib/bucket_mem';
+import {isKeyInContents} from '../../lib/bucket_utilities';
+import makeid from './makeid';
+import shuffle from './shuffle';
+import timeDiff from './timeDiff';
 
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
