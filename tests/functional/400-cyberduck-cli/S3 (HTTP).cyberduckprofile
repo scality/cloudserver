@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Protocol</key>
+        <string>s3</string>
+        <key>Vendor</key>
+        <string>s3-http</string>
+        <key>Scheme</key>
+        <string>http</string>
+        <key>Description</key>
+        <string>S3 (HTTP)</string>
+        <key>Default Hostname</key>
+	<string>IP</string>
+	<key>Default Port</key>
+	<string>8000</string>
+	<key>Username Placeholder</key>
+	<string>Access Key ID</string>
+	<key>Password Placeholder</key>
+	<string>Secret Key</string>
+    </dict>
+</plist>

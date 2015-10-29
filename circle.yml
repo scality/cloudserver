@@ -27,7 +27,7 @@ checkout:
     - chmod 600 ./deployment/checkout/project/.ssh/config
 
 dependencies:
-  pre:
+  post:
     # this is required to access the docker registry
     # the variable  docker_password and docker_user should be set in the circleci project settings
     # There is also the option of specifying an email address (with -e) but we have opted not to here.
