@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import Auth from '../lib/auth/checkAuth.js';
 
-describe('canonicalization', function () {
-    it('should construct a canonicalized header', function () {
+describe('canonicalization', () => {
+    it('should construct a canonicalized header', () => {
         const lowerCaseHeaders = {
             date: 'Mon, 21 Sep 2015 22:29:27 GMT',
             'x-amz-request-payer': 'requester',
@@ -19,7 +19,7 @@ describe('canonicalization', function () {
     });
 
     it('should return an empty string as the canonicalized ' +
-       'header if no amz headers', function () {
+       'header if no amz headers', () => {
         const lowerCaseHeaders = {
             date: 'Mon, 21 Sep 2015 22:29:27 GMT',
             authorization: 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
@@ -33,7 +33,7 @@ describe('canonicalization', function () {
         expect(canonicalizedHeader).to.equal('');
     });
 
-    it('should construct a canonicalized resource', function () {
+    it('should construct a canonicalized resource', () => {
         const request = {
             headers: {
                 host: 'bucket.s3.amazonaws.com:80'
@@ -52,7 +52,7 @@ describe('canonicalization', function () {
     });
 
     it('should return the path as the canonicalized resource ' +
-       'if no bucket name, overriding headers or delete query', function () {
+       'if no bucket name, overriding headers or delete query', () => {
         const request = {
             headers: {
                 host: 's3.amazonaws.com:80'
@@ -71,9 +71,9 @@ describe('canonicalization', function () {
 });
 
 
-describe('Auth._reconstructSignature', function () {
+describe('Auth._reconstructSignature', () => {
     it('should reconstruct the signature for a ' +
-       'GET request from s3-curl', function () {
+       'GET request from s3-curl', () => {
         // Based on s3-curl run
         const request = {
             method: "GET",
@@ -96,7 +96,7 @@ describe('Auth._reconstructSignature', function () {
     });
 
     it('should reconstruct the signature for a GET ' +
-       'request from CyberDuck', function () {
+       'request from CyberDuck', () => {
         // Based on CyberDuck request
         const request = {
             method: 'GET',
@@ -122,7 +122,7 @@ describe('Auth._reconstructSignature', function () {
     });
 
     it('should reconstruct the signature for ' +
-       'a PUT request from s3cmd', function () {
+       'a PUT request from s3cmd', () => {
         // Based on s3cmd run
         const request = {
             method: "PUT",
@@ -163,9 +163,9 @@ describe('Auth._reconstructSignature', function () {
     });
 });
 
-describe('Auth._checkTimestamp for timecheck in header auth', function () {
+describe('Auth._checkTimestamp for timecheck in header auth', () => {
     it('should return true if the date in the header is ' +
-       'more than 15 minutes old', function () {
+       'more than 15 minutes old', () => {
         let timeStamp = 'Mon Sep 21 2015 17:12:58 GMT-0700 (PDT)';
         timeStamp = Date.parse(timeStamp);
         const result = Auth._checkTimestamp(timeStamp);
@@ -173,7 +173,7 @@ describe('Auth._checkTimestamp for timecheck in header auth', function () {
     });
 
     it('should return true if the date in the header is more ' +
-       'than 15 minutes in the future', function () {
+       'than 15 minutes in the future', () => {
         // Note: This test will have to be updated in 2095
         let timeStamp = 'Mon Sep 25 2095 17:12:58 GMT-0700 (PDT)';
         timeStamp = Date.parse(timeStamp);
@@ -182,16 +182,16 @@ describe('Auth._checkTimestamp for timecheck in header auth', function () {
     });
 
     it('should return false if the date in the header is ' +
-       'within 15 minutes of current time', function () {
+       'within 15 minutes of current time', () => {
         const timeStamp = new Date();
         const result = Auth._checkTimestamp(timeStamp);
         expect(result).to.be.false;
     });
 });
 
-describe('Error handling in checkAuth', function () {
+describe('Error handling in checkAuth', () => {
     it('should return an error message if no ' +
-       'secret key is associated with access key', function (done) {
+       'secret key is associated with access key', (done) => {
         const date = new Date();
         const request = {
             method: 'GET',
@@ -204,14 +204,14 @@ describe('Error handling in checkAuth', function () {
                     'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
             url: '/bucket',
         };
-        Auth.checkAuth(request, function (err) {
+        Auth.checkAuth(request, (err) => {
             expect(err).to.equal('InvalidAccessKeyId');
             done();
         });
     });
 
     it('should return an error message if no date header ' +
-       'is provided with v2header auth check', function (done) {
+       'is provided with v2header auth check', (done) => {
         const request = {
             method: 'GET',
             lowerCaseHeaders: {
@@ -224,7 +224,7 @@ describe('Error handling in checkAuth', function () {
             url: '/bucket',
         };
 
-        Auth.checkAuth(request, function (err) {
+        Auth.checkAuth(request, (err) => {
             expect(err).to.equal('MissingSecurityHeader');
             done();
         });
@@ -232,7 +232,7 @@ describe('Error handling in checkAuth', function () {
 
     it('should return an error message if the Expires ' +
        'query parameter is more than 15 minutes ' +
-       'old with query auth check', function (done) {
+       'old with query auth check', (done) => {
         const request = {
             method: 'GET',
             url: '/bucket?AWSAccessKeyId=accessKey1&' +
@@ -245,14 +245,14 @@ describe('Error handling in checkAuth', function () {
             lowerCaseHeaders: {},
             headers: {}
         };
-        Auth._v2QueryAuthCheck(request, function (err) {
+        Auth._v2QueryAuthCheck(request, (err) => {
             expect(err).to.equal('RequestTimeTooSkewed');
             done();
         });
     });
 
     it('should return an error message if ' +
-       'the signatures do not match for v2query auth', function (done) {
+       'the signatures do not match for v2query auth', (done) => {
         // Date.now() provides milliseconds since 1/1/1970.
         // AWS Expires is in seconds so need to divide by 1000
         let expires = Date.now() / 1000;
@@ -271,14 +271,14 @@ describe('Error handling in checkAuth', function () {
             headers: {}
         };
 
-        Auth._v2QueryAuthCheck(request, function (err) {
+        Auth._v2QueryAuthCheck(request, (err) => {
             expect(err).to.equal('SignatureDoesNotMatch');
             done();
         });
     });
 
     it('should return an error message if the ' +
-       'signatures do not match for v2header auth', function (done) {
+       'signatures do not match for v2header auth', (done) => {
         const date = new Date();
         const request = {
             method: "GET",
@@ -292,7 +292,7 @@ describe('Error handling in checkAuth', function () {
             query: {}
         };
 
-        Auth.checkAuth(request, function (err) {
+        Auth.checkAuth(request, (err) => {
             expect(err).to.equal('SignatureDoesNotMatch');
             done();
         });
