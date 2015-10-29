@@ -7,28 +7,28 @@ import shuffle from './shuffle.js';
 import timeDiff from './timeDiff.js';
 
 describe('bucket API for getting, putting and deleting ' +
-         'objects in a bucket', function () {
+         'objects in a bucket', () => {
     let bucket;
-    before(function () {
+    before(() => {
         bucket = new Bucket();
     });
 
-    after(function (done) {
-        bucket.deleteBucketMD(function () {
+    after((done) => {
+        bucket.deleteBucketMD(() => {
             done();
         });
     });
 
-    it("should create a bucket with a keyMap", function (done) {
+    it("should create a bucket with a keyMap", (done) => {
         expect(bucket).to.be.an("object");
         expect(bucket.keyMap).to.be.an("object");
         done();
     });
 
     it('should be able to add an object to a bucket ' +
-       'and get the object by key', function (done) {
-        bucket.putObjectMD("sampleKey", "sampleValue", function () {
-            bucket.getObjectMD("sampleKey", function (err, value) {
+       'and get the object by key', (done) => {
+        bucket.putObjectMD("sampleKey", "sampleValue", () => {
+            bucket.getObjectMD("sampleKey", (err, value) => {
                 expect(value).to.equal("sampleValue");
                 done();
             });
@@ -36,20 +36,20 @@ describe('bucket API for getting, putting and deleting ' +
     });
 
     it('should return an error in response ' +
-       'to getObjectMD when no such key', function (done) {
-        bucket.getObjectMD('notThere', function (err, value) {
+       'to getObjectMD when no such key', (done) => {
+        bucket.getObjectMD('notThere', (err, value) => {
             expect(err).to.be.true;
             expect(value).to.be.undefined;
             done();
         });
     });
 
-    it('should be able to delete an object from a bucket', function (done) {
+    it('should be able to delete an object from a bucket', (done) => {
         bucket.putObjectMD(
-            'objectToDelete', 'valueToDelete', function () {
-                bucket.deleteObjectMD('objectToDelete', function () {
+            'objectToDelete', 'valueToDelete', () => {
+                bucket.deleteObjectMD('objectToDelete', () => {
                     bucket.getObjectMD(
-                        'objectToDelete', function (err, value) {
+                        'objectToDelete', (err, value) => {
                             expect(err).to.be.true;
                             expect(value).to.be.undefined;
                             done();
@@ -61,7 +61,7 @@ describe('bucket API for getting, putting and deleting ' +
 
 
 describe('bucket API for getting a subset of ' +
-         'objects from a bucket', function () {
+         'objects from a bucket', () => {
     /*
      * Implementation of AWS GET Bucket (List Objects) functionality
      * Rules:
@@ -102,18 +102,18 @@ describe('bucket API for getting a subset of ' +
 
     let bucket;
 
-    before(function () {
+    before(() => {
         bucket = new Bucket();
     });
 
-    after(function (done) {
-        bucket.deleteBucketMD(function () {
+    after((done) => {
+        bucket.deleteBucketMD(() => {
             done();
         });
     });
 
     it('should return individual key if key does not contain ' +
-       'the delimiter even if key contains prefix', function (done) {
+       'the delimiter even if key contains prefix', (done) => {
         async.waterfall([
             function waterfall1(next) {
                 bucket.putObjectMD(
@@ -146,7 +146,7 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should return grouped keys under common prefix if keys start with ' +
-       'given prefix and contain given delimiter', function (done) {
+       'given prefix and contain given delimiter', (done) => {
         async.waterfall([
             function waterfall1(next) {
                 bucket.putObjectMD(
@@ -173,12 +173,12 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should return grouped keys if no prefix ' +
-       'given and keys match before delimiter', function (done) {
-        bucket.putObjectMD("noPrefix/one", "value1", function () {
-            bucket.putObjectMD("noPrefix/two", "value2", function () {
+       'given and keys match before delimiter', (done) => {
+        bucket.putObjectMD("noPrefix/one", "value1", () => {
+            bucket.putObjectMD("noPrefix/two", "value2", () => {
                 bucket.getBucketListObjects(
                     null, null, delimiter, defaultLimit,
-                    function (err, response) {
+                    (err, response) => {
                         expect(response.CommonPrefixes
                             .indexOf("noPrefix/")).to.be.above(-1);
                         expect(isKeyInContents(response, "noPrefix"))
@@ -190,21 +190,21 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should return no grouped keys if no ' +
-       'delimiter specified in getBucketListObjects', function (done) {
+       'delimiter specified in getBucketListObjects', (done) => {
         bucket.getBucketListObjects(
-            'key', null, null, defaultLimit, function (err, response) {
+            'key', null, null, defaultLimit, (err, response) => {
                 expect(response.CommonPrefixes.length).to.equal(0);
                 done();
             });
     });
 
     it('should only return keys occurring alphabetically ' +
-       'AFTER marker when no delimiter specified', function (done) {
-        bucket.putObjectMD('a', 'shouldBeExcluded', function () {
-            bucket.putObjectMD('b', 'shouldBeIncluded', function () {
+       'AFTER marker when no delimiter specified', (done) => {
+        bucket.putObjectMD('a', 'shouldBeExcluded', () => {
+            bucket.putObjectMD('b', 'shouldBeIncluded', () => {
                 bucket.getBucketListObjects(
                         null, 'a', null, defaultLimit,
-                        function (err, response) {
+                        (err, response) => {
                             expect(isKeyInContents(response, 'b'))
                                 .to.be.true;
                             expect(isKeyInContents(response, 'a'))
@@ -216,10 +216,10 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
-       'marker when delimiter specified', function (done) {
+       'marker when delimiter specified', (done) => {
         bucket.getBucketListObjects(
             null, 'a', delimiter, defaultLimit,
-            function (err, response) {
+            (err, response) => {
                 expect(isKeyInContents(response, 'b')).to.be.true;
                 expect(isKeyInContents(response, 'a')).to.be.false;
                 done();
@@ -227,10 +227,10 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
-       'marker when delimiter and prefix specified', function (done) {
+       'marker when delimiter and prefix specified', (done) => {
         bucket.getBucketListObjects(
             'b', 'a', delimiter, defaultLimit,
-            function (err, response) {
+            (err, response) => {
                 expect(isKeyInContents(response, 'b')).to.be.true;
                 expect(isKeyInContents(response, 'a')).to.be.false;
                 done();
@@ -238,7 +238,7 @@ describe('bucket API for getting a subset of ' +
     });
 
     it('should return a NextMarker if ' +
-       'maxKeys reached', function (done) {
+       'maxKeys reached', (done) => {
         async.waterfall([
             function waterfall1(next) {
                 bucket.putObjectMD(
@@ -270,7 +270,7 @@ describe('bucket API for getting a subset of ' +
 });
 
 
-describe("stress test for bucket API", function () {
+describe("stress test for bucket API", function describe() {
     this.timeout(200000);
 
     // Test should be of at least 100,000 keys
@@ -292,18 +292,18 @@ describe("stress test for bucket API", function () {
     const oddDelimiter = '$';
     let bucket;
 
-    before(function () {
+    before(() => {
         bucket = new Bucket();
     });
 
-    after(function (done) {
-        bucket.deleteBucketMD(function () {
+    after((done) => {
+        bucket.deleteBucketMD(() => {
             done();
         });
     });
 
     it('should put ' + numKeys + ' keys into bucket and retrieve bucket list ' +
-       'in under ' + maxMilliseconds + ' milliseconds', function (done) {
+       'in under ' + maxMilliseconds + ' milliseconds', (done) => {
         const data = {};
         const keys = [];
 
@@ -334,20 +334,20 @@ describe("stress test for bucket API", function () {
         // Start timing
         const startTime = process.hrtime();
 
-        async.each(keys, function (item, next) {
+        async.each(keys, (item, next) => {
             bucket.putObjectMD(item, "value", next);
-        }, function (err) {
+        }, (err) => {
             if (err) {
                 console.error("Error" + err);
                 expect(err).to.be.undefined;
                 done();
             } else {
                 bucket.getBucketListObjects(
-                    null, null, delimiter, null, function (err, response) {
+                    null, null, delimiter, null, (err, response) => {
                     // Stop timing and calculate millisecond time difference
                         const diff = timeDiff(startTime);
                         expect(diff).to.be.below(maxMilliseconds);
-                        prefixes.forEach(function (prefix) {
+                        prefixes.forEach((prefix) => {
                             expect(
                                 response.CommonPrefixes
                                     .indexOf(prefix + delimiter))
@@ -360,9 +360,9 @@ describe("stress test for bucket API", function () {
     });
 
     it('should return all keys as Contents if delimiter ' +
-       'does not match and specify NextMarker', function (done) {
+       'does not match and specify NextMarker', (done) => {
         bucket.getBucketListObjects(
-            null, null, oddDelimiter, testLimit, function (err, response) {
+            null, null, oddDelimiter, testLimit, (err, response) => {
                 expect(response.CommonPrefixes.length).to.equal(0);
                 expect(response.Contents.length).to.equal(testLimit);
                 expect(response.IsTruncated).to.be.true;
@@ -372,9 +372,9 @@ describe("stress test for bucket API", function () {
     });
 
     it('should return only keys occurring ' +
-       'after specified marker', function (done) {
+       'after specified marker', (done) => {
         bucket.getBucketListObjects(
-            null, testMarker, delimiter, null, function (err, response) {
+            null, testMarker, delimiter, null, (err, response) => {
                 expect(response.CommonPrefixes.length)
                     .to.equal(prefixes.length - 1);
                 expect(response.CommonPrefixes.indexOf(testPrefix))
