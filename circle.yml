@@ -27,6 +27,9 @@ checkout:
     - chmod 600 ./deployment/checkout/project/.ssh/config
 
 dependencies:
+  pre:
+    - sudo apt-get install python-pip
+    - sudo -H pip install flake8
   post:
     # this is required to access the docker registry
     # the variable  docker_password and docker_user should be set in the circleci project settings
@@ -40,10 +43,6 @@ dependencies:
     - sudo apt-get -y install build-essential python-dev libffi-dev libssl-dev
     - sudo pip install docker-py
     - sudo pip install pyyaml
-    - sudo pip install flake8
-    # lint python code
-    # do not lint on py modules imported by npm and do not lint setup.py
-    - find . -name "*.py"  | grep -v node_modules | xargs -t -n 1 -I{} flake8 {}
 
 test:
   pre:
@@ -60,6 +59,7 @@ test:
     - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && docker tag ${REPO}:${CIRCLE_SHA1} ${REPO}:latest
   override:
     - npm run --silent lint
+    - flake8 $(git ls-files '*.py')
     - npm test
   post:
     # trigger the execution of the functional tests
