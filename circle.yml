@@ -59,6 +59,7 @@ test:
     - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && docker tag ${REPO}:${CIRCLE_SHA1} ${REPO}:latest
   override:
     - npm run --silent lint
+    - npm run --silent lint_md
     - flake8 $(git ls-files '*.py')
     - npm test
   post:
