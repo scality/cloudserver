@@ -1,0 +1,14 @@
+---
+matryoshka:
+ - victim:
+    image: current
+ - aggressor:
+    image: dochub.ironmann.io:5000/ironman-base
+    startup: /bin/sleep 5d
+    configure: ./configure.bash
+---
+- uploadTest:
+    exec: ./test.sh
+    on: aggressor
+    okCode: 0
+

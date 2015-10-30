@@ -1,0 +1,14 @@
+---
+matryoshka:
+ - victim:
+    image: current
+ - aggressor:
+    image: dochub.ironmann.io:5000/ironman-base
+    tag: latest
+    startup: /bin/sleep 5d
+    configure:  su ironman -c "source /home/ironman/.bash_profile  && npm install"
+---
+- list-bucket-test:
+    exec:  su ironman -c "source /home/ironman/.bash_profile  && npm test"
+    on: aggressor
+    okCode: 0

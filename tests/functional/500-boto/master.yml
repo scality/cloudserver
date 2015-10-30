@@ -1,0 +1,14 @@
+---
+matryoshka:
+ - victim:
+    image: current
+ - aggressor:
+    image: dochub.ironmann.io:5000/ironman-base
+    startup: /bin/sleep 5d
+    configure: ./configure.bash
+---
+- test-boto:
+    exec: cd ./boto &&  python setup.py test
+    on: aggressor
+    okCode: 0
+
