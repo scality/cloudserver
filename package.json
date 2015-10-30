@@ -3,11 +3,8 @@
   "version": "0.0.1",
   "description": "S3 connector",
   "main": "index.js",
-  "engine": "node 4.0.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/scality/IronMan-S3.git"
-  },
+  "engines": { "node": "~4.2.0" },
+  "repository": "scality/IronMan-S3",
   "keywords": [
     "s3",
     "cloud",
@@ -35,15 +32,11 @@
     "eslint": "^1.5.1",
     "eslint-config-airbnb": "^0.0.9",
     "eslint-config-ironman": "scality/IronMan-Guidelines",
-    "gulp": "^3.9.0",
-    "gulp-jshint": "^1.11.2",
-    "gulp-shell": "^0.4.3",
     "mocha": "^2.3.3"
   },
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
     "start": "node index.js",
-    "postinstall": "gulp precommit-hook",
     "test": "mocha --compilers js:babel/register tests/unit"
   }
 }
