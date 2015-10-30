@@ -35,15 +35,11 @@
     "eslint": "^1.5.1",
     "eslint-config-airbnb": "^0.0.9",
     "eslint-config-ironman": "scality/IronMan-Guidelines",
-    "gulp": "^3.9.0",
-    "gulp-jshint": "^1.11.2",
-    "gulp-shell": "^0.4.3",
     "mocha": "^2.3.3"
   },
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
     "start": "node index.js",
-    "postinstall": "gulp precommit-hook",
     "test": "mocha --compilers js:babel/register tests/unit"
   }
 }
