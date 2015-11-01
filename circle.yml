@@ -64,9 +64,9 @@ test:
     - npm run --silent lint_md
     - flake8 $(git ls-files '*.py')
     - npm test
-  post:
-    # trigger the execution of the functional tests
+    # functional tests
     - python ./tests/matryoshka.py ${docker_image}
+  post:
     # we use test post as an opportunity to clean up
     # this step is more a reminder if you run the test on your laptop
     #- rm -rf ./deployment ./ci/matryoshka.py
