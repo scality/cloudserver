@@ -10,7 +10,7 @@ machine:
     # To run on your laptop, use :
     #     export CIRCLE_PROJECT_REPONAME=$(basename `git rev-parse --show-toplevel`)
     docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
-    docker_tag: $CIRCLE_SHA1
+    docker_tag: ${CIRCLE_SHA1:0:7}
   #we package the software through docker
   services:
     - docker
