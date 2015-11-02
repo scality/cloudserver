@@ -1101,3 +1101,28 @@ describe('serviceGet API', () => {
         });
     });
 });
+
+describe('putBucketACL API', () => {
+    it("should parse a grantheader", function testGrantHeader() {
+        const grantRead =
+            'uri="http://acs.amazonaws.com/groups/s3/LogDelivery", ' +
+            'emailAddress="test@testing.com", ' +
+            'emailAddress="test2@testly.com", ' +
+            'id="sdfsdfsfwwiieohefs"';
+        const grantReadHeader =
+            utils.parseGrant(grantRead, 'read');
+        const firstIdentifier = grantReadHeader[0].identifier;
+        expect(firstIdentifier).to.
+            equal('http://acs.amazonaws.com/groups/s3/LogDelivery');
+        const secondIdentifier = grantReadHeader[1].identifier;
+        expect(secondIdentifier).to.equal('test@testing.com');
+        const thirdIdentifier = grantReadHeader[2].identifier;
+        expect(thirdIdentifier).to.equal('test2@testly.com');
+        const fourthIdentifier = grantReadHeader[3].identifier;
+        expect(fourthIdentifier).to.equal('sdfsdfsfwwiieohefs');
+        const fourthType = grantReadHeader[3].userIDType;
+        expect(fourthType).to.equal('id');
+        const grantType = grantReadHeader[3].grantType;
+        expect(grantType).to.equal('read');
+    });
+});
