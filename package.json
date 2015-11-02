@@ -36,6 +36,7 @@
   },
   "scripts": {
     "lint": "eslint $(git ls-files '*.js')",
+    "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
     "test": "mocha --compilers js:babel/register tests/unit"
   }
