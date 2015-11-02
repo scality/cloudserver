@@ -5,6 +5,12 @@ machine:
   #our docker registry
   environment:
     docker_server: dochub.ironmann.io:5000
+    # The `docker_image` environment variable will be used to give a name to
+    # Docker images. (Docker registy only allows 0-9a-z_)
+    # To run on your laptop, use :
+    #     export CIRCLE_PROJECT_REPONAME=$(basename `git rev-parse --show-toplevel`)
+    docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
+    docker_tag: ${CIRCLE_SHA1:0:7}
   #we package the software through docker
   services:
     - docker
@@ -47,24 +53,20 @@ dependencies:
 test:
   pre:
     # we build the docker image corresponding to the project
-    # on your laptop use :
-    #       export CIRCLE_PROJECT_REPONAME=$(basename `git rev-parse --show-toplevel`)
-    #       export CIRCLE_BRANCH=$(git branch | grep "*" | grep -E -o "[^\* ]+" )
-    # the branch tags contains / characters that the docker registy refuses (allowed characters are 0-9a-z_ )
-    - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && cd ./deployment && docker build -t ${REPO}:${CIRCLE_SHA1} .
+    - cd ./deployment && docker build -t ${docker_image}:${docker_tag} .
     # we sent the docker image we just built into the registry
-    - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && docker tag ${REPO}:${CIRCLE_SHA1} ${docker_server}/${REPO}:${CIRCLE_SHA1}
-    #- REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && docker push ${docker_server}/${REPO}:${CIRCLE_SHA1}
+    - docker tag ${docker_image}:${docker_tag} ${docker_server}/${docker_image}:${docker_tag}
+    #- docker push ${docker_server}/${docker_image}:${docker_tag}
     # retag the local image as latest
-    - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && docker tag ${REPO}:${CIRCLE_SHA1} ${REPO}:latest
+    - docker tag ${docker_image}:${docker_tag} ${docker_image}:latest
   override:
     - npm run --silent lint
     - npm run --silent lint_md
     - flake8 $(git ls-files '*.py')
     - npm test
+    # functional tests
+    - python ./tests/matryoshka.py ${docker_image}
   post:
-    # trigger the execution of the functional tests
-    - REPO=$(echo ${CIRCLE_PROJECT_REPONAME} | tr '[:upper:]' '[:lower:]') && python ./tests/matryoshka.py ${REPO}
     # we use test post as an opportunity to clean up
     # this step is more a reminder if you run the test on your laptop
     #- rm -rf ./deployment ./ci/matryoshka.py
