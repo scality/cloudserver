@@ -186,6 +186,114 @@ describe('bucketPut API', () => {
                 done();
             });
     });
+    it('should return an error if ACL set in header ' +
+       'with an invalid canned ACL', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-acl': 'not-valid-option',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('InvalidArgument');
+                done();
+            });
+    });
+    it('should return an error if ACL set in header ' +
+       'with an invalid email address', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-read':
+                    'emailaddress="fake@faking.com"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                done();
+            });
+    });
+    it('should set a canned ACL while creating bucket' +
+        ' if option set out in header', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-acl':
+                    'public-read',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.be.null;
+                expect(metastore.buckets[bucketUID]
+                    .acl.Canned).to.equal('public-read');
+                done();
+            });
+    });
+    it('should set specific ACL grants while creating bucket' +
+        ' if options set out in header', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                    'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const canonicalIDforSample1 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const canonicalIDforSample2 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.be.null;
+                expect(metastore.buckets[bucketUID].acl.READ[0])
+                    .to.equal('http://acs.amazonaws.com/' +
+                        'groups/s3/LogDelivery');
+                expect(metastore.buckets[bucketUID].acl.WRITE[0])
+                    .to.equal('http://acs.amazonaws.com/' +
+                            'groups/global/AllUsers');
+                expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample2)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.READ_ACP
+                    .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.WRITE_ACP
+                    .indexOf(canonicalIDforSample2)).to.be.above(-1);
+                done();
+            });
+    });
 });
 
 describe("bucketDelete API", () => {
