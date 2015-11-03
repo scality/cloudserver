@@ -166,6 +166,26 @@ describe('bucketPut API', () => {
                 done();
             });
     });
+    it('should return an error if ACL set in header ' +
+       'with an invalid group URI', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('InvalidArgument');
+                done();
+            });
+    });
 });
 
 describe("bucketDelete API", () => {
@@ -1558,7 +1578,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should return an error if invalid email ' +
-    'address provided in ACLs provided in request body', (done) => {
+    'address provided in ACLs set out in request body', (done) => {
         const bucketName = 'BucketName';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
@@ -1709,6 +1729,99 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         expect(err).to.equal('MalformedXML');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid group ' +
+    'uri provided in ACLs set out in request body', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            // URI in grant below is not valid group URI for s3
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                  '<Grant>' +
+                    '<Grantee xsi:type="Group">' +
+                      '<URI>http://acs.amazonaws.com/groups/' +
+                      'global/NOTAVALIDGROUP</URI>' +
+                    '</Grantee>' +
+                    '<Permission>READ</Permission>' +
+                  '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('InvalidArgument');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid group uri' +
+        'provided in ACL header request', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('InvalidArgument');
                         done();
                     });
             });
