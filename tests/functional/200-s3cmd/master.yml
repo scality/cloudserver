@@ -4,11 +4,13 @@ matryoshka:
     image: current
  - aggressor:
     image: dochub.ironmann.io:5000/ironman-base
+    tag: latest
     startup:  /bin/sleep 5d
-    configure: ./configure.bash
+    configure: yum -y -q install s3cmd
+        && su ironman -c "source /home/ironman/.bash_profile
+        && npm install"
 ---
-- create-bucket:
-    exec: ./test.sh
+- full-test-suite:
+    exec: su ironman -c "source /home/ironman/.bash_profile && npm test"
     on: aggressor
     okCode: 0
-
