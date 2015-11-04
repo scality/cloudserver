@@ -12,6 +12,8 @@ import objectGet from '../../lib/api/objectGet.js';
 import objectDelete from '../../lib/api/objectDelete.js';
 import bucketGet from '../../lib/api/bucketGet.js';
 import serviceGet from '../../lib/api/serviceGet.js';
+import bucketPutACL from '../../lib/api/bucketPutACL.js';
+import bucketGetACL from '../../lib/api/bucketGetACL.js';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
@@ -162,6 +164,134 @@ describe('bucketPut API', () => {
                     .to.equal(accessKey);
                 expect(metastore.users[accessKey].buckets)
                     .to.have.length.of.at.least(1);
+                done();
+            });
+    });
+    it('should return an error if ACL set in header ' +
+       'with an invalid group URI', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('InvalidArgument');
+                done();
+            });
+    });
+    it('should return an error if ACL set in header ' +
+       'with an invalid canned ACL', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-acl': 'not-valid-option',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('InvalidArgument');
+                done();
+            });
+    });
+    it('should return an error if ACL set in header ' +
+       'with an invalid email address', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-read':
+                    'emailaddress="fake@faking.com"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                done();
+            });
+    });
+    it('should set a canned ACL while creating bucket' +
+        ' if option set out in header', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-acl':
+                    'public-read',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.be.null;
+                expect(metastore.buckets[bucketUID]
+                    .acl.Canned).to.equal('public-read');
+                done();
+            });
+    });
+    it('should set specific ACL grants while creating bucket' +
+        ' if options set out in header', (done) => {
+        const bucketName = 'BucketName';
+        const testRequest = {
+            lowerCaseHeaders: {
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                    'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const canonicalIDforSample1 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const canonicalIDforSample2 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+        bucketPut(accessKey, metastore, testRequest,
+            (err) => {
+                expect(err).to.be.null;
+                expect(metastore.buckets[bucketUID].acl.READ[0])
+                    .to.equal('http://acs.amazonaws.com/' +
+                        'groups/s3/LogDelivery');
+                expect(metastore.buckets[bucketUID].acl.WRITE[0])
+                    .to.equal('http://acs.amazonaws.com/' +
+                            'groups/global/AllUsers');
+                expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample2)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.READ_ACP
+                    .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                expect(metastore.buckets[bucketUID].acl.WRITE_ACP
+                    .indexOf(canonicalIDforSample2)).to.be.above(-1);
                 done();
             });
     });
@@ -1103,6 +1233,22 @@ describe('serviceGet API', () => {
 });
 
 describe('putBucketACL API', () => {
+    let metastore;
+
+    beforeEach(() => {
+        metastore = {
+            "users": {
+                "accessKey1": {
+                    "buckets": []
+                },
+                "accessKey2": {
+                    "buckets": []
+                }
+            },
+            "buckets": {}
+        };
+    });
+
     it("should parse a grantheader", function testGrantHeader() {
         const grantRead =
             'uri="http://acs.amazonaws.com/groups/s3/LogDelivery", ' +
@@ -1124,5 +1270,1103 @@ describe('putBucketACL API', () => {
         expect(fourthType).to.equal('id');
         const grantType = grantReadHeader[3].grantType;
         expect(grantType).to.equal('read');
+    });
+
+    it('should return an error if invalid canned ACL provided', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'not-a-valid-option'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'not-a-valid-option'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal(
+                            'InvalidArgument');
+                        done();
+                    });
+            });
+    });
+
+    it('should set a canned public-read-write ACL', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read-write'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read-write'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID]
+                            .acl.Canned).to.equal('public-read-write');
+                        done();
+                    });
+            });
+    });
+
+    it('should set a canned public-read ACL followed by'
+        + 'a canned authenticated-read ACL', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const testACLRequest2 = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'authenticated-read'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'authenticated-read'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID]
+                            .acl.Canned).to.equal('public-read');
+                        bucketPutACL(accessKey, metastore, testACLRequest2,
+                            (err) => {
+                                expect(err).to.be.null;
+                                expect(metastore.buckets[bucketUID]
+                                    .acl.Canned).to.equal('authenticated-read');
+                                done();
+                            });
+                    });
+            });
+    });
+
+    it('should set a canned private ACL ' +
+        'followed by a log-delivery-write ACL', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'private'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'private'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const testACLRequest2 = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'log-delivery-write'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'log-delivery-write'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID]
+                            .acl.Canned).to.equal('private');
+                        bucketPutACL(accessKey, metastore, testACLRequest2,
+                            (err) => {
+                                expect(err).to.be.null;
+                                expect(metastore.buckets[bucketUID]
+                                    .acl.Canned).to.equal('log-delivery-write');
+                                done();
+                            });
+                    });
+            });
+    });
+
+    it('should set ACLs provided in request headers', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                    'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                        'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const canonicalIDforSample1 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const canonicalIDforSample2 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID].acl.READ[0])
+                            .to.equal('http://acs.amazonaws.com/' +
+                                'groups/s3/LogDelivery');
+                        expect(metastore.buckets[bucketUID].acl.WRITE[0])
+                            .to.equal('http://acs.amazonaws.com/' +
+                                    'groups/global/AllUsers');
+                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                            .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
+                            .indexOf(canonicalIDforSample2)).to.be.above(-1);
+                        expect(metastore.buckets[bucketUID].acl.READ_ACP
+                            .indexOf(canonicalIDforSample1)).to.be.above(-1);
+                        expect(metastore.buckets[bucketUID].acl.WRITE_ACP
+                            .indexOf(canonicalIDforSample2)).to.be.above(-1);
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid email ' +
+        'provided in ACL header request', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="nonexistentEmail@sampling.com"',
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="nonexistentEmail@sampling.com"',
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                        done();
+                    });
+            });
+    });
+
+    it('should set ACLs provided in request body', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="CanonicalUser">' +
+                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<DisplayName>OwnerDisplayName</DisplayName>' +
+                      '</Grantee>' +
+                      '<Permission>FULL_CONTROL</Permission>' +
+                    '</Grant>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="Group">' +
+                        '<URI>http://acs.amazonaws.com/groups/' +
+                        'global/AllUsers</URI>' +
+                      '</Grantee>' +
+                      '<Permission>READ</Permission>' +
+                    '</Grant>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="Group">' +
+                        '<URI>http://acs.amazonaws.com/groups/s3/Log' +
+                        'Delivery</URI>' +
+                      '</Grantee>' +
+                      '<Permission>WRITE</Permission>' +
+                    '</Grant>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                        '<EmailAddress>sampleaccount1@sampling.com' +
+                        '</EmailAddress>' +
+                      '</Grantee>' +
+                      '<Permission>WRITE_ACP</Permission>' +
+                    '</Grant>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="CanonicalUser">' +
+                        '<ID>f30716ab7115dcb44a5ef76e9d74b8e20567f63' +
+                        'TestAccountCanonicalUserID</ID>' +
+                      '</Grantee>' +
+                      '<Permission>READ_ACP</Permission>' +
+                    '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const canonicalIDforSample1 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID]
+                            .acl.Canned).to.equal('');
+                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL[0])
+                            .to.equal(
+                                '852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                                'BucketOwnerCanonicalUserID');
+                        expect(metastore.buckets[bucketUID].acl.READ[0])
+                                    .to.equal('http://acs.amazonaws.com/' +
+                                            'groups/global/AllUsers');
+                        expect(metastore.buckets[bucketUID].acl.WRITE[0])
+                            .to.equal('http://acs.amazonaws.com/' +
+                                    'groups/s3/LogDelivery');
+                        expect(metastore.buckets[bucketUID].acl.WRITE_ACP[0])
+                            .to.equal(canonicalIDforSample1);
+                        expect(metastore.buckets[bucketUID].acl.READ_ACP[0])
+                                .to.equal('f30716ab7115dcb44a5e' +
+                                'f76e9d74b8e20567f63' +
+                                'TestAccountCanonicalUserID');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid email ' +
+    'address provided in ACLs set out in request body', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                      '</Grantee>' +
+                      '<Permission>WRITE_ACP</Permission>' +
+                    '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if xml provided does not match s3 ' +
+    'scheme for setting ACLs', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            // XML below uses the term "PowerGrant" instead of
+            // "Grant" which is part of the s3 xml shceme for ACLs
+            // so an error should be returned
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                    '<PowerGrant>' +
+                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                      '</Grantee>' +
+                      '<Permission>WRITE_ACP</Permission>' +
+                    '</PowerGrant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('MalformedACLError');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if malformed xml provided', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            // XML below fails to close each container properly
+            // so an error should be returned
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '<Owner>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                      '<Grantee>' +
+                      '<Permission>WRITE_ACP</Permission>' +
+                    '<Grant>' +
+                  '<AccessControlList>' +
+                '<AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('MalformedXML');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid group ' +
+    'uri provided in ACLs set out in request body', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            // URI in grant below is not valid group URI for s3
+            post: {
+                '<AccessControlPolicy xmlns':
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                  '<Grant>' +
+                    '<Grantee xsi:type="Group">' +
+                      '<URI>http://acs.amazonaws.com/groups/' +
+                      'global/NOTAVALIDGROUP</URI>' +
+                    '</Grantee>' +
+                    '<Permission>READ</Permission>' +
+                  '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>'},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('InvalidArgument');
+                        done();
+                    });
+            });
+    });
+
+    it('should return an error if invalid group uri' +
+        'provided in ACL header request', (done) => {
+        const bucketName = 'BucketName';
+        const testBucketPutRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: '/',
+            namespace: namespace
+        };
+        const testACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'uri="http://acs.amazonaws.com/groups/' +
+                    'global/NOTAVALIDGROUP"',
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        bucketPut(accessKey, metastore, testBucketPutRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testACLRequest,
+                    (err) => {
+                        expect(err).to.equal('InvalidArgument');
+                        done();
+                    });
+            });
+    });
+});
+
+
+describe('bucketGetACL API', () => {
+    let metastore;
+
+    beforeEach(() => {
+        metastore = {
+            "users": {
+                "accessKey1": {
+                    "buckets": []
+                },
+                "accessKey2": {
+                    "buckets": []
+                }
+            },
+            "buckets": {}
+        };
+    });
+    const bucketName = 'BucketName';
+    const testBucketPutRequest = {
+        lowerCaseHeaders: {},
+        headers: {host: `${bucketName}.s3.amazonaws.com`},
+        url: '/',
+        namespace: namespace
+    };
+    const testGetACLRequest = {
+        lowerCaseHeaders: {
+            host: `${bucketName}.s3.amazonaws.com`
+        },
+        headers: {
+            host: `${bucketName}.s3.amazonaws.com`
+        },
+        url: '/?acl',
+        namespace: namespace,
+        query: {
+            acl: ''
+        }
+    };
+
+    it('should get a canned private ACL', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'private'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'private'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal('accessKey1');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should get a canned public-read-write ACL', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read-write'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read-write'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal('accessKey1');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1]
+                .Permission[0]).to.equal('READ');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2]
+                .Permission[0]).to.equal('WRITE');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should get a canned public-read ACL', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'public-read'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal('accessKey1');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1]
+                .Permission[0]).to.equal('READ');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should get a canned authenticated-read ACL', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'authenticated-read'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'authenticated-read'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal('accessKey1');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/' +
+                    'global/AuthenticatedUsers');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1]
+                .Permission[0]).to.equal('READ');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should get a canned log-delivery-write ACL', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'log-delivery-write'
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-acl': 'log-delivery-write'
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal('accessKey1');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/' +
+                    's3/LogDelivery');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1]
+                .Permission[0]).to.equal('WRITE');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/' +
+                    's3/LogDelivery');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2]
+                .Permission[0]).to.equal('READ_ACP');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should get specifically set ACLs', (done) => {
+        const testPutACLRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                    'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control':
+                    'emailaddress="sampleaccount1@sampling.com"' +
+                    ',emailaddress="sampleaccount2@sampling.com"',
+                'x-amz-grant-read':
+                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
+                'x-amz-grant-write':
+                        'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be"',
+                'x-amz-grant-write-acp':
+                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf"',
+            },
+            url: '/?acl',
+            namespace: namespace,
+            query: {
+                acl: ''
+            }
+        };
+        const canonicalIDforSample1 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const canonicalIDforSample2 =
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+            },
+            function waterfall3(result, next) {
+                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .ID[0]).to.equal(canonicalIDforSample1);
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Grantee[0]
+                .DisplayName[0]).to.equal('sampleAccount1@sampling.com');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .ID[0]).to.equal(canonicalIDforSample2);
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Grantee[0]
+                .DisplayName[0]).to.equal('sampleAccount2@sampling.com');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0])
+                .to.equal('FULL_CONTROL');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Grantee[0]
+                .ID[0]).to.equal(canonicalIDforSample2);
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Grantee[0]
+                .DisplayName[0]).to.equal('sampleAccount2@sampling.com');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Permission[0])
+                .to.equal('WRITE_ACP');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3].Grantee[0]
+                .ID[0]).to.equal(canonicalIDforSample1);
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3].Grantee[0]
+                .DisplayName[0]).to.equal('sampleAccount1@sampling.com');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3].Permission[0])
+                .to.equal('READ_ACP');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[4].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/' +
+                    'global/AllUsers');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[4]
+                .Permission[0]).to.equal('WRITE');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[5].Grantee[0]
+                .URI[0]).to.equal(
+                    'http://acs.amazonaws.com/groups/' +
+                    's3/LogDelivery');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[5]
+                .Permission[0]).to.equal('READ');
+            expect(result.AccessControlPolicy.
+                AccessControlList[0].Grant[6])
+                .to.be.undefined;
+            done();
+        });
     });
 });
