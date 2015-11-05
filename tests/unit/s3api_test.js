@@ -36,7 +36,7 @@ describe('bucketPut API', () => {
 
 
     it('should return an error if bucket already exists', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const otherAccessKey = 'accessKey2';
         const testRequest = {
             lowerCaseHeaders: {},
@@ -54,11 +54,28 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if bucketname is invalid', (done) => {
+    it('should return an error if bucketname is invalid' +
+    'because bucketname is too short', (done) => {
         const tooShortBucketName = 'hi';
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${tooShortBucketName}`,
+            namespace: namespace,
+            post: ''
+        };
+
+        bucketPut(accessKey, metastore, testRequest, (err) => {
+            expect(err).to.equal('InvalidBucketName');
+            done();
+        });
+    });
+
+    it('should return an error if bucketname is invalid' +
+    'because bucketname has capital letters', (done) => {
+        const hasCapsBucketName = 'noSHOUTING';
+        const testRequest = {
+            lowerCaseHeaders: {},
+            url: `/${hasCapsBucketName}`,
             namespace: namespace,
             post: ''
         };
@@ -145,7 +162,7 @@ describe('bucketPut API', () => {
 
     it('should create a bucket using bucket ' +
        'name provided in host', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/',
@@ -169,7 +186,7 @@ describe('bucketPut API', () => {
     });
     it('should return an error if ACL set in header ' +
        'with an invalid group URI', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {
                 'x-amz-grant-full-control':
@@ -189,7 +206,7 @@ describe('bucketPut API', () => {
     });
     it('should return an error if ACL set in header ' +
        'with an invalid canned ACL', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {
                 'x-amz-acl': 'not-valid-option',
@@ -207,7 +224,7 @@ describe('bucketPut API', () => {
     });
     it('should return an error if ACL set in header ' +
        'with an invalid email address', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {
                 'x-amz-grant-read':
@@ -226,7 +243,7 @@ describe('bucketPut API', () => {
     });
     it('should set a canned ACL while creating bucket' +
         ' if option set out in header', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {
                 'x-amz-acl':
@@ -237,7 +254,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         bucketPut(accessKey, metastore, testRequest,
             (err) => {
                 expect(err).to.be.null;
@@ -248,7 +265,7 @@ describe('bucketPut API', () => {
     });
     it('should set specific ACL grants while creating bucket' +
         ' if options set out in header', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {
                 'x-amz-grant-full-control':
@@ -270,7 +287,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
@@ -316,7 +333,7 @@ describe("bucketDelete API", () => {
         datastore = {};
     });
 
-    const bucketName = 'bucketName';
+    const bucketName = 'bucketname';
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
@@ -389,7 +406,7 @@ describe('bucketHead API', () => {
     });
 
     it('should return an error if the bucket does not exist', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
@@ -403,7 +420,7 @@ describe('bucketHead API', () => {
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const putAccessKey = 'accessKey2';
         const testRequest = {
             lowerCaseHeaders: {},
@@ -425,7 +442,7 @@ describe('bucketHead API', () => {
 
     it('should return a success message if ' +
        'bucket exists and user is authorized', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -467,7 +484,7 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const testRequest = {
             lowerCaseHeaders: {},
@@ -485,7 +502,7 @@ describe('objectPut API', () => {
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const putAccessKey = 'accessKey2';
         const testPutBucketRequest = {
@@ -514,7 +531,7 @@ describe('objectPut API', () => {
     });
 
     it('should return an error if Content MD-5 is invalid', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const incorrectMD5 = 'asdfwelkjflkjslfjskj993ksjl';
         const objectName = 'objectName';
@@ -564,11 +581,11 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
-        const objectUID = '84c130398c854348bcff8b715f793dc4';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
+        const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -606,10 +623,10 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object with user metadata', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -680,7 +697,7 @@ describe('objectHead API', () => {
         datastore = {};
     });
 
-    const bucketName = 'BucketName';
+    const bucketName = 'bucketname';
     const postBody = 'I am a body';
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
@@ -854,7 +871,7 @@ describe('objectGet API', () => {
         datastore = {};
     });
 
-    const bucketName = 'BucketName';
+    const bucketName = 'bucketname';
     const postBody = 'I am a body';
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const objectName = 'objectName';
@@ -983,7 +1000,7 @@ describe('objectDelete API', () => {
         datastore = {};
     });
 
-    const bucketName = 'bucketName';
+    const bucketName = 'bucketname';
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
@@ -1045,7 +1062,7 @@ describe('bucketGet API', () => {
         datastore = {};
     });
 
-    const bucketName = 'BucketName';
+    const bucketName = 'bucketname';
     const postBody = 'I am a body';
     const prefix = 'sub';
     const delimiter = '/';
@@ -1175,9 +1192,9 @@ describe('serviceGet API', () => {
     });
 
     it('should return the list of buckets owned by the user', (done) => {
-        const bucketName1 = 'BucketName1';
-        const bucketName2 = 'BucketName2';
-        const bucketName3 = 'BucketName3';
+        const bucketName1 = 'bucketname1';
+        const bucketName2 = 'bucketname2';
+        const bucketName3 = 'bucketname3';
         const testbucketPutRequest1 = {
             lowerCaseHeaders: {},
             url: '/',
@@ -1273,7 +1290,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1309,7 +1326,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1332,7 +1349,7 @@ describe('putBucketACL API', () => {
             }
         };
 
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
@@ -1349,7 +1366,7 @@ describe('putBucketACL API', () => {
 
     it('should set a canned public-read ACL followed by'
         + 'a canned authenticated-read ACL', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1386,7 +1403,7 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
@@ -1409,7 +1426,7 @@ describe('putBucketACL API', () => {
 
     it('should set a canned private ACL ' +
         'followed by a log-delivery-write ACL', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1446,7 +1463,7 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
@@ -1468,7 +1485,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should set ACLs provided in request headers', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1514,7 +1531,7 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
@@ -1547,7 +1564,7 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1586,7 +1603,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1653,7 +1670,7 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '84d4cad3cdb50ad21b6c1660a92627b3';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
@@ -1688,7 +1705,7 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1739,7 +1756,7 @@ describe('putBucketACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1792,7 +1809,7 @@ describe('putBucketACL API', () => {
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1845,7 +1862,7 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1898,7 +1915,7 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group uri' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'BucketName';
+        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -1954,7 +1971,7 @@ describe('bucketGetACL API', () => {
             "buckets": {}
         };
     });
-    const bucketName = 'BucketName';
+    const bucketName = 'bucketname';
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         headers: {host: `${bucketName}.s3.amazonaws.com`},
