@@ -184,6 +184,35 @@ describe('bucketPut API', () => {
                 done();
             });
     });
+
+    it('should not create duplicate buckets', (done) => {
+        const bucketName = 'test1';
+        const testRequest = {
+            lowerCaseHeaders: {},
+            url: `/${bucketName}`,
+            namespace: namespace,
+            post: ''
+        };
+        const testBucketUID =
+            utils.getResourceUID(testRequest.namespace, bucketName);
+
+        bucketPut(accessKey, metastore, testRequest,
+            () => {
+                bucketPut(accessKey, metastore, testRequest, (err) => {
+                    expect(err).to.equal('BucketAlreadyExists');
+                    expect(metastore.buckets[testBucketUID].name)
+                        .to.equal(bucketName);
+                    expect(metastore.buckets[testBucketUID].owner)
+                        .to.equal(accessKey);
+                    expect(metastore.users[accessKey].buckets)
+                        .to.have.length.of(1);
+                    expect(Object.keys(metastore.buckets))
+                        .to.have.length.of(1);
+                    done();
+                });
+            });
+    });
+
     it('should return an error if ACL set in header ' +
        'with an invalid group URI', (done) => {
         const bucketName = 'bucketname';
