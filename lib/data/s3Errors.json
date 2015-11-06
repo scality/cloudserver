@@ -303,6 +303,10 @@
     "httpCode": 400,
     "description": "You have attempted to create more buckets than allowed."
   },
+  "TooManyParts": {
+    "httpCode": 400,
+    "description": "You have attempted to uploan more parts than allowed."
+  },
   "UnexpectedContent": {
     "httpCode": 400,
     "description": "This request does not support content."
