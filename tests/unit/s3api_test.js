@@ -609,7 +609,8 @@ describe('objectPut API', () => {
         // object
     });
 
-    it('should successfully put an object', (done) => {
+    it('should successfully put an object with bucket' +
+    ' and object in pathname', (done) => {
         const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -627,6 +628,50 @@ describe('objectPut API', () => {
         const testPutObjectRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
+            namespace: namespace,
+            post: postBody,
+            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+        };
+
+        bucketPut(accessKey, metastore, testPutBucketRequest,
+            (err, success) => {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest, (err, result) => {
+                        expect(result).to.equal(correctMD5);
+                        expect(
+                            metastore.buckets[bucketUID].keyMap[objectName])
+                            .to.exist;
+                        expect(
+                            metastore.buckets[bucketUID]
+                                .keyMap[objectName]['content-md5'])
+                                .to.equal(correctMD5);
+                        expect(datastore[objectUID]).to.equal('I am a body');
+                        done();
+                    });
+            });
+    });
+
+    it('should successfully put an object with object ' +
+    'in pathname and bucket in hostname', (done) => {
+        const bucketName = 'bucketname';
+        const postBody = 'I am a body';
+        const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
+        const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
+        const objectName = 'objectName';
+        const testPutBucketRequest = {
+            lowerCaseHeaders: {},
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`
+            },
+            url: '/',
+            namespace: namespace
+        };
+        const testPutObjectRequest = {
+            lowerCaseHeaders: {},
+            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            url: `/${objectName}`,
             namespace: namespace,
             post: postBody,
             calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
