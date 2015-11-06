@@ -7,6 +7,7 @@ import { parseString } from 'xml2js';
 import async from 'async';
 import crypto from 'crypto';
 
+
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
