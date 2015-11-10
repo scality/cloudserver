@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import Auth from '../../lib/auth/checkAuth.js';
+import Auth from '../../../lib/auth/checkAuth';
 
 describe('canonicalization', () => {
     it('should construct a canonicalized header', () => {
