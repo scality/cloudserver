@@ -102,7 +102,7 @@ describe('Multipart Upload API', () => {
         ],
         function waterfallFinal(err, json) {
             const testUploadId =
-                json.InitiateMultipartUploadResult.UploadID[0];
+                json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
             const bufferMD5 =
                 new Buffer(postBody, 'base64');
