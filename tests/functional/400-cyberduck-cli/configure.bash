@@ -5,6 +5,7 @@ echo -e "[duck-stable]\n\
 name=duck-stable\n\
 baseurl=https://repo.cyberduck.io/stable/\$basearch/\n\
 enabled=1\n\
+sslverify=false\n\
 gpgcheck=0" |  tee /etc/yum.repos.d/duck-stable.repo > /dev/null
 yum -y -q install duck
 mkdir -p /home/ironman/.duck/profiles
