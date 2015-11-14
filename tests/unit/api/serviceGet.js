@@ -49,7 +49,14 @@ describe('serviceGet API', () => {
         const serviceGetRequest = {
             lowerCaseHeaders: {host: 's3.amazonaws.com'},
             url: '/',
+            headers: {host: 's3.amazonaws.com'},
         };
+        const date = new Date();
+        let month = (date.getMonth() + 1).toString();
+        if (month.length === 1) {
+            month = `0${month}`;
+        }
+        const dateString = `${date.getFullYear()}-${month}-${date.getDate()}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -77,6 +84,8 @@ describe('serviceGet API', () => {
                 .to.equal(bucketName2);
             expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0])
                 .to.equal(bucketName3);
+            expect(result.ListAllMyBucketsResult.$.xmlns)
+                .to.equal(`http://s3.amazonaws.com/doc/${dateString}`);
             done();
         });
     });
