@@ -3,6 +3,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
+import multipartDelete from '../../../lib/api/multipartDelete';
 import { parseString } from 'xml2js';
 import async from 'async';
 import crypto from 'crypto';
@@ -1567,6 +1568,192 @@ describe('Multipart Upload API', () => {
                                         done();
                                     });
                                 });
+                        });
+                });
+        });
+    });
+
+    it('should abort/delete a multipart upload', (done) => {
+        const bucketName = 'bucketname';
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
+        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    accessKey, metastore, initiateRequest, next);
+            },
+            function waterfall3(result, next) {
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap)).to.have.length.of(1);
+                parseString(result, next);
+            },
+        ],
+        function waterfallFinal(err, json) {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const postBody = 'I am a part';
+            const bufferMD5 =
+                new Buffer(postBody, 'base64');
+            const calculatedMD5 = bufferMD5.toString('hex');
+            const partRequest = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            objectPutPart(accessKey, datastore,
+                metastore, partRequest, () => {
+                    const deleteRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {host: `${bucketName}.s3.amazonaws.com`},
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                    };
+                    expect(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap[testUploadId]).to.exist;
+                    expect(Object.keys(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap))
+                        .to.have.length.of(1);
+                    multipartDelete(
+                        accessKey, datastore, metastore,
+                        deleteRequest, (err) => {
+                            expect(err).to.be.null;
+                            expect(metastore.buckets[bucketUID]
+                                .multipartObjectKeyMap[testUploadId])
+                                .to.not.exist;
+                            expect(Object.keys(metastore.buckets[bucketUID]
+                                .multipartObjectKeyMap))
+                                .to.have.length.of(0);
+                            expect(Object.keys(datastore)).to.have.length.of(0);
+                            done();
+                        });
+                });
+        });
+    });
+
+    it('should return an error if attempt to abort/delete a multipart upload ' +
+        'that does not exist', (done) => {
+        const bucketName = 'bucketname';
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
+        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    accessKey, metastore, initiateRequest, next);
+            },
+            function waterfall3(result, next) {
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap)).to.have.length.of(1);
+                parseString(result, next);
+            },
+        ],
+        function waterfallFinal(err, json) {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const postBody = 'I am a part';
+            const bufferMD5 =
+                new Buffer(postBody, 'base64');
+            const calculatedMD5 = bufferMD5.toString('hex');
+            const partRequest = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            objectPutPart(accessKey, datastore,
+                metastore, partRequest, () => {
+                    const deleteRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {host: `${bucketName}.s3.amazonaws.com`},
+                        query: {
+                            uploadId: 'non-existent-upload-id',
+                        },
+                    };
+                    expect(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap[testUploadId]).to.exist;
+                    expect(Object.keys(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap))
+                        .to.have.length.of(1);
+                    multipartDelete(
+                        accessKey, datastore, metastore,
+                        deleteRequest, (err) => {
+                            expect(err).to.equal('NoSuchUpload');
+                            done();
                         });
                 });
         });
