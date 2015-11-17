@@ -45,7 +45,7 @@ describe("bucketDelete API", () => {
             url: `/${bucketName}/${objectName}`,
             namespace: namespace,
             post: postBody,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
