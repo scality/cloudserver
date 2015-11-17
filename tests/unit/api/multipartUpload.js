@@ -1207,4 +1207,255 @@ describe('Multipart Upload API', () => {
                 });
         });
     });
+
+    it('should set a canned ACL for a multipart upload', (done) => {
+        const bucketName = 'bucketname';
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+                'x-amz-acl': 'authenticated-read',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
+        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    accessKey, metastore, initiateRequest, next);
+            },
+            function waterfall3(result, next) {
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                parseString(result, next);
+            },
+        ],
+        function waterfallFinal(err, json) {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const postBody = 'I am a part';
+            const bufferMD5 =
+                new Buffer(postBody, 'base64');
+            const calculatedMD5 = bufferMD5.toString('hex');
+            const partRequest1 = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'content-length': 6000000,
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            const partRequest2 = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'content-length': 100,
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '2',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            objectPutPart(accessKey, datastore,
+                metastore, partRequest1, () => {
+                    objectPutPart(accessKey, datastore,
+                        metastore, partRequest2, () => {
+                            const completeBody = `<CompleteMultipartUpload>` +
+                                `<Part>` +
+                                `<PartNumber>1</PartNumber>` +
+                                `<ETag>${calculatedMD5}</ETag>` +
+                                `</Part>` +
+                                `<Part>` +
+                                `<PartNumber>2</PartNumber>` +
+                                `<ETag>${calculatedMD5}</ETag>` +
+                                `</Part>` +
+                                `</CompleteMultipartUpload>`;
+                            const completeRequest = {
+                                lowerCaseHeaders: {
+                                    host: `${bucketName}.s3.amazonaws.com`
+                                },
+                                url: `/${objectKey}?uploadId=${testUploadId}`,
+                                namespace: namespace,
+                                headers: {
+                                    host: `${bucketName}.s3.amazonaws.com`
+                                },
+                                query: {
+                                    uploadId: testUploadId,
+                                },
+                                post: completeBody,
+                                calculatedMD5: calculatedMD5,
+                            };
+                            completeMultipartUpload(
+                                accessKey, metastore,
+                                completeRequest, (err, result) => {
+                                    expect(err).to.equal(null);
+                                    parseString(result, (err) => {
+                                        expect(err).to.equal(null);
+                                        expect(metastore.buckets[bucketUID]
+                                            .keyMap[objectKey].acl.Canned)
+                                            .to.equal('authenticated-read');
+                                        done();
+                                    });
+                                });
+                        });
+                });
+        });
+    });
+
+    it('should set specific ACL grants for a multipart upload', (done) => {
+        const bucketName = 'bucketname';
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const granteeId = '79a59df900b949e55d96a1e698fbace' +
+            'dfd6e09d98eacf8f8d5218e7cd47ef2be';
+        const granteeEmail = 'sampleAccount1@sampling.com';
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+                'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
+        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    accessKey, metastore, initiateRequest, next);
+            },
+            function waterfall3(result, next) {
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                parseString(result, next);
+            },
+        ],
+        function waterfallFinal(err, json) {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const postBody = 'I am a part';
+            const bufferMD5 =
+                new Buffer(postBody, 'base64');
+            const calculatedMD5 = bufferMD5.toString('hex');
+            const partRequest1 = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'content-length': 6000000,
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            const partRequest2 = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                    'content-length': 100,
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '2',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: calculatedMD5,
+            };
+            objectPutPart(accessKey, datastore,
+                metastore, partRequest1, () => {
+                    objectPutPart(accessKey, datastore,
+                        metastore, partRequest2, () => {
+                            const completeBody = `<CompleteMultipartUpload>` +
+                                `<Part>` +
+                                `<PartNumber>1</PartNumber>` +
+                                `<ETag>${calculatedMD5}</ETag>` +
+                                `</Part>` +
+                                `<Part>` +
+                                `<PartNumber>2</PartNumber>` +
+                                `<ETag>${calculatedMD5}</ETag>` +
+                                `</Part>` +
+                                `</CompleteMultipartUpload>`;
+                            const completeRequest = {
+                                lowerCaseHeaders: {
+                                    host: `${bucketName}.s3.amazonaws.com`
+                                },
+                                url: `/${objectKey}?uploadId=${testUploadId}`,
+                                namespace: namespace,
+                                headers: {
+                                    host: `${bucketName}.s3.amazonaws.com`
+                                },
+                                query: {
+                                    uploadId: testUploadId,
+                                },
+                                post: completeBody,
+                                calculatedMD5: calculatedMD5,
+                            };
+                            completeMultipartUpload(
+                                accessKey, metastore,
+                                completeRequest, (err, result) => {
+                                    expect(err).to.equal(null);
+                                    parseString(result, (err) => {
+                                        expect(err).to.equal(null);
+                                        expect(metastore.buckets[bucketUID]
+                                            .keyMap[objectKey].acl.READ[0])
+                                            .to.equal(granteeId);
+                                        done();
+                                    });
+                                });
+                        });
+                });
+        });
+    });
 });
