@@ -55,7 +55,7 @@ describe('Multipart Upload API', () => {
                     (err, result) => {
                         expect(err).to.be.undefined;
                         expect(Object.keys(metastore.buckets[bucketUID]
-                            .multiPartObjectKeyMap)).to.have.length.of(1);
+                            .multipartObjectKeyMap)).to.have.length.of(1);
                         parseString(result, (err, json) => {
                             expect(json.InitiateMultipartUploadResult
                                 .Bucket[0]).to.equal(bucketName);
@@ -97,7 +97,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -129,10 +129,10 @@ describe('Multipart Upload API', () => {
                     expect(err).to.be.null;
                     const dataLocation = Object.keys(datastore)[0];
                     expect(metastore.buckets[bucketUID]
-                        .multiPartObjectKeyMap[testUploadId].partLocations[1]
+                        .multipartObjectKeyMap[testUploadId].partLocations[1]
                         .location).to.equal(dataLocation);
                     expect(metastore.buckets[bucketUID]
-                        .multiPartObjectKeyMap[testUploadId]
+                        .multipartObjectKeyMap[testUploadId]
                         .partLocations[1].etag).to.equal(calculatedMD5);
                     expect(datastore[dataLocation]).to.equal(postBody);
                     expect(result).to.equal(calculatedMD5);
@@ -171,7 +171,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -238,7 +238,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -308,7 +308,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -376,7 +376,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -429,11 +429,11 @@ describe('Multipart Upload API', () => {
                             expect(err).to.be.null;
                             const dataLocation = Object.keys(datastore)[1];
                             expect(metastore.buckets[bucketUID]
-                                .multiPartObjectKeyMap[testUploadId]
+                                .multipartObjectKeyMap[testUploadId]
                                 .partLocations[2]
                                 .location).to.equal(dataLocation);
                             expect(metastore.buckets[bucketUID]
-                                .multiPartObjectKeyMap[testUploadId]
+                                .multipartObjectKeyMap[testUploadId]
                                 .partLocations[2].etag).to.equal(calculatedMD5);
                             expect(datastore[dataLocation]).to.equal(postBody2);
                             expect(result).to.equal(calculatedMD5);
@@ -477,7 +477,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -584,7 +584,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -673,7 +673,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -765,7 +765,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -883,7 +883,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1001,7 +1001,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1118,7 +1118,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1243,7 +1243,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1370,7 +1370,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
-                    .multiPartObjectKeyMap)).to.have.length.of(1);
+                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
