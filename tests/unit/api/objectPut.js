@@ -126,7 +126,7 @@ describe('objectPut API', () => {
     ' and object in pathname', (done) => {
         const bucketName = 'bucketname';
         const postBody = 'I am a body';
-        const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
         const objectName = 'objectName';
@@ -143,7 +143,7 @@ describe('objectPut API', () => {
             url: `/${bucketName}/${objectName}`,
             namespace: namespace,
             post: postBody,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
@@ -169,7 +169,7 @@ describe('objectPut API', () => {
     'in pathname and bucket in hostname', (done) => {
         const bucketName = 'bucketname';
         const postBody = 'I am a body';
-        const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
         const objectName = 'objectName';
@@ -187,7 +187,7 @@ describe('objectPut API', () => {
             url: `/${objectName}`,
             namespace: namespace,
             post: postBody,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
@@ -212,7 +212,7 @@ describe('objectPut API', () => {
     it('should successfully put an object with user metadata', (done) => {
         const bucketName = 'bucketname';
         const postBody = 'I am a body';
-        const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -235,7 +235,7 @@ describe('objectPut API', () => {
             url: `/${bucketName}/${objectName}`,
             namespace: namespace,
             post: postBody,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
