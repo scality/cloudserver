@@ -28,7 +28,7 @@ describe('objectGet API', () => {
 
     const bucketName = 'bucketname';
     const postBody = 'I am a body';
-    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+    const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const objectName = 'objectName';
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
@@ -44,7 +44,7 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
         namespace: namespace,
         post: postBody,
-        calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+        calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
     };
 
     it("should get the object metadata", (done) => {
@@ -98,7 +98,7 @@ describe('objectGet API', () => {
     it('should get the object data for large objects', (done) => {
         const testBigData = crypto.randomBytes(1000000);
         const correctBigMD5 =
-            crypto.createHash('md5').update(testBigData).digest('hex');
+            crypto.createHash('md5').update(testBigData).digest('base64');
 
         const testPutBigObjectRequest = {
             lowerCaseHeaders: {
@@ -126,7 +126,7 @@ describe('objectGet API', () => {
                             metastore, testGetRequest, (err, result) => {
                                 const resultmd5Hash =
                                     crypto.createHash('md5')
-                                        .update(result).digest('hex');
+                                        .update(result).digest('base64');
                                 expect(resultmd5Hash).to.equal(correctBigMD5);
                                 done();
                             });

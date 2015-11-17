@@ -27,7 +27,7 @@ describe('objectHead API', () => {
 
     const bucketName = 'bucketname';
     const postBody = 'I am a body';
-    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+    const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
     const objectName = 'objectName';
     const date = new Date();
@@ -47,7 +47,7 @@ describe('objectHead API', () => {
         url: `/${bucketName}/${objectName}`,
         namespace: namespace,
         post: postBody,
-        calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+        calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
     };
 
 
