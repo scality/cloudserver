@@ -3,12 +3,12 @@ matryoshka:
  - victim:
     image: current
  - aggressor:
-    image: dochub.ironmann.io:5000/ironman-base
+    image: scality/ironman-base
     tag: latest
     startup: /bin/sleep 5d
-    configure:  su ironman -c "source /home/ironman/.bash_profile  && npm install"
+    configure:  su ironman -c "npm install"
 ---
 - list-bucket-test:
-    exec:  su ironman -c "source /home/ironman/.bash_profile  && npm test"
+    exec:  su ironman -c "npm test"
     on: aggressor
     okCode: 0

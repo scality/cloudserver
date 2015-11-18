@@ -3,12 +3,12 @@ matryoshka:
  - victim:
     image: current
  - aggressor:
-    image: dochub.ironmann.io:5000/ironman-base
+    image: scality/ironman-base
     startup: /bin/sleep 5d
     configure: ./configure.bash
 ---
 - test-conncurrent:
-    exec: M2_HOME=/usr/local/maven PATH=${M2_HOME}/bin:${PATH} mvn test
+    exec: mvn test
     on: aggressor
     okCode: 0
 
