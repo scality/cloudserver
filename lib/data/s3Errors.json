@@ -305,7 +305,7 @@
   },
   "TooManyParts": {
     "httpCode": 400,
-    "description": "You have attempted to uploan more parts than allowed."
+    "description": "You have attempted to upload more parts than allowed."
   },
   "UnexpectedContent": {
     "httpCode": 400,

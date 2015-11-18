@@ -5,6 +5,7 @@ import objectPutPart from '../../../lib/api/objectPutPart';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import { parseString } from 'xml2js';
 import async from 'async';
+import crypto from 'crypto';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -107,9 +108,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -181,9 +184,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -248,9 +253,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -318,9 +325,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am faking a big post';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`,
@@ -386,9 +395,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a first part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -406,9 +417,11 @@ describe('Multipart Upload API', () => {
             objectPutPart(accessKey, datastore,
                 metastore, partRequest1, () => {
                     const postBody2 = 'I am a second part';
-                    const secondBufferMD5 =
-                        new Buffer(postBody, 'base64');
-                    const secondCalculatedMD5 = secondBufferMD5.toString('hex');
+                    const md5Hash2 = crypto.createHash('md5');
+                    const bufferBody2 =
+                        new Buffer(postBody2, 'binary');
+                    md5Hash2.update(bufferBody2);
+                    const secondCalculatedMD5 = md5Hash2.digest('hex');
                     const partRequest2 = {
                         lowerCaseHeaders: {
                             host: `${bucketName}.s3.amazonaws.com`
@@ -434,9 +447,10 @@ describe('Multipart Upload API', () => {
                                 .location).to.equal(dataLocation);
                             expect(metastore.buckets[bucketUID]
                                 .multipartObjectKeyMap[testUploadId]
-                                .partLocations[2].etag).to.equal(calculatedMD5);
+                                .partLocations[2].etag)
+                                .to.equal(secondCalculatedMD5);
                             expect(datastore[dataLocation]).to.equal(postBody2);
-                            expect(result).to.equal(calculatedMD5);
+                            expect(result).to.equal(secondCalculatedMD5);
                             done();
                         });
                 });
@@ -486,10 +500,12 @@ describe('Multipart Upload API', () => {
             // until here
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
-            const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const postBody = 'I am a part\n';
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -525,6 +541,8 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5: calculatedMD5,
                     };
+                    const awsVerifiedEtag =
+                        '953e9e776f285afc0bfcf1ab4668299d-1';
                     completeMultipartUpload(
                         accessKey, metastore,
                         completeRequest, (err, result) => {
@@ -537,6 +555,8 @@ describe('Multipart Upload API', () => {
                                     .Bucket[0]).to.equal(bucketName);
                                 expect(json.CompleteMultipartUploadResult
                                     .Key[0]).to.equal(objectKey);
+                                expect(json.CompleteMultipartUploadResult
+                                    .ETag[0]).to.equal(awsVerifiedEtag);
                                 expect(metastore.buckets[bucketUID]
                                     .keyMap[objectKey]).to.exist;
                                 expect(metastore.buckets[bucketUID]
@@ -594,9 +614,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -683,9 +705,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -775,9 +799,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -893,9 +919,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const wrongMD5 = '3858f62230ac3c915f300c664312c11f-9';
             const partRequest1 = {
                 lowerCaseHeaders: {
@@ -1011,9 +1039,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`,
@@ -1128,9 +1158,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`,
@@ -1253,9 +1285,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`,
@@ -1380,9 +1414,11 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
-            const bufferMD5 =
-                new Buffer(postBody, 'base64');
-            const calculatedMD5 = bufferMD5.toString('hex');
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const calculatedMD5 = md5Hash.digest('hex');
             const partRequest1 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`,
