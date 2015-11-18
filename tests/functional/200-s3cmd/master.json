@@ -1,0 +1,6 @@
+{
+    "tests": {
+        "files": [ "tests.js" ],
+        "on": "aggressor"
+    }
+}
