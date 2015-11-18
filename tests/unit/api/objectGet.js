@@ -161,7 +161,8 @@ describe('objectGet API', () => {
                                     md5Hash.update(cBuffer);
                                 });
                                 readable.on('end', function combineChunks() {
-                                    const resultmd5Hash = md5Hash.digest('hex');
+                                    const resultmd5Hash =
+                                        md5Hash.digest('base64');
                                     expect(resultmd5Hash)
                                         .to.equal(correctBigMD5);
                                     done();

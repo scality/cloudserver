@@ -72,38 +72,6 @@ describe('objectPut API', () => {
             });
     });
 
-    it('should return an error if Content MD-5 is invalid', (done) => {
-        const bucketName = 'bucketname';
-        const postBody = 'I am a body';
-        const incorrectMD5 = 'asdfwelkjflkjslfjskj993ksjl';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace: namespace,
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {
-                'content-md5': incorrectMD5
-            },
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: `/${objectName}`,
-            namespace: namespace,
-            post: postBody
-        };
-
-        bucketPut(accessKey, metastore, testPutBucketRequest,
-            (err, success) => {
-                expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest, (err) => {
-                        expect(err).to.equal('InvalidDigest');
-                        done();
-                    });
-            });
-    });
-
     it.skip('should return an error if datastore ' +
             'reports an error back', () => {
         // TODO: Test to be written once services.putDataStore
