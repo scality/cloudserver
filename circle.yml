@@ -1,9 +1,7 @@
 # sample circle.yml for IronMan-s3
 machine:
-  node:
-    version: 4.1.0
-  #our docker registry
   environment:
+    #our docker registry
     docker_server: dochub.ironmann.io:5000
     # The `docker_image` environment variable will be used to give a name to
     # Docker images. (Docker registy only allows 0-9a-z_)
@@ -22,7 +20,7 @@ checkout:
     - git clone git@github.com:scality/IronMan-CI.git
     # place the file gathered from IronMan-CI where needed
     - mv IronMan-CI/deployment .
-    - mv IronMan-CI/ci/matryoshka.py ./tests
+    - mv IronMan-CI/ci/matryoshka*  ./tests
     # we are in the project so we just copy the files where appropriate for building the docker image
     - bash  ./deployment/checkout-local.bash
     # move the ssh key to the project dir where the Dockerfile will consume them
@@ -33,40 +31,15 @@ checkout:
     - chmod 600 ./deployment/checkout/project/.ssh/config
 
 dependencies:
-  pre:
-    - sudo apt-get install python-pip
-    - sudo -H pip install flake8
-  post:
-    # this is required to access the docker registry
-    # the variable  docker_password and docker_user should be set in the circleci project settings
-    # There is also the option of specifying an email address (with -e) but we have opted not to here.
-    - docker login -e ${CIRCLE_USERNAME}@{CIRCLE_PROJECT_USERNAME}.com -p ${docker_password} -u ${docker_user} ${docker_server}
-    # fetch from the registry the various docker images we need to run the test
-    # there could be more than one
-    - docker pull ${docker_server}/ironman-base
+  override:
     # dependencies for testing with matryoshka
-    - sudo apt-get -y update
-    - sudo apt-get -y install build-essential python-dev libffi-dev libssl-dev
-    - sudo pip install docker-py
-    - sudo pip install pyyaml
+    - sudo pip install docker-py pyyaml flake8
 
 test:
-  pre:
-    # we build the docker image corresponding to the project
-    - cd ./deployment && docker build -t ${docker_image}:${docker_tag} .
-    # we sent the docker image we just built into the registry
-    - docker tag ${docker_image}:${docker_tag} ${docker_server}/${docker_image}:${docker_tag}
-    #- docker push ${docker_server}/${docker_image}:${docker_tag}
-    # retag the local image as latest
-    - docker tag ${docker_image}:${docker_tag} ${docker_image}:latest
   override:
-    - npm run --silent lint
-    - npm run --silent lint_md
+    # lint the python used for testing (node linting is done by the docker file)
     - flake8 $(git ls-files '*.py')
-    - npm test
     # functional tests
-    - python ./tests/matryoshka.py ${docker_image}
-  post:
-    # we use test post as an opportunity to clean up
-    # this step is more a reminder if you run the test on your laptop
-    #- rm -rf ./deployment ./ci/matryoshka.py
+    - bash ./tests/matryoshka-balance.sh ${docker_image} :
+        parallel: true
+
