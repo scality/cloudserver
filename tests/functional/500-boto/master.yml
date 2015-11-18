@@ -3,7 +3,7 @@ matryoshka:
  - victim:
     image: current
  - aggressor:
-    image: dochub.ironmann.io:5000/ironman-base
+    image:  scality/ironman-base
     startup: /bin/sleep 5d
     configure: ./configure.bash
 ---

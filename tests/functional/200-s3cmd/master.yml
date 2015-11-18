@@ -3,14 +3,12 @@ matryoshka:
  - victim:
     image: current
  - aggressor:
-    image: dochub.ironmann.io:5000/ironman-base
+    image: scality/ironman-base
     tag: latest
     startup:  /bin/sleep 5d
-    configure: yum -y -q install s3cmd
-        && su ironman -c "source /home/ironman/.bash_profile
-        && npm install"
+    configure: ./configure.bash && su ironman -c "npm install"
 ---
 - full-test-suite:
-    exec: su ironman -c "source /home/ironman/.bash_profile && npm test"
+    exec: su ironman -c "LC_ALL=C npm test"
     on: aggressor
     okCode: 0
