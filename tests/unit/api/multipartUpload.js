@@ -128,7 +128,7 @@ describe('Multipart Upload API', () => {
                 calculatedMD5: calculatedMD5,
             };
             objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err, result) => {
+                metastore, partRequest, (err) => {
                     expect(err).to.be.null;
                     const dataLocation = Object.keys(datastore)[0];
                     expect(metastore.buckets[bucketUID]
@@ -138,7 +138,85 @@ describe('Multipart Upload API', () => {
                         .multipartObjectKeyMap[testUploadId]
                         .partLocations[1].etag).to.equal(calculatedMD5);
                     expect(datastore[dataLocation]).to.equal(postBody);
-                    expect(result).to.equal(calculatedMD5);
+                    done();
+                });
+        });
+    });
+
+    it('should upload a part even if the client sent ' +
+    'a base 64 etag (and the stored etag ' +
+    'in metadata should be hex)', (done) => {
+        const bucketName = 'bucketname';
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    accessKey, metastore, initiateRequest, next);
+            },
+            function waterfall3(result, next) {
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap)).to.have.length.of(1);
+                parseString(result, next);
+            },
+        ],
+        function waterfallFinal(err, json) {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const postBody = 'I am a part';
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody =
+                new Buffer(postBody, 'binary');
+            md5Hash.update(bufferBody);
+            const base64MD5 = md5Hash.digest('base64');
+            let hexMD5 = new Buffer(base64MD5, 'base64');
+            hexMD5 = hexMD5.toString('hex');
+            const partRequest = {
+                lowerCaseHeaders: {
+                    host: `${bucketName}.s3.amazonaws.com`
+                },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                namespace: namespace,
+                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                post: postBody,
+                calculatedMD5: base64MD5,
+            };
+            objectPutPart(accessKey, datastore,
+                metastore, partRequest, (err) => {
+                    expect(err).to.be.null;
+                    const dataLocation = Object.keys(datastore)[0];
+                    expect(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap[testUploadId].partLocations[1]
+                        .location).to.equal(dataLocation);
+                    expect(metastore.buckets[bucketUID]
+                        .multipartObjectKeyMap[testUploadId]
+                        .partLocations[1].etag).to.equal(hexMD5);
+                    expect(datastore[dataLocation]).to.equal(postBody);
                     done();
                 });
         });
@@ -438,7 +516,7 @@ describe('Multipart Upload API', () => {
                         calculatedMD5: secondCalculatedMD5,
                     };
                     objectPutPart(accessKey, datastore, metastore,
-                        partRequest2, (err, result) => {
+                        partRequest2, (err) => {
                             expect(err).to.be.null;
                             const dataLocation = Object.keys(datastore)[1];
                             expect(metastore.buckets[bucketUID]
@@ -450,7 +528,6 @@ describe('Multipart Upload API', () => {
                                 .partLocations[2].etag)
                                 .to.equal(secondCalculatedMD5);
                             expect(datastore[dataLocation]).to.equal(postBody2);
-                            expect(result).to.equal(secondCalculatedMD5);
                             done();
                         });
                 });
