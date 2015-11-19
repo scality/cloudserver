@@ -3,6 +3,28 @@ import crypto from 'crypto';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
+import { Writable } from 'stream';
+
+const memStore = {};
+
+// Create in memory writable stream
+class WMStrm extends Writable {
+    constructor(key) {
+        super();
+        this.key = key;
+        memStore[key] = new Buffer('');
+    }
+    _write(chunk, enc, cb) {
+        // our memory store stores things in buffers
+        const buffer = (Buffer.isBuffer(chunk)) ?
+        chunk :  // already is Buffer use it
+        new Buffer(chunk, enc);  // string, convert
+
+      // concat to the buffer already there
+        memStore[this.key] = Buffer.concat([memStore[this.key], buffer]);
+        cb();
+    }
+}
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -87,9 +109,16 @@ describe('objectGet API', () => {
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectGet(accessKey, datastore, metastore,
-                            testGetRequest, (err, result) => {
-                                expect(result).to.equal(postBody);
-                                done();
+                            testGetRequest, (err, readStream) => {
+                                // Create new in memory writestream
+                                const wstream = new WMStrm('smallObject');
+                                readStream.pipe(wstream, {end: false});
+                                readStream.on('end', function readStreamRes() {
+                                    wstream.end();
+                                    expect(memStore.smallObject
+                                        .toString()).to.equal(postBody);
+                                    done();
+                                });
                             });
                     });
             });
@@ -123,12 +152,21 @@ describe('objectGet API', () => {
                     testPutBigObjectRequest, (err, result) => {
                         expect(result).to.equal(correctBigMD5);
                         objectGet(accessKey, datastore,
-                            metastore, testGetRequest, (err, result) => {
-                                const resultmd5Hash =
-                                    crypto.createHash('md5')
-                                        .update(result).digest('base64');
-                                expect(resultmd5Hash).to.equal(correctBigMD5);
-                                done();
+                            metastore, testGetRequest, (err, readable) => {
+                                const md5Hash = crypto.createHash('md5');
+                                const chunks = [];
+                                readable.on('data', function chunkRcvd(chunk) {
+                                    const cBuffer = new Buffer(chunk, "binary");
+                                    chunks.push(cBuffer);
+                                    md5Hash.update(cBuffer);
+                                });
+                                readable.on('end', function combineChunks() {
+                                    const resultmd5Hash =
+                                        md5Hash.digest('base64');
+                                    expect(resultmd5Hash)
+                                        .to.equal(correctBigMD5);
+                                    done();
+                                });
                             });
                     });
             });
