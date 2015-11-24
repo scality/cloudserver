@@ -15,17 +15,16 @@ const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`, ] : null;
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     proc.spawn('diff', [ putFile, receivedFile, ]).on('exit', code => {
-        assert.deepEqual(code, 0);
+        assert.strictEqual(code, 0);
         done();
     });
 }
 
 function createFile(name, bytes, callback) {
-    process.stdout.write(
-        `dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
+    process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
     proc.spawn('dd', [ 'if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1' ], { stdio: 'inherit' }).on('exit', code => {
-            assert.deepEqual(code, 0);
+            assert.strictEqual(code, 0);
             callback();
         });
 }
@@ -49,7 +48,7 @@ function exec(args, done, exitCode) {
     process.stdout.write(`${program} ${av}\n`);
     proc.spawn(program, av, { stdio: 'inherit' })
         .on('exit', code => {
-            assert.deepEqual(code, exit);
+            assert.strictEqual(code, exit);
             done();
         });
 }
@@ -101,9 +100,7 @@ describe('s3cmd getObject', () => {
 
     it('downloaded file should equal uploaded file', (done) => {
         diff(upload, download, () => {
-            deleteFile(download, () => {
-                done();
-            });
+            deleteFile(download, done);
         });
     });
 
@@ -133,17 +130,13 @@ describe('s3cmd delObject', () => {
 describe('connector edge cases', () => {
     it('should put previous file in existing bucket', (done) => {
         exec(['put', upload, `s3://${bucket}`, ], () => {
-            deleteFile(upload, () => {
-                done();
-            });
+            deleteFile(upload, done);
         });
     });
 
     it('should get existing file in existing bucket', (done) => {
         exec(['get', `s3://${bucket}/${upload}`, download ], () => {
-            deleteFile(download, () => {
-                done();
-            });
+            deleteFile(download, done);
         });
     });
 });
@@ -162,9 +155,7 @@ describe('s3cmd multipart upload', () => {
     it('downloaded file should equal uploaded file', (done) => {
         diff('test16MB', 'download16MB', ()=> {
             deleteFile('test16MB', () => {
-                deleteFile('download16MB', () => {
-                    done();
-                });
+                deleteFile('download16MB', done);
             });
         });
     });
