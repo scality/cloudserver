@@ -33,6 +33,7 @@ describe('bucketGet API', () => {
     const delimiter = '/';
     const objectName1 = `${prefix}${delimiter}objectName1`;
     const objectName2 = `${prefix}${delimiter}objectName2`;
+    const objectName3 = 'notURIvalid$$';
 
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
@@ -48,6 +49,12 @@ describe('bucketGet API', () => {
     const testPutObjectRequest2 = {
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName2}`,
+        namespace: namespace,
+        post: postBody
+    };
+    const testPutObjectRequest3 = {
+        lowerCaseHeaders: {},
+        url: `/${bucketName}/${objectName3}`,
         namespace: namespace,
         post: postBody
     };
@@ -125,7 +132,7 @@ describe('bucketGet API', () => {
                 bucketGet(accessKey, metastore,
                     testGetRequest, next);
             },
-            function waterfall4(result, next) {
+            function waterfall5(result, next) {
                 parseString(result, next);
             }
         ],
@@ -134,6 +141,98 @@ describe('bucketGet API', () => {
                 .to.equal(objectName1);
             expect(result.ListBucketResult.Contents[1].Key[0])
                 .to.equal(objectName2);
+            done();
+        });
+    });
+
+    it('should return no more keys than ' +
+       'max-keys specified', (done) => {
+        const testGetRequest = {
+            lowerCaseHeaders: {
+                host: '/'
+            },
+            url: `/${bucketName}`,
+            namespace: namespace,
+            query: {
+                'max-keys': '1',
+            }
+        };
+
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testPutBucketRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest1, next);
+            },
+            function waterfall3(result, next) {
+                objectPut(accessKey, datastore,
+                    metastore, testPutObjectRequest2, next);
+            },
+            function waterfall4(result, next) {
+                bucketGet(accessKey, metastore,
+                    testGetRequest, next);
+            },
+            function waterfall5(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.ListBucketResult.Contents[0].Key[0])
+                .to.equal(objectName1);
+            expect(result.ListBucketResult.Contents[1])
+                .to.be.undefined;
+            done();
+        });
+    });
+
+    it('should url encode object key name ' +
+       'if requested', (done) => {
+        const testGetRequest = {
+            lowerCaseHeaders: {
+                host: '/'
+            },
+            url: `/${bucketName}`,
+            namespace: namespace,
+            query: {
+                'encoding-type': 'url',
+            }
+        };
+
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, testPutBucketRequest, next);
+            },
+            function waterfall2(success, next) {
+                expect(success).to.equal('Bucket created');
+                objectPut(accessKey, datastore, metastore,
+                    testPutObjectRequest1, next);
+            },
+            function waterfall3(result, next) {
+                objectPut(accessKey, datastore,
+                    metastore, testPutObjectRequest2, next);
+            },
+            function waterfall4(result, next) {
+                objectPut(accessKey, datastore,
+                    metastore, testPutObjectRequest3, next);
+            },
+            function waterfall5(result, next) {
+                bucketGet(accessKey, metastore,
+                    testGetRequest, next);
+            },
+            function waterfall6(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            expect(result.ListBucketResult.Contents[0].Key[0])
+                .to.equal(encodeURIComponent(objectName3));
+            expect(result.ListBucketResult.Contents[1].Key[0])
+                .to.equal(encodeURIComponent(objectName1));
             done();
         });
     });
