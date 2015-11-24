@@ -1,7 +1,8 @@
 import {expect} from 'chai';
 import async from 'async';
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
-import {isKeyInContents} from '../../../lib/bucket_utilities';
+import {isKeyInContents} from
+    '../../../lib/metadata/in_memory/bucket_utilities';
 import { makeid, shuffle, timeDiff } from '../helpers';
 
 describe('bucket API for getting, putting and deleting ' +
