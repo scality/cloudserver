@@ -8,7 +8,7 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const uploadId = '6ae3d09d-7b65-4bca-bc4f-c4695badfe41';
 const bucketName = 'freshestbucket';
-const uploadKey = 'makememulti';
+const uploadKey = '$makememulti';
 const sixMBObjectEtag = 'f3a9fb2071d3503b703938a74eb99846';
 const lastPieceEtag = '555e4cd2f9eff38109d7a3ab13995a32';
 
@@ -69,7 +69,7 @@ describe('List Parts API', () => {
                         "lastModified": "2015-11-20T17:30:43.707Z"
                     }
                 ],
-                "key": "makememulti",
+                "key": uploadKey,
                 "initiated": "2015-11-20T17:27:23.017Z",
                 "uploadId": uploadId,
                 "x-amz-storage-class": "Standard",
@@ -143,24 +143,28 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should return xml with requested encoding', (done) => {
+    it('should return xml with objectKey url encoded if requested', (done) => {
         const listRequest = {
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'encoding-type': 'ASCII',
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
+                'encoding-type': 'url',
             }
         };
+        const urlEncodedObjectKey = '%24makememulti';
 
         listParts(accessKey, metastore, listRequest, (err, xml) => {
             expect(err).to.be.null;
-            expect(xml.substring(30, 35)).to.equal('ASCII');
-            done();
+            parseString(xml, (err, json) => {
+                expect(json.ListPartResult.Key[0])
+                    .to.equal(urlEncodedObjectKey);
+                done();
+            });
         });
     });
 
@@ -169,13 +173,13 @@ describe('List Parts API', () => {
         const listRequest = {
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'max-parts': '4',
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
+                'max-parts': '4',
             }
         };
 
@@ -209,13 +213,13 @@ describe('List Parts API', () => {
         const listRequest = {
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'max-parts': '6',
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
+                'max-parts': '6',
             }
         };
 
@@ -247,14 +251,14 @@ describe('List Parts API', () => {
     it('should only list parts after PartNumberMarker', (done) => {
         const listRequest = {
             lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'part-number-marker': '2',
+                host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
+                'part-number-marker': '2',
             }
         };
 
@@ -288,15 +292,15 @@ describe('List Parts API', () => {
     'and a max-parts specified', (done) => {
         const listRequest = {
             lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'part-number-marker': '2',
-                'max-parts': '2',
+                host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
+                'part-number-marker': '2',
+                'max-parts': '2',
             }
         };
 
