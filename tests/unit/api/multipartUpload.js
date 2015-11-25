@@ -1,12 +1,15 @@
+import async from 'async';
+import crypto from 'crypto';
 import { expect } from 'chai';
+import { parseString } from 'xml2js';
+
 import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import multipartDelete from '../../../lib/api/multipartDelete';
-import { parseString } from 'xml2js';
-import async from 'async';
-import crypto from 'crypto';
+import config from '../../../config';
+const splitter = config.splitter;
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -49,18 +52,21 @@ describe('Multipart Upload API', () => {
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         bucketPut(accessKey, metastore, putRequest, () => {
             initiateMultipartUpload(accessKey, metastore, initiateRequest,
                     (err, result) => {
                         expect(err).to.be.undefined;
-                        expect(Object.keys(metastore.buckets[bucketUID]
-                            .multipartObjectKeyMap)).to.have.length.of(1);
+                        expect(Object.keys(metastore.buckets[mpuBucket]
+                            .keyMap)).to.have.length.of(1);
                         parseString(result, (err, json) => {
                             expect(json.InitiateMultipartUploadResult
                                 .Bucket[0]).to.equal(bucketName);
                             expect(json.InitiateMultipartUploadResult
                                 .Key[0]).to.equal(objectKey);
+                            expect(json.InitiateMultipartUploadResult
+                                .UploadId[0]).to.exist;
                             done();
                         });
                     });
@@ -86,6 +92,7 @@ describe('Multipart Upload API', () => {
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -96,8 +103,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -128,6 +135,25 @@ describe('Multipart Upload API', () => {
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
+                const keysInMPUkeyMap = Object.keys(metastore
+                    .buckets[mpuBucket].keyMap);
+                const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                    if (a.slice(0, 8) === 'overview') {
+                        return -1;
+                    }
+                });
+                const overviewEntry = sortedKeyMap[0];
+                const partEntryArray = sortedKeyMap[1].split(splitter);
+                const partUploadId = partEntryArray[0];
+                const firstPartNumber = partEntryArray[1];
+                const partEtag = partEntryArray[3];
+                expect(keysInMPUkeyMap).to.have.length(2);
+                expect(metastore.buckets[mpuBucket]
+                    .keyMap[overviewEntry].key)
+                    .to.equal(objectKey);
+                expect(partUploadId).to.equal(testUploadId);
+                expect(firstPartNumber).to.equal('1');
+                expect(partEtag).to.equal(calculatedMD5);
                 done();
             });
         });
@@ -154,6 +180,7 @@ describe('Multipart Upload API', () => {
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -164,8 +191,6 @@ describe('Multipart Upload API', () => {
                                         initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -198,6 +223,18 @@ describe('Multipart Upload API', () => {
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
+                expect(err).to.be.null;
+                const keysInMPUkeyMap = Object.keys(metastore
+                    .buckets[mpuBucket].keyMap);
+                const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                    if (a.slice(0, 8) === 'overview') {
+                        return -1;
+                    }
+                });
+                const partEntryArray = sortedKeyMap[1].split(splitter);
+                const partEtag = partEntryArray[3];
+                expect(keysInMPUkeyMap).to.have.length(2);
+                expect(partEtag).to.equal(hexMD5);
                 done();
             });
         });
@@ -221,7 +258,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
 
         async.waterfall([
             function waterfall1(next) {
@@ -232,8 +268,6 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -288,7 +322,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
 
         async.waterfall([
             function waterfall1(next) {
@@ -299,8 +332,6 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -358,7 +389,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
 
         async.waterfall([
             function waterfall1(next) {
@@ -369,8 +399,6 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -427,6 +455,7 @@ describe('Multipart Upload API', () => {
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -437,8 +466,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -492,6 +521,29 @@ describe('Multipart Upload API', () => {
                 objectPutPart(accessKey, metastore,
                     partRequest2, (err) => {
                         expect(err).to.be.null;
+                        const keysInMPUkeyMap = Object.keys(metastore
+                            .buckets[mpuBucket].keyMap);
+                        const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                            if (a.slice(0, 8) === 'overview') {
+                                return -1;
+                            }
+                        });
+                        const overviewEntry = sortedKeyMap[0];
+                        const secondPartEntryArray =
+                            sortedKeyMap[2].split(splitter);
+                        const partUploadId = secondPartEntryArray[0];
+                        const secondPartNumber =
+                            secondPartEntryArray[1];
+                        const secondPartEtag =
+                            secondPartEntryArray[3];
+                        expect(keysInMPUkeyMap).to.have.length(3);
+                        expect(metastore.buckets[mpuBucket]
+                            .keyMap[overviewEntry].key)
+                            .to.equal(objectKey);
+                        expect(partUploadId).to.equal(testUploadId);
+                        expect(secondPartNumber).to.equal('2');
+                        expect(secondPartEtag)
+                            .to.equal(secondCalculatedMD5);
                         done();
                     });
             });
@@ -521,6 +573,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -531,8 +584,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -633,6 +686,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -643,8 +697,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -722,6 +776,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -732,8 +787,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -815,6 +870,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -825,8 +881,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -899,6 +955,9 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('InvalidPartOrder');
+                            expect(Object.keys(metastore
+                                .buckets[mpuBucket]
+                                .keyMap)).to.have.length.of(3);
                             done();
                         });
                 });
@@ -932,6 +991,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -942,8 +1002,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1017,6 +1077,9 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('InvalidPart');
+                            expect(Object.keys(metastore
+                                .buckets[mpuBucket]
+                                .keyMap)).to.have.length.of(3);
                             done();
                         });
                 });
@@ -1049,6 +1112,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1059,8 +1123,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1135,6 +1199,9 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('EntityTooSmall');
+                            expect(Object.keys(metastore
+                                .buckets[mpuBucket]
+                                .keyMap)).to.have.length.of(3);
                             done();
                         });
                 });
@@ -1165,6 +1232,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1175,8 +1243,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1290,6 +1358,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1300,8 +1369,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1417,6 +1486,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1427,8 +1497,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1539,6 +1609,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1549,8 +1620,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1589,20 +1660,15 @@ describe('Multipart Upload API', () => {
                         uploadId: testUploadId,
                     },
                 };
-                expect(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap[testUploadId]).to.exist;
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap))
-                    .to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap))
+                    .to.have.length.of(2);
                 multipartDelete(
                     accessKey, metastore,
                     deleteRequest, (err) => {
                         expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID]
-                            .multipartObjectKeyMap[testUploadId])
-                            .to.not.exist;
-                        expect(Object.keys(metastore.buckets[bucketUID]
-                            .multipartObjectKeyMap))
+                        expect(Object.keys(metastore.buckets[mpuBucket]
+                            .keyMap))
                             .to.have.length.of(0);
                         done();
                     });
@@ -1634,6 +1700,7 @@ describe('Multipart Upload API', () => {
             }
         };
         const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
+        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -1644,8 +1711,8 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap)).to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap)).to.have.length.of(1);
                 parseString(result, next);
             },
         ],
@@ -1684,11 +1751,9 @@ describe('Multipart Upload API', () => {
                         uploadId: 'non-existent-upload-id',
                     },
                 };
-                expect(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap[testUploadId]).to.exist;
-                expect(Object.keys(metastore.buckets[bucketUID]
-                    .multipartObjectKeyMap))
-                    .to.have.length.of(1);
+                expect(Object.keys(metastore.buckets[mpuBucket]
+                    .keyMap))
+                    .to.have.length.of(2);
                 multipartDelete(
                     accessKey, metastore,
                     deleteRequest, (err) => {
