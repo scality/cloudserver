@@ -4,6 +4,8 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
+import config from '../../../config';
+const splitter = config.splitter;
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -61,7 +63,7 @@ describe('listMultipartUploads API', () => {
             lowerCaseHeaders: {
                 host: '/'
             },
-            url: `/${bucketName}?uploads&delimiter=\/&prefix=sub`,
+            url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
             namespace: namespace,
             query: {
                 delimiter: delimiter,
