@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import async from 'async';
-import Bucket from '../../../lib/bucket_mem';
+import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import {isKeyInContents} from '../../../lib/bucket_utilities';
 import { makeid, shuffle, timeDiff } from '../helpers';
 

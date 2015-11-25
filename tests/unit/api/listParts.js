@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
-import Bucket from '../../../lib/bucket_mem';
+import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import listParts from '../../../lib/api/listParts';
 
 const accessKey = 'accessKey1';
