@@ -223,7 +223,6 @@ describe('Multipart Upload API', () => {
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
-                expect(err).to.be.null;
                 const keysInMPUkeyMap = Object.keys(metastore
                     .buckets[mpuBucket].keyMap);
                 const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
@@ -518,8 +517,8 @@ describe('Multipart Upload API', () => {
                     post: postBody2,
                     calculatedMD5: secondCalculatedMD5,
                 };
-                objectPutPart(accessKey, metastore,
-                    partRequest2, (err) => {
+                objectPutPart(accessKey, metastore, partRequest2,
+                    (err) => {
                         expect(err).to.be.null;
                         const keysInMPUkeyMap = Object.keys(metastore
                             .buckets[mpuBucket].keyMap);
@@ -548,7 +547,6 @@ describe('Multipart Upload API', () => {
                     });
             });
         });
-    });
 
     it('should complete a multipart upload', (done) => {
         const bucketName = 'bucketname';
@@ -1762,5 +1760,6 @@ describe('Multipart Upload API', () => {
                     });
             });
         });
+    });
     });
 });
