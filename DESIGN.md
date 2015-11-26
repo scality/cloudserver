@@ -38,8 +38,8 @@ Our metadata is currently stored on memory, but should use IM-Metadata soon.
 For authentication, we use a stubbed implementation, but IM-Vault will be the
 final solution.
 
-For the storage part, we are using our in-memory backend, the RING and
-IM-Metadata are the backends that we will be integrating in the near future.
+For the storage part, we are using our in-memory backend, sproxyd and
+IM-Data are the backends that we will be integrating in the near future.
 
 ### API specifications
 
