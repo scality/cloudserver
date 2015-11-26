@@ -48,19 +48,19 @@ Right now, the following operations are implemented:
 - PutBucket
 - GetBucket
 - HeadBucket
+- DeleteBucket
 - PutBucketACL
 - GetBucketACL
 - PutObject
 - GetObject
 - HeadObject
+- DeleteObject
+- PutObjectACL
+- GetObjectACL
+- Multipart Upload
 - GetService
 - v2 Authentication
 
 The following operations are in a WIP state:
 
-- DeleteBucket
-- DeleteObject
-- PutObjectACL
-- GetObjectACL
-- Multipart Upload
 - v4 Authentication
