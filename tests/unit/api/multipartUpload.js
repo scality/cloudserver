@@ -516,7 +516,7 @@ describe('Multipart Upload API', () => {
                         post: postBody2,
                         calculatedMD5: secondCalculatedMD5,
                     };
-                    objectPutPart(accessKey, datastore, metastore,
+                    objectPutPart(accessKey, metastore,
                         partRequest2, (err) => {
                             expect(err).to.be.null;
                             const dataLocation = Object.keys(datastore)[1];
@@ -1653,7 +1653,7 @@ describe('Multipart Upload API', () => {
                         .multipartObjectKeyMap))
                         .to.have.length.of(1);
                     multipartDelete(
-                        accessKey, datastore, metastore,
+                        accessKey, metastore,
                         deleteRequest, (err) => {
                             expect(err).to.be.null;
                             expect(metastore.buckets[bucketUID]
@@ -1750,7 +1750,7 @@ describe('Multipart Upload API', () => {
                         .multipartObjectKeyMap))
                         .to.have.length.of(1);
                     multipartDelete(
-                        accessKey, datastore, metastore,
+                        accessKey, metastore,
                         deleteRequest, (err) => {
                             expect(err).to.equal('NoSuchUpload');
                             done();
