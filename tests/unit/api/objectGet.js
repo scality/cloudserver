@@ -3,35 +3,12 @@ import crypto from 'crypto';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
-import { Writable } from 'stream';
-
-const memStore = {};
-
-// Create in memory writable stream
-class WMStrm extends Writable {
-    constructor(key) {
-        super();
-        this.key = key;
-        memStore[key] = new Buffer('');
-    }
-    _write(chunk, enc, cb) {
-        // our memory store stores things in buffers
-        const buffer = (Buffer.isBuffer(chunk)) ?
-        chunk :  // already is Buffer use it
-        new Buffer(chunk, enc);  // string, convert
-
-      // concat to the buffer already there
-        memStore[this.key] = Buffer.concat([memStore[this.key], buffer]);
-        cb();
-    }
-}
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 
 describe('objectGet API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -45,7 +22,6 @@ describe('objectGet API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     const bucketName = 'bucketname';
@@ -76,23 +52,21 @@ describe('objectGet API', () => {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
-            (err, success) => {
-                expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
-                        objectGet(accessKey, datastore,
-                            metastore, testGetRequest,
-                            (err, result, responseMetaHeaders) => {
-                                expect(responseMetaHeaders[userMetadataKey])
-                                    .to.equal(userMetadataValue);
-                                expect(responseMetaHeaders.Etag)
-                                    .to.equal(correctMD5);
-                                done();
-                            });
-                    });
-            });
+        bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
+            expect(res).to.equal('Bucket created');
+            objectPut(accessKey, metastore,
+                testPutObjectRequest, (err, result) => {
+                    expect(result).to.equal(correctMD5);
+                    objectGet(accessKey, metastore, testGetRequest,
+                        (err, result, responseMetaHeaders) => {
+                            expect(responseMetaHeaders[userMetadataKey])
+                                .to.equal(userMetadataValue);
+                            expect(responseMetaHeaders.Etag)
+                                .to.equal(correctMD5);
+                            done();
+                        });
+                });
+        });
     });
 
     it('should get the object data', (done) => {
@@ -102,26 +76,18 @@ describe('objectGet API', () => {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
-            (err, success) => {
-                expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
-                        objectGet(accessKey, datastore, metastore,
-                            testGetRequest, (err, readStream) => {
-                                // Create new in memory writestream
-                                const wstream = new WMStrm('smallObject');
-                                readStream.pipe(wstream, {end: false});
-                                readStream.on('end', function readStreamRes() {
-                                    wstream.end();
-                                    expect(memStore.smallObject
-                                        .toString()).to.equal(postBody);
-                                    done();
-                                });
-                            });
-                    });
-            });
+        bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
+            expect(res).to.equal('Bucket created');
+            objectPut(accessKey, metastore,
+                testPutObjectRequest, (err, result) => {
+                    expect(result).to.equal(correctMD5);
+                    objectGet(accessKey, metastore,
+                        testGetRequest, (err, readStream) => {
+                            readStream;
+                            done(err);
+                        });
+                });
+        });
     });
 
     it('should get the object data for large objects', (done) => {
@@ -148,10 +114,10 @@ describe('objectGet API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutBigObjectRequest, (err, result) => {
+                objectPut(accessKey, metastore, testPutBigObjectRequest,
+                    (err, result) => {
                         expect(result).to.equal(correctBigMD5);
-                        objectGet(accessKey, datastore,
+                        objectGet(accessKey,
                             metastore, testGetRequest, (err, readable) => {
                                 const md5Hash = crypto.createHash('md5');
                                 const chunks = [];

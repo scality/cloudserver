@@ -10,7 +10,6 @@ const namespace = 'default';
 
 describe('bucketGet API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -24,7 +23,6 @@ describe('bucketGet API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     const bucketName = 'bucketname';
@@ -81,16 +79,13 @@ describe('bucketGet API', () => {
             },
             function waterfall2(success, next) {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest1, next);
+                objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey, datastore,
-                    metastore, testPutObjectRequest2, next);
+                objectPut(accessKey, metastore, testPutObjectRequest2, next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey, metastore,
-                    testGetRequest, next);
+                bucketGet(accessKey, metastore, testGetRequest, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -121,12 +116,11 @@ describe('bucketGet API', () => {
             },
             function waterfall2(success, next) {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey, datastore,
-                    metastore, testPutObjectRequest2, next);
+                objectPut(accessKey, metastore, testPutObjectRequest2, next);
             },
             function waterfall4(result, next) {
                 bucketGet(accessKey, metastore,
@@ -165,16 +159,13 @@ describe('bucketGet API', () => {
             },
             function waterfall2(success, next) {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest1, next);
+                objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey, datastore,
-                    metastore, testPutObjectRequest2, next);
+                objectPut(accessKey, metastore, testPutObjectRequest2, next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey, metastore,
-                    testGetRequest, next);
+                bucketGet(accessKey, metastore, testGetRequest, next);
             },
             function waterfall5(result, next) {
                 parseString(result, next);
@@ -209,16 +200,13 @@ describe('bucketGet API', () => {
             },
             function waterfall2(success, next) {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
-                    testPutObjectRequest1, next);
+                objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey, datastore,
-                    metastore, testPutObjectRequest2, next);
+                objectPut(accessKey, metastore, testPutObjectRequest2, next);
             },
             function waterfall4(result, next) {
-                objectPut(accessKey, datastore,
-                    metastore, testPutObjectRequest3, next);
+                objectPut(accessKey, metastore, testPutObjectRequest3, next);
             },
             function waterfall5(result, next) {
                 bucketGet(accessKey, metastore,

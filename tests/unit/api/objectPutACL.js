@@ -8,7 +8,6 @@ const namespace = 'default';
 
 describe('putObjectACL API', () => {
     let metastore;
-    let datastore;
     beforeEach(() => {
         metastore = {
             "users": {
@@ -21,7 +20,6 @@ describe('putObjectACL API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
@@ -62,7 +60,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -116,7 +114,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -190,7 +188,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest1,
@@ -284,7 +282,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -372,7 +370,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -462,7 +460,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -562,7 +560,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -647,7 +645,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -717,7 +715,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -786,7 +784,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -856,7 +854,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
@@ -919,7 +917,7 @@ describe('putObjectACL API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
