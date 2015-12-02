@@ -8,7 +8,6 @@ const namespace = 'default';
 
 describe("bucketDelete API", () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -22,7 +21,6 @@ describe("bucketDelete API", () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     const bucketName = 'bucketname';
@@ -49,7 +47,7 @@ describe("bucketDelete API", () => {
         };
 
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest,
+            objectPut(accessKey, metastore, testPutObjectRequest,
                 () => {
                     bucketDelete(accessKey, metastore, testDeleteRequest,
                         (err) => {

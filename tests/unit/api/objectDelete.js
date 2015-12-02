@@ -8,7 +8,6 @@ const namespace = 'default';
 
 describe('objectDelete API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -22,7 +21,6 @@ describe('objectDelete API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     const bucketName = 'bucketname';
@@ -53,14 +51,12 @@ describe('objectDelete API', () => {
 
     it('should delete an object', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, datastore, metastore, testPutObjectRequest,
+            objectPut(accessKey, metastore, testPutObjectRequest,
                 () => {
-                    objectDelete(accessKey, datastore, metastore,
+                    objectDelete(accessKey, metastore,
                         testDeleteRequest, (err, response) => {
                             expect(response)
                                 .to.equal('Object deleted permanently');
-                            expect(Object.keys(datastore)
-                                .length).to.equal(0);
                             done();
                         });
                 });

@@ -14,7 +14,6 @@ const namespace = 'default';
 
 describe('Multipart Upload API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -28,7 +27,6 @@ describe('Multipart Upload API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
 
@@ -128,19 +126,10 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err) => {
-                    expect(err).to.be.null;
-                    const dataLocation = Object.keys(datastore)[0];
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId].partLocations[1]
-                        .location).to.equal(dataLocation);
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId]
-                        .partLocations[1].etag).to.equal(calculatedMD5);
-                    expect(datastore[dataLocation]).to.equal(postBody);
-                    done();
-                });
+            objectPutPart(accessKey, metastore, partRequest, (err) => {
+                expect(err).to.be.null;
+                done();
+            });
         });
     });
 
@@ -171,8 +160,8 @@ describe('Multipart Upload API', () => {
                 bucketPut(accessKey, metastore, putRequest, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    accessKey, metastore, initiateRequest, next);
+                initiateMultipartUpload(accessKey, metastore,
+                                        initiateRequest, next);
             },
             function waterfall3(result, next) {
                 expect(Object.keys(metastore.buckets[bucketUID]
@@ -207,19 +196,10 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: base64MD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err) => {
-                    expect(err).to.be.null;
-                    const dataLocation = Object.keys(datastore)[0];
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId].partLocations[1]
-                        .location).to.equal(dataLocation);
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId]
-                        .partLocations[1].etag).to.equal(hexMD5);
-                    expect(datastore[dataLocation]).to.equal(postBody);
-                    done();
-                });
+            objectPutPart(accessKey, metastore, partRequest, (err) => {
+                expect(err).to.be.null;
+                done();
+            });
         });
     });
 
@@ -282,13 +262,11 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err, result) => {
-                    expect(err).to.equal('TooManyParts');
-                    expect(result).to.be.undefined;
-                    expect(Object.keys(datastore)).length.to.be(0);
-                    done();
-                });
+            objectPutPart(accessKey, metastore, partRequest, (err, result) => {
+                expect(err).to.equal('TooManyParts');
+                expect(result).to.be.undefined;
+                done();
+            });
         });
     });
 
@@ -351,13 +329,11 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err, result) => {
-                    expect(err).to.equal('InvalidArgument');
-                    expect(result).to.be.undefined;
-                    expect(Object.keys(datastore)).length.to.be(0);
-                    done();
-                });
+            objectPutPart(accessKey, metastore, partRequest, (err, result) => {
+                expect(err).to.equal('InvalidArgument');
+                expect(result).to.be.undefined;
+                done();
+            });
         });
     });
 
@@ -424,13 +400,11 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, (err, result) => {
-                    expect(err).to.equal('EntityTooLarge');
-                    expect(result).to.be.undefined;
-                    expect(Object.keys(datastore)).length.to.be(0);
-                    done();
-                });
+            objectPutPart(accessKey, metastore, partRequest, (err, result) => {
+                expect(err).to.equal('EntityTooLarge');
+                expect(result).to.be.undefined;
+                done();
+            });
         });
     });
 
@@ -493,45 +467,34 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    const postBody2 = 'I am a second part';
-                    const md5Hash2 = crypto.createHash('md5');
-                    const bufferBody2 =
-                        new Buffer(postBody2, 'binary');
-                    md5Hash2.update(bufferBody2);
-                    const secondCalculatedMD5 = md5Hash2.digest('hex');
-                    const partRequest2 = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?partNumber=` +
-                            `1&uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            partNumber: '2',
-                            uploadId: testUploadId,
-                        },
-                        post: postBody2,
-                        calculatedMD5: secondCalculatedMD5,
-                    };
-                    objectPutPart(accessKey, metastore,
-                        partRequest2, (err) => {
-                            expect(err).to.be.null;
-                            const dataLocation = Object.keys(datastore)[1];
-                            expect(metastore.buckets[bucketUID]
-                                .multipartObjectKeyMap[testUploadId]
-                                .partLocations[2]
-                                .location).to.equal(dataLocation);
-                            expect(metastore.buckets[bucketUID]
-                                .multipartObjectKeyMap[testUploadId]
-                                .partLocations[2].etag)
-                                .to.equal(secondCalculatedMD5);
-                            expect(datastore[dataLocation]).to.equal(postBody2);
-                            done();
-                        });
-                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                const postBody2 = 'I am a second part';
+                const md5Hash2 = crypto.createHash('md5');
+                const bufferBody2 =
+                    new Buffer(postBody2, 'binary');
+                md5Hash2.update(bufferBody2);
+                const secondCalculatedMD5 = md5Hash2.digest('hex');
+                const partRequest2 = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?partNumber=` +
+                        `1&uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        partNumber: '2',
+                        uploadId: testUploadId,
+                    },
+                    post: postBody2,
+                    calculatedMD5: secondCalculatedMD5,
+                };
+                objectPutPart(accessKey, metastore,
+                    partRequest2, (err) => {
+                        expect(err).to.be.null;
+                        done();
+                    });
+            });
         });
     });
 
@@ -598,52 +561,51 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, () => {
-                    const completeBody = `<CompleteMultipartUpload>` +
-                        `<Part>` +
-                        `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
-                        `</Part>` +
-                        `</CompleteMultipartUpload>`;
-                    const completeRequest = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            uploadId: testUploadId,
-                        },
-                        post: completeBody,
-                        calculatedMD5: calculatedMD5,
-                    };
-                    const awsVerifiedEtag =
-                        '953e9e776f285afc0bfcf1ab4668299d-1';
-                    completeMultipartUpload(
-                        accessKey, metastore,
-                        completeRequest, (err, result) => {
-                            parseString(result, (err, json) => {
-                                expect(json.CompleteMultipartUploadResult
-                                    .Location[0]).to.
-                                    equal(`http://${bucketName}.` +
-                                    `s3.amazonaws.com/${objectKey}`);
-                                expect(json.CompleteMultipartUploadResult
-                                    .Bucket[0]).to.equal(bucketName);
-                                expect(json.CompleteMultipartUploadResult
-                                    .Key[0]).to.equal(objectKey);
-                                expect(json.CompleteMultipartUploadResult
-                                    .ETag[0]).to.equal(awsVerifiedEtag);
-                                expect(metastore.buckets[bucketUID]
-                                    .keyMap[objectKey]).to.exist;
-                                expect(metastore.buckets[bucketUID]
-                                    .keyMap[objectKey]['x-amz-meta-stuff'])
-                                    .to.equal('I am some user metadata');
-                                done();
-                            });
+            objectPutPart(accessKey, metastore, partRequest, () => {
+                const completeBody = `<CompleteMultipartUpload>` +
+                    `<Part>` +
+                    `<PartNumber>1</PartNumber>` +
+                    `<ETag>${calculatedMD5}</ETag>` +
+                    `</Part>` +
+                    `</CompleteMultipartUpload>`;
+                const completeRequest = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        uploadId: testUploadId,
+                    },
+                    post: completeBody,
+                    calculatedMD5: calculatedMD5,
+                };
+                const awsVerifiedEtag =
+                    '953e9e776f285afc0bfcf1ab4668299d-1';
+                completeMultipartUpload(
+                    accessKey, metastore,
+                    completeRequest, (err, result) => {
+                        parseString(result, (err, json) => {
+                            expect(json.CompleteMultipartUploadResult
+                                .Location[0]).to.
+                                equal(`http://${bucketName}.` +
+                                `s3.amazonaws.com/${objectKey}`);
+                            expect(json.CompleteMultipartUploadResult
+                                .Bucket[0]).to.equal(bucketName);
+                            expect(json.CompleteMultipartUploadResult
+                                .Key[0]).to.equal(objectKey);
+                            expect(json.CompleteMultipartUploadResult
+                                .ETag[0]).to.equal(awsVerifiedEtag);
+                            expect(metastore.buckets[bucketUID]
+                                .keyMap[objectKey]).to.exist;
+                            expect(metastore.buckets[bucketUID]
+                                .keyMap[objectKey]['x-amz-meta-stuff'])
+                                .to.equal('I am some user metadata');
+                            done();
                         });
-                });
+                    });
+            });
         });
     });
 
@@ -711,29 +673,27 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, () => {
-                    const completeBody = `Malformed xml`;
-                    const completeRequest = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            uploadId: testUploadId,
-                        },
-                        post: completeBody,
-                        calculatedMD5: calculatedMD5,
-                    };
-                    completeMultipartUpload(
-                        accessKey, metastore,
-                        completeRequest, (err) => {
-                            expect(err).to.equal('MalformedXML');
-                            done();
-                        });
-                });
+            objectPutPart(accessKey, metastore, partRequest, () => {
+                const completeBody = `Malformed xml`;
+                const completeRequest = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        uploadId: testUploadId,
+                    },
+                    post: completeBody,
+                    calculatedMD5: calculatedMD5,
+                };
+                completeMultipartUpload(accessKey, metastore,
+                    completeRequest, (err) => {
+                        expect(err).to.equal('MalformedXML');
+                        done();
+                    });
+            });
         });
     });
 
@@ -802,32 +762,31 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, () => {
-                    // XML is missing any part listing so does
-                    // not conform to the AWS spec
-                    const completeBody = `<CompleteMultipartUpload>` +
-                        `</CompleteMultipartUpload>`;
-                    const completeRequest = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            uploadId: testUploadId,
-                        },
-                        post: completeBody,
-                        calculatedMD5: calculatedMD5,
-                    };
-                    completeMultipartUpload(
-                        accessKey, metastore,
-                        completeRequest, (err) => {
-                            expect(err).to.equal('MalformedPOSTRequest');
-                            done();
-                        });
-                });
+            objectPutPart(accessKey, metastore, partRequest, () => {
+                // XML is missing any part listing so does
+                // not conform to the AWS spec
+                const completeBody = `<CompleteMultipartUpload>` +
+                    `</CompleteMultipartUpload>`;
+                const completeRequest = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        uploadId: testUploadId,
+                    },
+                    post: completeBody,
+                    calculatedMD5: calculatedMD5,
+                };
+                completeMultipartUpload(
+                    accessKey, metastore,
+                    completeRequest, (err) => {
+                        expect(err).to.equal('MalformedPOSTRequest');
+                        done();
+                    });
+            });
         });
     });
 
@@ -910,43 +869,40 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err) => {
-                                    expect(err).to.equal('InvalidPartOrder');
-                                    done();
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(accessKey, metastore,
+                        completeRequest, (err) => {
+                            expect(err).to.equal('InvalidPartOrder');
+                            done();
                         });
                 });
+            });
         });
     });
 
@@ -1031,43 +987,40 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${wrongMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err) => {
-                                    expect(err).to.equal('InvalidPart');
-                                    done();
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${wrongMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(accessKey, metastore,
+                        completeRequest, (err) => {
+                            expect(err).to.equal('InvalidPart');
+                            done();
                         });
                 });
+            });
         });
     });
 
@@ -1152,43 +1105,40 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err) => {
-                                    expect(err).to.equal('EntityTooSmall');
-                                    done();
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(accessKey, metastore,
+                        completeRequest, (err) => {
+                            expect(err).to.equal('EntityTooSmall');
+                            done();
                         });
                 });
+            });
         });
     });
 
@@ -1232,7 +1182,7 @@ describe('Multipart Upload API', () => {
         ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
-            // until here
+            // until her
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const postBody = 'I am a part';
@@ -1271,50 +1221,48 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err, result) => {
-                                    expect(err).to.equal(null);
-                                    parseString(result, (err) => {
-                                        expect(err).to.equal(null);
-                                        expect(metastore.buckets[bucketUID]
-                                            .keyMap[objectKey]
-                                            ['content-length'])
-                                            .to.equal(6000100);
-                                        done();
-                                    });
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(
+                        accessKey, metastore,
+                        completeRequest, (err, result) => {
+                            expect(err).to.equal(null);
+                            parseString(result, (err) => {
+                                expect(err).to.equal(null);
+                                expect(metastore.buckets[bucketUID]
+                                    .keyMap[objectKey]
+                                    ['content-length'])
+                                    .to.equal(6000100);
+                                done();
+                            });
                         });
                 });
+            });
         });
     });
 
@@ -1398,49 +1346,47 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err, result) => {
-                                    expect(err).to.equal(null);
-                                    parseString(result, (err) => {
-                                        expect(err).to.equal(null);
-                                        expect(metastore.buckets[bucketUID]
-                                            .keyMap[objectKey].acl.Canned)
-                                            .to.equal('authenticated-read');
-                                        done();
-                                    });
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(
+                        accessKey, metastore,
+                        completeRequest, (err, result) => {
+                            expect(err).to.equal(null);
+                            parseString(result, (err) => {
+                                expect(err).to.equal(null);
+                                expect(metastore.buckets[bucketUID]
+                                    .keyMap[objectKey].acl.Canned)
+                                    .to.equal('authenticated-read');
+                                done();
+                            });
                         });
                 });
+            });
         });
     });
 
@@ -1527,49 +1473,46 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest1, () => {
-                    objectPutPart(accessKey, datastore,
-                        metastore, partRequest2, () => {
-                            const completeBody = `<CompleteMultipartUpload>` +
-                                `<Part>` +
-                                `<PartNumber>1</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `<Part>` +
-                                `<PartNumber>2</PartNumber>` +
-                                `<ETag>${calculatedMD5}</ETag>` +
-                                `</Part>` +
-                                `</CompleteMultipartUpload>`;
-                            const completeRequest = {
-                                lowerCaseHeaders: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                url: `/${objectKey}?uploadId=${testUploadId}`,
-                                namespace: namespace,
-                                headers: {
-                                    host: `${bucketName}.s3.amazonaws.com`
-                                },
-                                query: {
-                                    uploadId: testUploadId,
-                                },
-                                post: completeBody,
-                                calculatedMD5: calculatedMD5,
-                            };
-                            completeMultipartUpload(
-                                accessKey, metastore,
-                                completeRequest, (err, result) => {
-                                    expect(err).to.equal(null);
-                                    parseString(result, (err) => {
-                                        expect(err).to.equal(null);
-                                        expect(metastore.buckets[bucketUID]
-                                            .keyMap[objectKey].acl.READ[0])
-                                            .to.equal(granteeId);
-                                        done();
-                                    });
-                                });
+            objectPutPart(accessKey, metastore, partRequest1, () => {
+                objectPutPart(accessKey, metastore, partRequest2, () => {
+                    const completeBody = `<CompleteMultipartUpload>` +
+                        `<Part>` +
+                        `<PartNumber>1</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `<Part>` +
+                        `<PartNumber>2</PartNumber>` +
+                        `<ETag>${calculatedMD5}</ETag>` +
+                        `</Part>` +
+                        `</CompleteMultipartUpload>`;
+                    const completeRequest = {
+                        lowerCaseHeaders: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        namespace: namespace,
+                        headers: {
+                            host: `${bucketName}.s3.amazonaws.com`
+                        },
+                        query: {
+                            uploadId: testUploadId,
+                        },
+                        post: completeBody,
+                        calculatedMD5: calculatedMD5,
+                    };
+                    completeMultipartUpload(accessKey, metastore,
+                        completeRequest, (err, result) => {
+                            expect(err).to.equal(null);
+                            parseString(result, (err) => {
+                                expect(err).to.equal(null);
+                                expect(metastore.buckets[bucketUID]
+                                    .keyMap[objectKey].acl.READ[0])
+                                    .to.equal(granteeId);
+                                done();
+                            });
                         });
                 });
+            });
         });
     });
 
@@ -1634,38 +1577,36 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, () => {
-                    const deleteRequest = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            uploadId: testUploadId,
-                        },
-                    };
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId]).to.exist;
-                    expect(Object.keys(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap))
-                        .to.have.length.of(1);
-                    multipartDelete(
-                        accessKey, metastore,
-                        deleteRequest, (err) => {
-                            expect(err).to.be.null;
-                            expect(metastore.buckets[bucketUID]
-                                .multipartObjectKeyMap[testUploadId])
-                                .to.not.exist;
-                            expect(Object.keys(metastore.buckets[bucketUID]
-                                .multipartObjectKeyMap))
-                                .to.have.length.of(0);
-                            expect(Object.keys(datastore)).to.have.length.of(0);
-                            done();
-                        });
-                });
+            objectPutPart(accessKey, metastore, partRequest, () => {
+                const deleteRequest = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        uploadId: testUploadId,
+                    },
+                };
+                expect(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap[testUploadId]).to.exist;
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap))
+                    .to.have.length.of(1);
+                multipartDelete(
+                    accessKey, metastore,
+                    deleteRequest, (err) => {
+                        expect(err).to.be.null;
+                        expect(metastore.buckets[bucketUID]
+                            .multipartObjectKeyMap[testUploadId])
+                            .to.not.exist;
+                        expect(Object.keys(metastore.buckets[bucketUID]
+                            .multipartObjectKeyMap))
+                            .to.have.length.of(0);
+                        done();
+                    });
+            });
         });
     });
 
@@ -1731,31 +1672,30 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5: calculatedMD5,
             };
-            objectPutPart(accessKey, datastore,
-                metastore, partRequest, () => {
-                    const deleteRequest = {
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
-                        headers: {host: `${bucketName}.s3.amazonaws.com`},
-                        query: {
-                            uploadId: 'non-existent-upload-id',
-                        },
-                    };
-                    expect(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap[testUploadId]).to.exist;
-                    expect(Object.keys(metastore.buckets[bucketUID]
-                        .multipartObjectKeyMap))
-                        .to.have.length.of(1);
-                    multipartDelete(
-                        accessKey, metastore,
-                        deleteRequest, (err) => {
-                            expect(err).to.equal('NoSuchUpload');
-                            done();
-                        });
-                });
+            objectPutPart(accessKey, metastore, partRequest, () => {
+                const deleteRequest = {
+                    lowerCaseHeaders: {
+                        host: `${bucketName}.s3.amazonaws.com`
+                    },
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    namespace: namespace,
+                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    query: {
+                        uploadId: 'non-existent-upload-id',
+                    },
+                };
+                expect(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap[testUploadId]).to.exist;
+                expect(Object.keys(metastore.buckets[bucketUID]
+                    .multipartObjectKeyMap))
+                    .to.have.length.of(1);
+                multipartDelete(
+                    accessKey, metastore,
+                    deleteRequest, (err) => {
+                        expect(err).to.equal('NoSuchUpload');
+                        done();
+                    });
+            });
         });
     });
 });
