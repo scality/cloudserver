@@ -298,3 +298,38 @@ describe('Error handling in checkAuth', () => {
         });
     });
 });
+
+describe('Public Access', () => {
+    it('should grant access to a user that provides absolutely' +
+        'no authentication information and should assign that user the ' +
+        'All Users Group accessKey', (done) => {
+        const request = {
+            method: "GET",
+            lowerCaseHeaders: { host: 's3.amazonaws.com'},
+            url: '/bucket',
+            query: {},
+        };
+        Auth.checkAuth(request, (err, accessKey) => {
+            expect(err).to.be.null;
+            expect(accessKey).to
+                .equal('http://acs.amazonaws.com/groups/global/AllUsers');
+            done();
+        });
+    });
+
+    it('should not grant access to a request that contains ' +
+    'an authorization header without proper credentials', (done) => {
+        const request = {
+            method: "GET",
+            lowerCaseHeaders: {
+                host: 's3.amazonaws.com',
+                authorization: 'noAuth'},
+            url: '/bucket',
+            query: {},
+        };
+        Auth.checkAuth(request, (err) => {
+            expect(err).to.equal('MissingSecurityHeader');
+            done();
+        });
+    });
+});
