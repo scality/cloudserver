@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import Auth from '../../../lib/auth/checkAuth';
+import { hashSignature } from '../../../lib/auth/vault';
 
 describe('canonicalization', () => {
     it('should construct a canonicalized header', () => {
@@ -71,7 +72,7 @@ describe('canonicalization', () => {
 });
 
 
-describe('Auth._reconstructSignature', () => {
+describe('checkAuth reconstruction of signature', () => {
     it('should reconstruct the signature for a ' +
        'GET request from s3-curl', () => {
         // Based on s3-curl run
@@ -89,8 +90,9 @@ describe('Auth._reconstructSignature', () => {
             query: {}
         };
         const secretKey = 'verySecretKey1';
+        const stringToSign = Auth._constructStringToSign(request);
         const reconstructedSig =
-            Auth._reconstructSignature(secretKey, request);
+            hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig)
             .to.equal('MJNF7AqNapSu32TlBOVkcAxj58c=');
     });
@@ -116,8 +118,9 @@ describe('Auth._reconstructSignature', () => {
             query: { 'max-keys': '1000', prefix: '', delimiter: '/' }
         };
         const secretKey = 'verySecretKey1';
+        const stringToSign = Auth._constructStringToSign(request);
         const reconstructedSig =
-            Auth._reconstructSignature(secretKey, request);
+            hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig).to.equal("V8g5UJUFmMzruMqUHVT6ZwvUw+M=");
     });
 
@@ -156,8 +159,9 @@ describe('Auth._reconstructSignature', () => {
             query: {}
         };
         const secretKey = "verySecretKey1";
+        const stringToSign = Auth._constructStringToSign(request);
         const reconstructedSig =
-            Auth._reconstructSignature(secretKey, request);
+            hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig)
             .to.equal("fWPcicKn7Fhzfje/0pRTifCxL44=");
     });
@@ -203,6 +207,7 @@ describe('Error handling in checkAuth', () => {
                 authorization:
                     'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
             url: '/bucket',
+            query: {},
         };
         Auth.checkAuth(request, (err) => {
             expect(err).to.equal('InvalidAccessKeyId');
