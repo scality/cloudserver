@@ -1,8 +1,21 @@
 {
-  "secretKeys": {
-    "accessKey1": "verySecretKey1",
-    "accessKey2": "verySecretKey2"
-    },
+  "accountsKeyedbyAccessKey": {
+      "accessKey1": {
+          "arn": "aws::iam:accessKey1:user/Bart",
+          "IAMdisplayName": "Bart",
+          "secretKey": "verySecretKey1",
+          "canonicalID": "accessKey1",
+          "displayName": "parentAccount1"
+      },
+      "accessKey2": {
+          "arn": "aws::iam:accessKey2:user/Lisa",
+          "IAMdisplayName": "Lisa",
+          "secretKey": "verySecretKey2",
+          "canonicalID": "accessKey2",
+          "displayName": "parentAccount2"
+      }
+  },
+
   "accountsKeyedbyEmail": {
         "sampleaccount1@sampling.com": {
             "arn": "aws::iam:123456789012:root",
