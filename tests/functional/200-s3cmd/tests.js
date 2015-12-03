@@ -7,6 +7,8 @@ const assert = require('assert');
 const program = 's3cmd';
 const upload = 'test1MB';
 const download = 'tmpfile';
+const MPUpload = 'test16MB';
+const MPDownload = 'MPtmpfile';
 const bucket = 'universe';
 const nonexist = 'VOID';
 
@@ -78,10 +80,12 @@ describe('s3cmd getBucket', () => {
 });
 
 describe('s3cmd putObject', () => {
+    before('create file to put', (done) => {
+        createFile(upload, 1048576, done);
+    });
+
     it('should put file in existing bucket', (done) => {
-        createFile(upload, 1048576, ()=> {
-            exec(['put', upload, `s3://${bucket}`, ], done);
-        });
+        exec(['put', upload, `s3://${bucket}`, ], done);
     });
 
     it('should put file with the same name in existing bucket', (done) => {
@@ -94,22 +98,24 @@ describe('s3cmd putObject', () => {
 });
 
 describe('s3cmd getObject', () => {
+    after('delete downloaded file', done => {
+        deleteFile(download, done);
+    });
+
     it('should get existing file in existing bucket', (done) => {
         exec(['get', `s3://${bucket}/${upload}`, download ], done);
     });
 
     it('downloaded file should equal uploaded file', (done) => {
-        diff(upload, download, () => {
-            deleteFile(download, done);
-        });
+        diff(upload, download, done);
     });
 
     it('get non existing file in existing bucket, should fail', (done) => {
-        exec(['get', `s3://${bucket}/${nonexist}`, download, ], done, 12);
+        exec(['get', `s3://${bucket}/${nonexist}`, 'fail', ], done, 12);
     });
 
     it('get file in non existing bucket, should fail', (done) => {
-        exec(['get', `s3://${nonexist}/${nonexist}`, download, ], done, 12);
+        exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2', ], done, 12);
     });
 });
 
@@ -128,44 +134,50 @@ describe('s3cmd delObject', () => {
 });
 
 describe('connector edge cases', () => {
-    it('should put previous file in existing bucket', (done) => {
-        exec(['put', upload, `s3://${bucket}`, ], () => {
-            deleteFile(upload, done);
+    after('delete uploaded and downloaded file', done => {
+        deleteFile(upload, () => {
+            deleteFile(download, done);
         });
     });
 
+    it('should put previous file in existing bucket', (done) => {
+        exec(['put', upload, `s3://${bucket}`, ], done);
+    });
+
     it('should get existing file in existing bucket', (done) => {
-        exec(['get', `s3://${bucket}/${upload}`, download ], () => {
-            deleteFile(download, done);
-        });
+        exec(['get', `s3://${bucket}/${upload}`, download ], done);
     });
 });
 
 describe('s3cmd multipart upload', () => {
-    it('should put an object via a multipart upload', (done) => {
-        createFile('test16MB', 16777216, ()=> {
-            exec(['put', 'test16MB', `s3://${bucket}`, ], done);
+    before('create the multipart file', (done) => {
+        createFile(MPUpload, 16777216, done);
+    });
+
+    after('delete the multipart and the downloaded file', done => {
+        deleteFile(MPUpload, () => {
+            deleteFile(MPDownload, done);
         });
+    });
+
+    it('should put an object via a multipart upload', (done) => {
+        exec(['put', MPUpload, `s3://${bucket}`, ], done);
     });
 
     it('should get an object that was put via multipart upload', (done) => {
-        exec(['get', `s3://${bucket}/test16MB`, 'download16MB' ], done);
+        exec(['get', `s3://${bucket}/${MPUpload}`, MPDownload ], done);
     });
 
     it('downloaded file should equal uploaded file', (done) => {
-        diff('test16MB', 'download16MB', ()=> {
-            deleteFile('test16MB', () => {
-                deleteFile('download16MB', done);
-            });
-        });
+        diff(MPUpload, MPDownload, done);
     });
 
     it('should delete multipart uploaded object', (done) => {
-        exec(['rm', `s3://${bucket}/test16MB`, ], done);
+        exec(['rm', `s3://${bucket}/${MPUpload}`, ], done);
     });
 
     it('should not be able to get deleted object', (done) => {
-        exec(['get', `s3://${bucket}/test16MB`, download, ], done, 12);
+        exec(['get', `s3://${bucket}/${MPUpload}`, download, ], done, 12);
     });
 });
 
