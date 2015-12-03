@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "S3 connector",
   "main": "index.js",
-  "engines": { "node": "~4.2.0" },
+  "engines": {
+    "node": "~4.2.0"
+  },
   "repository": "scality/IronMan-S3",
   "keywords": [
     "s3",
@@ -18,7 +20,10 @@
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
     "async": "~1.4.2",
-    "babel": "^5.8.23",
+    "babel-core": "^6.2.1",
+    "babel-plugin-transform-es2015-destructuring": "^6.1.18",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
+    "babel-plugin-transform-es2015-parameters": "^6.2.0",
     "jsutils": "giorgioregni/jsutils",
     "node-simple-router": "giorgioregni/node-simple-router",
     "node-uuid": "^1.4.3",
@@ -39,6 +44,6 @@
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
-    "test": "mocha --compilers js:babel/register tests/unit/*/*.js"
+    "test": "mocha --compilers js:babel-core/register tests/unit/*/*.js"
   }
 }

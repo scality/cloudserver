@@ -31,4 +31,4 @@ testMakeBucket() {
 }
 
 # load shunit2
-. /usr/share/shunit2/shunit2
+. /usr/bin/shunit2
