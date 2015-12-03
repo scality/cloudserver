@@ -1,5 +1,6 @@
-import {expect} from 'chai';
 import async from 'async';
+import {expect} from 'chai';
+
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import {isKeyInContents} from
     '../../../lib/metadata/in_memory/bucket_utilities';
