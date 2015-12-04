@@ -1,12 +1,6 @@
 # sample circle.yml for IronMan-s3
 machine:
   environment:
-    #our docker registry
-    docker_server: dochub.ironmann.io:5000
-    # The `docker_image` environment variable will be used to give a name to
-    # Docker images. (Docker registy only allows 0-9a-z_)
-    # To run on your laptop, use :
-    #     export CIRCLE_PROJECT_REPONAME=$(basename `git rev-parse --show-toplevel`)
     docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
     docker_tag: ${CIRCLE_SHA1:0:7}
   #we package the software through docker
@@ -14,21 +8,12 @@ machine:
     - docker
 
 checkout:
-  # we let circleci checkout the project quietly in the machine
-  post:
+  override:
     # checkout the IronMan-ci
     - git clone git@github.com:scality/IronMan-CI.git
     # place the file gathered from IronMan-CI where needed
     - mv IronMan-CI/deployment .
     - mv IronMan-CI/ci/matryoshka*  ./tests
-    # we are in the project so we just copy the files where appropriate for building the docker image
-    - bash  ./deployment/checkout-local.bash
-    # move the ssh key to the project dir where the Dockerfile will consume them
-    # (required for npm install / npm test during the docker image construction
-    # to access the private repo)
-    - cp -rp ~/.ssh ./deployment/checkout/project
-    - sed -i "s/\/home\/ubuntu/\~/g" ./deployment/checkout/project/.ssh/config
-    - chmod 600 ./deployment/checkout/project/.ssh/config
 
 dependencies:
   override:
