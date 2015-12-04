@@ -14,8 +14,14 @@ checkout:
     # place the file gathered from IronMan-CI where needed
     - mv IronMan-CI/deployment .
     - mv IronMan-CI/ci/matryoshka*  ./tests
+    # Poor man docker image cache
+    - if [ ! -d ~/dockerimg ]; then mkdir ~/dockerimg  ; fi
+    - if [ ! -f ~/dockerimg/pcurl.sh ]; then  curl -o  ~/dockerimg/pcurl.sh  http://demo.scality.com/ironman/pcurl.sh ; chmod ugoa+x ~/dockerimg/pcurl.sh   ; fi
+    - if [ ! -f ~/dockerimg/base.tar.gz ]; then cd  ~/dockerimg/ &&  ./pcurl.sh http://demo.scality.com/ironman/base.tar.gz ; cd .. ; fi
 
 dependencies:
+  cache_directories:
+    - "~/dockerimg"
   override:
     # dependencies for testing with matryoshka
     - sudo pip install docker-py pyyaml flake8
