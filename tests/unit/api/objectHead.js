@@ -8,7 +8,6 @@ const namespace = 'default';
 
 describe('objectHead API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -22,7 +21,6 @@ describe('objectHead API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
     const bucketName = 'bucketname';
@@ -65,7 +63,7 @@ describe('objectHead API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectHead(accessKey, metastore, testGetRequest,
@@ -90,7 +88,7 @@ describe('objectHead API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectHead(accessKey, metastore,
@@ -116,7 +114,7 @@ describe('objectHead API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectHead(accessKey, metastore,
@@ -142,7 +140,7 @@ describe('objectHead API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectHead(accessKey, metastore,
@@ -164,7 +162,7 @@ describe('objectHead API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         objectHead(accessKey, metastore,

@@ -7,7 +7,6 @@ const namespace = 'default';
 
 describe('objectPut API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -21,7 +20,6 @@ describe('objectPut API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
 
 
@@ -36,11 +34,10 @@ describe('objectPut API', () => {
             post: postBody
         };
 
-        objectPut(accessKey, datastore, metastore, testRequest,
-            (err) => {
-                expect(err).to.equal('NoSuchBucket');
-                done();
-            });
+        objectPut(accessKey, metastore, testRequest, (err) => {
+            expect(err).to.equal('NoSuchBucket');
+            done();
+        });
     });
 
     it('should return an error if user is not authorized', (done) => {
@@ -64,7 +61,7 @@ describe('objectPut API', () => {
         bucketPut(putAccessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
+                objectPut(accessKey, metastore, testPutObjectRequest,
                     (err) => {
                         expect(err).to.equal('AccessDenied');
                         done();
@@ -96,7 +93,6 @@ describe('objectPut API', () => {
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
-        const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -117,7 +113,7 @@ describe('objectPut API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         expect(
@@ -127,7 +123,6 @@ describe('objectPut API', () => {
                             metastore.buckets[bucketUID]
                                 .keyMap[objectName]['content-md5'])
                                 .to.equal(correctMD5);
-                        expect(datastore[objectUID]).to.equal('I am a body');
                         done();
                     });
             });
@@ -139,7 +134,6 @@ describe('objectPut API', () => {
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
-        const objectUID = '31b0c936d4b4c712e2ea1a927b387fd3';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -161,7 +155,7 @@ describe('objectPut API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         expect(
@@ -171,7 +165,6 @@ describe('objectPut API', () => {
                             metastore.buckets[bucketUID]
                                 .keyMap[objectName]['content-md5'])
                                 .to.equal(correctMD5);
-                        expect(datastore[objectUID]).to.equal('I am a body');
                         done();
                     });
             });
@@ -209,7 +202,7 @@ describe('objectPut API', () => {
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
                 expect(success).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore,
+                objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         expect(result).to.equal(correctMD5);
                         expect(

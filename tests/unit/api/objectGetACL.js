@@ -10,7 +10,6 @@ const namespace = 'default';
 
 describe('objectGetACL API', () => {
     let metastore;
-    let datastore;
 
     beforeEach(() => {
         metastore = {
@@ -24,7 +23,6 @@ describe('objectGetACL API', () => {
             },
             "buckets": {}
         };
-        datastore = {};
     });
     const bucketName = 'bucketname';
     const objectName = 'objectName';
@@ -62,8 +60,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -103,8 +100,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -154,8 +150,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -211,8 +206,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -263,8 +257,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -313,8 +306,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
@@ -387,8 +379,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 expect(result).to.equal('Bucket created');
-                objectPut(accessKey, datastore, metastore, testPutObjectRequest,
-                        next);
+                objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
                 expect(result).to.equal(correctMD5);
