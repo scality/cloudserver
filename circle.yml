@@ -16,7 +16,7 @@ checkout:
     - mv IronMan-CI/ci/matryoshka*  ./tests
     # Poor man docker image cache
     - if [ ! -d ~/dockerimg ]; then mkdir ~/dockerimg  ; fi
-    - if [ ! -f ~/dockerimg/pcurl.sh ]; then  curl -o  ~/dockerimg/pcurl.sh  http://demo.scality.com/ironman/pcurl.sh ; chmod ugoa+x ~/dockerimg/pcurl.sh   ; fi
+    - if [ ! -f ~/dockerimg/pcurl.sh ]; then wget http://sourceforge.net/projects/pcurl/files/pcurl.sh -O ~/dockerimg/pcurl.sh h ; chmod ugoa+x ~/dockerimg/pcurl.sh ; fi
     - if [ ! -f ~/dockerimg/base.tar.gz ]; then cd  ~/dockerimg/ &&  ./pcurl.sh http://demo.scality.com/ironman/base.tar.gz ; cd .. ; fi
 
 dependencies:
