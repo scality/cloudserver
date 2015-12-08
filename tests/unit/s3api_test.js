@@ -2507,7 +2507,7 @@ describe('initiateMultipartUpload API', () => {
                     (err, result) => {
                         expect(err).to.be.undefined;
                         expect(Object.keys(metastore.buckets[bucketUID]
-                            .multipartObjectKeyMap)).to.have.length.of(1);
+                            .keyMap)).to.have.length.of(1);
                         parseString(result, (err, json) => {
                             expect(json.InitiateMultipartUploadResult
                                 .Bucket[0]).to.equal(bucketName);

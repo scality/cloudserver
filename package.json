@@ -3,9 +3,7 @@
   "version": "0.0.1",
   "description": "S3 connector",
   "main": "index.js",
-  "engines": {
-    "node": "~4.2.0"
-  },
+  "engines": { "node": "~4.2.0" },
   "repository": "scality/IronMan-S3",
   "keywords": [
     "s3",
@@ -25,6 +23,7 @@
     "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
     "babel-plugin-transform-es2015-parameters": "^6.2.0",
     "jsutils": "giorgioregni/jsutils",
+    "natural-compare-lite": "^1.4.0",
     "node-simple-router": "giorgioregni/node-simple-router",
     "node-uuid": "^1.4.3",
     "utf8": "~2.1.1",
