@@ -150,7 +150,8 @@ describe('connector edge cases', () => {
 });
 
 describe('s3cmd multipart upload', () => {
-    before('create the multipart file', (done) => {
+    before('create the multipart file', function createMPUFile(done) {
+        this.timeout(60000);
         createFile(MPUpload, 16777216, done);
     });
 
