@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import assert from 'assert';
+
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
@@ -51,15 +52,13 @@ describe('objectDelete API', () => {
 
     it('should delete an object', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest,
-                () => {
-                    objectDelete(accessKey, metastore,
-                        testDeleteRequest, (err, response) => {
-                            expect(response)
-                                .to.equal('Object deleted permanently');
-                            done();
-                        });
-                });
+            objectPut(accessKey, metastore, testPutObjectRequest, () => {
+                objectDelete(accessKey, metastore, testDeleteRequest,
+                    (err, response) => {
+                        assert.strictEqual(response, 'ObjectDeletedPermanently');
+                        done();
+                    });
+            });
         });
     });
 });
