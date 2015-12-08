@@ -55,7 +55,8 @@ describe('objectDelete API', () => {
             objectPut(accessKey, metastore, testPutObjectRequest, () => {
                 objectDelete(accessKey, metastore, testDeleteRequest,
                     (err, response) => {
-                        assert.strictEqual(response, 'ObjectDeletedPermanently');
+                        assert.strictEqual(response,
+                            'ObjectDeletedPermanently');
                         done();
                     });
             });
