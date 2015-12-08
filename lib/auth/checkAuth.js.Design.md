@@ -41,33 +41,6 @@ See Common Steps for Signature Version 2
 
 ### Common Steps for Signature Version 2
 
-CURRENT IMPLEMENTATION:
-
-1. Uses the accessKey to pull the secretKey from database (stored in memory for
-   the time being).
-2. Uses the secretKey to reconstruct the signature:
-   * Builds the stringToSign:
-
-     ```
-     HTTP-Verb + "\n" +
-     Content-MD5 + "\n" +
-     Content-Type + "\n" +
-     Date (or Expiration for query Auth) + "\n" +
-     CanonicalizedAmzHeaders +
-     CanonicalizedResource;
-     ```
-
-   * utf8 encodes the stringToSign
-   * Uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as
-     inputs to create a digest.
-   * Base64 encodes the digest. The result is the reconstructed signature.
-3. Checks whether the reconstructed signature matches the signature provided
-   with the request. If the two signatures match, it means that the requestor
-   had the secretKey in order to properly encode the signature provided so
-   authentication is confirmed.
-
-TO BE REVISED IMPLEMENTATION:
-
 1. Build the stringToSign:
 
    ```
@@ -83,11 +56,13 @@ TO BE REVISED IMPLEMENTATION:
 3. Send to Vault: (a) the user provided signature, (b) the encoded
    stringToSign, (c) the user's accesskey.
 4. Vault pulls the secretKey for the user based on the accessKey.
-5. Vault uses HMAC-SHA1 with the secretKey and the utf8-encoded stringToSign as
-   inputs to create a digest.
-6. Vault Base64 encodes the digest. The result is the reconstructed signature.
+5. Vault uses either HMAC-SHA1 or HMAC-SHA256 (depending on the
+   length of the signature in the request) with the secretKey
+   and the utf8-encoded stringToSign as inputs to create a digest.
+6. Vault Base64 encodes the digest. The result is the reconstructed
+   signatures.
 7. Vault compares the reconstructed signature with the signature provided by
-   with the request. If the two signatures match, it means that the requestor
+   with the request. If the signatures match, it means that the requestor
    had the secretKey in order to properly encode the signature provided so
    authentication is confirmed and Vault returns true.  Otherwise, Vault
    returns false and the request is rejected.
@@ -102,8 +77,8 @@ takes two arguments: (a) the request object and (b) a callback function to
 handle any error messages or to proceed if authentication is successful.  The
 checkAuth function returns the callback function with either (i) an error
 message as the first argument if authentication is unsuccessful or (ii) null as
-the first argument and the user's accessKey as the second argument if
-authentication is successful.
+the first argument and an object containing info about the account as
+the second argument if authentication is successful.
 
 For instance, if you have a route to get an object, you would include checkAuth
 as follows:
