@@ -73,15 +73,14 @@ describe("bucketDelete API", () => {
     it('should delete a bucket', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
             bucketDelete(accessKey, metastore, testDeleteRequest,
-                (err, response) => {
-                    assert.strictEqual(response, 'Bucket deleted permanently');
+                () => {
                     assert.strictEqual(metastore
                         .users[accessKey].buckets.length, 0);
                     metadata.getBucket(testBucketUID, (err, md) => {
                         assert.strictEqual(err, 'NoSuchBucket');
                         assert.strictEqual(md, undefined);
+                        done();
                     });
-                    done();
                 });
         });
     });
