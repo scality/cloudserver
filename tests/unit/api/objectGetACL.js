@@ -1,17 +1,22 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import async from 'async';
 import { parseString } from 'xml2js';
+
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
 import objectPut from '../../../lib/api/objectPut';
 import objectGetACL from '../../../lib/api/objectGetACL';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectGetACL API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -23,8 +28,17 @@ describe('objectGetACL API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
-    const bucketName = 'bucketname';
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
     const objectName = 'objectName';
     const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const testBucketPutRequest = {
@@ -59,11 +73,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -71,12 +85,12 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
             done();
         });
     });
@@ -99,11 +113,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -111,22 +125,20 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .URI[0])
-                .to.equal('http://acs.amazonaws.com/groups/global/AllUsers');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('READ');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2])
-                .to.be.undefined;
+                .URI[0],
+                'http://acs.amazonaws.com/groups/global/AllUsers');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0], 'READ');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2], undefined);
             done();
         });
     });
@@ -149,11 +161,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -161,28 +173,28 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .URI[0])
-                .to.equal('http://acs.amazonaws.com/groups/global/AllUsers');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('READ');
-            expect(result.AccessControlPolicy.
+                .URI[0],
+                'http://acs.amazonaws.com/groups/global/AllUsers');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0],
+                'READ');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
-                .URI[0])
-                .to.equal('http://acs.amazonaws.com/groups/global/AllUsers');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2].Permission[0])
-                .to.equal('WRITE');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[3]).to.be.undefined;
+                .URI[0],
+                'http://acs.amazonaws.com/groups/global/AllUsers');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Permission[0],
+                'WRITE');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3], undefined);
             done();
         });
     });
@@ -205,11 +217,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -217,23 +229,23 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .URI[0])
-                .to.equal('http://acs.amazonaws.com/' +
-                    'groups/global/AuthenticatedUsers');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('READ');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2])
-                .to.be.undefined;
+                .URI[0],
+                'http://acs.amazonaws.com/' +
+                'groups/global/AuthenticatedUsers');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0],
+                'READ');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2],
+                undefined);
             done();
         });
     });
@@ -256,11 +268,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -268,21 +280,20 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('READ');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2])
-                .to.be.undefined;
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0],
+                'READ');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2], undefined);
             done();
         });
     });
@@ -305,11 +316,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -317,21 +328,20 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0]).to.equal('accessKey1');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2])
-                .to.be.undefined;
+                .ID[0], 'accessKey1');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2], undefined);
             done();
         });
     });
@@ -378,11 +388,11 @@ describe('objectGetACL API', () => {
                 bucketPut(accessKey, metastore, testBucketPutRequest, next);
             },
             function waterfall2(result, next) {
-                expect(result).to.equal('Bucket created');
+                assert.strictEqual(result, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest, next);
             },
             function waterfall3(result, next) {
-                expect(result).to.equal(correctMD5);
+                assert.strictEqual(result, correctMD5);
                 objectGetACL(accessKey, metastore, testGetACLRequest, next);
             },
             function waterfall4(result, next) {
@@ -390,56 +400,56 @@ describe('objectGetACL API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .ID[0]).to.equal('79a59df900b949e55d96a1e698fbacedfd6e09d98' +
+                .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
                 'eacf8f8d5218e7cd47ef2be');
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .DisplayName[0]).to.equal('sampleAccount1@sampling.com');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[0].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .DisplayName[0], 'sampleAccount1@sampling.com');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[0].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0]).to.equal('79a59df900b949e55d96a1e698fbacedfd6e09d98' +
+                .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
                 'eacf8f8d5218e7cd47ef2bf');
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .DisplayName[0]).to.equal('sampleAccount2@sampling.com');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[1].Permission[0])
-                .to.equal('FULL_CONTROL');
-            expect(result.AccessControlPolicy.
+                .DisplayName[0], 'sampleAccount2@sampling.com');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[1].Permission[0],
+                'FULL_CONTROL');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
-                .ID[0]).to.equal('79a59df900b949e55d96a1e698fbacedfd6e09d98' +
+                .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
                 'eacf8f8d5218e7cd47ef2bf');
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
-                .DisplayName[0]).to.equal('sampleAccount2@sampling.com');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[2].Permission[0])
-                .to.equal('WRITE_ACP');
-            expect(result.AccessControlPolicy.
+                .DisplayName[0], 'sampleAccount2@sampling.com');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[2].Permission[0],
+                'WRITE_ACP');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
-                .ID[0]).to.equal('79a59df900b949e55d96a1e698fbacedfd6e09d98' +
+                .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
                 'eacf8f8d5218e7cd47ef2be');
-            expect(result.AccessControlPolicy.
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
-                .DisplayName[0]).to.equal('sampleAccount1@sampling.com');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[3].Permission[0])
-                .to.equal('READ_ACP');
-            expect(result.AccessControlPolicy.
+                .DisplayName[0], 'sampleAccount1@sampling.com');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[3].Permission[0],
+                'READ_ACP');
+            assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[4].Grantee[0]
-                .URI[0]).to.equal('http://acs.amazonaws.com/groups/global/' +
+                .URI[0], 'http://acs.amazonaws.com/groups/global/' +
                 'AuthenticatedUsers');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[4].Permission[0])
-                .to.equal('READ');
-            expect(result.AccessControlPolicy.
-                AccessControlList[0].Grant[5])
-                .to.be.undefined;
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[4].Permission[0],
+                'READ');
+            assert.strictEqual(result.AccessControlPolicy.
+                AccessControlList[0].Grant[5],
+                undefined);
             done();
         });
     });
