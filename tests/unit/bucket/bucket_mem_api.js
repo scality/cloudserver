@@ -50,7 +50,7 @@ describe('bucket API for getting, putting and deleting ' +
     it('should be able to delete an object from a bucket', (done) => {
         metadata.putObjectMD(bucketName, 'objectToDelete', 'valueToDelete',
             () => {
-                bucket.deleteObjectMD('objectToDelete', () => {
+                metadata.deleteObjectMD(bucketName, 'objectToDelete', () => {
                     metadata.getObjectMD(bucketName,
                         'objectToDelete', (err, value) => {
                             assert.strictEqual(err, 'NoSuchKey');
