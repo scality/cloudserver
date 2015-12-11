@@ -1,14 +1,18 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketHead API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -20,10 +24,18 @@ describe('bucketHead API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
     it('should return an error if the bucket does not exist', (done) => {
-        const bucketName = 'bucketname';
         const testRequest = {
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
@@ -31,7 +43,7 @@ describe('bucketHead API', () => {
         };
 
         bucketHead(accessKey, metastore, testRequest, (err) => {
-            expect(err).to.equal('NoSuchBucket');
+            assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
     });
@@ -48,10 +60,10 @@ describe('bucketHead API', () => {
 
         bucketPut(putAccessKey, metastore, testRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketHead(accessKey, metastore, testRequest,
                     (err) => {
-                        expect(err).to.equal('AccessDenied');
+                        assert.strictEqual(err, 'AccessDenied');
                         done();
                     });
             });
@@ -69,11 +81,11 @@ describe('bucketHead API', () => {
 
         bucketPut(accessKey, metastore, testRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketHead(accessKey, metastore, testRequest,
                     (err, result) => {
-                        expect(result).to.equal(
-                            'Bucket exists and user authorized -- 200');
+                        assert.strictEqual(result,
+                        'Bucket exists and user authorized -- 200');
                         done();
                     });
             });

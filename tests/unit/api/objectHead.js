@@ -1,15 +1,20 @@
-import { expect } from 'chai';
+import assert from 'assert';
+
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
 import objectPut from '../../../lib/api/objectPut';
 import objectHead from '../../../lib/api/objectHead';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectHead API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -21,9 +26,17 @@ describe('objectHead API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
-    const bucketName = 'bucketname';
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
     const postBody = 'I am a body';
     const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
@@ -62,13 +75,13 @@ describe('objectHead API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectHead(accessKey, metastore, testGetRequest,
                             (err) => {
-                                expect(err).to.equal('NotModified');
+                                assert.strictEqual(err, 'NotModified');
                                 done();
                             });
                     });
@@ -87,13 +100,13 @@ describe('objectHead API', () => {
         };
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectHead(accessKey, metastore,
                             testGetRequest, (err) => {
-                                expect(err).to.equal('PreconditionFailed');
+                                assert.strictEqual(err, 'PreconditionFailed');
                                 done();
                             });
                     });
@@ -113,13 +126,13 @@ describe('objectHead API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectHead(accessKey, metastore,
                             testGetRequest, (err) => {
-                                expect(err).to.equal('PreconditionFailed');
+                                assert.strictEqual(err, 'PreconditionFailed');
                                 done();
                             });
                     });
@@ -139,13 +152,13 @@ describe('objectHead API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectHead(accessKey, metastore,
                             testGetRequest, (err) => {
-                                expect(err).to.equal('NotModified');
+                                assert.strictEqual(err, 'NotModified');
                                 done();
                             });
                     });
@@ -161,16 +174,15 @@ describe('objectHead API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectHead(accessKey, metastore,
                             testGetRequest, (err, success) => {
-                                expect(success[userMetadataKey])
-                                    .to.equal(userMetadataValue);
-                                expect(success.Etag)
-                                    .to.equal(correctMD5);
+                                assert.strictEqual(success[userMetadataKey],
+                                    userMetadataValue);
+                                assert.strictEqual(success.Etag, correctMD5);
                                 done();
                             });
                     });

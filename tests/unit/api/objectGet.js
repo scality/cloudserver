@@ -1,16 +1,21 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import crypto from 'crypto';
+
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectGet API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -22,9 +27,17 @@ describe('objectGet API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
-    const bucketName = 'bucketname';
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
     const postBody = 'I am a body';
     const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const objectName = 'objectName';
@@ -53,16 +66,16 @@ describe('objectGet API', () => {
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
-            expect(res).to.equal('Bucket created');
+            assert.strictEqual(res, 'Bucket created');
             objectPut(accessKey, metastore,
                 testPutObjectRequest, (err, result) => {
-                    expect(result).to.equal(correctMD5);
+                    assert.strictEqual(result, correctMD5);
                     objectGet(accessKey, metastore, testGetRequest,
                         (err, result, responseMetaHeaders) => {
-                            expect(responseMetaHeaders[userMetadataKey])
-                                .to.equal(userMetadataValue);
-                            expect(responseMetaHeaders.Etag)
-                                .to.equal(correctMD5);
+                            assert.strictEqual(responseMetaHeaders
+                                [userMetadataKey], userMetadataValue);
+                            assert.strictEqual(responseMetaHeaders.Etag,
+                                correctMD5);
                             done();
                         });
                 });
@@ -77,14 +90,22 @@ describe('objectGet API', () => {
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
-            expect(res).to.equal('Bucket created');
+            assert.strictEqual(res, 'Bucket created');
             objectPut(accessKey, metastore,
                 testPutObjectRequest, (err, result) => {
-                    expect(result).to.equal(correctMD5);
+                    assert.strictEqual(result, correctMD5);
                     objectGet(accessKey, metastore,
-                        testGetRequest, (err, readStream) => {
-                            readStream;
-                            done(err);
+                        testGetRequest, (err, readable) => {
+                            const chunks = [];
+                            readable.on('data', function chunkRcvd(chunk) {
+                                chunks.push(chunk);
+                            });
+                            readable.on('end', function combineChunks() {
+                                const final = chunks.toString();
+                                assert.strictEqual(final,
+                                    postBody);
+                                done();
+                            });
                         });
                 });
         });
@@ -113,10 +134,10 @@ describe('objectGet API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore, testPutBigObjectRequest,
                     (err, result) => {
-                        expect(result).to.equal(correctBigMD5);
+                        assert.strictEqual(result, correctBigMD5);
                         objectGet(accessKey,
                             metastore, testGetRequest, (err, readable) => {
                                 const md5Hash = crypto.createHash('md5');
@@ -129,8 +150,8 @@ describe('objectGet API', () => {
                                 readable.on('end', function combineChunks() {
                                     const resultmd5Hash =
                                         md5Hash.digest('base64');
-                                    expect(resultmd5Hash)
-                                        .to.equal(correctBigMD5);
+                                    assert.strictEqual(resultmd5Hash,
+                                        correctBigMD5);
                                     done();
                                 });
                             });
