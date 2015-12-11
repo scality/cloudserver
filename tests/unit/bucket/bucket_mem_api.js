@@ -1,4 +1,5 @@
 import async from 'async';
+import assert from 'assert';
 import {expect} from 'chai';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
@@ -30,7 +31,7 @@ describe('bucket API for getting, putting and deleting ' +
     it('should be able to add an object to a bucket ' +
        'and get the object by key', (done) => {
         metadata.putObjectMD(bucketName, "sampleKey", "sampleValue", () => {
-            bucket.getObjectMD("sampleKey", (err, value) => {
+            metadata.getObjectMD(bucketName, "sampleKey", (err, value) => {
                 expect(value).to.equal("sampleValue");
                 done();
             });
@@ -39,8 +40,8 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should return an error in response ' +
        'to getObjectMD when no such key', (done) => {
-        bucket.getObjectMD('notThere', (err, value) => {
-            expect(err).to.be.true;
+        metadata.getObjectMD(bucketName, 'notThere', (err, value) => {
+            assert.strictEqual(err, 'NoSuchKey');
             expect(value).to.be.undefined;
             done();
         });
@@ -50,9 +51,9 @@ describe('bucket API for getting, putting and deleting ' +
         metadata.putObjectMD(bucketName, 'objectToDelete', 'valueToDelete',
             () => {
                 bucket.deleteObjectMD('objectToDelete', () => {
-                    bucket.getObjectMD(
+                    metadata.getObjectMD(bucketName,
                         'objectToDelete', (err, value) => {
-                            expect(err).to.be.true;
+                            assert.strictEqual(err, 'NoSuchKey');
                             expect(value).to.be.undefined;
                             done();
                         });
