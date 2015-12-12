@@ -1,14 +1,19 @@
-import { expect } from 'chai';
+import assert from 'assert';
+
 import objectPut from '../../../lib/api/objectPut';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
+import metadata from '../../../lib/metadata/wrapper';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('putObjectACL API', () => {
     let metastore;
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -20,10 +25,18 @@ describe('putObjectACL API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -59,13 +72,13 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err).to.equal('InvalidArgument');
+                                assert.strictEqual(err, 'InvalidArgument');
                                 done();
                             }
                         );
@@ -76,8 +89,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const bucketName = 'bucketname';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -113,19 +124,19 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err).to.equal(undefined);
-                                expect(metastore
-                                        .buckets[bucketUID]
-                                        .keyMap.objectName
-                                        .acl.Canned)
-                                        .to.equal('public-read-write');
-                                done();
+                                assert.strictEqual(err, undefined);
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.Canned,
+                                        'public-read-write');
+                                    done();
+                                });
                             }
                         );
                     }
@@ -136,8 +147,6 @@ describe('putObjectACL API', () => {
 
     it('should set a canned public-read ACL followed by'
         + ' a canned authenticated-read ACL', (done) => {
-        const bucketName = 'bucketname';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -187,30 +196,29 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest1,
                             (err) => {
-                                expect(err).to.equal(undefined);
-                                expect(metastore
-                                        .buckets[bucketUID]
-                                        .keyMap.objectName
-                                        .acl.Canned)
-                                        .to.equal('public-read');
-                                objectPutACL(accessKey, metastore,
-                                    testObjACLRequest2,
-                                    (err) => {
-                                        expect(err).to.equal(undefined);
-                                        expect(metastore
-                                                .buckets[bucketUID]
-                                                .keyMap.objectName
-                                                .acl.Canned)
-                                                .to.equal('authenticated-read');
-                                        done();
-                                    }
-                                );
+                                assert.strictEqual(err, undefined);
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.Canned, 'public-read');
+                                    objectPutACL(accessKey, metastore,
+                                        testObjACLRequest2,
+                                        (err) => {
+                                            assert.strictEqual(err, undefined);
+                                            metadata.getBucket(testBucketUID,
+                                                (err, md) => {
+                                                    assert.strictEqual(md.keyMap
+                                                    .objectName.acl.Canned,
+                                                    'authenticated-read');
+                                                    done();
+                                                });
+                                        });
+                                });
                             }
                         );
                     }
@@ -220,8 +228,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request headers', (done) => {
-        const bucketName = 'bucketname';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
@@ -281,46 +287,33 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err).to.equal(undefined);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.READ[0])
-                                    .to.equal('http://acs.amazonaws.com/' +
+                                assert.strictEqual(err, undefined);
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.READ[0],
+                                        'http://acs.amazonaws.com/' +
                                         'groups/s3/LogDelivery');
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.FULL_CONTROL[0]
-                                    .indexOf(canonicalIDforSample1))
-                                    .to.be.above(-1);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.FULL_CONTROL[1]
-                                    .indexOf(canonicalIDforSample2))
-                                    .to.be.above(-1);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.READ_ACP[0]
-                                    .indexOf(canonicalIDforSample1))
-                                    .to.be.above(-1);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.WRITE_ACP[0]
-                                    .indexOf(canonicalIDforSample2))
-                                    .to.be.above(-1);
-                                done();
-                            }
-                        );
+                                    assert(md.keyMap.objectName
+                                        .acl.FULL_CONTROL[0]
+                                        .indexOf(canonicalIDforSample1) > -1);
+                                    assert(md.keyMap.objectName
+                                        .acl.FULL_CONTROL[1]
+                                        .indexOf(canonicalIDforSample2) > -1);
+                                    assert(md.keyMap.objectName
+                                        .acl.READ_ACP[0]
+                                        .indexOf(canonicalIDforSample1) > -1);
+                                    assert(md.keyMap.objectName
+                                        .acl.WRITE_ACP[0]
+                                        .indexOf(canonicalIDforSample2) > -1);
+                                    done();
+                                });
+                            });
                     }
                 );
             }
@@ -329,7 +322,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -369,14 +361,14 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                .to.equal('UnresolvableGrantByEmailAddress');
+                                assert.strictEqual(err,
+                                    'UnresolvableGrantByEmailAddress');
                                 done();
                             }
                         );
@@ -387,7 +379,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -453,47 +444,37 @@ describe('putObjectACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to.equal(undefined);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.FULL_CONTROL[0])
-                                    .to.equal(
+                                assert.strictEqual(err, undefined);
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.FULL_CONTROL[0],
                                         '852b113e7a2f25102679df27bb' +
                                         '0ae12b3f85be6');
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.READ[0])
-                                    .to.equal('http://acs.amazonaws.com/' +
-                                            'groups/global/AllUsers');
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.WRITE_ACP[0])
-                                    .to.equal(canonicalIDforSample1);
-                                expect(metastore.
-                                    buckets[bucketUID]
-                                    .keyMap.objectName
-                                    .acl.READ_ACP[0])
-                                    .to.equal('f30716ab7115dcb44a5e' +
-                                    'f76e9d74b8e20567f63');
-                                done();
-                            }
-                        );
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.READ[0],
+                                        'http://acs.amazonaws.com/' +
+                                        'groups/global/AllUsers');
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.WRITE_ACP[0],
+                                        canonicalIDforSample1);
+                                    assert.strictEqual(md.keyMap.objectName
+                                        .acl.READ_ACP[0],
+                                        'f30716ab7115dcb44a5e' +
+                                        'f76e9d74b8e20567f63');
+                                    done();
+                                });
+                            });
                     }
                 );
             }
@@ -502,8 +483,6 @@ describe('putObjectACL API', () => {
 
     it('should ignore if WRITE ACL permission is ' +
         'provided in request body', (done) => {
-        const bucketName = 'bucketname';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -559,33 +538,32 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err).to.be.undefined;
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.Canned)
-                                    .to.equal('');
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.FULL_CONTROL[0])
-                                    .to.equal('852b113e7a2f2510267' +
+                                assert.strictEqual(err, undefined);
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.Canned, '');
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.FULL_CONTROL[0],
+                                        '852b113e7a2f2510267' +
                                         '9df27bb0ae12b3f85be6');
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.WRITE).to.be.undefined;
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.READ[0]).to.be.undefined;
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.WRITE_ACP[0])
-                                    .to.be.undefined;
-                                expect(metastore.buckets[bucketUID].keyMap
-                                    .objectName.acl.READ_ACP[0])
-                                    .to.be.undefined;
-                                done();
-                            }
-                        );
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.WRITE, undefined);
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.READ[0], undefined);
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.WRITE_ACP[0],
+                                        undefined);
+                                    assert.strictEqual(md.keyMap
+                                        .objectName.acl.READ_ACP[0], undefined);
+                                    done();
+                                });
+                            });
                     }
                 );
             }
@@ -594,7 +572,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -644,15 +621,14 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to
-                                    .equal('UnresolvableGrantByEmailAddress');
+                                assert.strictEqual(err,
+                                    'UnresolvableGrantByEmailAddress');
                                 done();
                             }
                         );
@@ -664,7 +640,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -714,15 +689,13 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to
-                                    .equal('MalformedACLError');
+                                assert.strictEqual(err, 'MalformedACLError');
                                 done();
                             }
                         );
@@ -733,7 +706,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -783,15 +755,13 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to
-                                    .equal('MalformedXML');
+                                assert.strictEqual(err, 'MalformedXML');
                                 done();
                             }
                         );
@@ -803,7 +773,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -853,15 +822,13 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to
-                                    .equal('MalformedXML');
+                                assert.strictEqual(err, 'MalformedXML');
                                 done();
                             }
                         );
@@ -873,7 +840,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group uri ' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
@@ -916,15 +882,13 @@ describe('putObjectACL API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
+                        assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
-                                expect(err)
-                                    .to
-                                    .equal('InvalidArgument');
+                                assert.strictEqual(err, 'InvalidArgument');
                                 done();
                             }
                         );

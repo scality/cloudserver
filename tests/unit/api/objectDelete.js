@@ -1,16 +1,20 @@
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectDelete API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -22,9 +26,17 @@ describe('objectDelete API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
-    const bucketName = 'bucketname';
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,

@@ -1,24 +1,30 @@
+import assert from 'assert';
 import async from 'async';
 import crypto from 'crypto';
 import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import objectPutPart from '../../../lib/api/objectPutPart';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
+import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
+import metadata from '../../../lib/metadata/wrapper';
 import multipartDelete from '../../../lib/api/multipartDelete';
+import objectPutPart from '../../../lib/api/objectPutPart';
 import config from '../../../config';
 const splitter = config.splitter;
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
+const mpuBucket = `mpu...${testBucketUID}`;
 
 
 describe('Multipart Upload API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -30,11 +36,25 @@ describe('Multipart Upload API', () => {
             },
             "buckets": {}
         };
+
+        // Must delete real bucket and shadow mpu bucket
+        metadata.deleteBucket(testBucketUID, () => {
+            metadata.deleteBucket(mpuBucket, () => {
+                done();
+            });
+        });
+    });
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, () => {
+            metadata.deleteBucket(mpuBucket, () => {
+                done();
+            });
+        });
     });
 
 
     it('should initiate a multipart upload', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -51,15 +71,11 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-        const mpuBucket = `mpu...${bucketUID}`;
 
         bucketPut(accessKey, metastore, putRequest, () => {
             initiateMultipartUpload(accessKey, metastore, initiateRequest,
                     (err, result) => {
                         expect(err).to.be.undefined;
-                        expect(Object.keys(metastore.buckets[mpuBucket]
-                            .keyMap)).to.have.length.of(1);
                         parseString(result, (err, json) => {
                             expect(json.InitiateMultipartUploadResult
                                 .Bucket[0]).to.equal(bucketName);
@@ -67,14 +83,20 @@ describe('Multipart Upload API', () => {
                                 .Key[0]).to.equal(objectKey);
                             expect(json.InitiateMultipartUploadResult
                                 .UploadId[0]).to.exist;
-                            done();
+                            metadata.getBucket(mpuBucket, (err, md) => {
+                                assert.strictEqual(Object
+                                    .keys(md.keyMap).length, 1);
+                                assert(Object.keys(md.keyMap)[0]
+                                    .startsWith(
+                                    `overview${splitter}${objectKey}`));
+                                done();
+                            });
                         });
                     });
         });
     });
 
     it('should upload a part', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -91,8 +113,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -103,9 +123,14 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
-                parseString(result, next);
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object
+                        .keys(md.keyMap).length, 1);
+                    assert(Object.keys(md.keyMap)[0]
+                        .startsWith(
+                        `overview${splitter}${objectKey}`));
+                    parseString(result, next);
+                });
             },
         ],
         function waterfallFinal(err, json) {
@@ -135,26 +160,26 @@ describe('Multipart Upload API', () => {
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
-                const keysInMPUkeyMap = Object.keys(metastore
-                    .buckets[mpuBucket].keyMap);
-                const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                    if (a.slice(0, 8) === 'overview') {
-                        return -1;
-                    }
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    const keysInMPUkeyMap = Object.keys(md.keyMap);
+                    const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                        if (a.slice(0, 8) === 'overview') {
+                            return -1;
+                        }
+                    });
+                    const overviewEntry = sortedKeyMap[0];
+                    const partEntryArray = sortedKeyMap[1].split(splitter);
+                    const partUploadId = partEntryArray[0];
+                    const firstPartNumber = partEntryArray[1];
+                    const partEtag = partEntryArray[3];
+                    expect(keysInMPUkeyMap).to.have.length(2);
+                    expect(md.keyMap[overviewEntry].key)
+                        .to.equal(objectKey);
+                    expect(partUploadId).to.equal(testUploadId);
+                    expect(firstPartNumber).to.equal('1');
+                    expect(partEtag).to.equal(calculatedMD5);
+                    done();
                 });
-                const overviewEntry = sortedKeyMap[0];
-                const partEntryArray = sortedKeyMap[1].split(splitter);
-                const partUploadId = partEntryArray[0];
-                const firstPartNumber = partEntryArray[1];
-                const partEtag = partEntryArray[3];
-                expect(keysInMPUkeyMap).to.have.length(2);
-                expect(metastore.buckets[mpuBucket]
-                    .keyMap[overviewEntry].key)
-                    .to.equal(objectKey);
-                expect(partUploadId).to.equal(testUploadId);
-                expect(firstPartNumber).to.equal('1');
-                expect(partEtag).to.equal(calculatedMD5);
-                done();
             });
         });
     });
@@ -162,7 +187,6 @@ describe('Multipart Upload API', () => {
     it('should upload a part even if the client sent ' +
     'a base 64 etag (and the stored etag ' +
     'in metadata should be hex)', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -179,8 +203,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -223,24 +245,24 @@ describe('Multipart Upload API', () => {
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
-                const keysInMPUkeyMap = Object.keys(metastore
-                    .buckets[mpuBucket].keyMap);
-                const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                    if (a.slice(0, 8) === 'overview') {
-                        return -1;
-                    }
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    const keysInMPUkeyMap = Object.keys(md.keyMap);
+                    const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                        if (a.slice(0, 8) === 'overview') {
+                            return -1;
+                        }
+                    });
+                    const partEntryArray = sortedKeyMap[1].split(splitter);
+                    const partEtag = partEntryArray[3];
+                    expect(keysInMPUkeyMap).to.have.length(2);
+                    expect(partEtag).to.equal(hexMD5);
+                    done();
                 });
-                const partEntryArray = sortedKeyMap[1].split(splitter);
-                const partEtag = partEntryArray[3];
-                expect(keysInMPUkeyMap).to.have.length(2);
-                expect(partEtag).to.equal(hexMD5);
-                done();
             });
         });
     });
 
     it('should return an error if too many parts', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -304,7 +326,6 @@ describe('Multipart Upload API', () => {
     });
 
     it('should return an error if part number is not an integer', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -371,7 +392,6 @@ describe('Multipart Upload API', () => {
         // Note this is only faking a large file
         // by setting a large content-length.  It is not actually putting a
         // large file.  Functional tests will test actual large data.
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -436,7 +456,6 @@ describe('Multipart Upload API', () => {
     });
 
     it('should upload two parts', (done) => {
-        const bucketName = 'bucketname';
         const objectKey = 'testObject';
         const putRequest = {
             lowerCaseHeaders: {},
@@ -453,8 +472,6 @@ describe('Multipart Upload API', () => {
             namespace: namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-        const mpuBucket = `mpu...${bucketUID}`;
 
         async.waterfall([
             function waterfall1(next) {
@@ -465,9 +482,11 @@ describe('Multipart Upload API', () => {
                     accessKey, metastore, initiateRequest, next);
             },
             function waterfall3(result, next) {
-                expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
-                parseString(result, next);
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                        .keyMap).length, 1);
+                    parseString(result, next);
+                });
             },
         ],
         function waterfallFinal(err, json) {
@@ -520,73 +539,73 @@ describe('Multipart Upload API', () => {
                 objectPutPart(accessKey, metastore, partRequest2,
                     (err) => {
                         expect(err).to.be.null;
-                        const keysInMPUkeyMap = Object.keys(metastore
-                            .buckets[mpuBucket].keyMap);
-                        const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                            if (a.slice(0, 8) === 'overview') {
-                                return -1;
-                            }
+                        metadata.getBucket(mpuBucket, (err, md) => {
+                            const keysInMPUkeyMap = Object.keys(md.keyMap);
+                            const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
+                                if (a.slice(0, 8) === 'overview') {
+                                    return -1;
+                                }
+                            });
+                            const overviewEntry = sortedKeyMap[0];
+                            const secondPartEntryArray =
+                                sortedKeyMap[2].split(splitter);
+                            const partUploadId = secondPartEntryArray[0];
+                            const secondPartNumber =
+                                secondPartEntryArray[1];
+                            const secondPartEtag =
+                                secondPartEntryArray[3];
+                            expect(keysInMPUkeyMap).to.have.length(3);
+                            expect(md.keyMap[overviewEntry].key)
+                                .to.equal(objectKey);
+                            expect(partUploadId).to.equal(testUploadId);
+                            expect(secondPartNumber).to.equal('2');
+                            expect(secondPartEtag)
+                                .to.equal(secondCalculatedMD5);
+                            done();
                         });
-                        const overviewEntry = sortedKeyMap[0];
-                        const secondPartEntryArray =
-                            sortedKeyMap[2].split(splitter);
-                        const partUploadId = secondPartEntryArray[0];
-                        const secondPartNumber =
-                            secondPartEntryArray[1];
-                        const secondPartEtag =
-                            secondPartEntryArray[3];
-                        expect(keysInMPUkeyMap).to.have.length(3);
-                        expect(metastore.buckets[mpuBucket]
-                            .keyMap[overviewEntry].key)
-                            .to.equal(objectKey);
-                        expect(partUploadId).to.equal(testUploadId);
-                        expect(secondPartNumber).to.equal('2');
-                        expect(secondPartEtag)
-                            .to.equal(secondCalculatedMD5);
-                        done();
                     });
             });
         });
+    });
 
-        it('should complete a multipart upload', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+    it('should complete a multipart upload', (done) => {
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -648,58 +667,57 @@ describe('Multipart Upload API', () => {
                                 .Key[0]).to.equal(objectKey);
                             expect(json.CompleteMultipartUploadResult
                                 .ETag[0]).to.equal(awsVerifiedEtag);
-                            expect(metastore.buckets[bucketUID]
-                                .keyMap[objectKey]).to.exist;
-                            expect(metastore.buckets[bucketUID]
-                                .keyMap[objectKey]['x-amz-meta-stuff'])
-                                .to.equal('I am some user metadata');
-                            done();
+                            metadata.getBucket(testBucketUID, (err, md) => {
+                                expect(md.keyMap[objectKey]).to.exist;
+                                expect(md.keyMap[objectKey]['x-amz-meta-stuff'])
+                                    .to.equal('I am some user metadata');
+                                done();
+                            });
                         });
                     });
             });
         });
-        });
+    });
 
-        it('should return an error if a complete multipart upload' +
+    it('should return an error if a complete multipart upload' +
     ' request contains malformed xml', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -743,53 +761,56 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(accessKey, metastore,
                     completeRequest, (err) => {
                         expect(err).to.equal('MalformedXML');
-                        done();
+                        metadata.getBucket(mpuBucket, (err, md) => {
+                            assert.strictEqual(Object.keys(md
+                                .keyMap).length, 2);
+                            done();
+                        });
                     });
             });
         });
-        });
+    });
 
-        it('should return an error if the complete ' +
+    it('should return an error if the complete ' +
     'multipart upload request contains xml that ' +
     'does not conform to the AWS spec', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -841,49 +862,48 @@ describe('Multipart Upload API', () => {
                     });
             });
         });
-        });
+    });
 
-        it('should return an error if the complete ' +
+    it('should return an error if the complete ' +
     'multipart upload request contains xml with ' +
     'a part list that is not in numerical order', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -953,58 +973,58 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('InvalidPartOrder');
-                            expect(Object.keys(metastore
-                                .buckets[mpuBucket]
-                                .keyMap)).to.have.length.of(3);
-                            done();
+                            metadata.getBucket(mpuBucket, (err, md) => {
+                                assert.strictEqual(Object.keys(md
+                                    .keyMap).length, 3);
+                                done();
+                            });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should return an error if the complete ' +
+    it('should return an error if the complete ' +
     'multipart upload request contains xml with ' +
     'a part etag that does not match the md5 for ' +
     'the part that was actually sent', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1075,57 +1095,57 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('InvalidPart');
-                            expect(Object.keys(metastore
-                                .buckets[mpuBucket]
-                                .keyMap)).to.have.length.of(3);
-                            done();
+                            metadata.getBucket(mpuBucket, (err, md) => {
+                                assert.strictEqual(Object.keys(md
+                                    .keyMap).length, 3);
+                                done();
+                            });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should return an error if there is a part ' +
+    it('should return an error if there is a part ' +
     'other than the last part that is less than 5MB ' +
     'in size', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1197,55 +1217,55 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
                             expect(err).to.equal('EntityTooSmall');
-                            expect(Object.keys(metastore
-                                .buckets[mpuBucket]
-                                .keyMap)).to.have.length.of(3);
-                            done();
+                            metadata.getBucket(mpuBucket, (err, md) => {
+                                assert.strictEqual(Object.keys(md
+                                    .keyMap).length, 3);
+                                done();
+                            });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should aggregate the sizes of the parts', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+    it('should aggregate the sizes of the parts', (done) => {
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until her
@@ -1320,58 +1340,58 @@ describe('Multipart Upload API', () => {
                             expect(err).to.equal(null);
                             parseString(result, (err) => {
                                 expect(err).to.equal(null);
-                                expect(metastore.buckets[bucketUID]
-                                    .keyMap[objectKey]
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    expect(md.keyMap[objectKey]
                                     ['content-length'])
                                     .to.equal(6000100);
-                                done();
+                                    done();
+                                });
                             });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should set a canned ACL for a multipart upload', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                    'x-amz-acl': 'authenticated-read',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+    it('should set a canned ACL for a multipart upload', (done) => {
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+                'x-amz-acl': 'authenticated-read',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1446,60 +1466,60 @@ describe('Multipart Upload API', () => {
                             expect(err).to.equal(null);
                             parseString(result, (err) => {
                                 expect(err).to.equal(null);
-                                expect(metastore.buckets[bucketUID]
-                                    .keyMap[objectKey].acl.Canned)
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    expect(md.keyMap[objectKey].acl.Canned)
                                     .to.equal('authenticated-read');
-                                done();
+                                    done();
+                                });
                             });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should set specific ACL grants for a multipart upload', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const granteeId = '79a59df900b949e55d96a1e698fbace' +
+    it('should set specific ACL grants for a multipart upload', (done) => {
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const granteeId = '79a59df900b949e55d96a1e698fbace' +
             'dfd6e09d98eacf8f8d5218e7cd47ef2be';
-            const granteeEmail = 'sampleAccount1@sampling.com';
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                    'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const granteeEmail = 'sampleAccount1@sampling.com';
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+                'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1573,56 +1593,56 @@ describe('Multipart Upload API', () => {
                             expect(err).to.equal(null);
                             parseString(result, (err) => {
                                 expect(err).to.equal(null);
-                                expect(metastore.buckets[bucketUID]
-                                    .keyMap[objectKey].acl.READ[0])
+                                metadata.getBucket(testBucketUID, (err, md) => {
+                                    expect(md.keyMap[objectKey].acl.READ[0])
                                     .to.equal(granteeId);
-                                done();
+                                    done();
+                                });
                             });
                         });
                 });
             });
         });
-        });
+    });
 
-        it('should abort/delete a multipart upload', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+    it('should abort/delete a multipart upload', (done) => {
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1658,62 +1678,63 @@ describe('Multipart Upload API', () => {
                         uploadId: testUploadId,
                     },
                 };
-                expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap))
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    expect(Object.keys(md.keyMap))
                     .to.have.length.of(2);
-                multipartDelete(
+                    multipartDelete(
                     accessKey, metastore,
                     deleteRequest, (err) => {
                         expect(err).to.be.null;
-                        expect(Object.keys(metastore.buckets[mpuBucket]
-                            .keyMap))
+                        metadata.getBucket(mpuBucket, (err, md) => {
+                            expect(Object.keys(md.keyMap))
                             .to.have.length.of(0);
-                        done();
+                            done();
+                        });
                     });
+                });
             });
         });
-        });
+    });
 
-        it('should return an error if attempt to abort/delete ' +
+    it('should return an error if attempt to abort/delete ' +
         'a multipart upload that does not exist', (done) => {
-            const bucketName = 'bucketname';
-            const objectKey = 'testObject';
-            const putRequest = {
-                lowerCaseHeaders: {},
-                url: '/',
-                namespace: namespace,
-                post: '',
-                headers: {host: `${bucketName}.s3.amazonaws.com`}
-            };
-            const initiateRequest = {
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                },
-                url: `/${objectKey}?uploads`,
-                namespace: namespace,
-                headers: {
-                    host: `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-stuff': 'I am some user metadata',
-                }
-            };
-            const bucketUID = "911b9ca7dbfbe2b280a70ef0d2c2fb22";
-            const mpuBucket = `mpu...${bucketUID}`;
+        const objectKey = 'testObject';
+        const putRequest = {
+            lowerCaseHeaders: {},
+            url: '/',
+            namespace: namespace,
+            post: '',
+            headers: {host: `${bucketName}.s3.amazonaws.com`}
+        };
+        const initiateRequest = {
+            lowerCaseHeaders: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            },
+            url: `/${objectKey}?uploads`,
+            namespace: namespace,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-stuff': 'I am some user metadata',
+            }
+        };
 
-            async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(accessKey, metastore, putRequest, next);
-                },
-                function waterfall2(success, next) {
-                    initiateMultipartUpload(
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore, putRequest, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
                     accessKey, metastore, initiateRequest, next);
-                },
-                function waterfall3(result, next) {
-                    expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap)).to.have.length.of(1);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    assert.strictEqual(Object.keys(md
+                            .keyMap).length, 1);
                     parseString(result, next);
-                },
-            ],
+                });
+            },
+        ],
         function waterfallFinal(err, json) {
             // Need to build request in here since do not have uploadId
             // until here
@@ -1749,17 +1770,17 @@ describe('Multipart Upload API', () => {
                         uploadId: 'non-existent-upload-id',
                     },
                 };
-                expect(Object.keys(metastore.buckets[mpuBucket]
-                    .keyMap))
+                metadata.getBucket(mpuBucket, (err, md) => {
+                    expect(Object.keys(md.keyMap))
                     .to.have.length.of(2);
-                multipartDelete(
+                    multipartDelete(
                     accessKey, metastore,
                     deleteRequest, (err) => {
                         expect(err).to.equal('NoSuchUpload');
                         done();
                     });
+                });
             });
-        });
         });
     });
 });

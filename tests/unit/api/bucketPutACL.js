@@ -1,15 +1,19 @@
-import { expect } from 'chai';
-import utils from '../../../lib/utils.js';
+import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut.js';
 import bucketPutACL from '../../../lib/api/bucketPutACL.js';
+import metadata from '../../../lib/metadata/wrapper';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
+
 
 describe('putBucketACL API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -21,6 +25,15 @@ describe('putBucketACL API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
     it("should parse a grantheader", function testGrantHeader() {
@@ -32,22 +45,21 @@ describe('putBucketACL API', () => {
         const grantReadHeader =
             utils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;
-        expect(firstIdentifier).to.
-            equal('http://acs.amazonaws.com/groups/s3/LogDelivery');
+        assert.strictEqual(firstIdentifier,
+            'http://acs.amazonaws.com/groups/s3/LogDelivery');
         const secondIdentifier = grantReadHeader[1].identifier;
-        expect(secondIdentifier).to.equal('test@testing.com');
+        assert.strictEqual(secondIdentifier, 'test@testing.com');
         const thirdIdentifier = grantReadHeader[2].identifier;
-        expect(thirdIdentifier).to.equal('test2@testly.com');
+        assert.strictEqual(thirdIdentifier, 'test2@testly.com');
         const fourthIdentifier = grantReadHeader[3].identifier;
-        expect(fourthIdentifier).to.equal('sdfsdfsfwwiieohefs');
+        assert.strictEqual(fourthIdentifier, 'sdfsdfsfwwiieohefs');
         const fourthType = grantReadHeader[3].userIDType;
-        expect(fourthType).to.equal('id');
+        assert.strictEqual(fourthType, 'id');
         const grantType = grantReadHeader[3].grantType;
-        expect(grantType).to.equal('read');
+        assert.strictEqual(grantType, 'read');
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -72,18 +84,16 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal(
-                            'InvalidArgument');
+                        assert.strictEqual(err, 'InvalidArgument');
                         done();
                     });
             });
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -106,24 +116,23 @@ describe('putBucketACL API', () => {
             }
         };
 
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
-
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID]
-                            .acl.Canned).to.equal('public-read-write');
-                        done();
+                        assert.strictEqual(err, null);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                                'public-read-write');
+                            done();
+                        });
                     });
             });
     });
 
     it('should set a canned public-read ACL followed by'
         + 'a canned authenticated-read ACL', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -160,30 +169,33 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID]
-                            .acl.Canned).to.equal('public-read');
-                        bucketPutACL(accessKey, metastore, testACLRequest2,
-                            (err) => {
-                                expect(err).to.be.null;
-                                expect(metastore.buckets[bucketUID]
-                                    .acl.Canned).to.equal('authenticated-read');
-                                done();
-                            });
+                        assert.strictEqual(err, null);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                                'public-read');
+                            bucketPutACL(accessKey, metastore,
+                                testACLRequest2, (err) => {
+                                    assert.strictEqual(err, null);
+                                    metadata.getBucket(testBucketUID,
+                                        (err, md) => {
+                                            assert.strictEqual(md.acl
+                                                .Canned, 'authenticated-read');
+                                            done();
+                                        });
+                                });
+                        });
                     });
             });
     });
 
     it('should set a canned private ACL ' +
         'followed by a log-delivery-write ACL', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -220,29 +232,32 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID]
-                            .acl.Canned).to.equal('private');
-                        bucketPutACL(accessKey, metastore, testACLRequest2,
-                            (err) => {
-                                expect(err).to.be.null;
-                                expect(metastore.buckets[bucketUID]
-                                    .acl.Canned).to.equal('log-delivery-write');
-                                done();
-                            });
+                        assert.strictEqual(err, null);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                                'private');
+                            bucketPutACL(accessKey, metastore,
+                                testACLRequest2, (err) => {
+                                    assert.strictEqual(err, null);
+                                    metadata.getBucket(testBucketUID,
+                                        (err, md) => {
+                                            assert.strictEqual(md.acl
+                                                .Canned, 'log-delivery-write');
+                                            done();
+                                        });
+                                });
+                        });
                     });
             });
     });
 
     it('should set ACLs provided in request headers', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -288,7 +303,6 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
@@ -296,32 +310,33 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID].acl.READ[0])
-                            .to.equal('http://acs.amazonaws.com/' +
+                        assert.strictEqual(err, null);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert.strictEqual(md.acl.READ[0],
+                                'http://acs.amazonaws.com/' +
                                 'groups/s3/LogDelivery');
-                        expect(metastore.buckets[bucketUID].acl.WRITE[0])
-                            .to.equal('http://acs.amazonaws.com/' +
-                                    'groups/global/AllUsers');
-                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
-                            .indexOf(canonicalIDforSample1)).to.be.above(-1);
-                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL
-                            .indexOf(canonicalIDforSample2)).to.be.above(-1);
-                        expect(metastore.buckets[bucketUID].acl.READ_ACP
-                            .indexOf(canonicalIDforSample1)).to.be.above(-1);
-                        expect(metastore.buckets[bucketUID].acl.WRITE_ACP
-                            .indexOf(canonicalIDforSample2)).to.be.above(-1);
-                        done();
+                            assert.strictEqual(md.acl.WRITE[0],
+                                'http://acs.amazonaws.com/' +
+                                'groups/global/AllUsers');
+                            assert(md.acl.FULL_CONTROL
+                                .indexOf(canonicalIDforSample1) > -1);
+                            assert(md.acl.FULL_CONTROL
+                                .indexOf(canonicalIDforSample2) > -1);
+                            assert(md.acl.READ_ACP
+                                .indexOf(canonicalIDforSample1) > -1);
+                            assert(md.acl.WRITE_ACP
+                                .indexOf(canonicalIDforSample2) > -1);
+                            done();
+                        });
                     });
             });
     });
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -350,17 +365,17 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                        assert.strictEqual(err,
+                            'UnresolvableGrantByEmailAddress');
                         done();
                     });
             });
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -427,42 +442,40 @@ describe('putBucketACL API', () => {
                 acl: ''
             }
         };
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.be.null;
-                        expect(metastore.buckets[bucketUID]
-                            .acl.Canned).to.equal('');
-                        expect(metastore.buckets[bucketUID].acl.FULL_CONTROL[0])
-                            .to.equal(
+                        assert.strictEqual(err, null);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert.strictEqual(md.acl.Canned, '');
+                            assert.strictEqual(md.acl.FULL_CONTROL[0],
                                 '852b113e7a2f25102679df27bb0ae12b3f85be6' +
                                 'BucketOwnerCanonicalUserID');
-                        expect(metastore.buckets[bucketUID].acl.READ[0])
-                                    .to.equal('http://acs.amazonaws.com/' +
-                                            'groups/global/AllUsers');
-                        expect(metastore.buckets[bucketUID].acl.WRITE[0])
-                            .to.equal('http://acs.amazonaws.com/' +
-                                    'groups/s3/LogDelivery');
-                        expect(metastore.buckets[bucketUID].acl.WRITE_ACP[0])
-                            .to.equal(canonicalIDforSample1);
-                        expect(metastore.buckets[bucketUID].acl.READ_ACP[0])
-                                .to.equal('f30716ab7115dcb44a5e' +
+                            assert.strictEqual(md.acl.READ[0],
+                                'http://acs.amazonaws.com/' +
+                                'groups/global/AllUsers');
+                            assert.strictEqual(md.acl.WRITE[0],
+                                'http://acs.amazonaws.com/' +
+                                'groups/s3/LogDelivery');
+                            assert.strictEqual(md.acl.WRITE_ACP[0],
+                                canonicalIDforSample1);
+                            assert.strictEqual(md.acl.READ_ACP[0],
+                                'f30716ab7115dcb44a5e' +
                                 'f76e9d74b8e20567f63' +
                                 'TestAccountCanonicalUserID');
-                        done();
+                            done();
+                        });
                     });
             });
     });
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -502,10 +515,11 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('UnresolvableGrantByEmailAddress');
+                        assert.strictEqual(err,
+                            'UnresolvableGrantByEmailAddress');
                         done();
                     });
             });
@@ -513,7 +527,6 @@ describe('putBucketACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -556,17 +569,16 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('MalformedACLError');
+                        assert.strictEqual(err, 'MalformedACLError');
                         done();
                     });
             });
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -608,10 +620,10 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('MalformedXML');
+                        assert.strictEqual(err, 'MalformedXML');
                         done();
                     });
             });
@@ -619,7 +631,6 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -661,10 +672,10 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('InvalidArgument');
+                        assert.strictEqual(err, 'InvalidArgument');
                         done();
                     });
             });
@@ -672,7 +683,6 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group uri' +
         'provided in ACL header request', (done) => {
-        const bucketName = 'bucketname';
         const testBucketPutRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -701,10 +711,10 @@ describe('putBucketACL API', () => {
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        expect(err).to.equal('InvalidArgument');
+                        assert.strictEqual(err, 'InvalidArgument');
                         done();
                     });
             });

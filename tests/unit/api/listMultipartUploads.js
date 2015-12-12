@@ -1,17 +1,23 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import async from 'async';
 import { parseString } from 'xml2js';
+
 import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
+import metadata from '../../../lib/metadata/wrapper';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
+const mpuBucket = `mpu...${testBucketUID}`;
 
 describe('listMultipartUploads API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -23,9 +29,23 @@ describe('listMultipartUploads API', () => {
             },
             "buckets": {}
         };
+
+        // Must delete real bucket and shadow mpu bucket
+        metadata.deleteBucket(testBucketUID, () => {
+            metadata.deleteBucket(mpuBucket, () => {
+                done();
+            });
+        });
     });
 
-    const bucketName = 'bucketname';
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, () => {
+            metadata.deleteBucket(mpuBucket, () => {
+                done();
+            });
+        });
+    });
+
     const prefix = 'sub';
     const delimiter = '/';
     const objectName1 = `${prefix}${delimiter}objectName1`;
@@ -74,7 +94,7 @@ describe('listMultipartUploads API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 initiateMultipartUpload(accessKey, metastore,
                     testInitiateMPURequest1, next);
             },
@@ -91,9 +111,9 @@ describe('listMultipartUploads API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListMultipartUploadsResult
-                .CommonPrefixes[0].Prefix[0])
-                .to.equal(commonPrefix);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .CommonPrefixes[0].Prefix[0],
+                commonPrefix);
             done();
         });
     });
@@ -115,7 +135,7 @@ describe('listMultipartUploads API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 initiateMultipartUpload(accessKey, metastore,
                     testInitiateMPURequest1, next);
             },
@@ -132,12 +152,12 @@ describe('listMultipartUploads API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListMultipartUploadsResult.Upload[0].Key[0])
-                .to.equal(objectName1);
-            expect(result.ListMultipartUploadsResult.Upload[1].Key[0])
-                .to.equal(objectName2);
-            expect(result.ListMultipartUploadsResult
-                .IsTruncated[0]).to.equal('false');
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[0].Key[0], objectName1);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[1].Key[0], objectName2);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .IsTruncated[0], 'false');
             done();
         });
     });
@@ -160,7 +180,7 @@ describe('listMultipartUploads API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 initiateMultipartUpload(accessKey, metastore,
                     testInitiateMPURequest1, next);
             },
@@ -177,17 +197,16 @@ describe('listMultipartUploads API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListMultipartUploadsResult.Upload[0].Key[0])
-                .to.equal(objectName1);
-            expect(result.ListMultipartUploadsResult.Upload[1])
-                .to.be.undefined;
-            expect(result.ListMultipartUploadsResult
-                .IsTruncated[0]).to.equal('true');
-            expect(result.ListMultipartUploadsResult
-                .NextKeyMarker[0]).to.equal(objectName2);
-            expect(result.ListMultipartUploadsResult
-                .NextUploadIdMarker[0])
-                .to.have.length.above(5);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[0].Key[0], objectName1);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[1], undefined);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .IsTruncated[0], 'true');
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .NextKeyMarker[0], objectName2);
+            assert(result.ListMultipartUploadsResult
+                .NextUploadIdMarker[0].length > 5);
             done();
         });
     });
@@ -210,7 +229,7 @@ describe('listMultipartUploads API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 initiateMultipartUpload(accessKey, metastore,
                     testInitiateMPURequest1, next);
             },
@@ -231,10 +250,10 @@ describe('listMultipartUploads API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListMultipartUploadsResult.Upload[0].Key[0])
-                .to.equal(encodeURIComponent(objectName3));
-            expect(result.ListMultipartUploadsResult.Upload[1].Key[0])
-                .to.equal(encodeURIComponent(objectName1));
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[0].Key[0], encodeURIComponent(objectName3));
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[1].Key[0], encodeURIComponent(objectName1));
             done();
         });
     });
@@ -257,7 +276,7 @@ describe('listMultipartUploads API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 initiateMultipartUpload(accessKey, metastore,
                     testInitiateMPURequest1, next);
             },
@@ -278,10 +297,10 @@ describe('listMultipartUploads API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListMultipartUploadsResult.Upload[0].Key[0])
-                .to.equal(objectName2);
-            expect(result.ListMultipartUploadsResult.Upload[1])
-                .to.be.undefined;
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[0].Key[0], objectName2);
+            assert.strictEqual(result.ListMultipartUploadsResult
+                .Upload[1], undefined);
             done();
         });
     });

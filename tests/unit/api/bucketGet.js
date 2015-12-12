@@ -1,17 +1,22 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import async from 'async';
 import { parseString } from 'xml2js';
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+
 import bucketGet from '../../../lib/api/bucketGet';
+import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
+import objectPut from '../../../lib/api/objectPut';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketGet API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -23,9 +28,18 @@ describe('bucketGet API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
-    const bucketName = 'bucketname';
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
+
     const postBody = 'I am a body';
     const prefix = 'sub';
     const delimiter = '/';
@@ -65,7 +79,7 @@ describe('bucketGet API', () => {
             lowerCaseHeaders: {
                 host: '/'
             },
-            url: `/${bucketName}?delimiter=\/&prefix=sub`,
+            url: `/${bucketName}?delimiter=/&prefix=sub`,
             namespace: namespace,
             query: {
                 delimiter: delimiter,
@@ -78,7 +92,7 @@ describe('bucketGet API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
@@ -92,8 +106,8 @@ describe('bucketGet API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListBucketResult.CommonPrefixes[0].Prefix[0])
-                .to.equal(commonPrefix);
+            assert.strictEqual(result.ListBucketResult
+                .CommonPrefixes[0].Prefix[0], commonPrefix);
             done();
         });
     });
@@ -115,7 +129,7 @@ describe('bucketGet API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest1, next);
             },
@@ -131,10 +145,10 @@ describe('bucketGet API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListBucketResult.Contents[0].Key[0])
-                .to.equal(objectName1);
-            expect(result.ListBucketResult.Contents[1].Key[0])
-                .to.equal(objectName2);
+            assert.strictEqual(result.ListBucketResult
+                .Contents[0].Key[0], objectName1);
+            assert.strictEqual(result.ListBucketResult
+                .Contents[1].Key[0], objectName2);
             done();
         });
     });
@@ -158,7 +172,7 @@ describe('bucketGet API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
@@ -172,10 +186,9 @@ describe('bucketGet API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListBucketResult.Contents[0].Key[0])
-                .to.equal(objectName1);
-            expect(result.ListBucketResult.Contents[1])
-                .to.be.undefined;
+            assert.strictEqual(result.ListBucketResult
+                .Contents[0].Key[0], objectName1);
+            assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
             done();
         });
     });
@@ -199,7 +212,7 @@ describe('bucketGet API', () => {
                 bucketPut(accessKey, metastore, testPutBucketRequest, next);
             },
             function waterfall2(success, next) {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest1, next);
             },
             function waterfall3(result, next) {
@@ -217,10 +230,10 @@ describe('bucketGet API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListBucketResult.Contents[0].Key[0])
-                .to.equal(encodeURIComponent(objectName3));
-            expect(result.ListBucketResult.Contents[1].Key[0])
-                .to.equal(encodeURIComponent(objectName1));
+            assert.strictEqual(result.ListBucketResult
+                .Contents[0].Key[0], encodeURIComponent(objectName3));
+            assert.strictEqual(result.ListBucketResult
+                .Contents[1].Key[0], encodeURIComponent(objectName1));
             done();
         });
     });

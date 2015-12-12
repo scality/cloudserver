@@ -1,15 +1,20 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import metadata from '../../../lib/metadata/wrapper';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID =
+    utils.getResourceUID(namespace, bucketName);
 
 describe("bucketDelete API", () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -21,9 +26,11 @@ describe("bucketDelete API", () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
-    const bucketName = 'bucketname';
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
@@ -51,12 +58,13 @@ describe("bucketDelete API", () => {
                 () => {
                     bucketDelete(accessKey, metastore, testDeleteRequest,
                         (err) => {
-                            expect(err).to.equal('BucketNotEmpty');
-                            expect(metastore.users[accessKey]
-                                .buckets).to.have.length.of(1);
-                            expect(Object.keys(metastore.buckets))
-                                .to.have.length.of(1);
-                            done();
+                            assert.strictEqual(err, 'BucketNotEmpty');
+                            assert.strictEqual(metastore.users[accessKey]
+                                .buckets.length, 1);
+                            metadata.getBucket(testBucketUID, (err, md) => {
+                                assert.strictEqual(md.name, bucketName);
+                                done();
+                            });
                         });
                 });
         });
@@ -66,12 +74,13 @@ describe("bucketDelete API", () => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
             bucketDelete(accessKey, metastore, testDeleteRequest,
                 (err, response) => {
-                    expect(response).to
-                        .equal('Bucket deleted permanently');
-                    expect(metastore.users[accessKey].buckets)
-                        .to.have.length.of(0);
-                    expect(Object.keys(metastore.buckets))
-                        .to.have.length.of(0);
+                    assert.strictEqual(response, 'Bucket deleted permanently');
+                    assert.strictEqual(metastore
+                        .users[accessKey].buckets.length, 0);
+                    metadata.getBucket(testBucketUID, (err, md) => {
+                        assert.strictEqual(err, 'NoSuchBucket');
+                        assert.strictEqual(md, undefined);
+                    });
                     done();
                 });
         });

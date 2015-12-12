@@ -1,14 +1,19 @@
-import { expect } from 'chai';
-import objectPut from '../../../lib/api/objectPut';
+import assert from 'assert';
+
 import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../../../lib/metadata/wrapper';
+import objectPut from '../../../lib/api/objectPut';
+import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName = 'bucketname';
+const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectPut API', () => {
     let metastore;
 
-    beforeEach(() => {
+    beforeEach((done) => {
         metastore = {
             "users": {
                 "accessKey1": {
@@ -20,11 +25,19 @@ describe('objectPut API', () => {
             },
             "buckets": {}
         };
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
+    });
+
+    after((done) => {
+        metadata.deleteBucket(testBucketUID, ()=> {
+            done();
+        });
     });
 
 
     it('should return an error if the bucket does not exist', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const testRequest = {
             lowerCaseHeaders: {},
@@ -35,13 +48,12 @@ describe('objectPut API', () => {
         };
 
         objectPut(accessKey, metastore, testRequest, (err) => {
-            expect(err).to.equal('NoSuchBucket');
+            assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const putAccessKey = 'accessKey2';
         const testPutBucketRequest = {
@@ -60,10 +72,10 @@ describe('objectPut API', () => {
 
         bucketPut(putAccessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore, testPutObjectRequest,
                     (err) => {
-                        expect(err).to.equal('AccessDenied');
+                        assert.strictEqual(err, 'AccessDenied');
                         done();
                     });
             });
@@ -89,10 +101,8 @@ describe('objectPut API', () => {
 
     it('should successfully put an object with bucket' +
     ' and object in pathname', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -112,28 +122,24 @@ describe('objectPut API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
-                        expect(
-                            metastore.buckets[bucketUID].keyMap[objectName])
-                            .to.exist;
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]['content-md5'])
-                                .to.equal(correctMD5);
-                        done();
+                        assert.strictEqual(result, correctMD5);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert(md.keyMap[objectName]);
+                            assert.strictEqual(md.keyMap[objectName]
+                                ['content-md5'], correctMD5);
+                            done();
+                        });
                     });
             });
     });
 
     it('should successfully put an object with object ' +
     'in pathname and bucket in hostname', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -154,27 +160,23 @@ describe('objectPut API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
-                        expect(
-                            metastore.buckets[bucketUID].keyMap[objectName])
-                            .to.exist;
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]['content-md5'])
-                                .to.equal(correctMD5);
-                        done();
+                        assert.strictEqual(result, correctMD5);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert(md.keyMap[objectName]);
+                            assert.strictEqual(md.keyMap[objectName]
+                                ['content-md5'], correctMD5);
+                            done();
+                        });
                     });
             });
     });
 
     it('should successfully put an object with user metadata', (done) => {
-        const bucketName = 'bucketname';
         const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const bucketUID = '911b9ca7dbfbe2b280a70ef0d2c2fb22';
         const objectName = 'objectName';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -201,26 +203,20 @@ describe('objectPut API', () => {
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
             (err, success) => {
-                expect(success).to.equal('Bucket created');
+                assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
-                        expect(result).to.equal(correctMD5);
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]).to.exist;
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]['x-amz-meta-test'])
-                                    .to.equal('some metadata');
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]['x-amz-meta-test2'])
-                                    .to.equal('some more metadata');
-                        expect(
-                            metastore.buckets[bucketUID]
-                                .keyMap[objectName]['x-amz-meta-test3'])
-                                    .to.equal('even more metadata');
-                        done();
+                        assert.strictEqual(result, correctMD5);
+                        metadata.getBucket(testBucketUID, (err, md) => {
+                            assert(md.keyMap[objectName]);
+                            assert.strictEqual(md.keyMap[objectName]
+                                ['x-amz-meta-test'], 'some metadata');
+                            assert.strictEqual(md.keyMap[objectName]
+                                ['x-amz-meta-test2'], 'some more metadata');
+                            assert.strictEqual(md.keyMap[objectName]
+                                ['x-amz-meta-test3'], 'even more metadata');
+                            done();
+                        });
                     });
             });
     });
