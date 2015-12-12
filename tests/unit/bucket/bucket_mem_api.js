@@ -1,22 +1,25 @@
 import async from 'async';
+import assert from 'assert';
 import {expect} from 'chai';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import {isKeyInContents} from
     '../../../lib/metadata/in_memory/bucket_utilities';
+import metadata from '../../../lib/metadata/wrapper';
 import { makeid, shuffle, timeDiff } from '../helpers';
 
+const bucketName = 'Zaphod';
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
     let bucket;
-    before(() => {
-        bucket = new Bucket();
+    before((done) => {
+        bucket = new Bucket(bucketName, 'iAmTheOwner');
+        bucket.uid = bucketName;
+        metadata.createBucket(bucketName, bucket, done);
     });
 
     after((done) => {
-        bucket.deleteBucketMD(() => {
-            done();
-        });
+        metadata.deleteBucket(bucketName, done);
     });
 
     it("should create a bucket with a keyMap", (done) => {
@@ -27,8 +30,8 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should be able to add an object to a bucket ' +
        'and get the object by key', (done) => {
-        bucket.putObjectMD("sampleKey", "sampleValue", () => {
-            bucket.getObjectMD("sampleKey", (err, value) => {
+        metadata.putObjectMD(bucketName, "sampleKey", "sampleValue", () => {
+            metadata.getObjectMD(bucketName, "sampleKey", (err, value) => {
                 expect(value).to.equal("sampleValue");
                 done();
             });
@@ -37,20 +40,20 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should return an error in response ' +
        'to getObjectMD when no such key', (done) => {
-        bucket.getObjectMD('notThere', (err, value) => {
-            expect(err).to.be.true;
+        metadata.getObjectMD(bucketName, 'notThere', (err, value) => {
+            assert.strictEqual(err, 'NoSuchKey');
             expect(value).to.be.undefined;
             done();
         });
     });
 
     it('should be able to delete an object from a bucket', (done) => {
-        bucket.putObjectMD(
-            'objectToDelete', 'valueToDelete', () => {
-                bucket.deleteObjectMD('objectToDelete', () => {
-                    bucket.getObjectMD(
+        metadata.putObjectMD(bucketName, 'objectToDelete', 'valueToDelete',
+            () => {
+                metadata.deleteObjectMD(bucketName, 'objectToDelete', () => {
+                    metadata.getObjectMD(bucketName,
                         'objectToDelete', (err, value) => {
-                            expect(err).to.be.true;
+                            assert.strictEqual(err, 'NoSuchKey');
                             expect(value).to.be.undefined;
                             done();
                         });
@@ -102,29 +105,30 @@ describe('bucket API for getting a subset of ' +
 
     let bucket;
 
-    before(() => {
-        bucket = new Bucket();
+    before(done => {
+        bucket = new Bucket(bucketName, 'owner');
+        bucket.uid = bucketName;
+        metadata.createBucket(bucketName, bucket, done);
     });
 
-    after((done) => {
-        bucket.deleteBucketMD(() => {
-            done();
-        });
+    after(done => {
+        metadata.deleteBucket(bucketName, done);
     });
 
     it('should return individual key if key does not contain ' +
        'the delimiter even if key contains prefix', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'key1', 'valueWithoutDelimiter', next);
             },
             function waterfall2(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'noMatchKey', 'non-matching key', next);
             },
             function waterfall3(next) {
-                bucket.putObjectMD('key1/', 'valueWithDelimiter', next);
+                metadata.putObjectMD(bucketName,
+                                   'key1/', 'valueWithDelimiter', next);
             },
             function waterfall4(next) {
                 bucket.getBucketListObjects(
@@ -149,15 +153,15 @@ describe('bucket API for getting a subset of ' +
        'given prefix and contain given delimiter', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'key/one', 'value1', next);
             },
             function waterfall2(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'key/two', 'value2', next);
             },
             function waterfall3(next) {
-                bucket.putObjectMD('key/three', 'value3', next);
+                metadata.putObjectMD(bucketName, 'key/three', 'value3', next);
             },
             function waterfall4(next) {
                 bucket.getBucketListObjects(
@@ -174,8 +178,8 @@ describe('bucket API for getting a subset of ' +
 
     it('should return grouped keys if no prefix ' +
        'given and keys match before delimiter', (done) => {
-        bucket.putObjectMD("noPrefix/one", "value1", () => {
-            bucket.putObjectMD("noPrefix/two", "value2", () => {
+        metadata.putObjectMD(bucketName, "noPrefix/one", "value1", () => {
+            metadata.putObjectMD(bucketName, "noPrefix/two", "value2", () => {
                 bucket.getBucketListObjects(
                     null, null, delimiter, defaultLimit,
                     (err, response) => {
@@ -200,8 +204,8 @@ describe('bucket API for getting a subset of ' +
 
     it('should only return keys occurring alphabetically ' +
        'AFTER marker when no delimiter specified', (done) => {
-        bucket.putObjectMD('a', 'shouldBeExcluded', () => {
-            bucket.putObjectMD('b', 'shouldBeIncluded', () => {
+        metadata.putObjectMD(bucketName, 'a', 'shouldBeExcluded', () => {
+            metadata.putObjectMD(bucketName, 'b', 'shouldBeIncluded', () => {
                 bucket.getBucketListObjects(
                         null, 'a', null, defaultLimit,
                         (err, response) => {
@@ -241,15 +245,15 @@ describe('bucket API for getting a subset of ' +
        'maxKeys reached', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'next/', 'shouldBeListed', next);
             },
             function waterfall2(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'next/rollUp', 'shouldBeRolledUp', next);
             },
             function waterfall3(next) {
-                bucket.putObjectMD(
+                metadata.putObjectMD(bucketName,
                     'next1/', 'shouldBeNextMarker', next);
             },
             function waterfall4(next) {
@@ -292,14 +296,14 @@ describe("stress test for bucket API", function describe() {
     const oddDelimiter = '$';
     let bucket;
 
-    before(() => {
-        bucket = new Bucket();
+    before((done) => {
+        bucket = new Bucket(bucketName, 'owner');
+        bucket.uid = bucketName;
+        metadata.createBucket(bucketName, bucket, done);
     });
 
     after((done) => {
-        bucket.deleteBucketMD(() => {
-            done();
-        });
+        metadata.deleteBucket(bucketName, done);
     });
 
     it('should put ' + numKeys + ' keys into bucket and retrieve bucket list ' +
@@ -335,10 +339,9 @@ describe("stress test for bucket API", function describe() {
         const startTime = process.hrtime();
 
         async.each(keys, (item, next) => {
-            bucket.putObjectMD(item, "value", next);
+            metadata.putObjectMD(bucketName, item, "value", next);
         }, (err) => {
             if (err) {
-                console.error("Error" + err);
                 expect(err).to.be.undefined;
                 done();
             } else {
