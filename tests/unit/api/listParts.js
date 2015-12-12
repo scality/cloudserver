@@ -3,6 +3,7 @@ import { parseString } from 'xml2js';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import listParts from '../../../lib/api/listParts';
+import metadata from '../../../lib/metadata/wrapper';
 import metastore from '../../../lib/metadata/in_memory/metadata';
 import config from '../../../config';
 const splitter = config.splitter;
@@ -41,13 +42,11 @@ const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5...` +
     `${splitter}18${splitter}85bc16f5769687070fb13cfe66b5e41f`;
 
 describe('List Parts API', () => {
-    beforeEach(() => {
-        const sampleNormalBucketInstance = new Bucket();
-        sampleNormalBucketInstance.owner = accessKey;
-        sampleNormalBucketInstance.name = bucketName;
-        const sampleMPUInstance = new Bucket();
-        sampleMPUInstance.owner = accessKey;
-        sampleMPUInstance.name = mpuBucket;
+    beforeEach(done => {
+        const sampleNormalBucketInstance = new Bucket(bucketName, accessKey);
+        sampleNormalBucketInstance.uid = bucketUID;
+        const sampleMPUInstance = new Bucket(mpuBucket, accessKey);
+        sampleMPUInstance.uid = mpuBucket;
         sampleMPUInstance.keyMap[overviewKey] = {
             "id": "4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0",
             "owner": {
@@ -77,8 +76,15 @@ describe('List Parts API', () => {
         sampleMPUInstance.keyMap[partFourKey] = '';
         sampleMPUInstance.keyMap[partFiveKey] = '';
 
-        metastore.buckets[bucketUID] = sampleNormalBucketInstance;
-        metastore.buckets[mpuBucket] = sampleMPUInstance;
+        metadata.createBucket(bucketUID, sampleNormalBucketInstance, () => {
+            metadata.createBucket(mpuBucket, sampleMPUInstance, done);
+        });
+    });
+
+    afterEach(done => {
+        metadata.deleteBucket(bucketUID, () => {
+            metadata.deleteBucket(mpuBucket, done);
+        });
     });
 
     it('should list all parts of a multipart upload', (done) => {
