@@ -131,7 +131,7 @@ describe('bucket API for getting a subset of ' +
                                    'key1/', 'valueWithDelimiter', next);
             },
             function waterfall4(next) {
-                bucket.getBucketListObjects(
+                metadata.listObject(bucket.uid,
                     'key', null, delimiter, defaultLimit, next);
             }
         ],
@@ -164,7 +164,7 @@ describe('bucket API for getting a subset of ' +
                 metadata.putObjectMD(bucketName, 'key/three', 'value3', next);
             },
             function waterfall4(next) {
-                bucket.getBucketListObjects(
+                metadata.listObject(bucket.uid,
                     'ke', null, delimiter, defaultLimit, next);
             }
         ],
@@ -180,7 +180,7 @@ describe('bucket API for getting a subset of ' +
        'given and keys match before delimiter', (done) => {
         metadata.putObjectMD(bucketName, "noPrefix/one", "value1", () => {
             metadata.putObjectMD(bucketName, "noPrefix/two", "value2", () => {
-                bucket.getBucketListObjects(
+                metadata.listObject(bucket.uid,
                     null, null, delimiter, defaultLimit,
                     (err, response) => {
                         expect(response.CommonPrefixes
@@ -195,7 +195,7 @@ describe('bucket API for getting a subset of ' +
 
     it('should return no grouped keys if no ' +
        'delimiter specified in getBucketListObjects', (done) => {
-        bucket.getBucketListObjects(
+        metadata.listObject(bucket.uid,
             'key', null, null, defaultLimit, (err, response) => {
                 expect(response.CommonPrefixes.length).to.equal(0);
                 done();
@@ -206,7 +206,7 @@ describe('bucket API for getting a subset of ' +
        'AFTER marker when no delimiter specified', (done) => {
         metadata.putObjectMD(bucketName, 'a', 'shouldBeExcluded', () => {
             metadata.putObjectMD(bucketName, 'b', 'shouldBeIncluded', () => {
-                bucket.getBucketListObjects(
+                metadata.listObject(bucket.uid,
                         null, 'a', null, defaultLimit,
                         (err, response) => {
                             expect(isKeyInContents(response, 'b'))
@@ -221,7 +221,7 @@ describe('bucket API for getting a subset of ' +
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter specified', (done) => {
-        bucket.getBucketListObjects(
+        metadata.listObject(bucket.uid,
             null, 'a', delimiter, defaultLimit,
             (err, response) => {
                 expect(isKeyInContents(response, 'b')).to.be.true;
@@ -232,7 +232,7 @@ describe('bucket API for getting a subset of ' +
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter and prefix specified', (done) => {
-        bucket.getBucketListObjects(
+        metadata.listObject(bucket.uid,
             'b', 'a', delimiter, defaultLimit,
             (err, response) => {
                 expect(isKeyInContents(response, 'b')).to.be.true;
@@ -245,20 +245,20 @@ describe('bucket API for getting a subset of ' +
        'maxKeys reached', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                metadata.putObjectMD(bucketName,
-                    'next/', 'shouldBeListed', next);
+                metadata.putObjectMD(bucketName, 'next/',
+                                     'shouldBeListed', next);
             },
             function waterfall2(next) {
-                metadata.putObjectMD(bucketName,
-                    'next/rollUp', 'shouldBeRolledUp', next);
+                metadata.putObjectMD(bucketName, 'next/rollUp',
+                                     'shouldBeRolledUp', next);
             },
             function waterfall3(next) {
                 metadata.putObjectMD(bucketName,
                     'next1/', 'shouldBeNextMarker', next);
             },
             function waterfall4(next) {
-                bucket.getBucketListObjects(
-                    'next', null, delimiter, smallLimit, next);
+                metadata.listObject(bucket.uid, 'next', null, delimiter,
+                                    smallLimit, next);
             }
         ],
         function waterfallFinal(err, response) {
@@ -345,7 +345,7 @@ describe("stress test for bucket API", function describe() {
                 expect(err).to.be.undefined;
                 done();
             } else {
-                bucket.getBucketListObjects(
+                metadata.listObject(bucket.uid,
                     null, null, delimiter, null, (err, response) => {
                     // Stop timing and calculate millisecond time difference
                         const diff = timeDiff(startTime);
@@ -364,7 +364,7 @@ describe("stress test for bucket API", function describe() {
 
     it('should return all keys as Contents if delimiter ' +
        'does not match and specify NextMarker', (done) => {
-        bucket.getBucketListObjects(
+        metadata.listObject(bucket.uid,
             null, null, oddDelimiter, testLimit, (err, response) => {
                 expect(response.CommonPrefixes.length).to.equal(0);
                 expect(response.Contents.length).to.equal(testLimit);
@@ -376,7 +376,7 @@ describe("stress test for bucket API", function describe() {
 
     it('should return only keys occurring ' +
        'after specified marker', (done) => {
-        bucket.getBucketListObjects(
+        metadata.listObject(bucket.uid,
             null, testMarker, delimiter, null, (err, response) => {
                 expect(response.CommonPrefixes.length)
                     .to.equal(prefixes.length - 1);
