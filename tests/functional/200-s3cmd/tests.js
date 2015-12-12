@@ -11,6 +11,7 @@ const MPUpload = 'test16MB';
 const MPDownload = 'MPtmpfile';
 const bucket = 'universe';
 const nonexist = 'VOID';
+const emailAccount = 'sampleAccount1@sampling.com';
 
 const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`, ] : null;
 
@@ -55,6 +56,23 @@ function exec(args, done, exitCode) {
         });
 }
 
+// Get stdout and stderr stringified
+function provideRawOutput(args, cb) {
+    const av = args;
+    process.stdout.write(`${program} ${av}\n`);
+    const allData = [];
+    const child = proc.spawn(program, av);
+    child.stdout.on('data', (data) => {
+        allData.push(data.toString().trim());
+    });
+    child.stderr.on('data', (data) => {
+        allData.push(data.toString());
+    });
+    child.on('exit', () => {
+        cb(allData);
+    });
+}
+
 describe('s3cmd putBucket', () => {
     it('should put a valid bucket', (done) => {
         exec(['mb', `s3://${bucket}`, ], done);
@@ -66,6 +84,41 @@ describe('s3cmd putBucket', () => {
 
     it('put an invalid bucket, should fail', (done) => {
         exec(['mb', `s3://${nonexist}`, ], done, 11);
+    });
+});
+
+describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
+    this.timeout(60000);
+    // Note that s3cmd first gets the current ACL and then
+    // sets the new one so by running setacl you are running a
+    // get and a put
+    it('should set a canned ACL', (done) => {
+        exec(['setacl', `s3://${bucket}`, '--acl-public'], done);
+    });
+
+    it('should get canned ACL that was set', (done) => {
+        provideRawOutput(['info', `s3://${bucket}`], (output) => {
+            const acl = output.find((item) => {
+                return item.indexOf("ACL") > -1;
+            });
+            assert(acl.indexOf(`*anon*: READ`) > -1);
+            done();
+        });
+    });
+
+    it('should set a specific ACL', (done) => {
+        exec(['setacl', `s3://${bucket}`,
+        `--acl-grant=write:${emailAccount}`], done);
+    });
+
+    it('should get specific ACL that was set', (done) => {
+        provideRawOutput(['info', `s3://${bucket}`], (output) => {
+            const acl = output.find((item) => {
+                return item.indexOf("ACL") > -1;
+            });
+            assert(acl.indexOf(`${emailAccount}: WRITE`) > -1);
+            done();
+        });
     });
 });
 
@@ -117,6 +170,43 @@ describe('s3cmd getObject', function toto() {
 
     it('get file in non existing bucket, should fail', (done) => {
         exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2', ], done, 12);
+    });
+});
+
+describe(`s3cmd put and get object ACL's`, function aclObj() {
+    this.timeout(60000);
+    // Note that s3cmd first gets the current ACL and then
+    // sets the new one so by running setacl you are running a
+    // get and a put
+    it('should set a canned ACL', (done) => {
+        provideRawOutput(['setacl', `s3://${bucket}/${upload}`, '--acl-public'],
+            (output) => {
+                const isItThere = output[0].indexOf('ACL set to Public') > -1 ?
+                    true : false;
+                assert(isItThere);
+                done();
+            });
+    });
+
+    it('should set a specific ACL', (done) => {
+        provideRawOutput(['setacl', `s3://${bucket}/${upload}`,
+        `--acl-grant=write:${emailAccount}`],
+            (output) => {
+                assert(output[0].indexOf('ACL updated') > -1);
+                done();
+            });
+    });
+
+    it('should return error if set acl for ' +
+        'nonexistent object', (done) => {
+        provideRawOutput(['setacl', `s3://${bucket}/${nonexist}`,
+            '--acl-public'],
+            (output) => {
+                assert.strictEqual(output[0],
+                    'ERROR: S3 error: 404 (NoSuchKey): ' +
+                    'The specified key does not exist.\n');
+                done();
+            });
     });
 });
 
