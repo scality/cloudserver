@@ -10,6 +10,7 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
+const postBody = [ new Buffer('I am a body')];
 
 describe('objectDelete API', () => {
     let metastore;
@@ -42,7 +43,6 @@ describe('objectDelete API', () => {
         url: `/${bucketName}`,
         namespace: namespace,
     };
-    const postBody = 'I am a body';
     const objectName = 'objectName';
     const testPutObjectRequest = {
         lowerCaseHeaders: {},

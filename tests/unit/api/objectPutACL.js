@@ -9,6 +9,7 @@ import utils from '../../../lib/utils';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const postBody = [ new Buffer('I am a body'), ];
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('putObjectACL API', () => {
@@ -37,7 +38,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -89,7 +89,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -147,7 +146,6 @@ describe('putObjectACL API', () => {
 
     it('should set a canned public-read ACL followed by'
         + ' a canned authenticated-read ACL', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -232,7 +230,6 @@ describe('putObjectACL API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -322,7 +319,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -379,7 +375,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -483,7 +478,6 @@ describe('putObjectACL API', () => {
 
     it('should ignore if WRITE ACL permission is ' +
         'provided in request body', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -572,7 +566,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -640,7 +633,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -706,7 +698,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -773,7 +764,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -840,7 +830,6 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group uri ' +
         'provided in ACL header request', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {

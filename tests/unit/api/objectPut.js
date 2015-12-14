@@ -9,6 +9,7 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
+const postBody = [ new Buffer('I am a body'), ];
 
 describe('objectPut API', () => {
     let metastore;
@@ -38,7 +39,6 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', (done) => {
-        const postBody = 'I am a body';
         const testRequest = {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
@@ -54,7 +54,6 @@ describe('objectPut API', () => {
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const postBody = 'I am a body';
         const putAccessKey = 'accessKey2';
         const testPutBucketRequest = {
             lowerCaseHeaders: {},
@@ -101,7 +100,6 @@ describe('objectPut API', () => {
 
     it('should successfully put an object with bucket' +
     ' and object in pathname', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -138,7 +136,6 @@ describe('objectPut API', () => {
 
     it('should successfully put an object with object ' +
     'in pathname and bucket in hostname', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {
@@ -175,7 +172,6 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object with user metadata', (done) => {
-        const postBody = 'I am a body';
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const objectName = 'objectName';
         const testPutBucketRequest = {

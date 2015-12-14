@@ -97,7 +97,8 @@ describe('s3cmd putObject', () => {
     });
 });
 
-describe('s3cmd getObject', () => {
+describe('s3cmd getObject', function toto() {
+    this.timeout(0);
     after('delete downloaded file', done => {
         deleteFile(download, done);
     });
@@ -133,7 +134,8 @@ describe('s3cmd delObject', () => {
     });
 });
 
-describe('connector edge cases', () => {
+describe('connector edge cases', function tata() {
+    this.timeout(0);
     after('delete uploaded and downloaded file', done => {
         deleteFile(upload, () => {
             deleteFile(download, done);
@@ -149,7 +151,8 @@ describe('connector edge cases', () => {
     });
 });
 
-describe('s3cmd multipart upload', () => {
+describe('s3cmd multipart upload', function titi() {
+    this.timeout(0);
     before('create the multipart file', function createMPUFile(done) {
         this.timeout(60000);
         createFile(MPUpload, 16777216, done);

@@ -11,6 +11,7 @@ import utils from '../../../lib/utils';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const postBody = [ new Buffer('I am a body'), ];
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketGet API', () => {
@@ -40,7 +41,6 @@ describe('bucketGet API', () => {
     });
 
 
-    const postBody = 'I am a body';
     const prefix = 'sub';
     const delimiter = '/';
     const objectName1 = `${prefix}${delimiter}objectName1`;
