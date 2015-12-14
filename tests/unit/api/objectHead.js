@@ -9,6 +9,7 @@ import utils from '../../../lib/utils';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const postBody = [ new Buffer('I am a body'), ];
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectHead API', () => {
@@ -37,7 +38,6 @@ describe('objectHead API', () => {
         });
     });
 
-    const postBody = 'I am a body';
     const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
     const objectName = 'objectName';

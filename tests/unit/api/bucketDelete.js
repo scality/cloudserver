@@ -8,6 +8,7 @@ import utils from '../../../lib/utils';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const postBody = [ new Buffer('I am a body'), ];
 const testBucketUID =
     utils.getResourceUID(namespace, bucketName);
 
@@ -43,7 +44,6 @@ describe("bucketDelete API", () => {
     };
 
     it('should return an error if the bucket is not empty', (done) => {
-        const postBody = 'I am a body';
         const objectName = 'objectName';
         const testPutObjectRequest = {
             lowerCaseHeaders: {},
