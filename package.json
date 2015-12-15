@@ -33,8 +33,10 @@
     "xml2js": "~0.4.12"
   },
   "devDependencies": {
+    "aws-sdk": "^2.2.22",
     "babel-eslint": "^4.1.3",
     "chai": "^3.2.0",
+    "commander": "^2.9.0",
     "eslint": "^1.5.1",
     "eslint-config-airbnb": "^0.0.9",
     "eslint-config-ironman": "scality/IronMan-Guidelines",
