@@ -11,6 +11,7 @@ import utils from '../../../lib/utils';
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const postBody = [ new Buffer('I am a body'), ];
 const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('objectGetACL API', () => {
@@ -65,7 +66,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -105,7 +106,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -153,7 +154,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -209,7 +210,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -260,7 +261,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -308,7 +309,7 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
@@ -380,7 +381,7 @@ describe('objectGetACL API', () => {
                     'f8f8d5218e7cd47ef2bf"',            },
             url: `/${bucketName}/${objectName}`,
             namespace,
-            post: 'I am a post body',
+            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
         async.waterfall([
