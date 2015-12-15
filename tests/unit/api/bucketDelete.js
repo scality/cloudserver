@@ -84,4 +84,14 @@ describe("bucketDelete API", () => {
                 });
         });
     });
+
+    it('should prevent anonymous user from accessing ' +
+        'delete bucket API', (done) => {
+        bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
+            metastore, testDeleteRequest,
+                (err) => {
+                    assert.strictEqual(err, 'AccessDenied');
+                });
+        done();
+    });
 });

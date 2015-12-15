@@ -74,4 +74,14 @@ describe('objectDelete API', () => {
             });
         });
     });
+
+    it('should prevent anonymous user from accessing ' +
+        'deleteObject API', (done) => {
+        objectDelete('http://acs.amazonaws.com/groups/global/AllUsers',
+            metastore, testDeleteRequest,
+                (err) => {
+                    assert.strictEqual(err, 'AccessDenied');
+                });
+        done();
+    });
 });
