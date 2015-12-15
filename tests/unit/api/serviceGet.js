@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import assert from 'assert';
 import { parseString } from 'xml2js';
 import async from 'async';
 import serviceGet from '../../../lib/api/serviceGet.js';
@@ -24,6 +24,12 @@ describe('serviceGet API', () => {
         };
     });
 
+    const serviceGetRequest = {
+        lowerCaseHeaders: {host: 's3.amazonaws.com'},
+        url: '/',
+        headers: {host: 's3.amazonaws.com'},
+    };
+
     it('should return the list of buckets owned by the user', (done) => {
         const bucketName1 = 'bucketname1';
         const bucketName2 = 'bucketname2';
@@ -45,11 +51,6 @@ describe('serviceGet API', () => {
             url: '/',
             namespace: namespace,
             headers: {host: `${bucketName3}.s3.amazonaws.com`}
-        };
-        const serviceGetRequest = {
-            lowerCaseHeaders: {host: 's3.amazonaws.com'},
-            url: '/',
-            headers: {host: 's3.amazonaws.com'},
         };
         const date = new Date();
         let month = (date.getMonth() + 1).toString();
@@ -76,17 +77,25 @@ describe('serviceGet API', () => {
             }
         ],
         function waterfallFinal(err, result) {
-            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket)
-                .to.have.length.of(3);
-            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[0].Name[0])
-                .to.equal(bucketName1);
-            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[1].Name[0])
-                .to.equal(bucketName2);
-            expect(result.ListAllMyBucketsResult.Buckets[0].Bucket[2].Name[0])
-                .to.equal(bucketName3);
-            expect(result.ListAllMyBucketsResult.$.xmlns)
-                .to.equal(`http://s3.amazonaws.com/doc/${dateString}`);
+            assert.strictEqual(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket.length, 3);
+            assert.strictEqual(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[0].Name[0], bucketName1);
+            assert.strictEqual(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[1].Name[0], bucketName2);
+            assert.strictEqual(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[2].Name[0], bucketName3);
+            assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns,
+                `http://s3.amazonaws.com/doc/${dateString}`);
             done();
         });
+    });
+
+    it('should prevent anonymous user from accessing getService API', done => {
+        serviceGet('http://acs.amazonaws.com/groups/global/AllUsers',
+            metastore, serviceGetRequest, (err) => {
+                assert.strictEqual(err, 'AccessDenied');
+                done();
+            });
     });
 });

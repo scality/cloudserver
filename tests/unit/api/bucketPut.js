@@ -333,4 +333,20 @@ describe('bucketPut API', () => {
             });
         });
     });
+
+    it('should prevent anonymous user from accessing ' +
+        'putBucket API', (done) => {
+        const testRequest = {
+            lowerCaseHeaders: {},
+            url: `/${bucketName}`,
+            namespace: namespace,
+            post: ''
+        };
+        bucketPut('http://acs.amazonaws.com/groups/global/AllUsers',
+            metastore, testRequest,
+                (err) => {
+                    assert.strictEqual(err, 'AccessDenied');
+                });
+        done();
+    });
 });
