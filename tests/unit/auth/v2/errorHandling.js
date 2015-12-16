@@ -22,9 +22,8 @@ describe('Error handling in checkAuth', () => {
             url: '/bucket',
             query: {},
         };
-
         auth(request, logger, (err) => {
-            expect(err).to.equal('InvalidAccessKeyId');
+            expect(err).to.equal('InvalidArgument');
             done();
         });
     });
