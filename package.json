@@ -22,6 +22,7 @@
     "babel-plugin-transform-es2015-destructuring": "^6.1.18",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
     "babel-plugin-transform-es2015-parameters": "^6.2.0",
+    "bucketclient": "scality/bucketclient",
     "jsutils": "giorgioregni/jsutils",
     "natural-compare-lite": "^1.4.0",
     "node-simple-router": "giorgioregni/node-simple-router",
