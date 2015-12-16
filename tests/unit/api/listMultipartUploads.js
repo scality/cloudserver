@@ -5,7 +5,7 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
