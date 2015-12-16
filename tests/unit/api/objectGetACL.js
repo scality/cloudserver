@@ -3,7 +3,7 @@ import async from 'async';
 import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGetACL from '../../../lib/api/objectGetACL';
 import utils from '../../../lib/utils';

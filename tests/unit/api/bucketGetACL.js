@@ -5,7 +5,7 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 

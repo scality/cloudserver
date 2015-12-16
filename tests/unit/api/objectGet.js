@@ -2,7 +2,7 @@ import assert from 'assert';
 import crypto from 'crypto';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
 import utils from '../../../lib/utils';

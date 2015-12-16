@@ -1,7 +1,7 @@
 import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut.js';
 import bucketPutACL from '../../../lib/api/bucketPutACL.js';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
