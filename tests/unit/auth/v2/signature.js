@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import constructStringToSign from
     '../../../../lib/auth/v2/constructStringToSign';
-import { hashSignature } from '../../../../lib/auth/vault';
+import { hashSignature } from '../../../../lib/auth/backend';
 
 import DummyRequestLogger from '../../helpers.js';
 
