@@ -7,13 +7,13 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import config from '../../../config';
-const splitter = config.splitter;
 import utils from '../../../lib/utils';
 
+const splitter = config.splitter;
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';

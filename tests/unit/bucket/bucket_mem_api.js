@@ -5,7 +5,7 @@ import {expect} from 'chai';
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import {isKeyInContents} from
     '../../../lib/metadata/in_memory/bucket_utilities';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
 
 const bucketName = 'Zaphod';

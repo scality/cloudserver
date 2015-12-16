@@ -2,7 +2,7 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import bucketDelete from '../../../lib/api/bucketDelete';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';

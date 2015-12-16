@@ -3,7 +3,7 @@ import assert from 'assert';
 import objectPut from '../../../lib/api/objectPut';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
-import metadata from '../../../lib/metadata/wrapper';
+import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
