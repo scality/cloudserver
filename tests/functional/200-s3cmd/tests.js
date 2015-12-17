@@ -179,22 +179,32 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
     // sets the new one so by running setacl you are running a
     // get and a put
     it('should set a canned ACL', (done) => {
-        provideRawOutput(['setacl', `s3://${bucket}/${upload}`, '--acl-public'],
-            (output) => {
-                const isItThere = output[0].indexOf('ACL set to Public') > -1 ?
-                    true : false;
-                assert(isItThere);
-                done();
+        exec(['setacl', `s3://${bucket}/${upload}`, '--acl-public'], done);
+    });
+
+    it('should get canned ACL that was set', (done) => {
+        provideRawOutput(['info', `s3://${bucket}/${upload}`], (output) => {
+            const acl = output.find((item) => {
+                return item.indexOf("ACL") > -1;
             });
+            assert(acl.indexOf(`*anon*: READ`) > -1);
+            done();
+        });
     });
 
     it('should set a specific ACL', (done) => {
-        provideRawOutput(['setacl', `s3://${bucket}/${upload}`,
-        `--acl-grant=write:${emailAccount}`],
-            (output) => {
-                assert(output[0].indexOf('ACL updated') > -1);
-                done();
+        exec(['setacl', `s3://${bucket}/${upload}`,
+            `--acl-grant=read:${emailAccount}`], done);
+    });
+
+    it('should get specific ACL that was set', (done) => {
+        provideRawOutput(['info', `s3://${bucket}/${upload}`], (output) => {
+            const acl = output.find((item) => {
+                return item.indexOf("ACL") > -1;
             });
+            assert(acl.indexOf(`${emailAccount}: READ`) > -1);
+            done();
+        });
     });
 
     it('should return error if set acl for ' +
