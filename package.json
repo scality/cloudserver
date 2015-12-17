@@ -45,6 +45,6 @@
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
-    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register tests/unit/*/*.js"
+    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register tests/unit/*/*.js  tests/unit/*/*/*.js"
   }
 }
