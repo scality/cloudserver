@@ -1,5 +1,7 @@
 # sample circle.yml for IronMan-s3
 machine:
+  node:
+    version: 4.2
   environment:
     docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
     docker_tag: ${CIRCLE_SHA1:0:7}
@@ -25,10 +27,12 @@ dependencies:
   override:
     # dependencies for testing with matryoshka
     - sudo pip install docker-py pyyaml flake8
+    - npm install
 
 test:
   override:
-    # lint the python used for testing (node linting is done by the docker file)
+    - npm run --silent lint
+    - npm run --silent lint_md
     - flake8 $(git ls-files '*.py')
     # functional tests
     - bash ./tests/matryoshka-balance.sh ${docker_image} :
