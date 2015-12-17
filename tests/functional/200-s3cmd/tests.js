@@ -56,20 +56,25 @@ function exec(args, done, exitCode) {
         });
 }
 
-// Get stdout and stderr stringified
-function provideRawOutput(args, cb) {
-    const av = args;
+// Test stdout against expected output
+function provideRawOutput(args, lineFinder, testString, cb) {
+    let av = args;
+    if (isIronman) {
+        av = args.concat(isIronman);
+    }
     process.stdout.write(`${program} ${av}\n`);
     const allData = [];
     const child = proc.spawn(program, av);
     child.stdout.on('data', (data) => {
         allData.push(data.toString().trim());
+        process.stdout.write(data.toString());
     });
-    child.stderr.on('data', (data) => {
-        allData.push(data.toString());
-    });
-    child.on('exit', () => {
-        cb(allData);
+    child.on('close', () => {
+        const lineOfInterest = allData.find((item) => {
+            return item.indexOf(lineFinder) > -1;
+        });
+        const foundIt = lineOfInterest.indexOf(testString) > -1;
+        return cb(foundIt);
     });
 }
 
@@ -97,11 +102,9 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
     });
 
     it('should get canned ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}`], (output) => {
-            const acl = output.find((item) => {
-                return item.indexOf("ACL") > -1;
-            });
-            assert(acl.indexOf(`*anon*: READ`) > -1);
+        provideRawOutput(['info', `s3://${bucket}`], 'ACL', `*anon*: READ`,
+        (foundIt) => {
+            assert(foundIt);
             done();
         });
     });
@@ -112,11 +115,9 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
     });
 
     it('should get specific ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}`], (output) => {
-            const acl = output.find((item) => {
-                return item.indexOf("ACL") > -1;
-            });
-            assert(acl.indexOf(`${emailAccount}: WRITE`) > -1);
+        provideRawOutput(['info', `s3://${bucket}`], 'ACL',
+        `${emailAccount}: WRITE`, (foundIt) => {
+            assert(foundIt);
             done();
         });
     });
@@ -183,11 +184,9 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
     });
 
     it('should get canned ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}/${upload}`], (output) => {
-            const acl = output.find((item) => {
-                return item.indexOf("ACL") > -1;
-            });
-            assert(acl.indexOf(`*anon*: READ`) > -1);
+        provideRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
+        `*anon*: READ`, (foundIt) => {
+            assert(foundIt);
             done();
         });
     });
@@ -198,25 +197,17 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
     });
 
     it('should get specific ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}/${upload}`], (output) => {
-            const acl = output.find((item) => {
-                return item.indexOf("ACL") > -1;
-            });
-            assert(acl.indexOf(`${emailAccount}: READ`) > -1);
+        provideRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
+        `${emailAccount}: READ`, (foundIt) => {
+            assert(foundIt);
             done();
         });
     });
 
     it('should return error if set acl for ' +
         'nonexistent object', (done) => {
-        provideRawOutput(['setacl', `s3://${bucket}/${nonexist}`,
-            '--acl-public'],
-            (output) => {
-                assert.strictEqual(output[0],
-                    'ERROR: S3 error: 404 (NoSuchKey): ' +
-                    'The specified key does not exist.\n');
-                done();
-            });
+        exec(['setacl', `s3://${bucket}/${nonexist}`,
+            '--acl-public'], done, 12);
     });
 });
 
