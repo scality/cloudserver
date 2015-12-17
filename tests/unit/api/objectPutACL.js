@@ -398,8 +398,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -434,7 +434,7 @@ describe('putObjectACL API', () => {
                       '<Permission>READ_ACP</Permission>' +
                     '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
@@ -501,8 +501,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -524,7 +524,7 @@ describe('putObjectACL API', () => {
                       '<Permission>WRITE</Permission>' +
                     '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
@@ -589,8 +589,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -605,7 +605,7 @@ describe('putObjectACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
@@ -656,8 +656,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -672,7 +672,7 @@ describe('putObjectACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '</PowerGrant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
@@ -721,8 +721,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -737,7 +737,7 @@ describe('putObjectACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '<Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
@@ -787,8 +787,8 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
             namespace: namespace,
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: [ new Buffer(
+                '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
@@ -803,7 +803,7 @@ describe('putObjectACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '<Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>')],
             query: {
                 acl: ''
             }
