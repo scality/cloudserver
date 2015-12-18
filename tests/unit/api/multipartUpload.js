@@ -560,8 +560,9 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it.skip('should complete a multipart upload', (done) => {
+    it('should complete a multipart upload', (done) => {
         const objectKey = 'testObject';
+        const partBody = [ new Buffer('I am a part\n') ];
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
@@ -604,9 +605,7 @@ describe('Multipart Upload API', () => {
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const md5Hash = crypto.createHash('md5');
-            const bufferBody =
-                new Buffer(postBody, 'binary');
-            md5Hash.update(bufferBody);
+            md5Hash.update(partBody[0]);
             const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
@@ -619,7 +618,15 @@ describe('Multipart Upload API', () => {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
-                post: postBody,
+                // Note that the body of the post set in the request here does
+                // not really matter in this test.
+                // The put is not going through the route so the md5 is being
+                // calculated above and manually being set in the request below.
+                // What is being tested is that the calculatedMD5 being sent
+                // to the API for the part is stored and then used to
+                // calculate the final etag upon completion
+                // of the multipart upload.
+                post: partBody,
                 calculatedMD5: calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
@@ -640,7 +647,6 @@ describe('Multipart Upload API', () => {
                         uploadId: testUploadId,
                     },
                     post: completeBody,
-                    calculatedMD5: calculatedMD5,
                 };
                 const awsVerifiedEtag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
