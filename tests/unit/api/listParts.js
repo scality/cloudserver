@@ -47,7 +47,7 @@ describe('List Parts API', () => {
         sampleNormalBucketInstance.uid = bucketUID;
         const sampleMPUInstance = new Bucket(mpuBucket, accessKey);
         sampleMPUInstance.uid = mpuBucket;
-        sampleMPUInstance.keyMap[overviewKey] = {
+        sampleMPUInstance.keyMap[overviewKey] = JSON.stringify({
             "id": "4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0",
             "owner": {
                 "displayName": "placeholder " +
@@ -69,12 +69,14 @@ describe('List Parts API', () => {
                 "READ": [],
                 "READ_ACP": []
             }
-        };
-        sampleMPUInstance.keyMap[partOneKey] = '';
-        sampleMPUInstance.keyMap[partTwoKey] = '';
-        sampleMPUInstance.keyMap[partThreeKey] = '';
-        sampleMPUInstance.keyMap[partFourKey] = '';
-        sampleMPUInstance.keyMap[partFiveKey] = '';
+        });
+
+        const val = '{}';
+        sampleMPUInstance.keyMap[partOneKey] = val;
+        sampleMPUInstance.keyMap[partTwoKey] = val;
+        sampleMPUInstance.keyMap[partThreeKey] = val;
+        sampleMPUInstance.keyMap[partFourKey] = val;
+        sampleMPUInstance.keyMap[partFiveKey] = val;
 
         metadata.createBucket(bucketUID, sampleNormalBucketInstance, () => {
             metadata.createBucket(mpuBucket, sampleMPUInstance, done);

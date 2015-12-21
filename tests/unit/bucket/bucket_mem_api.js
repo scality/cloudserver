@@ -9,6 +9,9 @@ import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
 
 const bucketName = 'Zaphod';
+const objMDAsObj = { test: '8' };
+const objMD = JSON.stringify(objMDAsObj);
+
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
     let bucket;
@@ -22,17 +25,11 @@ describe('bucket API for getting, putting and deleting ' +
         metadata.deleteBucket(bucketName, done);
     });
 
-    it("should create a bucket with a keyMap", (done) => {
-        expect(bucket).to.be.an("object");
-        expect(bucket.keyMap).to.be.an("object");
-        done();
-    });
-
     it('should be able to add an object to a bucket ' +
        'and get the object by key', (done) => {
-        metadata.putObjectMD(bucketName, "sampleKey", "sampleValue", () => {
-            metadata.getObjectMD(bucketName, "sampleKey", (err, value) => {
-                expect(value).to.equal("sampleValue");
+        metadata.putObjectMD(bucketName, 'sampleKey', objMD, () => {
+            metadata.getObjectMD(bucketName, 'sampleKey', (err, value) => {
+                assert.deepStrictEqual(value, objMDAsObj);
                 done();
             });
         });
@@ -42,35 +39,33 @@ describe('bucket API for getting, putting and deleting ' +
        'to getObjectMD when no such key', (done) => {
         metadata.getObjectMD(bucketName, 'notThere', (err, value) => {
             assert.strictEqual(err, 'NoSuchKey');
-            expect(value).to.be.undefined;
+            assert.strictEqual(value, undefined);
             done();
         });
     });
 
     it('should be able to delete an object from a bucket', (done) => {
-        metadata.putObjectMD(bucketName, 'objectToDelete', 'valueToDelete',
-            () => {
-                metadata.deleteObjectMD(bucketName, 'objectToDelete', () => {
-                    metadata.getObjectMD(bucketName,
-                        'objectToDelete', (err, value) => {
-                            assert.strictEqual(err, 'NoSuchKey');
-                            expect(value).to.be.undefined;
-                            done();
-                        });
-                });
+        metadata.putObjectMD(bucketName, 'objectToDelete', '{}', () => {
+            metadata.deleteObjectMD(bucketName, 'objectToDelete', () => {
+                metadata.getObjectMD(bucketName, 'objectToDelete',
+                    (err, value) => {
+                        assert.strictEqual(err, 'NoSuchKey');
+                        assert.strictEqual(value, undefined);
+                        done();
+                    });
             });
+        });
     });
 });
 
 
-describe('bucket API for getting a subset of ' +
-         'objects from a bucket', () => {
+describe('bucket API for getting a subset of objects from a bucket', () => {
     /*
      * Implementation of AWS GET Bucket (List Objects) functionality
      * Rules:
-     * 1) 	Return individual key if key does not contain the
+     * 1) Return individual key if key does not contain the
      * delimiter (even if key begins with specified prefix).
-     * 2)	Return key under common prefix if key begins with
+     * 2) Return key under common prefix if key begins with
      * prefix and contains delimiter.
      * All keys that contain the same substring starting
      * with the prefix and ending with the first
@@ -78,15 +73,15 @@ describe('bucket API for getting a subset of ' +
      * together and appear once under common prefix.
      * For instance, "key2/sample" and "key2/moreSample" will be
      * grouped together under key2/ if prefix is "key" and delimiter is "/".
-     * 3)	If do not specify prefix, return grouped keys under
+     * 3) If do not specify prefix, return grouped keys under
      * common prefix if they contain
      * same substring starting at beginning of the key
      * and ending before first occurrence of delimiter.
-     * 4)	There will be no grouping if no delimiter specified
+     * 4) There will be no grouping if no delimiter specified
      * as argument in getBucketListObjects.
-     * 5)	If marker specified, only return keys that occur
+     * 5) If marker specified, only return keys that occur
      * alphabetically AFTER the marker.
-     * 6)	If specify maxKeys, only return up to that max.
+     * 6) If specify maxKeys, only return up to that max.
      * All keys grouped under common-prefix,
      * will only count as one key to reach maxKeys.
      * If not all keys returned due to reaching maxKeys,
@@ -119,16 +114,13 @@ describe('bucket API for getting a subset of ' +
        'the delimiter even if key contains prefix', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                metadata.putObjectMD(bucketName,
-                    'key1', 'valueWithoutDelimiter', next);
+                metadata.putObjectMD(bucketName, 'key1', '{}', next);
             },
             function waterfall2(next) {
-                metadata.putObjectMD(bucketName,
-                    'noMatchKey', 'non-matching key', next);
+                metadata.putObjectMD(bucketName, 'noMatchKey', '{}', next);
             },
             function waterfall3(next) {
-                metadata.putObjectMD(bucketName,
-                                   'key1/', 'valueWithDelimiter', next);
+                metadata.putObjectMD(bucketName, 'key1/', '{}', next);
             },
             function waterfall4(next) {
                 metadata.listObject(bucket.uid,
@@ -153,40 +145,36 @@ describe('bucket API for getting a subset of ' +
        'given prefix and contain given delimiter', (done) => {
         async.waterfall([
             function waterfall1(next) {
-                metadata.putObjectMD(bucketName,
-                    'key/one', 'value1', next);
+                metadata.putObjectMD(bucketName, 'key/one', '{}', next);
             },
             function waterfall2(next) {
-                metadata.putObjectMD(bucketName,
-                    'key/two', 'value2', next);
+                metadata.putObjectMD(bucketName, 'key/two', '{}', next);
             },
             function waterfall3(next) {
-                metadata.putObjectMD(bucketName, 'key/three', 'value3', next);
+                metadata.putObjectMD(bucketName, 'key/three', '{}', next);
             },
             function waterfall4(next) {
-                metadata.listObject(bucket.uid,
-                    'ke', null, delimiter, defaultLimit, next);
+                metadata.listObject(bucket.uid, 'ke', null, delimiter,
+                                    defaultLimit, next);
             }
         ],
         function waterfallFinal(err, response) {
-            expect(response.CommonPrefixes
-                .indexOf("key/")).to.be.above(-1);
-            expect(isKeyInContents(response, "key/")).to.be.false;
+            assert(response.CommonPrefixes.indexOf('key/') > -1);
+            assert.strictEqual(isKeyInContents(response, 'key/'), false);
             done();
         });
     });
 
     it('should return grouped keys if no prefix ' +
        'given and keys match before delimiter', (done) => {
-        metadata.putObjectMD(bucketName, "noPrefix/one", "value1", () => {
-            metadata.putObjectMD(bucketName, "noPrefix/two", "value2", () => {
-                metadata.listObject(bucket.uid,
-                    null, null, delimiter, defaultLimit,
-                    (err, response) => {
-                        expect(response.CommonPrefixes
-                            .indexOf("noPrefix/")).to.be.above(-1);
-                        expect(isKeyInContents(response, "noPrefix"))
-                            .to.be.false;
+        metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', () => {
+            metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', () => {
+                metadata.listObject(bucket.uid, null, null, delimiter,
+                    defaultLimit, (err, response) => {
+                        assert(response.CommonPrefixes.indexOf('noPrefix/')
+                               > -1);
+                        assert.strictEqual(isKeyInContents(response,
+                                                           'noPrefix'), false);
                         done();
                     });
             });
@@ -195,48 +183,44 @@ describe('bucket API for getting a subset of ' +
 
     it('should return no grouped keys if no ' +
        'delimiter specified in getBucketListObjects', (done) => {
-        metadata.listObject(bucket.uid,
-            'key', null, null, defaultLimit, (err, response) => {
-                expect(response.CommonPrefixes.length).to.equal(0);
+        metadata.listObject(bucket.uid, 'key', null, null, defaultLimit,
+            (err, response) => {
+                assert.strictEqual(response.CommonPrefixes.length, 0);
                 done();
             });
     });
 
     it('should only return keys occurring alphabetically ' +
        'AFTER marker when no delimiter specified', (done) => {
-        metadata.putObjectMD(bucketName, 'a', 'shouldBeExcluded', () => {
-            metadata.putObjectMD(bucketName, 'b', 'shouldBeIncluded', () => {
-                metadata.listObject(bucket.uid,
-                        null, 'a', null, defaultLimit,
-                        (err, response) => {
-                            expect(isKeyInContents(response, 'b'))
-                                .to.be.true;
-                            expect(isKeyInContents(response, 'a'))
-                                .to.be.false;
-                            done();
-                        });
+        metadata.putObjectMD(bucketName, 'a', '{}', () => {
+            metadata.putObjectMD(bucketName, 'b', '{}', () => {
+                metadata.listObject(bucket.uid, null, 'a', null, defaultLimit,
+                    (err, response) => {
+                        assert(isKeyInContents(response, 'b'));
+                        assert.strictEqual(isKeyInContents(response, 'a'),
+                                           false);
+                        done();
+                    });
             });
         });
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter specified', (done) => {
-        metadata.listObject(bucket.uid,
-            null, 'a', delimiter, defaultLimit,
+        metadata.listObject(bucket.uid, null, 'a', delimiter, defaultLimit,
             (err, response) => {
-                expect(isKeyInContents(response, 'b')).to.be.true;
-                expect(isKeyInContents(response, 'a')).to.be.false;
+                assert(isKeyInContents(response, 'b'));
+                assert.strictEqual(isKeyInContents(response, 'a'), false);
                 done();
             });
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter and prefix specified', (done) => {
-        metadata.listObject(bucket.uid,
-            'b', 'a', delimiter, defaultLimit,
+        metadata.listObject(bucket.uid, 'b', 'a', delimiter, defaultLimit,
             (err, response) => {
-                expect(isKeyInContents(response, 'b')).to.be.true;
-                expect(isKeyInContents(response, 'a')).to.be.false;
+                assert(isKeyInContents(response, 'b'));
+                assert.strictEqual(isKeyInContents(response, 'a'), false);
                 done();
             });
     });
@@ -246,15 +230,13 @@ describe('bucket API for getting a subset of ' +
         async.waterfall([
             function waterfall1(next) {
                 metadata.putObjectMD(bucketName, 'next/',
-                                     'shouldBeListed', next);
+                                     '{}', next);
             },
             function waterfall2(next) {
-                metadata.putObjectMD(bucketName, 'next/rollUp',
-                                     'shouldBeRolledUp', next);
+                metadata.putObjectMD(bucketName, 'next/rollUp', '{}', next);
             },
             function waterfall3(next) {
-                metadata.putObjectMD(bucketName,
-                    'next1/', 'shouldBeNextMarker', next);
+                metadata.putObjectMD(bucketName, 'next1/', '{}', next);
             },
             function waterfall4(next) {
                 metadata.listObject(bucket.uid, 'next', null, delimiter,
@@ -267,7 +249,7 @@ describe('bucket API for getting a subset of ' +
             expect(response.CommonPrefixes
                 .indexOf("next1/")).to.equal(-1);
             expect(response.NextMarker).to.equal("next1/");
-            expect(response.IsTruncated).to.be.true;
+            assert(response.IsTruncated);
             done();
         });
     });
@@ -339,14 +321,14 @@ describe("stress test for bucket API", function describe() {
         const startTime = process.hrtime();
 
         async.each(keys, (item, next) => {
-            metadata.putObjectMD(bucketName, item, "value", next);
+            metadata.putObjectMD(bucketName, item, '{}', next);
         }, (err) => {
             if (err) {
-                expect(err).to.be.undefined;
+                assert.strictEqual(err, undefined);
                 done();
             } else {
-                metadata.listObject(bucket.uid,
-                    null, null, delimiter, null, (err, response) => {
+                metadata.listObject(bucket.uid, null, null, delimiter, null,
+                    (err, response) => {
                     // Stop timing and calculate millisecond time difference
                         const diff = timeDiff(startTime);
                         expect(diff).to.be.below(maxMilliseconds);
