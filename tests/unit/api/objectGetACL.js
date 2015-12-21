@@ -96,6 +96,17 @@ describe('objectGetACL API', () => {
         });
     });
 
+    it('should return an error if try to get an ACL ' +
+        'for a nonexistent object', (done) => {
+        bucketPut(accessKey, metastore, testBucketPutRequest, (err, result) => {
+            assert.strictEqual(result, 'Bucket created');
+            objectGetACL(accessKey, metastore, testGetACLRequest, (err) => {
+                assert.strictEqual(err, 'NoSuchKey');
+                done();
+            });
+        });
+    });
+
     it('should get a canned public-read ACL', (done) => {
         const testPutObjectRequest = {
             lowerCaseHeaders: {
