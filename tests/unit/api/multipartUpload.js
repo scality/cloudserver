@@ -224,10 +224,7 @@ describe('Multipart Upload API', () => {
             const md5Hash = crypto.createHash('md5');
             const bufferBody =
                 new Buffer(postBody, 'binary');
-            md5Hash.update(bufferBody);
-            const base64MD5 = md5Hash.digest('base64');
-            let hexMD5 = new Buffer(base64MD5, 'base64');
-            hexMD5 = hexMD5.toString('hex');
+            const calculatedMD5 = md5Hash.update(bufferBody).digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
@@ -240,7 +237,7 @@ describe('Multipart Upload API', () => {
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: base64MD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 expect(err).to.be.null;
@@ -254,7 +251,7 @@ describe('Multipart Upload API', () => {
                     const partEntryArray = sortedKeyMap[1].split(splitter);
                     const partEtag = partEntryArray[3];
                     expect(keysInMPUkeyMap).to.have.length(2);
-                    expect(partEtag).to.equal(hexMD5);
+                    expect(partEtag).to.equal(calculatedMD5);
                     done();
                 });
             });
@@ -629,7 +626,7 @@ describe('Multipart Upload API', () => {
                 const completeBody = `<CompleteMultipartUpload>` +
                     `<Part>` +
                     `<PartNumber>1</PartNumber>` +
-                    `<ETag>${calculatedMD5}</ETag>` +
+                    `<ETag>"${calculatedMD5}"</ETag>` +
                     `</Part>` +
                     `</CompleteMultipartUpload>`;
                 const completeRequest = {
@@ -939,11 +936,11 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `</CompleteMultipartUpload>`;
                     const completeRequest = {
@@ -1060,7 +1057,7 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
@@ -1181,11 +1178,11 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `</CompleteMultipartUpload>`;
                     const completeRequest = {
@@ -1300,11 +1297,11 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `</CompleteMultipartUpload>`;
                     const completeRequest = {
@@ -1425,11 +1422,11 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `</CompleteMultipartUpload>`;
                     const completeRequest = {
@@ -1552,11 +1549,11 @@ describe('Multipart Upload API', () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
-                        `<ETag>${calculatedMD5}</ETag>` +
+                        `<ETag>"${calculatedMD5}"</ETag>` +
                         `</Part>` +
                         `</CompleteMultipartUpload>`;
                     const completeRequest = {
