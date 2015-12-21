@@ -80,24 +80,6 @@ describe('objectPut API', () => {
             });
     });
 
-    it.skip('should return an error if datastore ' +
-            'reports an error back', () => {
-        // TODO: Test to be written once services.putDataStore
-        // includes an actual call to
-        // datastore rather than just the in
-        // memory adding of a key/value pair to the datastore
-        // object
-    });
-
-    it.skip('should return an error if metastore ' +
-            'reports an error back', () => {
-        // TODO: Test to be written once
-        // services.metadataStoreObject includes an actual call to
-        // datastore rather than just the in
-        // memory adding of a key/value pair to the datastore
-        // object
-    });
-
     it('should successfully put an object with bucket' +
     ' and object in pathname', (done) => {
         const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
@@ -125,9 +107,9 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(testBucketUID, (err, md) => {
-                            assert(md.keyMap[objectName]);
-                            assert.strictEqual(md.keyMap[objectName]
-                                ['content-md5'], correctMD5);
+                            const MD = JSON.parse(md.keyMap[objectName]);
+                            assert(MD);
+                            assert.strictEqual(MD['content-md5'], correctMD5);
                             done();
                         });
                     });
@@ -162,9 +144,9 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(testBucketUID, (err, md) => {
-                            assert(md.keyMap[objectName]);
-                            assert.strictEqual(md.keyMap[objectName]
-                                ['content-md5'], correctMD5);
+                            const MD = JSON.parse(md.keyMap[objectName]);
+                            assert(MD);
+                            assert.strictEqual(MD['content-md5'], correctMD5);
                             done();
                         });
                     });
@@ -204,13 +186,14 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(testBucketUID, (err, md) => {
-                            assert(md.keyMap[objectName]);
-                            assert.strictEqual(md.keyMap[objectName]
-                                ['x-amz-meta-test'], 'some metadata');
-                            assert.strictEqual(md.keyMap[objectName]
-                                ['x-amz-meta-test2'], 'some more metadata');
-                            assert.strictEqual(md.keyMap[objectName]
-                                ['x-amz-meta-test3'], 'even more metadata');
+                            const MD = JSON.parse(md.keyMap[objectName]);
+                            assert(MD);
+                            assert.strictEqual(MD['x-amz-meta-test'],
+                                               'some metadata');
+                            assert.strictEqual(MD['x-amz-meta-test2'],
+                                               'some more metadata');
+                            assert.strictEqual(MD['x-amz-meta-test3'],
+                                               'even more metadata');
                             done();
                         });
                     });
