@@ -1,0 +1,10 @@
+{
+    "name": "s3curl-tests",
+    "dependencies": {
+        "mocha": "2.3.3",
+        "xml2js": "~0.4.12"
+    },
+    "scripts": {
+        "test": "mocha *.js"
+    }
+}
