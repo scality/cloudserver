@@ -45,7 +45,7 @@ test:
   override:
     - npm run --silent lint
     - npm run --silent lint_md
-    # lint the python used for testing 
+    # lint the python used for testing
     - flake8 $(git ls-files '*.py')
     # functional tests
     - bash ./tests/matryoshka-balance.sh ${docker_image} :
