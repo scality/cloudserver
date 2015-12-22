@@ -1,5 +1,6 @@
 import assert from 'assert';
 import async from 'async';
+
 import { parseString } from 'xml2js';
 
 import bucketGet from '../../../lib/api/bucketGet';
@@ -27,7 +28,6 @@ describe('bucketGet API', () => {
                     "buckets": []
                 }
             },
-            "buckets": {}
         };
         metadata.deleteBucket(testBucketUID, ()=> {
             done();
@@ -137,8 +137,7 @@ describe('bucketGet API', () => {
                 objectPut(accessKey, metastore, testPutObjectRequest2, next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey, metastore,
-                    testGetRequest, next);
+                bucketGet(accessKey, metastore, testGetRequest, next);
             },
             function waterfall5(result, next) {
                 parseString(result, next);
