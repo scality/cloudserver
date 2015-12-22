@@ -102,7 +102,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -111,7 +111,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -159,7 +159,7 @@ describe('Multipart Upload API', () => {
                 calculatedMD5: calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
-                expect(err).to.be.null;
+                assert.strictEqual(err, null);
                 metadata.getBucket(mpuBucket, (err, md) => {
                     const keysInMPUkeyMap = Object.keys(md.keyMap);
                     const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
@@ -175,7 +175,7 @@ describe('Multipart Upload API', () => {
                     expect(keysInMPUkeyMap).to.have.length(2);
                     expect(md.keyMap[overviewEntry].key)
                         .to.equal(objectKey);
-                    expect(partUploadId).to.equal(testUploadId);
+                    assert.strictEqual(partUploadId, testUploadId);
                     expect(firstPartNumber).to.equal('1');
                     expect(partEtag).to.equal(calculatedMD5);
                     done();
