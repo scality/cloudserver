@@ -6,6 +6,8 @@ const assert = require('assert');
 
 const program = 's3cmd';
 const upload = 'test1MB';
+const emptyUpload = 'Utest0B';
+const emptyDownload = 'Dtest0B';
 const download = 'tmpfile';
 const MPUpload = 'test16MB';
 const MPDownload = 'MPtmpfile';
@@ -30,6 +32,14 @@ function createFile(name, bytes, callback) {
             assert.strictEqual(code, 0);
             callback();
         });
+}
+
+function createEmptyFile(name, callback) {
+    process.stdout.write(`touch ${name}\n`);
+    proc.spawn('touch', [ name ], { stdio: 'inherit' }).on('exit', code => {
+        assert.strictEqual(code, 0);
+        callback();
+    });
 }
 
 function deleteFile(file, callback) {
@@ -227,9 +237,16 @@ describe('s3cmd delObject', () => {
 
 describe('connector edge cases', function tata() {
     this.timeout(0);
-    after('delete uploaded and downloaded file', done => {
+    before('create file to put', (done) => {
+        createEmptyFile(emptyUpload, done);
+    });
+    after('delete uploaded and downloaded file', (done) => {
         deleteFile(upload, () => {
-            deleteFile(download, done);
+            deleteFile(download, () => {
+                deleteFile(emptyUpload, () => {
+                    deleteFile(emptyDownload, done);
+                });
+            });
         });
     });
 
@@ -239,6 +256,18 @@ describe('connector edge cases', function tata() {
 
     it('should get existing file in existing bucket', (done) => {
         exec(['get', `s3://${bucket}/${upload}`, download ], done);
+    });
+
+    it('should put a 0 Bytes file', (done) => {
+        exec(['put', emptyUpload, `s3://${bucket}`, ], done);
+    });
+
+    it('should get a 0 Bytes file', (done) => {
+        exec(['get', `s3://${bucket}/${emptyUpload}`, emptyDownload, ], done);
+    });
+
+    it('should delete a 0 Bytes file', (done) => {
+        exec(['del', `s3://${bucket}/${emptyUpload}`, ], done);
     });
 });
 
