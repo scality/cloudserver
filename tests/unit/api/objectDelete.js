@@ -4,6 +4,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
+import objectGet from '../../../lib/api/objectGet';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
@@ -51,6 +52,11 @@ describe('objectDelete API', () => {
         post: postBody,
         calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
     };
+    const testGetObjectRequest = {
+        lowerCaseHeaders: {},
+        url: `/${bucketName}/${objectName}`,
+        namespace: namespace
+    };
     const testDeleteRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName}`,
@@ -66,10 +72,13 @@ describe('objectDelete API', () => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
             objectPut(accessKey, metastore, testPutObjectRequest, () => {
                 objectDelete(accessKey, metastore, testDeleteRequest,
-                    (err, response) => {
-                        assert.strictEqual(response,
-                            'ObjectDeletedPermanently');
-                        done();
+                    (err) => {
+                        assert.strictEqual(err, undefined);
+                        objectGet(accessKey, metastore, testGetObjectRequest,
+                        (err) => {
+                            assert.strictEqual(err, 'NoSuchKey');
+                            done();
+                        });
                     });
             });
         });
