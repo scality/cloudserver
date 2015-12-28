@@ -49,178 +49,201 @@ function deleteFile(file, callback) {
 }
 
 // Test whether the proper xml error response is received
-function testErrorResponse(args, done, expectedOutput) {
-    const av = args;
-    process.stdout.write(`${program} ${av}\n`);
-    const child = proc.spawn(program, av);
-    child.stdout.on('data', data => {
-        const stringifiedData = data.toString();
-        process.stdout.write('stdout: ' + stringifiedData);
-        parseString(data.toString(), (err, result) => {
-            assert.strictEqual(result.Error.Code[0], expectedOutput);
-        });
-    });
-    child.stderr.on('data', (data) => {
-        process.stdout.write('stderr: ' + data.toString());
-    });
-    child.on('close', () => {
+function assertError(data, expectedOutput, done) {
+    parseString(data, (err, result) => {
+        assert.strictEqual(result.Error.Code[0], expectedOutput);
         done();
     });
 }
 
-
-// Get content xml response and parse it
-// to pass to callback
-function provideXmlOutputInJSON(args, cb) {
-    const av = args;
-    process.stdout.write(`${program} ${av}\n`);
-    const child = proc.spawn(program, av);
-    child.stdout.on('data', data => {
-        parseString(data.toString(), (err, result) => {
-            cb(err, result);
-        });
-    });
-}
-
-// Get stdout stringified
+// Get stdout and stderr stringified
 function provideRawOutput(args, cb) {
     const av = args;
     process.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);
+    const procData = {
+        stdout: '',
+        stderr: ''
+    };
     child.stdout.on('data', data => {
-        cb(data.toString());
+        procData.stdout += data.toString();
+    });
+    child.on('close', () => {
+        let httpCode;
+        if (procData.stderr !== '') {
+            const lines = procData.stderr.replace(/[<>]/g, '').split(/[\r\n]/);
+            httpCode = lines.find((line) => {
+                const trimmed = line.trim().toUpperCase();
+                // ignore 100 Continue HTTP code
+                if (trimmed.startsWith('HTTP/1.1 ') &&
+                    !trimmed.includes('100 CONTINUE')) {
+                    return true;
+                }
+            });
+            if (httpCode) {
+                httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
+                    .toUpperCase();
+            }
+        }
+        return cb(httpCode, procData);
     });
     child.stderr.on('data', (data) => {
-        process.stdout.write('stderr: ' + data.toString());
+        procData.stderr += data.toString();
     });
 }
 
-function justExec(args, cb, exitCode) {
-    let exit = exitCode;
-    if (exit === undefined) {
-        exit = 0;
-    }
-    process.stdout.write(`${program} ${args}\n`);
-    const child = proc.spawn(program, args, { stdio: 'inherit'});
-    child.on('exit', code => {
-        assert.strictEqual(code, exit);
-        cb();
-    });
-}
-
-describe('s3curl put and delete buckets', () => {
+describe('s3curl put and delete buckets', function qwerty() {
     it('should put a valid bucket', (done) => {
-        justExec(['--createBucket', '--',
-        `http://${ipAddress}:8000/${bucket}`], done);
+        provideRawOutput(['--createBucket', '--',
+            `http://${ipAddress}:8000/${bucket}`, '-v'],
+            (httpCode) => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
     });
 
     it('should not be able to put a bucket with a name ' +
         'already being used', (done) => {
-        testErrorResponse(['--createBucket', '--',
-        `http://${ipAddress}:8000/${bucket}`],
-        done, 'BucketAlreadyExists');
+        provideRawOutput(['--createBucket', '--',
+            `http://${ipAddress}:8000/${bucket}`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '409 CONFLICT');
+                assertError(rawOutput.stdout, 'BucketAlreadyExists',
+                    done);
+            });
     });
 
     it('should not be able to put a bucket with an invalid name',
         (done) => {
-            testErrorResponse(['--createBucket', '--',
-            `http://${ipAddress}:8000/2`],
-            done, 'InvalidBucketName');
+            provideRawOutput(['--createBucket', '--',
+                `http://${ipAddress}:8000/2`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'InvalidBucketName', done);
+                });
         });
 
     it('should be able to delete a bucket', (done) => {
-        justExec(['--delete', '--',
-        `http://${ipAddress}:8000/${bucket}`], done);
+        provideRawOutput(['--delete', '--',
+            `http://${ipAddress}:8000/${bucket}`, '-v'],
+            (httpCode) => {
+                assert.strictEqual(httpCode, '204 NO CONTENT');
+                done();
+            });
     });
 
     it('should not be able to get a bucket that was deleted',
         (done) => {
-            testErrorResponse(['--',
-            `http://${ipAddress}:8000/${bucket}`],
-            done, 'NoSuchBucket');
+            provideRawOutput(['--',
+                `http://${ipAddress}:8000/${bucket}`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '404 NOT FOUND');
+                    assertError(rawOutput.stdout, 'NoSuchBucket', done);
+                });
         });
 
     it('should be able to create a bucket with a name' +
         'of a bucket that has previously been deleted', (done) => {
-        justExec(['--createBucket', '--',
-        `http://${ipAddress}:8000/${bucket}`], done);
+        provideRawOutput(['--createBucket', '--',
+            `http://${ipAddress}:8000/${bucket}`, '-v'],
+            (httpCode) => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
     });
 });
 
 describe('s3curl put and get bucket ACLs', () => {
     it('should be able to create a bucket with a canned ACL', (done) => {
-        justExec(['--createBucket', '--', '-H',
+        provideRawOutput(['--createBucket', '--', '-H',
         'x-amz-acl:public-read',
-        `http://${ipAddress}:8000/${aclBucket}`], done);
-    });
-
-    it('should be able to get a canned ACL', (done) => {
-        provideXmlOutputInJSON(['--',
-        `http://${ipAddress}:8000/${aclBucket}?acl`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.AccessControlPolicy
-                .Owner[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Grantee[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Permission[0], 'FULL_CONTROL');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[1]
-                .Grantee[0].URI[0],
-                'http://acs.amazonaws.com/groups/global/AllUsers');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[1]
-                .Permission[0], 'READ');
+        `http://${ipAddress}:8000/${aclBucket}`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
+    it('should be able to get a canned ACL', (done) => {
+        provideRawOutput(['--',
+        `http://${ipAddress}:8000/${aclBucket}?acl`, '-v'],
+        (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, xml) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(xml.AccessControlPolicy
+                    .Owner[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Grantee[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Permission[0], 'FULL_CONTROL');
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[1]
+                    .Grantee[0].URI[0],
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[1]
+                    .Permission[0], 'READ');
+                done();
+            });
+        });
+    });
+
     it('should be able to create a bucket with a specific ACL', (done) => {
-        justExec(['--createBucket', '--', '-H',
+        provideRawOutput(['--createBucket', '--', '-H',
         'x-amz-grant-read:uri=http://acs.amazonaws.com/groups/global/AllUsers',
-        `http://${ipAddress}:8000/${aclBucket}2`], done);
+        `http://${ipAddress}:8000/${aclBucket}2`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 
     it('should be able to get a specifically set ACL', (done) => {
-        provideXmlOutputInJSON(['--',
-        `http://${ipAddress}:8000/${aclBucket}2?acl`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.AccessControlPolicy
-                .Owner[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Grantee[0].URI[0],
-                'http://acs.amazonaws.com/groups/global/AllUsers');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Permission[0], 'READ');
-            done();
+        provideRawOutput(['--',
+        `http://${ipAddress}:8000/${aclBucket}2?acl`, '-v'],
+        (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, xml) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(xml.AccessControlPolicy
+                    .Owner[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Grantee[0].URI[0],
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+                assert.strictEqual(xml.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Permission[0], 'READ');
+                done();
+            });
         });
     });
 });
 
 describe('s3curl getService', () => {
     it('should get a list of all buckets created by user account', (done) => {
-        provideXmlOutputInJSON(['--', `http://${ipAddress}:8000`],
-        (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            const bucketNames = result.ListAllMyBucketsResult
-                .Buckets[0].Bucket.map((item) => {
-                    return item.Name[0];
-                });
-            const whereIsMyBucket = bucketNames.indexOf(bucket);
-            assert(whereIsMyBucket > -1);
-            const whereIsMyAclBucket = bucketNames.indexOf(aclBucket);
-            assert(whereIsMyAclBucket > -1);
-            done();
+        provideRawOutput(['--', `http://${ipAddress}:8000`, '-v'],
+        (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, xml) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                const bucketNames = xml.ListAllMyBucketsResult
+                    .Buckets[0].Bucket.map((item) => {
+                        return item.Name[0];
+                    });
+                const whereIsMyBucket = bucketNames.indexOf(bucket);
+                assert(whereIsMyBucket > -1);
+                const whereIsMyAclBucket = bucketNames.indexOf(aclBucket);
+                assert(whereIsMyAclBucket > -1);
+                done();
+            });
         });
     });
 });
@@ -232,91 +255,109 @@ describe('s3curl putObject', () => {
 
     it('should put first object in existing bucket with prefix ' +
     'and delimiter', (done) => {
-        justExec(['--debug', `--put=${upload}`, `--`,
+        provideRawOutput(['--debug', `--put=${upload}`, `--`,
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}1`],
-            done);
+            `${prefix}${delimiter}${upload}1`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 
     it('should put second object in existing bucket with prefix ' +
     'and delimiter', (done) => {
-        justExec([`--put=${upload}`, `--`,
+        provideRawOutput([`--put=${upload}`, `--`,
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}2`],
-            done);
+            `${prefix}${delimiter}${upload}2`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 
     it('should put third object in existing bucket with prefix ' +
     'and delimiter', (done) => {
-        justExec([`--put=${upload}`, `--`,
+        provideRawOutput([`--put=${upload}`, `--`,
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}3`],
-            done);
+            `${prefix}${delimiter}${upload}3`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 });
 
 describe('s3curl getBucket', () => {
     it('should list all objects if no prefix or delimiter ' +
     'specified', (done) => {
-        provideXmlOutputInJSON(['--',
-        `http://${ipAddress}:8000/${bucket}`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.ListBucketResult
-                .Contents[0].Key[0], 'topLevel/test1MB1');
-            assert.strictEqual(result.ListBucketResult
-                .Contents[1].Key[0], 'topLevel/test1MB2');
-            assert.strictEqual(result.ListBucketResult
-                .Contents[2].Key[0], 'topLevel/test1MB3');
-            done();
+        provideRawOutput(['--',
+        `http://${ipAddress}:8000/${bucket}`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(result.ListBucketResult
+                    .Contents[0].Key[0], 'topLevel/test1MB1');
+                assert.strictEqual(result.ListBucketResult
+                    .Contents[1].Key[0], 'topLevel/test1MB2');
+                assert.strictEqual(result.ListBucketResult
+                    .Contents[2].Key[0], 'topLevel/test1MB3');
+                done();
+            });
         });
     });
 
     it('should list a common prefix if a common prefix and delimiter are ' +
     'specified', (done) => {
-        provideXmlOutputInJSON(['--',
+        provideRawOutput(['--',
         `http://${ipAddress}:8000/${bucket}?delimiter=${delimiter}` +
-        `&prefix=${prefix}`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.ListBucketResult
-                .CommonPrefixes[0].Prefix[0], 'topLevel/');
-            done();
+        `&prefix=${prefix}`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(result.ListBucketResult
+                    .CommonPrefixes[0].Prefix[0], 'topLevel/');
+                done();
+            });
         });
     });
 
     it('should not list a common prefix if no delimiter is ' +
     'specified', (done) => {
-        provideXmlOutputInJSON(['--',
+        provideRawOutput(['--',
         `http://${ipAddress}:8000/${bucket}?` +
-        `&prefix=${prefix}`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            const keys = Object.keys(result.ListBucketResult);
-            const location = keys.indexOf('CommonPrefixes');
-            assert.strictEqual(location, -1);
-            assert.strictEqual(result.ListBucketResult
-                .Contents[0].Key[0], 'topLevel/test1MB1');
-            done();
+        `&prefix=${prefix}`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                const keys = Object.keys(result.ListBucketResult);
+                const location = keys.indexOf('CommonPrefixes');
+                assert.strictEqual(location, -1);
+                assert.strictEqual(result.ListBucketResult
+                    .Contents[0].Key[0], 'topLevel/test1MB1');
+                done();
+            });
         });
     });
 
     it('should provide a next marker if maxs keys exceeded ' +
         'and delimiter specified', (done) => {
-        provideXmlOutputInJSON(['--',
+        provideRawOutput(['--',
         `http://${ipAddress}:8000/${bucket}?` +
-        `delimiter=x&max-keys=2`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.ListBucketResult
-                .NextMarker[0], 'topLevel/test1MB3');
-            assert.strictEqual(result.ListBucketResult
-                .IsTruncated[0], 'true');
-            done();
+        `delimiter=x&max-keys=2`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(result.ListBucketResult
+                    .NextMarker[0], 'topLevel/test1MB3');
+                assert.strictEqual(result.ListBucketResult
+                    .IsTruncated[0], 'true');
+                done();
+            });
         });
     });
 });
@@ -324,10 +365,8 @@ describe('s3curl getBucket', () => {
 describe('s3curl head bucket', () => {
     it('should return a 404 response if bucket does not exist', (done) => {
         provideRawOutput(['--head', '--',
-        `http://${ipAddress}:8000/${nonexist}`], (output) => {
-            const lines = output.split('\n');
-            const httpCode = lines[0].split(' ')[1];
-            assert.strictEqual(httpCode, '404');
+        `http://${ipAddress}:8000/${nonexist}`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '404 NOT FOUND');
             done();
         });
     });
@@ -335,10 +374,8 @@ describe('s3curl head bucket', () => {
     it('should return a 200 response if bucket exists' +
         ' and user is authorized', (done) => {
         provideRawOutput(['--head', '--',
-        `http://${ipAddress}:8000/${bucket}`], (output) => {
-            const lines = output.split('\n');
-            const httpCode = lines[0].split(' ')[1];
-            assert.strictEqual(httpCode, '200');
+        `http://${ipAddress}:8000/${bucket}`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
@@ -352,16 +389,21 @@ describe('s3curl getObject', () => {
     });
 
     it('should put object with metadata', (done) => {
-        testErrorResponse(['--debug', `--put=${upload}`, `--`,
+        provideRawOutput([`--put=${upload}`, `--`,
             '-H', 'x-amz-meta-mine:BestestObjectEver',
-            `http://${ipAddress}:8000/${bucket}/getter`],
-            done, '');
+            `http://${ipAddress}:8000/${bucket}/getter`, '-v'],
+            (httpCode) => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
     });
 
     it('should get an existing file in an existing bucket', (done) => {
-        justExec(['--', '-o', download,
-            `http://${ipAddress}:8000/${bucket}/getter`],
-            done);
+        provideRawOutput(['--', '-o', download,
+            `http://${ipAddress}:8000/${bucket}/getter`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 
     it('downloaded file should equal uploaded file', (done) => {
@@ -372,12 +414,14 @@ describe('s3curl getObject', () => {
 describe('s3curl head object', () => {
     it(`should get object's metadata`, (done) => {
         provideRawOutput(['--head', '--',
-            `http://${ipAddress}:8000/${bucket}/getter`], (output) => {
-            const lines = output.split('\n');
-            const userMetadata = `x-amz-meta-mine: BestestObjectEver\r`;
-            assert(lines.indexOf(userMetadata) > -1);
-            done();
-        });
+            `http://${ipAddress}:8000/${bucket}/getter`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                const lines = rawOutput.stdout.split('\n');
+                const userMetadata = `x-amz-meta-mine: BestestObjectEver\r`;
+                assert(lines.indexOf(userMetadata) > -1);
+                done();
+            });
     });
 });
 
@@ -390,73 +434,86 @@ describe('s3curl object ACLs', () => {
     });
 
     it('should put an object with a canned ACL', (done) => {
-        justExec([`--put=${aclUpload}`, `--`,
+        provideRawOutput([`--put=${aclUpload}`, `--`,
             '-H', 'x-amz-acl:public-read',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${aclUpload}withcannedacl`],
-            done);
-    });
-
-    it(`should get an object's canned ACL`, (done) => {
-        provideXmlOutputInJSON(['--',
-        `http://${ipAddress}:8000/${bucket}/` +
-        `${aclUpload}withcannedacl?acl`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.AccessControlPolicy
-                .Owner[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Grantee[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Permission[0], 'FULL_CONTROL');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[1]
-                .Grantee[0].URI[0],
-                'http://acs.amazonaws.com/groups/global/AllUsers');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[1]
-                .Permission[0], 'READ');
+            `${aclUpload}withcannedacl`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
+    it(`should get an object's canned ACL`, (done) => {
+        provideRawOutput(['--',
+        `http://${ipAddress}:8000/${bucket}/` +
+        `${aclUpload}withcannedacl?acl`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(result.AccessControlPolicy
+                    .Owner[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Grantee[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Permission[0], 'FULL_CONTROL');
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[1]
+                    .Grantee[0].URI[0],
+                    'http://acs.amazonaws.com/groups/global/AllUsers');
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[1]
+                    .Permission[0], 'READ');
+                done();
+            });
+        });
+    });
+
     it('should put an object with a specific ACL', (done) => {
-        justExec([`--put=${aclUpload}`, `--`,
+        provideRawOutput([`--put=${aclUpload}`, `--`,
             '-H', 'x-amz-grant-read:uri=' +
             'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${aclUpload}withspecificacl`],
-            done);
+            `${aclUpload}withspecificacl`, '-v'], (httpCode) => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
     });
 
     it(`should get an object's specific ACL`, (done) => {
-        provideXmlOutputInJSON(['--',
+        provideRawOutput(['--',
         `http://${ipAddress}:8000/${bucket}/` +
-        `${aclUpload}withspecificacl?acl`], (err, result) => {
-            if (err) {
-                assert.ifError(err);
-            }
-            assert.strictEqual(result.AccessControlPolicy
-                .Owner[0].ID[0], ownerCanonicalId);
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Grantee[0].URI[0],
-                'http://acs.amazonaws.com/groups/global/AuthenticatedUsers');
-            assert.strictEqual(result.AccessControlPolicy
-                .AccessControlList[0].Grant[0]
-                .Permission[0], 'READ');
-            done();
+        `${aclUpload}withspecificacl?acl`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
+            parseString(rawOutput.stdout, (err, result) => {
+                if (err) {
+                    assert.ifError(err);
+                }
+                assert.strictEqual(result.AccessControlPolicy
+                    .Owner[0].ID[0], ownerCanonicalId);
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Grantee[0].URI[0],
+                    'http://acs.amazonaws.com/groups/global/' +
+                    'AuthenticatedUsers');
+                assert.strictEqual(result.AccessControlPolicy
+                    .AccessControlList[0].Grant[0]
+                    .Permission[0], 'READ');
+                done();
+            });
         });
     });
 
     it('should return a NoSuchKey error if try to get an object' +
         'ACL for an object that does not exist', (done) => {
-        testErrorResponse(['--',
+        provideRawOutput(['--',
             `http://${ipAddress}:8000/${bucket}/` +
-            `keydoesnotexist?acl`],
-                done, 'NoSuchKey');
+            `keydoesnotexist?acl`, '-v'], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '404 NOT FOUND');
+            assertError(rawOutput.stdout, 'NoSuchKey', done);
+        });
     });
 });
