@@ -1,43 +1,37 @@
 import assert from 'assert';
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketPut from '../../../lib/api/bucketPut';
+import Config from '../../../lib/Config';
 import metadata from '../metadataswitch';
+import objectPut from '../../../lib/api/objectPut';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
+const usersBucket = new Config().usersBucket;
+// TODO: Remove references to metastore.  This is GH Issue #172
+const metastore = undefined;
 
 describe("bucketDelete API", () => {
-    let metastore;
-
-    beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
+    afterEach(done => {
+        metadata.deleteBucket(bucketName, () => {
+            metadata.deleteBucket(usersBucket, () => {
+                done();
+            });
         });
     });
 
     const testBucketPutRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace,
+        namespace,
     };
     const testDeleteRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace
+        namespace,
     };
 
     it('should return an error if the bucket is not empty', (done) => {
@@ -45,49 +39,51 @@ describe("bucketDelete API", () => {
         const testPutObjectRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace,
+            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest,
-                () => {
-                    bucketDelete(accessKey, metastore, testDeleteRequest,
-                        (err) => {
-                            assert.strictEqual(err, 'BucketNotEmpty');
-                            assert.strictEqual(metastore.users[accessKey]
-                                .buckets.length, 1);
-                            metadata.getBucket(bucketName, (err, md) => {
-                                assert.strictEqual(md.name, bucketName);
+            objectPut(accessKey, metastore, testPutObjectRequest, () => {
+                bucketDelete(accessKey, metastore, testDeleteRequest, err => {
+                    assert.strictEqual(err, 'BucketNotEmpty');
+                    metadata.getBucket(bucketName, (err, md) => {
+                        assert.strictEqual(md.name, bucketName);
+                        metadata.listObject(usersBucket, accessKey,
+                            null, null, null, (err, listResponse) => {
+                                assert
+                                .strictEqual(listResponse.Contents.length, 1);
                                 done();
                             });
-                        });
+                    });
                 });
+            });
         });
     });
 
     it('should delete a bucket', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
             bucketDelete(accessKey, metastore, testDeleteRequest, () => {
-                assert.strictEqual(metastore
-                    .users[accessKey].buckets.length, 0);
                 metadata.getBucket(bucketName, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
-                    done();
+                    metadata.listObject(usersBucket, accessKey,
+                        null, null, null, (err, listResponse) => {
+                            assert.strictEqual(listResponse.Contents.length, 0);
+                            done();
+                        });
                 });
             });
         });
     });
 
-    it('should prevent anonymous user from accessing ' +
-        'delete bucket API', (done) => {
-        bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, testDeleteRequest,
-                (err) => {
+    it('should prevent anonymous user from accessing delete bucket API',
+        done => {
+            bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
+                metastore, testDeleteRequest, err => {
                     assert.strictEqual(err, 'AccessDenied');
+                    done();
                 });
-        done();
-    });
+        });
 });

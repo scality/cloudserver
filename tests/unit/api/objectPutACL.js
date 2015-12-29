@@ -12,24 +12,13 @@ const postBody = [ new Buffer('I am a body'), ];
 
 describe('putObjectACL API', () => {
     let metastore;
-    beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
+    beforeEach(done => {
         metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, ()=> {
             done();
         });
