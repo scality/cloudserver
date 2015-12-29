@@ -1,11 +1,3 @@
 {
-  "users": {
-      "accessKey1": {
-        "buckets": []
-      },
-      "accessKey2": {
-        "buckets": []
-      }
-  },
-  "buckets": {}
+    "buckets": {}
 }

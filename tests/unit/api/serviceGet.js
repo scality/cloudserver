@@ -1,33 +1,47 @@
 import assert from 'assert';
-import { parseString } from 'xml2js';
 import async from 'async';
-import serviceGet from '../../../lib/api/serviceGet.js';
-import bucketPut from '../../../lib/api/bucketPut.js';
+import { parseString } from 'xml2js';
+
+import Config from '../../../lib/Config';
+import bucketPut from '../../../lib/api/bucketPut';
+import metadata from '../metadataswitch';
+import serviceGet from '../../../lib/api/serviceGet';
+
+const usersBucket = new Config().usersBucket;
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const bucketName1 = 'bucketname1';
+const bucketName2 = 'bucketname2';
+const bucketName3 = 'bucketname3';
+// TODO: Remove references to metastore.  This is GH Issue #172
+const metastore = undefined;
 
 describe('serviceGet API', () => {
-    let metastore;
+    beforeEach((done) => {
+        metadata.deleteBucket('bucketname', () => {
+            metadata.deleteBucket(usersBucket, () => {
+                done();
+            });
+        });
+    });
 
-    beforeEach(() => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
+    afterEach((done) => {
+        metadata.deleteBucket(bucketName1, ()=> {
+            metadata.deleteBucket(bucketName2, () => {
+                metadata.deleteBucket(bucketName3, () => {
+                    metadata.deleteBucket(usersBucket, () => {
+                        done();
+                    });
+                });
+            });
+        });
     });
 
     const serviceGetRequest = {
-        lowerCaseHeaders: {host: 's3.amazonaws.com'},
+        lowerCaseHeaders: { host: 's3.amazonaws.com' },
         url: '/',
-        headers: {host: 's3.amazonaws.com'},
+        headers: { host: 's3.amazonaws.com' },
     };
 
     it('should return the list of buckets owned by the user', (done) => {
@@ -37,19 +51,19 @@ describe('serviceGet API', () => {
         const testbucketPutRequest1 = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName1}.s3.amazonaws.com`}
         };
         const testbucketPutRequest2 = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName2}.s3.amazonaws.com`}
         };
         const testbucketPutRequest3 = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName3}.s3.amazonaws.com`}
         };
         const date = new Date();
