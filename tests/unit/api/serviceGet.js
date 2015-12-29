@@ -29,7 +29,7 @@ describe('serviceGet API', () => {
     });
 
     afterEach((done) => {
-        metadata.deleteBucket(bucketName1, ()=> {
+        metadata.deleteBucket(bucketName1, () => {
             metadata.deleteBucket(bucketName2, () => {
                 metadata.deleteBucket(bucketName3, () => {
                     metadata.deleteBucket(usersBucket, () => {
