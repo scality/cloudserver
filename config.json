@@ -1,6 +1,7 @@
 {
     "port": 8000,
-    "splitter": "...!*!",
+    "splitter": "splitterfornow",
+    "usersBucket": "namespaceusersbucket",
     "sproxyd": {
         "bootstrap": ["localhost:81"]
     },
