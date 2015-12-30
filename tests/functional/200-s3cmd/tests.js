@@ -67,7 +67,7 @@ function exec(args, done, exitCode) {
 }
 
 // Test stdout against expected output
-function provideRawOutput(args, lineFinder, testString, cb) {
+function checkRawOutput(args, lineFinder, testString, cb) {
     let av = args;
     if (isIronman) {
         av = args.concat(isIronman);
@@ -85,6 +85,24 @@ function provideRawOutput(args, lineFinder, testString, cb) {
         });
         const foundIt = lineOfInterest.indexOf(testString) > -1;
         return cb(foundIt);
+    });
+}
+
+// Pull line of interest from stderr (to get debug output)
+function provideLineOfInterest(args, lineFinder, cb) {
+    const av = isIronman ? args.concat(isIronman) : args;
+    process.stdout.write(`${program} ${av}\n`);
+    const allData = [];
+    const child = proc.spawn(program, av);
+    child.stderr.on('data', (data) => {
+        allData.push(data.toString().trim());
+        process.stdout.write(data.toString());
+    });
+    child.on('close', () => {
+        const lineOfInterest = allData.find((item) => {
+            return item.indexOf(lineFinder) > -1;
+        });
+        return cb(lineOfInterest);
     });
 }
 
@@ -112,7 +130,7 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
     });
 
     it('should get canned ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}`], 'ACL', `*anon*: READ`,
+        checkRawOutput(['info', `s3://${bucket}`], 'ACL', `*anon*: READ`,
         (foundIt) => {
             assert(foundIt);
             done();
@@ -125,7 +143,7 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
     });
 
     it('should get specific ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}`], 'ACL',
+        checkRawOutput(['info', `s3://${bucket}`], 'ACL',
         `${emailAccount}: WRITE`, (foundIt) => {
             assert(foundIt);
             done();
@@ -141,6 +159,39 @@ describe('s3cmd getBucket', () => {
     it('list non existing bucket, should fail', (done) => {
         exec(['ls', `s3://${nonexist}`, ], done, 12);
     });
+});
+
+describe('s3cmd getService', () => {
+    it(`should get a list of a user's buckets`, (done) => {
+        checkRawOutput(['ls'], 's3://',
+        `${bucket}`, (foundIt) => {
+            assert(foundIt);
+            done();
+        });
+    });
+
+    it(`should have response headers matching AWS's response headers`,
+        (done) => {
+            provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response:',
+            (lineOfInterest) => {
+                const openingBracket = lineOfInterest.indexOf('{');
+                const resObject = lineOfInterest.slice(openingBracket)
+                    .replace(/"/g, '\\"').replace(/'/g, '"');
+                const parsedObject = JSON.parse(resObject);
+                assert(parsedObject.headers['x-amz-id-2']);
+                assert.strictEqual(parsedObject.headers.server, 'AmazonS3');
+                assert(parsedObject.headers['transfer-encoding']);
+                assert(parsedObject.headers['x-amz-request-id']);
+                const gmtDate = new Date(parsedObject.headers.date)
+                    .toUTCString();
+                assert.strictEqual(parsedObject.headers.date, gmtDate);
+                assert.strictEqual(parsedObject
+                    .headers['content-type'], 'application/xml');
+                assert.strictEqual(parsedObject
+                    .headers['set-cookie'], undefined);
+                done();
+            });
+        });
 });
 
 describe('s3cmd putObject', () => {
@@ -194,7 +245,7 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
     });
 
     it('should get canned ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
+        checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         `*anon*: READ`, (foundIt) => {
             assert(foundIt);
             done();
@@ -207,7 +258,7 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
     });
 
     it('should get specific ACL that was set', (done) => {
-        provideRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
+        checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         `${emailAccount}: READ`, (foundIt) => {
             assert(foundIt);
             done();
