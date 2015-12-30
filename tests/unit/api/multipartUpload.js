@@ -102,7 +102,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -111,7 +111,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -159,7 +159,7 @@ describe('Multipart Upload API', () => {
                 calculatedMD5: calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
-                expect(err).to.be.null;
+                assert.strictEqual(err, null);
                 metadata.getBucket(mpuBucket, (err, md) => {
                     const keysInMPUkeyMap = Object.keys(md.keyMap);
                     const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
@@ -175,7 +175,7 @@ describe('Multipart Upload API', () => {
                     expect(keysInMPUkeyMap).to.have.length(2);
                     expect(md.keyMap[overviewEntry].key)
                         .to.equal(objectKey);
-                    expect(partUploadId).to.equal(testUploadId);
+                    assert.strictEqual(partUploadId, testUploadId);
                     expect(firstPartNumber).to.equal('1');
                     expect(partEtag).to.equal(calculatedMD5);
                     done();
@@ -650,8 +650,7 @@ describe('Multipart Upload API', () => {
                 };
                 const awsVerifiedEtag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
-                completeMultipartUpload(
-                    accessKey, metastore,
+                completeMultipartUpload(accessKey, metastore,
                     completeRequest, (err, result) => {
                         parseString(result, (err, json) => {
                             expect(json.CompleteMultipartUploadResult
@@ -665,9 +664,10 @@ describe('Multipart Upload API', () => {
                             expect(json.CompleteMultipartUploadResult
                                 .ETag[0]).to.equal(awsVerifiedEtag);
                             metadata.getBucket(testBucketUID, (err, md) => {
-                                expect(md.keyMap[objectKey]).to.exist;
-                                expect(md.keyMap[objectKey]['x-amz-meta-stuff'])
-                                    .to.equal('I am some user metadata');
+                                assert(md.keyMap[objectKey]);
+                                const MD = JSON.parse(md.keyMap[objectKey]);
+                                assert.strictEqual(MD['x-amz-meta-stuff'],
+                                                   'I am some user metadata');
                                 done();
                             });
                         });
@@ -1323,18 +1323,17 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
-                    completeMultipartUpload(
-                        accessKey, metastore,
+                    completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err, result) => {
-                            expect(err).to.equal(null);
+                            assert.strictEqual(err, null);
                             parseString(result, (err) => {
-                                expect(err).to.equal(null);
+                                assert.strictEqual(err, null);
                                 metadata.getBucket(testBucketUID, (err, md) => {
-                                    expect(md.keyMap[objectKey]
-                                    ['content-length'])
-                                    .to.equal(6000100);
+                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    assert.strictEqual(MD['content-length'],
+                                                      6000100);
                                     done();
                                 });
                             });
@@ -1440,7 +1439,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -1448,17 +1447,17 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
-                    completeMultipartUpload(
-                        accessKey, metastore,
+                    completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err, result) => {
-                            expect(err).to.equal(null);
+                            assert.strictEqual(err, null);
                             parseString(result, (err) => {
-                                expect(err).to.equal(null);
+                                assert.strictEqual(err, null);
                                 metadata.getBucket(testBucketUID, (err, md) => {
-                                    expect(md.keyMap[objectKey].acl.Canned)
-                                    .to.equal('authenticated-read');
+                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    assert.strictEqual(MD.acl.Canned,
+                                                       'authenticated-read');
                                     done();
                                 });
                             });
@@ -1567,7 +1566,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -1575,16 +1574,17 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err, result) => {
-                            expect(err).to.equal(null);
+                            assert.strictEqual(err, null);
                             parseString(result, (err) => {
-                                expect(err).to.equal(null);
+                                assert.strictEqual(err, null);
                                 metadata.getBucket(testBucketUID, (err, md) => {
-                                    expect(md.keyMap[objectKey].acl.READ[0])
-                                    .to.equal(granteeId);
+                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    assert.strictEqual(MD.acl.READ[0],
+                                                       granteeId);
                                     done();
                                 });
                             });
