@@ -1,6 +1,11 @@
 import { expect } from 'chai';
 import auth from '../../../../lib/auth/auth';
 
+import DummyRequestLogger from '../../helpers.js';
+
+const logger = new DummyRequestLogger();
+
+
 describe('Error handling in checkAuth', () => {
     it('should return an error message if no ' +
        'secret key is associated with access key', (done) => {
@@ -17,7 +22,8 @@ describe('Error handling in checkAuth', () => {
             url: '/bucket',
             query: {},
         };
-        auth(request, (err) => {
+
+        auth(request, logger, (err) => {
             expect(err).to.equal('InvalidAccessKeyId');
             done();
         });
@@ -37,7 +43,7 @@ describe('Error handling in checkAuth', () => {
             url: '/bucket',
         };
 
-        auth(request, (err) => {
+        auth(request, logger, (err) => {
             expect(err).to.equal('MissingSecurityHeader');
             done();
         });
@@ -58,7 +64,7 @@ describe('Error handling in checkAuth', () => {
             lowerCaseHeaders: {},
             headers: {}
         };
-        auth(request, (err) => {
+        auth(request, logger, (err) => {
             expect(err).to.equal('RequestTimeTooSkewed');
             done();
         });
@@ -84,7 +90,7 @@ describe('Error handling in checkAuth', () => {
             headers: {}
         };
 
-        auth(request, (err) => {
+        auth(request, logger, (err) => {
             expect(err).to.equal('SignatureDoesNotMatch');
             done();
         });
@@ -105,7 +111,7 @@ describe('Error handling in checkAuth', () => {
             query: {}
         };
 
-        auth(request, (err) => {
+        auth(request, logger, (err) => {
             expect(err).to.equal('SignatureDoesNotMatch');
             done();
         });

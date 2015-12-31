@@ -4,7 +4,9 @@ import objectPut from '../../../lib/api/objectPut';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
 import metadata from '../metadataswitch';
+import DummyRequestLogger from '../helpers';
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
@@ -57,14 +59,14 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, 'InvalidArgument');
                                 done();
                             }
@@ -108,14 +110,14 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, undefined);
                                 metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap
@@ -179,20 +181,20 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest1,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, undefined);
                                 metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
                                         .acl.Canned, 'public-read');
                                     objectPutACL(accessKey, metastore,
-                                        testObjACLRequest2,
+                                        testObjACLRequest2, log,
                                         (err) => {
                                             assert.strictEqual(err, undefined);
                                             metadata.getBucket(bucketName,
@@ -269,14 +271,14 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, undefined);
                                 metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
@@ -342,14 +344,14 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err,
                                     'UnresolvableGrantByEmailAddress');
                                 done();
@@ -429,14 +431,14 @@ describe('putObjectACL API', () => {
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, undefined);
                                 metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
@@ -518,13 +520,13 @@ describe('putObjectACL API', () => {
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest,
-            (err, success) => {
+            log, (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, undefined);
                                 metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap
@@ -599,14 +601,14 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err,
                                     'UnresolvableGrantByEmailAddress');
                                 done();
@@ -666,14 +668,14 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, 'MalformedACLError');
                                 done();
                             }
@@ -731,14 +733,14 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, 'MalformedXML');
                                 done();
                             }
@@ -797,14 +799,14 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, 'MalformedXML');
                                 done();
                             }
@@ -856,14 +858,14 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(accessKey, metastore, testObjACLRequest,
-                            (err) => {
+                            log, (err) => {
                                 assert.strictEqual(err, 'InvalidArgument');
                                 done();
                             }

@@ -5,7 +5,9 @@ import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
+import DummyRequestLogger from '../helpers';
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
@@ -62,21 +64,22 @@ describe('objectGet API', () => {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
-            assert.strictEqual(res, 'Bucket created');
-            objectPut(accessKey, metastore,
-                testPutObjectRequest, (err, result) => {
-                    assert.strictEqual(result, correctMD5);
-                    objectGet(accessKey, metastore, testGetRequest,
-                        (err, result, responseMetaHeaders) => {
-                            assert.strictEqual(responseMetaHeaders
-                                [userMetadataKey], userMetadataValue);
-                            assert.strictEqual(responseMetaHeaders.ETag,
-                                `"${correctMD5}"`);
-                            done();
-                        });
-                });
-        });
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
+            (err, res) => {
+                assert.strictEqual(res, 'Bucket created');
+                objectPut(accessKey, metastore,
+                    testPutObjectRequest, log, (err, result) => {
+                        assert.strictEqual(result, correctMD5);
+                        objectGet(accessKey, metastore, testGetRequest,
+                            log, (err, result, responseMetaHeaders) => {
+                                assert.strictEqual(responseMetaHeaders
+                                    [userMetadataKey], userMetadataValue);
+                                assert.strictEqual(responseMetaHeaders.ETag,
+                                    `"${correctMD5}"`);
+                                done();
+                            });
+                    });
+            });
     });
 
     it('should get the object data', (done) => {
@@ -86,24 +89,25 @@ describe('objectGet API', () => {
             namespace,
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
-            assert.strictEqual(res, 'Bucket created');
-            objectPut(accessKey, metastore, testPutObjectRequest,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
-                    objectGet(accessKey, metastore,
-                        testGetRequest, (err, readable) => {
-                            const chunks = [];
-                            readable.on('data', function chunkRcvd(chunk) {
-                                chunks.push(chunk);
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
+            (err, res) => {
+                assert.strictEqual(res, 'Bucket created');
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    (err, result) => {
+                        assert.strictEqual(result, correctMD5);
+                        objectGet(accessKey, metastore, testGetRequest, log,
+                            (err, readable) => {
+                                const chunks = [];
+                                readable.on('data', function chunkRcvd(chunk) {
+                                    chunks.push(chunk);
+                                });
+                                readable.on('end', function combineChunks() {
+                                    assert.deepStrictEqual(chunks, postBody);
+                                    done();
+                                });
                             });
-                            readable.on('end', function combineChunks() {
-                                assert.deepStrictEqual(chunks, postBody);
-                                done();
-                            });
-                        });
-                });
-        });
+                    });
+            });
     });
 
     it('should get the object data for large objects', (done) => {
@@ -127,14 +131,14 @@ describe('objectGet API', () => {
             namespace: namespace
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey, metastore, testPutBigObjectRequest,
+                objectPut(accessKey, metastore, testPutBigObjectRequest, log,
                     (err, result) => {
                         assert.strictEqual(result, correctBigMD5);
-                        objectGet(accessKey,
-                            metastore, testGetRequest, (err, readable) => {
+                        objectGet(accessKey, metastore, testGetRequest, log,
+                            (err, readable) => {
                                 const md5Hash = crypto.createHash('md5');
                                 const chunks = [];
                                 readable.on('data', function chunkRcvd(chunk) {

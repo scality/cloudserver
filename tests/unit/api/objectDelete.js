@@ -5,6 +5,9 @@ import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
+import DummyRequestLogger from '../helpers';
+
+const log = new DummyRequestLogger();
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -67,16 +70,16 @@ describe('objectDelete API', () => {
     });
 
     it('should delete an object', (done) => {
-        bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest, () => {
-                objectDelete(accessKey, metastore, testDeleteRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
+            objectPut(accessKey, metastore, testPutObjectRequest, log, () => {
+                objectDelete(accessKey, metastore, testDeleteRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         objectGet(accessKey, metastore, testGetObjectRequest,
-                        (err) => {
-                            assert.strictEqual(err, 'NoSuchKey');
-                            done();
-                        });
+                            log, (err) => {
+                                assert.strictEqual(err, 'NoSuchKey');
+                                done();
+                            });
                     });
             });
         });
@@ -85,7 +88,7 @@ describe('objectDelete API', () => {
     it('should prevent anonymous user from accessing ' +
         'deleteObject API', (done) => {
         objectDelete('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, testDeleteRequest,
+            metastore, testDeleteRequest, log,
                 (err) => {
                     assert.strictEqual(err, 'AccessDenied');
                 });

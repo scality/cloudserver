@@ -6,6 +6,9 @@ import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGetACL from '../../../lib/api/objectGetACL';
+import DummyRequestLogger from '../helpers';
+
+const log = new DummyRequestLogger();
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -69,15 +72,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -96,13 +102,15 @@ describe('objectGetACL API', () => {
 
     it('should return an error if try to get an ACL ' +
         'for a nonexistent object', (done) => {
-        bucketPut(accessKey, metastore, testBucketPutRequest, (err, result) => {
-            assert.strictEqual(result, 'Bucket created');
-            objectGetACL(accessKey, metastore, testGetACLRequest, (err) => {
-                assert.strictEqual(err, 'NoSuchKey');
-                done();
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
+            (err, result) => {
+                assert.strictEqual(result, 'Bucket created');
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    (err) => {
+                        assert.strictEqual(err, 'NoSuchKey');
+                        done();
+                    });
             });
-        });
     });
 
     it('should get a canned public-read ACL', (done) => {
@@ -120,15 +128,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -168,15 +179,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -224,15 +238,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -275,15 +292,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -323,15 +343,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -395,15 +418,18 @@ describe('objectGetACL API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, next);
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(accessKey, metastore, testGetACLRequest, next);
+                objectGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
