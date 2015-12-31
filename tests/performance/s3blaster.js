@@ -1,6 +1,9 @@
-import crypto from 'crypto';
-import { config, S3 } from 'aws-sdk';
-import commander from 'commander';
+'use strict'; // eslint-disable-line strict
+
+const commander = require('commander');
+const config = require('aws-sdk').config;
+const S3 = require('aws-sdk').S3;
+const crypto = require('crypto');
 
 const stderr = process.stderr;
 
@@ -42,16 +45,39 @@ class S3Blaster {
         this.latSum = 0;
         this.latSumSq = 0;
         this.okBucket = 0;
+        this.storedKeys = [];
+        this.actions = [];
+        this.createdBucketsNb = 0;
     }
 
-    createBucket(bucketName, callback) {
+    setActions(put, get, del) {
+        this.actions = [put || false, get || false, del || false];
+    }
+
+    createBucket(bucketName, cb) {
         this.s3.createBucket({ Bucket: bucketName }, (err) => {
             if (!err) {
-                return callback(true);
+                return cb();
             }
             const code = err.toString().split(':')[0];
-            stderr.write(`createBucket: ${code}\n`);
-            callback(code === 'BucketAlreadyExists' ? true : false);
+            stderr.write(`createBucket: ${code}..`);
+            return cb(code === 'DBAlreadyExists' ? null : code);
+        });
+    }
+
+    createBuckets(cb) {
+        const bucketName = `${this.bucketPrefix}${this.createdBucketsNb}`;
+        stderr.write(`creating bucket ${bucketName}..`);
+        this.createBucket(bucketName, (err) => {
+            if (err) {
+                return cb(`error creating bucket ${bucketName}: ${err}\n`);
+            }
+            stderr.write(`done\n`);
+            this.createdBucketsNb += 1;
+            if (this.createdBucketsNb === this.nBuckets) {
+                return cb();
+            }
+            this.createBuckets(cb);
         });
     }
 
@@ -61,30 +87,110 @@ class S3Blaster {
             Key: key,
             Body: data,
         };
+        const storedKey = {
+            Bucket: bucketName,
+            Key: key,
+        };
         this.s3.putObject(object, (err, value) => {
             if (!err) {
-                return callback(true, value);
+                return callback(null, value, storedKey);
             }
-            stderr.write(`putObj NOK: ${err.code} ${err.message} ${value}\n`);
-            callback(false, value);
+            stderr.write(`put ${key} in ${bucketName} NOK: `);
+            stderr.write(`${err.code} ${err.message}\n`);
+            callback(err, value);
         });
     }
 
-    printStats() {
-        const latMu = this.latSum / this.nSuccesses;
-        const latSigma = Math.sqrt(this.latSumSq / this.nSuccesses
-                                   - latMu * latMu);
-        stderr.write(`nSuccesses: ${this.nSuccesses}\n`);
-        stderr.write(`nFailures: ${this.nFailures}\n`);
-        stderr.write(`total nbytes: ${this.nBytes}B\n`);
-        stderr.write(`avg: ${latMu}ms\n`);
-        stderr.write(`std dev: ${latSigma}ms\n`);
+    getObject(bucketName, key, callback) {
+        const params = {
+            Bucket: bucketName,
+            Key: key,
+        };
+        this.s3.getObject(params, (err, data) => {
+            if (!err) {
+                return callback(null, data.Body);
+            }
+            stderr.write(`get ${key} in ${bucketName} NOK: `);
+            stderr.write(`${err.code} ${err.message}\n`);
+            callback(err);
+        });
     }
 
-    put(i) {
-        if (i > this.nOps) {
+    deleteObject(bucketName, key, callback) {
+        const object = {
+            Bucket: bucketName,
+            Key: key,
+        };
+        this.s3.deleteObject(object, (err) => {
+            if (!err) {
+                return callback(null);
+            }
+            stderr.write(`delete ${key} in ${bucketName} NOK: `);
+            stderr.write(`${err.code} ${err.message}\n`);
+            callback(err);
+        });
+    }
+
+    printStats(action) {
+        const latMu = this.latSum / this.nSuccesses;
+        const latSigma = Math.sqrt(this.latSumSq / this.nSuccesses
+                                                            - latMu * latMu);
+        stderr.write(`${action}  ${this.nSuccesses}  ${this.nFailures}     `);
+        stderr.write(`${latMu.toFixed(3)}     ${latSigma.toFixed(5)}\n`);
+    }
+
+    resetStats() {
+        this.count = 0;
+        this.latSum = 0;
+        this.latSumSq = 0;
+        this.nBytes = 0;
+        this.nSuccesses = 0;
+        this.nFailures = 0;
+        this.threads = 0;
+    }
+
+    updateStats(time) {
+        const lat = time[0] * 1e3 + time[1] / 1e6;
+        this.latSum += lat;
+        this.latSumSq += lat * lat;
+        this.nBytes += this.size;
+        this.nSuccesses++;
+    }
+
+    isCorrectObject(key, src, data) {
+        return (key === data.key) &&
+               (Buffer.compare(new Buffer(data.data), src) === 0);
+    }
+
+    doSimul(cb) {
+        stderr.write(`        #OK   #NOK  Average    Std. Dev.\n`);
+        for (let i = 0; i < this.nThreads; i++) {
+            if (this.actions[0]) {
+                this.put(cb);
+            } else if (this.actions[1]) {
+                this.get(cb);
+            } else if (this.actions[2]) {
+                this.delete(cb);
+            } else {
+                return cb();
+            }
+        }
+    }
+
+    put(cb) {
+        this.count++;
+        if (this.count > this.nOps) {
             if (this.threads === 0) {
-                this.printStats();
+                this.printStats('   put');
+                this.resetStats();
+                if (this.actions[1]) {
+                    this.get(cb);
+                } else if (this.actions[2]) {
+                    this.delete(cb);
+                } else {
+                    cb();
+                    return;
+                }
             }
             return;
         }
@@ -93,56 +199,135 @@ class S3Blaster {
         }
         this.threads++;
         const data = {
-            key: `key${i}`,
+            key: `key${this.count}`,
             data: this.value,
         };
         const bucketName = this.bucketPrefix +
             Math.floor((Math.random() * this.nBuckets));
         const begin = process.hrtime();
         this.putObject(bucketName, data.key, JSON.stringify(data),
-            function metrics(ok, val) {
+            function metrics(err, val, storedKey) {
                 const end = process.hrtime(begin);
                 this.threads--;
-                if (i % 1000 === 0) {
-                    stderr.write(`${i}\n`);
-                }
-                if (ok) {
-                    const lat = end[0] * 1e3 + end[1] / 1e6;
-                    this.latSum += lat;
-                    this.latSumSq += lat * lat;
-                    this.nBytes += this.size;
-                    this.nSuccesses++;
+                if (!err) {
+                    this.storedKeys.push(storedKey);
+                    this.updateStats(end);
                 } else {
                     this.nFailures++;
-                    stderr.write(`error: ${val}\n`);
+                    stderr.write(`put error: ${val}\n`);
                 }
-                setTimeout(this.put.bind(this), 0, ++this.count);
+                this.put(cb);
             }.bind(this));
     }
 
-    bucketCallback(ok) {
-        if (ok) {
-            this.okBucket++;
-            if (this.okBucket === this.nBuckets) {
-                for (let i = 0; i < this.nThreads; i++) {
-                    stderr.write(`started thread ${i}\n`);
-                    this.put(++this.count);
+    get(cb) {
+        this.count++;
+        if (this.count > this.storedKeys.length) {
+            if (this.threads === 0) {
+                this.printStats('   get');
+                this.resetStats();
+                if (this.actions[2]) {
+                    this.delete(cb);
+                } else {
+                    cb();
+                    return;
                 }
             }
-        } else {
-            stderr.write('error creating bucket\n');
-            process.exit(1);
+            return;
         }
+        if (this.threads > this.nThreads) {
+            return;
+        }
+        this.threads++;
+        const storedKey = this.storedKeys[this.count - 1];
+        const key = storedKey.Key;
+        const bucketName = storedKey.Bucket;
+        const begin = process.hrtime();
+        this.getObject(bucketName, key, function metrics(err, data) {
+            const end = process.hrtime(begin);
+            this.threads--;
+            if (!err &&
+                this.isCorrectObject(key, this.value, JSON.parse(data))) {
+                this.updateStats(end);
+            } else {
+                this.nFailures++;
+                stderr.write(`get error: ${err}\n`);
+            }
+            this.get(cb);
+        }.bind(this));
+    }
+
+    delete(cb) {
+        if (this.storedKeys.length === 0) {
+            if (this.threads === 0) {
+                this.printStats('delete');
+                this.resetStats();
+                cb();
+                return;
+            }
+            return;
+        }
+        if (this.threads > this.nThreads) {
+            return;
+        }
+        this.threads++;
+        const storedKey = this.storedKeys.shift();
+        const key = storedKey.Key;
+        const bucketName = storedKey.Bucket;
+        const begin = process.hrtime();
+        this.deleteObject(bucketName, key, function metrics(err) {
+            const end = process.hrtime(begin);
+            this.threads--;
+            if (!err) {
+                this.updateStats(end);
+            } else {
+                this.nFailures++;
+                stderr.write(`delete error: ${err}\n`);
+            }
+            this.delete(cb);
+        }.bind(this));
     }
 }
 
-function main() {
+describe('Measure serial PUT/GET/DELETE performance', function putPerf() {
+    this.timeout(0);
     const blaster = new S3Blaster();
-    for (let i = 0; i < blaster.nBuckets; i++) {
-        const bucketName = `${blaster.bucketPrefix}${i}`;
-        stderr.write(`creating bucket ${bucketName}\n`);
-        blaster.createBucket(bucketName, blaster.bucketCallback.bind(blaster));
-    }
-}
+    before((done) => {
+        blaster.createBuckets(done);
+    });
 
-main();
+    it('Only PUT', (done) => {
+        blaster.setActions(true, false, false);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', (done) => {
+        blaster.setActions(false, true, false);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', (done) => {
+        blaster.setActions(false, false, true);
+        blaster.doSimul(done);
+    });
+
+    it('PUT -> GET', (done) => {
+        blaster.setActions(true, true, false);
+        blaster.doSimul(done);
+    });
+
+    it('GET -> DELETE', (done) => {
+        blaster.setActions(false, true, true);
+        blaster.doSimul(done);
+    });
+
+    it('PUT -> DELETE', (done) => {
+        blaster.setActions(true, false, true);
+        blaster.doSimul(done);
+    });
+
+    it('PUT -> GET -> DELETE', (done) => {
+        blaster.setActions(true, true, true);
+        blaster.doSimul(done);
+    });
+});
