@@ -33,7 +33,7 @@ function createFile(name, bytes, callback) {
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
             assert.strictEqual(code, 0);
             process.stdout.write(`chmod ugoa+rw ${name}\n`);
-            proc.spawn(`chmod`, [`ugo+rw`, `${name}`], { stdio: 'inherit'})
+            proc.spawn('chmod', ['ugo+rw', name, ], { stdio: 'inherit' })
                 .on('exit', code => {
                     assert.strictEqual(code, 0);
                     callback();
@@ -43,7 +43,7 @@ function createFile(name, bytes, callback) {
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [ `${file}`, ]).on('exit', () => {
+    proc.spawn('rm', [ file, ]).on('exit', () => {
         callback();
     });
 }
@@ -63,7 +63,7 @@ function provideRawOutput(args, cb) {
     const child = proc.spawn(program, av);
     const procData = {
         stdout: '',
-        stderr: ''
+        stderr: '',
     };
     child.stdout.on('data', data => {
         procData.stdout += data.toString();
@@ -515,5 +515,39 @@ describe('s3curl object ACLs', () => {
             assert.strictEqual(httpCode, '404 NOT FOUND');
             assertError(rawOutput.stdout, 'NoSuchKey', done);
         });
+    });
+});
+
+describe('s3curl multipart upload', () => {
+    it(`should list parts of multipart upload with no parts`, (done) => {
+        const key = 'multipart';
+        provideRawOutput(['--', `-X`, `POST`,
+            `http://${ipAddress}:8000/${bucket}/${key}?uploads`, '-v'],
+            (httpCode, rawOutput) => {
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    const uploadId =
+                        result.InitiateMultipartUploadResult.UploadId[0];
+                    provideRawOutput(['--',
+                        `http://${ipAddress}:8000/${bucket}/${key}?` +
+                        `uploadId=${uploadId}`, '-v'],
+                            (httpCode, rawOutput) => {
+                                assert.strictEqual(httpCode, '200 OK');
+                                parseString(rawOutput.stdout, (err, result) => {
+                                    assert.strictEqual(result
+                                        .ListPartResult.UploadId[0], uploadId);
+                                    assert.strictEqual(result
+                                        .ListPartResult.Bucket[0], bucket);
+                                    assert.strictEqual(result
+                                        .ListPartResult.Key[0], key);
+                                    assert.strictEqual(result
+                                        .ListPartResult.Part, undefined);
+                                    done();
+                                });
+                            });
+                });
+            });
     });
 });
