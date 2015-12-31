@@ -6,6 +6,9 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import metadata from '../metadataswitch';
+import DummyRequestLogger from '../helpers';
+
+const log = new DummyRequestLogger();
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -76,14 +79,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -121,14 +127,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -177,14 +186,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -227,14 +239,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -280,14 +295,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -369,14 +387,17 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, next);
+                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, next);
+                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, next);
+                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);

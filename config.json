@@ -8,5 +8,13 @@
         "bootstrap": ["localhost"]
     },
     "clustering": false,
-    "clusters": 10
+    "clusters": 10,
+    "log": {
+        "logLevel": "info",
+        "dumpLevel": "error",
+        "logstash": {
+            "host": "127.0.0.1",
+            "port": 5505
+        }
+    }
 }

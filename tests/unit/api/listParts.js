@@ -8,6 +8,9 @@ import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 import metastore from '../../../lib/metadata/in_memory/metadata';
 import Config from '../../../lib/Config';
+import DummyRequestLogger from '../helpers';
+
+const log = new DummyRequestLogger();
 
 const splitter = new Config().splitter;
 
@@ -100,7 +103,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -145,7 +148,7 @@ describe('List Parts API', () => {
         };
         const urlEncodedObjectKey = '%24makememulti';
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             expect(err).to.be.null;
             parseString(xml, (err, json) => {
                 expect(json.ListPartResult.Key[0])
@@ -170,7 +173,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             expect(err).to.be.null;
             parseString(xml, (err, json) => {
                 expect(err).to.be.null;
@@ -210,7 +213,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             expect(err).to.be.null;
             parseString(xml, (err, json) => {
                 expect(err).to.be.null;
@@ -249,7 +252,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             expect(err).to.be.null;
             parseString(xml, (err, json) => {
                 expect(err).to.be.null;
@@ -291,7 +294,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, metastore, listRequest, (err, xml) => {
+        listParts(accessKey, metastore, listRequest, log, (err, xml) => {
             expect(err).to.be.null;
             parseString(xml, (err, json) => {
                 expect(err).to.be.null;
