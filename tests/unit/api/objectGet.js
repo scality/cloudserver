@@ -26,7 +26,6 @@ describe('objectGet API', () => {
                     "buckets": []
                 }
             },
-            "buckets": {}
         };
         metadata.deleteBucket(testBucketUID, ()=> {
             done();
@@ -44,7 +43,7 @@ describe('objectGet API', () => {
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace,
+        namespace,
     };
     const userMetadataKey = 'x-amz-meta-test';
     const userMetadataValue = 'some metadata';
@@ -82,17 +81,17 @@ describe('objectGet API', () => {
         });
     });
 
-    it.skip('should get the object data', (done) => {
+    it('should get the object data', (done) => {
         const testGetRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
+            namespace,
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, (err, res) => {
             assert.strictEqual(res, 'Bucket created');
-            objectPut(accessKey, metastore,
-                testPutObjectRequest, (err, result) => {
+            objectPut(accessKey, metastore, testPutObjectRequest,
+                (err, result) => {
                     assert.strictEqual(result, correctMD5);
                     objectGet(accessKey, metastore,
                         testGetRequest, (err, readable) => {
@@ -101,9 +100,7 @@ describe('objectGet API', () => {
                                 chunks.push(chunk);
                             });
                             readable.on('end', function combineChunks() {
-                                const final = [ chunks ];
-                                assert.strictEqual(final,
-                                    postBody);
+                                assert.deepStrictEqual(chunks, postBody);
                                 done();
                             });
                         });
