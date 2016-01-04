@@ -7,13 +7,11 @@ import bucketGet from '../../../lib/api/bucketGet';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketGet API', () => {
     let metastore;
@@ -29,13 +27,13 @@ describe('bucketGet API', () => {
                 }
             },
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });

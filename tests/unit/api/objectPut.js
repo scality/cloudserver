@@ -3,12 +3,10 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 const postBody = [ new Buffer('I am a body'), ];
 
 describe('objectPut API', () => {
@@ -26,13 +24,13 @@ describe('objectPut API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
@@ -106,7 +104,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             const MD = JSON.parse(md.keyMap[objectName]);
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
@@ -143,7 +141,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             const MD = JSON.parse(md.keyMap[objectName]);
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
@@ -185,7 +183,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             const MD = JSON.parse(md.keyMap[objectName]);
                             assert(MD);
                             assert.strictEqual(MD['x-amz-meta-test'],
