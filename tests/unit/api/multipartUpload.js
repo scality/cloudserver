@@ -1,6 +1,7 @@
 import assert from 'assert';
-import async from 'async';
 import crypto from 'crypto';
+
+import async from 'async';
 import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
@@ -11,14 +12,12 @@ import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import Config from '../../../lib/Config';
-import utils from '../../../lib/utils';
 
 const splitter = new Config().splitter;
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
-const mpuBucket = `mpu...${testBucketUID}`;
+const mpuBucket = `mpu...${bucketName}`;
 const postBody = [ new Buffer('I am a body'), ];
 
 
@@ -39,7 +38,7 @@ describe('Multipart Upload API', () => {
         };
 
         // Must delete real bucket and shadow mpu bucket
-        metadata.deleteBucket(testBucketUID, () => {
+        metadata.deleteBucket(bucketName, () => {
             metadata.deleteBucket(mpuBucket, () => {
                 done();
             });
@@ -47,7 +46,7 @@ describe('Multipart Upload API', () => {
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, () => {
+        metadata.deleteBucket(bucketName, () => {
             metadata.deleteBucket(mpuBucket, () => {
                 done();
             });
@@ -60,40 +59,36 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
         };
         const initiateRequest = {
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
         };
 
         bucketPut(accessKey, metastore, putRequest, () => {
             initiateMultipartUpload(accessKey, metastore, initiateRequest,
-                    (err, result) => {
-                        expect(err).to.be.undefined;
-                        parseString(result, (err, json) => {
-                            expect(json.InitiateMultipartUploadResult
-                                .Bucket[0]).to.equal(bucketName);
-                            expect(json.InitiateMultipartUploadResult
-                                .Key[0]).to.equal(objectKey);
-                            expect(json.InitiateMultipartUploadResult
-                                .UploadId[0]).to.exist;
-                            metadata.getBucket(mpuBucket, (err, md) => {
-                                assert.strictEqual(Object
-                                    .keys(md.keyMap).length, 1);
-                                assert(Object.keys(md.keyMap)[0]
-                                    .startsWith(
-                                    `overview${splitter}${objectKey}`));
-                                done();
-                            });
+                (err, result) => {
+                    assert.strictEqual(err, undefined);
+                    parseString(result, (err, json) => {
+                        expect(json.InitiateMultipartUploadResult
+                            .Bucket[0]).to.equal(bucketName);
+                        expect(json.InitiateMultipartUploadResult
+                            .Key[0]).to.equal(objectKey);
+                        assert(json.InitiateMultipartUploadResult.UploadId[0]);
+                        metadata.getBucket(mpuBucket, (err, md) => {
+                            assert.strictEqual(Object.keys(md.keyMap).length,
+                                               1);
+                            assert(Object.keys(md.keyMap)[0]
+                            .startsWith(`overview${splitter}${objectKey}`));
+                            done();
                         });
                     });
+                });
         });
     });
 
@@ -149,14 +144,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err) => {
                 assert.strictEqual(err, null);
@@ -191,7 +186,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -200,7 +195,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -230,7 +225,7 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
@@ -263,7 +258,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -272,7 +267,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -303,14 +298,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '10001',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err, result) => {
                 expect(err).to.equal('TooManyParts');
@@ -325,7 +320,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -334,7 +329,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -365,14 +360,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: 'I am not an integer',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err, result) => {
                 expect(err).to.equal('InvalidArgument');
@@ -390,7 +385,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -399,7 +394,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -431,14 +426,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 5368709121,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, (err, result) => {
                 expect(err).to.equal('EntityTooLarge');
@@ -453,7 +448,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -462,7 +457,7 @@ describe('Multipart Upload API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
 
@@ -497,14 +492,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 const postBody2 = [ new Buffer('I am a second part')];
@@ -519,7 +514,7 @@ describe('Multipart Upload API', () => {
                     },
                     url: `/${objectKey}?partNumber=` +
                         `1&uploadId=${testUploadId}`,
-                    namespace: namespace,
+                    namespace,
                     headers: {host: `${bucketName}.s3.amazonaws.com`},
                     query: {
                         partNumber: '2',
@@ -566,7 +561,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -576,7 +571,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -593,8 +588,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, (err, md) => {
-                    assert.strictEqual(Object.keys(md
-                            .keyMap).length, 1);
+                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
                     parseString(result, next);
                 });
             },
@@ -604,15 +598,14 @@ describe('Multipart Upload API', () => {
             // until here
             const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
-            const md5Hash = crypto.createHash('md5');
-            md5Hash.update(partBody[0]);
+            const md5Hash = crypto.createHash('md5').update(partBody[0]);
             const calculatedMD5 = md5Hash.digest('hex');
             const partRequest = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
@@ -627,7 +620,7 @@ describe('Multipart Upload API', () => {
                 // calculate the final ETag upon completion
                 // of the multipart upload.
                 post: partBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
                 const completeBody = `<CompleteMultipartUpload>` +
@@ -638,11 +631,11 @@ describe('Multipart Upload API', () => {
                     `</CompleteMultipartUpload>`;
                 const completeRequest = {
                     lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`
+                        host: `${bucketName}.s3.amazonaws.com`,
                     },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
-                    namespace: namespace,
-                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    namespace,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: {
                         uploadId: testUploadId,
                     },
@@ -663,7 +656,7 @@ describe('Multipart Upload API', () => {
                                 .Key[0]).to.equal(objectKey);
                             expect(json.CompleteMultipartUploadResult
                                 .ETag[0]).to.equal(awsVerifiedETag);
-                            metadata.getBucket(testBucketUID, (err, md) => {
+                            metadata.getBucket(bucketName, (err, md) => {
                                 assert(md.keyMap[objectKey]);
                                 const MD = JSON.parse(md.keyMap[objectKey]);
                                 assert.strictEqual(MD['x-amz-meta-stuff'],
@@ -682,7 +675,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -692,7 +685,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -730,14 +723,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
                 const completeBody = `Malformed xml`;
@@ -746,13 +739,13 @@ describe('Multipart Upload API', () => {
                         host: `${bucketName}.s3.amazonaws.com`
                     },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
-                    namespace: namespace,
+                    namespace,
                     headers: {host: `${bucketName}.s3.amazonaws.com`},
                     query: {
                         uploadId: testUploadId,
                     },
                     post: completeBody,
-                    calculatedMD5: calculatedMD5,
+                    calculatedMD5,
                 };
                 completeMultipartUpload(accessKey, metastore,
                     completeRequest, (err) => {
@@ -774,7 +767,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -784,7 +777,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -822,14 +815,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
                 // XML is missing any part listing so does
@@ -841,13 +834,13 @@ describe('Multipart Upload API', () => {
                         host: `${bucketName}.s3.amazonaws.com`
                     },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
-                    namespace: namespace,
+                    namespace,
                     headers: {host: `${bucketName}.s3.amazonaws.com`},
                     query: {
                         uploadId: testUploadId,
                     },
                     post: completeBody,
-                    calculatedMD5: calculatedMD5,
+                    calculatedMD5,
                 };
                 completeMultipartUpload(
                     accessKey, metastore,
@@ -866,7 +859,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -876,7 +869,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -914,28 +907,28 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -954,7 +947,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -962,7 +955,7 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
@@ -986,7 +979,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -996,7 +989,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1035,28 +1028,28 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -1075,7 +1068,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -1083,7 +1076,7 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
@@ -1106,7 +1099,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1116,7 +1109,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1155,14 +1148,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
@@ -1170,14 +1163,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 200,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -1196,7 +1189,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -1204,7 +1197,7 @@ describe('Multipart Upload API', () => {
                             uploadId: testUploadId,
                         },
                         post: completeBody,
-                        calculatedMD5: calculatedMD5,
+                        calculatedMD5,
                     };
                     completeMultipartUpload(accessKey, metastore,
                         completeRequest, (err) => {
@@ -1225,7 +1218,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1235,7 +1228,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1274,14 +1267,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
@@ -1289,14 +1282,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -1315,7 +1308,7 @@ describe('Multipart Upload API', () => {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        namespace: namespace,
+                        namespace,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
@@ -1330,7 +1323,7 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     const MD = JSON.parse(md.keyMap[objectKey]);
                                     assert.strictEqual(MD['content-length'],
                                                       6000100);
@@ -1348,7 +1341,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1359,7 +1352,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-acl': 'authenticated-read',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1398,14 +1391,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
@@ -1413,14 +1406,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -1454,7 +1447,7 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     const MD = JSON.parse(md.keyMap[objectKey]);
                                     assert.strictEqual(MD.acl.Canned,
                                                        'authenticated-read');
@@ -1472,7 +1465,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1486,7 +1479,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1503,8 +1496,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, (err, md) => {
-                    assert.strictEqual(Object.keys(md
-                            .keyMap).length, 1);
+                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
                     parseString(result, next);
                 });
             },
@@ -1525,14 +1517,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
-                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             const partRequest2 = {
                 lowerCaseHeaders: {
@@ -1540,14 +1532,14 @@ describe('Multipart Upload API', () => {
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest1, () => {
                 objectPutPart(accessKey, metastore, partRequest2, () => {
@@ -1581,7 +1573,7 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     const MD = JSON.parse(md.keyMap[objectKey]);
                                     assert.strictEqual(MD.acl.READ[0],
                                                        granteeId);
@@ -1599,7 +1591,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1609,7 +1601,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1645,14 +1637,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
-                headers: {host: `${bucketName}.s3.amazonaws.com`},
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
                 const deleteRequest = {
@@ -1660,7 +1652,7 @@ describe('Multipart Upload API', () => {
                         host: `${bucketName}.s3.amazonaws.com`
                     },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
-                    namespace: namespace,
+                    namespace,
                     headers: {host: `${bucketName}.s3.amazonaws.com`},
                     query: {
                         uploadId: testUploadId,
@@ -1672,7 +1664,7 @@ describe('Multipart Upload API', () => {
                     multipartDelete(
                     accessKey, metastore,
                     deleteRequest, (err) => {
-                        expect(err).to.be.null;
+                        assert.strictEqual(err, null);
                         metadata.getBucket(mpuBucket, (err, md) => {
                             expect(Object.keys(md.keyMap))
                             .to.have.length.of(0);
@@ -1690,7 +1682,7 @@ describe('Multipart Upload API', () => {
         const putRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -1700,7 +1692,7 @@ describe('Multipart Upload API', () => {
                 'x-amz-meta-stuff': 'I am some user metadata',
             },
             url: `/${objectKey}?uploads`,
-            namespace: namespace,
+            namespace,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
@@ -1717,8 +1709,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, (err, md) => {
-                    assert.strictEqual(Object.keys(md
-                            .keyMap).length, 1);
+                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
                     parseString(result, next);
                 });
             },
@@ -1736,14 +1727,14 @@ describe('Multipart Upload API', () => {
                     host: `${bucketName}.s3.amazonaws.com`
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                namespace: namespace,
+                namespace,
                 headers: {host: `${bucketName}.s3.amazonaws.com`},
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
                 post: postBody,
-                calculatedMD5: calculatedMD5,
+                calculatedMD5,
             };
             objectPutPart(accessKey, metastore, partRequest, () => {
                 const deleteRequest = {
@@ -1751,21 +1742,19 @@ describe('Multipart Upload API', () => {
                         host: `${bucketName}.s3.amazonaws.com`
                     },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
-                    namespace: namespace,
-                    headers: {host: `${bucketName}.s3.amazonaws.com`},
+                    namespace,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: {
                         uploadId: 'non-existent-upload-id',
                     },
                 };
                 metadata.getBucket(mpuBucket, (err, md) => {
-                    expect(Object.keys(md.keyMap))
-                    .to.have.length.of(2);
-                    multipartDelete(
-                    accessKey, metastore,
-                    deleteRequest, (err) => {
-                        expect(err).to.equal('NoSuchUpload');
-                        done();
-                    });
+                    assert.strictEqual(Object.keys(md.keyMap).length, 2);
+                    multipartDelete(accessKey, metastore, deleteRequest,
+                        err => {
+                            assert.strictEqual(err, 'NoSuchUpload');
+                            done();
+                        });
                 });
             });
         });

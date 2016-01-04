@@ -1,14 +1,12 @@
 import assert from 'assert';
-import bucketPut from '../../../lib/api/bucketPut.js';
-import bucketPutACL from '../../../lib/api/bucketPutACL.js';
+import bucketPut from '../../../lib/api/bucketPut';
+import bucketPutACL from '../../../lib/api/bucketPutACL';
 import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
-
 
 describe('putBucketACL API', () => {
     let metastore;
@@ -25,13 +23,13 @@ describe('putBucketACL API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
@@ -122,7 +120,7 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         assert.strictEqual(err, null);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'public-read-write');
                             done();
@@ -176,13 +174,13 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         assert.strictEqual(err, null);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'public-read');
                             bucketPutACL(accessKey, metastore,
                                 testACLRequest2, (err) => {
                                     assert.strictEqual(err, null);
-                                    metadata.getBucket(testBucketUID,
+                                    metadata.getBucket(bucketName,
                                         (err, md) => {
                                             assert.strictEqual(md.acl
                                                 .Canned, 'authenticated-read');
@@ -239,13 +237,13 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         assert.strictEqual(err, null);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'private');
                             bucketPutACL(accessKey, metastore,
                                 testACLRequest2, (err) => {
                                     assert.strictEqual(err, null);
-                                    metadata.getBucket(testBucketUID,
+                                    metadata.getBucket(bucketName,
                                         (err, md) => {
                                             assert.strictEqual(md.acl
                                                 .Canned, 'log-delivery-write');
@@ -314,7 +312,7 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         assert.strictEqual(err, null);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.READ[0],
                                 'http://acs.amazonaws.com/' +
                                 'groups/s3/LogDelivery');
@@ -451,7 +449,7 @@ describe('putBucketACL API', () => {
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
                         assert.strictEqual(err, null);
-                        metadata.getBucket(testBucketUID, (err, md) => {
+                        metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned, '');
                             assert.strictEqual(md.acl.FULL_CONTROL[0],
                                 '852b113e7a2f25102679df27bb0ae12b3f85be6' +

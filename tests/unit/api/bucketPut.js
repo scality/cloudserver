@@ -2,7 +2,6 @@ import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
@@ -10,7 +9,6 @@ const namespace = 'default';
 describe('bucketPut API', () => {
     let metastore;
     const bucketName = 'bucketname';
-    const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
     beforeEach((done) => {
         metastore = {
@@ -24,13 +22,13 @@ describe('bucketPut API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
@@ -146,7 +144,7 @@ describe('bucketPut API', () => {
                 return done(err);
             }
             assert.strictEqual(success, 'Bucket created');
-            metadata.getBucket(testBucketUID, (err, md) => {
+            metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
                 assert.strictEqual(md.owner, accessKey);
                 assert.strictEqual(metastore
@@ -170,7 +168,7 @@ describe('bucketPut API', () => {
                 return done(err);
             }
             assert.strictEqual(success, 'Bucket created');
-            metadata.getBucket(testBucketUID, (err, md) => {
+            metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
                 assert.strictEqual(md.owner, accessKey);
                 assert.strictEqual(metastore.users[accessKey].
@@ -192,7 +190,7 @@ describe('bucketPut API', () => {
         bucketPut(accessKey, metastore, testRequest, () => {
             bucketPut(differentAccount, metastore, testRequest, (err) => {
                 assert.strictEqual(err, 'BucketAlreadyExists');
-                metadata.getBucket(testBucketUID, (err, md) => {
+                metadata.getBucket(bucketName, (err, md) => {
                     assert.strictEqual(md.name, bucketName);
                     // The bucket that is actually created
                     // should be the one put by accessKey
@@ -221,7 +219,7 @@ describe('bucketPut API', () => {
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
-            metadata.getBucket(testBucketUID, (err) => {
+            metadata.getBucket(bucketName, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -241,7 +239,7 @@ describe('bucketPut API', () => {
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
-            metadata.getBucket(testBucketUID, (err) => {
+            metadata.getBucket(bucketName, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -262,7 +260,7 @@ describe('bucketPut API', () => {
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
             assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
-            metadata.getBucket(testBucketUID, (err) => {
+            metadata.getBucket(bucketName, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -283,7 +281,7 @@ describe('bucketPut API', () => {
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
             assert.strictEqual(err, null);
-            metadata.getBucket(testBucketUID, (err, md) => {
+            metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(md.acl.Canned, 'public-read');
                 done();
@@ -320,7 +318,7 @@ describe('bucketPut API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPut(accessKey, metastore, testRequest, (err) => {
             assert.strictEqual(err, null, 'Error creating bucket');
-            metadata.getBucket(testBucketUID, (err, md) => {
+            metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(md.acl.READ[0],
                     'http://acs.amazonaws.com/groups/s3/LogDelivery');
                 assert.strictEqual(md.acl.WRITE[0],

@@ -4,13 +4,11 @@ import objectPut from '../../../lib/api/objectPut';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('putObjectACL API', () => {
     let metastore;
@@ -26,13 +24,13 @@ describe('putObjectACL API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
@@ -130,7 +128,7 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap
                                         .objectName.acl.Canned,
                                         'public-read-write');
@@ -201,14 +199,14 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest1,
                             (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
                                         .acl.Canned, 'public-read');
                                     objectPutACL(accessKey, metastore,
                                         testObjACLRequest2,
                                         (err) => {
                                             assert.strictEqual(err, undefined);
-                                            metadata.getBucket(testBucketUID,
+                                            metadata.getBucket(bucketName,
                                                 (err, md) => {
                                                     assert.strictEqual(md.keyMap
                                                     .objectName.acl.Canned,
@@ -291,7 +289,7 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
                                         .acl.READ[0],
                                         'http://acs.amazonaws.com/' +
@@ -451,7 +449,7 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap.objectName
                                         .acl.FULL_CONTROL[0],
                                         '852b113e7a2f25102679df27bb' +
@@ -539,7 +537,7 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(testBucketUID, (err, md) => {
+                                metadata.getBucket(bucketName, (err, md) => {
                                     assert.strictEqual(md.keyMap
                                         .objectName.acl.Canned, '');
                                     assert.strictEqual(md.keyMap

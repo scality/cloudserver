@@ -6,13 +6,10 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
-
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketGetACL API', () => {
     let metastore;
@@ -29,13 +26,13 @@ describe('bucketGetACL API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });

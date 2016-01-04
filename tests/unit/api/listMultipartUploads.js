@@ -6,13 +6,11 @@ import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
-const mpuBucket = `mpu...${testBucketUID}`;
+const mpuBucket = `mpu...${bucketName}`;
 
 describe('listMultipartUploads API', () => {
     let metastore;
@@ -31,7 +29,7 @@ describe('listMultipartUploads API', () => {
         };
 
         // Must delete real bucket and shadow mpu bucket
-        metadata.deleteBucket(testBucketUID, () => {
+        metadata.deleteBucket(bucketName, () => {
             metadata.deleteBucket(mpuBucket, () => {
                 done();
             });
@@ -39,7 +37,7 @@ describe('listMultipartUploads API', () => {
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, () => {
+        metadata.deleteBucket(bucketName, () => {
             metadata.deleteBucket(mpuBucket, () => {
                 done();
             });
@@ -55,22 +53,22 @@ describe('listMultipartUploads API', () => {
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace,
+        namespace,
     };
     const testInitiateMPURequest1 = {
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName1}?uploads`,
-        namespace: namespace,
+        namespace,
     };
     const testInitiateMPURequest2 = {
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName2}?uploads`,
-        namespace: namespace,
+        namespace,
     };
     const testInitiateMPURequest3 = {
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName3}?uploads`,
-        namespace: namespace,
+        namespace,
     };
 
     it('should return the name of the common prefix ' +
@@ -82,7 +80,7 @@ describe('listMultipartUploads API', () => {
                 host: '/'
             },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
-            namespace: namespace,
+            namespace,
             query: {
                 delimiter: delimiter,
                 prefix: prefix
@@ -125,7 +123,7 @@ describe('listMultipartUploads API', () => {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace: namespace,
+            namespace,
             query: {}
         };
 
@@ -169,7 +167,7 @@ describe('listMultipartUploads API', () => {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace: namespace,
+            namespace,
             query: {
                 'max-uploads': '1',
             }
@@ -218,7 +216,7 @@ describe('listMultipartUploads API', () => {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace: namespace,
+            namespace,
             query: {
                 'encoding-type': 'url',
             }
@@ -265,7 +263,7 @@ describe('listMultipartUploads API', () => {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace: namespace,
+            namespace,
             query: {
                 'key-marker': objectName1,
             }
