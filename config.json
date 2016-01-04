@@ -1,4 +1,6 @@
 {
     "port": 8000,
-    "splitter": "...!*!"
+    "splitter": "...!*!",
+    "clustering": false,
+    "clusters": 10
 }
