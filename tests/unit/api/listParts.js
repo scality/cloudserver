@@ -5,8 +5,9 @@ import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 import metastore from '../../../lib/metadata/in_memory/metadata';
-import config from '../../../config';
-const splitter = config.splitter;
+import Config from '../../../lib/Config';
+
+const splitter = new Config().splitter;
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
