@@ -10,10 +10,10 @@ import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
-import config from '../../../config';
+import Config from '../../../lib/Config';
 import utils from '../../../lib/utils';
 
-const splitter = config.splitter;
+const splitter = new Config().splitter;
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';

@@ -1,0 +1,9 @@
+{
+    "port": 8000,
+    "splitter": "...!*!",
+    "sproxyd": {
+        "bootstrap": ["localhost:81"]
+    },
+    "clustering": false,
+    "clusters": 10
+}
