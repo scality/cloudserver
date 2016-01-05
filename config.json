@@ -4,6 +4,9 @@
     "sproxyd": {
         "bootstrap": ["localhost:81"]
     },
+    "bucketd": {
+        "bootstrap": ["localhost"]
+    },
     "clustering": false,
     "clusters": 10
 }
