@@ -16,8 +16,8 @@ const bucketName = 'freshestbucket';
 const bucketUID = '0969df071dc0de6603230850ac138a30';
 const mpuBucket = `mpu...${bucketUID}`;
 const uploadKey = '$makememulti';
-const sixMBObjectEtag = 'f3a9fb2071d3503b703938a74eb99846';
-const lastPieceEtag = '555e4cd2f9eff38109d7a3ab13995a32';
+const sixMBObjectETag = 'f3a9fb2071d3503b703938a74eb99846';
+const lastPieceETag = '555e4cd2f9eff38109d7a3ab13995a32';
 const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
     `d89d-49d3-9fa6-e9c2c1eb31b0${splitter}freshestbucket` +
     `${splitter}accessKey1${splitter}placeholder display name for ` +
@@ -119,12 +119,12 @@ describe('List Parts API', () => {
                     .NextPartNumberMarker).to.be.undefined;
                 expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('1');
                 expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectEtag);
+                    .to.equal(sixMBObjectETag);
                 expect(json.ListPartResult.Part[0].Size[0])
                     .to.equal('6000000');
                 expect(json.ListPartResult.Part[4].PartNumber[0]).to.equal('5');
                 expect(json.ListPartResult.Part[4].ETag[0])
-                    .to.equal(lastPieceEtag);
+                    .to.equal(lastPieceETag);
                 expect(json.ListPartResult.Part[4].Size[0])
                     .to.equal('18');
                 expect(json.ListPartResult.Part).to.have.length.of(5);
@@ -189,7 +189,7 @@ describe('List Parts API', () => {
                     .NextPartNumberMarker[0]).to.equal('4');
                 expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('3');
                 expect(json.ListPartResult.Part[2].ETag[0])
-                    .to.equal(sixMBObjectEtag);
+                    .to.equal(sixMBObjectETag);
                 expect(json.ListPartResult.Part[2].Size[0])
                     .to.equal('6000000');
                 expect(json.ListPartResult.Part).to.have.length.of(4);
@@ -229,7 +229,7 @@ describe('List Parts API', () => {
                     .NextPartNumberMarker).to.be.undefined;
                 expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('3');
                 expect(json.ListPartResult.Part[2].ETag[0])
-                    .to.equal(sixMBObjectEtag);
+                    .to.equal(sixMBObjectETag);
                 expect(json.ListPartResult.Part[2].Size[0])
                     .to.equal('6000000');
                 expect(json.ListPartResult.Part).to.have.length.of(5);
@@ -268,7 +268,7 @@ describe('List Parts API', () => {
                     .NextPartNumberMarker).to.be.undefined;
                 expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('3');
                 expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectEtag);
+                    .to.equal(sixMBObjectETag);
                 expect(json.ListPartResult.Part[0].Size[0])
                     .to.equal('6000000');
                 expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('5');
@@ -310,7 +310,7 @@ describe('List Parts API', () => {
                     .NextPartNumberMarker[0]).to.equal('4');
                 expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('3');
                 expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectEtag);
+                    .to.equal(sixMBObjectETag);
                 expect(json.ListPartResult.Part[0].Size[0])
                     .to.equal('6000000');
                 expect(json.ListPartResult.Part[1].PartNumber[0]).to.equal('4');
