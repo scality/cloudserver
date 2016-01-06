@@ -3,14 +3,11 @@ import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import bucketDelete from '../../../lib/api/bucketDelete';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
-const testBucketUID =
-    utils.getResourceUID(namespace, bucketName);
 
 describe("bucketDelete API", () => {
     let metastore;
@@ -27,7 +24,7 @@ describe("bucketDelete API", () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
@@ -61,7 +58,7 @@ describe("bucketDelete API", () => {
                             assert.strictEqual(err, 'BucketNotEmpty');
                             assert.strictEqual(metastore.users[accessKey]
                                 .buckets.length, 1);
-                            metadata.getBucket(testBucketUID, (err, md) => {
+                            metadata.getBucket(bucketName, (err, md) => {
                                 assert.strictEqual(md.name, bucketName);
                                 done();
                             });
@@ -72,16 +69,15 @@ describe("bucketDelete API", () => {
 
     it('should delete a bucket', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            bucketDelete(accessKey, metastore, testDeleteRequest,
-                () => {
-                    assert.strictEqual(metastore
-                        .users[accessKey].buckets.length, 0);
-                    metadata.getBucket(testBucketUID, (err, md) => {
-                        assert.strictEqual(err, 'NoSuchBucket');
-                        assert.strictEqual(md, undefined);
-                        done();
-                    });
+            bucketDelete(accessKey, metastore, testDeleteRequest, () => {
+                assert.strictEqual(metastore
+                    .users[accessKey].buckets.length, 0);
+                metadata.getBucket(bucketName, (err, md) => {
+                    assert.strictEqual(err, 'NoSuchBucket');
+                    assert.strictEqual(md, undefined);
+                    done();
                 });
+            });
         });
     });
 

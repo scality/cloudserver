@@ -5,12 +5,10 @@ import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 const postBody = [ new Buffer('I am a body')];
 
 describe('objectDelete API', () => {
@@ -28,13 +26,13 @@ describe('objectDelete API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });

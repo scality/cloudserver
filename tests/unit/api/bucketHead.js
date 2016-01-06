@@ -2,12 +2,10 @@ import assert from 'assert';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const testBucketUID = utils.getResourceUID(namespace, bucketName);
 
 describe('bucketHead API', () => {
     let metastore;
@@ -24,13 +22,13 @@ describe('bucketHead API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(testBucketUID, ()=> {
+        metadata.deleteBucket(bucketName, ()=> {
             done();
         });
     });

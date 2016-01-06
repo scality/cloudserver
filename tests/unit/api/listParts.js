@@ -1,3 +1,5 @@
+import assert from 'assert';
+
 import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
@@ -13,8 +15,7 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const uploadId = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0';
 const bucketName = 'freshestbucket';
-const bucketUID = '0969df071dc0de6603230850ac138a30';
-const mpuBucket = `mpu...${bucketUID}`;
+const mpuBucket = `mpu...${bucketName}`;
 const uploadKey = '$makememulti';
 const sixMBObjectETag = 'f3a9fb2071d3503b703938a74eb99846';
 const lastPieceETag = '555e4cd2f9eff38109d7a3ab13995a32';
@@ -45,31 +46,27 @@ const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5...` +
 describe('List Parts API', () => {
     beforeEach(done => {
         const sampleNormalBucketInstance = new Bucket(bucketName, accessKey);
-        sampleNormalBucketInstance.uid = bucketUID;
         const sampleMPUInstance = new Bucket(mpuBucket, accessKey);
-        sampleMPUInstance.uid = mpuBucket;
         sampleMPUInstance.keyMap[overviewKey] = JSON.stringify({
-            "id": "4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0",
-            "owner": {
-                "displayName": "placeholder " +
-                    "display name for now",
-                "id": "accessKey1"
+            id: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+            owner: {
+                displayName: 'placeholder display name for now',
+                id: 'accessKey1',
             },
-            "initiator": {
-                "displayName": "placeholder display " +
-                    "name for now",
-                "id": "accessKey1"
+            initiator: {
+                displayName: 'placeholder display name for now',
+                id: 'accessKey1',
             },
-            "key": "$makememulti",
-            "initiated": "2015-11-30T22:40:07.858Z",
-            "uploadId": "4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0",
-            "acl": {
-                "Canned": "private",
-                "FULL_CONTROL": [],
-                "WRITE_ACP": [],
-                "READ": [],
-                "READ_ACP": []
-            }
+            key: '$makememulti',
+            initiated: '2015-11-30T22:40:07.858Z',
+            uploadId: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+            acl: {
+                Canned: 'private',
+                FULL_CONTROL: [],
+                WRITE_ACP: [],
+                READ: [],
+                READ_ACP: [],
+            },
         });
 
         const val = '{}';
@@ -79,13 +76,13 @@ describe('List Parts API', () => {
         sampleMPUInstance.keyMap[partFourKey] = val;
         sampleMPUInstance.keyMap[partFiveKey] = val;
 
-        metadata.createBucket(bucketUID, sampleNormalBucketInstance, () => {
+        metadata.createBucket(bucketName, sampleNormalBucketInstance, () => {
             metadata.createBucket(mpuBucket, sampleMPUInstance, done);
         });
     });
 
     afterEach(done => {
-        metadata.deleteBucket(bucketUID, () => {
+        metadata.deleteBucket(bucketName, () => {
             metadata.deleteBucket(mpuBucket, done);
         });
     });
@@ -96,7 +93,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
@@ -104,15 +101,15 @@ describe('List Parts API', () => {
         };
 
         listParts(accessKey, metastore, listRequest, (err, xml) => {
-            expect(err).to.be.null;
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(err).to.be.null;
+                assert.strictEqual(err, null);
                 expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
                 expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
                 expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
                 expect(json.ListPartResult.MaxParts[0]).to.equal('1000');
-                expect(json.ListPartResult.Initiator[0]
-                    .ID[0]).to.equal(accessKey);
+                expect(json.ListPartResult.Initiator[0].ID[0])
+                    .to.equal(accessKey);
                 expect(json.ListPartResult.IsTruncated[0]).to.equal('false');
                 expect(json.ListPartResult.PartNumberMarker).to.be.undefined;
                 expect(json.ListPartResult
@@ -139,7 +136,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
@@ -165,7 +162,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
@@ -205,7 +202,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
@@ -244,7 +241,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
@@ -285,7 +282,7 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            namespace: namespace,
+            namespace,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
                 uploadId: uploadId,
