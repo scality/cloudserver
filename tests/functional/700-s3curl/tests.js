@@ -420,6 +420,7 @@ describe('s3curl head object', () => {
                 const lines = rawOutput.stdout.split('\n');
                 const userMetadata = `x-amz-meta-mine: BestestObjectEver\r`;
                 assert(lines.indexOf(userMetadata) > -1);
+                assert(rawOutput.stdout.indexOf('ETag') > -1);
                 done();
             });
     });

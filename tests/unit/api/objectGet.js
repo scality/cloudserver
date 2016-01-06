@@ -38,7 +38,7 @@ describe('objectGet API', () => {
         });
     });
 
-    const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
+    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const objectName = 'objectName';
     const testPutBucketRequest = {
         lowerCaseHeaders: {},
@@ -54,7 +54,7 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
         namespace: namespace,
         post: postBody,
-        calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+        calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
     };
 
     it("should get the object metadata", (done) => {
@@ -73,8 +73,8 @@ describe('objectGet API', () => {
                         (err, result, responseMetaHeaders) => {
                             assert.strictEqual(responseMetaHeaders
                                 [userMetadataKey], userMetadataValue);
-                            assert.strictEqual(responseMetaHeaders.Etag,
-                                correctMD5);
+                            assert.strictEqual(responseMetaHeaders.ETag,
+                                `"${correctMD5}"`);
                             done();
                         });
                 });
