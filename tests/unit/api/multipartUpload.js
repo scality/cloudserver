@@ -171,13 +171,13 @@ describe('Multipart Upload API', () => {
                     const partEntryArray = sortedKeyMap[1].split(splitter);
                     const partUploadId = partEntryArray[0];
                     const firstPartNumber = partEntryArray[1];
-                    const partEtag = partEntryArray[3];
+                    const partETag = partEntryArray[3];
                     expect(keysInMPUkeyMap).to.have.length(2);
                     expect(md.keyMap[overviewEntry].key)
                         .to.equal(objectKey);
                     assert.strictEqual(partUploadId, testUploadId);
                     expect(firstPartNumber).to.equal('1');
-                    expect(partEtag).to.equal(calculatedMD5);
+                    expect(partETag).to.equal(calculatedMD5);
                     done();
                 });
             });
@@ -185,7 +185,7 @@ describe('Multipart Upload API', () => {
     });
 
     it('should upload a part even if the client sent ' +
-    'a base 64 etag (and the stored etag ' +
+    'a base 64 ETag (and the stored ETag ' +
     'in metadata should be hex)', (done) => {
         const objectKey = 'testObject';
         const putRequest = {
@@ -249,9 +249,9 @@ describe('Multipart Upload API', () => {
                         }
                     });
                     const partEntryArray = sortedKeyMap[1].split(splitter);
-                    const partEtag = partEntryArray[3];
+                    const partETag = partEntryArray[3];
                     expect(keysInMPUkeyMap).to.have.length(2);
-                    expect(partEtag).to.equal(calculatedMD5);
+                    expect(partETag).to.equal(calculatedMD5);
                     done();
                 });
             });
@@ -544,14 +544,14 @@ describe('Multipart Upload API', () => {
                             const partUploadId = secondPartEntryArray[0];
                             const secondPartNumber =
                                 secondPartEntryArray[1];
-                            const secondPartEtag =
+                            const secondPartETag =
                                 secondPartEntryArray[3];
                             expect(keysInMPUkeyMap).to.have.length(3);
                             expect(md.keyMap[overviewEntry].key)
                                 .to.equal(objectKey);
                             expect(partUploadId).to.equal(testUploadId);
                             expect(secondPartNumber).to.equal('2');
-                            expect(secondPartEtag)
+                            expect(secondPartETag)
                                 .to.equal(secondCalculatedMD5);
                             done();
                         });
@@ -624,7 +624,7 @@ describe('Multipart Upload API', () => {
                 // calculated above and manually being set in the request below.
                 // What is being tested is that the calculatedMD5 being sent
                 // to the API for the part is stored and then used to
-                // calculate the final etag upon completion
+                // calculate the final ETag upon completion
                 // of the multipart upload.
                 post: partBody,
                 calculatedMD5: calculatedMD5,
@@ -648,7 +648,7 @@ describe('Multipart Upload API', () => {
                     },
                     post: completeBody,
                 };
-                const awsVerifiedEtag =
+                const awsVerifiedETag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
                 completeMultipartUpload(accessKey, metastore,
                     completeRequest, (err, result) => {
@@ -662,7 +662,7 @@ describe('Multipart Upload API', () => {
                             expect(json.CompleteMultipartUploadResult
                                 .Key[0]).to.equal(objectKey);
                             expect(json.CompleteMultipartUploadResult
-                                .ETag[0]).to.equal(awsVerifiedEtag);
+                                .ETag[0]).to.equal(awsVerifiedETag);
                             metadata.getBucket(testBucketUID, (err, md) => {
                                 assert(md.keyMap[objectKey]);
                                 const MD = JSON.parse(md.keyMap[objectKey]);
@@ -980,7 +980,7 @@ describe('Multipart Upload API', () => {
 
     it('should return an error if the complete ' +
     'multipart upload request contains xml with ' +
-    'a part etag that does not match the md5 for ' +
+    'a part ETag that does not match the md5 for ' +
     'the part that was actually sent', (done) => {
         const objectKey = 'testObject';
         const putRequest = {
