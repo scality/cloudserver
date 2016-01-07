@@ -105,7 +105,7 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
-                            const MD = JSON.parse(md.keyMap[objectName]);
+                            const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
                             done();
@@ -142,7 +142,7 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
-                            const MD = JSON.parse(md.keyMap[objectName]);
+                            const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
                             done();
@@ -184,7 +184,7 @@ describe('objectPut API', () => {
                     testPutObjectRequest, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
-                            const MD = JSON.parse(md.keyMap[objectName]);
+                            const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['x-amz-meta-test'],
                                                'some metadata');
