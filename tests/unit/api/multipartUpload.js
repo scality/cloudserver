@@ -658,7 +658,7 @@ describe('Multipart Upload API', () => {
                                 .ETag[0]).to.equal(awsVerifiedETag);
                             metadata.getBucket(bucketName, (err, md) => {
                                 assert(md.keyMap[objectKey]);
-                                const MD = JSON.parse(md.keyMap[objectKey]);
+                                const MD = md.keyMap[objectKey];
                                 assert.strictEqual(MD['x-amz-meta-stuff'],
                                                    'I am some user metadata');
                                 done();
@@ -1324,7 +1324,7 @@ describe('Multipart Upload API', () => {
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
                                 metadata.getBucket(bucketName, (err, md) => {
-                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    const MD = md.keyMap[objectKey];
                                     assert.strictEqual(MD['content-length'],
                                                       6000100);
                                     done();
@@ -1448,7 +1448,7 @@ describe('Multipart Upload API', () => {
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
                                 metadata.getBucket(bucketName, (err, md) => {
-                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    const MD = md.keyMap[objectKey];
                                     assert.strictEqual(MD.acl.Canned,
                                                        'authenticated-read');
                                     done();
@@ -1574,7 +1574,7 @@ describe('Multipart Upload API', () => {
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
                                 metadata.getBucket(bucketName, (err, md) => {
-                                    const MD = JSON.parse(md.keyMap[objectKey]);
+                                    const MD = md.keyMap[objectKey];
                                     assert.strictEqual(MD.acl.READ[0],
                                                        granteeId);
                                     done();
@@ -1618,8 +1618,7 @@ describe('Multipart Upload API', () => {
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, (err, md) => {
-                    assert.strictEqual(Object.keys(md
-                            .keyMap).length, 1);
+                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
                     parseString(result, next);
                 });
             },
