@@ -9,8 +9,7 @@ import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
 
 const bucketName = 'Zaphod';
-const objMDAsObj = { test: '8' };
-const objMD = JSON.stringify(objMDAsObj);
+const objMD = { test: '8' };
 
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
@@ -29,7 +28,7 @@ describe('bucket API for getting, putting and deleting ' +
        'and get the object by key', (done) => {
         metadata.putObjectMD(bucketName, 'sampleKey', objMD, () => {
             metadata.getObjectMD(bucketName, 'sampleKey', (err, value) => {
-                assert.deepStrictEqual(value, objMDAsObj);
+                assert.deepStrictEqual(value, objMD);
                 done();
             });
         });
