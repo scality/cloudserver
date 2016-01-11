@@ -62,7 +62,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -74,7 +74,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'not-a-valid-option'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -96,7 +96,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -108,7 +108,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -119,7 +119,7 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        assert.strictEqual(err, null);
+                        assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'public-read-write');
@@ -135,7 +135,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -147,7 +147,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -162,7 +162,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -173,17 +173,17 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        assert.strictEqual(err, null);
+                        assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'public-read');
                             bucketPutACL(accessKey, metastore,
                                 testACLRequest2, (err) => {
-                                    assert.strictEqual(err, null);
+                                    assert.strictEqual(err, undefined);
                                     metadata.getBucket(bucketName,
                                         (err, md) => {
-                                            assert.strictEqual(md.acl
-                                                .Canned, 'authenticated-read');
+                                            assert.strictEqual(md.acl.Canned,
+                                                        'authenticated-read');
                                             done();
                                         });
                                 });
@@ -198,7 +198,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -210,7 +210,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'private'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -225,7 +225,7 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'log-delivery-write'
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -236,13 +236,13 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        assert.strictEqual(err, null);
+                        assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'private');
                             bucketPutACL(accessKey, metastore,
                                 testACLRequest2, (err) => {
-                                    assert.strictEqual(err, null);
+                                    assert.strictEqual(err, undefined);
                                     metadata.getBucket(bucketName,
                                         (err, md) => {
                                             assert.strictEqual(md.acl
@@ -260,7 +260,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -296,7 +296,7 @@ describe('putBucketACL API', () => {
                     'f8f8d5218e7cd47ef2bf"',
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -311,7 +311,7 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        assert.strictEqual(err, null);
+                        assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.READ[0],
                                 'http://acs.amazonaws.com/' +
@@ -339,7 +339,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -355,7 +355,7 @@ describe('putBucketACL API', () => {
                     ',emailaddress="nonexistentEmail@sampling.com"',
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -378,7 +378,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -435,7 +435,7 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -448,7 +448,7 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(success, 'Bucket created');
                 bucketPutACL(accessKey, metastore, testACLRequest,
                     (err) => {
-                        assert.strictEqual(err, null);
+                        assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned, '');
                             assert.strictEqual(md.acl.FULL_CONTROL[0],
@@ -478,12 +478,10 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace,
         };
         const testACLRequest = {
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             post: {
                 '<AccessControlPolicy xmlns':
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -500,15 +498,16 @@ describe('putBucketACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>'
+            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
-            }
+            },
         };
 
         bucketPut(accessKey, metastore, testBucketPutRequest,
@@ -529,7 +528,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace,
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -554,12 +553,13 @@ describe('putBucketACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '</PowerGrant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>'
+            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -581,7 +581,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -610,7 +610,7 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -633,7 +633,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -662,7 +662,7 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
@@ -685,7 +685,7 @@ describe('putBucketACL API', () => {
             lowerCaseHeaders: {},
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             url: '/',
-            namespace: namespace
+            namespace
         };
         const testACLRequest = {
             lowerCaseHeaders: {
@@ -701,7 +701,7 @@ describe('putBucketACL API', () => {
                     'global/NOTAVALIDGROUP"',
             },
             url: '/?acl',
-            namespace: namespace,
+            namespace,
             query: {
                 acl: ''
             }
