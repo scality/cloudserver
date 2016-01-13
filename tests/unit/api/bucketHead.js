@@ -24,15 +24,11 @@ describe('bucketHead API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     it('should return an error if the bucket does not exist', (done) => {

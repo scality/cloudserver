@@ -26,15 +26,11 @@ describe('objectPut API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
 
@@ -106,7 +102,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(bucketName, (err, md) => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
                             const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
@@ -143,7 +139,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(bucketName, (err, md) => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
                             const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['content-md5'], correctMD5);
@@ -185,7 +181,7 @@ describe('objectPut API', () => {
                 objectPut(accessKey, metastore,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getBucket(bucketName, (err, md) => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
                             const MD = md.keyMap[objectName];
                             assert(MD);
                             assert.strictEqual(MD['x-amz-meta-test'],

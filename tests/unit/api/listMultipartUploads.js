@@ -32,18 +32,14 @@ describe('listMultipartUploads API', () => {
         };
 
         // Must delete real bucket and shadow mpu bucket
-        metadata.deleteBucket(bucketName, () => {
-            metadata.deleteBucket(mpuBucket, () => {
-                done();
-            });
+        metadata.deleteBucket(bucketName, log, () => {
+            metadata.deleteBucket(mpuBucket, log, () => done());
         });
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, () => {
-            metadata.deleteBucket(mpuBucket, () => {
-                done();
-            });
+        metadata.deleteBucket(bucketName, log, () => {
+            metadata.deleteBucket(mpuBucket, log, () => done());
         });
     });
 
