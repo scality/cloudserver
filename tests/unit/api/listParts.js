@@ -79,14 +79,15 @@ describe('List Parts API', () => {
         sampleMPUInstance.keyMap[partFourKey] = val;
         sampleMPUInstance.keyMap[partFiveKey] = val;
 
-        metadata.createBucket(bucketName, sampleNormalBucketInstance, () => {
-            metadata.createBucket(mpuBucket, sampleMPUInstance, done);
-        });
+        metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
+            () => {
+                metadata.createBucket(mpuBucket, sampleMPUInstance, log, done);
+            });
     });
 
     afterEach(done => {
-        metadata.deleteBucket(bucketName, () => {
-            metadata.deleteBucket(mpuBucket, done);
+        metadata.deleteBucket(bucketName, log, () => {
+            metadata.deleteBucket(mpuBucket, log, done);
         });
     });
 
