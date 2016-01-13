@@ -246,4 +246,47 @@ describe('bucketGet API', () => {
             done();
         });
     });
+
+    it('should return the correct date in the xml attributes', (done) => {
+        const testGetRequest = {
+            lowerCaseHeaders: {
+                host: '/'
+            },
+            url: `/${bucketName}?`,
+            namespace: namespace,
+            query: {}
+        };
+
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(accessKey, metastore,
+                    testPutBucketRequest, log, next);
+            },
+            function waterfall2(success, next) {
+                assert.strictEqual(success, 'Bucket created');
+                objectPut(accessKey, metastore,
+                    testPutObjectRequest1, log, next);
+            },
+            function waterfall3(result, next) {
+                bucketGet(accessKey, metastore,
+                    testGetRequest, log, next);
+            },
+            function waterfall4(result, next) {
+                parseString(result, next);
+            }
+        ],
+        function waterfallFinal(err, result) {
+            const dateNow = new Date();
+            let month = (dateNow.getMonth() + 1).toString();
+            if (month.length === 1) {
+                month = `0${month}`;
+            }
+            const dateString =
+                `${dateNow.getFullYear()}-${month}-${dateNow.getDate()}`;
+            const resultDate = result.ListBucketResult.$.xmlns.slice(-10);
+            assert.strictEqual(dateString, resultDate);
+            assert.strictEqual(resultDate.indexOf('NaN'), -1);
+            done();
+        });
+    });
 });
