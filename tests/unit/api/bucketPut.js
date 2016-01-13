@@ -1,35 +1,34 @@
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import Config from '../../../lib/Config';
 import metadata from '../metadataswitch';
+
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
+const config = new Config;
+const splitter = config.splitter;
+const usersBucket = config.usersBucket;
+// TODO: Remove references to metastore.  This is GH Issue #172
+const metastore = undefined;
 
 describe('bucketPut API', () => {
-    let metastore;
     const bucketName = 'bucketname';
 
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
         metadata.deleteBucket(bucketName, ()=> {
-            done();
+            metadata.deleteBucket(usersBucket, () => {
+                done();
+            });
         });
     });
 
     after((done) => {
         metadata.deleteBucket(bucketName, ()=> {
-            done();
+            metadata.deleteBucket(usersBucket, () => {
+                done();
+            });
         });
     });
 
@@ -38,9 +37,9 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
         bucketPut(accessKey, metastore, testRequest, () => {
             bucketPut(otherAccessKey, metastore, testRequest,
@@ -57,7 +56,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${tooShortBucketName}`,
-            namespace: namespace,
+            namespace,
             post: ''
         };
 
@@ -73,7 +72,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${hasCapsBucketName}`,
-            namespace: namespace,
+            namespace,
             post: ''
         };
 
@@ -88,7 +87,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/test1',
-            namespace: namespace,
+            namespace,
             post: 'malformedxml'
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
@@ -103,7 +102,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/test1',
-            namespace: namespace,
+            namespace,
             post: '<Hello></Hello>'
         };
         bucketPut(accessKey, metastore, testRequest, (err) => {
@@ -117,7 +116,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/test1',
-            namespace: namespace,
+            namespace,
             post:
                 '<CreateBucketConfiguration ' +
                 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -135,7 +134,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}`,
-            namespace: namespace,
+            namespace,
             post: ''
         };
 
@@ -147,9 +146,13 @@ describe('bucketPut API', () => {
             metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
                 assert.strictEqual(md.owner, accessKey);
-                assert.strictEqual(metastore
-                    .users[accessKey].buckets.length, 1);
-                done();
+                const prefix = `${accessKey}${splitter}`;
+                metadata.listObject(usersBucket, prefix,
+                    null, null, null, (err, listResponse) => {
+                        assert.strictEqual(listResponse.Contents[0].key,
+                            `${accessKey}${splitter}${bucketName}`);
+                        done();
+                    });
             });
         });
     });
@@ -159,7 +162,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -171,9 +174,13 @@ describe('bucketPut API', () => {
             metadata.getBucket(bucketName, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
                 assert.strictEqual(md.owner, accessKey);
-                assert.strictEqual(metastore.users[accessKey].
-                    buckets.length, 1);
-                done();
+                const prefix = `${accessKey}${splitter}`;
+                metadata.listObject(usersBucket, prefix,
+                    null, null, null, (err, listResponse) => {
+                        assert.strictEqual(listResponse.Contents[0].key,
+                            `${accessKey}${splitter}${bucketName}`);
+                        done();
+                    });
             });
         });
     });
@@ -182,7 +189,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}`,
-            namespace: namespace,
+            namespace,
             post: ''
         };
         const differentAccount = 'accessKey2';
@@ -196,9 +203,13 @@ describe('bucketPut API', () => {
                     // should be the one put by accessKey
                     // rather than differentAccount
                     assert.strictEqual(md.owner, accessKey);
-                    assert.strictEqual(metastore.users[accessKey]
-                        .buckets.length, 1);
-                    done();
+                    const prefix = `${accessKey}${splitter}`;
+                    metadata.listObject(usersBucket, prefix,
+                        null, null, null, (err, listResponse) => {
+                            assert.strictEqual(listResponse.Contents.length,
+                                1);
+                            done();
+                        });
                 });
             });
         });
@@ -213,7 +224,7 @@ describe('bucketPut API', () => {
                     'global/NOTAVALIDGROUP"',
             },
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -233,7 +244,7 @@ describe('bucketPut API', () => {
                 'x-amz-acl': 'not-valid-option',
             },
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -254,7 +265,7 @@ describe('bucketPut API', () => {
                     'emailaddress="fake@faking.com"',
             },
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -275,7 +286,7 @@ describe('bucketPut API', () => {
                     'public-read',
             },
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -308,7 +319,7 @@ describe('bucketPut API', () => {
                     'f8f8d5218e7cd47ef2bf"',
             },
             url: '/',
-            namespace: namespace,
+            namespace,
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
@@ -337,7 +348,7 @@ describe('bucketPut API', () => {
         const testRequest = {
             lowerCaseHeaders: {},
             url: `/${bucketName}`,
-            namespace: namespace,
+            namespace,
             post: ''
         };
         bucketPut('http://acs.amazonaws.com/groups/global/AllUsers',
