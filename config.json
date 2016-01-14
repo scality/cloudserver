@@ -1,6 +1,5 @@
 {
     "port": 8000,
-    "splitter": "...!*!",
     "sproxyd": {
         "bootstrap": ["localhost:81"]
     },
