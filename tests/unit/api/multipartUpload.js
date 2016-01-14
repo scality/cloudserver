@@ -7,16 +7,16 @@ import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
+import constants from '../../../constants';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
-import Config from '../../../lib/Config';
 import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
 
-const splitter = new Config().splitter;
+const splitter = constants.splitter;
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';

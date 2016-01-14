@@ -2,13 +2,13 @@ import assert from 'assert';
 import async from 'async';
 import { parseString } from 'xml2js';
 
-import Config from '../../../lib/Config';
+import constants from '../../../constants';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import serviceGet from '../../../lib/api/serviceGet';
 import DummyRequestLogger from '../helpers';
 
-const usersBucket = new Config().usersBucket;
+const usersBucket = constants.usersBucket;
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';

@@ -2,7 +2,7 @@ import assert from 'assert';
 
 import bucketDelete from '../../../lib/api/bucketDelete';
 import bucketPut from '../../../lib/api/bucketPut';
-import Config from '../../../lib/Config';
+import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import DummyRequestLogger from '../helpers';
@@ -12,7 +12,7 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
-const usersBucket = new Config().usersBucket;
+const usersBucket = constants.usersBucket;
 // TODO: Remove references to metastore.  This is GH Issue #172
 const metastore = undefined;
 
