@@ -3,7 +3,9 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
+import DummyRequestLogger from '../helpers';
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
@@ -45,7 +47,7 @@ describe('objectPut API', () => {
             post: postBody
         };
 
-        objectPut(accessKey, metastore, testRequest, (err) => {
+        objectPut(accessKey, metastore, testRequest, log, (err) => {
             assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
@@ -67,10 +69,10 @@ describe('objectPut API', () => {
             post: postBody
         };
 
-        bucketPut(putAccessKey, metastore, testPutBucketRequest,
+        bucketPut(putAccessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest,
+                objectPut(accessKey, metastore, testPutObjectRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'AccessDenied');
                         done();
@@ -98,11 +100,11 @@ describe('objectPut API', () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
                             const MD = md.keyMap[objectName];
@@ -135,11 +137,11 @@ describe('objectPut API', () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
                             const MD = md.keyMap[objectName];
@@ -177,11 +179,11 @@ describe('objectPut API', () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey, metastore, testPutBucketRequest,
+        bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(accessKey, metastore,
-                    testPutObjectRequest, (err, result) => {
+                    testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, (err, md) => {
                             const MD = md.keyMap[objectName];

@@ -3,7 +3,9 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import metadata from '../metadataswitch';
 import utils from '../../../lib/utils';
+import DummyRequestLogger from '../helpers';
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
@@ -80,10 +82,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();
@@ -114,10 +116,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
@@ -168,17 +170,17 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'public-read');
                             bucketPutACL(accessKey, metastore,
-                                testACLRequest2, (err) => {
+                                testACLRequest2, log, (err) => {
                                     assert.strictEqual(err, undefined);
                                     metadata.getBucket(bucketName,
                                         (err, md) => {
@@ -231,17 +233,17 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                                 'private');
                             bucketPutACL(accessKey, metastore,
-                                testACLRequest2, (err) => {
+                                testACLRequest2, log, (err) => {
                                     assert.strictEqual(err, undefined);
                                     metadata.getBucket(bucketName,
                                         (err, md) => {
@@ -306,10 +308,10 @@ describe('putBucketACL API', () => {
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
@@ -361,10 +363,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err,
                             'UnresolvableGrantByEmailAddress');
@@ -443,10 +445,10 @@ describe('putBucketACL API', () => {
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, (err, md) => {
@@ -510,10 +512,10 @@ describe('putBucketACL API', () => {
             },
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err,
                             'UnresolvableGrantByEmailAddress');
@@ -565,10 +567,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'MalformedACLError');
                         done();
@@ -616,10 +618,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'MalformedXML');
                         done();
@@ -668,10 +670,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();
@@ -707,10 +709,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest,
+        bucketPut(accessKey, metastore, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testACLRequest,
+                bucketPutACL(accessKey, metastore, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();

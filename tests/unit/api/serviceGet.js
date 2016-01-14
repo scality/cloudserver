@@ -6,9 +6,11 @@ import Config from '../../../lib/Config';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import serviceGet from '../../../lib/api/serviceGet';
+import DummyRequestLogger from '../helpers';
 
 const usersBucket = new Config().usersBucket;
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName1 = 'bucketname1';
@@ -75,16 +77,20 @@ describe('serviceGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest1, next);
+                bucketPut(accessKey, metastore, testbucketPutRequest1, log,
+                    next);
             },
             function waterfall2(result, next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest2, next);
+                bucketPut(accessKey, metastore, testbucketPutRequest2, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest3, next);
+                bucketPut(accessKey, metastore, testbucketPutRequest3, log,
+                    next);
             },
             function waterfall4(result, next) {
-                serviceGet(accessKey, metastore, serviceGetRequest, next);
+                serviceGet(accessKey, metastore, serviceGetRequest, log,
+                    next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -107,7 +113,7 @@ describe('serviceGet API', () => {
 
     it('should prevent anonymous user from accessing getService API', done => {
         serviceGet('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, serviceGetRequest, (err) => {
+            metastore, serviceGetRequest, log, (err) => {
                 assert.strictEqual(err, 'AccessDenied');
                 done();
             });

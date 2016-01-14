@@ -5,7 +5,9 @@ import bucketPut from '../../../lib/api/bucketPut';
 import Config from '../../../lib/Config';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
+import DummyRequestLogger from '../helpers';
 
+const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
@@ -44,27 +46,28 @@ describe("bucketDelete API", () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest, () => {
-                bucketDelete(accessKey, metastore, testDeleteRequest, err => {
-                    assert.strictEqual(err, 'BucketNotEmpty');
-                    metadata.getBucket(bucketName, (err, md) => {
-                        assert.strictEqual(md.name, bucketName);
-                        metadata.listObject(usersBucket, accessKey,
-                            null, null, null, (err, listResponse) => {
-                                assert
-                                .strictEqual(listResponse.Contents.length, 1);
-                                done();
-                            });
+        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
+            objectPut(accessKey, metastore, testPutObjectRequest, log, () => {
+                bucketDelete(accessKey, metastore, testDeleteRequest, log,
+                    err => {
+                        assert.strictEqual(err, 'BucketNotEmpty');
+                        metadata.getBucket(bucketName, (err, md) => {
+                            assert.strictEqual(md.name, bucketName);
+                            metadata.listObject(usersBucket, accessKey,
+                                null, null, null, (err, listResponse) => {
+                                    assert.strictEqual(listResponse.Contents.
+                                        length, 1);
+                                    done();
+                                });
+                        });
                     });
-                });
             });
         });
     });
 
     it('should delete a bucket', (done) => {
-        bucketPut(accessKey, metastore, testBucketPutRequest, () => {
-            bucketDelete(accessKey, metastore, testDeleteRequest, () => {
+        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
+            bucketDelete(accessKey, metastore, testDeleteRequest, log, () => {
                 metadata.getBucket(bucketName, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
@@ -81,7 +84,7 @@ describe("bucketDelete API", () => {
     it('should prevent anonymous user from accessing delete bucket API',
         done => {
             bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
-                metastore, testDeleteRequest, err => {
+                metastore, testDeleteRequest, log, err => {
                     assert.strictEqual(err, 'AccessDenied');
                     done();
                 });

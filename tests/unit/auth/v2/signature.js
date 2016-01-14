@@ -3,6 +3,10 @@ import constructStringToSign from
     '../../../../lib/auth/v2/constructStringToSign';
 import { hashSignature } from '../../../../lib/auth/vault';
 
+import DummyRequestLogger from '../../helpers.js';
+
+const log = new DummyRequestLogger();
+
 describe('checkAuth reconstruction of signature', () => {
     it('should reconstruct the signature for a ' +
        'GET request from s3-curl', () => {
@@ -21,7 +25,7 @@ describe('checkAuth reconstruction of signature', () => {
             query: {}
         };
         const secretKey = 'verySecretKey1';
-        const stringToSign = constructStringToSign(request);
+        const stringToSign = constructStringToSign(request, log);
         const reconstructedSig =
             hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig)
@@ -49,7 +53,7 @@ describe('checkAuth reconstruction of signature', () => {
             query: { 'max-keys': '1000', prefix: '', delimiter: '/' }
         };
         const secretKey = 'verySecretKey1';
-        const stringToSign = constructStringToSign(request);
+        const stringToSign = constructStringToSign(request, log);
         const reconstructedSig =
             hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig).to.equal('V8g5UJUFmMzruMqUHVT6ZwvUw+M=');
@@ -90,7 +94,7 @@ describe('checkAuth reconstruction of signature', () => {
             query: {}
         };
         const secretKey = 'verySecretKey1';
-        const stringToSign = constructStringToSign(request);
+        const stringToSign = constructStringToSign(request, log);
         const reconstructedSig =
             hashSignature(stringToSign, secretKey, 'sha1');
         expect(reconstructedSig)

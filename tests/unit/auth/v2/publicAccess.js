@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import auth from '../../../../lib/auth/auth';
+import DummyRequestLogger from '../../helpers.js';
 
+const logger = new DummyRequestLogger();
 describe('Public Access', () => {
     it('should grant access to a user that provides absolutely' +
         'no authentication information and should assign that user the ' +
@@ -11,7 +13,8 @@ describe('Public Access', () => {
             url: '/bucket',
             query: {},
         };
-        auth(request, (err, accessKey) => {
+
+        auth(request, logger, (err, accessKey) => {
             expect(err).to.be.null;
             expect(accessKey).to
                 .equal('http://acs.amazonaws.com/groups/global/AllUsers');
@@ -29,7 +32,8 @@ describe('Public Access', () => {
             url: '/bucket',
             query: {},
         };
-        auth(request, (err) => {
+
+        auth(request, logger, (err) => {
             expect(err).to.equal('MissingSecurityHeader');
             done();
         });
