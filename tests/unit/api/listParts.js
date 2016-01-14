@@ -4,15 +4,15 @@ import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
+import constants from '../../../constants';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 import metastore from '../../../lib/metadata/in_memory/metadata';
-import Config from '../../../lib/Config';
 import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
 
-const splitter = new Config().splitter;
+const splitter = constants.splitter;
 
 const accessKey = 'accessKey1';
 const namespace = 'default';

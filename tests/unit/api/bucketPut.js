@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import Config from '../../../lib/Config';
+import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import DummyRequestLogger from '../helpers';
 
@@ -10,9 +10,8 @@ const log = new DummyRequestLogger();
 
 const accessKey = 'accessKey1';
 const namespace = 'default';
-const config = new Config;
-const splitter = config.splitter;
-const usersBucket = config.usersBucket;
+const splitter = constants.splitter;
+const usersBucket = constants.usersBucket;
 // TODO: Remove references to metastore.  This is GH Issue #172
 const metastore = undefined;
 
