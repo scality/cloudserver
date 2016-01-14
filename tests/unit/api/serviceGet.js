@@ -21,18 +21,18 @@ const metastore = undefined;
 
 describe('serviceGet API', () => {
     beforeEach((done) => {
-        metadata.deleteBucket('bucketname', () => {
-            metadata.deleteBucket(usersBucket, () => {
+        metadata.deleteBucket('bucketname', log, () => {
+            metadata.deleteBucket(usersBucket, log, () => {
                 done();
             });
         });
     });
 
     afterEach((done) => {
-        metadata.deleteBucket(bucketName1, () => {
-            metadata.deleteBucket(bucketName2, () => {
-                metadata.deleteBucket(bucketName3, () => {
-                    metadata.deleteBucket(usersBucket, () => {
+        metadata.deleteBucket(bucketName1, log, () => {
+            metadata.deleteBucket(bucketName2, log, () => {
+                metadata.deleteBucket(bucketName3, log, () => {
+                    metadata.deleteBucket(usersBucket, log, () => {
                         done();
                     });
                 });

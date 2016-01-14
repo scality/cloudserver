@@ -72,7 +72,7 @@ describe("bucketDelete API", () => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, accessKey,
-                        null, null, null, (err, listResponse) => {
+                        null, null, null, log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length, 0);
                             done();
                         });

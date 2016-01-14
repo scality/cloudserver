@@ -150,7 +150,7 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.owner, accessKey);
                 const prefix = `${accessKey}${splitter}`;
                 metadata.listObject(usersBucket, prefix,
-                    null, null, null, (err, listResponse) => {
+                    null, null, null, log, (err, listResponse) => {
                         assert.strictEqual(listResponse.Contents[0].key,
                             `${accessKey}${splitter}${bucketName}`);
                         done();
@@ -178,7 +178,7 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.owner, accessKey);
                 const prefix = `${accessKey}${splitter}`;
                 metadata.listObject(usersBucket, prefix,
-                    null, null, null, (err, listResponse) => {
+                    null, null, null, log, (err, listResponse) => {
                         assert.strictEqual(listResponse.Contents[0].key,
                             `${accessKey}${splitter}${bucketName}`);
                         done();
@@ -207,7 +207,7 @@ describe('bucketPut API', () => {
                     assert.strictEqual(md.owner, accessKey);
                     const prefix = `${accessKey}${splitter}`;
                     metadata.listObject(usersBucket, prefix,
-                        null, null, null, (err, listResponse) => {
+                        null, null, null, log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length,
                                 1);
                             done();
