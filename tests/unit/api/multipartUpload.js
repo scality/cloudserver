@@ -20,7 +20,7 @@ const splitter = constants.splitter;
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const mpuBucket = `mpu...${bucketName}`;
+const mpuBucket = `mpuShadowBucket${bucketName}`;
 const postBody = [ new Buffer('I am a body'), ];
 const bucketPutRequest = {
     bucketName,
