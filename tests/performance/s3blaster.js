@@ -61,7 +61,7 @@ class S3Blaster {
             }
             const code = err.toString().split(':')[0];
             stderr.write(`createBucket: ${code}..`);
-            return cb(code === 'DBAlreadyExists' ? null : code);
+            return cb(code === 'BucketAlreadyExists' ? null : code);
         });
     }
 
