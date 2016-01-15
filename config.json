@@ -6,7 +6,7 @@
     "bucketd": {
         "bootstrap": ["localhost"]
     },
-    "clustering": false,
+    "clustering": true,
     "clusters": 10,
     "log": {
         "logLevel": "info",
