@@ -13,7 +13,7 @@ const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const mpuBucket = `mpu...${bucketName}`;
+const mpuBucket = `mpuShadowBucket${bucketName}`;
 
 describe('listMultipartUploads API', () => {
     let metastore;
