@@ -27,15 +27,11 @@ describe('objectHead API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';

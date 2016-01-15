@@ -30,15 +30,11 @@ describe('objectGetACL API', () => {
             },
             "buckets": {}
         };
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, ()=> {
-            done();
-        });
+        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     const objectName = 'objectName';

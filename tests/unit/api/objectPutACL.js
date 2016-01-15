@@ -15,13 +15,13 @@ const postBody = [ new Buffer('I am a body'), ];
 describe('putObjectACL API', () => {
     let metastore;
     beforeEach(done => {
-        metadata.deleteBucket(bucketName, ()=> {
+        metadata.deleteBucket(bucketName, log, ()=> {
             done();
         });
     });
 
     after(done => {
-        metadata.deleteBucket(bucketName, ()=> {
+        metadata.deleteBucket(bucketName, log, ()=> {
             done();
         });
     });
@@ -119,12 +119,13 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             log, (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, (err, md) => {
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.Canned,
-                                        'public-read-write');
-                                    done();
-                                });
+                                metadata.getBucket(bucketName, log,
+                                    (err, md) => {
+                                        assert.strictEqual(md.keyMap.
+                                            objectName.acl.Canned,
+                                            'public-read-write');
+                                        done();
+                                    });
                             }
                         );
                     }
@@ -190,22 +191,24 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest1,
                             log, (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, (err, md) => {
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.Canned, 'public-read');
-                                    objectPutACL(accessKey, metastore,
-                                        testObjACLRequest2, log,
-                                        (err) => {
-                                            assert.strictEqual(err, undefined);
-                                            metadata.getBucket(bucketName,
-                                                (err, md) => {
+                                metadata.getBucket(bucketName, log,
+                                    (err, md) => {
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.Canned, 'public-read');
+                                        objectPutACL(accessKey, metastore,
+                                            testObjACLRequest2, log,
+                                            (err) => {
+                                                assert.strictEqual(err,
+                                                    undefined);
+                                                metadata.getBucket(bucketName,
+                                                log, (err, md) => {
                                                     assert.strictEqual(md.keyMap
                                                     .objectName.acl.Canned,
                                                     'authenticated-read');
                                                     done();
                                                 });
-                                        });
-                                });
+                                            });
+                                    });
                             }
                         );
                     }
@@ -280,25 +283,30 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             log, (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, (err, md) => {
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.READ[0],
-                                        'http://acs.amazonaws.com/' +
-                                        'groups/s3/LogDelivery');
-                                    assert(md.keyMap.objectName
-                                        .acl.FULL_CONTROL[0]
-                                        .indexOf(canonicalIDforSample1) > -1);
-                                    assert(md.keyMap.objectName
-                                        .acl.FULL_CONTROL[1]
-                                        .indexOf(canonicalIDforSample2) > -1);
-                                    assert(md.keyMap.objectName
-                                        .acl.READ_ACP[0]
-                                        .indexOf(canonicalIDforSample1) > -1);
-                                    assert(md.keyMap.objectName
-                                        .acl.WRITE_ACP[0]
-                                        .indexOf(canonicalIDforSample2) > -1);
-                                    done();
-                                });
+                                metadata.getBucket(bucketName, log,
+                                    (err, md) => {
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.READ[0],
+                                            'http://acs.amazonaws.com/' +
+                                            'groups/s3/LogDelivery');
+                                        assert(md.keyMap.objectName
+                                            .acl.FULL_CONTROL[0]
+                                            .indexOf(canonicalIDforSample1) >
+                                                -1);
+                                        assert(md.keyMap.objectName
+                                            .acl.FULL_CONTROL[1]
+                                            .indexOf(canonicalIDforSample2) >
+                                                -1);
+                                        assert(md.keyMap.objectName
+                                            .acl.READ_ACP[0]
+                                            .indexOf(canonicalIDforSample1) >
+                                                -1);
+                                        assert(md.keyMap.objectName
+                                            .acl.WRITE_ACP[0]
+                                            .indexOf(canonicalIDforSample2) >
+                                                -1);
+                                        done();
+                                    });
                             });
                     }
                 );
@@ -440,24 +448,25 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             log, (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, (err, md) => {
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.FULL_CONTROL[0],
-                                        '852b113e7a2f25102679df27bb' +
-                                        '0ae12b3f85be6');
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.READ[0],
-                                        'http://acs.amazonaws.com/' +
-                                        'groups/global/AllUsers');
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.WRITE_ACP[0],
-                                        canonicalIDforSample1);
-                                    assert.strictEqual(md.keyMap.objectName
-                                        .acl.READ_ACP[0],
-                                        'f30716ab7115dcb44a5e' +
-                                        'f76e9d74b8e20567f63');
-                                    done();
-                                });
+                                metadata.getBucket(bucketName, log,
+                                    (err, md) => {
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.FULL_CONTROL[0],
+                                            '852b113e7a2f25102679df27bb' +
+                                            '0ae12b3f85be6');
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.READ[0],
+                                            'http://acs.amazonaws.com/' +
+                                            'groups/global/AllUsers');
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.WRITE_ACP[0],
+                                            canonicalIDforSample1);
+                                        assert.strictEqual(md.keyMap.objectName
+                                            .acl.READ_ACP[0],
+                                            'f30716ab7115dcb44a5e' +
+                                            'f76e9d74b8e20567f63');
+                                        done();
+                                    });
                             });
                     }
                 );
@@ -528,24 +537,26 @@ describe('putObjectACL API', () => {
                         objectPutACL(accessKey, metastore, testObjACLRequest,
                             log, (err) => {
                                 assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, (err, md) => {
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.Canned, '');
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.FULL_CONTROL[0],
-                                        '852b113e7a2f2510267' +
-                                        '9df27bb0ae12b3f85be6');
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.WRITE, undefined);
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.READ[0], undefined);
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.WRITE_ACP[0],
-                                        undefined);
-                                    assert.strictEqual(md.keyMap
-                                        .objectName.acl.READ_ACP[0], undefined);
-                                    done();
-                                });
+                                metadata.getBucket(bucketName, log,
+                                    (err, md) => {
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.Canned, '');
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.FULL_CONTROL[0],
+                                            '852b113e7a2f2510267' +
+                                            '9df27bb0ae12b3f85be6');
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.WRITE, undefined);
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.READ[0], undefined);
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.WRITE_ACP[0],
+                                            undefined);
+                                        assert.strictEqual(md.keyMap
+                                            .objectName.acl.READ_ACP[0],
+                                            undefined);
+                                        done();
+                                    });
                             });
                     }
                 );
@@ -856,7 +867,6 @@ describe('putObjectACL API', () => {
                 acl: ''
             }
         };
-
 
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {

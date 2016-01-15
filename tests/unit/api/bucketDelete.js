@@ -18,8 +18,8 @@ const metastore = undefined;
 
 describe("bucketDelete API", () => {
     afterEach(done => {
-        metadata.deleteBucket(bucketName, () => {
-            metadata.deleteBucket(usersBucket, () => {
+        metadata.deleteBucket(bucketName, log, () => {
+            metadata.deleteBucket(usersBucket, log, () => {
                 done();
             });
         });
@@ -51,10 +51,10 @@ describe("bucketDelete API", () => {
                 bucketDelete(accessKey, metastore, testDeleteRequest, log,
                     err => {
                         assert.strictEqual(err, 'BucketNotEmpty');
-                        metadata.getBucket(bucketName, (err, md) => {
+                        metadata.getBucket(bucketName, log, (err, md) => {
                             assert.strictEqual(md.name, bucketName);
                             metadata.listObject(usersBucket, accessKey,
-                                null, null, null, (err, listResponse) => {
+                                null, null, null, log, (err, listResponse) => {
                                     assert.strictEqual(listResponse.Contents.
                                         length, 1);
                                     done();
@@ -68,11 +68,11 @@ describe("bucketDelete API", () => {
     it('should delete a bucket', (done) => {
         bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
             bucketDelete(accessKey, metastore, testDeleteRequest, log, () => {
-                metadata.getBucket(bucketName, (err, md) => {
+                metadata.getBucket(bucketName, log, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, accessKey,
-                        null, null, null, (err, listResponse) => {
+                        null, null, null, log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length, 0);
                             done();
                         });
