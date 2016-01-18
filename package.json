@@ -29,7 +29,6 @@
     "bunyan-logstash": "^0.3.4",
     "jsutils": "giorgioregni/jsutils",
     "natural-compare-lite": "^1.4.0",
-    "node-simple-router": "giorgioregni/node-simple-router",
     "node-uuid": "^1.4.3",
     "sproxydclient": "scality/sproxydclient",
     "utf8": "~2.1.1",
