@@ -73,4 +73,8 @@ export default class DummyRequestLogger {
         this.ops.push(['fatal', [msg]]);
         this.counts.fatal += 1;
     }
+
+    getSerializedUids() {
+        return 'dummy:Serialized:Uids';
+    }
 }
