@@ -23,10 +23,7 @@ const uploadKey = '$makememulti';
 const sixMBObjectETag = 'f3a9fb2071d3503b703938a74eb99846';
 const lastPieceETag = '555e4cd2f9eff38109d7a3ab13995a32';
 const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
-    `d89d-49d3-9fa6-e9c2c1eb31b0${splitter}freshestbucket` +
-    `${splitter}accessKey1${splitter}placeholder display name for ` +
-    `now${splitter}accessKey1${splitter}placeholder display name ` +
-    `for now${splitter}undefined${splitter}2015-11-30T22:40:07.858Z`;
+    `d89d-49d3-9fa6-e9c2c1eb31b0`;
 const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}1`;
 const partTwoKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0` +
     `${splitter}2`;
@@ -38,15 +35,13 @@ describe('List Parts API', () => {
     beforeEach(done => {
         const sampleNormalBucketInstance = new Bucket(bucketName, accessKey);
         const sampleMPUInstance = new Bucket(mpuBucket, accessKey);
-        sampleMPUInstance.keyMap[overviewKey] = JSON.stringify({
+        sampleMPUInstance.keyMap[overviewKey] = {
             id: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
-            owner: {
-                displayName: 'placeholder display name for now',
-                id: 'accessKey1',
-            },
+            'owner-display-name': 'placeholder display name for now',
+            'owner-id': 'accessKey1',
             initiator: {
-                displayName: 'placeholder display name for now',
-                id: 'accessKey1',
+                DisplayName: 'placeholder display name for now',
+                ID: 'accessKey1',
             },
             key: '$makememulti',
             initiated: '2015-11-30T22:40:07.858Z',
@@ -58,7 +53,8 @@ describe('List Parts API', () => {
                 READ: [],
                 READ_ACP: [],
             },
-        });
+            eventualStorageBucket: 'freshestbucket',
+        };
 
         sampleMPUInstance.keyMap[partOneKey] = {
             key: partOneKey,

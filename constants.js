@@ -5,18 +5,15 @@ export default {
      * multipart upload.  These objects with large names are then stored in
      * metadata in a "shadow bucket" to a real bucket.  The shadow bucket
      * contains all ongoing multipart uploads.  We include in the object
-     * name all of the info we might need to pull about an open multipart
+     * name some of the info we might need to pull about an open multipart
      * upload or about an individual part with each piece of info separated
      * by the splitter.  We can then extract each piece of info by splitting
      * the object name string with this splitter.
      * For instance, assuming a splitter of '...!*!',
      * the name of the upload overview would be:
-     *   overview...!*!objectKey...!*!uploadId...!*!destinationBucketName
-     *   ...!*!initiatorID...!*!initiatorDisplayName...!*!ownerID
-     *   ...!*!ownerDisplayName...!*!storageClass...!*!timeInitiated
+     *   overview...!*!objectKey...!*!uploadId
      * For instance, the name of a part would be:
-     *   uploadId...!*!partNumber...!*!
-     *   timeLastModified...!*!ETag...!*!size...!*!location
+     *   uploadId...!*!partNumber
      *
      * The sequence of characters used in the splitter should not occur
      * elsewhere in the pieces of info to avoid splitting where not
