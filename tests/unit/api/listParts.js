@@ -27,24 +27,12 @@ const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
     `${splitter}accessKey1${splitter}placeholder display name for ` +
     `now${splitter}accessKey1${splitter}placeholder display name ` +
     `for now${splitter}undefined${splitter}2015-11-30T22:40:07.858Z`;
-const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}1` +
-    `${splitter}2015-11-30T22:41:18.658Z${splitter}` +
-    `f3a9fb2071d3503b703938a74eb99846` +
-    `${splitter}6000000${splitter}068db6a6745a79d54c1b29ff99f9f131`;
+const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}1`;
 const partTwoKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0` +
-    `${splitter}2${splitter}2015-11-30T22:41:40.207Z${splitter}f3a9fb2071d35` +
-    `03b703938a74eb99846${splitter}6000000${splitter}` +
-    `ff22f316b16956ff5118c93abce7d62d`;
-const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}` +
-    `3${splitter}2015-11-30T22:41:52.102Z` +
-    `${splitter}f3a9fb2071d3503b703938a` +
-    `74eb99846${splitter}6000000${splitter}dea282f70edb6fc5f9433cd6f525d4a6`;
-const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}4` +
-    `${splitter}2015-11-30T22:42:03.493Z${splitter}f3a9fb2071d3503b703938a74e` +
-    `b99846${splitter}6000000${splitter}afe24bc40153982e1f7f28066f7af6a4`;
-const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5` +
-    `${splitter}2015-11-30T22:42:22.876Z${splitter}555e4cd2f9eff38109d` +
-    `7a3ab13995a32${splitter}18${splitter}85bc16f5769687070fb13cfe66b5e41f`;
+    `${splitter}2`;
+const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}3`;
+const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}4`;
+const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5`;
 
 describe('List Parts API', () => {
     beforeEach(done => {
@@ -72,12 +60,41 @@ describe('List Parts API', () => {
             },
         });
 
-        const val = '{}';
-        sampleMPUInstance.keyMap[partOneKey] = val;
-        sampleMPUInstance.keyMap[partTwoKey] = val;
-        sampleMPUInstance.keyMap[partThreeKey] = val;
-        sampleMPUInstance.keyMap[partFourKey] = val;
-        sampleMPUInstance.keyMap[partFiveKey] = val;
+        sampleMPUInstance.keyMap[partOneKey] = {
+            key: partOneKey,
+            'last-modified': '2015-11-30T22:41:18.658Z',
+            'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+            'content-length': '6000000',
+            partLocations: ['068db6a6745a79d54c1b29ff99f9f131'],
+        };
+        sampleMPUInstance.keyMap[partTwoKey] = {
+            key: partTwoKey,
+            'last-modified': '2015-11-30T22:41:40.207Z',
+            'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+            'content-length': '6000000',
+            partLocations: ['ff22f316b16956ff5118c93abce7d62d'],
+        };
+        sampleMPUInstance.keyMap[partThreeKey] = {
+            key: partThreeKey,
+            'last-modified': '2015-11-30T22:41:52.102Z',
+            'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+            'content-length': '6000000',
+            partLocations: ['dea282f70edb6fc5f9433cd6f525d4a6'],
+        };
+        sampleMPUInstance.keyMap[partFourKey] = {
+            key: partFourKey,
+            'last-modified': '2015-11-30T22:42:03.493Z',
+            'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
+            'content-length': '6000000',
+            partLocations: ['afe24bc40153982e1f7f28066f7af6a4'],
+        };
+        sampleMPUInstance.keyMap[partFiveKey] = {
+            key: partFiveKey,
+            'last-modified': '2015-11-30T22:42:22.876Z',
+            'content-md5': '555e4cd2f9eff38109d7a3ab13995a32',
+            'content-length': '18',
+            partLocations: ['85bc16f5769687070fb13cfe66b5e41f'],
+        };
 
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
             () => {

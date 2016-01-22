@@ -155,10 +155,11 @@ describe('Multipart Upload API', () => {
                         }
                     });
                     const overviewEntry = sortedKeyMap[0];
-                    const partEntryArray = sortedKeyMap[1].split(splitter);
+                    const partKey = sortedKeyMap[1];
+                    const partEntryArray = partKey.split(splitter);
                     const partUploadId = partEntryArray[0];
                     const firstPartNumber = partEntryArray[1];
-                    const partETag = partEntryArray[3];
+                    const partETag = md.keyMap[partKey]['content-md5'];
                     expect(keysInMPUkeyMap).to.have.length(2);
                     expect(md.keyMap[overviewEntry].key)
                         .to.equal(objectKey);
@@ -220,8 +221,8 @@ describe('Multipart Upload API', () => {
                             return -1;
                         }
                     });
-                    const partEntryArray = sortedKeyMap[1].split(splitter);
-                    const partETag = partEntryArray[3];
+                    const partKey = sortedKeyMap[1];
+                    const partETag = md.keyMap[partKey]['content-md5'];
                     expect(keysInMPUkeyMap).to.have.length(2);
                     expect(partETag).to.equal(calculatedMD5);
                     done();
@@ -456,13 +457,15 @@ describe('Multipart Upload API', () => {
                                 }
                             });
                             const overviewEntry = sortedKeyMap[0];
+
+                            const partKey = sortedKeyMap[2];
                             const secondPartEntryArray =
-                                sortedKeyMap[2].split(splitter);
+                                partKey.split(splitter);
                             const partUploadId = secondPartEntryArray[0];
+                            const secondPartETag =
+                                md.keyMap[partKey]['content-md5'];
                             const secondPartNumber =
                                 secondPartEntryArray[1];
-                            const secondPartETag =
-                                secondPartEntryArray[3];
                             expect(keysInMPUkeyMap).to.have.length(3);
                             expect(md.keyMap[overviewEntry].key)
                                 .to.equal(objectKey);
