@@ -30,4 +30,10 @@ export default {
     // will work for serviceGet.  This is GH Issue#218.
     splitter: 'splitterfornow',
     usersBucket: 'namespaceusersbucket',
+    // MPU Bucket Prefix is used to create the name of the shadow
+    // bucket used for multipart uploads.  There is one shadow mpu
+    // bucket per bucket and its name is the mpuBucketPrefix followed
+    // by the name of the final destination bucket for the object
+    // once the multipart upload is complete.
+    mpuBucketPrefix: 'mpuShadowBucket',
 };
