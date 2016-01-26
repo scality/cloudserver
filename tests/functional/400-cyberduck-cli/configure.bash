@@ -1,9 +1,7 @@
 #!/bin/bash
 #install cyberduck cli 
-echo "deb https://s3.amazonaws.com/repo.deb.cyberduck.io stable main" >> /etc/apt/sources.list
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FE7097963FEFBE72
-apt-get update
-apt-get install -y -q duck
+wget https://dist.duck.sh/duck-4.8.18509.amd64.deb
+dpkg  -i duck-4.8.18509.amd64.deb  
 
 mkdir -p /home/ironman/.duck/profiles
 sed -i "s/IP/${IP}/g" S3\ \(HTTP\).cyberduckprofile
