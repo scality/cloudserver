@@ -37,12 +37,15 @@ describe('bucketGetACL API', () => {
     });
 
     const testBucketPutRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         headers: {host: `${bucketName}.s3.amazonaws.com`},
         url: '/',
-        namespace: namespace
     };
     const testGetACLRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {
             host: `${bucketName}.s3.amazonaws.com`
         },
@@ -50,7 +53,6 @@ describe('bucketGetACL API', () => {
             host: `${bucketName}.s3.amazonaws.com`
         },
         url: '/?acl',
-        namespace: namespace,
         query: {
             acl: ''
         }
@@ -58,6 +60,8 @@ describe('bucketGetACL API', () => {
 
     it('should get a canned private ACL', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private'
@@ -67,7 +71,6 @@ describe('bucketGetACL API', () => {
                 'x-amz-acl': 'private'
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -106,6 +109,8 @@ describe('bucketGetACL API', () => {
 
     it('should get a canned public-read-write ACL', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read-write'
@@ -115,7 +120,6 @@ describe('bucketGetACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -165,6 +169,8 @@ describe('bucketGetACL API', () => {
 
     it('should get a canned public-read ACL', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read'
@@ -174,7 +180,6 @@ describe('bucketGetACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -218,6 +223,8 @@ describe('bucketGetACL API', () => {
 
     it('should get a canned authenticated-read ACL', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read'
@@ -227,7 +234,6 @@ describe('bucketGetACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -274,6 +280,8 @@ describe('bucketGetACL API', () => {
 
     it('should get a canned log-delivery-write ACL', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'log-delivery-write'
@@ -283,7 +291,6 @@ describe('bucketGetACL API', () => {
                 'x-amz-acl': 'log-delivery-write'
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -338,6 +345,8 @@ describe('bucketGetACL API', () => {
 
     it('should get specifically set ACLs', (done) => {
         const testPutACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -371,7 +380,6 @@ describe('bucketGetACL API', () => {
                     'f8f8d5218e7cd47ef2bf"',
             },
             url: '/?acl',
-            namespace: namespace,
             query: {
                 acl: ''
             }

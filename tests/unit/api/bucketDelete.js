@@ -26,24 +26,28 @@ describe("bucketDelete API", () => {
     });
 
     const testBucketPutRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace,
     };
     const testDeleteRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace,
     };
 
     it('should return an error if the bucket is not empty', (done) => {
         const objectName = 'objectName';
         const testPutObjectRequest = {
+            bucketName,
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
             namespace,
             post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg==',
+            objectKey: objectName,
         };
 
         bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
