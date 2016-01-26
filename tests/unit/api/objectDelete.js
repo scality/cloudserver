@@ -37,27 +37,34 @@ describe('objectDelete API', () => {
     });
 
     const testBucketPutRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace,
     };
-    const objectName = 'objectName';
+    const objectKey = 'objectName';
     const testPutObjectRequest = {
+        bucketName,
+        namespace,
+        objectKey,
         lowerCaseHeaders: {},
-        url: `/${bucketName}/${objectName}`,
-        namespace: namespace,
+        url: `/${bucketName}/${objectKey}`,
         post: postBody,
         calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
     };
     const testGetObjectRequest = {
+        bucketName,
+        namespace,
+        objectKey,
         lowerCaseHeaders: {},
-        url: `/${bucketName}/${objectName}`,
-        namespace: namespace
+        url: `/${bucketName}/${objectKey}`,
     };
     const testDeleteRequest = {
+        bucketName,
+        namespace,
+        objectKey,
         lowerCaseHeaders: {},
-        url: `/${bucketName}/${objectName}`,
-        namespace: namespace
+        url: `/${bucketName}/${objectKey}`,
     };
 
     it.skip('should set delete markers ' +

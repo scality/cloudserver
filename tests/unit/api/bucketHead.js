@@ -8,7 +8,13 @@ const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
-
+const testRequest = {
+    bucketName,
+    namespace,
+    lowerCaseHeaders: {},
+    headers: {host: `${bucketName}.s3.amazonaws.com`},
+    url: '/',
+};
 describe('bucketHead API', () => {
     let metastore;
 
@@ -32,12 +38,6 @@ describe('bucketHead API', () => {
     });
 
     it('should return an error if the bucket does not exist', (done) => {
-        const testRequest = {
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace: namespace
-        };
-
         bucketHead(accessKey, metastore, testRequest, log, (err) => {
             assert.strictEqual(err, 'NoSuchBucket');
             done();
@@ -45,15 +45,7 @@ describe('bucketHead API', () => {
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const bucketName = 'bucketname';
         const putAccessKey = 'accessKey2';
-        const testRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace: namespace
-        };
-
         bucketPut(putAccessKey, metastore, testRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
@@ -67,14 +59,6 @@ describe('bucketHead API', () => {
 
     it('should return a success message if ' +
        'bucket exists and user is authorized', (done) => {
-        const bucketName = 'bucketname';
-        const testRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace: namespace
-        };
-
         bucketPut(accessKey, metastore, testRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');

@@ -12,7 +12,8 @@ const download = 'tmpfile';
 const MPUpload = 'test16MB';
 const MPDownload = 'MPtmpfile';
 const bucket = 'universe';
-const nonexist = 'VOID';
+const nonexist = 'nonexist';
+const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 
 const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`, ] : null;
@@ -116,7 +117,7 @@ describe('s3cmd putBucket', () => {
     });
 
     it('put an invalid bucket, should fail', (done) => {
-        exec(['mb', `s3://${nonexist}`, ], done, 11);
+        exec(['mb', `s3://${invalidName}`, ], done, 11);
     });
 });
 

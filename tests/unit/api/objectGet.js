@@ -37,29 +37,33 @@ describe('objectGet API', () => {
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const objectName = 'objectName';
     const testPutBucketRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace,
     };
     const userMetadataKey = 'x-amz-meta-test';
     const userMetadataValue = 'some metadata';
     const testPutObjectRequest = {
+        bucketName,
+        namespace,
+        objectKey: objectName,
         lowerCaseHeaders: {
             'x-amz-meta-test': 'some metadata'
         },
         url: `/${bucketName}/${objectName}`,
-        namespace: namespace,
         post: postBody,
         calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
     };
+    const testGetRequest = {
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        lowerCaseHeaders: {},
+        url: `/${bucketName}/${objectName}`,
+    };
 
     it("should get the object metadata", (done) => {
-        const testGetRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace: namespace
-        };
-
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
@@ -79,12 +83,6 @@ describe('objectGet API', () => {
     });
 
     it('should get the object data', (done) => {
-        const testGetRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-        };
-
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
@@ -112,21 +110,16 @@ describe('objectGet API', () => {
             crypto.createHash('md5').update(testBigData).digest('base64');
 
         const testPutBigObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-meta-test': 'some metadata'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace,
             post: [ testBigData ],
             calculatedMD5: correctBigMD5
         };
-
-        const testGetRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace: namespace
-        };
-
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');

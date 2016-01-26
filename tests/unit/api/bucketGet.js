@@ -45,27 +45,34 @@ describe('bucketGet API', () => {
     const objectName3 = 'notURIvalid$$';
 
     const testPutBucketRequest = {
+        bucketName,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
         namespace: namespace,
     };
     const testPutObjectRequest1 = {
+        bucketName,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName1}`,
         namespace: namespace,
         post: postBody,
+        objectKey: objectName1,
     };
     const testPutObjectRequest2 = {
+        bucketName,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName2}`,
         namespace: namespace,
-        post: postBody
+        post: postBody,
+        objectKey: objectName2,
     };
     const testPutObjectRequest3 = {
+        bucketName,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName3}`,
         namespace: namespace,
-        post: postBody
+        post: postBody,
+        objectKey: objectName3,
     };
 
     it('should return the name of the common prefix ' +
@@ -73,11 +80,12 @@ describe('bucketGet API', () => {
        'and prefix specified', (done) => {
         const commonPrefix = `${prefix}${delimiter}`;
         const testGetRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?delimiter=/&prefix=sub`,
-            namespace: namespace,
             query: {
                 delimiter: delimiter,
                 prefix: prefix
@@ -116,11 +124,12 @@ describe('bucketGet API', () => {
     it('should return list of all objects if ' +
        'no delimiter specified', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}`,
-            namespace: namespace,
             query: {}
         };
 
@@ -158,11 +167,12 @@ describe('bucketGet API', () => {
     it('should return no more keys than ' +
        'max-keys specified', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}`,
-            namespace: namespace,
             query: {
                 'max-keys': '1',
             }
@@ -202,11 +212,12 @@ describe('bucketGet API', () => {
     it('should url encode object key name ' +
        'if requested', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}`,
-            namespace: namespace,
             query: {
                 'encoding-type': 'url',
             }
@@ -249,11 +260,12 @@ describe('bucketGet API', () => {
 
     it('should return the correct date in the xml attributes', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?`,
-            namespace: namespace,
             query: {}
         };
 

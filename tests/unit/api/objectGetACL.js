@@ -40,14 +40,17 @@ describe('objectGetACL API', () => {
     const objectName = 'objectName';
     const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
     const testBucketPutRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         headers: {host: `${bucketName}.s3.amazonaws.com`},
         url: '/',
-        namespace: namespace
     };
     const testGetACLRequest = {
+        bucketName,
+        namespace,
+        objectKey: objectName,
         url: `/${bucketName}/${objectName}?acl`,
-        namespace: namespace,
         query: {
             acl: ''
         }
@@ -55,6 +58,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned private ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'private'
             },
@@ -62,7 +68,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'private'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -111,6 +116,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned public-read ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'public-read'
             },
@@ -118,7 +126,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -162,6 +169,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned public-read-write ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'public-read-write'
             },
@@ -169,7 +179,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -221,6 +230,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned authenticated-read ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'authenticated-read'
             },
@@ -228,7 +240,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -275,6 +286,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned bucket-owner-read ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'bucket-owner-read'
             },
@@ -282,7 +296,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'bucket-owner-read'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -326,6 +339,9 @@ describe('objectGetACL API', () => {
 
     it('should get a canned bucket-owner-full-control ACL', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'bucket-owner-full-control'
             },
@@ -333,7 +349,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'bucket-owner-full-control'
             },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
@@ -377,6 +392,9 @@ describe('objectGetACL API', () => {
 
     it('should get specifically set ACLs', (done) => {
         const testPutObjectRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
@@ -408,7 +426,6 @@ describe('objectGetACL API', () => {
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
                     'f8f8d5218e7cd47ef2bf"',            },
             url: `/${bucketName}/${objectName}`,
-            namespace,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };

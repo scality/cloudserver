@@ -50,24 +50,31 @@ describe('listMultipartUploads API', () => {
     const objectName3 = 'notURIvalid$$';
 
     const testPutBucketRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace,
     };
     const testInitiateMPURequest1 = {
+        bucketName,
+        namespace,
+        objectKey: objectName1,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName1}?uploads`,
-        namespace,
     };
     const testInitiateMPURequest2 = {
+        bucketName,
+        namespace,
+        objectKey: objectName2,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName2}?uploads`,
-        namespace,
     };
     const testInitiateMPURequest3 = {
+        bucketName,
+        namespace,
+        objectKey: objectName3,
         lowerCaseHeaders: {},
         url: `/${bucketName}/${objectName3}?uploads`,
-        namespace,
     };
 
     it('should return the name of the common prefix ' +
@@ -75,11 +82,12 @@ describe('listMultipartUploads API', () => {
        'and prefix specified', (done) => {
         const commonPrefix = `${prefix}${delimiter}`;
         const testListRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
-            namespace,
             query: {
                 delimiter: delimiter,
                 prefix: prefix
@@ -119,11 +127,12 @@ describe('listMultipartUploads API', () => {
     it('should return list of all multipart uploads if ' +
        'no delimiter specified', (done) => {
         const testListRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace,
             query: {}
         };
 
@@ -164,11 +173,12 @@ describe('listMultipartUploads API', () => {
     it('should return no more keys than ' +
        'max-uploads specified', (done) => {
         const testListRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace,
             query: {
                 'max-uploads': '1',
             }
@@ -214,11 +224,12 @@ describe('listMultipartUploads API', () => {
     it('should url encode object key name ' +
        'if requested', (done) => {
         const testListRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace,
             query: {
                 'encoding-type': 'url',
             }
@@ -262,11 +273,12 @@ describe('listMultipartUploads API', () => {
     it('should return key following specified ' +
     'key-marker', (done) => {
         const testListRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
-            namespace,
             query: {
                 'key-marker': objectName1,
             }

@@ -13,7 +13,7 @@ const aclUpload = `test500KB`;
 const download = `tmpfile`;
 const bucket = 's3universe';
 const aclBucket = 'acluniverse';
-const nonexist = 'VOID';
+const nonexist = 'nonexist';
 const prefix = 'topLevel';
 const delimiter = '/';
 const ownerCanonicalId = 'accessKey1';
@@ -252,6 +252,28 @@ describe('s3curl putObject', () => {
     before('create file to put', (done) => {
         createFile(upload, 1048576, done);
     });
+
+    it('should not be able to put an object in a bucket with an invalid name',
+        (done) => {
+            provideRawOutput(['--debug', `--put=${upload}`, `--`,
+                `http://${ipAddress}:8000/2/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'InvalidBucketName', done);
+                });
+        });
+
+    it('should not be able to put an object in a bucket that does not exist',
+        (done) => {
+            provideRawOutput(['--debug', `--put=${upload}`, `--`,
+                `http://${ipAddress}:8000/${nonexist}/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '404 NOT FOUND');
+                    assertError(rawOutput.stdout, 'NoSuchBucket', done);
+                });
+        });
 
     it('should put first object in existing bucket with prefix ' +
     'and delimiter', (done) => {
