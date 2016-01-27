@@ -41,6 +41,7 @@ describe('serviceGet API', () => {
     });
 
     const serviceGetRequest = {
+        parsedHost: 's3.amazonaws.com',
         lowerCaseHeaders: { host: 's3.amazonaws.com' },
         url: '/',
         headers: { host: 's3.amazonaws.com' },
@@ -51,21 +52,24 @@ describe('serviceGet API', () => {
         const bucketName2 = 'bucketname2';
         const bucketName3 = 'bucketname3';
         const testbucketPutRequest1 = {
+            namespace,
+            bucketName: bucketName1,
             lowerCaseHeaders: {},
             url: '/',
-            namespace,
             headers: {host: `${bucketName1}.s3.amazonaws.com`}
         };
         const testbucketPutRequest2 = {
+            namespace,
+            bucketName: bucketName2,
             lowerCaseHeaders: {},
             url: '/',
-            namespace,
             headers: {host: `${bucketName2}.s3.amazonaws.com`}
         };
         const testbucketPutRequest3 = {
+            namespace,
+            bucketName: bucketName3,
             lowerCaseHeaders: {},
             url: '/',
-            namespace,
             headers: {host: `${bucketName3}.s3.amazonaws.com`}
         };
         const date = new Date();

@@ -9,6 +9,13 @@ const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
+const testBucketPutRequest = {
+    bucketName,
+    namespace,
+    lowerCaseHeaders: {},
+    headers: {host: `${bucketName}.s3.amazonaws.com`},
+    url: '/',
+};
 
 describe('putBucketACL API', () => {
     let metastore;
@@ -56,13 +63,9 @@ describe('putBucketACL API', () => {
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-a-valid-option'
@@ -72,7 +75,6 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'not-a-valid-option'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -90,13 +92,9 @@ describe('putBucketACL API', () => {
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read-write'
@@ -106,7 +104,6 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -129,13 +126,9 @@ describe('putBucketACL API', () => {
 
     it('should set a canned public-read ACL followed by'
         + 'a canned authenticated-read ACL', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read'
@@ -145,12 +138,13 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
         };
         const testACLRequest2 = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read'
@@ -160,7 +154,6 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -192,13 +185,9 @@ describe('putBucketACL API', () => {
 
     it('should set a canned private ACL ' +
         'followed by a log-delivery-write ACL', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private'
@@ -208,12 +197,13 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'private'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
         };
         const testACLRequest2 = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'log-delivery-write'
@@ -223,7 +213,6 @@ describe('putBucketACL API', () => {
                 'x-amz-acl': 'log-delivery-write'
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -254,13 +243,9 @@ describe('putBucketACL API', () => {
     });
 
     it('should set ACLs provided in request headers', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -294,7 +279,6 @@ describe('putBucketACL API', () => {
                     'f8f8d5218e7cd47ef2bf"',
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -333,13 +317,9 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -353,7 +333,6 @@ describe('putBucketACL API', () => {
                     ',emailaddress="nonexistentEmail@sampling.com"',
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -372,13 +351,9 @@ describe('putBucketACL API', () => {
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -433,7 +408,6 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -472,13 +446,9 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace,
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             post: {
                 '<AccessControlPolicy xmlns':
@@ -502,7 +472,6 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             },
@@ -522,13 +491,9 @@ describe('putBucketACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace,
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -557,7 +522,6 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -575,13 +539,9 @@ describe('putBucketACL API', () => {
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -608,7 +568,6 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -627,13 +586,9 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -660,7 +615,6 @@ describe('putBucketACL API', () => {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }
@@ -679,13 +633,9 @@ describe('putBucketACL API', () => {
 
     it('should return an error if invalid group uri' +
         'provided in ACL header request', (done) => {
-        const testBucketPutRequest = {
-            lowerCaseHeaders: {},
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            url: '/',
-            namespace
-        };
         const testACLRequest = {
+            bucketName,
+            namespace,
             lowerCaseHeaders: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -699,7 +649,6 @@ describe('putBucketACL API', () => {
                     'global/NOTAVALIDGROUP"',
             },
             url: '/?acl',
-            namespace,
             query: {
                 acl: ''
             }

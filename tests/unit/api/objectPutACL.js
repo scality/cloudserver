@@ -11,6 +11,26 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
+const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
+const objectName = 'objectName';
+const testPutBucketRequest = {
+    bucketName,
+    namespace,
+    lowerCaseHeaders: {},
+    headers: {
+        host: `${bucketName}.s3.amazonaws.com`
+    },
+    url: '/',
+};
+const testPutObjectRequest = {
+    bucketName,
+    namespace,
+    objectKey: objectName,
+    lowerCaseHeaders: {},
+    url: `/${bucketName}/${objectName}`,
+    post: postBody,
+    calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+};
 
 describe('putObjectACL API', () => {
     let metastore;
@@ -27,25 +47,10 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if invalid canned ACL provided', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'invalid-option'
             },
@@ -53,7 +58,6 @@ describe('putObjectACL API', () => {
                 'x-amz-acl': 'invalid-option'
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace,
             query: {
                 acl: ''
             }
@@ -78,25 +82,10 @@ describe('putObjectACL API', () => {
     });
 
     it('should set a canned public-read-write ACL', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'public-read-write'
             },
@@ -104,7 +93,6 @@ describe('putObjectACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace,
             query: {
                 acl: ''
             }
@@ -136,25 +124,10 @@ describe('putObjectACL API', () => {
 
     it('should set a canned public-read ACL followed by'
         + ' a canned authenticated-read ACL', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest1 = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'public-read'
             },
@@ -162,13 +135,15 @@ describe('putObjectACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace,
             query: {
                 acl: ''
             }
         };
 
         const testObjACLRequest2 = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-acl': 'authenticated-read'
             },
@@ -176,7 +151,6 @@ describe('putObjectACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace,
             query: {
                 acl: ''
             }
@@ -222,25 +196,10 @@ describe('putObjectACL API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
@@ -268,7 +227,6 @@ describe('putObjectACL API', () => {
                     'f8f8d5218e7cd47ef2bf"',
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -316,25 +274,10 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
         'provided in ACL header request', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
@@ -346,7 +289,6 @@ describe('putObjectACL API', () => {
                     ',emailaddress="nonexistentemail@sampling.com"'
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             query: {
                 acl: ''
             }
@@ -372,29 +314,13 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request body', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -476,29 +402,13 @@ describe('putObjectACL API', () => {
 
     it('should ignore if WRITE ACL permission is ' +
         'provided in request body', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -566,29 +476,13 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -633,29 +527,13 @@ describe('putObjectACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -698,29 +576,13 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if malformed xml provided', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -764,29 +626,13 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             post: [ new Buffer(
                 '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -830,25 +676,10 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group uri ' +
         'provided in ACL header request', (done) => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
-        const objectName = 'objectName';
-        const testPutBucketRequest = {
-            lowerCaseHeaders: {},
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
-            url: '/',
-            namespace: namespace
-        };
-        const testPutObjectRequest = {
-            lowerCaseHeaders: {},
-            url: `/${bucketName}/${objectName}`,
-            namespace,
-            post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
-
         const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 host: `s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -856,7 +687,6 @@ describe('putObjectACL API', () => {
                     'global/NOTAVALIDGROUP"',
             },
             url: `/${bucketName}/${objectName}?acl`,
-            namespace: namespace,
             headers: {
                 host: `s3.amazonaws.com`,
                 'x-amz-grant-full-control':

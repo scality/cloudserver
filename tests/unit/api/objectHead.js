@@ -41,18 +41,21 @@ describe('objectHead API', () => {
     const laterDate = date.setMinutes(date.getMinutes() + 30);
     const earlierDate = date.setMinutes(date.getMinutes() - 30);
     const testPutBucketRequest = {
+        bucketName,
+        namespace,
         lowerCaseHeaders: {},
         url: `/${bucketName}`,
-        namespace: namespace,
     };
     const userMetadataKey = 'x-amz-meta-test';
     const userMetadataValue = 'some metadata';
     const testPutObjectRequest = {
+        bucketName,
+        namespace,
+        objectKey: objectName,
         lowerCaseHeaders: {
             'x-amz-meta-test': userMetadataValue
         },
         url: `/${bucketName}/${objectName}`,
-        namespace: namespace,
         post: postBody,
         calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
     };
@@ -62,11 +65,13 @@ describe('objectHead API', () => {
        'includes "if-modified-since" and object ' +
        'not modified since specified time', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'if-modified-since': laterDate
             },
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
@@ -88,11 +93,13 @@ describe('objectHead API', () => {
        'includes "if-unmodified-since" and object has ' +
        'been modified since specified time', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'if-unmodified-since': earlierDate
             },
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
         };
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
             (err, success) => {
@@ -113,11 +120,13 @@ describe('objectHead API', () => {
        'includes "if-match" and ETag of object ' +
        'does not match specified ETag', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'if-match': incorrectMD5
             },
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
@@ -139,11 +148,13 @@ describe('objectHead API', () => {
        'includes "if-none-match" and ETag of object does ' +
        'match specified ETag', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {
                 'if-none-match': correctMD5
             },
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
@@ -163,9 +174,11 @@ describe('objectHead API', () => {
 
     it('should get the object metadata', (done) => {
         const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
-            namespace: namespace
         };
 
         bucketPut(accessKey, metastore, testPutBucketRequest, log,
