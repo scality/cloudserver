@@ -15,20 +15,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 
 describe('bucketGetACL API', () => {
-    let metastore;
-
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
@@ -78,16 +65,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -127,16 +114,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -187,16 +174,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -241,16 +228,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -298,16 +285,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -391,16 +378,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testBucketPutRequest, log,
+                bucketPut(accessKey,  testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(accessKey, metastore, testPutACLRequest, log,
+                bucketPutACL(accessKey,  testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(accessKey, metastore, testGetACLRequest, log,
+                bucketGetACL(accessKey,  testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {

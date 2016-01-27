@@ -12,8 +12,6 @@ const accessKey = 'accessKey1';
 const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
-// TODO: Remove references to metastore.  This is GH Issue #172
-const metastore = undefined;
 const bucketName = 'bucketname';
 const testRequest = {
     bucketName,
@@ -43,8 +41,8 @@ describe('bucketPut API', () => {
 
     it('should return an error if bucket already exists', (done) => {
         const otherAccessKey = 'accessKey2';
-        bucketPut(accessKey, metastore, testRequest, log, () => {
-            bucketPut(otherAccessKey, metastore, testRequest, log,
+        bucketPut(accessKey,  testRequest, log, () => {
+            bucketPut(otherAccessKey,  testRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'BucketAlreadyExists');
                         done();
@@ -61,7 +59,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: 'malformedxml'
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -76,7 +74,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: '<Hello></Hello>'
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -95,14 +93,14 @@ describe('bucketPut API', () => {
                 '<LocationConstraint>invalidLocation</LocationConstraint>'
                 + '</CreateBucketConfiguration>'
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidLocationConstraint');
             done();
         });
     });
 
     it('should create a bucket', (done) => {
-        bucketPut(accessKey, metastore, testRequest, log, (err, success) => {
+        bucketPut(accessKey,  testRequest, log, (err, success) => {
             if (err) {
                 return done(err);
             }
@@ -135,7 +133,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -156,7 +154,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -178,7 +176,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -200,7 +198,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -238,7 +236,7 @@ describe('bucketPut API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(accessKey, metastore, testRequest, log, (err) => {
+        bucketPut(accessKey,  testRequest, log, (err) => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.acl.READ[0],
@@ -257,7 +255,7 @@ describe('bucketPut API', () => {
     it('should prevent anonymous user from accessing ' +
         'putBucket API', (done) => {
         bucketPut('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, testRequest, log,
+             testRequest, log,
                 (err) => {
                     assert.strictEqual(err, 'AccessDenied');
                 });
