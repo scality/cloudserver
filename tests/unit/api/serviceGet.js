@@ -16,8 +16,6 @@ const namespace = 'default';
 const bucketName1 = 'bucketname1';
 const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
-// TODO: Remove references to metastore.  This is GH Issue #172
-const metastore = undefined;
 
 describe('serviceGet API', () => {
     beforeEach((done) => {
@@ -81,19 +79,19 @@ describe('serviceGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest1, log,
+                bucketPut(accessKey,  testbucketPutRequest1, log,
                     next);
             },
             function waterfall2(result, next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest2, log,
+                bucketPut(accessKey,  testbucketPutRequest2, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketPut(accessKey, metastore, testbucketPutRequest3, log,
+                bucketPut(accessKey,  testbucketPutRequest3, log,
                     next);
             },
             function waterfall4(result, next) {
-                serviceGet(accessKey, metastore, serviceGetRequest, log,
+                serviceGet(accessKey,  serviceGetRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -117,9 +115,9 @@ describe('serviceGet API', () => {
 
     it('should prevent anonymous user from accessing getService API', done => {
         serviceGet('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, serviceGetRequest, log, (err) => {
-                assert.strictEqual(err, 'AccessDenied');
-                done();
-            });
+             serviceGetRequest, log, (err) => {
+                 assert.strictEqual(err, 'AccessDenied');
+                 done();
+             });
     });
 });

@@ -14,19 +14,7 @@ const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
 
 describe('objectGet API', () => {
-    let metastore;
-
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-        };
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
@@ -64,13 +52,13 @@ describe('objectGet API', () => {
     };
 
     it("should get the object metadata", (done) => {
-        bucketPut(accessKey, metastore, testPutBucketRequest, log,
+        bucketPut(accessKey,  testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
-                objectPut(accessKey, metastore,
+                objectPut(accessKey,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectGet(accessKey, metastore, testGetRequest,
+                        objectGet(accessKey,  testGetRequest,
                             log, (err, result, responseMetaHeaders) => {
                                 assert.strictEqual(responseMetaHeaders
                                     [userMetadataKey], userMetadataValue);
@@ -83,13 +71,13 @@ describe('objectGet API', () => {
     });
 
     it('should get the object data', (done) => {
-        bucketPut(accessKey, metastore, testPutBucketRequest, log,
+        bucketPut(accessKey,  testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
-                objectPut(accessKey, metastore, testPutObjectRequest, log,
+                objectPut(accessKey,  testPutObjectRequest, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectGet(accessKey, metastore, testGetRequest, log,
+                        objectGet(accessKey,  testGetRequest, log,
                             (err, readable) => {
                                 const chunks = [];
                                 readable.on('data', function chunkRcvd(chunk) {
@@ -120,13 +108,13 @@ describe('objectGet API', () => {
             post: [ testBigData ],
             calculatedMD5: correctBigMD5
         };
-        bucketPut(accessKey, metastore, testPutBucketRequest, log,
+        bucketPut(accessKey,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey, metastore, testPutBigObjectRequest, log,
+                objectPut(accessKey,  testPutBigObjectRequest, log,
                     (err, result) => {
                         assert.strictEqual(result, correctBigMD5);
-                        objectGet(accessKey, metastore, testGetRequest, log,
+                        objectGet(accessKey,  testGetRequest, log,
                             (err, readable) => {
                                 const md5Hash = crypto.createHash('md5');
                                 const chunks = [];

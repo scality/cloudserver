@@ -16,20 +16,7 @@ const testRequest = {
     url: '/',
 };
 describe('bucketHead API', () => {
-    let metastore;
-
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
@@ -38,7 +25,7 @@ describe('bucketHead API', () => {
     });
 
     it('should return an error if the bucket does not exist', (done) => {
-        bucketHead(accessKey, metastore, testRequest, log, (err) => {
+        bucketHead(accessKey, testRequest, log, (err) => {
             assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
@@ -46,10 +33,10 @@ describe('bucketHead API', () => {
 
     it('should return an error if user is not authorized', (done) => {
         const putAccessKey = 'accessKey2';
-        bucketPut(putAccessKey, metastore, testRequest, log,
+        bucketPut(putAccessKey, testRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketHead(accessKey, metastore, testRequest, log,
+                bucketHead(accessKey, testRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'AccessDenied');
                         done();
@@ -59,10 +46,10 @@ describe('bucketHead API', () => {
 
     it('should return a success message if ' +
        'bucket exists and user is authorized', (done) => {
-        bucketPut(accessKey, metastore, testRequest, log,
+        bucketPut(accessKey, testRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketHead(accessKey, metastore, testRequest, log,
+                bucketHead(accessKey, testRequest, log,
                     (err, result) => {
                         assert.strictEqual(result,
                         'Bucket exists and user authorized -- 200');

@@ -15,20 +15,7 @@ const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body')];
 
 describe('objectDelete API', () => {
-    let metastore;
-
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
@@ -73,12 +60,12 @@ describe('objectDelete API', () => {
     });
 
     it('should delete an object', (done) => {
-        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest, log, () => {
-                objectDelete(accessKey, metastore, testDeleteRequest, log,
+        bucketPut(accessKey,  testBucketPutRequest, log, () => {
+            objectPut(accessKey,  testPutObjectRequest, log, () => {
+                objectDelete(accessKey,  testDeleteRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
-                        objectGet(accessKey, metastore, testGetObjectRequest,
+                        objectGet(accessKey,  testGetObjectRequest,
                             log, (err) => {
                                 assert.strictEqual(err, 'NoSuchKey');
                                 done();
@@ -91,7 +78,7 @@ describe('objectDelete API', () => {
     it('should prevent anonymous user from accessing ' +
         'deleteObject API', (done) => {
         objectDelete('http://acs.amazonaws.com/groups/global/AllUsers',
-            metastore, testDeleteRequest, log,
+             testDeleteRequest, log,
                 (err) => {
                     assert.strictEqual(err, 'AccessDenied');
                 });
