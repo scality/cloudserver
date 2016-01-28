@@ -17,22 +17,7 @@ const bucketName = 'bucketname';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
 describe('listMultipartUploads API', () => {
-    let metastore;
-
     beforeEach((done) => {
-        metastore = {
-            "users": {
-                "accessKey1": {
-                    "buckets": []
-                },
-                "accessKey2": {
-                    "buckets": []
-                }
-            },
-            "buckets": {}
-        };
-
-        // Must delete real bucket and shadow mpu bucket
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(mpuBucket, log, () => done());
         });
@@ -97,20 +82,20 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testPutBucketRequest, log,
+                bucketPut(accessKey,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest1, log, next);
             },
             function waterfall3(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest2, log, next);
             },
             function waterfall4(result, next) {
-                listMultipartUploads(accessKey, metastore,
+                listMultipartUploads(accessKey,
                     testListRequest, log, next);
             },
             function waterfall4(result, next) {
@@ -140,20 +125,20 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testPutBucketRequest, log,
+                bucketPut(accessKey,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest1, log, next);
             },
             function waterfall3(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest2, log, next);
             },
             function waterfall4(result, next) {
-                listMultipartUploads(accessKey, metastore,
+                listMultipartUploads(accessKey,
                     testListRequest, log, next);
             },
             function waterfall5(result, next) {
@@ -187,20 +172,20 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testPutBucketRequest, log,
+                bucketPut(accessKey,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest1, log, next);
             },
             function waterfall3(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest2, log, next);
             },
             function waterfall4(result, next) {
-                listMultipartUploads(accessKey, metastore,
+                listMultipartUploads(accessKey,
                     testListRequest, log, next);
             },
             function waterfall5(result, next) {
@@ -238,24 +223,24 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testPutBucketRequest, log,
+                bucketPut(accessKey,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest1, log, next);
             },
             function waterfall3(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest2, log, next);
             },
             function waterfall4(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest3, log, next);
             },
             function waterfall5(result, next) {
-                listMultipartUploads(accessKey, metastore,
+                listMultipartUploads(accessKey,
                     testListRequest, log, next);
             },
             function waterfall6(result, next) {
@@ -287,24 +272,24 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, metastore, testPutBucketRequest, log,
+                bucketPut(accessKey,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest1, log, next);
             },
             function waterfall3(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest2, log, next);
             },
             function waterfall4(result, next) {
-                initiateMultipartUpload(accessKey, metastore,
+                initiateMultipartUpload(accessKey,
                     testInitiateMPURequest3, log, next);
             },
             function waterfall5(result, next) {
-                listMultipartUploads(accessKey, metastore,
+                listMultipartUploads(accessKey,
                     testListRequest, log, next);
             },
             function waterfall6(result, next) {

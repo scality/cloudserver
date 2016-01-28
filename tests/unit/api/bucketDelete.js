@@ -13,8 +13,6 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
 const usersBucket = constants.usersBucket;
-// TODO: Remove references to metastore.  This is GH Issue #172
-const metastore = undefined;
 
 describe("bucketDelete API", () => {
     afterEach(done => {
@@ -50,9 +48,9 @@ describe("bucketDelete API", () => {
             objectKey: objectName,
         };
 
-        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
-            objectPut(accessKey, metastore, testPutObjectRequest, log, () => {
-                bucketDelete(accessKey, metastore, testDeleteRequest, log,
+        bucketPut(accessKey,  testBucketPutRequest, log, () => {
+            objectPut(accessKey,  testPutObjectRequest, log, () => {
+                bucketDelete(accessKey,  testDeleteRequest, log,
                     err => {
                         assert.strictEqual(err, 'BucketNotEmpty');
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -70,8 +68,8 @@ describe("bucketDelete API", () => {
     });
 
     it('should delete a bucket', (done) => {
-        bucketPut(accessKey, metastore, testBucketPutRequest, log, () => {
-            bucketDelete(accessKey, metastore, testDeleteRequest, log, () => {
+        bucketPut(accessKey,  testBucketPutRequest, log, () => {
+            bucketDelete(accessKey,  testDeleteRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
@@ -88,9 +86,9 @@ describe("bucketDelete API", () => {
     it('should prevent anonymous user from accessing delete bucket API',
         done => {
             bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
-                metastore, testDeleteRequest, log, err => {
-                    assert.strictEqual(err, 'AccessDenied');
-                    done();
-                });
+                 testDeleteRequest, log, err => {
+                     assert.strictEqual(err, 'AccessDenied');
+                     done();
+                 });
         });
 });
