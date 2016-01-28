@@ -3,8 +3,8 @@ import assert from 'assert';
 import { parseString } from 'xml2js';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
-import DummyRequestLogger from '../helpers';
 import constants from '../../../constants';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 
@@ -12,7 +12,8 @@ const log = new DummyRequestLogger();
 
 const splitter = constants.splitter;
 
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const uploadId = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0';
 const bucketName = 'freshestbucket';
@@ -31,15 +32,16 @@ const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5`;
 
 describe('List Parts API', () => {
     beforeEach(done => {
-        const sampleNormalBucketInstance = new Bucket(bucketName, accessKey);
-        const sampleMPUInstance = new Bucket(mpuBucket, accessKey);
+        const sampleNormalBucketInstance = new Bucket(bucketName,
+            canonicalID, authInfo.getAccountDisplayName());
+        const sampleMPUInstance = new Bucket(mpuBucket, 'admin', 'admin');
         sampleMPUInstance.keyMap[overviewKey] = {
             id: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
-            'owner-display-name': 'placeholder display name for now',
-            'owner-id': 'accessKey1',
+            'owner-display-name': authInfo.getAccountDisplayName(),
+            'owner-id': canonicalID,
             initiator: {
-                DisplayName: 'placeholder display name for now',
-                ID: 'accessKey1',
+                DisplayName: authInfo.getAccountDisplayName(),
+                ID: canonicalID,
             },
             key: '$makememulti',
             initiated: '2015-11-30T22:40:07.858Z',
@@ -113,7 +115,7 @@ describe('List Parts API', () => {
             query: { uploadId, },
         };
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -122,7 +124,7 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartResult.MaxParts[0], '1000');
                 assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
-                                   accessKey);
+                                   authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
                 assert.strictEqual(json.ListPartResult.PartNumberMarker,
                                    undefined);
@@ -160,7 +162,7 @@ describe('List Parts API', () => {
         };
         const urlEncodedObjectKey = '%24makememulti';
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(json.ListPartResult.Key[0],
@@ -185,7 +187,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -194,7 +196,7 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartResult.MaxParts[0], '4');
                 assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
-                                   accessKey);
+                                   authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartResult.IsTruncated[0], 'true');
                 assert.strictEqual(json.ListPartResult.PartNumberMarker,
                                    undefined);
@@ -227,7 +229,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -236,7 +238,7 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartResult.MaxParts[0], '6');
                 assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
-                                   accessKey);
+                                   authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
                 assert.strictEqual(json.ListPartResult.PartNumberMarker,
                                    undefined);
@@ -270,7 +272,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -279,7 +281,7 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartResult.MaxParts[0], '1000');
                 assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
-                                   accessKey);
+                                   authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
                 assert.strictEqual(json.ListPartResult.PartNumberMarker[0],
                                    '2');
@@ -317,7 +319,7 @@ describe('List Parts API', () => {
             }
         };
 
-        listParts(accessKey, listRequest, log, (err, xml) => {
+        listParts(authInfo, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
@@ -326,7 +328,7 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartResult.MaxParts[0], '2');
                 assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
-                                   accessKey);
+                                   authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartResult.IsTruncated[0], 'true');
                 assert.strictEqual(json.ListPartResult.PartNumberMarker[0],
                                    '2');

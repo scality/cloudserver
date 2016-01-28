@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import checkRequestExpiry from '../../../../lib/auth/v2/checkRequestExpiry';
-import DummyRequestLogger from '../../helpers';
+import { DummyRequestLogger } from '../../helpers';
 
 const log = new DummyRequestLogger();
 

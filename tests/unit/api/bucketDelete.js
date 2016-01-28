@@ -5,10 +5,11 @@ import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import DummyRequestLogger from '../helpers';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
@@ -48,14 +49,14 @@ describe("bucketDelete API", () => {
             objectKey: objectName,
         };
 
-        bucketPut(accessKey,  testBucketPutRequest, log, () => {
-            objectPut(accessKey,  testPutObjectRequest, log, () => {
-                bucketDelete(accessKey,  testDeleteRequest, log,
+        bucketPut(authInfo,  testBucketPutRequest, log, () => {
+            objectPut(authInfo,  testPutObjectRequest, log, () => {
+                bucketDelete(authInfo,  testDeleteRequest, log,
                     err => {
                         assert.strictEqual(err, 'BucketNotEmpty');
                         metadata.getBucket(bucketName, log, (err, md) => {
                             assert.strictEqual(md.name, bucketName);
-                            metadata.listObject(usersBucket, accessKey,
+                            metadata.listObject(usersBucket, canonicalID,
                                 null, null, null, log, (err, listResponse) => {
                                     assert.strictEqual(listResponse.Contents.
                                         length, 1);
@@ -68,12 +69,12 @@ describe("bucketDelete API", () => {
     });
 
     it('should delete a bucket', (done) => {
-        bucketPut(accessKey,  testBucketPutRequest, log, () => {
-            bucketDelete(accessKey,  testDeleteRequest, log, () => {
+        bucketPut(authInfo,  testBucketPutRequest, log, () => {
+            bucketDelete(authInfo,  testDeleteRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
-                    metadata.listObject(usersBucket, accessKey,
+                    metadata.listObject(usersBucket, canonicalID,
                         null, null, null, log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length, 0);
                             done();
@@ -85,7 +86,8 @@ describe("bucketDelete API", () => {
 
     it('should prevent anonymous user from accessing delete bucket API',
         done => {
-            bucketDelete('http://acs.amazonaws.com/groups/global/AllUsers',
+            const publicAuthInfo = makeAuthInfo(constants.publicId);
+            bucketDelete(publicAuthInfo,
                  testDeleteRequest, log, err => {
                      assert.strictEqual(err, 'AccessDenied');
                      done();

@@ -7,16 +7,17 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
-import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
 
 const splitter = constants.splitter;
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
@@ -61,8 +62,8 @@ describe('Multipart Upload API', () => {
 
 
     it('should initiate a multipart upload', done => {
-        bucketPut(accessKey, bucketPutRequest, log, () => {
-            initiateMultipartUpload(accessKey, initiateRequest,
+        bucketPut(authInfo,  bucketPutRequest, log, () => {
+            initiateMultipartUpload(authInfo,  initiateRequest,
                 log, (err, result) => {
                     assert.strictEqual(err, undefined);
                     parseString(result, (err, json) => {
@@ -86,10 +87,11 @@ describe('Multipart Upload API', () => {
     it('should upload a part', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -124,7 +126,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, (err) => {
+            objectPutPart(authInfo,  partRequest, log, (err) => {
                 assert.strictEqual(err, null);
                 metadata.getBucket(mpuBucket, log, (err, md) => {
                     const keysInMPUkeyMap = Object.keys(md.keyMap);
@@ -155,10 +157,11 @@ describe('Multipart Upload API', () => {
     'in metadata should be hex)', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest,
+                    log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
@@ -185,7 +188,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, (err) => {
+            objectPutPart(authInfo, partRequest, log, (err) => {
                 assert.strictEqual(err, null);
                 metadata.getBucket(mpuBucket, log, (err, md) => {
                     const keysInMPUkeyMap = Object.keys(md.keyMap);
@@ -207,10 +210,10 @@ describe('Multipart Upload API', () => {
     it('should return an error if too many parts', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
@@ -238,7 +241,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, (err, result) => {
+            objectPutPart(authInfo, partRequest, log, (err, result) => {
                 assert.strictEqual(err, 'TooManyParts');
                 assert.strictEqual(result, undefined);
                 done();
@@ -249,10 +252,10 @@ describe('Multipart Upload API', () => {
     it('should return an error if part number is not an integer', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
@@ -282,7 +285,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, (err, result) => {
+            objectPutPart(authInfo, partRequest, log, (err, result) => {
                 assert.strictEqual(err, 'InvalidArgument');
                 assert.strictEqual(result, undefined);
                 done();
@@ -296,10 +299,10 @@ describe('Multipart Upload API', () => {
         // large file.  Functional tests will test actual large data.
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
@@ -330,7 +333,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, (err, result) => {
+            objectPutPart(authInfo, partRequest, log, (err, result) => {
                 assert.strictEqual(err, 'EntityTooLarge');
                 assert.strictEqual(result, undefined);
                 done();
@@ -341,10 +344,11 @@ describe('Multipart Upload API', () => {
     it('should upload two parts', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -377,7 +381,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
+            objectPutPart(authInfo, partRequest1, log, () => {
                 const postBody2 = [ new Buffer('I am a second part') ];
                 const md5Hash2 = crypto.createHash('md5');
                 const bufferBody2 = new Buffer(postBody2, 'binary');
@@ -400,7 +404,7 @@ describe('Multipart Upload API', () => {
                     post: postBody2,
                     calculatedMD5: secondCalculatedMD5,
                 };
-                objectPutPart(accessKey, partRequest2, log, err => {
+                objectPutPart(authInfo, partRequest2, log, err => {
                     assert.strictEqual(err, null);
                     metadata.getBucket(mpuBucket, log, (err, md) => {
                         const keysInMPUkeyMap = Object.keys(md.keyMap);
@@ -435,10 +439,11 @@ describe('Multipart Upload API', () => {
             'I am some user metadata';
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -476,7 +481,7 @@ describe('Multipart Upload API', () => {
                 post: partBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, () => {
+            objectPutPart(authInfo,  partRequest, log, () => {
                 const completeBody = `<CompleteMultipartUpload>` +
                     `<Part>` +
                     `<PartNumber>1</PartNumber>` +
@@ -498,7 +503,7 @@ describe('Multipart Upload API', () => {
                 };
                 const awsVerifiedETag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
-                completeMultipartUpload(accessKey,
+                completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
                             assert.strictEqual(
@@ -531,10 +536,11 @@ describe('Multipart Upload API', () => {
     ' request contains malformed xml', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -567,7 +573,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, () => {
+            objectPutPart(authInfo,  partRequest, log, () => {
                 const completeBody = `Malformed xml`;
                 const completeRequest = {
                     bucketName,
@@ -582,7 +588,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                     calculatedMD5,
                 };
-                completeMultipartUpload(accessKey,
+                completeMultipartUpload(authInfo,
                     completeRequest, log, (err) => {
                         assert.strictEqual(err, 'MalformedXML');
                         metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -600,10 +606,11 @@ describe('Multipart Upload API', () => {
     'does not conform to the AWS spec', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -636,7 +643,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, () => {
+            objectPutPart(authInfo,  partRequest, log, () => {
                 // XML is missing any part listing so does
                 // not conform to the AWS spec
                 const completeBody = `<CompleteMultipartUpload>` +
@@ -654,7 +661,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                     calculatedMD5,
                 };
-                completeMultipartUpload(accessKey, completeRequest, log,
+                completeMultipartUpload(authInfo, completeRequest, log,
                     err => {
                         assert.strictEqual(err, 'MalformedPOSTRequest');
                         done();
@@ -668,10 +675,10 @@ describe('Multipart Upload API', () => {
     'a part list that is not in numerical order', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -716,8 +723,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>2</PartNumber>` +
@@ -741,7 +748,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.strictEqual(err, 'InvalidPartOrder');
                             metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -760,10 +767,10 @@ describe('Multipart Upload API', () => {
     + 'the part that was actually sent', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -813,8 +820,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
@@ -842,7 +849,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.strictEqual(err, 'InvalidPart');
                             metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -861,10 +868,11 @@ describe('Multipart Upload API', () => {
     'in size', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -915,8 +923,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
@@ -944,7 +952,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.strictEqual(err, 'EntityTooSmall');
                             metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -961,10 +969,11 @@ describe('Multipart Upload API', () => {
     it('should aggregate the sizes of the parts', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1017,8 +1026,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
@@ -1046,7 +1055,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
@@ -1084,11 +1093,11 @@ describe('Multipart Upload API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
                 initiateMultipartUpload(
-                    accessKey, initiateRequest, log, next);
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1140,8 +1149,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
@@ -1169,7 +1178,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
@@ -1210,10 +1219,11 @@ describe('Multipart Upload API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1264,8 +1274,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest1, log, () => {
-                objectPutPart(accessKey, partRequest2, log, () => {
+            objectPutPart(authInfo,  partRequest1, log, () => {
+                objectPutPart(authInfo,  partRequest2, log, () => {
                     const completeBody = `<CompleteMultipartUpload>` +
                         `<Part>` +
                         `<PartNumber>1</PartNumber>` +
@@ -1293,7 +1303,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedMD5,
                     };
-                    completeMultipartUpload(accessKey,
+                    completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
@@ -1315,10 +1325,11 @@ describe('Multipart Upload API', () => {
     it('should abort/delete a multipart upload', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1349,7 +1360,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, () => {
+            objectPutPart(authInfo,  partRequest, log, () => {
                 const deleteRequest = {
                     bucketName,
                     namespace,
@@ -1363,7 +1374,7 @@ describe('Multipart Upload API', () => {
                 };
                 metadata.getBucket(mpuBucket, log, (err, md) => {
                     assert.strictEqual(Object.keys(md.keyMap).length, 2);
-                    multipartDelete(accessKey, deleteRequest, log, err => {
+                    multipartDelete(authInfo, deleteRequest, log, err => {
                         assert.strictEqual(err, null);
                         metadata.getBucket(mpuBucket, log, (err, md) => {
                             assert.strictEqual(Object.keys(md.keyMap).length,
@@ -1380,10 +1391,11 @@ describe('Multipart Upload API', () => {
         'a multipart upload that does not exist', done => {
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey, bucketPutRequest, log, next);
+                bucketPut(authInfo,  bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(accessKey, initiateRequest, log, next);
+                initiateMultipartUpload(
+                    authInfo,  initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1412,7 +1424,7 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedMD5,
             };
-            objectPutPart(accessKey, partRequest, log, () => {
+            objectPutPart(authInfo,  partRequest, log, () => {
                 const deleteRequest = {
                     bucketName,
                     namespace,
@@ -1428,7 +1440,7 @@ describe('Multipart Upload API', () => {
                 };
                 metadata.getBucket(mpuBucket, log, (err, md) => {
                     assert.strictEqual(Object.keys(md.keyMap).length, 2);
-                    multipartDelete(accessKey, deleteRequest, log, err => {
+                    multipartDelete(authInfo, deleteRequest, log, err => {
                         assert.strictEqual(err, 'NoSuchUpload');
                         done();
                     });

@@ -2,7 +2,7 @@ import async from 'async';
 import assert from 'assert';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
-import DummyRequestLogger from '../helpers';
+import { DummyRequestLogger } from '../helpers';
 import { isKeyInContents } from
     '../../../lib/metadata/in_memory/bucket_utilities';
 import metadata from '../metadataswitch';
@@ -16,7 +16,8 @@ describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
     let bucket;
     before(done => {
-        bucket = new Bucket(bucketName, 'iAmTheOwner');
+        bucket = new Bucket(bucketName, 'iAmTheOwnerId',
+        'iAmTheOwnerDisplayName');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
     });
@@ -101,7 +102,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     let bucket;
 
     before(done => {
-        bucket = new Bucket(bucketName, 'owner');
+        bucket = new Bucket(bucketName, 'ownerid', 'ownerdisplayname');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
     });
@@ -274,7 +275,7 @@ describe('stress test for bucket API', function describe() {
     let bucket;
 
     before(done => {
-        bucket = new Bucket(bucketName, 'owner');
+        bucket = new Bucket(bucketName, 'ownerid', 'ownerdisplayname');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
     });

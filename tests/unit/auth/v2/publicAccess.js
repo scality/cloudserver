@@ -1,7 +1,9 @@
 import assert from 'assert';
 
 import auth from '../../../../lib/auth/auth';
-import DummyRequestLogger from '../../helpers.js';
+import AuthInfo from '../../../../lib/auth/AuthInfo';
+import constants from '../../../../constants';
+import { DummyRequestLogger } from '../../helpers.js';
 
 const logger = new DummyRequestLogger();
 describe('Public Access', () => {
@@ -14,11 +16,13 @@ describe('Public Access', () => {
             url: '/bucket',
             query: {},
         };
-
-        auth(request, logger, (err, accessKey) => {
+        const publicAuthInfo = new AuthInfo({
+            canonicalID: constants.publicId,
+        });
+        auth(request, logger, (err, authInfo) => {
             assert.strictEqual(err, null);
-            assert.strictEqual(accessKey,
-                'http://acs.amazonaws.com/groups/global/AllUsers');
+            assert.strictEqual(authInfo.getCanonicalID(),
+                publicAuthInfo.getCanonicalID());
             done();
         });
     });
