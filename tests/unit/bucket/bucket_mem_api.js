@@ -1,10 +1,9 @@
 import async from 'async';
 import assert from 'assert';
-import {expect} from 'chai';
-import DummyRequestLogger from '../helpers';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
-import {isKeyInContents} from
+import DummyRequestLogger from '../helpers';
+import { isKeyInContents } from
     '../../../lib/metadata/in_memory/bucket_utilities';
 import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
@@ -16,18 +15,18 @@ const log = new DummyRequestLogger();
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
     let bucket;
-    before((done) => {
+    before(done => {
         bucket = new Bucket(bucketName, 'iAmTheOwner');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, done);
     });
 
     it('should be able to add an object to a bucket ' +
-       'and get the object by key', (done) => {
+       'and get the object by key', done => {
         metadata.putObjectMD(bucketName, 'sampleKey', objMD, log, () => {
             metadata.getObjectMD(bucketName, 'sampleKey', log, (err, value) => {
                 assert.deepStrictEqual(value, objMD);
@@ -37,7 +36,7 @@ describe('bucket API for getting, putting and deleting ' +
     });
 
     it('should return an error in response ' +
-       'to getObjectMD when no such key', (done) => {
+       'to getObjectMD when no such key', done => {
         metadata.getObjectMD(bucketName, 'notThere', log, (err, value) => {
             assert.strictEqual(err, 'NoSuchKey');
             assert.strictEqual(value, undefined);
@@ -45,7 +44,7 @@ describe('bucket API for getting, putting and deleting ' +
         });
     });
 
-    it('should be able to delete an object from a bucket', (done) => {
+    it('should be able to delete an object from a bucket', done => {
         metadata.putObjectMD(bucketName, 'objectToDelete', '{}', log, () => {
             metadata.deleteObjectMD(bucketName, 'objectToDelete', log, () => {
                 metadata.getObjectMD(bucketName, 'objectToDelete', log,
@@ -112,7 +111,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should return individual key if key does not contain ' +
-       'the delimiter even if key contains prefix', (done) => {
+       'the delimiter even if key contains prefix', done => {
         async.waterfall([
             function waterfall1(next) {
                 metadata.putObjectMD(bucketName, 'key1', '{}', log, next);
@@ -129,21 +128,19 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             }
         ],
         function waterfallFinal(err, response) {
-            expect(isKeyInContents(response, 'key1')).to.be.true;
-            expect(response.CommonPrefixes
-                .indexOf('key1')).to.equal(-1);
-            expect(isKeyInContents(response, 'key1/')).to.be.false;
-            expect(response.CommonPrefixes
-                .indexOf('key1/')).to.be.above(-1);
-            expect(isKeyInContents(response, 'noMatchKey')).to.be.false;
-            expect(response.CommonPrefixes
-                .indexOf('noMatchKey')).to.equal(-1);
+            assert.strictEqual(isKeyInContents(response, 'key1'), true);
+            assert.strictEqual(response.CommonPrefixes.indexOf('key1'), -1);
+            assert.strictEqual(isKeyInContents(response, 'key1/'), false);
+            assert(response.CommonPrefixes.indexOf('key1/') > -1);
+            assert.strictEqual(isKeyInContents(response, 'noMatchKey'), false);
+            assert.strictEqual(response.CommonPrefixes.indexOf('noMatchKey'),
+                               -1);
             done();
         });
     });
 
     it('should return grouped keys under common prefix if keys start with ' +
-       'given prefix and contain given delimiter', (done) => {
+       'given prefix and contain given delimiter', done => {
         async.waterfall([
             function waterfall1(next) {
                 metadata.putObjectMD(bucketName, 'key/one', '{}', log, next);
@@ -167,7 +164,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should return grouped keys if no prefix ' +
-       'given and keys match before delimiter', (done) => {
+       'given and keys match before delimiter', done => {
         metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', log, () => {
             metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', log, () => {
                 metadata.listObject(bucket.uid, null, null, delimiter,
@@ -183,7 +180,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should return no grouped keys if no ' +
-       'delimiter specified in getBucketListObjects', (done) => {
+       'delimiter specified in getBucketListObjects', done => {
         metadata.listObject(bucket.uid, 'key', null, null, defaultLimit, log,
             (err, response) => {
                 assert.strictEqual(response.CommonPrefixes.length, 0);
@@ -192,7 +189,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should only return keys occurring alphabetically ' +
-       'AFTER marker when no delimiter specified', (done) => {
+       'AFTER marker when no delimiter specified', done => {
         metadata.putObjectMD(bucketName, 'a', '{}', log, () => {
             metadata.putObjectMD(bucketName, 'b', '{}', log, () => {
                 metadata.listObject(bucket.uid, null, 'a', null, defaultLimit,
@@ -207,7 +204,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
-       'marker when delimiter specified', (done) => {
+       'marker when delimiter specified', done => {
         metadata.listObject(bucket.uid, null, 'a', delimiter, defaultLimit,
             log, (err, response) => {
                 assert(isKeyInContents(response, 'b'));
@@ -217,7 +214,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     });
 
     it('should only return keys occurring alphabetically AFTER ' +
-       'marker when delimiter and prefix specified', (done) => {
+       'marker when delimiter and prefix specified', done => {
         metadata.listObject(bucket.uid, 'b', 'a', delimiter, defaultLimit,
             log, (err, response) => {
                 assert(isKeyInContents(response, 'b'));
@@ -226,8 +223,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             });
     });
 
-    it('should return a NextMarker if ' +
-       'maxKeys reached', (done) => {
+    it('should return a NextMarker if maxKeys reached', done => {
         async.waterfall([
             function waterfall1(next) {
                 metadata.putObjectMD(bucketName, 'next/', '{}', log, next);
@@ -245,11 +241,9 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             }
         ],
         function waterfallFinal(err, response) {
-            expect(response.CommonPrefixes
-                .indexOf("next/")).to.be.above(-1);
-            expect(response.CommonPrefixes
-                .indexOf("next1/")).to.equal(-1);
-            expect(response.NextMarker).to.equal("next1/");
+            assert(response.CommonPrefixes.indexOf('next/') > -1);
+            assert.strictEqual(response.CommonPrefixes.indexOf('next1/'), -1);
+            assert.strictEqual(response.NextMarker, 'next1/');
             assert(response.IsTruncated);
             done();
         });
@@ -257,15 +251,15 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 });
 
 
-describe("stress test for bucket API", function describe() {
+describe('stress test for bucket API', function describe() {
     this.timeout(200000);
 
     // Test should be of at least 100,000 keys
     const numKeys = 100000;
-    // We expect 1,000 puts per second
+    // We assert.strictEqual 1,000 puts per second
     const maxMilliseconds = numKeys;
 
-    const prefixes = ['dogs', 'cats', 'tigers', 'elephants', 'monsters'];
+    const prefixes = [ 'dogs', 'cats', 'tigers', 'elephants', 'monsters' ];
 
     // testPrefix is used to test alphabetical marker so
     // must be string alphabetized before testMarker
@@ -279,18 +273,18 @@ describe("stress test for bucket API", function describe() {
     const oddDelimiter = '$';
     let bucket;
 
-    before((done) => {
+    before(done => {
         bucket = new Bucket(bucketName, 'owner');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, done);
     });
 
-    it('should put ' + numKeys + ' keys into bucket and retrieve bucket list ' +
-       'in under ' + maxMilliseconds + ' milliseconds', (done) => {
+    it(`should put ${numKeys} keys into bucket and retrieve bucket list ` +
+       `in under ${maxMilliseconds} milliseconds`, done => {
         const data = {};
         const keys = [];
 
@@ -323,7 +317,7 @@ describe("stress test for bucket API", function describe() {
 
         async.each(keys, (item, next) => {
             metadata.putObjectMD(bucketName, item, '{}', log, next);
-        }, (err) => {
+        }, err => {
             if (err) {
                 assert.strictEqual(err, undefined);
                 done();
@@ -332,12 +326,10 @@ describe("stress test for bucket API", function describe() {
                     log, (err, response) => {
                     // Stop timing and calculate millisecond time difference
                         const diff = timeDiff(startTime);
-                        expect(diff).to.be.below(maxMilliseconds);
-                        prefixes.forEach((prefix) => {
-                            expect(
-                                response.CommonPrefixes
-                                    .indexOf(prefix + delimiter))
-                                        .to.be.above(-1);
+                        assert(diff < maxMilliseconds);
+                        prefixes.forEach(prefix => {
+                            assert(response.CommonPrefixes
+                                   .indexOf(prefix + delimiter) > -1);
                         });
                         done();
                     });
@@ -346,28 +338,27 @@ describe("stress test for bucket API", function describe() {
     });
 
     it('should return all keys as Contents if delimiter ' +
-       'does not match and specify NextMarker', (done) => {
+       'does not match and specify NextMarker', done => {
         metadata.listObject(bucket.uid,
             null, null, oddDelimiter, testLimit, log, (err, response) => {
-                expect(response.CommonPrefixes.length).to.equal(0);
-                expect(response.Contents.length).to.equal(testLimit);
-                expect(response.IsTruncated).to.be.true;
-                expect(response.NextMarker).to.be.a.string;
+                assert.strictEqual(response.CommonPrefixes.length, 0);
+                assert.strictEqual(response.Contents.length, testLimit);
+                assert.strictEqual(response.IsTruncated, true);
+                assert.strictEqual(typeof response.NextMarker, 'string');
                 done();
             });
     });
 
     it('should return only keys occurring ' +
-       'after specified marker', (done) => {
-        metadata.listObject(bucket.uid,
-            null, testMarker, delimiter, null, log, (err, response) => {
-                expect(response.CommonPrefixes.length)
-                    .to.equal(prefixes.length - 1);
-                expect(response.CommonPrefixes.indexOf(testPrefix))
-                    .to.equal(-1);
-                expect(response.Contents.length).to.equal(0);
-                expect(response.IsTruncated).to.be.false;
-                expect(response.NextMarker).to.be.undefined;
+       'after specified marker', done => {
+        metadata.listObject(bucket.uid, null, testMarker, delimiter, null, log,
+            (err, res) => {
+                assert.strictEqual(res.CommonPrefixes.length,
+                                   prefixes.length - 1);
+                assert.strictEqual(res.CommonPrefixes.indexOf(testPrefix), -1);
+                assert.strictEqual(res.Contents.length, 0);
+                assert.strictEqual(res.IsTruncated, false);
+                assert.strictEqual(res.NextMarker, undefined);
                 done();
             });
     });
