@@ -1,12 +1,13 @@
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
@@ -39,18 +40,18 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', (done) => {
-        objectPut(accessKey,  testPutObjectRequest, log, (err) => {
+        objectPut(authInfo,  testPutObjectRequest, log, (err) => {
             assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
     });
 
     it('should return an error if user is not authorized', (done) => {
-        const putAccessKey = 'accessKey2';
-        bucketPut(putAccessKey,  testPutBucketRequest, log,
+        const putAuthInfo = makeAuthInfo('accessKey2');
+        bucketPut(putAuthInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest, log,
+                objectPut(authInfo,  testPutObjectRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'AccessDenied');
                         done();
@@ -70,10 +71,10 @@ describe('objectPut API', () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -107,10 +108,10 @@ describe('objectPut API', () => {
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getBucket(bucketName, log, (err, md) => {

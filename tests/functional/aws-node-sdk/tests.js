@@ -41,6 +41,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         done();
     });
 
+    const accessKey1ARN = `aws::iam:accessKey1:user/Bart`;
+
     it('should do an empty listing', function emptyListing(done) {
         s3.listBuckets((err, data) => {
             if (err) {
@@ -180,7 +182,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.Parts[1].PartNumber, 2);
             assert.strictEqual(data.Parts[1].ETag, calculatedMD5);
             assert.strictEqual(data.Parts[1].Size, 5242880);
-            assert.strictEqual(data.Initiator.ID, config.accessKeyId);
+            assert.strictEqual(data.Initiator.ID, accessKey1ARN);
             assert.strictEqual(data.Owner.ID, config.accessKeyId);
             assert.strictEqual(data.StorageClass, 'STANDARD');
         });

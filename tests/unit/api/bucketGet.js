@@ -7,11 +7,10 @@ import bucketGet from '../../../lib/api/bucketGet';
 import bucketPut from '../../../lib/api/bucketPut';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import DummyRequestLogger from '../helpers';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
-
-const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo('accessKey1');
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
@@ -82,20 +81,20 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,  testPutBucketRequest, log,
+                bucketPut(authInfo,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest1, log,
+                objectPut(authInfo,  testPutObjectRequest1, log,
                     next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey,  testPutObjectRequest2, log,
+                objectPut(authInfo,  testPutObjectRequest2, log,
                     next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey,  testGetRequest, log,
+                bucketGet(authInfo,  testGetRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -124,20 +123,20 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,  testPutBucketRequest, log,
+                bucketPut(authInfo,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest1, log,
+                objectPut(authInfo,  testPutObjectRequest1, log,
                     next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey,  testPutObjectRequest2, log,
+                objectPut(authInfo,  testPutObjectRequest2, log,
                     next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey,  testGetRequest, log, next);
+                bucketGet(authInfo,  testGetRequest, log, next);
             },
             function waterfall5(result, next) {
                 parseString(result, next);
@@ -169,20 +168,20 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,  testPutBucketRequest, log,
+                bucketPut(authInfo,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest1, log,
+                objectPut(authInfo,  testPutObjectRequest1, log,
                     next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey,  testPutObjectRequest2, log,
+                objectPut(authInfo,  testPutObjectRequest2, log,
                     next);
             },
             function waterfall4(result, next) {
-                bucketGet(accessKey,  testGetRequest, log,
+                bucketGet(authInfo,  testGetRequest, log,
                     next);
             },
             function waterfall5(result, next) {
@@ -214,24 +213,24 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,  testPutBucketRequest, log,
+                bucketPut(authInfo,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest1, log,
+                objectPut(authInfo,  testPutObjectRequest1, log,
                     next);
             },
             function waterfall3(result, next) {
-                objectPut(accessKey,  testPutObjectRequest2, log,
+                objectPut(authInfo,  testPutObjectRequest2, log,
                     next);
             },
             function waterfall4(result, next) {
-                objectPut(accessKey,  testPutObjectRequest3, log,
+                objectPut(authInfo,  testPutObjectRequest3, log,
                     next);
             },
             function waterfall5(result, next) {
-                bucketGet(accessKey,  testGetRequest, log, next);
+                bucketGet(authInfo,  testGetRequest, log, next);
             },
             function waterfall6(result, next) {
                 parseString(result, next);
@@ -259,11 +258,11 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,  testPutBucketRequest, log,
+                bucketPut(authInfo,  testPutBucketRequest, log,
                     next);
             },
             function waterfall2(result, next) {
-                bucketGet(accessKey,  testGetRequest, log,
+                bucketGet(authInfo,  testGetRequest, log,
                     next);
             },
             function waterfall3(result, next) {

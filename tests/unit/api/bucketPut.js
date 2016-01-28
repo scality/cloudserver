@@ -3,12 +3,11 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
-import DummyRequestLogger from '../helpers';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
-
-
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
@@ -40,9 +39,9 @@ describe('bucketPut API', () => {
     });
 
     it('should return an error if bucket already exists', (done) => {
-        const otherAccessKey = 'accessKey2';
-        bucketPut(accessKey,  testRequest, log, () => {
-            bucketPut(otherAccessKey,  testRequest, log,
+        const otherAuthInfo = makeAuthInfo('accessKey2');
+        bucketPut(authInfo,  testRequest, log, () => {
+            bucketPut(otherAuthInfo,  testRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'BucketAlreadyExists');
                         done();
@@ -59,7 +58,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: 'malformedxml'
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -74,7 +73,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: '<Hello></Hello>'
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -93,26 +92,26 @@ describe('bucketPut API', () => {
                 '<LocationConstraint>invalidLocation</LocationConstraint>'
                 + '</CreateBucketConfiguration>'
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidLocationConstraint');
             done();
         });
     });
 
     it('should create a bucket', (done) => {
-        bucketPut(accessKey,  testRequest, log, (err, success) => {
+        bucketPut(authInfo,  testRequest, log, (err, success) => {
             if (err) {
                 return done(err);
             }
             assert.strictEqual(success, 'Bucket created');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
-                assert.strictEqual(md.owner, accessKey);
-                const prefix = `${accessKey}${splitter}`;
+                assert.strictEqual(md.owner, canonicalID);
+                const prefix = `${canonicalID}${splitter}`;
                 metadata.listObject(usersBucket, prefix,
                     null, null, null, log, (err, listResponse) => {
                         assert.strictEqual(listResponse.Contents[0].key,
-                            `${accessKey}${splitter}${bucketName}`);
+                            `${canonicalID}${splitter}${bucketName}`);
                         done();
                     });
             });
@@ -133,7 +132,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -154,7 +153,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -176,7 +175,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -198,7 +197,7 @@ describe('bucketPut API', () => {
             post: '',
             headers: {host: `${bucketName}.s3.amazonaws.com`}
         };
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -217,10 +216,8 @@ describe('bucketPut API', () => {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
                     ',emailaddress="sampleaccount2@sampling.com"',
-                'x-amz-grant-read':
-                    'uri="http://acs.amazonaws.com/groups/s3/LogDelivery"',
-                'x-amz-grant-write':
-                    'uri="http://acs.amazonaws.com/groups/global/AllUsers"',
+                'x-amz-grant-read': `uri=${constants.logId}`,
+                'x-amz-grant-write': `uri=${constants.publicId}`,
                 'x-amz-grant-read-acp':
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
                     'f8f8d5218e7cd47ef2be"',
@@ -236,13 +233,11 @@ describe('bucketPut API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(accessKey,  testRequest, log, (err) => {
+        bucketPut(authInfo,  testRequest, log, (err) => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.READ[0],
-                    'http://acs.amazonaws.com/groups/s3/LogDelivery');
-                assert.strictEqual(md.acl.WRITE[0],
-                    'http://acs.amazonaws.com/groups/global/AllUsers');
+                assert.strictEqual(md.acl.READ[0], constants.logId);
+                assert.strictEqual(md.acl.WRITE[0], constants.publicId);
                 assert(md.acl.FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
                 assert(md.acl.FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
                 assert(md.acl.READ_ACP.indexOf(canonicalIDforSample1) > -1);
@@ -252,9 +247,10 @@ describe('bucketPut API', () => {
         });
     });
 
+    const publicAuthInfo = makeAuthInfo(constants.publicId);
     it('should prevent anonymous user from accessing ' +
         'putBucket API', (done) => {
-        bucketPut('http://acs.amazonaws.com/groups/global/AllUsers',
+        bucketPut(publicAuthInfo,
              testRequest, log,
                 (err) => {
                     assert.strictEqual(err, 'AccessDenied');

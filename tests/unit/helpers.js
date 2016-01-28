@@ -1,3 +1,5 @@
+import AuthInfo from '../../lib/auth/AuthInfo';
+
 export function makeid(size) {
     let text = '';
     const possible =
@@ -30,7 +32,16 @@ export function timeDiff(startTime) {
     return milliseconds;
 }
 
-export default class DummyRequestLogger {
+export function makeAuthInfo(accessKey) {
+    return new AuthInfo({
+        canonicalID: accessKey,
+        shortid: 'shortid',
+        email: `${accessKey}@l.com`,
+        accountDisplayName: accessKey,
+    });
+}
+
+export class DummyRequestLogger {
 
     constructor() {
         this.ops = [];
