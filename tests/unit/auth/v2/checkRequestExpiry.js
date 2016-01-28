@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import assert from 'assert';
+
 import checkRequestExpiry from '../../../../lib/auth/v2/checkRequestExpiry';
 import DummyRequestLogger from '../../helpers';
 
@@ -7,25 +8,19 @@ const log = new DummyRequestLogger();
 describe('checkTimestamp for timecheck in header auth', () => {
     it('should return true if the date in the header is ' +
        'more than 15 minutes old', () => {
-        let timeStamp = 'Mon Sep 21 2015 17:12:58 GMT-0700 (PDT)';
-        timeStamp = Date.parse(timeStamp);
-        const result = checkRequestExpiry(timeStamp, log);
-        expect(result).to.be.true;
+        const timestamp = new Date(Date.now() - 16 * 60000);
+        assert(checkRequestExpiry(timestamp, log));
     });
 
     it('should return true if the date in the header is more ' +
        'than 15 minutes in the future', () => {
-        // Note: This test will have to be updated in 2095
-        let timeStamp = 'Mon Sep 25 2095 17:12:58 GMT-0700 (PDT)';
-        timeStamp = Date.parse(timeStamp);
-        const result = checkRequestExpiry(timeStamp, log);
-        expect(result).to.be.true;
+        const timestamp = new Date(Date.now() + 16 * 60000);
+        assert(checkRequestExpiry(timestamp, log));
     });
 
     it('should return false if the date in the header is ' +
        'within 15 minutes of current time', () => {
-        const timeStamp = new Date();
-        const result = checkRequestExpiry(timeStamp, log);
-        expect(result).to.be.false;
+        const timestamp = new Date();
+        assert(!checkRequestExpiry(timestamp, log));
     });
 });
