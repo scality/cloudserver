@@ -1,13 +1,12 @@
 import assert from 'assert';
 
-import { expect } from 'chai';
 import { parseString } from 'xml2js';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
+import DummyRequestLogger from '../helpers';
 import constants from '../../../constants';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
-import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
 
@@ -108,41 +107,39 @@ describe('List Parts API', () => {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
-            query: {
-                uploadId: uploadId,
-            }
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            query: { uploadId, },
         };
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
+        listParts(accessKey, listRequest, log, (err, xml) => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(err, null);
-                expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
-                expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
-                expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
-                expect(json.ListPartResult.MaxParts[0]).to.equal('1000');
-                expect(json.ListPartResult.Initiator[0].ID[0])
-                    .to.equal(accessKey);
-                expect(json.ListPartResult.IsTruncated[0]).to.equal('false');
-                expect(json.ListPartResult.PartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult
-                    .NextPartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('1');
-                expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectETag);
-                expect(json.ListPartResult.Part[0].Size[0])
-                    .to.equal('6000000');
-                expect(json.ListPartResult.Part[4].PartNumber[0]).to.equal('5');
-                expect(json.ListPartResult.Part[4].ETag[0])
-                    .to.equal(lastPieceETag);
-                expect(json.ListPartResult.Part[4].Size[0])
-                    .to.equal('18');
-                expect(json.ListPartResult.Part).to.have.length.of(5);
+                assert.strictEqual(json.ListPartResult.Bucket[0], bucketName);
+                assert.strictEqual(json.ListPartResult.Key[0], uploadKey);
+                assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
+                assert.strictEqual(json.ListPartResult.MaxParts[0], '1000');
+                assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
+                                   accessKey);
+                assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartResult.PartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.NextPartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.Part[0].PartNumber[0],
+                                   '1');
+                assert.strictEqual(json.ListPartResult.Part[0].ETag[0],
+                                   sixMBObjectETag);
+                assert.strictEqual(json.ListPartResult.Part[0].Size[0],
+                                   '6000000');
+                assert.strictEqual(json.ListPartResult.Part[4].PartNumber[0],
+                                   '5');
+                assert.strictEqual(json.ListPartResult.Part[4].ETag[0],
+                                   lastPieceETag);
+                assert.strictEqual(json.ListPartResult.Part[4].Size[0], '18');
+                assert.strictEqual(json.ListPartResult.Part.length, 5);
                 done();
             });
         });
@@ -153,23 +150,21 @@ describe('List Parts API', () => {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: {host: `${bucketName}.s3.amazonaws.com`},
             query: {
-                uploadId: uploadId,
+                uploadId,
                 'encoding-type': 'url',
             }
         };
         const urlEncodedObjectKey = '%24makememulti';
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
-            expect(err).to.be.null;
+        listParts(accessKey, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(json.ListPartResult.Key[0])
-                    .to.equal(urlEncodedObjectKey);
+                assert.strictEqual(json.ListPartResult.Key[0],
+                                   urlEncodedObjectKey);
                 done();
             });
         });
@@ -181,37 +176,37 @@ describe('List Parts API', () => {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
-                uploadId: uploadId,
+                uploadId,
                 'max-parts': '4',
             }
         };
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
-            expect(err).to.be.null;
+        listParts(accessKey, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(err).to.be.null;
-                expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
-                expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
-                expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
-                expect(json.ListPartResult.MaxParts[0]).to.equal('4');
-                expect(json.ListPartResult.Initiator[0]
-                    .ID[0]).to.equal(accessKey);
-                expect(json.ListPartResult.IsTruncated[0]).to.equal('true');
-                expect(json.ListPartResult.PartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult
-                    .NextPartNumberMarker[0]).to.equal('4');
-                expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('3');
-                expect(json.ListPartResult.Part[2].ETag[0])
-                    .to.equal(sixMBObjectETag);
-                expect(json.ListPartResult.Part[2].Size[0])
-                    .to.equal('6000000');
-                expect(json.ListPartResult.Part).to.have.length.of(4);
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartResult.Bucket[0], bucketName);
+                assert.strictEqual(json.ListPartResult.Key[0], uploadKey);
+                assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
+                assert.strictEqual(json.ListPartResult.MaxParts[0], '4');
+                assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
+                                   accessKey);
+                assert.strictEqual(json.ListPartResult.IsTruncated[0], 'true');
+                assert.strictEqual(json.ListPartResult.PartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.NextPartNumberMarker[0],
+                                   '4');
+                assert.strictEqual(json.ListPartResult.Part[2].PartNumber[0],
+                                   '3');
+                assert.strictEqual(json.ListPartResult.Part[2].ETag[0],
+                                   sixMBObjectETag);
+                assert.strictEqual(json.ListPartResult.Part[2].Size[0],
+                                   '6000000');
+                assert.strictEqual(json.ListPartResult.Part.length, 4);
                 done();
             });
         });
@@ -223,37 +218,37 @@ describe('List Parts API', () => {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-            },
+            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
-                uploadId: uploadId,
+                uploadId,
                 'max-parts': '6',
             }
         };
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
-            expect(err).to.be.null;
+        listParts(accessKey, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(err).to.be.null;
-                expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
-                expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
-                expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
-                expect(json.ListPartResult.MaxParts[0]).to.equal('6');
-                expect(json.ListPartResult.Initiator[0]
-                    .ID[0]).to.equal(accessKey);
-                expect(json.ListPartResult.IsTruncated[0]).to.equal('false');
-                expect(json.ListPartResult.PartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult
-                    .NextPartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('3');
-                expect(json.ListPartResult.Part[2].ETag[0])
-                    .to.equal(sixMBObjectETag);
-                expect(json.ListPartResult.Part[2].Size[0])
-                    .to.equal('6000000');
-                expect(json.ListPartResult.Part).to.have.length.of(5);
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartResult.Bucket[0], bucketName);
+                assert.strictEqual(json.ListPartResult.Key[0], uploadKey);
+                assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
+                assert.strictEqual(json.ListPartResult.MaxParts[0], '6');
+                assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
+                                   accessKey);
+                assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartResult.PartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.NextPartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.Part[2].PartNumber[0],
+                                   '3');
+                assert.strictEqual(json.ListPartResult.Part[2].ETag[0],
+                                   sixMBObjectETag);
+                assert.strictEqual(json.ListPartResult.Part[2].Size[0],
+                                   '6000000');
+                assert.strictEqual(json.ListPartResult.Part.length, 5);
                 done();
             });
         });
@@ -268,34 +263,37 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
-                uploadId: uploadId,
+                uploadId,
                 'part-number-marker': '2',
             }
         };
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
-            expect(err).to.be.null;
+        listParts(accessKey, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(err).to.be.null;
-                expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
-                expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
-                expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
-                expect(json.ListPartResult.MaxParts[0]).to.equal('1000');
-                expect(json.ListPartResult.Initiator[0]
-                    .ID[0]).to.equal(accessKey);
-                expect(json.ListPartResult.IsTruncated[0]).to.equal('false');
-                expect(json.ListPartResult.PartNumberMarker[0]).to.equal('2');
-                expect(json.ListPartResult
-                    .NextPartNumberMarker).to.be.undefined;
-                expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('3');
-                expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectETag);
-                expect(json.ListPartResult.Part[0].Size[0])
-                    .to.equal('6000000');
-                expect(json.ListPartResult.Part[2].PartNumber[0]).to.equal('5');
-                expect(json.ListPartResult.Part).to.have.length.of(3);
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartResult.Bucket[0], bucketName);
+                assert.strictEqual(json.ListPartResult.Key[0], uploadKey);
+                assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
+                assert.strictEqual(json.ListPartResult.MaxParts[0], '1000');
+                assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
+                                   accessKey);
+                assert.strictEqual(json.ListPartResult.IsTruncated[0], 'false');
+                assert.strictEqual(json.ListPartResult.PartNumberMarker[0],
+                                   '2');
+                assert.strictEqual(json.ListPartResult.NextPartNumberMarker,
+                                   undefined);
+                assert.strictEqual(json.ListPartResult.Part[0].PartNumber[0],
+                                   '3');
+                assert.strictEqual(json.ListPartResult.Part[0].ETag[0],
+                                   sixMBObjectETag);
+                assert.strictEqual(json.ListPartResult.Part[0].Size[0],
+                                   '6000000');
+                assert.strictEqual(json.ListPartResult.Part[2].PartNumber[0],
+                                   '5');
+                assert.strictEqual(json.ListPartResult.Part.length, 3);
                 done();
             });
         });
@@ -311,35 +309,38 @@ describe('List Parts API', () => {
                 host: `${bucketName}.s3.amazonaws.com`
             },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
-                uploadId: uploadId,
+                uploadId,
                 'part-number-marker': '2',
                 'max-parts': '2',
             }
         };
 
-        listParts(accessKey,  listRequest, log, (err, xml) => {
-            expect(err).to.be.null;
+        listParts(accessKey, listRequest, log, (err, xml) => {
+            assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
-                expect(err).to.be.null;
-                expect(json.ListPartResult.Bucket[0]).to.equal(bucketName);
-                expect(json.ListPartResult.Key[0]).to.equal(uploadKey);
-                expect(json.ListPartResult.UploadId[0]).to.equal(uploadId);
-                expect(json.ListPartResult.MaxParts[0]).to.equal('2');
-                expect(json.ListPartResult.Initiator[0]
-                    .ID[0]).to.equal(accessKey);
-                expect(json.ListPartResult.IsTruncated[0]).to.equal('true');
-                expect(json.ListPartResult.PartNumberMarker[0]).to.equal('2');
-                expect(json.ListPartResult
-                    .NextPartNumberMarker[0]).to.equal('4');
-                expect(json.ListPartResult.Part[0].PartNumber[0]).to.equal('3');
-                expect(json.ListPartResult.Part[0].ETag[0])
-                    .to.equal(sixMBObjectETag);
-                expect(json.ListPartResult.Part[0].Size[0])
-                    .to.equal('6000000');
-                expect(json.ListPartResult.Part[1].PartNumber[0]).to.equal('4');
-                expect(json.ListPartResult.Part).to.have.length.of(2);
+                assert.strictEqual(err, null);
+                assert.strictEqual(json.ListPartResult.Bucket[0], bucketName);
+                assert.strictEqual(json.ListPartResult.Key[0], uploadKey);
+                assert.strictEqual(json.ListPartResult.UploadId[0], uploadId);
+                assert.strictEqual(json.ListPartResult.MaxParts[0], '2');
+                assert.strictEqual(json.ListPartResult.Initiator[0].ID[0],
+                                   accessKey);
+                assert.strictEqual(json.ListPartResult.IsTruncated[0], 'true');
+                assert.strictEqual(json.ListPartResult.PartNumberMarker[0],
+                                   '2');
+                assert.strictEqual(json.ListPartResult.NextPartNumberMarker[0],
+                                   '4');
+                assert.strictEqual(json.ListPartResult.Part[0].PartNumber[0],
+                                   '3');
+                assert.strictEqual(json.ListPartResult.Part[0].ETag[0],
+                                   sixMBObjectETag);
+                assert.strictEqual(json.ListPartResult.Part[0].Size[0],
+                                   '6000000');
+                assert.strictEqual(json.ListPartResult.Part[1].PartNumber[0],
+                                   '4');
+                assert.strictEqual(json.ListPartResult.Part.length, 2);
                 done();
             });
         });
