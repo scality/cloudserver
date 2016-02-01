@@ -1,4 +1,5 @@
 import assert from 'assert';
+
 import async from 'async';
 import { parseString } from 'xml2js';
 
@@ -8,20 +9,21 @@ import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGetACL from '../../../lib/api/objectGetACL';
+import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = [ new Buffer('I am a body'), ];
+const postBody = new Buffer('I am a body');
 
 describe('objectGetACL API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
@@ -44,8 +46,8 @@ describe('objectGetACL API', () => {
         }
     };
 
-    it('should get a canned private ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned private ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -58,21 +60,18 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -90,20 +89,18 @@ describe('objectGetACL API', () => {
     });
 
     it('should return an error if try to get an ACL ' +
-        'for a nonexistent object', (done) => {
-        bucketPut(authInfo,  testBucketPutRequest, log,
-            (err, result) => {
-                assert.strictEqual(result, 'Bucket created');
-                objectGetACL(authInfo,  testGetACLRequest, log,
-                    (err) => {
-                        assert.strictEqual(err, 'NoSuchKey');
-                        done();
-                    });
+        'for a nonexistent object', done => {
+        bucketPut(authInfo, testBucketPutRequest, log, (err, result) => {
+            assert.strictEqual(result, 'Bucket created');
+            objectGetACL(authInfo, testGetACLRequest, log, err => {
+                assert.strictEqual(err, 'NoSuchKey');
+                done();
             });
+        });
     });
 
-    it('should get a canned public-read ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned public-read ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -114,9 +111,8 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: `/${bucketName}/${objectName}`,
-            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,
@@ -154,8 +150,8 @@ describe('objectGetACL API', () => {
         });
     });
 
-    it('should get a canned public-read-write ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned public-read-write ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -166,9 +162,8 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: `/${bucketName}/${objectName}`,
-            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,
@@ -213,8 +208,8 @@ describe('objectGetACL API', () => {
         });
     });
 
-    it('should get a canned authenticated-read ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned authenticated-read ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -225,9 +220,8 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: `/${bucketName}/${objectName}`,
-            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,
@@ -267,8 +261,8 @@ describe('objectGetACL API', () => {
         });
     });
 
-    it('should get a canned bucket-owner-read ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned bucket-owner-read ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -281,7 +275,7 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
             post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,
@@ -320,8 +314,8 @@ describe('objectGetACL API', () => {
         });
     });
 
-    it('should get a canned bucket-owner-full-control ACL', (done) => {
-        const testPutObjectRequest = {
+    it('should get a canned bucket-owner-full-control ACL', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -332,9 +326,8 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'bucket-owner-full-control'
             },
             url: `/${bucketName}/${objectName}`,
-            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,
@@ -373,8 +366,8 @@ describe('objectGetACL API', () => {
         });
     });
 
-    it('should get specifically set ACLs', (done) => {
-        const testPutObjectRequest = {
+    it('should get specifically set ACLs', done => {
+        const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
             objectKey: objectName,
@@ -403,9 +396,8 @@ describe('objectGetACL API', () => {
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
                     'f8f8d5218e7cd47ef2bf"',            },
             url: `/${bucketName}/${objectName}`,
-            post: postBody,
             calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-        };
+        }, postBody);
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo,  testBucketPutRequest, log,

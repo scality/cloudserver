@@ -5,53 +5,53 @@ import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectHead from '../../../lib/api/objectHead';
+import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = [ new Buffer('I am a body'), ];
+const postBody = new Buffer('I am a body');
+const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
+const objectName = 'objectName';
+const date = new Date();
+const laterDate = date.setMinutes(date.getMinutes() + 30);
+const earlierDate = date.setMinutes(date.getMinutes() - 30);
+const testPutBucketRequest = {
+    bucketName,
+    namespace,
+    lowerCaseHeaders: {},
+    url: `/${bucketName}`,
+};
+const userMetadataKey = 'x-amz-meta-test';
+const userMetadataValue = 'some metadata';
+
+let testPutObjectRequest;
 
 describe('objectHead API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            lowerCaseHeaders: {
+                'x-amz-meta-test': userMetadataValue
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+        }, postBody);
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
-
-    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-    const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
-    const objectName = 'objectName';
-    const date = new Date();
-    const laterDate = date.setMinutes(date.getMinutes() + 30);
-    const earlierDate = date.setMinutes(date.getMinutes() - 30);
-    const testPutBucketRequest = {
-        bucketName,
-        namespace,
-        lowerCaseHeaders: {},
-        url: `/${bucketName}`,
-    };
-    const userMetadataKey = 'x-amz-meta-test';
-    const userMetadataValue = 'some metadata';
-    const testPutObjectRequest = {
-        bucketName,
-        namespace,
-        objectKey: objectName,
-        lowerCaseHeaders: {
-            'x-amz-meta-test': userMetadataValue
-        },
-        url: `/${bucketName}/${objectName}`,
-        post: postBody,
-        calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
-    };
-
 
     it('should return NotModified if request header ' +
        'includes "if-modified-since" and object ' +
-       'not modified since specified time', (done) => {
+       'not modified since specified time', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -79,7 +79,7 @@ describe('objectHead API', () => {
 
     it('should return PreconditionFailed if request header ' +
        'includes "if-unmodified-since" and object has ' +
-       'been modified since specified time', (done) => {
+       'been modified since specified time', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -106,7 +106,7 @@ describe('objectHead API', () => {
 
     it('should return PreconditionFailed if request header ' +
        'includes "if-match" and ETag of object ' +
-       'does not match specified ETag', (done) => {
+       'does not match specified ETag', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -134,7 +134,7 @@ describe('objectHead API', () => {
 
     it('should return NotModified if request header ' +
        'includes "if-none-match" and ETag of object does ' +
-       'match specified ETag', (done) => {
+       'match specified ETag', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -160,7 +160,7 @@ describe('objectHead API', () => {
             });
     });
 
-    it('should get the object metadata', (done) => {
+    it('should get the object metadata', done => {
         const testGetRequest = {
             bucketName,
             namespace,
