@@ -75,8 +75,11 @@ describe('serviceGet API', () => {
         if (month.length === 1) {
             month = `0${month}`;
         }
-        const dateString = `${date.getFullYear()}-${month}-${date.getDate()}`;
-
+        let day = date.getDate().toString();
+        if (day.length === 1) {
+            day = `0${day}`;
+        }
+        const dateString = `${date.getFullYear()}-${month}-${day}`;
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(accessKey,  testbucketPutRequest1, log,

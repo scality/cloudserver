@@ -281,10 +281,14 @@ describe('bucketGet API', () => {
             if (month.length === 1) {
                 month = `0${month}`;
             }
+            let day = dateNow.getDate().toString();
+            if (day.length === 1) {
+                day = `0${day}`;
+            }
             const dateString =
-                `${dateNow.getFullYear()}-${month}-${dateNow.getDate()}`;
+                `${dateNow.getFullYear()}-${month}-${day}`;
             const resultDate = result.ListBucketResult.$.xmlns.slice(-10);
-            assert.strictEqual(dateString, resultDate);
+            assert.strictEqual(resultDate, dateString);
             assert.strictEqual(resultDate.indexOf('NaN'), -1);
             done();
         });
