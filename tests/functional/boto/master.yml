@@ -1,14 +1,13 @@
 ---
 matryoshka:
- - victim:
-    image: current
- - aggressor:
-    image:  scality/ironman-base
-    startup: /bin/sleep 5d
-    configure: ./configure.bash
+  - victim:
+      image: current
+  - aggressor:
+      image: scality/ironman-base
+      startup: /bin/sleep 5d
+      configure: ./configure.bash
 ---
 - test-boto:
     exec: cd ./boto &&  python setup.py test
     on: aggressor
     okCode: 0
-
