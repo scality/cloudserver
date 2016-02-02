@@ -20,6 +20,7 @@ describe('checkAuth reconstruction of signature', () => {
             authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=' },
             url: '/bucket',
             lowerCaseHeaders: {
+                host: 's3.amazonaws.com',
                 date: 'Fri, 18 Sep 2015 22:57:23 +0000',
             },
             query: {}
