@@ -5,10 +5,10 @@ machine:
   environment:
     docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
     docker_tag: ${CIRCLE_SHA1:0:7}
-  #we package the software through docker
-  services:
-    - docker
-
+  post:
+    - sudo curl -L -o /usr/bin/docker https://get.docker.com/builds/Linux/x86_64/docker-1.9.1
+    - sudo container=yes docker daemon: { background: true }
+ 
 checkout:
   override:
     # checkout the IronMan-ci
