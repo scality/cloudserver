@@ -1,14 +1,13 @@
 ---
 matryoshka:
- - victim:
-    image: current
- - aggressor:
-    image: scality/ironman-base
-    startup: /bin/sleep 5d
-    configure: ./configure.bash
+  - victim:
+      image: current
+  - aggressor:
+      image: scality/ironman-base
+      startup: /bin/sleep 5d
+      configure: ./configure.bash
 ---
 - test-conncurrent:
     exec: mvn test
     on: aggressor
     okCode: 0
-
