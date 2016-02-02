@@ -70,16 +70,6 @@ describe('serviceGet API', () => {
             url: '/',
             headers: {host: `${bucketName3}.s3.amazonaws.com`}
         };
-        const date = new Date();
-        let month = (date.getMonth() + 1).toString();
-        if (month.length === 1) {
-            month = `0${month}`;
-        }
-        let day = date.getDate().toString();
-        if (day.length === 1) {
-            day = `0${day}`;
-        }
-        const dateString = `${date.getFullYear()}-${month}-${day}`;
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(accessKey,  testbucketPutRequest1, log,
@@ -111,7 +101,7 @@ describe('serviceGet API', () => {
             assert.strictEqual(result.ListAllMyBucketsResult
                 .Buckets[0].Bucket[2].Name[0], bucketName3);
             assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns,
-                `http://s3.amazonaws.com/doc/${dateString}`);
+                `http://s3.amazonaws.com/doc/2006-03-01/`);
             done();
         });
     });
