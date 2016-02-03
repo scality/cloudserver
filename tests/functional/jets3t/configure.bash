@@ -1,2 +1,2 @@
 #!/bin/bash
-apt-get install -y -q  default-jdk
+apt-get update && apt-get install -y -q  default-jdk
