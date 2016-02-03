@@ -246,50 +246,33 @@ describe('bucketGet API', () => {
         });
     });
 
-    it('should return the correct date in the xml attributes', (done) => {
+    it('should return xml that refers to the s3 docs for xml specs', (done) => {
         const testGetRequest = {
             bucketName,
             namespace,
             lowerCaseHeaders: {
                 host: '/'
             },
-            url: `/${bucketName}?`,
+            url: `/${bucketName}`,
             query: {}
         };
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(accessKey,
-                    testPutBucketRequest, log, next);
+                bucketPut(accessKey,  testPutBucketRequest, log,
+                    next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
-                    testPutObjectRequest1, log, next);
+            function waterfall2(result, next) {
+                bucketGet(accessKey,  testGetRequest, log,
+                    next);
             },
             function waterfall3(result, next) {
-                bucketGet(accessKey,
-                    testGetRequest, log, next);
-            },
-            function waterfall4(result, next) {
                 parseString(result, next);
             }
         ],
         function waterfallFinal(err, result) {
-            const dateNow = new Date();
-            let month = (dateNow.getMonth() + 1).toString();
-            if (month.length === 1) {
-                month = `0${month}`;
-            }
-            let day = dateNow.getDate().toString();
-            if (day.length === 1) {
-                day = `0${day}`;
-            }
-            const dateString =
-                `${dateNow.getFullYear()}-${month}-${day}`;
-            const resultDate = result.ListBucketResult.$.xmlns.slice(-10);
-            assert.strictEqual(resultDate, dateString);
-            assert.strictEqual(resultDate.indexOf('NaN'), -1);
+            assert.strictEqual(result.ListBucketResult.$.xmlns,
+                `http://s3.amazonaws.com/doc/2006-03-01/`);
             done();
         });
     });
