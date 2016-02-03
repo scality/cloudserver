@@ -64,6 +64,7 @@ export class DummyRequestLogger {
             error: 0,
             fatal: 0,
         };
+        this.defaultFields = {};
     }
 
     trace(msg) {
@@ -98,5 +99,9 @@ export class DummyRequestLogger {
 
     getSerializedUids() {
         return 'dummy:Serialized:Uids';
+    }
+
+    addDefaultFields(fields) {
+        Object.assign(this.defaultFields, fields);
     }
 }
