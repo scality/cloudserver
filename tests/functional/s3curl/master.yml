@@ -1,12 +1,12 @@
 ---
 matryoshka:
- - victim:
-    image: current
- - aggressor:
-    image: scality/ironman-base
-    tag: latest
-    startup:  /bin/sleep 5d
-    configure: ./configure.bash
+  - victim:
+      image: current
+  - aggressor:
+      image: scality/ironman-base
+      tag: latest
+      startup: /bin/sleep 5d
+      configure: ./configure.bash
 ---
 - full-test-suite:
     exec: npm test
