@@ -22,7 +22,7 @@ export default {
      * Splitter is also used in adding bucketnames to the
      * namespacerusersbucket.  The object names added to the
      * namespaceusersbucket are of the form:
-     * accessKey...!*!bucketname
+     * canonicalID...!*!bucketname
      */
 
     // TODO: Determine a splitter that is DNS compliant and will
@@ -36,4 +36,16 @@ export default {
     // by the name of the final destination bucket for the object
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
+    // PublicId is used as the canonicalID for a request that contains
+    // no authentication information.  Requestor can access
+    // only public resources
+    publicId: 'http://acs.amazonaws.com/groups/global/AllUsers',
+    // All Authenticated Users is an ACL group.
+    allAuthedUsersId: 'http://acs.amazonaws.com/groups/' +
+        'global/AuthenticatedUsers',
+    // LogId is used for the AWS logger to write the logs
+    // to the destination bucket.  This style of logging is
+    // to be implemented later but the logId is used in the
+    // ACLs.
+    logId: 'http://acs.amazonaws.com/groups/s3/LogDelivery',
 };

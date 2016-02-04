@@ -2,13 +2,14 @@ import assert from 'assert';
 import crypto from 'crypto';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
-import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
@@ -52,13 +53,13 @@ describe('objectGet API', () => {
     };
 
     it("should get the object metadata", (done) => {
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectGet(accessKey,  testGetRequest,
+                        objectGet(authInfo,  testGetRequest,
                             log, (err, result, responseMetaHeaders) => {
                                 assert.strictEqual(responseMetaHeaders
                                     [userMetadataKey], userMetadataValue);
@@ -71,13 +72,13 @@ describe('objectGet API', () => {
     });
 
     it('should get the object data', (done) => {
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, res) => {
                 assert.strictEqual(res, 'Bucket created');
-                objectPut(accessKey,  testPutObjectRequest, log,
+                objectPut(authInfo,  testPutObjectRequest, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectGet(accessKey,  testGetRequest, log,
+                        objectGet(authInfo,  testGetRequest, log,
                             (err, readable) => {
                                 const chunks = [];
                                 readable.on('data', function chunkRcvd(chunk) {
@@ -108,13 +109,13 @@ describe('objectGet API', () => {
             post: [ testBigData ],
             calculatedMD5: correctBigMD5
         };
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,  testPutBigObjectRequest, log,
+                objectPut(authInfo,  testPutBigObjectRequest, log,
                     (err, result) => {
                         assert.strictEqual(result, correctBigMD5);
-                        objectGet(accessKey,  testGetRequest, log,
+                        objectGet(authInfo,  testGetRequest, log,
                             (err, readable) => {
                                 const md5Hash = crypto.createHash('md5');
                                 const chunks = [];

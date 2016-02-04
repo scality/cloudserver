@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import auth from '../../../../lib/auth/auth';
-import DummyRequestLogger from '../../helpers';
+import { DummyRequestLogger } from '../../helpers';
 
 const logger = new DummyRequestLogger();
 

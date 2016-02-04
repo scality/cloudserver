@@ -1,13 +1,14 @@
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectHead from '../../../lib/api/objectHead';
-import DummyRequestLogger from '../helpers';
 
 const log = new DummyRequestLogger();
-const accessKey = 'accessKey1';
+const canonicalID = 'accessKey1';
+const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = [ new Buffer('I am a body'), ];
@@ -61,13 +62,13 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(accessKey,  testGetRequest, log,
+                        objectHead(authInfo,  testGetRequest, log,
                             (err) => {
                                 assert.strictEqual(err, 'NotModified');
                                 done();
@@ -88,13 +89,13 @@ describe('objectHead API', () => {
             },
             url: `/${bucketName}/${objectName}`,
         };
-        bucketPut(accessKey, testPutBucketRequest, log,
+        bucketPut(authInfo, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(accessKey,
+                        objectHead(authInfo,
                             testGetRequest, log, (err) => {
                                 assert.strictEqual(err, 'PreconditionFailed');
                                 done();
@@ -116,13 +117,13 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(accessKey,
+                        objectHead(authInfo,
                             testGetRequest, log, (err) => {
                                 assert.strictEqual(err, 'PreconditionFailed');
                                 done();
@@ -144,13 +145,13 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(accessKey,
+                        objectHead(authInfo,
                             testGetRequest, log, (err) => {
                                 assert.strictEqual(err, 'NotModified');
                                 done();
@@ -168,13 +169,13 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(accessKey,  testPutBucketRequest, log,
+        bucketPut(authInfo,  testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(accessKey,
+                objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(accessKey,
+                        objectHead(authInfo,
                             testGetRequest, log, (err, success) => {
                                 assert.strictEqual(success[userMetadataKey],
                                     userMetadataValue);
