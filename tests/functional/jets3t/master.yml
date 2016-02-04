@@ -5,7 +5,7 @@ matryoshka:
   - aggressor:
       image: scality/ironman-base
       startup: /bin/sleep 5d
-      configure: ./configure.bash
+      configure: echo "Nothing to do" && exit 0
 ---
 - test-conncurrent:
     exec: mvn test
