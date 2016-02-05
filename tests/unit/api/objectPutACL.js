@@ -6,16 +6,17 @@ import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
+import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = [ new Buffer('I am a body'), ];
+const postBody = new Buffer('I am a body');
 const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
 const objectName = 'objectName';
-const testPutBucketRequest = {
+const testPutBucketRequest = new DummyRequest({
     bucketName,
     namespace,
     lowerCaseHeaders: {},
@@ -23,19 +24,21 @@ const testPutBucketRequest = {
         host: `${bucketName}.s3.amazonaws.com`
     },
     url: '/',
-};
-const testPutObjectRequest = {
-    bucketName,
-    namespace,
-    objectKey: objectName,
-    lowerCaseHeaders: {},
-    url: `/${bucketName}/${objectName}`,
-    post: postBody,
-    calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
-};
+});
+
+let testPutObjectRequest;
 
 describe('putObjectACL API', () => {
     beforeEach(done => {
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            lowerCaseHeaders: {},
+            url: `/${bucketName}/${objectName}`,
+            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+        }, postBody);
+
         metadata.deleteBucket(bucketName, log, ()=> {
             done();
         });
@@ -64,22 +67,16 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
-            (err, success) => {
-                assert.strictEqual(success, 'Bucket created');
-                objectPut(authInfo,
-                    testPutObjectRequest, log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo,  testObjACLRequest,
-                            log, (err) => {
-                                assert.strictEqual(err, 'InvalidArgument');
-                                done();
-                            }
-                        );
-                    }
-                );
-            }
-        );
+        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
+            assert.strictEqual(success, 'Bucket created');
+            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctMD5);
+                objectPutACL(authInfo, testObjACLRequest, log, err => {
+                    assert.strictEqual(err, 'InvalidArgument');
+                    done();
+                });
+            });
+        });
     });
 
     it('should set a canned public-read-write ACL', (done) => {
@@ -99,28 +96,20 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
-            (err, success) => {
-                assert.strictEqual(success, 'Bucket created');
-                objectPut(authInfo,
-                    testPutObjectRequest, log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo,  testObjACLRequest,
-                            log, (err) => {
-                                assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, log,
-                                    (err, md) => {
-                                        assert.strictEqual(md.keyMap.
-                                            objectName.acl.Canned,
-                                            'public-read-write');
-                                        done();
-                                    });
-                            }
-                        );
-                    }
-                );
-            }
-        );
+        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
+            assert.strictEqual(success, 'Bucket created');
+            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctMD5);
+                objectPutACL(authInfo, testObjACLRequest, log, (err) => {
+                    assert.strictEqual(err, undefined);
+                    metadata.getBucket(bucketName, log, (err, md) => {
+                        assert.strictEqual(md.keyMap.objectName.acl.Canned,
+                                           'public-read-write');
+                        done();
+                    });
+                });
+            });
+        });
     });
 
     it('should set a canned public-read ACL followed by'
@@ -157,39 +146,28 @@ describe('putObjectACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
-            (err, success) => {
-                assert.strictEqual(success, 'Bucket created');
-                objectPut(authInfo,
-                    testPutObjectRequest, log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo,  testObjACLRequest1,
-                            log, (err) => {
-                                assert.strictEqual(err, undefined);
-                                metadata.getBucket(bucketName, log,
-                                    (err, md) => {
-                                        assert.strictEqual(md.keyMap.objectName
-                                            .acl.Canned, 'public-read');
-                                        objectPutACL(authInfo,
-                                            testObjACLRequest2, log,
-                                            (err) => {
-                                                assert.strictEqual(err,
-                                                    undefined);
-                                                metadata.getBucket(bucketName,
-                                                log, (err, md) => {
-                                                    assert.strictEqual(md.keyMap
-                                                    .objectName.acl.Canned,
-                                                    'authenticated-read');
-                                                    done();
-                                                });
-                                            });
-                                    });
-                            }
-                        );
-                    }
-                );
-            }
-        );
+        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
+            assert.strictEqual(success, 'Bucket created');
+            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctMD5);
+                objectPutACL(authInfo, testObjACLRequest1, log, (err) => {
+                    assert.strictEqual(err, undefined);
+                    metadata.getBucket(bucketName, log, (err, md) => {
+                        assert.strictEqual(md.keyMap.objectName.acl.Canned,
+                                           'public-read');
+                        objectPutACL(authInfo, testObjACLRequest2, log, err => {
+                            assert.strictEqual(err, undefined);
+                            metadata.getBucket(bucketName, log, (err, md) => {
+                                assert.strictEqual(md.keyMap
+                                                   .objectName.acl.Canned,
+                                                   'authenticated-read');
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
     });
 
     it('should set ACLs provided in request headers', (done) => {
