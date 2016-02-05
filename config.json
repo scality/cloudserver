@@ -6,6 +6,10 @@
     "bucketd": {
         "bootstrap": ["localhost"]
     },
+    "vault": {
+        "host": "localhost",
+        "port": 8500
+    },
     "clustering": true,
     "clusters": 10,
     "log": {
