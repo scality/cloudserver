@@ -43,8 +43,8 @@ describe('canonicalization', () => {
             },
             url: '/obj',
             query: {
-                'requestPayment': 'yes,please',
-                'ignore': 'me',
+                requestPayment: 'yes,please',
+                ignore: 'me',
             }
         };
         const canonicalizedResource = getCanonicalizedResource(request);
@@ -63,7 +63,7 @@ describe('canonicalization', () => {
             },
             url: '/',
             query: {
-                'ignore': 'me',
+                ignore: 'me',
             }
         };
         const canonicalizedResource = getCanonicalizedResource(request);

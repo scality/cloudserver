@@ -1,6 +1,6 @@
 import assert from 'assert';
-import async from 'async';
 
+import async from 'async';
 import { parseString } from 'xml2js';
 
 import bucketGet from '../../../lib/api/bucketGet';
