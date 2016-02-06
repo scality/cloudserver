@@ -30,7 +30,7 @@ class S3Blaster {
         // config.signatureVersion = 'v2';
         config.accessKeyId = 'accessKey1';
         config.secretAccessKey = 'verySecretKey1';
-        config.endpoint = this.host + ':' + this.port;
+        config.endpoint = `${this.host}:${this.port}`;
         config.sslEnabled = false;
         // config.logger = process.stdout;
         config.s3ForcePathStyle = true;
