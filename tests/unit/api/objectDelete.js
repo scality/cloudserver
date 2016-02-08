@@ -27,7 +27,6 @@ describe('objectDelete API', () => {
             objectKey,
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectKey}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         metadata.deleteBucket(bucketName, log, () => done());
     });
