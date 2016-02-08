@@ -76,15 +76,14 @@ describe('listMultipartUploads API', () => {
             },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
             query: {
-                delimiter: delimiter,
-                prefix: prefix
+                delimiter,
+                prefix,
             }
         };
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testPutBucketRequest, log,
-                    next);
+                bucketPut(authInfo, testPutBucketRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
