@@ -29,7 +29,6 @@ describe('objectGet API', () => {
                 'x-amz-meta-test': 'some metadata'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
         }, postBody);
     });
 
@@ -93,7 +92,7 @@ describe('objectGet API', () => {
     it('should get the object data for large objects', done => {
         const testBigData = crypto.randomBytes(1000000);
         const correctBigMD5 =
-            crypto.createHash('md5').update(testBigData).digest('base64');
+            crypto.createHash('md5').update(testBigData).digest('hex');
 
         const testPutBigObjectRequest = new DummyRequest({
             bucketName,
@@ -103,7 +102,6 @@ describe('objectGet API', () => {
                 'x-amz-meta-test': 'some metadata'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: correctBigMD5,
         }, testBigData);
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
@@ -121,7 +119,7 @@ describe('objectGet API', () => {
                             });
                             readable.on('end', function combineChunks() {
                                 const resultmd5Hash =
-                                    md5Hash.digest('base64');
+                                    md5Hash.digest('hex');
                                 assert.strictEqual(resultmd5Hash,
                                     correctBigMD5);
                                 done();

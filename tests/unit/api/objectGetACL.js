@@ -28,7 +28,7 @@ describe('objectGetACL API', () => {
     });
 
     const objectName = 'objectName';
-    const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
+    const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
     const testBucketPutRequest = {
         bucketName,
         namespace,
@@ -59,7 +59,6 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
@@ -111,7 +110,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
@@ -162,7 +160,6 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'public-read-write'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
@@ -274,7 +271,6 @@ describe('objectGetACL API', () => {
             },
             url: `/${bucketName}/${objectName}`,
             post: postBody,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
@@ -396,7 +392,6 @@ describe('objectGetACL API', () => {
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
                     'f8f8d5218e7cd47ef2bf"',            },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
