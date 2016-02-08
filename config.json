@@ -6,7 +6,7 @@
     "bucketd": {
         "bootstrap": ["localhost"]
     },
-    "vault": {
+    "vaultd": {
         "host": "localhost",
         "port": 8500
     },
