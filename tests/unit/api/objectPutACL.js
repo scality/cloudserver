@@ -14,7 +14,7 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
-const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
+const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
 const testPutBucketRequest = new DummyRequest({
     bucketName,
@@ -36,7 +36,6 @@ describe('putObjectACL API', () => {
             objectKey: objectName,
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
 
         metadata.deleteBucket(bucketName, log, ()=> {

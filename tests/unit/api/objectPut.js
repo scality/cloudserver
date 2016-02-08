@@ -12,6 +12,7 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
+const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const testPutBucketRequest = new DummyRequest({
     bucketName,
     namespace,
@@ -60,7 +61,6 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object', done => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -85,7 +85,6 @@ describe('objectPut API', () => {
     });
 
     it('should successfully put an object with user metadata', done => {
-        const correctMD5 = 'vnR+tLdVF79rPPfF+7YvOg==';
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
