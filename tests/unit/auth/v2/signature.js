@@ -2,7 +2,7 @@ import assert from 'assert';
 
 import constructStringToSign from
     '../../../../lib/auth/v2/constructStringToSign';
-import { hashSignature } from '../../../../lib/auth/backend';
+import { hashSignature } from '../../../../lib/auth/in_memory/vaultUtilities';
 import { DummyRequestLogger } from '../../helpers';
 
 const log = new DummyRequestLogger();
