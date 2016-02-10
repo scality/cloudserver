@@ -45,7 +45,9 @@ describe('canonicalization', () => {
             query: {
                 requestPayment: 'yes,please',
                 ignore: 'me',
-            }
+            },
+            gotBucketNameFromHost: true,
+            bucketName: 'bucket',
         };
         const canonicalizedResource = getCanonicalizedResource(request);
         assert.strictEqual(canonicalizedResource,
