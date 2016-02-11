@@ -74,6 +74,30 @@ describe('utils.getBucketNameFromHost', () => {
     });
 });
 
+describe('utils.getAllRegions', () => {
+    it('should return regions from config', () => {
+        const allRegions = utils.getAllRegions();
+
+        assert(allRegions.indexOf('eu-west-1') >= 0);
+        assert(allRegions.indexOf('us-west-1') >= 0);
+        assert(allRegions.indexOf('us-east-1') >= 0);
+        assert(allRegions.indexOf('us-gov-west-1') >= 0);
+        assert(allRegions.indexOf('localregion') >= 0);
+    });
+});
+
+describe('utils.getAllEndpoints', () => {
+    it('should return endpoints from config', () => {
+        const allEndpoints = utils.getAllEndpoints();
+
+        assert(allEndpoints.indexOf('s3-us-west-2.amazonaws.com') >= 0);
+        assert(allEndpoints.indexOf('s3.amazonaws.com') >= 0);
+        assert(allEndpoints.indexOf('s3-external-1.amazonaws.com') >= 0);
+        assert(allEndpoints.indexOf('s3.us-east-1.amazonaws.com') >= 0);
+        assert(allEndpoints.indexOf('localhost') >= 0);
+    });
+});
+
 describe('utils.isValidBucketName', () => {
     it('should return false if bucketname is fewer than ' +
         '3 characters long', () => {
