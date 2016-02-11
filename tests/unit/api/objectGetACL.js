@@ -113,18 +113,15 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -163,18 +160,15 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -217,16 +211,14 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'authenticated-read'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo,  testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, log,
                     next);
             },
             function waterfall3(result, next) {
