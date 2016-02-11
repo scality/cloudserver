@@ -25,13 +25,7 @@ describe("bucketDelete API", () => {
         });
     });
 
-    const testBucketPutRequest = {
-        bucketName,
-        namespace,
-        lowerCaseHeaders: {},
-        url: `/${bucketName}`,
-    };
-    const testDeleteRequest = {
+    const testRequest = {
         bucketName,
         namespace,
         lowerCaseHeaders: {},
@@ -45,13 +39,14 @@ describe("bucketDelete API", () => {
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
             namespace,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg==',
             objectKey: objectName,
         }, postBody);
 
-        bucketPut(authInfo, testBucketPutRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, () => {
-                bucketDelete(authInfo, testDeleteRequest, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
+            assert.strictEqual(err, null);
+            objectPut(authInfo, testPutObjectRequest, log, (err) => {
+                assert.strictEqual(err, undefined);
+                bucketDelete(authInfo, testRequest, log, err => {
                     assert.strictEqual(err, 'BucketNotEmpty');
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.name, bucketName);
@@ -68,8 +63,8 @@ describe("bucketDelete API", () => {
     });
 
     it('should delete a bucket', done => {
-        bucketPut(authInfo, testBucketPutRequest, log, () => {
-            bucketDelete(authInfo, testDeleteRequest, log, () => {
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.strictEqual(err, 'NoSuchBucket');
                     assert.strictEqual(md, undefined);
@@ -85,7 +80,7 @@ describe("bucketDelete API", () => {
 
     it('should prevent anonymous user delete bucket API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        bucketDelete(publicAuthInfo, testDeleteRequest, log, err => {
+        bucketDelete(publicAuthInfo, testRequest, log, err => {
             assert.strictEqual(err, 'AccessDenied');
             done();
         });
