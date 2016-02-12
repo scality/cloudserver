@@ -1,32 +1,40 @@
-'use strict'; // eslint-disable-line strict
+import fs from 'fs';
+import cp from 'child_process';
+import process from 'process';
+import path from 'path';
 
-const fs = require('fs');
-const proc = require('child_process');
-const process = require('process');
-
-const testDir = `${__dirname}/tests/functional`;
+const rootPath = path.join(__dirname, 'tests', 'functional');
 
 function testing(dir) {
+    let masterConfig;
+
     process.stdout.write(`testing ${dir}\n`);
-    let master;
+
     try {
-        master = fs.readFileSync(`${testDir}/${dir}/master.json`);
+        masterConfig = require(path.join(rootPath, dir, 'master.json'));
     } catch (err) {
-        process.stdout.write('master.json file not found, '
-                             + 'skipping this directory\n');
-        return true;
+        return process.stdout.write(['master.json file not found',
+            'skipping this directory'].join('\n'));
     }
-    const config = JSON.parse(master.toString());
-    return config.tests.files.reduce((prev, file) => {
-        const test = proc.spawnSync('mocha',
-                [ `${testDir}/${dir}/${file}` ], {stdio: 'inherit'});
+
+    return masterConfig.tests.files.reduce((prev, file) => {
+        const cwd = path.join(rootPath, dir);
+        const testFile = path.join(cwd, file);
+
+        const test = cp.spawnSync('mocha', [testFile], {
+            stdio: 'inherit',
+            cwd
+        });
+
         return prev && !test.status;
     }, true);
 }
 
 function main() {
-    process.stdout.write(`reading dirs in ${__dirname}/tests/functional\n`);
-    const dirs = fs.readdirSync(testDir);
+    process.stdout.write(`reading dirs in ${rootPath}\n`);
+
+    const dirs = fs.readdirSync(rootPath);
+
     return dirs.reduce((prev, dir) => {
         return prev && testing(dir);
     }, true);

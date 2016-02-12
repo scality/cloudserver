@@ -46,7 +46,7 @@
     "mocha": "^2.3.3"
   },
   "scripts": {
-    "ft_test": "mocha tester.js",
+    "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
