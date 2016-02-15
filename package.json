@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
+    "arsenal": "scality/IronMan-Arsenal#rel/1.0",
     "async": "~1.4.2",
     "aws-sdk": "^2.2.23",
     "babel-core": "^6.2.1",
