@@ -43,6 +43,7 @@
     "eslint": "^1.5.1",
     "eslint-config-airbnb": "^0.0.9",
     "eslint-config-ironman": "scality/IronMan-Guidelines",
+    "lolex": "^1.4.0",
     "mocha": "^2.3.3"
   },
   "scripts": {
