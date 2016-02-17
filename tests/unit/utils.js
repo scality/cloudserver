@@ -75,13 +75,24 @@ describe('utils.getBucketNameFromHost', () => {
 });
 
 describe('utils.getAllRegions', () => {
+    it('should return official AWS regions', () => {
+        const allRegions = utils.getAllRegions();
+
+        assert(allRegions.indexOf('ap-northeast-1') >= 0);
+        assert(allRegions.indexOf('ap-southeast-1') >= 0);
+        assert(allRegions.indexOf('ap-southeast-2') >= 0);
+        assert(allRegions.indexOf('eu-central-1') >= 0);
+        assert(allRegions.indexOf('eu-west-1') >= 0);
+        assert(allRegions.indexOf('sa-east-1') >= 0);
+        assert(allRegions.indexOf('us-west-1') >= 0);
+        assert(allRegions.indexOf('us-west-2') >= 0);
+        assert(allRegions.indexOf('us-east-1') >= 0);
+        assert(allRegions.indexOf('us-gov-west-1') >= 0);
+    });
+
     it('should return regions from config', () => {
         const allRegions = utils.getAllRegions();
 
-        assert(allRegions.indexOf('eu-west-1') >= 0);
-        assert(allRegions.indexOf('us-west-1') >= 0);
-        assert(allRegions.indexOf('us-east-1') >= 0);
-        assert(allRegions.indexOf('us-gov-west-1') >= 0);
         assert(allRegions.indexOf('localregion') >= 0);
     });
 });
