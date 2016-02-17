@@ -62,7 +62,8 @@ function exec(args, done, exitCode) {
     process.stdout.write(`${program} ${av}\n`);
     proc.spawn(program, av, { stdio: 'inherit' })
         .on('exit', code => {
-            assert.strictEqual(code, exit);
+            assert.strictEqual(code, exit,
+                               's3cmd did not yield expected exit status.');
             done();
         });
 }
