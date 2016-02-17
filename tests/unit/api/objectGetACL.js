@@ -16,6 +16,9 @@ const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
 const authInfo = makeAuthInfo(accessKey);
 const canonicalID = authInfo.getCanonicalID();
+const otherAccountAccessKey = 'accessKey2';
+const otherAccountAuthInfo = makeAuthInfo(otherAccountAccessKey);
+const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
@@ -34,7 +37,10 @@ describe('objectGetACL API', () => {
     const testBucketPutRequest = {
         bucketName,
         namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        headers: {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-acl': 'public-read-write',
+        },
         url: '/',
     };
     const testGetACLRequest = {
@@ -238,7 +244,8 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
+                bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
@@ -261,7 +268,7 @@ describe('objectGetACL API', () => {
                 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0], canonicalID);
+                .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'READ');
@@ -282,7 +289,8 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
+                bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
@@ -305,7 +313,7 @@ describe('objectGetACL API', () => {
                 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0], canonicalID);
+                .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'FULL_CONTROL');

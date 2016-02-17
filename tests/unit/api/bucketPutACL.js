@@ -1,11 +1,11 @@
 import { errors } from 'arsenal';
 import assert from 'assert';
 
+import aclUtils from '../../../lib/utilities/aclUtils';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
-import utils from '../../../lib/utils';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
@@ -36,7 +36,7 @@ describe('putBucketACL API', () => {
             `emailAddress="test2@testly.com", ` +
             `id="sdfsdfsfwwiieohefs"`;
         const grantReadHeader =
-            utils.parseGrant(grantRead, 'read');
+            aclUtils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;
         assert.strictEqual(firstIdentifier, constants.logId);
         const secondIdentifier = grantReadHeader[1].identifier;
@@ -254,8 +254,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
@@ -299,7 +298,6 @@ describe('putBucketACL API', () => {
                     '</Grant>' +
                   '</AccessControlList>' +
                 '</AccessControlPolicy>',
-            },
             url: '/?acl',
             query: { acl: '' },
         };
@@ -335,8 +333,7 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
@@ -352,7 +349,6 @@ describe('putBucketACL API', () => {
                     '</Grant>' +
                   '</AccessControlList>' +
                 '</AccessControlPolicy>',
-            },
             url: '/?acl',
             query: { acl: '' },
         };
@@ -372,11 +368,11 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            // XML below uses the term "PowerGrant" instead of
-            // "Grant" which is part of the s3 xml shceme for ACLs
-            // so an error should be returned
-            post: {
-                '<AccessControlPolicy xmlns':
+            /** XML below uses the term "PowerGrant" instead of
+            * "Grant" which is part of the s3 xml scheme for ACLs
+            * so an error should be returned
+            */
+            post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
@@ -392,7 +388,6 @@ describe('putBucketACL API', () => {
                     '</PowerGrant>' +
                   '</AccessControlList>' +
                 '</AccessControlPolicy>',
-            },
             url: '/?acl',
             query: { acl: '' },
         };
@@ -451,8 +446,7 @@ describe('putBucketACL API', () => {
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             // URI in grant below is not valid group URI for s3
-            post: {
-                '<AccessControlPolicy xmlns':
+            post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
@@ -468,7 +462,7 @@ describe('putBucketACL API', () => {
                     '<Permission>READ</Permission>' +
                   '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>' },
+                '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
         };
