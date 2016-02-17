@@ -23,7 +23,7 @@ const testRequest = {
 
 describe('bucketPut API', () => {
     beforeEach((done) => {
-        metadata.deleteBucket(bucketName, log, ()=> {
+        metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(usersBucket, log, () => {
                 done();
             });
@@ -31,7 +31,7 @@ describe('bucketPut API', () => {
     });
 
     after((done) => {
-        metadata.deleteBucket(bucketName, log, ()=> {
+        metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(usersBucket, log, () => {
                 done();
             });
@@ -40,8 +40,8 @@ describe('bucketPut API', () => {
 
     it('should return an error if bucket already exists', (done) => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(authInfo,  testRequest, log, () => {
-            bucketPut(otherAuthInfo,  testRequest, log,
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketPut(otherAuthInfo, testRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'BucketAlreadyExists');
                         done();
@@ -58,7 +58,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: 'malformedxml'
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -73,7 +73,7 @@ describe('bucketPut API', () => {
             url: `/${bucketName}`,
             post: '<Hello></Hello>'
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
@@ -92,14 +92,14 @@ describe('bucketPut API', () => {
                 '<LocationConstraint>invalidLocation</LocationConstraint>'
                 + '</CreateBucketConfiguration>'
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidLocationConstraint');
             done();
         });
     });
 
     it('should create a bucket', (done) => {
-        bucketPut(authInfo,  testRequest, log, (err, success) => {
+        bucketPut(authInfo, testRequest, log, (err, success) => {
             if (err) {
                 return done(err);
             }
@@ -130,9 +130,9 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -151,9 +151,9 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -173,9 +173,9 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
             metadata.getBucket(bucketName, log, (err) => {
                 assert.strictEqual(err, 'NoSuchBucket');
@@ -195,9 +195,9 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -227,13 +227,13 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: {host: `${bucketName}.s3.amazonaws.com`}
+            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(authInfo,  testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, (err) => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.acl.READ[0], constants.logId);

@@ -125,7 +125,7 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testPutBucketRequest, log,
+                bucketPut(authInfo, testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
@@ -172,7 +172,7 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testPutBucketRequest, log,
+                bucketPut(authInfo, testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
@@ -223,7 +223,7 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testPutBucketRequest, log,
+                bucketPut(authInfo, testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {
@@ -272,7 +272,7 @@ describe('listMultipartUploads API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testPutBucketRequest, log,
+                bucketPut(authInfo, testPutBucketRequest, log,
                     next);
             },
             function waterfall2(success, next) {

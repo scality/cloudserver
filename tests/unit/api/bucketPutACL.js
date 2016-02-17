@@ -16,7 +16,7 @@ const testBucketPutRequest = {
     bucketName,
     namespace,
     lowerCaseHeaders: {},
-    headers: {host: `${bucketName}.s3.amazonaws.com`},
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 };
 
@@ -69,10 +69,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();
@@ -98,10 +98,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -148,10 +148,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -207,10 +207,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -273,10 +273,10 @@ describe('putBucketACL API', () => {
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -320,10 +320,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err,
                             'UnresolvableGrantByEmailAddress');
@@ -383,7 +383,7 @@ describe('putBucketACL API', () => {
                       '<Permission>READ_ACP</Permission>' +
                     '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>' },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -395,10 +395,10 @@ describe('putBucketACL API', () => {
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, undefined);
                         metadata.getBucket(bucketName, log, (err, md) => {
@@ -455,10 +455,10 @@ describe('putBucketACL API', () => {
             },
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err,
                             'UnresolvableGrantByEmailAddress');
@@ -505,10 +505,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'MalformedACLError');
                         done();
@@ -541,7 +541,7 @@ describe('putBucketACL API', () => {
                       '<Permission>WRITE_ACP</Permission>' +
                     '<Grant>' +
                   '<AccessControlList>' +
-                '<AccessControlPolicy>'},
+                '<AccessControlPolicy>' },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -551,10 +551,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'MalformedXML');
                         done();
@@ -588,7 +588,7 @@ describe('putBucketACL API', () => {
                     '<Permission>READ</Permission>' +
                   '</Grant>' +
                   '</AccessControlList>' +
-                '</AccessControlPolicy>'},
+                '</AccessControlPolicy>' },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
             },
@@ -598,10 +598,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();
@@ -632,10 +632,10 @@ describe('putBucketACL API', () => {
             }
         };
 
-        bucketPut(authInfo,  testBucketPutRequest, log,
+        bucketPut(authInfo, testBucketPutRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testACLRequest, log,
+                bucketPutACL(authInfo, testACLRequest, log,
                     (err) => {
                         assert.strictEqual(err, 'InvalidArgument');
                         done();

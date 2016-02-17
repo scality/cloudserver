@@ -35,7 +35,7 @@ const createdAuthInfo = makeAuthInfo('accessKey1');
 describe('v4 headerAuthCheck', () => {
     it('should return error if undefined authorization header', (done) => {
         const alteredRequest = createAlteredRequest({
-            authorization: undefined}, 'headers', request, headers);
+            authorization: undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -44,7 +44,7 @@ describe('v4 headerAuthCheck', () => {
 
     it('should return error if undefined sha256 header', (done) => {
         const alteredRequest = createAlteredRequest({
-            'x-amz-content-sha256': undefined}, 'headers', request, headers);
+            'x-amz-content-sha256': undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -56,7 +56,7 @@ describe('v4 headerAuthCheck', () => {
             authorization: 'AWS4-HMAC-SHA256 SignedHeaders=host;' +
                 'x-amz-content-sha256;x-amz-date, Signature=abed9' +
                 '24c06abf8772c670064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'}, 'headers', request, headers);
+                '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -71,7 +71,7 @@ describe('v4 headerAuthCheck', () => {
                 'Sigheaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Signature=abed924c06abf8772c6' +
                 '70064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'}, 'headers', request, headers);
+                '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -86,7 +86,7 @@ describe('v4 headerAuthCheck', () => {
                 'SignedHeaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Sig=abed924c06abf8772c6' +
                 '70064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'}, 'headers', request, headers);
+                '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -95,7 +95,7 @@ describe('v4 headerAuthCheck', () => {
 
     it('should return error if missing timestamp', (done) => {
         const alteredRequest = createAlteredRequest({
-            'x-amz-date': undefined}, 'headers', request, headers);
+            'x-amz-date': undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'MissingSecurityHeader');
             done();
@@ -106,7 +106,7 @@ describe('v4 headerAuthCheck', () => {
         'match timestamp date', (done) => {
         // Different timestamp (2015 instead of 2016)
         const alteredRequest = createAlteredRequest({
-            'x-amz-date': '20150208T201405Z'}, 'headers', request, headers);
+            'x-amz-date': '20150208T201405Z' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -123,7 +123,7 @@ describe('v4 headerAuthCheck', () => {
                 'SignedHeaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Signature=abed924c06abf8772c67' +
                 '0064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'}, 'headers', request, headers);
+                '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'RequestTimeTooSkewed');
             done();
@@ -139,7 +139,7 @@ describe('v4 headerAuthCheck', () => {
                 'SignedHeaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Signature=abed924c06abf8772c67' +
                 '0064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'},
+                '4a789b0bae19307bc' },
             'headers', request, headers);
         delete alteredRequest.headers['x-amz-date'];
         headerAuthCheck(alteredRequest, log, (err) => {
@@ -158,7 +158,7 @@ describe('v4 headerAuthCheck', () => {
                 'SignedHeaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Signature=abed924c06abf8772c67' +
                 '0064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'},
+                '4a789b0bae19307bc' },
             'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'RequestTimeTooSkewed');
@@ -176,7 +176,7 @@ describe('v4 headerAuthCheck', () => {
                 'SignedHeaders=host;x-amz-content-sha256;' +
                 'x-amz-date, Signature=abed924c06abf8772c67' +
                 '0064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc'},
+                '4a789b0bae19307bc' },
             'headers', request, headers);
         delete alteredRequest.headers['x-amz-date'];
         headerAuthCheck(alteredRequest, log, (err) => {

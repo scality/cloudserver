@@ -33,7 +33,7 @@ describe('objectGetACL API', () => {
         bucketName,
         namespace,
         lowerCaseHeaders: {},
-        headers: {host: `${bucketName}.s3.amazonaws.com`},
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
     };
     const testGetACLRequest = {
@@ -214,7 +214,7 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log, next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
@@ -223,7 +223,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
+                objectGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -266,17 +266,17 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, log,
                     next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
+                objectGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -318,17 +318,17 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, log,
                     next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
+                objectGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -370,7 +370,7 @@ describe('objectGetACL API', () => {
                     'f8f8d5218e7cd47ef2be"',
                 'x-amz-grant-write-acp':
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',            },
+                    'f8f8d5218e7cd47ef2bf"', },
             headers: {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
@@ -382,22 +382,22 @@ describe('objectGetACL API', () => {
                     'f8f8d5218e7cd47ef2be"',
                 'x-amz-grant-write-acp':
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',            },
+                    'f8f8d5218e7cd47ef2bf"', },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo,  testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, log,
                     next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo,  testGetACLRequest, log,
+                objectGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
