@@ -85,7 +85,7 @@ describe('Error handling in checkAuth', () => {
                 AWSAccessKeyId: 'accessKey1',
                 Expires: expires,
                 Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
-            lowerCaseHeaders: {host: 's3.amazonaws.com'},
+            lowerCaseHeaders: { host: 's3.amazonaws.com' },
         };
 
         auth(request, logger, err => {

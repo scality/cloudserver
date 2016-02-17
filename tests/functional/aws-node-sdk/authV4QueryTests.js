@@ -50,7 +50,7 @@ function provideRawOutput(args, cb) {
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
-    proc.spawn('diff', [ putFile, receivedFile ]).on('exit', code => {
+    proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
     });
@@ -58,7 +58,7 @@ function diff(putFile, receivedFile, done) {
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [ file ]).on('exit', () => {
+    proc.spawn('rm', [file]).on('exit', () => {
         callback();
     });
 }
@@ -93,7 +93,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should create a bucket', function createBucket(done) {
-        const params = {Bucket: bucket};
+        const params = { Bucket: bucket };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], (httpCode) => {
             assert.strictEqual(httpCode, '200 OK');
@@ -121,7 +121,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should put an object', function putObject(done) {
-        const params = {Bucket: bucket, Key: 'key'};
+        const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
             '--upload-file', 'package.json'], (httpCode) => {
@@ -131,9 +131,9 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should list objects in bucket', function listObjects(done) {
-        const params = {Bucket: bucket};
+        const params = { Bucket: bucket };
         const url = s3.getSignedUrl('listObjects', params);
-        provideRawOutput(['-verbose', url ], (httpCode, rawOutput) => {
+        provideRawOutput(['-verbose', url], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
                 if (err) {
@@ -147,7 +147,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should get an object', function getObject(done) {
-        const params = {Bucket: bucket, Key: 'key'};
+        const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('getObject', params);
         provideRawOutput(['-verbose', '-o', 'download', url], (httpCode) => {
             assert.strictEqual(httpCode, '200 OK');
@@ -162,7 +162,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should delete an object', function deleteObject(done) {
-        const params = {Bucket: bucket, Key: 'key'};
+        const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             (httpCode) => {
@@ -172,7 +172,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('should delete a bucket', function deleteBucket(done) {
-        const params = {Bucket: bucket};
+        const params = { Bucket: bucket };
         const url = s3.getSignedUrl('deleteBucket', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             (httpCode) => {

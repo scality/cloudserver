@@ -16,11 +16,11 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 
-const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`, ] : null;
+const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`] : null;
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
-    proc.spawn('diff', [ putFile, receivedFile, ]).on('exit', code => {
+    proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
     });
@@ -28,8 +28,8 @@ function diff(putFile, receivedFile, done) {
 
 function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
-    proc.spawn('dd', [ 'if=/dev/urandom', `of=${name}`,
-        `bs=${bytes}`, 'count=1' ], { stdio: 'inherit' }).on('exit', code => {
+    proc.spawn('dd', ['if=/dev/urandom', `of=${name}`,
+        `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
             assert.strictEqual(code, 0);
             callback();
         });
@@ -37,7 +37,7 @@ function createFile(name, bytes, callback) {
 
 function createEmptyFile(name, callback) {
     process.stdout.write(`touch ${name}\n`);
-    proc.spawn('touch', [ name ], { stdio: 'inherit' }).on('exit', code => {
+    proc.spawn('touch', [name], { stdio: 'inherit' }).on('exit', code => {
         assert.strictEqual(code, 0);
         callback();
     });
@@ -45,7 +45,7 @@ function createEmptyFile(name, callback) {
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [ `${file}`, ]).on('exit', () => {
+    proc.spawn('rm', [`${file}`]).on('exit', () => {
         callback();
     });
 }
@@ -109,15 +109,15 @@ function provideLineOfInterest(args, lineFinder, cb) {
 
 describe('s3cmd putBucket', () => {
     it('should put a valid bucket', (done) => {
-        exec(['mb', `s3://${bucket}`, ], done);
+        exec(['mb', `s3://${bucket}`], done);
     });
 
     it('put the same bucket, should fail', (done) => {
-        exec(['mb', `s3://${bucket}`, ], done, 13);
+        exec(['mb', `s3://${bucket}`], done, 13);
     });
 
     it('put an invalid bucket, should fail', (done) => {
-        exec(['mb', `s3://${invalidName}`, ], done, 11);
+        exec(['mb', `s3://${invalidName}`], done, 11);
     });
 });
 
@@ -154,11 +154,11 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
 
 describe('s3cmd getBucket', () => {
     it('should list existing bucket', (done) => {
-        exec(['ls', `s3://${bucket}`, ], done);
+        exec(['ls', `s3://${bucket}`], done);
     });
 
     it('list non existing bucket, should fail', (done) => {
-        exec(['ls', `s3://${nonexist}`, ], done, 12);
+        exec(['ls', `s3://${nonexist}`], done, 12);
     });
 });
 
@@ -201,15 +201,15 @@ describe('s3cmd putObject', () => {
     });
 
     it('should put file in existing bucket', (done) => {
-        exec(['put', upload, `s3://${bucket}`, ], done);
+        exec(['put', upload, `s3://${bucket}`], done);
     });
 
     it('should put file with the same name in existing bucket', (done) => {
-        exec(['put', upload, `s3://${bucket}`, ], done);
+        exec(['put', upload, `s3://${bucket}`], done);
     });
 
     it('put file in non existing bucket, should fail', (done) => {
-        exec(['put', upload, `s3://${nonexist}`, ], done, 12);
+        exec(['put', upload, `s3://${nonexist}`], done, 12);
     });
 });
 
@@ -220,7 +220,7 @@ describe('s3cmd getObject', function toto() {
     });
 
     it('should get existing file in existing bucket', (done) => {
-        exec(['get', `s3://${bucket}/${upload}`, download ], done);
+        exec(['get', `s3://${bucket}/${upload}`, download], done);
     });
 
     it('downloaded file should equal uploaded file', (done) => {
@@ -228,11 +228,11 @@ describe('s3cmd getObject', function toto() {
     });
 
     it('get non existing file in existing bucket, should fail', (done) => {
-        exec(['get', `s3://${bucket}/${nonexist}`, 'fail', ], done, 12);
+        exec(['get', `s3://${bucket}/${nonexist}`, 'fail'], done, 12);
     });
 
     it('get file in non existing bucket, should fail', (done) => {
-        exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2', ], done, 12);
+        exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2'], done, 12);
     });
 });
 
@@ -275,15 +275,15 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
 
 describe('s3cmd delObject', () => {
     it('should delete existing object', (done) => {
-        exec(['rm', `s3://${bucket}/${upload}`, ], done);
+        exec(['rm', `s3://${bucket}/${upload}`], done);
     });
 
     it('delete non existing object, should fail', (done) => {
-        exec(['rm', `s3://${bucket}/${nonexist}`, ], done, 12);
+        exec(['rm', `s3://${bucket}/${nonexist}`], done, 12);
     });
 
     it('try to get the deleted object, should fail', (done) => {
-        exec(['get', `s3://${bucket}/${upload}`, download, ], done, 12);
+        exec(['get', `s3://${bucket}/${upload}`, download], done, 12);
     });
 });
 
@@ -303,23 +303,23 @@ describe('connector edge cases', function tata() {
     });
 
     it('should put previous file in existing bucket', (done) => {
-        exec(['put', upload, `s3://${bucket}`, ], done);
+        exec(['put', upload, `s3://${bucket}`], done);
     });
 
     it('should get existing file in existing bucket', (done) => {
-        exec(['get', `s3://${bucket}/${upload}`, download ], done);
+        exec(['get', `s3://${bucket}/${upload}`, download], done);
     });
 
     it('should put a 0 Bytes file', (done) => {
-        exec(['put', emptyUpload, `s3://${bucket}`, ], done);
+        exec(['put', emptyUpload, `s3://${bucket}`], done);
     });
 
     it('should get a 0 Bytes file', (done) => {
-        exec(['get', `s3://${bucket}/${emptyUpload}`, emptyDownload, ], done);
+        exec(['get', `s3://${bucket}/${emptyUpload}`, emptyDownload], done);
     });
 
     it('should delete a 0 Bytes file', (done) => {
-        exec(['del', `s3://${bucket}/${emptyUpload}`, ], done);
+        exec(['del', `s3://${bucket}/${emptyUpload}`], done);
     });
 });
 
@@ -337,7 +337,7 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should put an object via a multipart upload', (done) => {
-        exec(['put', MPUpload, `s3://${bucket}`, ], done);
+        exec(['put', MPUpload, `s3://${bucket}`], done);
     });
 
     it('should list multipart uploads', (done) => {
@@ -345,7 +345,7 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should get an object that was put via multipart upload', (done) => {
-        exec(['get', `s3://${bucket}/${MPUpload}`, MPDownload ], done);
+        exec(['get', `s3://${bucket}/${MPUpload}`, MPDownload], done);
     });
 
     it('downloaded file should equal uploaded file', (done) => {
@@ -353,28 +353,28 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should delete multipart uploaded object', (done) => {
-        exec(['rm', `s3://${bucket}/${MPUpload}`, ], done);
+        exec(['rm', `s3://${bucket}/${MPUpload}`], done);
     });
 
     it('should not be able to get deleted object', (done) => {
-        exec(['get', `s3://${bucket}/${MPUpload}`, download, ], done, 12);
+        exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 12);
     });
 });
 
 describe('s3cmd delBucket', () => {
     it('delete non-empty bucket, should fail', (done) => {
-        exec(['rb', `s3://${bucket}`, ], done, 13);
+        exec(['rb', `s3://${bucket}`], done, 13);
     });
 
     it('should delete remaining object', (done) => {
-        exec(['rm', `s3://${bucket}/${upload}`, ], done);
+        exec(['rm', `s3://${bucket}/${upload}`], done);
     });
 
     it('should delete empty bucket', (done) => {
-        exec(['rb', `s3://${bucket}`, ], done);
+        exec(['rb', `s3://${bucket}`], done);
     });
 
     it('try to get the deleted bucket, should fail', (done) => {
-        exec(['ls', `s3://${bucket}`, ], done, 12);
+        exec(['ls', `s3://${bucket}`], done, 12);
     });
 });

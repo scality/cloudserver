@@ -2,7 +2,7 @@ import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo} from '../helpers';
+import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';

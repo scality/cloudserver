@@ -54,37 +54,37 @@ describe('serviceGet API', () => {
             bucketName: bucketName1,
             lowerCaseHeaders: {},
             url: '/',
-            headers: {host: `${bucketName1}.s3.amazonaws.com`}
+            headers: { host: `${bucketName1}.s3.amazonaws.com` }
         };
         const testbucketPutRequest2 = {
             namespace,
             bucketName: bucketName2,
             lowerCaseHeaders: {},
             url: '/',
-            headers: {host: `${bucketName2}.s3.amazonaws.com`}
+            headers: { host: `${bucketName2}.s3.amazonaws.com` }
         };
         const testbucketPutRequest3 = {
             namespace,
             bucketName: bucketName3,
             lowerCaseHeaders: {},
             url: '/',
-            headers: {host: `${bucketName3}.s3.amazonaws.com`}
+            headers: { host: `${bucketName3}.s3.amazonaws.com` }
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testbucketPutRequest1, log,
+                bucketPut(authInfo, testbucketPutRequest1, log,
                     next);
             },
             function waterfall2(result, next) {
-                bucketPut(authInfo,  testbucketPutRequest2, log,
+                bucketPut(authInfo, testbucketPutRequest2, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketPut(authInfo,  testbucketPutRequest3, log,
+                bucketPut(authInfo, testbucketPutRequest3, log,
                     next);
             },
             function waterfall4(result, next) {
-                serviceGet(authInfo,  serviceGetRequest, log,
+                serviceGet(authInfo, serviceGetRequest, log,
                     next);
             },
             function waterfall4(result, next) {

@@ -40,4 +40,7 @@ function main() {
     }, true);
 }
 
-main() ? process.exit(0) : process.exit(1);
+if (main()) {
+    process.exit(0);
+}
+process.exit(1);

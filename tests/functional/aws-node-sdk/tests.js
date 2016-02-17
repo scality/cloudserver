@@ -58,7 +58,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should create a bucket', function createbucket(done) {
-        s3.createBucket({Bucket: bucket}, (err) => {
+        s3.createBucket({ Bucket: bucket }, (err) => {
             if (err) {
                 return done(new Error(`error creating bucket: ${err}`));
             }
@@ -67,7 +67,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should create a multipart upload', function createMPU(done) {
-        s3.createMultipartUpload({Bucket: bucket, Key: 'toAbort'},
+        s3.createMultipartUpload({ Bucket: bucket, Key: 'toAbort' },
             (err, data) => {
                 if (err) {
                     return done(new Error(
@@ -116,7 +116,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should upload a part of a multipart upload', function createMPU(done) {
-        s3.createMultipartUpload({Bucket: bucket, Key: 'toComplete'},
+        s3.createMultipartUpload({ Bucket: bucket, Key: 'toComplete' },
             (err, data) => {
                 if (err) {
                     return done(new Error(
@@ -267,7 +267,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
 
     it('should delete a bucket', function deletebucket(done) {
-        s3.deleteBucket({Bucket: bucket}, (err) => {
+        s3.deleteBucket({ Bucket: bucket }, (err) => {
             if (err) {
                 return done(new Error(`error deleting bucket: ${err}`));
             }

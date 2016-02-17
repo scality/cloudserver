@@ -13,7 +13,7 @@ const testRequest = {
     bucketName,
     namespace,
     lowerCaseHeaders: {},
-    headers: {host: `${bucketName}.s3.amazonaws.com`},
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 };
 describe('bucketHead API', () => {
