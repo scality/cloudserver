@@ -67,7 +67,7 @@ describe('objectPut API', () => {
             objectKey: objectName,
             lowerCaseHeaders: {},
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
@@ -100,7 +100,7 @@ describe('objectPut API', () => {
                 'x-amz-meta-test3': 'even more metadata',
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {

@@ -314,7 +314,7 @@ describe('objectGetACL API', () => {
                 'x-amz-acl': 'bucket-owner-full-control'
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
         }, postBody);
         async.waterfall([
             function waterfall1(next) {

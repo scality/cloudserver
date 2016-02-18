@@ -15,7 +15,7 @@ const md5Hash = crypto.createHash('md5');
 const bufferBody =
     new Buffer(5242880).fill(0);
 md5Hash.update(bufferBody);
-const calculatedMD5 = md5Hash.digest('hex');
+const calculatedHash = md5Hash.digest('hex');
 
 // Store uploadId's in memory so can do multiple tests with
 // same uploadId
@@ -94,7 +94,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 if (err) {
                     return done(new Error(`error uploading a part: ${err}`));
                 }
-                assert.strictEqual(data.ETag, `"${calculatedMD5}"`);
+                assert.strictEqual(data.ETag, `"${calculatedHash}"`);
                 done();
             });
         });
@@ -136,7 +136,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                         return done(
                             new Error('error uploading a part: ${err}'));
                     }
-                    assert.strictEqual(data.ETag, `"${calculatedMD5}"`);
+                    assert.strictEqual(data.ETag, `"${calculatedHash}"`);
                     done();
                 });
             });
@@ -155,7 +155,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 if (err) {
                     return done(new Error(`error uploading a part: ${err}`));
                 }
-                assert.strictEqual(data.ETag, `"${calculatedMD5}"`);
+                assert.strictEqual(data.ETag, `"${calculatedHash}"`);
                 done();
             });
         });
@@ -176,10 +176,10 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 .secondUploadId);
             assert.strictEqual(data.IsTruncated, false);
             assert.strictEqual(data.Parts[0].PartNumber, 1);
-            assert.strictEqual(data.Parts[0].ETag, calculatedMD5);
+            assert.strictEqual(data.Parts[0].ETag, calculatedHash);
             assert.strictEqual(data.Parts[0].Size, 5242880);
             assert.strictEqual(data.Parts[1].PartNumber, 2);
-            assert.strictEqual(data.Parts[1].ETag, calculatedMD5);
+            assert.strictEqual(data.Parts[1].ETag, calculatedHash);
             assert.strictEqual(data.Parts[1].Size, 5242880);
             // Must disable for now when running with Vault
             // since will need to pull actual ARN and canonicalId
@@ -215,11 +215,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             MultipartUpload: {
                 Parts: [
                     {
-                        ETag: `"${calculatedMD5}"`,
+                        ETag: `"${calculatedHash}"`,
                         PartNumber: 1
                     },
                     {
-                        ETag: `"${calculatedMD5}"`,
+                        ETag: `"${calculatedHash}"`,
                         PartNumber: 2
                     }
                 ]

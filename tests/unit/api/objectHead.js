@@ -40,7 +40,7 @@ describe('objectHead API', () => {
                 'x-amz-meta-test': userMetadataValue
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedMD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
+            calculatedHash: 'be747eb4b75517bf6b3cf7c5fbb62f3a'
         }, postBody);
         metadata.deleteBucket(bucketName, log, () => done());
     });
