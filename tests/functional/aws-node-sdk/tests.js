@@ -194,6 +194,21 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         done();
     });
 
+    it('should list ongoing multipart uploads', (done) => {
+        const params = {
+            Bucket: bucket,
+        };
+        s3.listMultipartUploads(params, (err, data) => {
+            if (err) {
+                return done(new Error(`error in listMultipartUploads: ${err}`));
+            }
+            assert.strictEqual(data.Uploads.length, 1);
+            assert.strictEqual(data.Uploads[0].UploadId,
+                multipartUploadData.secondUploadId);
+            done();
+        });
+    });
+
     it('should return an error if do not provide correct ' +
         'xml when completing a multipart upload', function completempu(done) {
         const params = {
