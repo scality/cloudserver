@@ -154,7 +154,7 @@ describe('List Parts API', () => {
             objectKey: uploadKey,
             lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
-            headers: {host: `${bucketName}.s3.amazonaws.com`},
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
                 uploadId,
                 'encoding-type': 'url',

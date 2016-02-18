@@ -20,7 +20,7 @@ const ownerCanonicalId = 'accessKey1';
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
-    proc.spawn('diff', [ putFile, receivedFile, ]).on('exit', code => {
+    proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
     });
@@ -29,11 +29,11 @@ function diff(putFile, receivedFile, done) {
 
 function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
-    proc.spawn('dd', [ 'if=/dev/urandom', `of=${name}`,
+    proc.spawn('dd', ['if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
             assert.strictEqual(code, 0);
             process.stdout.write(`chmod ugoa+rw ${name}\n`);
-            proc.spawn('chmod', ['ugo+rw', name, ], { stdio: 'inherit' })
+            proc.spawn('chmod', ['ugo+rw', name], { stdio: 'inherit' })
                 .on('exit', code => {
                     assert.strictEqual(code, 0);
                     callback();
@@ -43,7 +43,7 @@ function createFile(name, bytes, callback) {
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [ file, ]).on('exit', () => {
+    proc.spawn('rm', [file]).on('exit', () => {
         callback();
     });
 }

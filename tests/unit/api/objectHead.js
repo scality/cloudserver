@@ -62,13 +62,13 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
+        bucketPut(authInfo, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(authInfo,
                     testPutObjectRequest, log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo,  testGetRequest, log,
+                        objectHead(authInfo, testGetRequest, log,
                             (err) => {
                                 assert.strictEqual(err, 'NotModified');
                                 done();
@@ -117,7 +117,7 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
+        bucketPut(authInfo, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(authInfo,
@@ -145,7 +145,7 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
+        bucketPut(authInfo, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(authInfo,
@@ -169,7 +169,7 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo,  testPutBucketRequest, log,
+        bucketPut(authInfo, testPutBucketRequest, log,
             (err, success) => {
                 assert.strictEqual(success, 'Bucket created');
                 objectPut(authInfo,

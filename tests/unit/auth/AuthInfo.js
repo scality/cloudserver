@@ -61,13 +61,13 @@ describe('AuthInfo class constructor', () => {
 
     it('should have a working isRequesterAnIAMUser() method', () => {
         assert.strictEqual(authInfo.isRequesterAnIAMUser(), true);
-        const accountUser = new AuthInfo({canonicalID: 'account'});
+        const accountUser = new AuthInfo({ canonicalID: 'account' });
         assert.strictEqual(accountUser.isRequesterAnIAMUser(), false);
     });
 
     it('should have a working isRequesterPublicUser() method', () => {
         assert.strictEqual(authInfo.isRequesterPublicUser(), false);
-        const publicUser = new AuthInfo({canonicalID: constants.publicId});
+        const publicUser = new AuthInfo({ canonicalID: constants.publicId });
         assert.strictEqual(publicUser.isRequesterPublicUser(), true);
     });
 });

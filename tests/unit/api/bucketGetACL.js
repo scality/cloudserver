@@ -28,7 +28,7 @@ describe('bucketGetACL API', () => {
         bucketName,
         namespace,
         lowerCaseHeaders: {},
-        headers: {host: `${bucketName}.s3.amazonaws.com`},
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
     };
     const testGetACLRequest = {
@@ -66,16 +66,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -115,16 +115,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -175,16 +175,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -229,16 +229,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -284,16 +284,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {
@@ -371,16 +371,16 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo,  testBucketPutRequest, log,
+                bucketPut(authInfo, testBucketPutRequest, log,
                     next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo,  testPutACLRequest, log,
+                bucketPutACL(authInfo, testPutACLRequest, log,
                     next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo,  testGetACLRequest, log,
+                bucketGetACL(authInfo, testGetACLRequest, log,
                     next);
             },
             function waterfall4(result, next) {

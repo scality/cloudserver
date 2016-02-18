@@ -81,7 +81,7 @@ describe('objectGet API', () => {
                         chunks.push(chunk);
                     });
                     readable.on('end', function combineChunks() {
-                        assert.deepStrictEqual(chunks, [ postBody ]);
+                        assert.deepStrictEqual(chunks, [postBody]);
                         done();
                     });
                 });

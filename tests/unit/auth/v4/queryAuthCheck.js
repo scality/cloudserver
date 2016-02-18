@@ -39,8 +39,8 @@ const createdAuthInfo = makeAuthInfo('accessKey1');
 
 describe('v4 queryAuthCheck', () => {
     it('should return error if algorithm param incorrect', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Algorithm':
-            'AWS4-HMAC-SHA1'}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Algorithm':
+            'AWS4-HMAC-SHA1' }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -48,8 +48,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if X-Amz-Credential param is undefined', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Credential':
-            undefined}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
+            undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -57,8 +57,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if credential param format incorrect', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Credential':
-            'incorrectformat'}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
+            'incorrectformat' }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -67,8 +67,8 @@ describe('v4 queryAuthCheck', () => {
 
     it('should return error if service set forth in ' +
         'credential param is not s3', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Credential':
-        'accessKey1/20160208/us-east-1/EC2/aws4_request'},
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
+        'accessKey1/20160208/us-east-1/EC2/aws4_request' },
         'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
@@ -78,8 +78,8 @@ describe('v4 queryAuthCheck', () => {
 
     it('should return error if requestType set forth in ' +
         'credential param is not aws4_request', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Credential':
-        'accessKey1/20160208/us-east-1/s3/aws2_request'},
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
+        'accessKey1/20160208/us-east-1/s3/aws2_request' },
         'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
@@ -88,8 +88,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if undefined X-Amz-SignedHeaders param', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-SignedHeaders':
-        undefined}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-SignedHeaders':
+        undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -97,8 +97,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if undefined X-Amz-Signature param', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Signature':
-        undefined}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Signature':
+        undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -106,8 +106,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if undefined X-Amz-Date param', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Date':
-        undefined}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Date':
+        undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -115,8 +115,8 @@ describe('v4 queryAuthCheck', () => {
     });
 
     it('should return error if undefined X-Amz-Expires param', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Expires':
-        undefined}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
+        undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -125,8 +125,8 @@ describe('v4 queryAuthCheck', () => {
 
     it('should return error if X-Amz-Expires param ' +
     'is less than 1', (done) => {
-        const alteredRequest = createAlteredRequest({'X-Amz-Expires':
-        0}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
+        0 }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
@@ -136,8 +136,8 @@ describe('v4 queryAuthCheck', () => {
     it('should return error if X-Amz-Expires param ' +
     'is greater than 604800', (done) => {
         // Greater than 604800 seconds (7 days)
-        const alteredRequest = createAlteredRequest({'X-Amz-Expires':
-        604801}, 'query', request, query);
+        const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
+        604801 }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             assert.strictEqual(err, 'InvalidArgument');
             done();
