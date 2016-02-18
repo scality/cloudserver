@@ -340,6 +340,10 @@ describe('s3cmd multipart upload', function titi() {
         exec(['put', MPUpload, `s3://${bucket}`, ], done);
     });
 
+    it('should list multipart uploads', (done) => {
+        exec(['multipart', `s3://${bucket}`], done);
+    });
+
     it('should get an object that was put via multipart upload', (done) => {
         exec(['get', `s3://${bucket}/${MPUpload}`, MPDownload ], done);
     });
