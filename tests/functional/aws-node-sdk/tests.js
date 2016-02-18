@@ -198,7 +198,6 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         const params = {
             Bucket: bucket,
         };
-        done();
         s3.listMultipartUploads(params, (err, data) => {
             if (err) {
                 return done(new Error(`error in listMultipartUploads: ${err}`));
@@ -206,6 +205,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.Uploads.length, 1);
             assert.strictEqual(data.Uploads[0].UploadId,
                 multipartUploadData.secondUploadId);
+            done();
         });
     });
 
