@@ -1,6 +1,6 @@
 {
     "tests": {
-        "files": [ "tests.js", "authV4QueryTests.js", "/tests" ],
+        "files": ["/test" ],
         "on": "aggressor"
     }
 }
