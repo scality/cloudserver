@@ -39,28 +39,28 @@ describe('listMultipartUploads API', () => {
     const testPutBucketRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}`,
     };
     const testInitiateMPURequest1 = {
         bucketName,
         namespace,
         objectKey: objectName1,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectName1}?uploads`,
     };
     const testInitiateMPURequest2 = {
         bucketName,
         namespace,
         objectKey: objectName2,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectName2}?uploads`,
     };
     const testInitiateMPURequest3 = {
         bucketName,
         namespace,
         objectKey: objectName3,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectName3}?uploads`,
     };
 
@@ -71,7 +71,7 @@ describe('listMultipartUploads API', () => {
         const testListRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
@@ -115,7 +115,7 @@ describe('listMultipartUploads API', () => {
         const testListRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
@@ -161,7 +161,7 @@ describe('listMultipartUploads API', () => {
         const testListRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
@@ -212,7 +212,7 @@ describe('listMultipartUploads API', () => {
         const testListRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,
@@ -261,7 +261,7 @@ describe('listMultipartUploads API', () => {
         const testListRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?uploads`,

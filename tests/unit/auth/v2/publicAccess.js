@@ -12,7 +12,7 @@ describe('Public Access', () => {
         'All Users Group accessKey', done => {
         const request = {
             method: 'GET',
-            lowerCaseHeaders: { host: 's3.amazonaws.com' },
+            headers: { host: 's3.amazonaws.com' },
             url: '/bucket',
             query: {},
         };
@@ -31,7 +31,7 @@ describe('Public Access', () => {
     'an authorization header without proper credentials', (done) => {
         const request = {
             method: 'GET',
-            lowerCaseHeaders: {
+            headers: {
                 host: 's3.amazonaws.com',
                 authorization: 'noAuth',
             },

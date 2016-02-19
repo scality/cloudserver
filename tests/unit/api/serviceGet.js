@@ -18,7 +18,7 @@ const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
 
 describe('serviceGet API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
         metadata.deleteBucket('bucketname', log, () => {
             metadata.deleteBucket(usersBucket, log, () => {
                 done();
@@ -26,7 +26,7 @@ describe('serviceGet API', () => {
         });
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         metadata.deleteBucket(bucketName1, log, () => {
             metadata.deleteBucket(bucketName2, log, () => {
                 metadata.deleteBucket(bucketName3, log, () => {
@@ -40,56 +40,48 @@ describe('serviceGet API', () => {
 
     const serviceGetRequest = {
         parsedHost: 's3.amazonaws.com',
-        lowerCaseHeaders: { host: 's3.amazonaws.com' },
-        url: '/',
         headers: { host: 's3.amazonaws.com' },
+        url: '/',
     };
 
-    it('should return the list of buckets owned by the user', (done) => {
+    it('should return the list of buckets owned by the user', done => {
         const bucketName1 = 'bucketname1';
         const bucketName2 = 'bucketname2';
         const bucketName3 = 'bucketname3';
         const testbucketPutRequest1 = {
             namespace,
             bucketName: bucketName1,
-            lowerCaseHeaders: {},
             url: '/',
-            headers: { host: `${bucketName1}.s3.amazonaws.com` }
+            headers: { host: `${bucketName1}.s3.amazonaws.com` },
         };
         const testbucketPutRequest2 = {
             namespace,
             bucketName: bucketName2,
-            lowerCaseHeaders: {},
             url: '/',
-            headers: { host: `${bucketName2}.s3.amazonaws.com` }
+            headers: { host: `${bucketName2}.s3.amazonaws.com` },
         };
         const testbucketPutRequest3 = {
             namespace,
             bucketName: bucketName3,
-            lowerCaseHeaders: {},
             url: '/',
-            headers: { host: `${bucketName3}.s3.amazonaws.com` }
+            headers: { host: `${bucketName3}.s3.amazonaws.com` },
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testbucketPutRequest1, log,
-                    next);
+                bucketPut(authInfo, testbucketPutRequest1, log, next);
             },
             function waterfall2(result, next) {
-                bucketPut(authInfo, testbucketPutRequest2, log,
-                    next);
+                bucketPut(authInfo, testbucketPutRequest2, log, next);
             },
             function waterfall3(result, next) {
-                bucketPut(authInfo, testbucketPutRequest3, log,
-                    next);
+                bucketPut(authInfo, testbucketPutRequest3, log, next);
             },
             function waterfall4(result, next) {
-                serviceGet(authInfo, serviceGetRequest, log,
-                    next);
+                serviceGet(authInfo, serviceGetRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListAllMyBucketsResult
@@ -108,10 +100,9 @@ describe('serviceGet API', () => {
 
     it('should prevent anonymous user from accessing getService API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        serviceGet(publicAuthInfo,
-             serviceGetRequest, log, (err) => {
-                 assert.strictEqual(err, 'AccessDenied');
-                 done();
-             });
+        serviceGet(publicAuthInfo, serviceGetRequest, log, err => {
+            assert.strictEqual(err, 'AccessDenied');
+            done();
+        });
     });
 });

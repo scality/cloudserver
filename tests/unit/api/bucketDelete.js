@@ -28,7 +28,7 @@ describe("bucketDelete API", () => {
     const testRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}`,
     };
 
@@ -36,7 +36,7 @@ describe("bucketDelete API", () => {
         const objectName = 'objectName';
         const testPutObjectRequest = new DummyRequest({
             bucketName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectName}`,
             namespace,
             objectKey: objectName,

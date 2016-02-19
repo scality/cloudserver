@@ -15,14 +15,13 @@ const bucketName = 'bucketname';
 const testRequest = {
     bucketName,
     namespace,
-    lowerCaseHeaders: {},
     url: '/',
     post: '',
-    headers: { host: `${bucketName}.s3.amazonaws.com` }
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
 
 describe('bucketPut API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(usersBucket, log, () => {
                 done();
@@ -30,7 +29,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(usersBucket, log, () => {
                 done();
@@ -38,70 +37,69 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if bucket already exists', (done) => {
+    it('should return an error if bucket already exists', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(authInfo, testRequest, log, () => {
-            bucketPut(otherAuthInfo, testRequest, log,
-                    (err) => {
-                        assert.strictEqual(err, 'BucketAlreadyExists');
-                        done();
-                    });
+            bucketPut(otherAuthInfo, testRequest, log, err => {
+                assert.strictEqual(err, 'BucketAlreadyExists');
+                done();
+            });
         });
     });
 
     it('should return an error if malformed xml ' +
-       'is provided in request.post', (done) => {
+       'is provided in request.post', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}`,
-            post: 'malformedxml'
+            post: 'malformedxml',
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
     });
 
     it('should return an error if xml which does ' +
-       'not conform to s3 docs is provided in request.post', (done) => {
+       'not conform to s3 docs is provided in request.post', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}`,
-            post: '<Hello></Hello>'
+            post: '<Hello></Hello>',
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'MalformedXML');
             done();
         });
     });
 
     it('should return an error if LocationConstraint ' +
-       'specified is not valid', (done) => {
+       'specified is not valid', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}`,
             post:
-                '<CreateBucketConfiguration ' +
-                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-                '<LocationConstraint>invalidLocation</LocationConstraint>'
-                + '</CreateBucketConfiguration>'
+                '<CreateBucketConfiguration '
+                + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+                + '<LocationConstraint>invalidLocation</LocationConstraint>'
+                + '</CreateBucketConfiguration>',
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'InvalidLocationConstraint');
             done();
         });
     });
 
-    it('should create a bucket', (done) => {
+    it('should create a bucket', done => {
         bucketPut(authInfo, testRequest, log, (err, success) => {
             if (err) {
-                return done(err);
+                return done(new Error(err));
             }
             assert.strictEqual(success, 'Bucket created');
             metadata.getBucket(bucketName, log, (err, md) => {
@@ -119,22 +117,22 @@ describe('bucketPut API', () => {
     });
 
     it('should return an error if ACL set in header ' +
-       'with an invalid group URI', (done) => {
+       'with an invalid group URI', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'uri="http://acs.amazonaws.com/groups/' +
                     'global/NOTAVALIDGROUP"',
             },
             url: '/',
             post: '',
-            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'InvalidArgument');
-            metadata.getBucket(bucketName, log, (err) => {
+            metadata.getBucket(bucketName, log, err => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -142,20 +140,20 @@ describe('bucketPut API', () => {
     });
 
     it('should return an error if ACL set in header ' +
-       'with an invalid canned ACL', (done) => {
+       'with an invalid canned ACL', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'not-valid-option',
             },
             url: '/',
             post: '',
-            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'InvalidArgument');
-            metadata.getBucket(bucketName, log, (err) => {
+            metadata.getBucket(bucketName, log, err => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -163,21 +161,21 @@ describe('bucketPut API', () => {
     });
 
     it('should return an error if ACL set in header ' +
-       'with an invalid email address', (done) => {
+       'with an invalid email address', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-read':
                     'emailaddress="fake@faking.com"',
             },
             url: '/',
             post: '',
-            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
-            metadata.getBucket(bucketName, log, (err) => {
+            metadata.getBucket(bucketName, log, err => {
                 assert.strictEqual(err, 'NoSuchBucket');
                 done();
             });
@@ -185,19 +183,19 @@ describe('bucketPut API', () => {
     });
 
     it('should set a canned ACL while creating bucket' +
-        ' if option set out in header', (done) => {
+        ' if option set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl':
                     'public-read',
             },
             url: '/',
             post: '',
-            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -208,11 +206,12 @@ describe('bucketPut API', () => {
     });
 
     it('should set specific ACL grants while creating bucket' +
-        ' if options set out in header', (done) => {
+        ' if options set out in header', done => {
         const testRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
                     ',emailaddress="sampleaccount2@sampling.com"',
@@ -227,13 +226,12 @@ describe('bucketPut API', () => {
             },
             url: '/',
             post: '',
-            headers: { host: `${bucketName}.s3.amazonaws.com` }
         };
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(authInfo, testRequest, log, (err) => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.acl.READ[0], constants.logId);
@@ -247,14 +245,11 @@ describe('bucketPut API', () => {
         });
     });
 
-    const publicAuthInfo = makeAuthInfo(constants.publicId);
-    it('should prevent anonymous user from accessing ' +
-        'putBucket API', (done) => {
-        bucketPut(publicAuthInfo,
-             testRequest, log,
-                (err) => {
-                    assert.strictEqual(err, 'AccessDenied');
-                });
+    it('should prevent anonymous user from accessing putBucket API', done => {
+        const publicAuthInfo = makeAuthInfo(constants.publicId);
+        bucketPut(publicAuthInfo, testRequest, log, err => {
+            assert.strictEqual(err, 'AccessDenied');
+        });
         done();
     });
 });
