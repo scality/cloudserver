@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://jsonschema.net",
+  "type": "object",
+  "properties": {
+    "Buckets": {
+      "id": "http://jsonschema.net/Buckets",
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "id": "http://jsonschema.net/Buckets/0",
+        "type": "object",
+        "properties": {
+          "Name": {
+            "id": "http://jsonschema.net/Buckets/0/Name",
+            "type": "string"
+          },
+          "CreationDate": {
+            "id": "http://jsonschema.net/Buckets/0/CreationDate",
+            "type": "object"
+          }
+        },
+        "required": [
+          "Name",
+          "CreationDate"
+        ]
+      }
+    },
+    "Owner": {
+      "id": "http://jsonschema.net/Owner",
+      "type": "object",
+      "properties": {
+        "DisplayName": {
+          "id": "http://jsonschema.net/Owner/DisplayName",
+          "type": "string"
+        },
+        "ID": {
+          "id": "http://jsonschema.net/Owner/ID",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "Buckets",
+    "Owner"
+  ]
+}
