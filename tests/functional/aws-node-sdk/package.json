@@ -9,11 +9,13 @@
   ],
   "dependencies": {
     "aws-sdk": "^2.2.11",
-    "mocha": "^2.3.4",
     "babel-core": "^6.5.1",
     "babel-plugin-transform-es2015-destructuring": "^6.5.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.5.2",
-    "babel-plugin-transform-es2015-parameters": "^6.5.0"
+    "babel-plugin-transform-es2015-parameters": "^6.5.0",
+    "bluebird": "^3.3.1",
+    "mocha": "^2.3.4",
+    "tv4": "^1.2.7"
   },
   "scripts": {
     "test-aws": "AWS_ON_AIR=true mocha",
