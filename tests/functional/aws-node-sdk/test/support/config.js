@@ -1,16 +1,16 @@
-import AWS from 'aws-sdk';
-import memCredentials from '../../lib/json/mem_credentials.json';
 import fs from 'fs';
 import path from 'path';
+import AWS from 'aws-sdk';
+import memCredentials from '../../lib/json/mem_credentials.json';
 
 const DEFAULT_GLOBAL_OPTIONS = {
     logger: process.stdout,
-    apiVersions: { s3: '2006-03-01' }
+    apiVersions: { s3: '2006-03-01' },
 };
 const DEFAULT_MEM_OPTIONS = {
     endpoint: 'http://localhost:8000',
     sslEnabled: false,
-    s3ForcePathStyle: true
+    s3ForcePathStyle: true,
 };
 const DEFAULT_AWS_OPTIONS = {};
 
@@ -33,7 +33,7 @@ function _getAwsCredentials(profile) {
     try {
         fs.statSync(filename);
     } catch (e) {
-        const msg = 'AWS credential file is not existing: ' + filename;
+        const msg = `AWS credential file is not existing: ${filename}`;
         throw new Error(msg);
     }
 
