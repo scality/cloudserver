@@ -375,7 +375,7 @@ describe('s3curl getBucket', () => {
                     assert.ifError(err);
                 }
                 assert.strictEqual(result.ListBucketResult
-                    .NextMarker[0], 'topLevel/test1MB3');
+                    .NextMarker[0], 'topLevel/test1MB2');
                 assert.strictEqual(result.ListBucketResult
                     .IsTruncated[0], 'true');
                 done();
