@@ -30,27 +30,27 @@ describe('bucketGet API', () => {
     beforeEach(done => {
         testPutBucketRequest = new DummyRequest({
             bucketName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}`,
             namespace,
         }, new Buffer(0));
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectName1}`,
             namespace,
             objectKey: objectName1,
         }, postBody);
         testPutObjectRequest2 = new DummyRequest({
             bucketName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectName2}`,
             namespace,
             objectKey: objectName2,
         }, postBody);
         testPutObjectRequest3 = new DummyRequest({
             bucketName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectName3}`,
             namespace,
             objectKey: objectName3,
@@ -68,7 +68,7 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}?delimiter=${delimiter}&prefix=${prefix}`,
@@ -108,7 +108,7 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}`,
@@ -147,7 +147,7 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}`,
@@ -186,7 +186,7 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}`,
@@ -230,7 +230,7 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
+            headers: {
                 host: '/'
             },
             url: `/${bucketName}`,

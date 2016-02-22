@@ -16,7 +16,6 @@ const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const testPutBucketRequest = new DummyRequest({
     bucketName,
     namespace,
-    lowerCaseHeaders: {},
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
@@ -30,7 +29,6 @@ describe('objectPut API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {},
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
         }, postBody);
@@ -43,7 +41,7 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', done => {
-        objectPut(authInfo, testPutObjectRequest, log, (err) => {
+        objectPut(authInfo, testPutObjectRequest, log, err => {
             assert.strictEqual(err, 'NoSuchBucket');
             done();
         });
@@ -65,9 +63,9 @@ describe('objectPut API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
@@ -89,7 +87,7 @@ describe('objectPut API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
+            headers: {
                 // Note that Node will collapse common headers into one
                 // (e.g. "x-amz-meta-test: hi" and "x-amz-meta-test:
                 // there" becomes "x-amz-meta-test: hi, there")
@@ -100,7 +98,7 @@ describe('objectPut API', () => {
                 'x-amz-meta-test3': 'even more metadata',
             },
             url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {

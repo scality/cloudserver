@@ -16,27 +16,23 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 
 describe('bucketGetACL API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
     const testBucketPutRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
     };
     const testGetACLRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {
-            host: `${bucketName}.s3.amazonaws.com`
-        },
         headers: {
             host: `${bucketName}.s3.amazonaws.com`
         },
@@ -46,14 +42,10 @@ describe('bucketGetACL API', () => {
         }
     };
 
-    it('should get a canned private ACL', (done) => {
+    it('should get a canned private ACL', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'private'
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'private'
@@ -66,17 +58,14 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo, testPutACLRequest, log,
-                    next);
+                bucketPutACL(authInfo, testPutACLRequest, log, next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                bucketGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -95,17 +84,13 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get a canned public-read-write ACL', (done) => {
+    it('should get a canned public-read-write ACL', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'public-read-write'
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'public-read-write'
+                'x-amz-acl': 'public-read-write',
             },
             url: '/?acl',
             query: {
@@ -115,17 +100,14 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo, testPutACLRequest, log,
-                    next);
+                bucketPutACL(authInfo, testPutACLRequest, log, next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                bucketGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
@@ -155,14 +137,10 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get a canned public-read ACL', (done) => {
+    it('should get a canned public-read ACL', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'public-read'
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'public-read'
@@ -209,14 +187,10 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get a canned authenticated-read ACL', (done) => {
+    it('should get a canned authenticated-read ACL', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'authenticated-read'
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-acl': 'authenticated-read'
@@ -264,17 +238,13 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get a canned log-delivery-write ACL', (done) => {
+    it('should get a canned log-delivery-write ACL', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'log-delivery-write'
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-acl': 'log-delivery-write'
+                'x-amz-acl': 'log-delivery-write',
             },
             url: '/?acl',
             query: {
@@ -325,26 +295,10 @@ describe('bucketGetACL API', () => {
         });
     });
 
-    it('should get specifically set ACLs', (done) => {
+    it('should get specifically set ACLs', done => {
         const testPutACLRequest = {
             bucketName,
             namespace,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' +
-                    ',emailaddress="sampleaccount2@sampling.com"',
-                'x-amz-grant-read':
-                    `uri=${constants.logId}`,
-                'x-amz-grant-write':
-                    `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
-                'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',
-            },
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-grant-full-control':
@@ -371,17 +325,14 @@ describe('bucketGetACL API', () => {
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                bucketPutACL(authInfo, testPutACLRequest, log,
-                    next);
+                bucketPutACL(authInfo, testPutACLRequest, log, next);
             },
             function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                bucketGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);

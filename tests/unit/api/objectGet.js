@@ -25,9 +25,7 @@ describe('objectGet API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-meta-test': 'some metadata'
-            },
+            headers: { 'x-amz-meta-test': 'some metadata' },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
     });
@@ -40,7 +38,7 @@ describe('objectGet API', () => {
     const testPutBucketRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}`,
     };
     const userMetadataKey = 'x-amz-meta-test';
@@ -49,7 +47,7 @@ describe('objectGet API', () => {
         bucketName,
         namespace,
         objectKey: objectName,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectName}`,
     };
 
@@ -98,34 +96,28 @@ describe('objectGet API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-meta-test': 'some metadata'
-            },
+            headers: { 'x-amz-meta-test': 'some metadata' },
             url: `/${bucketName}/${objectName}`,
         }, testBigData);
         bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
-            objectPut(authInfo, testPutBigObjectRequest, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctBigMD5);
-                    objectGet(authInfo, testGetRequest, log,
-                        (err, readable) => {
-                            const md5Hash = crypto.createHash('md5');
-                            const chunks = [];
-                            readable.on('data', function chunkRcvd(chunk) {
-                                const cBuffer = new Buffer(chunk, "binary");
-                                chunks.push(cBuffer);
-                                md5Hash.update(cBuffer);
-                            });
-                            readable.on('end', function combineChunks() {
-                                const resultmd5Hash =
-                                    md5Hash.digest('hex');
-                                assert.strictEqual(resultmd5Hash,
-                                    correctBigMD5);
-                                done();
-                            });
-                        });
+            objectPut(authInfo, testPutBigObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctBigMD5);
+                objectGet(authInfo, testGetRequest, log, (err, readable) => {
+                    const md5Hash = crypto.createHash('md5');
+                    const chunks = [];
+                    readable.on('data', function chunkRcvd(chunk) {
+                        const cBuffer = new Buffer(chunk, 'binary');
+                        chunks.push(cBuffer);
+                        md5Hash.update(cBuffer);
+                    });
+                    readable.on('end', function combineChunks() {
+                        const resultmd5Hash = md5Hash.digest('hex');
+                        assert.strictEqual(resultmd5Hash, correctBigMD5);
+                        done();
+                    });
                 });
+            });
         });
     });
 });

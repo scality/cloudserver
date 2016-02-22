@@ -32,7 +32,6 @@ describe('objectGetACL API', () => {
     const testBucketPutRequest = {
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
     };
@@ -41,9 +40,7 @@ describe('objectGetACL API', () => {
         namespace,
         objectKey: objectName,
         url: `/${bucketName}/${objectName}?acl`,
-        query: {
-            acl: ''
-        }
+        query: { acl: '' },
     };
 
     it('should get a canned private ACL', done => {
@@ -51,12 +48,7 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'private'
-            },
-            headers: {
-                'x-amz-acl': 'private'
-            },
+            headers: { 'x-amz-acl': 'private' },
             url: `/${bucketName}/${objectName}`,
             post: postBody,
         }, postBody);
@@ -74,7 +66,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -103,12 +95,7 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'public-read'
-            },
-            headers: {
-                'x-amz-acl': 'public-read'
-            },
+            headers: { 'x-amz-acl': 'public-read' },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
@@ -125,7 +112,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -150,12 +137,7 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'public-read-write'
-            },
-            headers: {
-                'x-amz-acl': 'public-read-write'
-            },
+            headers: { 'x-amz-acl': 'public-read-write' },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
@@ -172,7 +154,7 @@ describe('objectGetACL API', () => {
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -204,12 +186,7 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'authenticated-read'
-            },
-            headers: {
-                'x-amz-acl': 'authenticated-read'
-            },
+            headers: { 'x-amz-acl': 'authenticated-read' },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
@@ -218,17 +195,15 @@ describe('objectGetACL API', () => {
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo, testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -255,33 +230,25 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'bucket-owner-read'
-            },
-            headers: {
-                'x-amz-acl': 'bucket-owner-read'
-            },
+            headers: { 'x-amz-acl': 'bucket-owner-read' },
             url: `/${bucketName}/${objectName}`,
             post: postBody,
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo, testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -307,33 +274,25 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-acl': 'bucket-owner-full-control'
-            },
-            headers: {
-                'x-amz-acl': 'bucket-owner-full-control'
-            },
+            headers: { 'x-amz-acl': 'bucket-owner-full-control' },
             url: `/${bucketName}/${objectName}`,
-            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg=='
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo, testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
@@ -359,18 +318,6 @@ describe('objectGetACL API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            lowerCaseHeaders: {
-                'x-amz-grant-full-control':
-                    'emailaddress="sampleaccount1@sampling.com"' +
-                    ',emailaddress="sampleaccount2@sampling.com"',
-                'x-amz-grant-read': `uri=${constants.allAuthedUsersId}`,
-                'x-amz-grant-write': `uri=${constants.publicId}`,
-                'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
-                'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"', },
             headers: {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
@@ -382,27 +329,25 @@ describe('objectGetACL API', () => {
                     'f8f8d5218e7cd47ef2be"',
                 'x-amz-grant-write-acp':
                     'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"', },
+                    'f8f8d5218e7cd47ef2bf"',
+            },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log,
-                    next);
+                bucketPut(authInfo, testBucketPutRequest, log, next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
-                objectPut(authInfo, testPutObjectRequest, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
                 assert.strictEqual(result, correctMD5);
-                objectGetACL(authInfo, testGetACLRequest, log,
-                    next);
+                objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.AccessControlPolicy.
