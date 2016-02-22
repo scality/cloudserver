@@ -64,8 +64,9 @@ describe('GET Service - AWS.S3.listBuckets', () => {
         let deleteBucket;
 
         before(() => {
-            s3 = new S3(getConfig());
+            s3 = new S3(getConfig('default'));
             anotherS3 = new S3(getConfig('lisa'));
+
             listBuckets = promisify(s3.listBuckets);
             createBucket = promisify(s3.createBucket);
             deleteBucket = promisify(s3.deleteBucket);
