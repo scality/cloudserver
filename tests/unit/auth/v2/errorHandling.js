@@ -7,7 +7,7 @@ const logger = new DummyRequestLogger();
 
 describe('Error handling in checkAuth', () => {
     it('should return an error message if no ' +
-       'secret key is associated with access key', done => {
+       'such access key access key', done => {
         const date = new Date();
         const request = {
             method: 'GET',
@@ -22,7 +22,7 @@ describe('Error handling in checkAuth', () => {
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.strictEqual(err, 'InvalidAccessKeyId');
             done();
         });
     });
