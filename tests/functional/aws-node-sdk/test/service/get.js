@@ -41,8 +41,7 @@ describe('GET Service - AWS.S3.listBuckets', () => {
             testFn(missingCredential, expectedCode, undefined, done);
         });
 
-        const itFn = process.env.AWS_ON_AIR ? it : it.skip;
-        itFn('should return 403 and InvalidAccessKeyId ' +
+        it('should return 403 and InvalidAccessKeyId ' +
             'if accessKeyId is invalid', done => {
             const invalidAccess = getConfig('default', {
                 credentials: null,
