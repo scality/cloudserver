@@ -31,16 +31,6 @@ describe('GET Service - AWS.S3.listBuckets', () => {
             };
         });
 
-        it('should return CredentialsError ' +
-            'if user is unidentified', done => {
-            const missingCredential = getConfig('default', {
-                credentials: null,
-            });
-            const expectedCode = 'CredentialsError';
-
-            testFn(missingCredential, expectedCode, undefined, done);
-        });
-
         it('should return 403 and InvalidAccessKeyId ' +
             'if accessKeyId is invalid', done => {
             const invalidAccess = getConfig('default', {
