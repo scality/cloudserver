@@ -185,6 +185,21 @@ describe('v4 headerAuthCheck', () => {
         });
     });
 
+    it('should return error if unknown region', (done) => {
+        const alteredRequest = createAlteredRequest({
+            authorization: 'AWS4-HMAC-SHA256 Credential=accessKey1/20160208' +
+                '/noSuchRegion/s3/aws4_request, SignedHeaders' +
+                '=host;x-amz-content-sha256;' +
+                'x-amz-date, Signature=abed924c06abf87' +
+                '72c670064d22eacd6ccb85c06befa15f' +
+                '4a789b0bae19307bc',
+        }, 'headers', request, headers);
+        headerAuthCheck(alteredRequest, log, (err) => {
+            assert.strictEqual(err, 'InvalidArgument');
+            done();
+        });
+    });
+
     it('should successfully authenticate', (done) => {
         // Freezes time so date created within function will be Feb 8, 2016
         const clock = lolex.install(1454973383163);
