@@ -187,7 +187,7 @@ describe('listMultipartUploads API', () => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .IsTruncated[0], 'true');
             assert.strictEqual(result.ListMultipartUploadsResult
-                .NextKeyMarker[0], objectName2);
+                .NextKeyMarker[0], objectName1);
             assert(result.ListMultipartUploadsResult
                 .NextUploadIdMarker[0].length > 5);
             done();
