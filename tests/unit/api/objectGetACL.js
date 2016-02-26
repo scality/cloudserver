@@ -12,8 +12,9 @@ import objectGetACL from '../../../lib/api/objectGetACL';
 import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo(accessKey);
+const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');

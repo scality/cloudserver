@@ -4,15 +4,15 @@
           "arn": "aws::iam:accessKey1:user/Bart",
           "IAMdisplayName": "Bart",
           "secretKey": "verySecretKey1",
-          "canonicalID": "accessKey1",
-          "displayName": "parentAccount1"
+          "canonicalID": "accessKey1canonicalID",
+          "displayName": "accessKey1displayName"
       },
       "accessKey2": {
           "arn": "aws::iam:accessKey2:user/Lisa",
           "IAMdisplayName": "Lisa",
           "secretKey": "verySecretKey2",
-          "canonicalID": "accessKey2",
-          "displayName": "parentAccount2"
+          "canonicalID": "accessKey2canonicalID",
+          "displayName": "accessKey2displayName"
       }
   },
 
