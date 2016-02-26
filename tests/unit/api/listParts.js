@@ -12,8 +12,9 @@ const log = new DummyRequestLogger();
 
 const splitter = constants.splitter;
 
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo(accessKey);
+const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const uploadId = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0';
 const bucketName = 'freshestbucket';
