@@ -1,7 +1,7 @@
 import assert from 'assert';
 import tv4 from 'tv4';
 import { S3 } from 'aws-sdk';
-import { promisify } from 'bluebird';
+import Promise from 'bluebird';
 import getConfig from '../support/config';
 import serviceSchema from '../../schema/service';
 
@@ -59,29 +59,85 @@ describe('GET Service - AWS.S3.listBuckets', () => {
     describe('when user has credential', () => {
         let s3;
         let anotherS3;
-        let listBuckets;
-        let createBucket;
-        let deleteBucket;
+
+        const random = Math.round(Math.random() * 100).toString();
+        const baseName = `ft-awsnodesdk-bucket-${random}`;
+        const bucketsNumber = 5;
+
+        let createdBuckets;
 
         before(() => {
-            s3 = new S3(getConfig('default'));
-            anotherS3 = new S3(getConfig('lisa'));
-
-            listBuckets = promisify(s3.listBuckets);
-            createBucket = promisify(s3.createBucket);
-            deleteBucket = promisify(s3.deleteBucket);
+            s3 = Promise.promisifyAll(new S3(getConfig('default')));
+            anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')));
         });
 
-        it('should return no error and owner and available buckets', done => {
-            listBuckets.call(s3)
-                .then(data => {
-                    const isValid = tv4.validate(data, serviceSchema);
+        before(done => {
+            let promises;
 
-                    assert.ok(isValid);
-                    if (!isValid) {
+            promises = Array.from(Array(bucketsNumber).keys()).reverse()
+                .map(i => {
+                    const bucketName = `${baseName}-${i}`;
+                    return s3
+                        .createBucketAsync({ Bucket: bucketName })
+                        .then(() => bucketName);
+                });
+
+            Promise.all(promises)
+                .catch(done)
+                .then(data => {
+                    createdBuckets = data;
+                    done();
+                });
+        });
+
+        after(done => {
+            let promises;
+
+            promises = createdBuckets.map(bucketName => {
+                return s3.deleteBucketAsync({ Bucket: bucketName });
+            });
+
+            Promise.all(promises)
+                .catch(done)
+                .then(() => done());
+        });
+
+        it('should return no error, owner info, ' +
+            'and created buckets list in alphabetical order', done => {
+            s3
+                .listBucketsAsync()
+                .then(data => {
+                    const isValidResponse = tv4.validate(data, serviceSchema);
+                    if (!isValidResponse) {
                         throw new Error(tv4.error);
                     }
+                    assert.ok(data.Buckets[0].CreationDate instanceof Date);
 
+                    return data;
+                })
+                .then(data => {
+                    const buckets = data.Buckets.filter(bucket => {
+                        return createdBuckets.indexOf(bucket.Name) > -1;
+                    });
+
+                    assert.equal(buckets.length, createdBuckets.length,
+                    'Created buckets are missing in getService response');
+
+                    return buckets;
+                })
+                .then(buckets => {
+                    let isListedByCorrectOrder = true;
+
+                    // Sort createdBuckets in alphabetical order
+                    createdBuckets.sort();
+
+                    buckets.forEach((bucket, idx) => {
+                        isListedByCorrectOrder = isListedByCorrectOrder &&
+                            bucket.Name === createdBuckets[idx];
+                    });
+
+                    assert.ok(isListedByCorrectOrder,
+                    'It doesnt list the bucket names by alphabetically');
                     done();
                 })
                 .catch(done);
@@ -89,30 +145,14 @@ describe('GET Service - AWS.S3.listBuckets', () => {
 
         const describeFn = process.env.AWS_ON_AIR ? describe.skip : describe;
         describeFn('two accounts are given', () => {
-            const random = Math.round(Math.random() * 100).toString();
-            const bucketName = `fttest-awsnodesdk-bucket-${random}`;
-
-            before(done => {
-                createBucket
-                    .call(anotherS3, { Bucket: bucketName })
-                    .then(() => done())
-                    .catch(done);
-            });
-
-            after(done => {
-                deleteBucket
-                    .call(anotherS3, { Bucket: bucketName })
-                    .then(() => done())
-                    .catch(done);
-            });
-
-            it('should not return other account bucket list', done => {
-                listBuckets.call(s3)
-                    .then((data) => {
-                        const buckets = data.Buckets;
-
-                        const hasSameBuckets = buckets
-                            .filter(b => b.Name === bucketName)
+            it('should not return other accounts bucket list', done => {
+                anotherS3
+                    .listBucketsAsync()
+                    .then(data => {
+                        const hasSameBuckets = data.Buckets
+                            .filter(bucket => {
+                                return createdBuckets.indexOf(bucket.Name) > -1;
+                            })
                             .length;
 
                         assert.strictEqual(hasSameBuckets, 0,
