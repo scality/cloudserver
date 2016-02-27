@@ -118,7 +118,7 @@ describe('objectDelete API', () => {
             testPutObjectRequest, testDeleteRequest, log, done);
     });
 
-    it('should del object if it has canned public-read-write acl', done => {
+    it('should del object in bucket with public-read-write acl', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-acl'] = 'public-read-write';

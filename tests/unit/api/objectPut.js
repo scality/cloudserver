@@ -91,7 +91,7 @@ describe('objectPut API', () => {
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
-    it('should put object if it has canned public-read-write acl', done => {
+    it('should put object in bucket with public-read-write acl', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-acl'] = 'public-read-write';
