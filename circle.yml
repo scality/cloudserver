@@ -7,48 +7,15 @@ general:
 machine:
   node:
     version: 4.2
-  environment:
-    docker_image: ${CIRCLE_PROJECT_REPONAME,,}  # lowercase
-    docker_tag: ${CIRCLE_SHA1:0:7}
-  post:
-    - sudo curl -L -o /usr/bin/docker
-        https://get.docker.com/builds/Linux/x86_64/docker-1.9.1
-    - sudo container=yes docker daemon: {background: true}
-
-checkout:
-  override:
-    # checkout the IronMan-ci
-    - git clone git@github.com:scality/IronMan-CI.git
-    # place the file gathered from IronMan-CI where needed
-    - mv IronMan-CI/deployment .
-    - mv IronMan-CI/ci/matryoshka* IronMan-CI/ci/setup.py ./tests
-    # Poor man docker image cache
-    - if [ ! -d ~/dockerimg ]; then mkdir ~/dockerimg; fi
-    - if [ ! -f ~/dockerimg/pcurl.sh ]; then
-        wget http://sourceforge.net/projects/pcurl/files/pcurl.sh
-          -O ~/dockerimg/pcurl.sh h;
-        chmod ugoa+x ~/dockerimg/pcurl.sh;
-      fi
-    - if [ ! -f ~/dockerimg/base.tar.gz ]; then
-        cd ~/dockerimg;
-        ./pcurl.sh http://demo.scality.com/ironman/base.tar.gz;
-        cd ..;
-      fi
 
 dependencies:
-  cache_directories:
-    - "~/dockerimg"
-  pre:
-    - sudo sed -i 's/\.s3\.amazonaws\.com//ig' /etc/apt/sources.list
-    - sudo sed -i 's/\.s3\.amazonaws\.com//ig' /etc/apt/sources.list.d/*
-    - sudo sed -i 's/us-east-1/us-west-1/g' /etc/apt/sources.list
-    - sudo sed -i 's/us-east-1/us-west-1/g' /etc/apt/sources.list.d/*
-    - sudo rm /etc/apt/sources.list.d/circle.list
-    - sudo rm /etc/apt/sources.list.d/cassandra.list
-    - sudo rm /etc/apt/sources.list.d/google.list
   post:
-    # dependencies for testing with boto
-    - sudo pip install docker-py pyyaml flake8 yamllint
+    - sudo pip install flake8 yamllint
+    # s3cmd dependencies
+    - sudo apt-get install -y -q python-dateutil python-magic
+    - wget http://launchpadlibrarian.net/222422124/s3cmd_1.6.0-2_all.deb
+    - sudo dpkg -i s3cmd*.deb
+
 
 test:
   override:
@@ -57,6 +24,4 @@ test:
     # lint the python used for testing
     - flake8 $(git ls-files '*.py')
     - yamllint $(git ls-files '*.yml')
-    # functional tests
-    - bash ./tests/matryoshka-balance.sh ${docker_image}:
-        parallel: true
+    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;

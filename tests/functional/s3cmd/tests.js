@@ -16,7 +16,7 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 
-const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`] : null;
+const isIronman = process.env.CI ? ['-c', `${__dirname}/s3cfg`] : null;
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
