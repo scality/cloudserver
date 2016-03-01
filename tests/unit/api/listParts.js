@@ -104,15 +104,14 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should list all parts of a multipart upload', (done) => {
+    it('should list all parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            query: { uploadId, },
+            query: { uploadId },
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -147,18 +146,17 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should return xml with objectKey url encoded if requested', (done) => {
+    it('should return xml with objectKey url encoded if requested', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
                 uploadId,
                 'encoding-type': 'url',
-            }
+            },
         };
         const urlEncodedObjectKey = '%24makememulti';
 
@@ -173,18 +171,17 @@ describe('List Parts API', () => {
     });
 
     it('should list only up to requested number ' +
-    'of max parts of a multipart upload', (done) => {
+    'of max parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
                 uploadId,
                 'max-parts': '4',
-            }
+            },
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -215,18 +212,17 @@ describe('List Parts API', () => {
     });
 
     it('should list all parts if requested max-parts ' +
-    'is greater than total number of parts', (done) => {
+    'is greater than total number of parts', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com`, },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
                 uploadId,
                 'max-parts': '6',
-            }
+            },
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -256,20 +252,17 @@ describe('List Parts API', () => {
         });
     });
 
-    it('should only list parts after PartNumberMarker', (done) => {
+    it('should only list parts after PartNumberMarker', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {
                 uploadId,
                 'part-number-marker': '2',
-            }
+            },
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -302,14 +295,11 @@ describe('List Parts API', () => {
     });
 
     it('should handle a part-number-marker specified ' +
-    'and a max-parts specified', (done) => {
+    'and a max-parts specified', done => {
         const listRequest = {
             bucketName,
             namespace,
             objectKey: uploadKey,
-            lowerCaseHeaders: {
-                host: `${bucketName}.s3.amazonaws.com`
-            },
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: {

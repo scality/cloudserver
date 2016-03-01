@@ -223,7 +223,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
                 done();
             });
     });
-
+    // Next marker should be the last common prefix or contents key returned
     it('should return a NextMarker if maxKeys reached', done => {
         async.waterfall([
             function waterfall1(next) {
@@ -244,7 +244,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         function waterfallFinal(err, response) {
             assert(response.CommonPrefixes.indexOf('next/') > -1);
             assert.strictEqual(response.CommonPrefixes.indexOf('next1/'), -1);
-            assert.strictEqual(response.NextMarker, 'next1/');
+            assert.strictEqual(response.NextMarker, 'next/');
             assert(response.IsTruncated);
             done();
         });

@@ -37,4 +37,9 @@ npm start &
 npm run ft_test
 ```
 
+## s3cmd versions
+
+If using s3cmd as a client to IronMan-S3 be aware that v4 signature format
+is buggy in s3cmd versions < 1.6.1.
+
 [badge]: https://circleci.com/gh/scality/IronMan-S3.svg?style=shield&circle-token=1937e3399faf29be09c5eafced1a0a5323341c4c

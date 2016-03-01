@@ -1,13 +1,10 @@
-'use strict'; // eslint-disable-line strict
+import assert from 'assert';
+import crypto from 'crypto';
+import { S3 } from 'aws-sdk';
+import getConfig from '../support/config';
 
-const assert = require('assert');
-
-const awssdk = require('aws-sdk');
-const crypto = require('crypto');
-const config = awssdk.config;
-const S3 = awssdk.S3;
-
-const bucket = 'mybucket';
+const random = Math.round(Math.random() * 100).toString();
+const bucket = `mybucket-${random}`;
 
 // Create a buffer to put as a multipart upload part
 // and get its ETag
@@ -25,29 +22,19 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     this.timeout(60000);
     let s3;
 
-    before(function setup(done) {
-        config.accessKeyId = 'accessKey1';
-        config.secretAccessKey = 'verySecretKey1';
-        if (process.env.IP !== undefined) {
-            config.endpoint = `http://${process.env.IP}:8000`;
-        } else {
-            config.endpoint = 'http://localhost:8000';
-        }
-        config.sslEnabled = false;
-        config.s3ForcePathStyle = true;
-        config.apiVersions = { s3: '2006-03-01' };
-        config.logger = process.stdout;
-        config.signatureVersion = 'v4';
-        s3 = new S3();
-        done();
+    before(function setup() {
+        const config = getConfig('default', { signatureVersion: 'v4' });
+
+        s3 = new S3(config);
     });
 
-    it('should do an empty listing', function emptyListing(done) {
+    it('should do bucket listing', function bucketListing(done) {
         s3.listBuckets((err, data) => {
             if (err) {
                 return done(new Error(`error listing buckets: ${err}`));
             }
-            assert.strictEqual(data.Buckets.length, 0);
+
+            assert(data.Buckets, 'No buckets Info sent back');
             assert(data.Owner, 'No owner Info sent back');
             assert(data.Owner.ID, 'Owner ID not sent back');
             assert(data.Owner.DisplayName, 'DisplayName not sent back');
@@ -88,7 +75,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 Key: 'toAbort',
                 PartNumber: 1,
                 UploadId: multipartUploadData.firstUploadId,
-                Body: bufferBody
+                Body: bufferBody,
             };
             s3.uploadPart(params, (err, data) => {
                 if (err) {
@@ -129,7 +116,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     Key: 'toComplete',
                     PartNumber: 1,
                     UploadId: uploadId,
-                    Body: bufferBody
+                    Body: bufferBody,
                 };
                 s3.uploadPart(params, (err, data) => {
                     if (err) {
@@ -149,7 +136,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 Key: 'toComplete',
                 PartNumber: 2,
                 UploadId: multipartUploadData.secondUploadId,
-                Body: bufferBody
+                Body: bufferBody,
             };
             s3.uploadPart(params, (err, data) => {
                 if (err) {
@@ -231,14 +218,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 Parts: [
                     {
                         ETag: `"${calculatedHash}"`,
-                        PartNumber: 1
+                        PartNumber: 1,
                     },
                     {
                         ETag: `"${calculatedHash}"`,
-                        PartNumber: 2
-                    }
-                ]
-            }
+                        PartNumber: 2,
+                    },
+                ],
+            },
         };
         s3.completeMultipartUpload(params, (err, data) => {
             if (err) {

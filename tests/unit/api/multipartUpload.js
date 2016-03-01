@@ -26,21 +26,17 @@ const postBody = new Buffer('I am a body');
 const bucketPutRequest = {
     bucketName,
     namespace,
-    lowerCaseHeaders: {},
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
     post: '',
-    headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
 const objectKey = 'testObject';
 const initiateRequest = {
     bucketName,
     namespace,
     objectKey,
-    lowerCaseHeaders: {
-        host: `${bucketName}.s3.amazonaws.com`
-    },
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
-    headers: { host: `${bucketName}.s3.amazonaws.com` }
 };
 
 
@@ -91,8 +87,7 @@ describe('Multipart Upload API', () => {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -115,9 +110,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 objectKey,
                 namespace,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -152,16 +144,14 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it('should upload a part even if the client sent ' +
-    'a base 64 ETag (and the stored ETag ' +
-    'in metadata should be hex)', done => {
+    it('should upload a part even if the client sent a base 64 ETag ' +
+    '(and the stored ETag in metadata should be hex)', done => {
         async.waterfall([
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(authInfo, initiateRequest,
-                    log, next);
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
@@ -178,9 +168,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -230,9 +219,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '10001',
                     uploadId: testUploadId,
@@ -271,9 +259,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 objectKey,
                 namespace,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -317,12 +302,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
                     'content-length': 5368709121,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -343,8 +327,7 @@ describe('Multipart Upload API', () => {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -365,9 +348,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -386,9 +366,6 @@ describe('Multipart Upload API', () => {
                     bucketName,
                     namespace,
                     objectKey,
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`
-                    },
                     url: `/${objectKey}?partNumber=` +
                         `1&uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -429,7 +406,7 @@ describe('Multipart Upload API', () => {
 
     it('should complete a multipart upload', done => {
         const partBody = new Buffer('I am a part\n');
-        initiateRequest.lowerCaseHeaders['x-amz-meta-stuff'] =
+        initiateRequest.headers['x-amz-meta-stuff'] =
             'I am some user metadata';
         async.waterfall([
             function waterfall1(next) {
@@ -457,9 +434,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -486,12 +462,9 @@ describe('Multipart Upload API', () => {
                     namespace,
                     objectKey,
                     parsedHost: 's3.amazonaws.com',
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`,
-                    },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { uploadId: testUploadId, },
+                    query: { uploadId: testUploadId },
                     post: completeBody,
                 };
                 const awsVerifiedETag =
@@ -554,9 +527,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -571,12 +541,9 @@ describe('Multipart Upload API', () => {
                     bucketName,
                     objectKey,
                     namespace,
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`,
-                    },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { uploadId: testUploadId, },
+                    query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
                 };
@@ -623,9 +590,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -643,20 +607,16 @@ describe('Multipart Upload API', () => {
                     bucketName,
                     namespace,
                     objectKey,
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`
-                    },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId, },
                     post: completeBody,
                     calculatedHash,
                 };
-                completeMultipartUpload(authInfo, completeRequest, log,
-                    err => {
-                        assert.strictEqual(err, 'MalformedPOSTRequest');
-                        done();
-                    });
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    assert.strictEqual(err, 'MalformedPOSTRequest');
+                    done();
+                });
             });
         });
     });
@@ -690,9 +650,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -703,9 +662,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
@@ -728,9 +686,6 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
                         headers: { host: `${bucketName}.s3.amazonaws.com` },
                         query: { uploadId: testUploadId, },
@@ -781,9 +736,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -796,9 +748,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -823,16 +772,9 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
                         url: `/${objectKey}?uploadId=${testUploadId}`,
-                        headers: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        query: {
-                            uploadId: testUploadId,
-                        },
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
                     };
@@ -880,12 +822,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -896,12 +837,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 200,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
@@ -924,13 +864,10 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         query: {
                             uploadId: testUploadId,
                         },
@@ -981,12 +918,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -997,12 +933,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
@@ -1026,13 +961,10 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         query: {
                             uploadId: testUploadId,
                         },
@@ -1063,16 +995,12 @@ describe('Multipart Upload API', () => {
             bucketName,
             namespace,
             objectKey,
-            lowerCaseHeaders: {
+            headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
                 'x-amz-acl': 'authenticated-read',
             },
             url: `/${objectKey}?uploads`,
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-meta-stuff': 'I am some user metadata',
-            }
         };
 
         async.waterfall([
@@ -1103,12 +1031,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -1119,12 +1046,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
@@ -1147,13 +1073,10 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         query: {
                             uploadId: testUploadId,
                         },
@@ -1187,16 +1110,12 @@ describe('Multipart Upload API', () => {
             bucketName,
             namespace,
             objectKey,
-            lowerCaseHeaders: {
+            headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-stuff': 'I am some user metadata',
                 'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
             },
             url: `/${objectKey}?uploads`,
-            headers: {
-                host: `${bucketName}.s3.amazonaws.com`,
-                'x-amz-meta-stuff': 'I am some user metadata',
-            }
         };
 
         async.waterfall([
@@ -1226,12 +1145,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 6000000,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -1242,12 +1160,11 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
+                headers: {
                     host: `${bucketName}.s3.amazonaws.com`,
                     'content-length': 100,
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
                     partNumber: '2',
                     uploadId: testUploadId,
@@ -1271,13 +1188,10 @@ describe('Multipart Upload API', () => {
                         bucketName,
                         namespace,
                         objectKey,
-                        lowerCaseHeaders: {
-                            host: `${bucketName}.s3.amazonaws.com`
-                        },
-                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         headers: {
                             host: `${bucketName}.s3.amazonaws.com`
                         },
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
                         query: {
                             uploadId: testUploadId,
                         },
@@ -1309,8 +1223,7 @@ describe('Multipart Upload API', () => {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1329,9 +1242,6 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: {
-                    host: `${bucketName}.s3.amazonaws.com`
-                },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 query: {
@@ -1345,9 +1255,6 @@ describe('Multipart Upload API', () => {
                     bucketName,
                     namespace,
                     objectKey,
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`
-                    },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId, },
@@ -1374,8 +1281,7 @@ describe('Multipart Upload API', () => {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 metadata.getBucket(mpuBucket, log, (err, md) => {
@@ -1394,9 +1300,8 @@ describe('Multipart Upload API', () => {
                 bucketName,
                 namespace,
                 objectKey,
-                lowerCaseHeaders: { host: `${bucketName}.s3.amazonaws.com` },
-                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
                     uploadId: testUploadId,
@@ -1408,9 +1313,6 @@ describe('Multipart Upload API', () => {
                     bucketName,
                     namespace,
                     objectKey,
-                    lowerCaseHeaders: {
-                        host: `${bucketName}.s3.amazonaws.com`
-                    },
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: {

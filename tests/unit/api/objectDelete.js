@@ -25,7 +25,7 @@ describe('objectDelete API', () => {
             bucketName,
             namespace,
             objectKey,
-            lowerCaseHeaders: {},
+            headers: {},
             url: `/${bucketName}/${objectKey}`,
         }, postBody);
         metadata.deleteBucket(bucketName, log, () => done());
@@ -38,21 +38,21 @@ describe('objectDelete API', () => {
     const testBucketPutRequest = new DummyRequest({
         bucketName,
         namespace,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}`,
     });
     const testGetObjectRequest = new DummyRequest({
         bucketName,
         namespace,
         objectKey,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectKey}`,
     });
     const testDeleteRequest = new DummyRequest({
         bucketName,
         namespace,
         objectKey,
-        lowerCaseHeaders: {},
+        headers: {},
         url: `/${bucketName}/${objectKey}`,
     });
 

@@ -22,24 +22,11 @@ the handling of the request due to client error or system error will result
 in an error being returned to the client that follows S3's error specifications.
 
 The multi-daemon architecture allows us to restart daemons on the fly in case
-of any crash without interrupting the service. The daemon does handle
+of any crash without interrupting the service. The daemon handles
 remaining requests even in case of an error, stopping listening while another
 daemon is spawned to handle future requests in its stead.
 
 ![Arch](res/architecture.png)
-
-### Status
-
-Currently, our implementation resides on a single daemon handling every
-request. In the near future, the connector will be clusterized, allowing
-multiple connectors to handle multiple requests at once.
-
-Our metadata is currently stored on memory, but should use IM-Metadata soon.
-For authentication, we use a stubbed implementation, but IM-Vault will be the
-final solution.
-
-For the storage part, we are using our in-memory backend, sproxyd and
-IM-Data are the backends that we will be integrating in the near future.
 
 ### API specifications
 
@@ -60,7 +47,4 @@ Right now, the following operations are implemented:
 - Multipart Upload
 - GetService
 - v2 Authentication
-
-The following operations are in a WIP state:
-
 - v4 Authentication

@@ -1,21 +1,17 @@
-'use strict'; // eslint-disable-line strict
+import assert from 'assert';
+import process from 'process';
+import cp from 'child_process';
+import { parseString } from 'xml2js';
+import { S3 } from 'aws-sdk';
+import getConfig from '../support/config';
 
-const assert = require('assert');
-const parseString = require('xml2js').parseString;
-const proc = require('child_process');
-const process = require('process');
-
-const awssdk = require('aws-sdk');
-const config = awssdk.config;
-const S3 = awssdk.S3;
-
-const bucket = 'mybucket';
-
+const random = Math.round(Math.random() * 100).toString();
+const bucket = `mybucket-${random}`;
 
 // Get stdout and stderr stringified
 function provideRawOutput(args, cb) {
     process.stdout.write(`curl ${args}\n`);
-    const child = proc.spawn('curl', args);
+    const child = cp.spawn('curl', args);
     const procData = {
         stdout: '',
         stderr: '',
@@ -50,7 +46,7 @@ function provideRawOutput(args, cb) {
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
-    proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
+    cp.spawn('diff', [putFile, receivedFile]).on('exit', code => {
         assert.strictEqual(code, 0);
         done();
     });
@@ -58,7 +54,7 @@ function diff(putFile, receivedFile, done) {
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [file]).on('exit', () => {
+    cp.spawn('rm', [file]).on('exit', () => {
         callback();
     });
 }
@@ -67,21 +63,10 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     this.timeout(60000);
     let s3;
 
-    before(function setup(done) {
-        config.accessKeyId = 'accessKey1';
-        config.secretAccessKey = 'verySecretKey1';
-        if (process.env.IP !== undefined) {
-            config.endpoint = `http://${process.env.IP}:8000`;
-        } else {
-            config.endpoint = 'http://localhost:8000';
-        }
-        config.sslEnabled = false;
-        config.s3ForcePathStyle = true;
-        config.apiVersions = { s3: '2006-03-01' };
-        config.logger = process.stdout;
-        config.signatureVersion = 'v4';
-        s3 = new S3();
-        done();
+    before(function setup() {
+        const config = getConfig('default', { signatureVersion: 'v4' });
+
+        s3 = new S3(config);
     });
 
     it('should do an empty bucket listing', function emptyListing(done) {

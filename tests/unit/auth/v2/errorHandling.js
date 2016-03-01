@@ -7,22 +7,22 @@ const logger = new DummyRequestLogger();
 
 describe('Error handling in checkAuth', () => {
     it('should return an error message if no ' +
-       'secret key is associated with access key', done => {
+       'such access key access key', done => {
         const date = new Date();
         const request = {
             method: 'GET',
-            lowerCaseHeaders: {
-                host: 's3.amazonaws.com',
-                'user-agent': 'curl/7.43.0',
-                accept: '*/*',
+            headers: {
                 date,
-                authorization: 'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
+                'host': 's3.amazonaws.com',
+                'user-agent': 'curl/7.43.0',
+                'accept': '*/*',
+                'authorization': 'AWS brokenKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
             },
             url: '/bucket',
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.strictEqual(err, 'InvalidAccessKeyId');
             done();
         });
     });
@@ -31,12 +31,11 @@ describe('Error handling in checkAuth', () => {
        'is provided with v2header auth check', done => {
         const request = {
             method: 'GET',
-            lowerCaseHeaders: {
-                host: 's3.amazonaws.com',
+            headers: {
+                'host': 's3.amazonaws.com',
                 'user-agent': 'curl/7.43.0',
-                accept: '*/*',
-                authorization:
-                    'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c='
+                'accept': '*/*',
+                'authorization': 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
             },
             url: '/bucket',
         };
@@ -58,10 +57,9 @@ describe('Error handling in checkAuth', () => {
             query: {
                 AWSAccessKeyId: 'accessKey1',
                 Expires: '1141889120',
-                Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D'
+                Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D',
             },
-            lowerCaseHeaders: {},
-            headers: {}
+            headers: {},
         };
         auth(request, logger, err => {
             assert.strictEqual(err, 'RequestTimeTooSkewed');
@@ -84,10 +82,10 @@ describe('Error handling in checkAuth', () => {
             query: {
                 AWSAccessKeyId: 'accessKey1',
                 Expires: expires,
-                Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D' },
-            lowerCaseHeaders: { host: 's3.amazonaws.com' },
+                Signature: 'vjbyPxybdZaNmGa%2ByT272YEAiv4%3D',
+            },
+            headers: { host: 's3.amazonaws.com' },
         };
-
         auth(request, logger, err => {
             assert.strictEqual(err, 'SignatureDoesNotMatch');
             done();
@@ -99,7 +97,7 @@ describe('Error handling in checkAuth', () => {
         const date = new Date();
         const request = {
             method: 'GET',
-            lowerCaseHeaders: {
+            headers: {
                 host: 's3.amazonaws.com',
                 'user-agent': 'curl/7.43.0',
                 accept: '*/*',
@@ -107,9 +105,8 @@ describe('Error handling in checkAuth', () => {
                 authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
             },
             url: '/bucket',
-            query: {}
+            query: {},
         };
-
         auth(request, logger, err => {
             assert.strictEqual(err, 'SignatureDoesNotMatch');
             done();
