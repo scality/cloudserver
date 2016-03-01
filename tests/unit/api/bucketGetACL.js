@@ -10,8 +10,9 @@ import metadata from '../metadataswitch';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo(accessKey);
+const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 
