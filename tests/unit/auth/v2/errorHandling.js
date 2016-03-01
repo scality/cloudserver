@@ -98,11 +98,11 @@ describe('Error handling in checkAuth', () => {
         const request = {
             method: 'GET',
             headers: {
-                host: 's3.amazonaws.com',
-                'user-agent': 'curl/7.43.0',
-                accept: '*/*',
                 date,
-                authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
+                'host': 's3.amazonaws.com',
+                'user-agent': 'curl/7.43.0',
+                'accept': '*/*',
+                'authorization': 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
             },
             url: '/bucket',
             query: {},
