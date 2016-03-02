@@ -37,60 +37,60 @@ describe('List Parts API', () => {
             canonicalID, authInfo.getAccountDisplayName());
         const sampleMPUInstance = new Bucket(mpuBucket, 'admin', 'admin');
         sampleMPUInstance.keyMap[overviewKey] = {
-            id: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+            'id': '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
             'owner-display-name': authInfo.getAccountDisplayName(),
             'owner-id': canonicalID,
-            initiator: {
+            'initiator': {
                 DisplayName: authInfo.getAccountDisplayName(),
                 ID: canonicalID,
             },
-            key: '$makememulti',
-            initiated: '2015-11-30T22:40:07.858Z',
-            uploadId: '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
-            acl: {
+            'key': '$makememulti',
+            'initiated': '2015-11-30T22:40:07.858Z',
+            'uploadId': '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
+            'acl': {
                 Canned: 'private',
                 FULL_CONTROL: [],
                 WRITE_ACP: [],
                 READ: [],
                 READ_ACP: [],
             },
-            eventualStorageBucket: 'freshestbucket',
+            'eventualStorageBucket': 'freshestbucket',
         };
 
         sampleMPUInstance.keyMap[partOneKey] = {
-            key: partOneKey,
+            'key': partOneKey,
             'last-modified': '2015-11-30T22:41:18.658Z',
             'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
             'content-length': '6000000',
-            partLocations: ['068db6a6745a79d54c1b29ff99f9f131'],
+            'partLocations': ['068db6a6745a79d54c1b29ff99f9f131'],
         };
         sampleMPUInstance.keyMap[partTwoKey] = {
-            key: partTwoKey,
+            'key': partTwoKey,
             'last-modified': '2015-11-30T22:41:40.207Z',
             'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
             'content-length': '6000000',
-            partLocations: ['ff22f316b16956ff5118c93abce7d62d'],
+            'partLocations': ['ff22f316b16956ff5118c93abce7d62d'],
         };
         sampleMPUInstance.keyMap[partThreeKey] = {
-            key: partThreeKey,
+            'key': partThreeKey,
             'last-modified': '2015-11-30T22:41:52.102Z',
             'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
             'content-length': '6000000',
-            partLocations: ['dea282f70edb6fc5f9433cd6f525d4a6'],
+            'partLocations': ['dea282f70edb6fc5f9433cd6f525d4a6'],
         };
         sampleMPUInstance.keyMap[partFourKey] = {
-            key: partFourKey,
+            'key': partFourKey,
             'last-modified': '2015-11-30T22:42:03.493Z',
             'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
             'content-length': '6000000',
-            partLocations: ['afe24bc40153982e1f7f28066f7af6a4'],
+            'partLocations': ['afe24bc40153982e1f7f28066f7af6a4'],
         };
         sampleMPUInstance.keyMap[partFiveKey] = {
-            key: partFiveKey,
+            'key': partFiveKey,
             'last-modified': '2015-11-30T22:42:22.876Z',
             'content-md5': '555e4cd2f9eff38109d7a3ab13995a32',
             'content-length': '18',
-            partLocations: ['85bc16f5769687070fb13cfe66b5e41f'],
+            'partLocations': ['85bc16f5769687070fb13cfe66b5e41f'],
         };
 
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
@@ -307,7 +307,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'part-number-marker': '2',
                 'max-parts': '2',
-            }
+            },
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
