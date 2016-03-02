@@ -46,9 +46,6 @@ dependencies:
     - sudo rm /etc/apt/sources.list.d/circle.list
     - sudo rm /etc/apt/sources.list.d/cassandra.list
     - sudo rm /etc/apt/sources.list.d/google.list
-    - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    - sudo apt-get update
-    - sudo apt-get install automake-1.14
   post:
     # dependencies for testing with boto
     - sudo pip install docker-py pyyaml flake8 yamllint
