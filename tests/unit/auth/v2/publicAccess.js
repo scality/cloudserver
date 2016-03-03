@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import auth from '../../../../lib/auth/auth';
@@ -40,7 +41,7 @@ describe('Public Access', () => {
         };
 
         auth(request, logger, err => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
