@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
@@ -84,7 +85,7 @@ describe('objectDelete API', () => {
                 objectDelete(authInfo, testDeleteRequest, log, err => {
                     assert.strictEqual(err, undefined);
                     objectGet(authInfo, testGetObjectRequest, log, err => {
-                        assert.strictEqual(err, 'NoSuchKey');
+                        assert.deepStrictEqual(err, errors.NoSuchKey);
                         done();
                     });
                 });
@@ -95,7 +96,7 @@ describe('objectDelete API', () => {
     it('should prevent anonymous user deleteObject API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
-            assert.strictEqual(err, 'AccessDenied');
+            assert.deepStrictEqual(err, errors.AccessDenied);
             done();
         });
     });

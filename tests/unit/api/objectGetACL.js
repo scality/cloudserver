@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import async from 'async';
@@ -85,7 +86,7 @@ describe('objectGetACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, result) => {
             assert.strictEqual(result, 'Bucket created');
             objectGetACL(authInfo, testGetACLRequest, log, err => {
-                assert.strictEqual(err, 'NoSuchKey');
+                assert.deepStrictEqual(err, errors.NoSuchKey);
                 done();
             });
         });
