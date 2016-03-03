@@ -4,7 +4,7 @@ import { S3 } from 'aws-sdk';
 import getConfig from '../support/config';
 
 const random = Math.round(Math.random() * 100).toString();
-const bucket = `mybucket-${random}`;
+const bucket = `ftest-mybucket-${random}`;
 
 // Create a buffer to put as a multipart upload part
 // and get its ETag
