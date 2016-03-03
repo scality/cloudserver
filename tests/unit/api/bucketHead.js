@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketHead from '../../../lib/api/bucketHead';
@@ -26,7 +27,7 @@ describe('bucketHead API', () => {
 
     it('should return an error if the bucket does not exist', done => {
         bucketHead(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'NoSuchBucket');
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
     });
@@ -36,7 +37,7 @@ describe('bucketHead API', () => {
         bucketPut(otherAuthInfo, testRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketHead(authInfo, testRequest, log, err => {
-                assert.strictEqual(err, 'AccessDenied');
+                assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
             });
         });
