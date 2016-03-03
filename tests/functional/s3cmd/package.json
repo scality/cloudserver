@@ -1,7 +1,8 @@
 {
     "name": "s3cmd-tests",
     "dependencies": {
-        "mocha": "2.3.3"
+        "mocha": "2.3.3",
+        "arsenal": "scality/IronMan-Arsenal#rel/1.0"
     },
     "scripts": {
         "test": "mocha *.js"
