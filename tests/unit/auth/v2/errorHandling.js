@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import auth from '../../../../lib/auth/auth';
@@ -22,7 +23,7 @@ describe('Error handling in checkAuth', () => {
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'InvalidAccessKeyId');
+            assert.deepStrictEqual(err, errors.InvalidAccessKeyId);
             done();
         });
     });
@@ -41,7 +42,7 @@ describe('Error handling in checkAuth', () => {
         };
 
         auth(request, logger, err => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -62,7 +63,7 @@ describe('Error handling in checkAuth', () => {
             headers: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -87,7 +88,7 @@ describe('Error handling in checkAuth', () => {
             headers: { host: 's3.amazonaws.com' },
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'SignatureDoesNotMatch');
+            assert.deepStrictEqual(err, errors.SignatureDoesNotMatch);
             done();
         });
     });
@@ -108,7 +109,7 @@ describe('Error handling in checkAuth', () => {
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'SignatureDoesNotMatch');
+            assert.deepStrictEqual(err, errors.SignatureDoesNotMatch);
             done();
         });
     });
