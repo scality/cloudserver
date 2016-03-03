@@ -1,6 +1,7 @@
 import assert from 'assert';
 import crypto from 'crypto';
 import { S3 } from 'aws-sdk';
+
 import getConfig from '../support/config';
 
 const random = Math.round(Math.random() * 100).toString();
