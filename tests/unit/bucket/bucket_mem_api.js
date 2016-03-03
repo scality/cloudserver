@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 import async from 'async';
 
@@ -39,7 +40,7 @@ describe('bucket API for getting, putting and deleting ' +
     it('should return an error in response ' +
        'to getObjectMD when no such key', done => {
         metadata.getObjectMD(bucketName, 'notThere', log, (err, value) => {
-            assert.strictEqual(err, 'NoSuchKey');
+            assert.deepStrictEqual(err, errors.NoSuchKey);
             assert.strictEqual(value, undefined);
             done();
         });
@@ -50,7 +51,7 @@ describe('bucket API for getting, putting and deleting ' +
             metadata.deleteObjectMD(bucketName, 'objectToDelete', log, () => {
                 metadata.getObjectMD(bucketName, 'objectToDelete', log,
                     (err, value) => {
-                        assert.strictEqual(err, 'NoSuchKey');
+                        assert.deepStrictEqual(err, errors.NoSuchKey);
                         assert.strictEqual(value, undefined);
                         done();
                     });
