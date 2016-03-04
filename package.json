@@ -50,11 +50,11 @@
     "mocha": "^2.3.3"
   },
   "scripts": {
-    "coverage": "S3BACKEND=mem babel-node ./node_modules/istanbul/lib/cli.js cover _mocha -- --recursive tests/unit",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
-    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit"
+    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
+    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem babel-node ./node_modules/istanbul/lib/cli.js cover --dir coverage/unit _mocha -- --recursive tests/unit"
   }
 }

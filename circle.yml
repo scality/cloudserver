@@ -3,6 +3,8 @@ general:
   branches:
     ignore:
       - /^ultron\/.*/ # Ignore ultron/* branches
+  artifacts:
+    - coverage/
 
 machine:
   node:
@@ -24,5 +26,5 @@ test:
     # lint the python used for testing
     - flake8 $(git ls-files '*.py')
     - yamllint $(git ls-files '*.yml')
-    - npm run test
+    - npm run unit_coverage
     - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
