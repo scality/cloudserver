@@ -6,6 +6,7 @@ import memCredentials from '../../lib/json/mem_credentials.json';
 const DEFAULT_GLOBAL_OPTIONS = {
     logger: process.stdout,
     apiVersions: { s3: '2006-03-01' },
+    signatureCache: false,
 };
 const DEFAULT_MEM_OPTIONS = {
     endpoint: 'http://localhost:8000',
