@@ -365,6 +365,57 @@ describe('s3cmd multipart upload', function titi() {
     });
 });
 
+describe('s3cmd put, get and delete object with spaces ' +
+    'in object key names', function test() {
+    this.timeout(0);
+    const keyWithSpacesAndPluses = 'key with spaces and + pluses +';
+    before('create file to put', (done) => {
+        createFile(upload, 1000, done);
+    });
+    after('delete uploaded and downloaded file', (done) => {
+        deleteFile(upload, () => {
+            deleteFile(download, done);
+        });
+    });
+
+    const bucket = 'freshbucket';
+
+    it('should put a valid bucket', (done) => {
+        exec(['mb', `s3://${bucket}`], done);
+    });
+
+    it('should put file with spaces in key in existing bucket', (done) => {
+        exec(['put', upload,
+        `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
+    });
+
+    it('should get file with spaces', (done) => {
+        exec(['get', `s3://${bucket}/${keyWithSpacesAndPluses}`,
+        download], done);
+    });
+
+    it('should list bucket showing file with spaces', (done) => {
+        checkRawOutput(['ls', `s3://${bucket}`], `s3://${bucket}`,
+        keyWithSpacesAndPluses,
+        (foundIt) => {
+            assert(foundIt);
+            done();
+        });
+    });
+
+    it('downloaded file should equal uploaded file', (done) => {
+        diff(upload, download, done);
+    });
+
+    it('should delete file with spaces', (done) => {
+        exec(['del', `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
+    });
+
+    it('should delete empty bucket', (done) => {
+        exec(['rb', `s3://${bucket}`], done);
+    });
+});
+
 describe('s3cmd delBucket', () => {
     it('delete non-empty bucket, should fail', (done) => {
         exec(['rb', `s3://${bucket}`], done, 13);
