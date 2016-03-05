@@ -10,11 +10,7 @@ import { DummyRequestLogger, makeAuthInfo } from '../../helpers';
 const log = new DummyRequestLogger();
 
 const method = 'GET';
-const url = '/mybucket?X-Amz-Algorithm=AWS4-HMAC-SHA256&X' +
-    '-Amz-Credential=accessKey1%2F20160208%2Fus-east-1%2Fs' +
-    '3%2Faws4_request&X-Amz-Date=20160208T234304Z&X-Amz-Expires' +
-    '=900&X-Amz-Signature=036c5d854aca98a003c1c155a772315' +
-    '7d8148ad5888b3aee1133784eb5aec08b&X-Amz-SignedHeaders=host';
+const path = decodeURIComponent('/mybucket');
 const host = 'localhost:8000';
 const query = {
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
@@ -28,7 +24,7 @@ const query = {
 };
 const request = {
     method,
-    url,
+    path,
     headers: {
         host,
     },
