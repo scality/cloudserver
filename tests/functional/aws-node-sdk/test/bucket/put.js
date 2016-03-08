@@ -6,6 +6,29 @@ import withV4 from '../support/withV4';
 describe('PUT Bucket - AWS.S3.createBucket', () => {
     let s3;
 
+    describe('When user is unauthorized', () => {
+        let s3;
+        let config;
+
+        beforeEach(() => {
+            config = getConfig('default');
+            s3 = new S3(config);
+        });
+
+        it('should return 403 and AccessDenied', done => {
+            const params = { Bucket: 'mybucket' };
+
+            s3.makeUnauthenticatedRequest('createBucket', params, error => {
+                assert(error);
+
+                assert.strictEqual(error.statusCode, 403);
+                assert.strictEqual(error.code, 'AccessDenied');
+
+                done();
+            });
+        });
+    });
+
     withV4(sigCfg => {
         before(() => {
             const config = getConfig('default', sigCfg);

@@ -7,6 +7,31 @@ import withV4 from '../support/withV4';
 import svcSchema from '../../schema/service';
 
 describe('GET Service - AWS.S3.listBuckets', () => {
+    describe('When user is unauthorized', () => {
+        let s3;
+        let config;
+
+        beforeEach(() => {
+            config = getConfig('default');
+            s3 = new S3(config);
+        });
+
+        const itSkipAWS = process.env.AWS_ON_AIR
+            ? it.skip
+            : it;
+
+        itSkipAWS('should return 403 and AccessDenied', done => {
+            s3.makeUnauthenticatedRequest('listBuckets', error => {
+                assert(error);
+
+                assert.strictEqual(error.statusCode, 403);
+                assert.strictEqual(error.code, 'AccessDenied');
+
+                done();
+            });
+        });
+    });
+
     withV4(sigCfg => {
         describe('when user has invalid credential', () => {
             let testFn;
