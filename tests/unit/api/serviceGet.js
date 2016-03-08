@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 import async from 'async';
 import { parseString } from 'xml2js';
@@ -101,7 +102,7 @@ describe('serviceGet API', () => {
     it('should prevent anonymous user from accessing getService API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         serviceGet(publicAuthInfo, serviceGetRequest, log, err => {
-            assert.strictEqual(err, 'AccessDenied');
+            assert.deepStrictEqual(err, errors.AccessDenied);
             done();
         });
     });

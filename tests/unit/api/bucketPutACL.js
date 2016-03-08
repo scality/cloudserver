@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
@@ -65,7 +66,7 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'InvalidArgument');
+                assert.deepStrictEqual(err, errors.InvalidArgument);
                 done();
             });
         });
@@ -241,7 +242,8 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
+                assert.deepStrictEqual(err,
+                                       errors.UnresolvableGrantByEmailAddress);
                 done();
             });
         });
@@ -357,7 +359,8 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
+                assert.deepStrictEqual(err,
+                                       errors.UnresolvableGrantByEmailAddress);
                 done();
             });
         });
@@ -397,7 +400,7 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'MalformedACLError');
+                assert.deepStrictEqual(err, errors.MalformedACLError);
                 done();
             });
         });
@@ -435,7 +438,7 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'MalformedXML');
+                assert.deepStrictEqual(err, errors.MalformedXML);
                 done();
             });
         });
@@ -473,7 +476,7 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'InvalidArgument');
+                assert.deepStrictEqual(err, errors.InvalidArgument);
                 done();
             });
         });
@@ -497,7 +500,7 @@ describe('putBucketACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, 'InvalidArgument');
+                assert.deepStrictEqual(err, errors.InvalidArgument);
                 done();
             });
         });

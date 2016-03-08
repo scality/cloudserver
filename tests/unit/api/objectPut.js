@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
@@ -58,7 +59,7 @@ describe('objectPut API', () => {
 
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, log, err => {
-            assert.strictEqual(err, 'NoSuchBucket');
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
     });
@@ -68,7 +69,7 @@ describe('objectPut API', () => {
         bucketPut(putAuthInfo, testPutBucketRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, err => {
-                assert.strictEqual(err, 'AccessDenied');
+                assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
             });
         });
