@@ -366,7 +366,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .DisplayName[0], 'sampleAccount1@sampling.com');
+                .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
                 'FULL_CONTROL');
@@ -376,7 +376,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .DisplayName[0], 'sampleAccount2@sampling.com');
+                .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'FULL_CONTROL');
@@ -386,7 +386,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
-                .DisplayName[0], 'sampleAccount2@sampling.com');
+                .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Permission[0],
                 'WRITE_ACP');
@@ -396,7 +396,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
-                .DisplayName[0], 'sampleAccount1@sampling.com');
+                .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Permission[0],
                 'READ_ACP');
