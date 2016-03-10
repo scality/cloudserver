@@ -15,6 +15,7 @@ const bucket = 'universe';
 const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
+const lowerCaseEmail = emailAccount.toLowerCase();
 
 const isIronman = process.env.CI ? ['-c', `${__dirname}/s3cfg`] : null;
 
@@ -82,10 +83,12 @@ function checkRawOutput(args, lineFinder, testString, cb) {
         process.stdout.write(data.toString());
     });
     child.on('close', () => {
-        const lineOfInterest = allData.find((item) => {
+        const linesOfInterest = allData.filter((item) => {
             return item.indexOf(lineFinder) > -1;
         });
-        const foundIt = lineOfInterest.indexOf(testString) > -1;
+        const foundIt = linesOfInterest.some(item => {
+            return item.indexOf(testString) > -1;
+        });
         return cb(foundIt);
     });
 }
@@ -146,7 +149,7 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
 
     it('should get specific ACL that was set', (done) => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
-        `${emailAccount}: WRITE`, (foundIt) => {
+        `${lowerCaseEmail}: WRITE`, (foundIt) => {
             assert(foundIt);
             done();
         });
@@ -261,7 +264,7 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
 
     it('should get specific ACL that was set', (done) => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `${emailAccount}: READ`, (foundIt) => {
+        `${lowerCaseEmail}: READ`, (foundIt) => {
             assert(foundIt);
             done();
         });
