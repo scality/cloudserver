@@ -93,12 +93,12 @@ describe('createCanonicalRequest function', () => {
             pHttpVerb: 'GET',
             pResource: '/test.txt',
             pQuery: {
-                'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-                'X-Amz-Credential': 'AKIAIOSFODNN7EXAMPLE/20130524/' +
-                    'us-east-1/s3/aws4_request',
-                'X-Amz-Date': '20130524T000000Z',
                 'X-Amz-Expires': '86400',
                 'X-Amz-SignedHeaders': 'host',
+                'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+                'X-Amz-Date': '20130524T000000Z',
+                'X-Amz-Credential': 'AKIAIOSFODNN7EXAMPLE/20130524/' +
+                    'us-east-1/s3/aws4_request',
             },
             pHeaders: {
                 host: 'examplebucket.s3.amazonaws.com',
