@@ -10,7 +10,7 @@ import { DummyRequestLogger, makeAuthInfo } from '../../helpers';
 const log = new DummyRequestLogger();
 
 const method = 'PUT';
-const url = '/mybucket';
+const path = '/mybucket';
 const xAMZcontentSha256 = '771df8abbecb2265e9724e5dc4510dcc160' +
     '60c0513ae669baf35b255d465b63f';
 const host = 'localhost:8000';
@@ -27,7 +27,7 @@ const headers = {
 };
 const request = {
     method,
-    url,
+    path,
     headers,
     query: {},
 };
