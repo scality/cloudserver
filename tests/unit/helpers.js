@@ -1,4 +1,5 @@
 import AuthInfo from '../../lib/auth/AuthInfo';
+import constants from '../../constants';
 
 export function makeid(size) {
     let text = '';
@@ -33,11 +34,13 @@ export function timeDiff(startTime) {
 }
 
 export function makeAuthInfo(accessKey) {
+    const canonicalID = accessKey === constants.publicId ?
+        constants.publicId : `${accessKey}canonicalID`;
     return new AuthInfo({
-        canonicalID: accessKey,
+        canonicalID,
         shortid: 'shortid',
         email: `${accessKey}@l.com`,
-        accountDisplayName: accessKey,
+        accountDisplayName: `${accessKey}displayName`,
     });
 }
 

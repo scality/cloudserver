@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 import lolex from 'lolex';
 
@@ -9,11 +10,7 @@ import { DummyRequestLogger, makeAuthInfo } from '../../helpers';
 const log = new DummyRequestLogger();
 
 const method = 'GET';
-const url = '/mybucket?X-Amz-Algorithm=AWS4-HMAC-SHA256&X' +
-    '-Amz-Credential=accessKey1%2F20160208%2Fus-east-1%2Fs' +
-    '3%2Faws4_request&X-Amz-Date=20160208T234304Z&X-Amz-Expires' +
-    '=900&X-Amz-Signature=036c5d854aca98a003c1c155a772315' +
-    '7d8148ad5888b3aee1133784eb5aec08b&X-Amz-SignedHeaders=host';
+const path = decodeURIComponent('/mybucket');
 const host = 'localhost:8000';
 const query = {
     'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
@@ -27,7 +24,7 @@ const query = {
 };
 const request = {
     method,
-    url,
+    path,
     headers: {
         host,
     },
@@ -42,7 +39,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Algorithm':
             'AWS4-HMAC-SHA1' }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -51,7 +48,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
             undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -60,7 +57,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Credential':
             'incorrectformat' }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -71,7 +68,7 @@ describe('v4 queryAuthCheck', () => {
         'accessKey1/20160208/us-east-1/EC2/aws4_request' },
         'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -82,7 +79,7 @@ describe('v4 queryAuthCheck', () => {
         'accessKey1/20160208/us-east-1/s3/aws2_request' },
         'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -91,7 +88,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-SignedHeaders':
         undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -100,7 +97,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Signature':
         undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -109,7 +106,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Date':
         undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -118,7 +115,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
         undefined }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -128,7 +125,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
         0 }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -139,7 +136,7 @@ describe('v4 queryAuthCheck', () => {
         const alteredRequest = createAlteredRequest({ 'X-Amz-Expires':
         604801 }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -152,7 +149,7 @@ describe('v4 queryAuthCheck', () => {
             'X-Amz-Credential': 'accessKey1/20950208/us-east-1/s3/aws4_request',
         }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -162,7 +159,7 @@ describe('v4 queryAuthCheck', () => {
             'X-Amz-Date': '20160208T234304Z',
         }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -176,7 +173,7 @@ describe('v4 queryAuthCheck', () => {
         }, 'query', request, query);
         queryAuthCheck(alteredRequest, log, (err) => {
             clock.uninstall();
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -187,7 +184,7 @@ describe('v4 queryAuthCheck', () => {
         const clock = lolex.install(1454974984001);
         queryAuthCheck(request, log, (err, authInfo) => {
             clock.uninstall();
-            assert.strictEqual(err, null);
+            assert.deepStrictEqual(err, null);
             assert.strictEqual(authInfo.getCanonicalID(),
                 createdAuthInfo.getCanonicalID());
             done();

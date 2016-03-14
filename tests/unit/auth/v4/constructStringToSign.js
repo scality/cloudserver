@@ -15,7 +15,7 @@ describe('constructStringToSign function', () => {
         const params = {
             request: {
                 method: 'GET',
-                url: '/test.txt',
+                path: '/test.txt',
                 headers: {
                     'host': 'examplebucket.s3.amazonaws.com',
                     'x-amz-date': '20130524T000000Z',
@@ -53,7 +53,7 @@ describe('constructStringToSign function', () => {
         const params = {
             request: {
                 method: 'PUT',
-                url: '/test$file.text',
+                path: '/test$file.text',
                 headers: {
                     'date': 'Fri, 24 May 2013 00:00:00 GMT',
                     'host': 'examplebucket.s3.amazonaws.com',
@@ -94,7 +94,7 @@ describe('constructStringToSign function', () => {
         const params = {
             request: {
                 method: 'GET',
-                url: '/test.txt',
+                path: '/test.txt',
                 headers: {
                     host: 'examplebucket.s3.amazonaws.com',
                 },

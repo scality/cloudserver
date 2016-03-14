@@ -15,8 +15,9 @@ const bucket = 'universe';
 const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
+const lowerCaseEmail = emailAccount.toLowerCase();
 
-const isIronman = process.env.IP ? ['-c', `${__dirname}/s3cfg`] : null;
+const isIronman = process.env.CI ? ['-c', `${__dirname}/s3cfg`] : null;
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
@@ -82,10 +83,12 @@ function checkRawOutput(args, lineFinder, testString, cb) {
         process.stdout.write(data.toString());
     });
     child.on('close', () => {
-        const lineOfInterest = allData.find((item) => {
+        const linesOfInterest = allData.filter((item) => {
             return item.indexOf(lineFinder) > -1;
         });
-        const foundIt = lineOfInterest.indexOf(testString) > -1;
+        const foundIt = linesOfInterest.some(item => {
+            return item.indexOf(testString) > -1;
+        });
         return cb(foundIt);
     });
 }
@@ -146,7 +149,7 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
 
     it('should get specific ACL that was set', (done) => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
-        `${emailAccount}: WRITE`, (foundIt) => {
+        `${lowerCaseEmail}: WRITE`, (foundIt) => {
             assert(foundIt);
             done();
         });
@@ -261,7 +264,7 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
 
     it('should get specific ACL that was set', (done) => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `${emailAccount}: READ`, (foundIt) => {
+        `${lowerCaseEmail}: READ`, (foundIt) => {
             assert(foundIt);
             done();
         });
@@ -359,6 +362,57 @@ describe('s3cmd multipart upload', function titi() {
 
     it('should not be able to get deleted object', (done) => {
         exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 12);
+    });
+});
+
+describe('s3cmd put, get and delete object with spaces ' +
+    'in object key names', function test() {
+    this.timeout(0);
+    const keyWithSpacesAndPluses = 'key with spaces and + pluses +';
+    before('create file to put', (done) => {
+        createFile(upload, 1000, done);
+    });
+    after('delete uploaded and downloaded file', (done) => {
+        deleteFile(upload, () => {
+            deleteFile(download, done);
+        });
+    });
+
+    const bucket = 'freshbucket';
+
+    it('should put a valid bucket', (done) => {
+        exec(['mb', `s3://${bucket}`], done);
+    });
+
+    it('should put file with spaces in key in existing bucket', (done) => {
+        exec(['put', upload,
+        `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
+    });
+
+    it('should get file with spaces', (done) => {
+        exec(['get', `s3://${bucket}/${keyWithSpacesAndPluses}`,
+        download], done);
+    });
+
+    it('should list bucket showing file with spaces', (done) => {
+        checkRawOutput(['ls', `s3://${bucket}`], `s3://${bucket}`,
+        keyWithSpacesAndPluses,
+        (foundIt) => {
+            assert(foundIt);
+            done();
+        });
+    });
+
+    it('downloaded file should equal uploaded file', (done) => {
+        diff(upload, download, done);
+    });
+
+    it('should delete file with spaces', (done) => {
+        exec(['del', `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
+    });
+
+    it('should delete empty bucket', (done) => {
+        exec(['rb', `s3://${bucket}`], done);
     });
 });
 

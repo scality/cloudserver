@@ -1,10 +1,11 @@
 import assert from 'assert';
 import crypto from 'crypto';
 import { S3 } from 'aws-sdk';
+
 import getConfig from '../support/config';
 
 const random = Math.round(Math.random() * 100).toString();
-const bucket = `mybucket-${random}`;
+const bucket = `ftest-mybucket-${random}`;
 
 // Create a buffer to put as a multipart upload part
 // and get its ETag
@@ -184,6 +185,23 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     it('should list ongoing multipart uploads', (done) => {
         const params = {
             Bucket: bucket,
+        };
+        s3.listMultipartUploads(params, (err, data) => {
+            if (err) {
+                return done(new Error(`error in listMultipartUploads: ${err}`));
+            }
+            assert.strictEqual(data.Uploads.length, 1);
+            assert.strictEqual(data.Uploads[0].UploadId,
+                multipartUploadData.secondUploadId);
+            done();
+        });
+    });
+
+    it('should list ongoing multipart uploads with params', (done) => {
+        const params = {
+            Bucket: bucket,
+            Prefix: 'to',
+            MaxUploads: 2,
         };
         s3.listMultipartUploads(params, (err, data) => {
             if (err) {

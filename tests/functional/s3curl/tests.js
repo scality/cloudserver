@@ -16,7 +16,7 @@ const aclBucket = 'acluniverse';
 const nonexist = 'nonexist';
 const prefix = 'topLevel';
 const delimiter = '/';
-const ownerCanonicalId = 'accessKey1';
+const ownerCanonicalId = 'accessKey1canonicalID';
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);

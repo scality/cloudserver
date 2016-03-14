@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketDelete from '../../../lib/api/bucketDelete';
@@ -47,7 +48,7 @@ describe("bucketDelete API", () => {
             objectPut(authInfo, testPutObjectRequest, log, (err) => {
                 assert.strictEqual(err, undefined);
                 bucketDelete(authInfo, testRequest, log, err => {
-                    assert.strictEqual(err, 'BucketNotEmpty');
+                    assert.deepStrictEqual(err, errors.BucketNotEmpty);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.name, bucketName);
                         metadata.listObject(usersBucket, canonicalID,
@@ -66,7 +67,7 @@ describe("bucketDelete API", () => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(err, 'NoSuchBucket');
+                    assert.deepStrictEqual(err, errors.NoSuchBucket);
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, canonicalID,
                         null, null, null, log, (err, listResponse) => {
@@ -81,7 +82,7 @@ describe("bucketDelete API", () => {
     it('should prevent anonymous user delete bucket API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketDelete(publicAuthInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'AccessDenied');
+            assert.deepStrictEqual(err, errors.AccessDenied);
             done();
         });
     });
