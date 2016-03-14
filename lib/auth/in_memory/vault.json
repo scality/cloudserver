@@ -4,15 +4,15 @@
           "arn": "aws::iam:accessKey1:user/Bart",
           "IAMdisplayName": "Bart",
           "secretKey": "verySecretKey1",
-          "canonicalID": "accessKey1",
-          "displayName": "parentAccount1"
+          "canonicalID": "accessKey1canonicalID",
+          "displayName": "accessKey1displayName"
       },
       "accessKey2": {
           "arn": "aws::iam:accessKey2:user/Lisa",
           "IAMdisplayName": "Lisa",
           "secretKey": "verySecretKey2",
-          "canonicalID": "accessKey2",
-          "displayName": "parentAccount2"
+          "canonicalID": "accessKey2canonicalID",
+          "displayName": "accessKey2displayName"
       }
   },
 
@@ -25,7 +25,7 @@
             "pwdCreated": "",
             "name": "",
             "shortid": "123456789012",
-            "email": "sampleAccount1@sampling.com",
+            "email": "sampleaccount1@sampling.com",
             "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
             "secretKeyIdList": [],
             "aliasList": [],
@@ -39,7 +39,7 @@
             "pwdCreated": "",
             "name": "",
             "shortid": "321456789012",
-            "email": "sampleAccount2@sampling.com",
+            "email": "sampleaccount2@sampling.com",
             "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf",
             "secretKeyIdList": [],
             "aliasList": [],
@@ -55,7 +55,7 @@
               "pwdCreated": "",
               "name": "",
               "shortid": "123456789012",
-              "email": "sampleAccount1@sampling.com",
+              "email": "sampleaccount1@sampling.com",
               "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
               "secretKeyIdList": [],
               "aliasList": [],
@@ -69,7 +69,7 @@
               "pwdCreated": "",
               "name": "",
               "shortid": "321456789012",
-              "email": "sampleAccount2@sampling.com",
+              "email": "sampleaccount2@sampling.com",
               "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf",
               "secretKeyIdList": [],
               "aliasList": [],

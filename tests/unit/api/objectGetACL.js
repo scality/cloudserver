@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import async from 'async';
@@ -12,8 +13,12 @@ import objectGetACL from '../../../lib/api/objectGetACL';
 import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo(accessKey);
+const canonicalID = authInfo.getCanonicalID();
+const otherAccountAccessKey = 'accessKey2';
+const otherAccountAuthInfo = makeAuthInfo(otherAccountAccessKey);
+const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
@@ -32,7 +37,10 @@ describe('objectGetACL API', () => {
     const testBucketPutRequest = {
         bucketName,
         namespace,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        headers: {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-acl': 'public-read-write',
+        },
         url: '/',
     };
     const testGetACLRequest = {
@@ -84,7 +92,7 @@ describe('objectGetACL API', () => {
         bucketPut(authInfo, testBucketPutRequest, log, (err, result) => {
             assert.strictEqual(result, 'Bucket created');
             objectGetACL(authInfo, testGetACLRequest, log, err => {
-                assert.strictEqual(err, 'NoSuchKey');
+                assert.deepStrictEqual(err, errors.NoSuchKey);
                 done();
             });
         });
@@ -236,7 +244,8 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
+                bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
@@ -259,7 +268,7 @@ describe('objectGetACL API', () => {
                 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0], canonicalID);
+                .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'READ');
@@ -280,7 +289,8 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
+                bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
+                    next);
             },
             function waterfall2(result, next) {
                 assert.strictEqual(result, 'Bucket created');
@@ -303,7 +313,7 @@ describe('objectGetACL API', () => {
                 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .ID[0], canonicalID);
+                .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'FULL_CONTROL');
@@ -356,7 +366,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
-                .DisplayName[0], 'sampleAccount1@sampling.com');
+                .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
                 'FULL_CONTROL');
@@ -366,7 +376,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
-                .DisplayName[0], 'sampleAccount2@sampling.com');
+                .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
                 'FULL_CONTROL');
@@ -376,7 +386,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
-                .DisplayName[0], 'sampleAccount2@sampling.com');
+                .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Permission[0],
                 'WRITE_ACP');
@@ -386,7 +396,7 @@ describe('objectGetACL API', () => {
                 'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
-                .DisplayName[0], 'sampleAccount1@sampling.com');
+                .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Permission[0],
                 'READ_ACP');

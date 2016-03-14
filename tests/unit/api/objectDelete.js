@@ -1,6 +1,8 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
@@ -16,6 +18,23 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
 const objectKey = 'objectName';
+
+function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
+    log, cb) {
+    bucketPut(bucketOwner, bucketPutReq, log, (err, success) => {
+        assert.strictEqual(success, 'Bucket created');
+        bucketPutACL(bucketOwner, bucketPutReq, log, err => {
+            assert.strictEqual(err, undefined);
+            objectPut(bucketOwner, objPutReq, log, err => {
+                assert.strictEqual(err, undefined);
+                objectDelete(authUser, objDelReq, log, err => {
+                    assert.strictEqual(err, undefined);
+                    cb();
+                });
+            });
+        });
+    });
+}
 
 describe('objectDelete API', () => {
     let testPutObjectRequest;
@@ -66,7 +85,7 @@ describe('objectDelete API', () => {
                 objectDelete(authInfo, testDeleteRequest, log, err => {
                     assert.strictEqual(err, undefined);
                     objectGet(authInfo, testGetObjectRequest, log, err => {
-                        assert.strictEqual(err, 'NoSuchKey');
+                        assert.deepStrictEqual(err, errors.NoSuchKey);
                         done();
                     });
                 });
@@ -77,8 +96,34 @@ describe('objectDelete API', () => {
     it('should prevent anonymous user deleteObject API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
-            assert.strictEqual(err, 'AccessDenied');
+            assert.deepStrictEqual(err, errors.AccessDenied);
             done();
         });
+    });
+
+    it('should del object if user has FULL_CONTROL grant on bucket', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testBucketPutRequest.headers['x-amz-grant-full-control'] =
+            `id="${authUser.getCanonicalID()}"`;
+        testAuth(bucketOwner, authUser, testBucketPutRequest,
+            testPutObjectRequest, testDeleteRequest, log, done);
+    });
+
+    it('should del object if user has WRITE grant on bucket', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testBucketPutRequest.headers['x-amz-grant-write'] =
+            `id="${authUser.getCanonicalID()}"`;
+        testAuth(bucketOwner, authUser, testBucketPutRequest,
+            testPutObjectRequest, testDeleteRequest, log, done);
+    });
+
+    it('should del object in bucket with public-read-write acl', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testBucketPutRequest.headers['x-amz-acl'] = 'public-read-write';
+        testAuth(bucketOwner, authUser, testBucketPutRequest,
+            testPutObjectRequest, testDeleteRequest, log, done);
     });
 });

@@ -1,86 +1,113 @@
 import assert from 'assert';
 import { S3 } from 'aws-sdk';
 import getConfig from '../support/config';
+import withV4 from '../support/withV4';
 
 describe('PUT Bucket - AWS.S3.createBucket', () => {
     let s3;
 
-    before(() => {
-        const config = getConfig('default');
+    describe('When user is unauthorized', () => {
+        let s3;
+        let config;
 
-        s3 = new S3(config);
+        beforeEach(() => {
+            config = getConfig('default');
+            s3 = new S3(config);
+        });
+
+        it('should return 403 and AccessDenied', done => {
+            const params = { Bucket: 'mybucket' };
+
+            s3.makeUnauthenticatedRequest('createBucket', params, error => {
+                assert(error);
+
+                assert.strictEqual(error.statusCode, 403);
+                assert.strictEqual(error.code, 'AccessDenied');
+
+                done();
+            });
+        });
     });
 
-    describe('bucket naming restriction', () => {
-        let testFn;
-
+    withV4(sigCfg => {
         before(() => {
-            testFn = (bucketName, done) => {
-                const expectedStatus = 400;
-                const expectedCode = 'InvalidBucketName';
+            const config = getConfig('default', sigCfg);
 
-                s3.createBucket({ Bucket: bucketName }, (error, data) => {
-                    if (data) {
-                        const e = new Error('it expects failure in creation, ' +
-                            'but it succeeded');
-
-                        return done(e);
-                    }
-
-                    assert.strictEqual(error.code, expectedCode);
-                    assert.strictEqual(error.statusCode, expectedStatus);
-                    done();
-                });
-            };
+            s3 = new S3(config);
         });
 
-        // Found that AWS has fewer restriction in naming than they described in
-        // their document.
-        // Hence it skips some of test suites.
-        const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
+        describe('bucket naming restriction', () => {
+            let testFn;
 
-        it('should return 400 if name is shorter than 3 chars', done => {
-            const shortName = 'as';
+            before(() => {
+                testFn = (bucketName, done) => {
+                    const expectedStatus = 400;
+                    const expectedCode = 'InvalidBucketName';
 
-            testFn(shortName, done);
-        });
+                    s3.createBucket({ Bucket: bucketName }, (error, data) => {
+                        if (data) {
+                            const e = new Error('Expect failure in creation, ' +
+                                'but it succeeded');
 
-        itSkipIfAWS('should return 400 if name is longer than 63 chars',
-            done => {
-                const longName = 'x'.repeat(64);
-                testFn(longName, done);
-            }
-        );
+                            return done(e);
+                        }
 
-        itSkipIfAWS('should return 400 if name is formatted as IP address',
-            done => {
-                const ipAddress = '192.168.5.4';
-                testFn(ipAddress, done);
-            }
-        );
+                        assert.strictEqual(error.code, expectedCode);
+                        assert.strictEqual(error.statusCode, expectedStatus);
+                        done();
+                    });
+                };
+            });
 
-        itSkipIfAWS('should return 400 if name starts with period',
-            done => {
-                const invalidName = '.myawsbucket';
+            // Found that AWS has fewer restriction in naming than
+            // they described in their document.
+            // Hence it skips some of test suites.
+            const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
+
+            it('should return 400 if name is shorter than 3 chars', done => {
+                const shortName = 'as';
+
+                testFn(shortName, done);
+            });
+
+            itSkipIfAWS('should return 400 if name is longer than 63 chars',
+                done => {
+                    const longName = 'x'.repeat(64);
+                    testFn(longName, done);
+                }
+            );
+
+            itSkipIfAWS('should return 400 if name is formatted as IP address',
+                done => {
+                    const ipAddress = '192.168.5.4';
+                    testFn(ipAddress, done);
+                }
+            );
+
+            itSkipIfAWS('should return 400 if name starts with period',
+                done => {
+                    const invalidName = '.myawsbucket';
+                    testFn(invalidName, done);
+                }
+            );
+
+            it('should return 400 if name ends with period', done => {
+                const invalidName = 'myawsbucket.';
                 testFn(invalidName, done);
-            }
-        );
+            });
 
-        it('should return 400 if name ends with period', done => {
-            const invalidName = 'myawsbucket.';
-            testFn(invalidName, done);
-        });
+            itSkipIfAWS(
+                'should return 400 if name has two period between labels',
+                done => {
+                    const invalidName = 'my..examplebucket';
+                    testFn(invalidName, done);
+                }
+            );
 
-        itSkipIfAWS(
-            'should return 400 if name has two period between labels', done => {
-                const invalidName = 'my..examplebucket';
+            it('should return 400 if name has special chars', done => {
+                const invalidName = 'my.#s3bucket';
                 testFn(invalidName, done);
-            }
-        );
-
-        it('should return 400 if name has special chars', done => {
-            const invalidName = 'my.#s3bucket';
-            testFn(invalidName, done);
+            });
         });
     });
 });

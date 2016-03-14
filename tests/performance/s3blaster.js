@@ -1,5 +1,6 @@
 'use strict'; // eslint-disable-line strict
 
+const errors = require('arsenal').errors;
 const commander = require('commander');
 const config = require('aws-sdk').config;
 const S3 = require('aws-sdk').S3;
@@ -61,7 +62,7 @@ class S3Blaster {
             }
             const code = err.toString().split(':')[0];
             stderr.write(`createBucket: ${code}..`);
-            return cb(code === 'BucketAlreadyExists' ? null : code);
+            return cb(code === errors.BucketAlreadyExists ? null : code);
         });
     }
 

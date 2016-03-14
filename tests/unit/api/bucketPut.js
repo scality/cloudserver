@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
@@ -6,8 +7,9 @@ import metadata from '../metadataswitch';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const accessKey = 'accessKey1';
+const authInfo = makeAuthInfo(accessKey);
+const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
@@ -41,7 +43,7 @@ describe('bucketPut API', () => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(authInfo, testRequest, log, () => {
             bucketPut(otherAuthInfo, testRequest, log, err => {
-                assert.strictEqual(err, 'BucketAlreadyExists');
+                assert.deepStrictEqual(err, errors.BucketAlreadyExists);
                 done();
             });
         });
@@ -57,7 +59,7 @@ describe('bucketPut API', () => {
             post: 'malformedxml',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'MalformedXML');
+            assert.deepStrictEqual(err, errors.MalformedXML);
             done();
         });
     });
@@ -72,7 +74,7 @@ describe('bucketPut API', () => {
             post: '<Hello></Hello>',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'MalformedXML');
+            assert.deepStrictEqual(err, errors.MalformedXML);
             done();
         });
     });
@@ -91,7 +93,7 @@ describe('bucketPut API', () => {
                 + '</CreateBucketConfiguration>',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'InvalidLocationConstraint');
+            assert.deepStrictEqual(err, errors.InvalidLocationConstraint);
             done();
         });
     });
@@ -131,9 +133,9 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
-                assert.strictEqual(err, 'NoSuchBucket');
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
         });
@@ -152,9 +154,9 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
-                assert.strictEqual(err, 'NoSuchBucket');
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
         });
@@ -174,9 +176,9 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'UnresolvableGrantByEmailAddress');
+            assert.deepStrictEqual(err, errors.UnresolvableGrantByEmailAddress);
             metadata.getBucket(bucketName, log, err => {
-                assert.strictEqual(err, 'NoSuchBucket');
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
         });
@@ -248,7 +250,7 @@ describe('bucketPut API', () => {
     it('should prevent anonymous user from accessing putBucket API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketPut(publicAuthInfo, testRequest, log, err => {
-            assert.strictEqual(err, 'AccessDenied');
+            assert.deepStrictEqual(err, errors.AccessDenied);
         });
         done();
     });

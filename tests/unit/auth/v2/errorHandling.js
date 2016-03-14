@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import auth from '../../../../lib/auth/auth';
@@ -22,7 +23,7 @@ describe('Error handling in checkAuth', () => {
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'InvalidAccessKeyId');
+            assert.deepStrictEqual(err, errors.InvalidAccessKeyId);
             done();
         });
     });
@@ -41,7 +42,7 @@ describe('Error handling in checkAuth', () => {
         };
 
         auth(request, logger, err => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -62,7 +63,7 @@ describe('Error handling in checkAuth', () => {
             headers: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -87,7 +88,7 @@ describe('Error handling in checkAuth', () => {
             headers: { host: 's3.amazonaws.com' },
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'SignatureDoesNotMatch');
+            assert.deepStrictEqual(err, errors.SignatureDoesNotMatch);
             done();
         });
     });
@@ -98,17 +99,17 @@ describe('Error handling in checkAuth', () => {
         const request = {
             method: 'GET',
             headers: {
-                host: 's3.amazonaws.com',
-                'user-agent': 'curl/7.43.0',
-                accept: '*/*',
                 date,
-                authorization: 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
+                'host': 's3.amazonaws.com',
+                'user-agent': 'curl/7.43.0',
+                'accept': '*/*',
+                'authorization': 'AWS accessKey1:MJNF7AqNapSu32TlBOVkcAxj58c=',
             },
             url: '/bucket',
             query: {},
         };
         auth(request, logger, err => {
-            assert.strictEqual(err, 'SignatureDoesNotMatch');
+            assert.deepStrictEqual(err, errors.SignatureDoesNotMatch);
             done();
         });
     });

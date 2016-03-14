@@ -68,14 +68,9 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?delimiter=${delimiter}&prefix=${prefix}`,
-            query: {
-                delimiter,
-                prefix,
-            }
+            query: { delimiter, prefix },
         };
 
         async.waterfall([
@@ -94,7 +89,7 @@ describe('bucketGet API', () => {
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult
@@ -108,11 +103,9 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}`,
-            query: {}
+            query: {},
         };
 
 
@@ -132,7 +125,7 @@ describe('bucketGet API', () => {
             },
             function waterfall5(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
@@ -147,13 +140,9 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}`,
-            query: {
-                'max-keys': '1',
-            }
+            query: { 'max-keys': '1' },
         };
 
         async.waterfall([
@@ -172,7 +161,7 @@ describe('bucketGet API', () => {
             },
             function waterfall5(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
@@ -186,13 +175,9 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}`,
-            query: {
-                'encoding-type': 'url',
-            }
+            query: { 'encoding-type': 'url' },
         };
 
         async.waterfall([
@@ -201,8 +186,7 @@ describe('bucketGet API', () => {
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
-                objectPut(authInfo, testPutObjectRequest1, log,
-                    next);
+                objectPut(authInfo, testPutObjectRequest1, log, next);
             },
             function waterfall3(result, next) {
                 objectPut(authInfo, testPutObjectRequest2, log, next);
@@ -215,13 +199,13 @@ describe('bucketGet API', () => {
             },
             function waterfall6(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
-            assert.strictEqual(result.ListBucketResult
-                .Contents[0].Key[0], encodeURIComponent(objectName3));
-            assert.strictEqual(result.ListBucketResult
-                .Contents[1].Key[0], encodeURIComponent(objectName1));
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
+                               encodeURIComponent(objectName3));
+            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
+                               encodeURIComponent(objectName1));
             done();
         });
     });
@@ -230,11 +214,9 @@ describe('bucketGet API', () => {
         const testGetRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}`,
-            query: {}
+            query: {},
         };
 
         async.waterfall([
@@ -246,7 +228,7 @@ describe('bucketGet API', () => {
             },
             function waterfall3(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult.$.xmlns,

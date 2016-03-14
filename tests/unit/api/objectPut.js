@@ -1,6 +1,8 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import bucketPutACL from '../../../lib/api/bucketPutACL';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
@@ -19,9 +21,24 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
+
 const objectName = 'objectName';
 
 let testPutObjectRequest;
+
+function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
+    bucketPut(bucketOwner, bucketPutReq, log, (err, success) => {
+        assert.strictEqual(success, 'Bucket created');
+        bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            objectPut(authUser, testPutObjectRequest, log, (err, res) => {
+                assert.strictEqual(err, undefined);
+                assert.strictEqual(res, correctMD5);
+                cb();
+            });
+        });
+    });
+}
 
 describe('objectPut API', () => {
     beforeEach(done => {
@@ -42,7 +59,7 @@ describe('objectPut API', () => {
 
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, log, err => {
-            assert.strictEqual(err, 'NoSuchBucket');
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
     });
@@ -52,10 +69,35 @@ describe('objectPut API', () => {
         bucketPut(putAuthInfo, testPutBucketRequest, log, (err, success) => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, err => {
-                assert.strictEqual(err, 'AccessDenied');
+                assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
             });
         });
+    });
+
+    it('should put object if user has FULL_CONTROL grant on bucket', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testPutBucketRequest.headers['x-amz-grant-full-control'] =
+            `id="${authUser.getCanonicalID()}"`;
+        testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
+    });
+
+    it('should put object if user has WRITE grant on bucket', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testPutBucketRequest.headers['x-amz-grant-write'] =
+            `id="${authUser.getCanonicalID()}"`;
+
+        testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
+    });
+
+    it('should put object in bucket with public-read-write acl', done => {
+        const bucketOwner = makeAuthInfo('accessKey2');
+        const authUser = makeAuthInfo('accessKey3');
+        testPutBucketRequest.headers['x-amz-acl'] = 'public-read-write';
+
+        testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
     it('should successfully put an object', done => {

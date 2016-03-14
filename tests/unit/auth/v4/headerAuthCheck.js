@@ -1,3 +1,4 @@
+import { errors } from 'arsenal';
 import assert from 'assert';
 import lolex from 'lolex';
 
@@ -9,7 +10,7 @@ import { DummyRequestLogger, makeAuthInfo } from '../../helpers';
 const log = new DummyRequestLogger();
 
 const method = 'PUT';
-const url = '/mybucket';
+const path = '/mybucket';
 const xAMZcontentSha256 = '771df8abbecb2265e9724e5dc4510dcc160' +
     '60c0513ae669baf35b255d465b63f';
 const host = 'localhost:8000';
@@ -26,7 +27,7 @@ const headers = {
 };
 const request = {
     method,
-    url,
+    path,
     headers,
     query: {},
 };
@@ -37,7 +38,7 @@ describe('v4 headerAuthCheck', () => {
         const alteredRequest = createAlteredRequest({
             authorization: undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -46,7 +47,7 @@ describe('v4 headerAuthCheck', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-content-sha256': undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -58,7 +59,7 @@ describe('v4 headerAuthCheck', () => {
                 '24c06abf8772c670064d22eacd6ccb85c06befa15f' +
                 '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -73,7 +74,7 @@ describe('v4 headerAuthCheck', () => {
                 '70064d22eacd6ccb85c06befa15f' +
                 '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -88,7 +89,7 @@ describe('v4 headerAuthCheck', () => {
                 '70064d22eacd6ccb85c06befa15f' +
                 '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -97,7 +98,7 @@ describe('v4 headerAuthCheck', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-date': undefined }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'MissingSecurityHeader');
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();
         });
     });
@@ -108,7 +109,7 @@ describe('v4 headerAuthCheck', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-date': '20150208T201405Z' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -125,7 +126,7 @@ describe('v4 headerAuthCheck', () => {
                 '0064d22eacd6ccb85c06befa15f' +
                 '4a789b0bae19307bc' }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -143,7 +144,7 @@ describe('v4 headerAuthCheck', () => {
             'headers', request, headers);
         delete alteredRequest.headers['x-amz-date'];
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -161,7 +162,7 @@ describe('v4 headerAuthCheck', () => {
                 '4a789b0bae19307bc' },
             'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -180,7 +181,7 @@ describe('v4 headerAuthCheck', () => {
             'headers', request, headers);
         delete alteredRequest.headers['x-amz-date'];
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'RequestTimeTooSkewed');
+            assert.deepStrictEqual(err, errors.RequestTimeTooSkewed);
             done();
         });
     });
@@ -195,7 +196,7 @@ describe('v4 headerAuthCheck', () => {
                 '4a789b0bae19307bc',
         }, 'headers', request, headers);
         headerAuthCheck(alteredRequest, log, (err) => {
-            assert.strictEqual(err, 'InvalidArgument');
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
@@ -224,7 +225,7 @@ describe('v4 headerAuthCheck', () => {
         const clock = lolex.install(1454973383163);
         headerAuthCheck(alteredRequest, log, (err) => {
             clock.uninstall();
-            assert.strictEqual(err, 'InvalidAccessKeyId');
+            assert.deepStrictEqual(err, errors.InvalidAccessKeyId);
             done();
         });
     });

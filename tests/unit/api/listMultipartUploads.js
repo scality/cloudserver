@@ -18,13 +18,13 @@ const bucketName = 'bucketname';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
 describe('listMultipartUploads API', () => {
-    beforeEach((done) => {
+    beforeEach(done => {
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(mpuBucket, log, () => done());
         });
     });
 
-    after((done) => {
+    after(done => {
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(mpuBucket, log, () => done());
         });
@@ -66,19 +66,14 @@ describe('listMultipartUploads API', () => {
 
     it('should return the name of the common prefix ' +
        'of common prefix object keys for multipart uploads if delimiter ' +
-       'and prefix specified', (done) => {
+       'and prefix specified', done => {
         const commonPrefix = `${prefix}${delimiter}`;
         const testListRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
-            query: {
-                delimiter,
-                prefix,
-            }
+            query: { delimiter, prefix },
         };
 
         async.waterfall([
@@ -100,7 +95,7 @@ describe('listMultipartUploads API', () => {
             },
             function waterfall4(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -111,22 +106,19 @@ describe('listMultipartUploads API', () => {
     });
 
     it('should return list of all multipart uploads if ' +
-       'no delimiter specified', (done) => {
+       'no delimiter specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?uploads`,
-            query: {}
+            query: {},
         };
 
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log,
-                    next);
+                bucketPut(authInfo, testPutBucketRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
@@ -143,7 +135,7 @@ describe('listMultipartUploads API', () => {
             },
             function waterfall5(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -157,23 +149,18 @@ describe('listMultipartUploads API', () => {
     });
 
     it('should return no more keys than ' +
-       'max-uploads specified', (done) => {
+       'max-uploads specified', done => {
         const testListRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?uploads`,
-            query: {
-                'max-uploads': '1',
-            }
+            query: { 'max-uploads': '1' },
         };
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log,
-                    next);
+                bucketPut(authInfo, testPutBucketRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
@@ -190,7 +177,7 @@ describe('listMultipartUploads API', () => {
             },
             function waterfall5(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -200,7 +187,7 @@ describe('listMultipartUploads API', () => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .IsTruncated[0], 'true');
             assert.strictEqual(result.ListMultipartUploadsResult
-                .NextKeyMarker[0], objectName2);
+                .NextKeyMarker[0], objectName1);
             assert(result.ListMultipartUploadsResult
                 .NextUploadIdMarker[0].length > 5);
             done();
@@ -208,23 +195,18 @@ describe('listMultipartUploads API', () => {
     });
 
     it('should url encode object key name ' +
-       'if requested', (done) => {
+       'if requested', done => {
         const testListRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?uploads`,
-            query: {
-                'encoding-type': 'url',
-            }
+            query: { 'encoding-type': 'url' },
         };
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log,
-                    next);
+                bucketPut(authInfo, testPutBucketRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
@@ -245,7 +227,7 @@ describe('listMultipartUploads API', () => {
             },
             function waterfall6(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -257,23 +239,18 @@ describe('listMultipartUploads API', () => {
     });
 
     it('should return key following specified ' +
-    'key-marker', (done) => {
+    'key-marker', done => {
         const testListRequest = {
             bucketName,
             namespace,
-            headers: {
-                host: '/'
-            },
+            headers: { host: '/' },
             url: `/${bucketName}?uploads`,
-            query: {
-                'key-marker': objectName1,
-            }
+            query: { 'key-marker': objectName1 },
         };
 
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log,
-                    next);
+                bucketPut(authInfo, testPutBucketRequest, log, next);
             },
             function waterfall2(success, next) {
                 assert.strictEqual(success, 'Bucket created');
@@ -294,7 +271,7 @@ describe('listMultipartUploads API', () => {
             },
             function waterfall6(result, next) {
                 parseString(result, next);
-            }
+            },
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult

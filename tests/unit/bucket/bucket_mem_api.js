@@ -1,9 +1,10 @@
-import async from 'async';
+import { errors } from 'arsenal';
 import assert from 'assert';
+import async from 'async';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import { DummyRequestLogger } from '../helpers';
-import { isKeyInContents } from
+import { isKeyInContents, } from
     '../../../lib/metadata/in_memory/bucket_utilities';
 import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
@@ -39,7 +40,7 @@ describe('bucket API for getting, putting and deleting ' +
     it('should return an error in response ' +
        'to getObjectMD when no such key', done => {
         metadata.getObjectMD(bucketName, 'notThere', log, (err, value) => {
-            assert.strictEqual(err, 'NoSuchKey');
+            assert.deepStrictEqual(err, errors.NoSuchKey);
             assert.strictEqual(value, undefined);
             done();
         });
@@ -50,7 +51,7 @@ describe('bucket API for getting, putting and deleting ' +
             metadata.deleteObjectMD(bucketName, 'objectToDelete', log, () => {
                 metadata.getObjectMD(bucketName, 'objectToDelete', log,
                     (err, value) => {
-                        assert.strictEqual(err, 'NoSuchKey');
+                        assert.deepStrictEqual(err, errors.NoSuchKey);
                         assert.strictEqual(value, undefined);
                         done();
                     });
@@ -126,7 +127,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             function waterfall4(next) {
                 metadata.listObject(bucket.uid,
                     'key', null, delimiter, defaultLimit, log, next);
-            }
+            },
         ],
         function waterfallFinal(err, response) {
             assert.strictEqual(isKeyInContents(response, 'key1'), true);
@@ -155,7 +156,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             function waterfall4(next) {
                 metadata.listObject(bucket.uid, 'ke', null, delimiter,
                                     defaultLimit, log, next);
-            }
+            },
         ],
         function waterfallFinal(err, response) {
             assert(response.CommonPrefixes.indexOf('key/') > -1);
@@ -239,7 +240,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             function waterfall4(next) {
                 metadata.listObject(bucket.uid, 'next', null, delimiter,
                                     smallLimit, log, next);
-            }
+            },
         ],
         function waterfallFinal(err, response) {
             assert(response.CommonPrefixes.indexOf('next/') > -1);
