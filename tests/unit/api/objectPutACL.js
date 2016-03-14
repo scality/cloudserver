@@ -521,7 +521,7 @@ describe('putObjectACL API', () => {
             namespace,
             objectKey: objectName,
             headers: {
-                'host': `s3.amazonaws.com`,
+                'host': 's3.amazonaws.com',
                 'x-amz-grant-full-control':
                     'uri="http://acs.amazonaws.com/groups/' +
                     'global/NOTAVALIDGROUP"',

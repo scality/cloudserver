@@ -232,7 +232,7 @@ describe('bucketGet API', () => {
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult.$.xmlns,
-                `http://s3.amazonaws.com/doc/2006-03-01/`);
+                'http://s3.amazonaws.com/doc/2006-03-01/');
             done();
         });
     });
