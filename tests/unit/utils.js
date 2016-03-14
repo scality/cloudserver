@@ -153,7 +153,7 @@ describe('utils.normalizeRequest', () => {
     it('should parse bucket name from path', () => {
         const request = {
             url: `/${bucketName}`,
-            headers: { host: `s3.amazonaws.com` },
+            headers: { host: 's3.amazonaws.com' },
         };
         const result = utils.normalizeRequest(request);
         assert.strictEqual(result.bucketName, bucketName);
@@ -173,7 +173,7 @@ describe('utils.normalizeRequest', () => {
     it('should parse bucket and object name from path', () => {
         const request = {
             url: `/${bucketName}/${objName}`,
-            headers: { host: `s3.amazonaws.com` },
+            headers: { host: 's3.amazonaws.com' },
         };
         const result = utils.normalizeRequest(request);
         assert.strictEqual(result.bucketName, bucketName);

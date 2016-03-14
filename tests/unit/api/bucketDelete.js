@@ -17,7 +17,7 @@ const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
 const usersBucket = constants.usersBucket;
 
-describe("bucketDelete API", () => {
+describe('bucketDelete API', () => {
     afterEach(done => {
         metadata.deleteBucket(bucketName, log, () => {
             metadata.deleteBucket(usersBucket, log, () => {

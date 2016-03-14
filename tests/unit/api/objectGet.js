@@ -51,7 +51,7 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
     };
 
-    it("should get the object metadata", done => {
+    it('should get the object metadata', done => {
         bucketPut(authInfo, testPutBucketRequest, log, (err, res) => {
             assert.strictEqual(res, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {

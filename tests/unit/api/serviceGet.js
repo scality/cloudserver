@@ -94,7 +94,7 @@ describe('serviceGet API', () => {
             assert.strictEqual(result.ListAllMyBucketsResult
                 .Buckets[0].Bucket[2].Name[0], bucketName3);
             assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns,
-                `http://s3.amazonaws.com/doc/2006-03-01/`);
+                'http://s3.amazonaws.com/doc/2006-03-01/');
             done();
         });
     });
