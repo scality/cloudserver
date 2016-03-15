@@ -26,6 +26,7 @@ graphs = {
    avgStd: average and standard-deviabtion graph will be plotted
    pdfCdf: estimated pdf/cdf graphs will be plotted
    statSize: latency vs. sizes graph will be plotted
+   thread: latency vs. number of threads graph will be plotted
 };
 */
 const graphs = Plotter.graphs;
@@ -86,6 +87,7 @@ function genArrSizes(min, max, step) {
  * distrFuncParams: [step, samplesNb] for estimating pdf and cdf
  *   -> step: step between two samples
  *   -> samplesNb: number of samples
+ * arrThreads: array of number of threads for tests
  * NOTE: a setting from previous describse test will be saved unless it is
  * re-defined by current describe test.
  */
@@ -95,6 +97,7 @@ function genArrSizes(min, max, step) {
  *   - graphs.avgStd: average and standard-deviabtion graph will be plotted
  *   - graphs.pdfCdf: estimated pdf/cdf graphs will be plotted
  *   - graphs.statSize: latency vs. sizes graph will be plotted
+ *   - graphs.thread: latency vs. number of threads graph will be plotted
  * If `graphsToPlot` is note defined, all the graphs will be plotted.
  */
 
@@ -118,10 +121,52 @@ const sizesToTest = genArrSizes(KB, MB, 100 * KB).
 
 const sizesToPut = genArrSizes(10 * KB, 200 * KB, 10 * KB);
 
-describe('Measure individual PUT', function indivPerf() {
+const threadsToTest = genArrSizes(1, 60, 1);
+
+describe('Measure individual PUT vs. threads', function indivPerf() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Puts`, ''];
+    const _prefSufName = [`${defaultFileName}PutOnlyThread`, ''];
     const _reqsToTest = [PUT_OBJ];
+    const graphsToPlot = [graphs.thread];
+    before((done) => {
+        blaster.setParams({
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: 200,
+            freqsToShow: -1,
+            sizes: [KB, MB],
+            arrThreads: threadsToTest,
+            distrFuncParams: [1, 3000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            done();
+        });
+    });
+
+    it('Only PUT', (done) => {
+        blaster.setActions([true]);
+        blaster.doSimul(done);
+    });
+
+    afterEach((done) => {
+        blaster.updateDataFiles(done);
+    });
+
+    after((done) => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure individual PUT vs. sizes', function indivPerf() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}PutOnlySize`, ''];
+    const _reqsToTest = [PUT_OBJ];
+    const graphsToPlot = [graphs.statSize];
     before((done) => {
         blaster.setParams({
             prefSufName: _prefSufName,
@@ -130,14 +175,14 @@ describe('Measure individual PUT', function indivPerf() {
             nOps: -1,
             freqsToShow: -1,
             sizes: sizesToPut,
+            arrThreads: -1,
             distrFuncParams: [1, 3000],
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
             done();
         });
     });
@@ -166,17 +211,65 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: 100,
-            freqsToShow: 100,
-            sizes: genArrSizes(10 * KB, 200 * KB, 10 * KB),
+            nOps: -1,
+            freqsToShow: -1,
+            sizes: sizesToPut,
             distrFuncParams: [1, 5000],
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0], graphsToPlot);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            done();
+        });
+    });
+
+    it('Only PUT', (done) => {
+        blaster.setActions([true]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', (done) => {
+        blaster.setActions([false, true]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', (done) => {
+        blaster.setActions([false, false, true]);
+        blaster.doSimul(done);
+    });
+
+    afterEach((done) => {
+        blaster.updateDataFiles(done);
+    });
+
+    after((done) => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}Thread`, ''];
+    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread];
+    before((done) => {
+        blaster.setParams({
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: -1,
+            freqsToShow: -1,
+            sizes: [KB, 100 * KB, MB],
+            arrThreads: threadsToTest,
+            distrFuncParams: [1, 5000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
             done();
         });
     });
@@ -217,14 +310,14 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
             nOps: -1,
             freqsToShow: -1,
             sizes: sizesToTest,
+            threads: -1,
             distrFuncParams: [2, 3000],
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
             done();
         });
     });
@@ -263,12 +356,11 @@ describe('Measure combined request PUT->GET->DELETE', function combPerf() {
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
             done();
         });
     });
@@ -297,12 +389,11 @@ describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
             reqsToTest: _reqsToTest,
             simulPolicy: simulMixed,
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
             done();
         });
     });
@@ -332,12 +423,11 @@ describe('Measure serial PUT/GET/DELETE', function serialPerf() {
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
             done();
         });
     });
@@ -382,12 +472,11 @@ describe('Measure personalized PUT GET DELETE', function perPerf() {
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
         });
-        blaster.init((err, dataFiles, funcFiles, sizeFile) => {
+        blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(dataFiles, funcFiles, sizeFile,
-                                    _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
             done();
         });
     });

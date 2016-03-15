@@ -62,12 +62,22 @@ function createNewArray(len, value) {
             new Array(len)).map(Number.prototype.valueOf, value);
 }
 
+function range(val) {
+    const input = val.split(':').map(Number);
+    const arr = [];
+    for (let i = input[0]; i <= input[2]; i += input[1]) {
+        arr.push(i);
+    }
+    return arr;
+}
+
 class S3Blaster {
     constructor() {
         commander.version('0.0.1')
         .option('-P, --port <port>', 'Port number', parseInt)
         .option('-H, --host [host]', 'Host name')
-        .option('-N, --n-threads <nThreads>', 'Number of threads', parseInt)
+        // .option('-N, --n-threads <nThreads>', 'Number of threads', parseInt)
+        .option('-N, --r-threads <a>:<b>:<c>', 'Threads range', range)
         .option('-n, --n-ops <nOps>', 'Number of operations', parseInt)
         .option('-u, --n-buckets <nBuckets>', 'Number of buckets', parseInt)
         .option('-B, --bucket-prefix [bucketPrefix]', 'Prefix for bucket name')
@@ -75,7 +85,7 @@ class S3Blaster {
         .parse(process.argv);
         this.host = commander.host || 'localhost';
         this.port = commander.port || 8000;
-        this.nThreads = commander.nThreads || 10;
+        this.rThreads = commander.rThreads || [1, 2];
         this.nOps = commander.nOps || 10;
         this.bucketPrefix = commander.bucketPrefix || 'foo';
         this.nBuckets = commander.nBuckets || 1;
@@ -83,6 +93,10 @@ class S3Blaster {
         this.nbDataSizes = commander.nbDataSizes || 1;
         Object.keys(this).forEach(opt => stderr.write(`${opt}=${this[opt]}\n`));
         config.apiVersions = { s3: '2006-03-01' };
+
+        this.currThreadIdx = 0;
+        this.nThreads = this.rThreads[this.currThreadIdx];
+        this.initRThreads = this.rThreads;
 
         /* For ringr2-nodes */
         config.accessKeyId = 'QRALRJ5ZB3R1TOCPY1HV';
@@ -154,8 +168,11 @@ class S3Blaster {
                 return [];
             });
         });
+        this.dataForThreadPlot = '';
+
         this.resetStatsAfterEachTest = false;
         this.simulPolicy = simulEach;
+        this.freqsToShow = Math.max(Math.ceil(this.nOps / 100), 100);
 
         /* for output data files */
         try {
@@ -170,12 +187,13 @@ class S3Blaster {
         this.suffixName = '';
         this.dataExt = `_dat.txt`;
         this.funcExt = `_func.txt`;
-        this.statExt = `_size.txt`;
-        this.freqsToShow = Math.max(Math.ceil(this.nOps / 100), 100);
+        this.sizeExt = `_size.txt`;
+        this.threadExt = `_thread.txt`;
         this.dataFiles = requests.map(() => {
             return '';
         });
         this.sizeFile = '';
+        this.threadFile = '';
 
         /* For pdf and cdf */
         this.initFuncFiles = [`pdf${this.funcExt}`, `cdf${this.funcExt}`];
@@ -225,6 +243,9 @@ class S3Blaster {
         }
         if (params.sizes !== undefined) {
             this.setSizes.bind(this)(params.sizes);
+        }
+        if (params.arrThreads !== undefined) {
+            this.setThreads.bind(this)(params.arrThreads);
         }
     }
 
@@ -286,7 +307,7 @@ class S3Blaster {
     setActions(actions) {
         this.currActions = [];
         this.actions = [];
-        stderr.write(`Action      Size    #OK  #NOK  `);
+        stderr.write(`#Threads   Action      Size    #OK  #NOK  `);
         stderr.write(`Min      Max      Average   Std. Dev.\n`);
         this.actionFlag = actions.map((action) => {
             return (action || false);
@@ -336,6 +357,25 @@ class S3Blaster {
             }
         } else {
             stderr.write(`input 'sizes' must be an array of number\n`);
+        }
+    }
+
+    /**
+     * set array of number of threads for tests
+     * @param {array} arrThreads: array of data sizes
+     * @return {this} this
+     */
+    setThreads(arrThreads) {
+        if (arrThreads.constructor === Array) {
+            this.rThreads = arrThreads;
+            this.currThreadIdx = 0;
+            this.nThreads = arrThreads[0];
+        } else {
+            if (arrThreads < 0) {
+                this.rThreads = this.initRThreads;
+            } else {
+                stderr.write(`input 'threads' must be an array of number\n`);
+            }
         }
     }
 
@@ -426,8 +466,10 @@ class S3Blaster {
         this.funcFiles.forEach((funcFile, idx) => {
             this.funcFiles[idx] = this.prefixName + this.initFuncFiles[idx];
         });
-        this.sizeFile = this.prefixName + this.suffixName + this.statExt;
-
+        this.sizeFile = this.prefixName + this.suffixName + this.sizeExt;
+        this.threadFile = this.prefixName + this.suffixName + this.threadExt;
+        const outputDataFiles = new Array(this.dataFiles, this.funcFiles,
+                                        this.sizeFile, this.threadFile);
         function createAvgStdFiles(cb) {
             let count = 0;
             const label =
@@ -511,8 +553,36 @@ class S3Blaster {
             });
         }
 
+        function createThreadFile(cb) {
+            let content = `# Configuration info\n`;
+            /* add metadata info */
+            content += `# nOps ${this.threshold}\n`;
+            content += `# sizes`;
+            this.sizes.forEach(dataSize => {
+                content += ` ${dataSize}`;
+            });
+            content += `\n# threads `;
+            this.rThreads.forEach(threadsNb => {
+                content += ` ${threadsNb}`;
+            });
+            content += `\n# requests`;
+            this.reqsToTest.forEach(req => {
+                content += ` ${this.reqsToTest[req]}`;
+            });
+            content += `\n# End_configuration\n`;
+            /* add column headers*/
+            content += `# ${toFixedLength(`#Thread`, 8)} ` +
+                       `${toFixedLength(`Size`, 8)} `;
+            this.reqsToTest.forEach(req => {
+                content += ` ${toFixedLength(requests[req], 16)} `;
+            });
+            content += `\n`;
+            /* create files */
+            fs.writeFile(this.threadFile, content, cb);
+        }
+
         let count = 0;
-        const totalFilesType = 3;
+        const totalFilesType = 4;
         let realDataFiles = undefined;
         createAvgStdFiles.bind(this)((err, dataFiles) => {
             if (err) {
@@ -521,7 +591,8 @@ class S3Blaster {
             count += 1;
             realDataFiles = dataFiles;
             if (count === totalFilesType) {
-                return cb(null, realDataFiles, this.funcFiles, this.sizeFile);
+                outputDataFiles[0] = realDataFiles;
+                return cb(null, outputDataFiles);
             }
         });
 
@@ -531,7 +602,7 @@ class S3Blaster {
             }
             count += 1;
             if (count === totalFilesType) {
-                return cb(null, realDataFiles, this.funcFiles, this.sizeFile);
+                return cb(null, outputDataFiles);
             }
         });
 
@@ -541,7 +612,17 @@ class S3Blaster {
             }
             count += 1;
             if (count === totalFilesType) {
-                return cb(null, realDataFiles, this.funcFiles, this.sizeFile);
+                return cb(null, outputDataFiles);
+            }
+        });
+
+        createThreadFile.bind(this)(err => {
+            if (err) {
+                return cb(err);
+            }
+            count += 1;
+            if (count === totalFilesType) {
+                return cb(null, outputDataFiles);
             }
         });
     }
@@ -554,6 +635,7 @@ class S3Blaster {
                                     nSuccesses - latMu * latMu);
         const latMin = this.latMin[idx][this.currSizeIdx].toFixed(3);
         const latMax = this.latMax[idx][this.currSizeIdx].toFixed(3);
+        stderr.write(`${toFixedLength(this.nThreads, 8)}  `);
         stderr.write(`${toFixedLength(requests[idx], 6)} `);
         stderr.write(`${toFixedLength(this.size, 8)} `);
         stderr.write(`${toFixedLength(nSuccesses, 6)} `);
@@ -563,7 +645,8 @@ class S3Blaster {
         stderr.write(`${toFixedLength(latMu.toFixed(3), 8)} `);
         stderr.write(`${toFixedLength(latSigma.toFixed(3), 8)}\n`);
         const valuesToPlot =
-                        [nSuccesses, latMu.toFixed(3), latSigma.toFixed(5)];
+            [nSuccesses, latMu.toFixed(3), latSigma.toFixed(5),
+                this.nThreads.toFixed(3)];
         this.dataToPlot[idx][this.currSizeIdx].push(valuesToPlot);
     }
 
@@ -733,7 +816,7 @@ class S3Blaster {
      * @param {function} cb: callback function
      * @return {function} callback
      */
-    updateSizeFiles(cb) {
+    updateSizeFile(cb) {
         let dataContent = '';
         this.sizes.forEach((size, sizeIdx) => {
             dataContent += `${toFixedLength(size, 10)} `;
@@ -750,24 +833,74 @@ class S3Blaster {
         fs.appendFile(this.sizeFile, dataContent, cb);
     }
 
+    /**
+     * Configuration info is stored on top of the file
+     * Data was stored with the structure of columns. First column
+     *  contains number of threads. Second column contains data size.
+     *  Next columns are group by two
+     * - 1st col: average value
+     * - 2nd col: standard deviation
+     * Each group of two columns corresponds to a request type
+     * @param {number} reqIdx: index of current request (optinal)
+     * @return {function} callback
+     */
+    updateThreadStats() {
+        let dataContent = '';
+        this.sizes.forEach((size, sizeIdx) => {
+            dataContent += `${toFixedLength(this.nThreads, 10)}` +
+                           `${toFixedLength(size, 8)} `;
+            this.reqsToTest.forEach((actIdx) => {
+                const arr = this.dataToPlot[actIdx][sizeIdx][
+                            this.dataToPlot[actIdx][sizeIdx].length - 1];
+                if (arr && arr.length > 2) {
+                    if (this.currActions.indexOf(actIdx) === -1) {
+                        dataContent += `${toFixedLength('1/0', 8)} ` +
+                                       `${toFixedLength('1/0', 8)} `;
+                    } else {
+                        dataContent += `${toFixedLength(arr[1], 8)} ` +
+                                       `${toFixedLength(arr[2], 8)} `;
+                    }
+                }
+            });
+            dataContent += `\n`;
+        });
+        this.dataForThreadPlot += dataContent;
+    }
+
+    updateThreadFile(cb) {
+        fs.appendFile(this.threadFile, this.dataForThreadPlot, cb);
+    }
+
     updateStatsFiles(cb) {
+        const nbStatsFile = 3;
         let count = 0;
         this.updateFuncFiles.bind(this)(err => {
             if (err) {
                 return cb(err);
             }
             count += 1;
-            if (count === 2) {
+            if (count === nbStatsFile) {
                 return cb();
             }
         });
 
-        this.updateSizeFiles.bind(this)(err => {
+        this.updateSizeFile.bind(this)(err => {
             if (err) {
                 return cb(err);
             }
             count += 1;
-            if (count === 2) {
+            if (count === nbStatsFile) {
+                return cb();
+            }
+        });
+
+        this.updateThreadFile.bind(this)(err => {
+            if (err) {
+                return cb(err);
+            }
+            this.dataForThreadPlot = '';
+            count += 1;
+            if (count === nbStatsFile) {
                 return cb();
             }
         });
@@ -776,7 +909,7 @@ class S3Blaster {
     resetStats(idx) {
         this.count = 0;
         this.threads = 0;
-        if (this.resetStatsAfterEachTest) {
+        if (this.resetStatsAfterEachTest || this.rThreads.length > 1) {
             this.resetDataStats.bind(this)(idx);
         }
     }
@@ -1079,6 +1212,68 @@ class S3Blaster {
     }
 
     doNextAction(reqIdx, cb) {
+        /* if current data size is the last one
+         *  - current request is done, disable it
+         *  - go next request
+         *      if current request is the last one, do next `threadsNb`
+         * otherwise, go next data size
+         */
+        function doNextDataSize() {
+            if (this.currSizeIdx === this.sizes.length - 1) {
+                this.actionFlag[reqIdx] = false;
+                this.currSizeIdx = 0;
+                /* if current request is the last one -> simul is done */
+                if (this.actionIdx === this.actions.length - 1) {
+                    if (reqIdx === COM_OBJ) {
+                        for (let idx = PUT_OBJ; idx <= DEL_OBJ; idx++) {
+                            this.printStats(idx);
+                            this.resetStats(idx);
+                        }
+                    }
+                    return false; // will call next threadsNb
+                }
+                this.actionIdx++;
+            } else {
+                this.currSizeIdx++;
+            }
+            return true; // will do next action/datasize
+        }
+
+        /* if current thread number is the last one
+         *  - return to call callback to finish
+         * otherwise, go next threads number. It then requires reset actions
+         *    and data sizes indices.
+         */
+        function doNextThread() {
+            this.updateThreadStats();
+            if (this.currThreadIdx === this.rThreads.length - 1) {
+                this.currThreadIdx = 0;
+                this.nThreads = this.rThreads[0];
+                return false; // will call cb
+            }
+            this.currThreadIdx++;
+            this.nThreads = this.rThreads[this.currThreadIdx];
+
+            //  for simulEach only, reset data size and action indices
+            if (this.simulPolicy === simulEach) {
+                this.currSizeIdx = 0;
+                this.actionIdx = 0;
+                // reset-actions
+                const actions = [];
+                let prevAction = -1;
+                this.currActions.forEach(action => {
+                    for (let i = prevAction + 1; i < action; i++) {
+                        actions.push(false);
+                    }
+                    actions.push(true);
+                    prevAction = action;
+                });
+                this.setActions(actions);
+            }
+
+            return true; // will do next thread
+        }
+
         /* if a request with a data size simulation runned for given 'threshold'
          *      number of iterations -> prepare for next simulation
          * otherwise, do next action
@@ -1091,33 +1286,21 @@ class S3Blaster {
                         this.printStats(idx);
                         this.resetStats(idx);
                     }
-                    cb();
-                    return;
-                }
-                this.printStats(reqIdx);
-                this.resetStats(reqIdx);
-                /* if current data size is the last one
-                 *  - current request is done, disable it
-                 *  - go next request
-                 * otherwise, go next data size
-                 */
-                if (this.currSizeIdx === this.sizes.length - 1) {
-                    this.actionFlag[reqIdx] = false;
-                    this.currSizeIdx = 0;
-                    /* if current request is the last one -> simul is done */
-                    if (this.actionIdx === this.actions.length - 1) {
-                        if (reqIdx === COM_OBJ) {
-                            for (let idx = PUT_OBJ; idx <= DEL_OBJ; idx++) {
-                                this.printStats(idx);
-                                this.resetStats(idx);
-                            }
-                        }
+                    if (!doNextThread.bind(this)()) {
                         cb();
                         return;
                     }
-                    this.actionIdx++;
                 } else {
-                    this.currSizeIdx++;
+                    this.printStats(reqIdx);
+                    this.resetStats(reqIdx);
+                    /* decide for next data size */
+                    if (!doNextDataSize.bind(this)()) {
+                        /* decide for next nThreads */
+                        if (!doNextThread.bind(this)()) {
+                            cb();
+                            return;
+                        }
+                    }
                 }
                 this.size = this.sizes[this.currSizeIdx];
                 this.value = this.values[this.currSizeIdx];
