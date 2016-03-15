@@ -22,18 +22,21 @@ function getArrOfString(arr) {
 const avgStdGraph = `avg-std`;
 const pdfCdfGraph = `pdf-cdf`;
 const statSizeGraph = `stat-size`;
+const threadGraph = `thread`;
 
 class Plotter {
     /**
-     * @param {array} dataFiles: files storing stats: avg & std-dev
-     * @param {array} funcFiles: files storing stats: estimated
-     *                  probability & cumulative distribution function
-     * @param {array} sizeFile: array of data sizes
+     * @param {array} arrDataFiles: array stores data files
+     *   - files stores stats: avg & std-dev of latency
+     *   - files stores stats: estimated probability & cumulative distribution
+     *                          function
+     *   - file stores stats: latency vs. data sizes
+     *   - file stores stats: latency vs. number of threads
      * @param {string} fileName: prefix name for .gnu and output files
      * @param {array} graphsToPlot: array of graphs for plotting
      * @return {this} Plotter
      */
-    constructor(dataFiles, funcFiles, sizeFile, fileName, graphsToPlot) {
+    constructor(arrDataFiles, fileName, graphsToPlot) {
         const gnuExt = `.gnu`;
         const outputExt = `.pdf`;
         const _fileName = fileName || `output`;
@@ -45,11 +48,15 @@ class Plotter {
                           `${_fileName}_cdf${gnuExt}`];
         this.outputPdfCdf = [`${_fileName}_pdf${outputExt}`,
                             `${_fileName}_cdf${outputExt}`];
+        this.gnuThreadFile = `${_fileName}_thread${gnuExt}`;
+        this.outputThreadFile = `${_fileName}_thread${outputExt}`;
+
         this.sizes = [];
         this.reqsToTest = [];
-        this.dataFiles = getArrOfString(dataFiles);
-        this.funcFiles = getArrOfString(funcFiles);
-        this.sizeFile = getArrOfString([sizeFile])[0];
+        this.dataFiles = getArrOfString(arrDataFiles[0]);
+        this.funcFiles = getArrOfString(arrDataFiles[1]);
+        this.sizeFile = getArrOfString([arrDataFiles[2]])[0];
+        this.threadFile = getArrOfString([arrDataFiles[3]])[0];
         if (this.dataFiles === undefined) {
             stderr.write('missing data files for Plotter\n');
             return;
@@ -62,6 +69,10 @@ class Plotter {
             stderr.write('missing size file for Plotter\n');
             return;
         }
+        if (this.threadFile === undefined) {
+            stderr.write('missing thread file for Plotter\n');
+            return;
+        }
         this.graphsToPlot = graphsToPlot;
         this.stats = {
             nOps: 0,
@@ -69,7 +80,8 @@ class Plotter {
             max: [],
             mu: [],
             sigma: [],
-            statSizes: [],
+            sizes: [],
+            threads: [],
         };
     }
 
@@ -93,7 +105,10 @@ class Plotter {
                 this.sizes = arr.slice(2);
             }
             if (arr[1] === 'statSizes') {
-                this.statSizes = arr.slice(2);
+                this.stats.sizes = arr.slice(2);
+            }
+            if (arr[1] === 'threads') {
+                this.stats.threads = arr.slice(2);
             }
             if (arr[1] === 'requests') {
                 this.reqsToTest = arr.slice(2);
@@ -131,8 +146,7 @@ class Plotter {
                 `set style data linespoints\n` +
                 `set xlabel 'Number of operations'\n` +
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
-                // `set mxtics 1\n` +
-                `set grid xtics, ytics, mytics, mxtics\n` +
+                `set grid\n` +
                 `set terminal postscript enhanced color font "CMR14"\n` +
                 `set output '| ps2pdf - ${this.outputFile}'\n` +
                 `plot `;
@@ -174,21 +188,30 @@ class Plotter {
      * @return {function} callback
      */
     createGnuFileSize(cb) {
+        const KB = 1024;
+        const MB = KB * KB;
+        let unit;
+        let unitString;
+        if (this.stats.sizes[0] < KB) {
+            unit = 1;
+            unitString = `Bytes`;
+        } else if (this.stats.sizes[0] < MB) {
+            unit = KB;
+            unitString = `KB`;
+        } else {
+            unit = MB;
+            unitString = `MB`;
+        }
+
         function genGnuFile(genCb) {
-            this.statSizes[0] = Math.floor(this.statSizes[0] / 1024);
-            this.statSizes[1] = Math.ceil(this.statSizes[1] / 1024);
-            const nbXtics = Math.min(5, this.statSizes[2]);
-            const xtics = Math.ceil((this.statSizes[1] - this.statSizes[0]) /
-                                        nbXtics);
-            const mxtics = Math.min(5, Math.ceil(this.statSizes[2] / nbXtics));
+            this.stats.sizes[0] = Math.floor(this.stats.sizes[0] / unit);
+            this.stats.sizes[1] = Math.ceil(this.stats.sizes[1] / unit);
             let content =
                 `set key top right Left reverse box width 3 height 1.5\n` +
                 `set style data linespoints\n` +
-                `set xlabel 'Data sizes (KB)'\n` +
+                `set xlabel 'Data sizes (${unitString})'\n` +
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
-                `set xtics ${xtics}\n` +
-                `set mxtics ${mxtics}\n` +
-                `set grid xtics, ytics, mytics, mxtics\n` +
+                `set grid\n` +
                 `set terminal postscript enhanced color font "CMR14"\n` +
                 `set output '| ps2pdf - ${this.outputSizeFile}'\n` +
                 `plot `;
@@ -197,9 +220,9 @@ class Plotter {
             this.reqsToTest.forEach((req, idx) => {
                 const title = `${reqsString[req]}`;
                 content = `${content}` +
-                    `"${this.sizeFile}" u ($1/1024):${col + 1} ` +
+                    `"${this.sizeFile}" u ($1/${unit}):${col + 1} ` +
                     `notitle w lines lc ${color} lt 1 lw 2, ` +
-                    `"${this.sizeFile}" u ($1/1024):${col + 1}:${col + 2} ` +
+                    `"${this.sizeFile}" u ($1/${unit}):${col + 1}:${col + 2} ` +
                     `title '${title}' w yerrorbars ` +
                     `lc ${color} lt 1 lw 1 pt ${color}`;
                 col += 2;
@@ -213,6 +236,59 @@ class Plotter {
             });
         }
         this.getConfigInfo(this.sizeFile, (err) => {
+            if (err) return cb(err);
+            genGnuFile.bind(this)(cb);
+        });
+    }
+
+    /**
+     * function creates .gnu files that plots graphs for request
+     *  latency vs. threads number
+     * @param {function} cb: callback function
+     * @return {function} callback
+     */
+    createGnuFileThread(cb) {
+        function genGnuFile(genCb) {
+            let content =
+                `set key top right Left reverse box width 3 height 1.5\n` +
+                `set style data linespoints\n` +
+                `set xlabel 'Number of threads'\n` +
+                `set ylabel 'Latency (ms): average and standard deviation'\n` +
+                `set grid\n` +
+                `set terminal postscript enhanced color font "CMR14"\n` +
+                `set output '| ps2pdf - ${this.outputThreadFile}'\n` +
+                `plot `;
+            let color = 1;
+            let col = 3;
+            const step = this.sizes.length;
+            this.reqsToTest.forEach((req, reqIdx) => {
+                let firstLine = 0;
+                this.sizes.forEach((size, idx) => {
+                    const title = `${reqsString[req]}`;
+                    content = `${content}` +
+                        `"${this.threadFile}" ` +
+                        `every ${step}::${firstLine} u 1:${col} ` +
+                        `notitle with linespoints lc ${color} lt 1 lw 2, ` +
+                        `"${this.threadFile}" ` +
+                        `every ${step}::${firstLine} u 1:${col}:${col + 1} ` +
+                        `title '${title}, size = ${size}bytes' w yerrorbars ` +
+                        `lc ${color} lt 1 lw 1 pt ${color}`;
+                    color++;
+                    firstLine++;
+                    if (idx < this.sizes.length - 1) {
+                        content += `,\\\n`;
+                    }
+                });
+                col += 2;
+                if (reqIdx < this.reqsToTest.length - 1) {
+                    content += `,\\\n`;
+                }
+            });
+            fs.writeFile(this.gnuThreadFile, content, (err) => {
+                return genCb(err);
+            });
+        }
+        this.getConfigInfo(this.threadFile, (err) => {
             if (err) return cb(err);
             genGnuFile.bind(this)(cb);
         });
@@ -348,7 +424,12 @@ class Plotter {
                 if (err) {
                     return cb(err);
                 }
-                this.createGnuFilePdfCdf(cb);
+                this.createGnuFileThread(err => {
+                    if (err) {
+                        return cb(err);
+                    }
+                    this.createGnuFilePdfCdf(cb);
+                });
             });
         });
     }
@@ -365,15 +446,22 @@ class Plotter {
                 this.gnuPdfCdf.forEach(file => {
                     cmd += `gnuplot ${file}; `;
                 });
-                cmd += `gnuplot ${this.gnuSizeFile}`;
-            } else if (this.graphsToPlot.indexOf(avgStdGraph) > -1) {
-                cmd += `gnuplot ${this.gnuFile}; `;
-            } else if (this.graphsToPlot.indexOf(pdfCdfGraph) > -1) {
-                this.gnuPdfCdf.forEach(file => {
-                    cmd += `gnuplot ${file}; `;
+                cmd += `gnuplot ${this.gnuSizeFile}; `;
+                cmd += `gnuplot ${this.gnuThreadFile}; `;
+            } else {
+                this.graphsToPlot.forEach(graph => {
+                    if (graph === avgStdGraph) {
+                        cmd += `gnuplot ${this.gnuFile}; `;
+                    } else if (graph === pdfCdfGraph) {
+                        this.gnuPdfCdf.forEach(file => {
+                            cmd += `gnuplot ${file}; `;
+                        });
+                    } else if (graph === statSizeGraph) {
+                        cmd += `gnuplot ${this.gnuSizeFile}; `;
+                    } else if (graph === threadGraph) {
+                        cmd += `gnuplot ${this.gnuThreadFile}; `;
+                    }
                 });
-            } else if (this.graphsToPlot.indexOf(statSizeGraph) > -1) {
-                cmd += `gnuplot ${this.gnuSizeFile}`;
             }
 
             const gnuplot = spawn('bash', ['-c', cmd]);
@@ -400,4 +488,5 @@ Plotter.graphs = {
     avgStd: avgStdGraph,
     pdfCdf: pdfCdfGraph,
     statSize: statSizeGraph,
+    thread: threadGraph,
 };
