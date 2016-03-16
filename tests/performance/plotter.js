@@ -19,6 +19,20 @@ function getArrOfString(arr) {
     return undefined;
 }
 
+const KB = 1024;
+const MB = KB * KB;
+const GB = KB * MB;
+function convertSize(size) {
+    if (size < KB) {
+        return `${size}B`;
+    } else if (size < MB) {
+        return `${size / KB}KB`;
+    } else if (size < GB) {
+        return `${size / MB}MB`;
+    }
+    return `${size / GB}GB`;
+}
+
 const avgStdGraph = `avg-std`;
 const pdfCdfGraph = `pdf-cdf`;
 const statSizeGraph = `stat-size`;
@@ -156,7 +170,8 @@ class Plotter {
                 const prefixTitle = dataFile.slice(dataFile.length - 15,
                                                    dataFile.length - 8);
                 for (let idx = 0; idx < this.sizes.length; idx++) {
-                    const title = `${prefixTitle}, size = ${this.sizes[idx]}`;
+                    const title = `${prefixTitle}, ` +
+                                  `size = ${convertSize(this.sizes[idx])}`;
                     content = `${content}` +
                         `"${dataFile}" u ${col}:${col + 1} ` +
                         `notitle w lines lc ${color} lt 1 lw 2, ` +
@@ -188,20 +203,8 @@ class Plotter {
      * @return {function} callback
      */
     createGnuFileSize(cb) {
-        const KB = 1024;
-        const MB = KB * KB;
         let unit;
         let unitString;
-        if (this.stats.sizes[0] < KB) {
-            unit = 1;
-            unitString = `Bytes`;
-        } else if (this.stats.sizes[0] < MB) {
-            unit = KB;
-            unitString = `KB`;
-        } else {
-            unit = MB;
-            unitString = `MB`;
-        }
 
         function genGnuFile(genCb) {
             this.stats.sizes[0] = Math.floor(this.stats.sizes[0] / unit);
@@ -237,6 +240,16 @@ class Plotter {
         }
         this.getConfigInfo(this.sizeFile, (err) => {
             if (err) return cb(err);
+            if (this.stats.sizes[0] < KB) {
+                unit = 1;
+                unitString = `B`;
+            } else if (this.stats.sizes[0] < MB) {
+                unit = KB;
+                unitString = `KB`;
+            } else {
+                unit = MB;
+                unitString = `MB`;
+            }
             genGnuFile.bind(this)(cb);
         });
     }
@@ -249,41 +262,94 @@ class Plotter {
      */
     createGnuFileThread(cb) {
         function genGnuFile(genCb) {
-            let content =
-                `set key top right Left reverse box width 3 height 1.5\n` +
-                `set style data linespoints\n` +
-                `set xlabel 'Number of threads'\n` +
-                `set ylabel 'Latency (ms): average and standard deviation'\n` +
-                `set grid\n` +
-                `set terminal postscript enhanced color font "CMR14"\n` +
-                `set output '| ps2pdf - ${this.outputThreadFile}'\n` +
-                `plot `;
+            const nbX = this.reqsToTest.length;
+            const nbY = this.sizes.length + 1;
+            const layout = `${nbY},${nbX}`;
+            const maxThread = this.stats.threads[this.stats.threads.length - 1];
+            const minThread = this.stats.threads[0];
+            const xticsNb = Math.min(this.stats.threads.length, 10);
+            const xtics = Math.floor((maxThread - minThread) / xticsNb);
+            const mxtics = this.stats.threads.length > 1 ?
+                    this.stats.threads[1] - this.stats.threads[0] : 1;
             let color = 1;
             let col = 3;
             const step = this.sizes.length;
+            let content =
+                `set terminal pdfcairo size ${5 * nbX},${5 * nbY} ` +
+                    `enhanced color font "CMR14, 12"\n` +
+                `set output '${this.outputThreadFile}'\n` +
+                `set key top left Left reverse box width 3 height 1.5\n` +
+                /* plot multiple graphs
+                 *   -> graphs on a column correspond to a request
+                 *   -> graphs on a row correspond to a data size
+                 */
+                `set multiplot layout ${layout} columnsfirst ` +
+                    `title "{/:Bold Latency vs. #threads, ` +
+                    ` ${this.stats.nOps} requests/point}"\n` +
+                `set style data linespoints\n` +
+                `set ylabel 'Latency (ms): average and standard deviation'\n` +
+                `set xtics ${xtics}; set mxtics ${mxtics}\n` +
+                `set grid xtics mxtics\n`;
             this.reqsToTest.forEach((req, reqIdx) => {
+                let colorp = color;
                 let firstLine = 0;
+                content += `plot `;
                 this.sizes.forEach((size, idx) => {
                     const title = `${reqsString[req]}`;
                     content = `${content}` +
                         `"${this.threadFile}" ` +
                         `every ${step}::${firstLine} u 1:${col} ` +
-                        `notitle with linespoints lc ${color} lt 1 lw 2, ` +
+                        `notitle with linespoints lc ${colorp} lt 1 lw 2, ` +
                         `"${this.threadFile}" ` +
                         `every ${step}::${firstLine} u 1:${col}:${col + 1} ` +
-                        `title '${title}, size = ${size}bytes' w yerrorbars ` +
-                        `lc ${color} lt 1 lw 1 pt ${color}`;
-                    color++;
+                        `title '${title}, size = ${convertSize(size)}' ` +
+                        `w yerrorbars lc ${colorp} lt 1 lw 1 pt ${colorp}`;
+                    colorp++;
                     firstLine++;
                     if (idx < this.sizes.length - 1) {
                         content += `,\\\n`;
+                    } else {
+                        content += `\n`;
                     }
                 });
-                col += 2;
-                if (reqIdx < this.reqsToTest.length - 1) {
-                    content += `,\\\n`;
+                firstLine = 0;
+                colorp = color;
+                content += `\n`;
+                if (reqIdx === 0) {
+                    content = `${content}` +
+                        `unset ylabel\n` +
+                        `set ylabel 'Latency (ms): average'\n`;
                 }
+                content = `${content}` +
+                    `a=3; b=2\n` +
+                    `FIT_MAXITER = 1\n` +
+                    `f(x) = a*x + b\n`;
+                this.sizes.forEach((size, sizeIdx) => {
+                    if (sizeIdx === this.sizes.length - 1) {
+                        content += `set xlabel 'Number of threads'\n`;
+                    }
+                    const title =
+                        `${reqsString[req]}, size = ${convertSize(size)}`;
+                    content = `${content}` +
+                        `fit f(x) "${this.threadFile}" ` +
+                            `every ${step}::${firstLine} u 1:${col} ` +
+                            `via a,b\n` +
+                        `ti = sprintf("Estimation y = %.2fx+(%.2f)", a, b)\n` +
+                        `plot "${this.threadFile}" ` +
+                        `every ${step}::${firstLine} u 1:${col} ` +
+                        `title '${title}' ` +
+                        `lc ${color} lt 1 lw 1 pt ${color},\ f(x) title ti\n`;
+                    color++;
+                    firstLine++;
+                });
+                if (reqIdx === 0) {
+                    content += `unset ylabel\n`;
+                }
+                content += `unset xlabel\n`;
+                col += 2;
+                color = colorp;
             });
+            content += `unset multiplot; set output\n`;
             fs.writeFile(this.gnuThreadFile, content, (err) => {
                 return genCb(err);
             });
@@ -327,7 +393,7 @@ class Plotter {
                 let color = 1;
                 let col = 2;
                 this.sizes.forEach((size, idx) => {
-                    content += `set ylabel "size = ${size}B"\n`;
+                    content += `set ylabel "size = ${convertSize(size)}"\n`;
                     if (idx === this.sizes.length - 1) {
                         content += `set xlabel 'Latency (ms)'\n`;
                     }
@@ -385,7 +451,7 @@ class Plotter {
                     this.sizes.forEach((size, idx) => {
                         content +=
                             `"${dataFile}" u ${1}:${col} ` +
-                            `title 'size = ${size}B' ` +
+                            `title 'size = ${convertSize(size)}' ` +
                             `lc ${color} lt 1 lw 1`;
                         if (idx < this.sizes.length - 1) {
                             content += `,\\`;
@@ -441,7 +507,8 @@ class Plotter {
                 return cb(err);
             }
             let cmd = ``;
-            if (this.graphsToPlot === undefined) {
+            if (this.graphsToPlot === undefined ||
+                (this.graphsToPlot.length === 0)) {
                 cmd += `gnuplot ${this.gnuFile}; `;
                 this.gnuPdfCdf.forEach(file => {
                     cmd += `gnuplot ${file}; `;
