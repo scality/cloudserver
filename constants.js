@@ -30,6 +30,7 @@ export default {
     // in object keys, so in initiateMultipartUpload.js we prevent
     // the user from creating an MPU object which contains the splitter.
     splitter: '..|..',
+    legacySplitter: 'splitterfornow',
     usersBucket: 'namespaceusersbucket',
     // MPU Bucket Prefix is used to create the name of the shadow
     // bucket used for multipart uploads.  There is one shadow mpu
