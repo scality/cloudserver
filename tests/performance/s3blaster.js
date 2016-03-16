@@ -26,10 +26,10 @@ const simulEach = 'Each';
 const simulMixed = 'Mixed';
 
 const lastSlashIdx = process.argv[2].lastIndexOf('/');
-const statsFolder = `./${process.argv[2].slice(0, lastSlashIdx)}/stats`;
-const defaultFileName = statsFolder +
-                            process.argv[2].slice(lastSlashIdx + 1,
-                                                    process.argv[2].length - 3);
+const statsFolder = `./${process.argv[2].slice(0, lastSlashIdx)}/stats/`;
+const calledFileName = process.argv[2].slice(lastSlashIdx + 1,
+                        process.argv[2].length - 3);
+const defaultFileName = statsFolder + calledFileName;
 
 /**
  * stringify to a given length
@@ -76,7 +76,6 @@ class S3Blaster {
         commander.version('0.0.1')
         .option('-P, --port <port>', 'Port number', parseInt)
         .option('-H, --host [host]', 'Host name')
-        // .option('-N, --n-threads <nThreads>', 'Number of threads', parseInt)
         .option('-N, --r-threads <a>:<b>:<c>', 'Threads range', range)
         .option('-n, --n-ops <nOps>', 'Number of operations', parseInt)
         .option('-u, --n-buckets <nBuckets>', 'Number of buckets', parseInt)
@@ -468,8 +467,8 @@ class S3Blaster {
         });
         this.sizeFile = this.prefixName + this.suffixName + this.sizeExt;
         this.threadFile = this.prefixName + this.suffixName + this.threadExt;
-        const outputDataFiles = new Array(this.dataFiles, this.funcFiles,
-                                        this.sizeFile, this.threadFile);
+        const outputDataFiles = [this.dataFiles, this.funcFiles,
+                                 this.sizeFile, this.threadFile];
         function createAvgStdFiles(cb) {
             let count = 0;
             const label =
@@ -854,8 +853,8 @@ class S3Blaster {
                             this.dataToPlot[actIdx][sizeIdx].length - 1];
                 if (arr && arr.length > 2) {
                     if (this.currActions.indexOf(actIdx) === -1) {
-                        dataContent += `${toFixedLength('1/0', 8)} ` +
-                                       `${toFixedLength('1/0', 8)} `;
+                        dataContent += `${toFixedLength('?1/0', 8)} ` +
+                                       `${toFixedLength('?1/0', 8)} `;
                     } else {
                         dataContent += `${toFixedLength(arr[1], 8)} ` +
                                        `${toFixedLength(arr[2], 8)} `;
@@ -1322,7 +1321,8 @@ class S3Blaster {
     put(cb) {
         this.count++;
         const data = {
-            key: `${randomString(5)}_key${this.size}${this.count}`,
+            key: `${randomString(5)}` +
+                    `key_S${this.size}_T${this.nThreads}_C${this.count}`,
             data: new Buffer(this.value),
             sizeIdx: this.currSizeIdx,
         };
@@ -1332,7 +1332,7 @@ class S3Blaster {
         function putCb(err, val, storedKey, time) {
             if (err) {
                 this.nFailures[PUT_OBJ][this.currSizeIdx]++;
-                stderr.write(`put error: ${val}\n`);
+                stderr.write(`put error: ${val} ${process.hrtime()}\n`);
                 return cb(err);
             }
             this.storedKeys[storedKey.SizeIdx].push(storedKey);
@@ -1415,7 +1415,8 @@ class S3Blaster {
     comb(cb) {
         this.count++;
         const data = {
-            key: `${randomString(5)}_key${this.size}${this.count}`,
+            key: `${randomString(5)}` +
+                    `key_S${this.size}_T${this.nThreads}_C${this.count}`,
             data: new Buffer(this.value),
             sizeIdx: this.currSizeIdx,
         };
@@ -1500,3 +1501,212 @@ S3Blaster.simulPolicy = {
 S3Blaster.statsFolder = {
     path: statsFolder,
 };
+
+/* ==== For Live Test running directly from this file ==== */
+function list(val) {
+    return val.split(',');
+}
+
+function helpS3blaster() {
+    stderr.write(`Run directly s3blaster test via mocha with arguments:\n`);
+    stderr.write(`(o)Host:\n`);
+    stderr.write(`  -H, --host: host adresse\n`);
+    stderr.write(`  -P, --port: port\n`);
+    stderr.write(`(o)Request type:\n`);
+    stderr.write(`  -x, --put : put object\n`);
+    stderr.write(`  -y, --get : get object\n`);
+    stderr.write(`  -z, --delete : del object\n`);
+    stderr.write(`  -c, --combine : combined operation put->get->delete\n`);
+    stderr.write(`(o)Simulation policy:\n`);
+    stderr.write(`  -m, --simul [simul]', 'Type of simulation, `);
+    stderr.write(`either 'e' for simulEach, 'm' for simulMixed\n`);
+    stderr.write(`(o)Number of operations per one set of parameters:\n`);
+    stderr.write(`  -n, --n-ops: Number of operations\n`);
+    stderr.write(`(o)Bucket:\n`);
+    stderr.write(`  -B, --bucket-prefix: prefix for bucket name\n`);
+    stderr.write(`  -u, --n-buckets: number of buckets\n`);
+    stderr.write(`(o)Data sizes:\n`);
+    stderr.write(`  -l, --sizes-list <items>: data sizes, separated by ','\n`);
+    stderr.write(`  -r, --sizes-arr <a>:<b>:<c>: range of data sizes, from `);
+    stderr.write(`'a' to 'c' with step 'b'. Its priority is less than `);
+    stderr.write(`--sizes-list\n`);
+    stderr.write(`  -u, --unit: data size unit, `);
+    stderr.write(`either '1' for bytes, 'k' for KB, 'm' for MB\n`);
+    stderr.write(`(o)Number of threads:\n`);
+    stderr.write(`  -N, --r-threads <a>:<b>:<c>: `);
+    stderr.write(`Threads range from 'a' to 'c' with step 'b'\n`);
+    stderr.write(`(o)Graphs to plot:\n`);
+    stderr.write(`  -g, --graphs <items>: 'a' for avg-std, 'p' for pdf-cdf, `);
+    stderr.write(`'s' for data sizes, 't' for threads\n`);
+    stderr.write(`(o)Suffix for output files:\n`);
+    stderr.write(`  -f, --name: Suffix for output files\n`);
+}
+
+if (calledFileName === `s3blaster`) {
+    const Plotter = require('./plotter');
+
+    /* Available graph to be plotted:
+    graphs = {
+       avgStd: average and standard-deviabtion graph will be plotted
+       pdfCdf: estimated pdf/cdf graphs will be plotted
+       statSize: latency vs. sizes graph will be plotted
+       thread: latency vs. number of threads graph will be plotted
+    };
+    */
+    const graphs = Plotter.graphs;
+    const KB = 1024;
+    const MB = KB * KB;
+
+
+    describe('Measure performance', function Perf() {
+        this.timeout(0);
+        commander.version('0.0.1')
+        .option('-x, --put', 'Put object')
+        .option('-y, --get', 'Get object')
+        .option('-z, --delete', 'Delete object')
+        .option('-c, --combine', 'Put->Get->Delete object')
+        .option('-g, --graphs <items>', 'Graphs to plot', list)
+        .option('-l, --sizes-list <items>', 'List of data sizes', list)
+        .option('-r, --sizes-arr <items>', 'Range of data sizes', range)
+        .option('-u, --unit [unit]', 'Data size unit')
+        .option('-f, --name [name]', 'Suffix for output files')
+        .option('-m, --simul [simul]', 'Type of simulation')
+        .option('-d, --distr <items>', 'Step, number of samples', list)
+        .option('-h, --helps3')
+        .parse(process.argv);
+        if (commander.helps3) {
+            helpS3blaster();
+            return;
+        }
+
+        let _simulPolicy;
+        if (commander.simul) {
+            if (commander.simul === 'e') {
+                _simulPolicy = simulEach;
+            } else if (commander.simul === 'm') {
+                _simulPolicy = simulMixed;
+            } else {
+                _simulPolicy = simulEach;
+                stderr.write(`wrong arg for 'simulPolicy'. `);
+                stderr.write(`Set it as simulEach\n`);
+            }
+        }
+
+        const _suffix = commander.name || `LiveTest`;
+        const _prefSufName = [`${defaultFileName}${_suffix}`, ''];
+        const _reqsToTest = [];
+        if (commander.put) {
+            _reqsToTest.push(PUT_OBJ);
+        }
+        if (commander.get) {
+            _reqsToTest.push(GET_OBJ);
+        }
+        if (commander.delete) {
+            _reqsToTest.push(DEL_OBJ);
+        }
+        if (commander.combine) {
+            _reqsToTest.push(PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ);
+        }
+        if (_reqsToTest.length === 0) {
+            _reqsToTest.push(PUT_OBJ, GET_OBJ, DEL_OBJ);
+        }
+        const actions = [false, false, false, false];
+        if (_reqsToTest.indexOf(COM_OBJ) > -1) {
+            actions[COM_OBJ] = true;
+        } else {
+            _reqsToTest.forEach(req => {
+                actions[req] = true;
+            });
+        }
+
+        const _graphsToPlot = [];
+        if (commander.graphs) {
+            if (commander.graphs.indexOf('a') > -1) {
+                _graphsToPlot.push(graphs.avgStd);
+            }
+            if (commander.graphs.indexOf('p') > -1) {
+                _graphsToPlot.push(graphs.pdfCdf);
+            }
+            if (commander.graphs.indexOf('s') > -1) {
+                _graphsToPlot.push(graphs.statSize);
+            }
+            if (commander.graphs.indexOf('t') > -1) {
+                _graphsToPlot.push(graphs.thread);
+            }
+        }
+
+        let unit = 1;
+        if (commander.unit) {
+            switch (commander.unit) {
+            case '1': unit = 1; break;
+            case 'k': unit = KB; break;
+            case 'm': unit = MB; break;
+            default: unit = 1; break;
+            }
+        }
+        let _sizes = [KB, MB];
+        if (commander.sizesList) {
+            _sizes = commander.sizesList.map(size => unit * parseInt(size, 10));
+        } else {
+            if (commander.sizesArr) {
+                _sizes = commander.sizesArr.map(size => unit * size);
+            }
+        }
+
+        let _distrFuncParams = [1, 1000];
+        if (commander.distr) {
+            _distrFuncParams = commander.distr.map(Number);
+        }
+
+        const blaster = new S3Blaster();
+        let plotter = undefined;
+        before((done) => {
+            blaster.setParams({
+                prefSufName: _prefSufName,
+                reqsToTest: _reqsToTest,
+                simulPolicy: _simulPolicy,
+                nOps: -1,
+                freqsToShow: -1,
+                sizes: _sizes,
+                arrThreads: -1,
+                distrFuncParams: _distrFuncParams,
+            });
+            blaster.init((err, arrDataFiles) => {
+                if (err) {
+                    return done(err);
+                }
+                plotter = new Plotter(arrDataFiles, _prefSufName[0],
+                                        _graphsToPlot);
+                done();
+            });
+        });
+
+        it('run test', (done) => {
+            blaster.setActions(actions);
+            blaster.doSimul(done);
+        });
+
+        afterEach((done) => {
+            blaster.updateDataFiles(done);
+        });
+
+        after((done) => {
+            blaster.updateStatsFiles((err) => {
+                if (err) {
+                    return done(err);
+                }
+                plotter.plotData((err) => {
+                    if (err) {
+                        process.stdout.write(err);
+                    }
+                    blaster.clearDataSimul((err) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        return done();
+                    });
+                });
+            });
+        });
+    });
+}

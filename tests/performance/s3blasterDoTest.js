@@ -54,7 +54,7 @@ function doAfterTest(blaster, plotter, cb) {
     });
 }
 
-function genArrSizes(min, max, step) {
+function genArray(min, max, step) {
     const arr = [];
     let size = min;
     do {
@@ -111,17 +111,15 @@ const params = {
     simulPolicy: simulEach,
     freqsToShow: -1,
     nOps: -1,
-    sizes: genArrSizes(KB, 200 * KB, 10 * KB),
+    sizes: genArray(KB, 200 * KB, 10 * KB),
     distrFuncParams: [0.2, 2000],
 };
 blaster.setParams(params);
 
-const sizesToTest = genArrSizes(KB, MB, 100 * KB).
-                        concat(genArrSizes(2 * MB, 10 * MB, MB));
+const sizesToTest = genArray(KB, MB, 100 * KB).concat([16 * MB, 64 * MB]);
 
-const sizesToPut = genArrSizes(10 * KB, 200 * KB, 10 * KB);
-
-const threadsToTest = genArrSizes(1, 60, 1);
+const sizesToPut = genArray(KB, 200 * KB, KB);
+const threadsToTest = genArray(1, 60, 1);
 
 describe('Measure individual PUT vs. threads', function indivPerf() {
     this.timeout(0);
@@ -133,7 +131,7 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: 200,
+            nOps: -1,
             freqsToShow: -1,
             sizes: [KB, MB],
             arrThreads: threadsToTest,
@@ -150,6 +148,55 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
 
     it('Only PUT', (done) => {
         blaster.setActions([true]);
+        blaster.doSimul(done);
+    });
+
+    afterEach((done) => {
+        blaster.updateDataFiles(done);
+    });
+
+    after((done) => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}Thread`, ''];
+    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread];
+    before((done) => {
+        blaster.setParams({
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: -1,
+            freqsToShow: -1,
+            sizes: [KB, 60 * KB, 150 * KB, MB],
+            arrThreads: threadsToTest,
+            distrFuncParams: [1, 5000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            done();
+        });
+    });
+
+    it('Only PUT', (done) => {
+        blaster.setActions([true]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', (done) => {
+        blaster.setActions([false, true]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', (done) => {
+        blaster.setActions([false, false, true]);
         blaster.doSimul(done);
     });
 
@@ -214,55 +261,7 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
             nOps: -1,
             freqsToShow: -1,
             sizes: sizesToPut,
-            distrFuncParams: [1, 5000],
-        });
-        blaster.init((err, arrDataFiles) => {
-            if (err) {
-                return done(err);
-            }
-            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            done();
-        });
-    });
-
-    it('Only PUT', (done) => {
-        blaster.setActions([true]);
-        blaster.doSimul(done);
-    });
-
-    it('Only GET', (done) => {
-        blaster.setActions([false, true]);
-        blaster.doSimul(done);
-    });
-
-    it('Only DELETE', (done) => {
-        blaster.setActions([false, false, true]);
-        blaster.doSimul(done);
-    });
-
-    afterEach((done) => {
-        blaster.updateDataFiles(done);
-    });
-
-    after((done) => {
-        doAfterTest(blaster, plotter, done);
-    });
-});
-
-describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
-    this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Thread`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    const graphsToPlot = [graphs.thread];
-    before((done) => {
-        blaster.setParams({
-            prefSufName: _prefSufName,
-            reqsToTest: _reqsToTest,
-            simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
-            sizes: [KB, 100 * KB, MB],
-            arrThreads: threadsToTest,
+            arrThreads: -1,
             distrFuncParams: [1, 5000],
         });
         blaster.init((err, arrDataFiles) => {
@@ -310,7 +309,7 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
             nOps: -1,
             freqsToShow: -1,
             sizes: sizesToTest,
-            threads: -1,
+            arrThreads: -1,
             distrFuncParams: [2, 3000],
         });
         blaster.init((err, arrDataFiles) => {
