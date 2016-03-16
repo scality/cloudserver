@@ -77,9 +77,9 @@ describe('Error handling in checkAuth', () => {
         expires = expires + fifteenMinutes;
         const request = {
             method: 'GET',
-            url: `/bucket?AWSAccessKeyId=accessKey1&Expires` +
+            url: '/bucket?AWSAccessKeyId=accessKey1&Expires' +
                 `=${expires}&Signature=vjbyPxybdZaNmGa` +
-                `%2ByT272YEAiv4%3D`,
+                '%2ByT272YEAiv4%3D',
             query: {
                 AWSAccessKeyId: 'accessKey1',
                 Expires: expires,
