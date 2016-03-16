@@ -9,11 +9,11 @@ export default {
      * upload or about an individual part with each piece of info separated
      * by the splitter.  We can then extract each piece of info by splitting
      * the object name string with this splitter.
-     * For instance, assuming a splitter of '...!*!',
+     * For instance, assuming a splitter of '..|..',
      * the name of the upload overview would be:
-     *   overview...!*!objectKey...!*!uploadId
+     *   overview..|..objectKey..|..uploadId
      * For instance, the name of a part would be:
-     *   uploadId...!*!partNumber
+     *   uploadId..|..partNumber
      *
      * The sequence of characters used in the splitter should not occur
      * elsewhere in the pieces of info to avoid splitting where not
@@ -22,13 +22,15 @@ export default {
      * Splitter is also used in adding bucketnames to the
      * namespacerusersbucket.  The object names added to the
      * namespaceusersbucket are of the form:
-     * canonicalID...!*!bucketname
+     * canonicalID..|..bucketname
      */
 
-    // TODO: Determine a splitter that is DNS compliant and will
-    // not cause an issue for multipartUpload.  This splitter
-    // will work for serviceGet.  This is GH Issue#218.
-    splitter: 'splitterfornow',
+    // ".." is not allowed in AWS bucket names so the following splitter
+    // will not occur in bucket names. However, any character is allowed
+    // in object keys, so in initiateMultipartUpload.js we prevent
+    // the user from creating an MPU object which contains the splitter.
+    splitter: '..|..',
+    legacySplitter: 'splitterfornow',
     usersBucket: 'namespaceusersbucket',
     // MPU Bucket Prefix is used to create the name of the shadow
     // bucket used for multipart uploads.  There is one shadow mpu
