@@ -203,7 +203,7 @@ describe('v4 headerAuthCheck', () => {
 
     it('should successfully authenticate', (done) => {
         // Freezes time so date created within function will be Feb 8, 2016
-        const clock = lolex.install(1454973383163);
+        const clock = lolex.install(1454962445000);
         headerAuthCheck(request, log, (err, authInfo) => {
             clock.uninstall();
             assert.strictEqual(err, null);
@@ -222,7 +222,7 @@ describe('v4 headerAuthCheck', () => {
                 'x-amz-date, Signature=abed924c06abf8772c67006' +
                 '4d22eacd6ccb85c06befa15f' +
                 '4a789b0bae19307bc' }, 'headers', request, headers);
-        const clock = lolex.install(1454973383163);
+        const clock = lolex.install(1454962445000);
         headerAuthCheck(alteredRequest, log, (err) => {
             clock.uninstall();
             assert.deepStrictEqual(err, errors.InvalidAccessKeyId);
