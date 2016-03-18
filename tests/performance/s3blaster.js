@@ -9,13 +9,14 @@ const fs = require('fs');
 const stderr = process.stderr;
 
 // available requests for testing
-const requests = ['PUT-OBJ', 'GET-OBJ', 'DEL-OBJ', 'COM-OBJ'];
+const requests = ['PUT-OBJ', 'GET-OBJ', 'DEL-OBJ', 'COM-OBJ', 'LST-OBJ'];
 const avaiReq = [];
 let idx = 0;
 const PUT_OBJ = idx; avaiReq.push(idx++);
 const GET_OBJ = idx; avaiReq.push(idx++);
 const DEL_OBJ = idx; avaiReq.push(idx++);
 const COM_OBJ = idx; avaiReq.push(idx++);
+const LST_OBJ = idx; avaiReq.push(idx++);
 /* simulaton schedule:
  *  (1) `Each`: in each `it` test, a request type and a data size is
  *     simulated for a given number of times before go to next one.
@@ -212,6 +213,8 @@ class S3Blaster {
                 return this.zeroFunc.slice();
             });
         });
+
+        this.latThread = undefined;
     }
 
     setParams(params) {
@@ -254,7 +257,7 @@ class S3Blaster {
             this.resetDataStats.bind(this)(req);
         });
         this.createdBucketsNb = 0;
-        this.createBuckets((err) => {
+        this.createBuckets(err => {
             if (err) {
                 return cb(err);
             }
@@ -502,7 +505,7 @@ class S3Blaster {
             this.reqsToTest.forEach((reqIdx) => {
                 const dataFile = this.dataFiles[reqIdx];
                 realDataFiles.push(dataFile);
-                fs.writeFile(dataFile, content, (err) => {
+                fs.writeFile(dataFile, content, err => {
                     if (err) {
                         return cb(err);
                     }
@@ -540,7 +543,7 @@ class S3Blaster {
         function createFuncFiles(cb) {
             let count = 0;
             this.funcFiles.forEach(funcFile => {
-                fs.writeFile(funcFile, `#\n`, (err) => {
+                fs.writeFile(funcFile, `#\n`, err => {
                     if (err) {
                         return cb(err);
                     }
@@ -676,7 +679,7 @@ class S3Blaster {
                 }
                 dataContent += `\n`;
             }
-            fs.appendFile(dataFile, dataContent, (err) => {
+            fs.appendFile(dataFile, dataContent, err => {
                 if (err) {
                     return cb(err);
                 }
@@ -705,7 +708,6 @@ class S3Blaster {
         /* compute pdf and cdf */
         this.finalizePdfCdf();
         let count = 0;
-        let lat;
         const funcArr = [this.pdf, this.cdf];
         let dataContent;
         this.funcFiles.forEach((file, fileIdx) => {
@@ -772,7 +774,7 @@ class S3Blaster {
                 dataContent += label;
             });
             dataContent += `\n`;
-            fs.writeFile(file, dataContent, (err) => {
+            fs.writeFile(file, dataContent, err => {
                 if (err) {
                     return cb(err);
                 }
@@ -785,14 +787,15 @@ class S3Blaster {
                         sizeIdx++) {
                         funcArr[fileIdx].forEach( // for each request
                             (funcPerReq, idxA) => { // eslint-disable-line
-                                lat = funcArr[fileIdx][idxA][sizeIdx][idx].
+                                const lat =
+                                    funcArr[fileIdx][idxA][sizeIdx][idx].
                                                             toFixed(3);
                                 dataContent += `${toFixedLength(lat, 7)}  `;
                             });
                     }
                     dataContent += `\n`;
                 }
-                fs.appendFile(file, dataContent, (err) => {
+                fs.appendFile(file, dataContent, err => {
                     if (err) {
                         return cb(err);
                     }
@@ -926,12 +929,14 @@ class S3Blaster {
         this.nFailures[req] = zeroArr.slice();
         this.latMin[req] = infinityArr.slice();
         this.latMax[req] = zeroArr.slice();
-        this.pdf[req] = this.sizes.map(() => {
-            return this.zeroFunc.slice();
-        });
-        this.cdf[req] = this.sizes.map(() => {
-            return this.zeroFunc.slice();
-        });
+        if (this.resetStatsAfterEachTest) {
+            this.pdf[req] = this.sizes.map(() => {
+                return this.zeroFunc.slice();
+            });
+            this.cdf[req] = this.sizes.map(() => {
+                return this.zeroFunc.slice();
+            });
+        }
     }
 
     resetPdfCdf() {
@@ -958,7 +963,7 @@ class S3Blaster {
 
     createBucket(bucketName, cb) {
         const begin = process.hrtime();
-        this.s3.createBucket({ Bucket: bucketName }, (err) => {
+        this.s3.createBucket({ Bucket: bucketName }, err => {
             const end = process.hrtime(begin);
             if (!err) {
                 return cb(null, end);
@@ -971,7 +976,7 @@ class S3Blaster {
 
     deleteBucket(bucketName, cb) {
         const begin = process.hrtime();
-        this.s3.deleteBucket({ Bucket: bucketName }, (err) => {
+        this.s3.deleteBucket({ Bucket: bucketName }, err => {
             const end = process.hrtime(begin);
             if (err) {
                 stderr.write(`deleteBucket: ${err}\n`);
@@ -989,8 +994,9 @@ class S3Blaster {
         const begin = process.hrtime();
         this.s3.listObjects(params, (err, value) => {
             const end = process.hrtime(begin);
+            const lat = end[0] * 1e3 + end[1] / 1e6;
             if (!err) {
-                return callback(null, value, end);
+                return callback(null, value, lat);
             }
             stderr.write(`list ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
@@ -1012,8 +1018,9 @@ class S3Blaster {
         const begin = process.hrtime();
         this.s3.putObject(object, (err, value) => {
             const end = process.hrtime(begin);
+            const lat = end[0] * 1e3 + end[1] / 1e6;
             if (!err) {
-                return callback(null, value, storedKey, end);
+                return callback(null, value, storedKey, lat);
             }
             stderr.write(`put ${data.key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
@@ -1029,12 +1036,13 @@ class S3Blaster {
         const begin = process.hrtime();
         this.s3.getObject(params, (err, data) => {
             const end = process.hrtime(begin);
+            const lat = end[0] * 1e3 + end[1] / 1e6;
             if (!err) {
-                return callback(null, data.Body, end, params, sizeIdx);
+                return callback(null, data.Body, lat, params, sizeIdx);
             }
             const code = err.toString().split(':')[0];
             if (code === 'NoSuchKey') {
-                return callback(null, null, end, params, sizeIdx);
+                return callback(null, null, lat, params, sizeIdx);
             }
             stderr.write(`get ${key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
@@ -1048,14 +1056,15 @@ class S3Blaster {
             Key: key,
         };
         const begin = process.hrtime();
-        this.s3.deleteObject(object, (err) => {
+        this.s3.deleteObject(object, err => {
             const end = process.hrtime(begin);
+            const lat = end[0] * 1e3 + end[1] / 1e6;
             if (!err) {
-                return callback(null, end, sizeIdx);
+                return callback(null, lat, sizeIdx);
             }
             const code = err.toString().split(':')[0];
             if (code === 'NoSuchKey') {
-                return callback(null, end, sizeIdx);
+                return callback(null, lat, sizeIdx);
             }
             stderr.write(`delete ${key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
@@ -1077,10 +1086,10 @@ class S3Blaster {
     }
 
     updateStats(idx, time) {
-        let lat = time[0] * 1e3 + time[1] / 1e6;
+        let lat = time;
         this.latSum[idx][this.currSizeIdx] += lat;
         this.latSumSq[idx][this.currSizeIdx] += lat * lat;
-        this.nBytes[idx][this.currSizeIdx] += this.currSize;
+        this.nBytes[idx][this.currSizeIdx] += this.size;
         this.nSuccesses[idx][this.currSizeIdx]++;
         if (lat < this.latMin[idx][this.currSizeIdx]) {
             this.latMin[idx][this.currSizeIdx] = lat;
@@ -1095,12 +1104,46 @@ class S3Blaster {
         this.pdf[idx][this.currSizeIdx][lat]++;
     }
 
+    updateStatsFinal(idx) {
+        const maxLatThread = Math.max.apply(Math.max, this.latThread[idx]);
+        const coef = maxLatThread / this.latSum[idx][this.currSizeIdx];
+        if (coef < 1) {
+            // update this.pdf
+            this.pdf[idx][this.currSizeIdx].forEach((frac, lat) => {
+                if (frac > 0) {
+                    const newLat = Math.floor(lat * coef);
+                    this.pdf[idx][this.currSizeIdx][newLat] += frac;
+                    this.pdf[idx][this.currSizeIdx][lat] = 0;
+                }
+            });
+            this.latMin[idx][this.currSizeIdx] *= coef;
+            this.latMax[idx][this.currSizeIdx] *= coef;
+            const nSuccesses = this.nSuccesses[idx][this.currSizeIdx];
+            const latMu = maxLatThread / nSuccesses;
+            const latSigma = Math.sqrt(this.latSumSq[idx][this.currSizeIdx] /
+                            nSuccesses - latMu * latMu) * coef;
+            stderr.write(`${toFixedLength('Final', 6)}`);
+            stderr.write(`${toFixedLength(this.nThreads, 2)}  `);
+            stderr.write(`${toFixedLength(requests[idx], 6)} `);
+            stderr.write(`${toFixedLength(this.size, 8)} `);
+            stderr.write(`${toFixedLength(nSuccesses, 6)} `);
+            stderr.write(`${toFixedLength(' ', 4)} `);
+            stderr.write(`${toFixedLength(' ', 8)} `);
+            stderr.write(`${toFixedLength(' ', 8)} `);
+            stderr.write(`${toFixedLength(latMu.toFixed(3), 8)} `);
+            stderr.write(`${toFixedLength(latSigma.toFixed(3), 8)}\n`);
+            const valuesToPlot =
+                [nSuccesses, latMu.toFixed(3), latSigma.toFixed(5),
+                    this.nThreads.toFixed(3)];
+            this.dataToPlot[idx][this.currSizeIdx].push(valuesToPlot);
+        }
+    }
+
     finalizePdfCdf() {
-        let sum;
         /* normalize pdf, then compute cdf */
         this.pdf.forEach((pdfPerReq, idxA) => {
             pdfPerReq.forEach((pdf, idxB) => {
-                sum = pdf.reduce((a, b) => { return a + b;}, 0);
+                const sum = pdf.reduce((a, b) => {return a + b;}, 0);
                 if (sum > 0) {
                     pdf.forEach((val, idx) => {
                         pdf[idx] = val / sum;
@@ -1118,7 +1161,7 @@ class S3Blaster {
     createBuckets(cb) {
         const bucketName = `${this.bucketPrefix}${this.createdBucketsNb}`;
         stderr.write(`creating bucket ${bucketName}..`);
-        this.createBucket(bucketName, (err) => {
+        this.createBucket(bucketName, err => {
             if (err) {
                 return cb(`error creating bucket ${bucketName}: ${err}\n`);
             }
@@ -1144,7 +1187,7 @@ class S3Blaster {
             }
             let count = 0;
             value.Contents.forEach((obj) => {
-                this.deleteObject(bucketName, obj.Key, (err) => {
+                this.deleteObject(bucketName, obj.Key, err => {
                     if (err) {
                         return cb(err);
                     }
@@ -1163,12 +1206,12 @@ class S3Blaster {
         stderr.write(`clearing databases..`);
         let count = 0;
         this.buckets.forEach((bucketName) => {
-            this.cleanBucket(bucketName, (err) => {
+            this.cleanBucket(bucketName, err => {
                 if (err) {
                     return cb(err);
                 }
                 stderr.write(`deleting bucket ${bucketName}..\n`);
-                this.deleteBucket(bucketName, (err) => {
+                this.deleteBucket(bucketName, err => {
                     if (err) {
                         cb(err);
                         return;
@@ -1190,12 +1233,16 @@ class S3Blaster {
     doSimul(cb) {
         if (this.actionFlag[PUT_OBJ] || this.actionFlag[GET_OBJ] ||
             this.actionFlag[DEL_OBJ] || this.actionFlag[COM_OBJ]) {
+            this.startSimul = process.hrtime();
+            this.latThread = this.reqsToTest.map(() => {
+                return createNewArray(this.nThreads, 0);
+            });
             for (let idx = 0; idx < this.nThreads; idx++) {
                 this.threads++;
                 if (this.simulPolicy === simulMixed) {
                     this.setNextRandomAction.bind(this)();
                 }
-                this.actions[this.actionIdx].bind(this)(cb);
+                this.actions[this.actionIdx].bind(this)(cb, idx);
             }
         } else {
             cb();
@@ -1210,7 +1257,7 @@ class S3Blaster {
         this.value = this.values[this.currSizeIdx];
     }
 
-    doNextAction(reqIdx, cb) {
+    doNextAction(reqIdx, cb, threadIdx) {
         /* if current data size is the last one
          *  - current request is done, disable it
          *  - go next request
@@ -1226,6 +1273,7 @@ class S3Blaster {
                     if (reqIdx === COM_OBJ) {
                         for (let idx = PUT_OBJ; idx <= DEL_OBJ; idx++) {
                             this.printStats(idx);
+                            this.updateStatsFinal(idx);
                             this.resetStats(idx);
                         }
                     }
@@ -1283,6 +1331,7 @@ class S3Blaster {
                 if (this.simulPolicy === simulMixed) {
                     for (let idx = 0; idx < this.currActions.length; idx++) {
                         this.printStats(idx);
+                        this.updateStatsFinal(idx);
                         this.resetStats(idx);
                     }
                     if (!doNextThread.bind(this)()) {
@@ -1291,6 +1340,7 @@ class S3Blaster {
                     }
                 } else {
                     this.printStats(reqIdx);
+                    this.updateStatsFinal(reqIdx);
                     this.resetStats(reqIdx);
                     /* decide for next data size */
                     if (!doNextDataSize.bind(this)()) {
@@ -1315,10 +1365,10 @@ class S3Blaster {
             this.size = this.sizes[this.currSizeIdx];
             this.value = this.values[this.currSizeIdx];
         }
-        this.actions[this.actionIdx].bind(this)(cb);
+        this.actions[this.actionIdx].bind(this)(cb, threadIdx);
     }
 
-    put(cb) {
+    put(cb, threadIdx) {
         this.count++;
         const data = {
             key: `${randomString(5)}` +
@@ -1335,26 +1385,25 @@ class S3Blaster {
                 stderr.write(`put error: ${val} ${process.hrtime()}\n`);
                 return cb(err);
             }
+            this.latThread[PUT_OBJ][threadIdx] += time;
             this.storedKeys[storedKey.SizeIdx].push(storedKey);
             this.updateStats.bind(this)(PUT_OBJ, time);
             if (this.nSuccesses[PUT_OBJ][storedKey.SizeIdx] %
                     this.freqsToShow === 0) {
                 this.printStats(PUT_OBJ);
             }
-            this.doNextAction(PUT_OBJ, cb);
+            this.doNextAction(PUT_OBJ, cb, threadIdx);
         }
         this.putObject(bucketName, data, putCb.bind(this));
     }
 
-    get(cb) {
+    get(cb, threadIdx) {
         this.count++;
         if (this.simulPolicy === simulMixed) {
             if (this.storedKeys[this.currSizeIdx].length === 0) {
                 this.count--;
                 this.setNextRandomAction.bind(this)();
-                process.nextTick(() => {
-                    this.actions[this.actionIdx].bind(this)(cb);
-                });
+                this.actions[this.actionIdx].bind(this)(cb, threadIdx);
                 return;
             }
         }
@@ -1370,25 +1419,24 @@ class S3Blaster {
                 stderr.write(`get error: ${err}\n`);
                 return cb(err);
             }
+            this.latThread[GET_OBJ][threadIdx] += time;
             this.updateStats(GET_OBJ, time);
             if (this.nSuccesses[GET_OBJ][sizeIdx] %
                     this.freqsToShow === 0) {
                 this.printStats(GET_OBJ);
             }
-            this.doNextAction(GET_OBJ, cb);
+            this.doNextAction(GET_OBJ, cb, threadIdx);
         }
         this.getObject(bucketName, key, getCb.bind(this), this.currSizeIdx);
     }
 
-    del(cb) {
+    del(cb, threadIdx) {
         this.count++;
         if (this.simulPolicy === simulMixed) {
             if (this.storedKeys[this.currSizeIdx].length === 0) {
                 this.count--;
                 this.setNextRandomAction.bind(this)();
-                process.nextTick(() => {
-                    this.actions[this.actionIdx].bind(this)(cb);
-                });
+                this.actions[this.actionIdx].bind(this)(cb, threadIdx);
                 return;
             }
         }
@@ -1401,18 +1449,48 @@ class S3Blaster {
                 stderr.write(`delete error: ${err}\n`);
                 return cb(err);
             }
+            this.latThread[DEL_OBJ][threadIdx] += time;
             this.updateStats(DEL_OBJ, time);
             if (this.nSuccesses[DEL_OBJ][sizeIdx] %
                     this.freqsToShow === 0) {
                 this.printStats(DEL_OBJ);
             }
-            this.doNextAction(DEL_OBJ, cb);
+            this.doNextAction(DEL_OBJ, cb, threadIdx);
         }
         this.deleteObject(bucketName, key, delCb.bind(this), this.currSizeIdx);
     }
 
+    list(cb, threadIdx) {
+        this.count++;
+        if (this.simulPolicy === simulMixed) {
+            if (this.storedKeys[this.currSizeIdx].length === 0) {
+                this.count--;
+                this.setNextRandomAction.bind(this)();
+                this.actions[this.actionIdx].bind(this)(cb, threadIdx);
+                return;
+            }
+        }
+        const bucketName =
+            this.buckets[Math.floor(Math.random() * this.nBuckets)];
+        function listCb(err, value, time) {
+            if (err) {
+                this.nFailures[LST_OBJ][sizeIdx]++;
+                stderr.write(`get error: ${err}\n`);
+                return cb(err);
+            }
+            this.latThread[LST_OBJ][threadIdx] += time;
+            this.updateStats(LST_OBJ, time);
+            if (this.nSuccesses[LST_OBJ][sizeIdx] %
+                    this.freqsToShow === 0) {
+                this.printStats(LST_OBJ);
+            }
+            this.doNextAction(LST_OBJ, cb, threadIdx);
+        }
+        this.listObject(bucketName, listCb.bind(this));
+    }
+
     /* put->get->del object */
-    comb(cb) {
+    comb(cb, threadIdx) {
         this.count++;
         const data = {
             key: `${randomString(5)}` +
@@ -1423,7 +1501,7 @@ class S3Blaster {
         const bucketName =
             this.buckets[Math.floor(Math.random() * this.nBuckets)];
 
-        const actionTime = [0, 0];
+        let actionTime = 0;
 
         function delCb(err, dTime, sizeIdx) {
             if (err) {
@@ -1431,8 +1509,9 @@ class S3Blaster {
                 stderr.write(`comb error after del\n`);
                 return cb(err);
             }
-            actionTime[0] += dTime[0];
-            actionTime[1] += dTime[1];
+            actionTime += dTime;
+            this.latThread[DEL_OBJ][threadIdx] += dTime;
+            this.latThread[COM_OBJ][threadIdx] += actionTime;
             this.updateStats(DEL_OBJ, dTime);
             this.updateStats(COM_OBJ, actionTime);
             if (this.nSuccesses[COM_OBJ][sizeIdx] %
@@ -1440,7 +1519,7 @@ class S3Blaster {
                 this.printStats(DEL_OBJ);
                 this.printStats(COM_OBJ);
             }
-            this.doNextAction(COM_OBJ, cb);
+            this.doNextAction(COM_OBJ, cb, threadIdx);
         }
 
         function getCb(err, data, gTime, params, sizeIdx) {
@@ -1449,8 +1528,8 @@ class S3Blaster {
                 stderr.write(`comb error after get: ${err}\n`);
                 return cb(err);
             }
-            actionTime[0] += gTime[0];
-            actionTime[1] += gTime[1];
+            actionTime += gTime;
+            this.latThread[GET_OBJ][threadIdx] += gTime;
             this.updateStats(GET_OBJ, gTime);
             if (this.nSuccesses[GET_OBJ][sizeIdx] %
                     this.freqsToShow === 0) {
@@ -1466,8 +1545,8 @@ class S3Blaster {
                 stderr.write(`comb error after put: ${err}\n`);
                 return cb(err);
             }
-            actionTime[0] += pTime[0];
-            actionTime[1] += pTime[1];
+            actionTime += pTime;
+            this.latThread[PUT_OBJ][threadIdx] += pTime;
             this.updateStats(PUT_OBJ, pTime);
             if (this.nSuccesses[PUT_OBJ][storedKey.SizeIdx] %
                     this.freqsToShow === 0) {
@@ -1503,7 +1582,7 @@ S3Blaster.statsFolder = {
 };
 
 /* ==== For Live Test running directly from this file ==== */
-function list(val) {
+function listValues(val) {
     return val.split(',');
 }
 
@@ -1539,7 +1618,7 @@ function helpS3blaster() {
     stderr.write(`  -g, --graphs <items>: 'a' for avg-std, 'p' for pdf-cdf, `);
     stderr.write(`'s' for data sizes, 't' for threads\n`);
     stderr.write(`(o)Suffix for output files:\n`);
-    stderr.write(`  -f, --name: Suffix for output files\n`);
+    stderr.write(`  -f, --output: suffix for output files\n`);
 }
 
 if (calledFileName === `s3blaster`) {
@@ -1565,13 +1644,13 @@ if (calledFileName === `s3blaster`) {
         .option('-y, --get', 'Get object')
         .option('-z, --delete', 'Delete object')
         .option('-c, --combine', 'Put->Get->Delete object')
-        .option('-g, --graphs <items>', 'Graphs to plot', list)
-        .option('-l, --sizes-list <items>', 'List of data sizes', list)
+        .option('-g, --graphs <items>', 'Graphs to plot', listValues)
+        .option('-l, --sizes-list <items>', 'List of data sizes', listValues)
         .option('-r, --sizes-arr <items>', 'Range of data sizes', range)
         .option('-u, --unit [unit]', 'Data size unit')
-        .option('-f, --name [name]', 'Suffix for output files')
+        .option('-f, --output [output]', 'Suffix for output files')
         .option('-m, --simul [simul]', 'Type of simulation')
-        .option('-d, --distr <items>', 'Step, number of samples', list)
+        .option('-d, --distr <items>', 'Step, number of samples', listValues)
         .option('-h, --helps3')
         .parse(process.argv);
         if (commander.helps3) {
@@ -1592,7 +1671,7 @@ if (calledFileName === `s3blaster`) {
             }
         }
 
-        const _suffix = commander.name || `LiveTest`;
+        const _suffix = commander.output || 'LiveTest';
         const _prefSufName = [`${defaultFileName}${_suffix}`, ''];
         const _reqsToTest = [];
         if (commander.put) {
@@ -1653,14 +1732,14 @@ if (calledFileName === `s3blaster`) {
             }
         }
 
-        let _distrFuncParams = [1, 1000];
+        let _distrFuncParams = [0.5, 500];
         if (commander.distr) {
             _distrFuncParams = commander.distr.map(Number);
         }
 
         const blaster = new S3Blaster();
         let plotter = undefined;
-        before((done) => {
+        before(done => {
             blaster.setParams({
                 prefSufName: _prefSufName,
                 reqsToTest: _reqsToTest,
@@ -1681,25 +1760,25 @@ if (calledFileName === `s3blaster`) {
             });
         });
 
-        it('run test', (done) => {
+        it('run test', done => {
             blaster.setActions(actions);
             blaster.doSimul(done);
         });
 
-        afterEach((done) => {
+        afterEach(done => {
             blaster.updateDataFiles(done);
         });
 
-        after((done) => {
-            blaster.updateStatsFiles((err) => {
+        after(done => {
+            blaster.updateStatsFiles(err => {
                 if (err) {
                     return done(err);
                 }
-                plotter.plotData((err) => {
+                plotter.plotData(err => {
                     if (err) {
                         process.stdout.write(err);
                     }
-                    blaster.clearDataSimul((err) => {
+                    blaster.clearDataSimul(err => {
                         if (err) {
                             return done(err);
                         }
