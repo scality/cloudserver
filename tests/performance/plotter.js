@@ -483,22 +483,21 @@ class Plotter {
     }
 
     createAllGnuFiles(cb) {
-        this.createGnuFile(err => {
-            if (err) {
-                return cb(err);
-            }
-            this.createGnuFileSize(err => {
-                if (err) {
-                    return cb(err);
-                }
-                this.createGnuFileThread(err => {
+        const gnuFilesNb = 4;
+        let count = 0;
+        [this.createGnuFile.bind(this), this.createGnuFileSize.bind(this),
+            this.createGnuFileThread.bind(this),
+            this.createGnuFilePdfCdf.bind(this)].forEach(createFile => {
+                createFile(err => {
                     if (err) {
                         return cb(err);
                     }
-                    this.createGnuFilePdfCdf(cb);
+                    count++;
+                    if (count === gnuFilesNb) {
+                        return cb();
+                    }
                 });
             });
-        });
     }
 
     plotData(cb) {

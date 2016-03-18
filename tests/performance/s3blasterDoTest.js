@@ -147,7 +147,7 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -186,17 +186,17 @@ describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only GET', (done) => {
-        blaster.setActions([false, true]);
+        blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only DELETE', (done) => {
-        blaster.setActions([false, false, true]);
+        blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -235,7 +235,7 @@ describe('Measure individual PUT vs. sizes', function indivPerf() {
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -274,17 +274,17 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only GET', (done) => {
-        blaster.setActions([false, true]);
+        blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only DELETE', (done) => {
-        blaster.setActions([false, false, true]);
+        blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -322,17 +322,17 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only GET', (done) => {
-        blaster.setActions([false, true]);
+        blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only DELETE', (done) => {
-        blaster.setActions([false, false, true]);
+        blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -365,7 +365,7 @@ describe('Measure combined request PUT->GET->DELETE', function combPerf() {
     });
 
     it('Only COMBINATON', (done) => {
-        blaster.setActions([false, false, false, true]);
+        blaster.setActions([COM_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -398,7 +398,7 @@ describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
     });
 
     it('PUT <-> GET <-> DELETE <-> PUT', (done) => {
-        blaster.setActions([true, true, true]);
+        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -432,22 +432,22 @@ describe('Measure serial PUT/GET/DELETE', function serialPerf() {
     });
 
     it('PUT -> GET', (done) => {
-        blaster.setActions([true, true]);
+        blaster.setActions([PUT_OBJ, GET_OBJ]);
         blaster.doSimul(done);
     });
 
     it('GET -> DELETE', (done) => {
-        blaster.setActions([false, true, true]);
+        blaster.setActions([GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
     it('PUT -> DELETE', (done) => {
-        blaster.setActions([true, false, true]);
+        blaster.setActions([PUT_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
     it('PUT -> GET -> DELETE', (done) => {
-        blaster.setActions([true, true, true]);
+        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -481,34 +481,34 @@ describe('Measure personalized PUT GET DELETE', function perPerf() {
     });
 
     it('PUT -> GET', (done) => {
-        blaster.setActions([true, true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Mixed PUT <-> GET <-> DELETE <-> PUT', (done) => {
         blaster.setSimulPolicy(simulMixed);
-        blaster.setActions([true, true, true]);
+        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only PUT', (done) => {
         blaster.setSimulPolicy(simulEach);
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only COMBINATON', (done) => {
-        blaster.setActions([false, false, false, true]);
+        blaster.setActions([COM_OBJ]);
         blaster.doSimul(done);
     });
 
     it('PUT -> GET -> DELETE', (done) => {
-        blaster.setActions([true, true, true]);
+        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
     it('Only PUT', (done) => {
-        blaster.setActions([true]);
+        blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
