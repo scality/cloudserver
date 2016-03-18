@@ -289,7 +289,7 @@ class Plotter {
                 `set style data linespoints\n` +
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
                 `set xtics ${xtics}; set mxtics ${mxtics}\n` +
-                `set grid xtics mxtics\n`;
+                `set grid xtics mxtics ytics\n`;
             this.reqsToTest.forEach((req, reqIdx) => {
                 let colorp = color;
                 let firstLine = 0;
@@ -321,9 +321,9 @@ class Plotter {
                         `set ylabel 'Latency (ms): average'\n`;
                 }
                 content = `${content}` +
-                    `a=3; b=2\n` +
+                    `a=1; b=1; c=1; d=1\n` +
                     `FIT_MAXITER = 1\n` +
-                    `f(x) = a*x + b\n`;
+                    `f(x) = a + b / (c*x + d)\n`;
                 this.sizes.forEach((size, sizeIdx) => {
                     if (sizeIdx === this.sizes.length - 1) {
                         content += `set xlabel 'Number of threads'\n`;
@@ -333,8 +333,9 @@ class Plotter {
                     content = `${content}` +
                         `fit f(x) "${this.threadFile}" ` +
                             `every ${step}::${firstLine} u 1:${col} ` +
-                            `via a,b\n` +
-                        `ti = sprintf("Estimation y = %.2fx+(%.2f)", a, b)\n` +
+                            `via a,b,c,d\n` +
+                        `ti = sprintf("Estimation ` +
+                            `y = %.2f+(%.2f)/(%.2fx+%.2f)", a, b, c, d)\n` +
                         `plot "${this.threadFile}" ` +
                         `every ${step}::${firstLine} u 1:${col} ` +
                         `title '${title}' ` +
@@ -404,8 +405,8 @@ class Plotter {
                         }
                         content +=
                             `set label ` +
-                                `"{/Symbol m} = ${this.stats.mu[col - 2]}\\n` +
-                                `{/Symbol s} = ${this.stats.sigma[col - 2]}" ` +
+                                `"avg = ${this.stats.mu[col - 2]}\\n` +
+                                `std-dev = ${this.stats.sigma[col - 2]}" ` +
                                 `at graph 0.8, graph 0.9 \n` +
                             `set xrange [${this.stats.min[col - 2]}:` +
                                         `${this.stats.max[col - 2]}]\n` +
