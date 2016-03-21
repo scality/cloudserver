@@ -1,6 +1,7 @@
 'use strict'; // eslint-disable-line strict
 
 const errors = require('arsenal').errors;
+const cluster = require('cluster');
 const commander = require('commander');
 const config = require('aws-sdk').config;
 const S3 = require('aws-sdk').S3;
@@ -17,6 +18,22 @@ const LST_OBJ = idx; avaiReq.push(idx++);
 const GET_OBJ = idx; avaiReq.push(idx++);
 const DEL_OBJ = idx; avaiReq.push(idx++);
 const COM_OBJ = idx; avaiReq.push(idx++);
+
+/* get number of workers */
+commander.version('0.0.1')
+.option('-w, --n-workers <nWorkers>', 'Workers number', parseInt)
+.parse(process.argv);
+let nWorkers = 0;
+if (commander.nWorkers) {
+    nWorkers = commander.nWorkers;
+}
+const nProcesses = (nWorkers === 0) ? 1 : nWorkers;
+
+let idWorker = '';
+if (cluster.isWorker) {
+    idWorker = `${cluster.worker.id}`;
+}
+
 /* simulaton schedule:
  *  (1) `Each`: in each `it` test, a request type and a data size is
  *     simulated for a given number of times before go to next one.
@@ -30,7 +47,8 @@ const lastSlashIdx = process.argv[2].lastIndexOf('/');
 const statsFolder = `./${process.argv[2].slice(0, lastSlashIdx)}/stats/`;
 const calledFileName = process.argv[2].slice(lastSlashIdx + 1,
                         process.argv[2].length - 3);
-const defaultFileName = statsFolder + calledFileName;
+const defaultFileName = `${statsFolder}` + `${calledFileName}` +
+                        `${idWorker}_`;
 
 /**
  * stringify to a given length
@@ -42,15 +60,6 @@ function toFixedLength(value, length) {
     return (value.toString().length < length) ?
                         toFixedLength(` ${value}`, length) : value;
 }
-
-/**
- * function generates a string of random lowercase characters
- * @param {number} size: output length
- * @return {string} string of `size` random lowercase characters
- */
-// function randomString(size) {
-//     return Math.random().toString(36).substring(2, 2 + size);
-// }
 
 /**
  * function creates an array containing all `value`
@@ -99,14 +108,14 @@ class S3Blaster {
         this.initRThreads = this.rThreads;
 
         /* For ringr2-nodes */
-        config.accessKeyId = 'QRALRJ5ZB3R1TOCPY1HV';
-        config.secretAccessKey = '8iDUTu8jCl3pNxIW/fmBmJU8VUMhz2ofM0XBI7py';
+        config.accessKeyId = '274BPZYBTQB169B2VEQT';
+        config.secretAccessKey = '4MCRhc=SARh7jkEnYScKmSSVpsQpTvGsgPEkv/B5';
         /* For ringr2-connectors */
         // config.accessKeyId = 'LWLRW219AQG2ICKTIBTZ';
         // config.secretAccessKey = 'FONH2b/k4qKASfcdDAMhfnEWN24aCRLCBetHDVSr';
         /* For localhost */
-        // config.accessKeyId = 'ZF33V2LYF2I6MS2X01LP';
-        // config.secretAccessKey = 'W/sjJbplbN0Re3R134SdKgfdWv3Y5GYhLHptSKom';
+        // config.accessKeyId = 'PXFZQV6ML8F8WEONVVTY';
+        // config.secretAccessKey = 'e+7O2yLhKUX455/ryp3c4778Hp9Asbi8kNk3ij+a';
 
         config.endpoint = `${this.host}:${this.port}`;
         config.sslEnabled = false;
@@ -125,16 +134,12 @@ class S3Blaster {
             this.sizes.push(Math.pow(10, idx) * this.size);
         }
         // random data for tests
-        this.values = this.sizes.map(size => {
-            return crypto.randomBytes(size);
-        });
+        this.values = this.sizes.map(size => crypto.randomBytes(size));
 
         this.currSizeIdx = 0;
         this.value = this.values[this.currSizeIdx];
         this.size = this.sizes[this.currSizeIdx];
-        this.storedKeys = this.sizes.map(() => {
-            return [];
-        });
+        this.storedKeys = this.sizes.map(() => []);
 
         this.currActions = [];
         this.actionsNb = 0;
@@ -149,7 +154,7 @@ class S3Blaster {
         this.actions = [];
 
         let idx = 0;
-        this.reqsToTest = requests.map(() => {return idx++;});
+        this.reqsToTest = requests.map(() => idx++);
         this.threshold = this.nOps;
 
         /* for stats */
@@ -167,11 +172,9 @@ class S3Blaster {
         this.latSumSq = requests.map(() => zeroArr.slice());
         this.latMin = requests.map(() => infinityArr.slice());
         this.latMax = requests.map(() => zeroArr.slice());
-        this.dataToPlot = requests.map(() => {
-            return this.sizes.map(() => {
-                return [];
-            });
-        });
+        this.dataToPlot = requests.map(() =>
+            this.sizes.map(() => [])
+        );
         this.dataForThreadPlot = '';
 
         this.resetStatsAfterEachTest = false;
@@ -189,13 +192,11 @@ class S3Blaster {
         }
         this.prefixName = '';
         this.suffixName = '';
-        this.dataExt = `_dat.txt`;
-        this.funcExt = `_func.txt`;
-        this.sizeExt = `_size.txt`;
-        this.threadExt = `_thread.txt`;
-        this.dataFiles = requests.map(() => {
-            return '';
-        });
+        this.dataExt = '_dat.txt';
+        this.funcExt = '_func.txt';
+        this.sizeExt = '_size.txt';
+        this.threadExt = '_thread.txt';
+        this.dataFiles = requests.map(() => '');
         this.sizeFile = '';
         this.threadFile = '';
 
@@ -207,18 +208,19 @@ class S3Blaster {
         this.samplesNb = 1000; // -> max lat = step * samplesNb
 
         this.zeroFunc = createNewArray(this.samplesNb, 0);
-        this.pdf = requests.map(() => {
-            return this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
-        });
-        this.cdf = requests.map(() => {
-            return this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
-        });
+        this.pdf = requests.map(() =>
+            this.sizes.map(() =>
+                this.zeroFunc.slice()
+            )
+        );
+        this.cdf = requests.map(() =>
+            this.sizes.map(() =>
+                this.zeroFunc.slice()
+            )
+        );
 
         this.latThread = undefined;
+        this.bucketPrefix += `${idWorker}`;
     }
 
     setParams(params) {
@@ -279,20 +281,20 @@ class S3Blaster {
             if (distrFuncParams[0] > 0) {
                 this.step = distrFuncParams[0];
             } else {
-                stderr.write(`1st element of 'distrFuncParams' ` +
-                             `must be a positive number\n`);
+                stderr.write('1st element of distrFuncParams ' +
+                             'must be a positive number\n');
             }
             if (distrFuncParams[1] > 0) {
                 this.samplesNb = parseInt(distrFuncParams[1], 10);
                 this.zeroFunc = createNewArray(this.samplesNb, 0);
             } else {
-                stderr.write(`2nd element of 'distrFuncParams' ` +
-                             `must be a positive integer\n`);
+                stderr.write('2nd element of distrFuncParams ' +
+                             'must be a positive integer\n');
             }
             this.resetPdfCdf.bind(this)();
         } else {
-            stderr.write(`input 'distrFuncParams' must be an array `);
-            stderr.write(`[step, samplesNb]\n`);
+            stderr.write('input `distrFuncParams` must be an array ');
+            stderr.write('[step, samplesNb]\n');
         }
     }
 
@@ -315,7 +317,7 @@ class S3Blaster {
         this.currActions = [];
         this.actions = [];
         this.actionFlag = createNewArray(requests.length, -0);
-        stderr.write(`#Threads   Action      Size    #OK  #NOK  `);
+        stderr.write('PID   #Threads   Action      Size    #OK  #NOK  ');
         stderr.write(`Min      Max      Average   Std. Dev.\n`);
         actions.forEach(action => {
             this.actionFlag[action] = true;
@@ -342,22 +344,18 @@ class S3Blaster {
         if (sizes.constructor === Array) {
             this.sizes = sizes;
             this.size = sizes[0];
-            this.values = sizes.map(size => {
-                return crypto.randomBytes(size);
-            });
+            this.values = sizes.map(size =>
+                crypto.randomBytes(size)
+            );
             if (sizes.length !== this.nbDataSizes) {
-                this.storedKeys = this.sizes.map(() => {
-                    return [];
-                });
+                this.storedKeys = this.sizes.map(() => []);
                 this.nbDataSizes = sizes.length;
                 this.reqsToTest.forEach(req => {
                     this.resetDataStats(req);
                 });
-                this.dataToPlot = requests.map(() => {
-                    return this.sizes.map(() => {
-                        return [];
-                    });
-                });
+                this.dataToPlot = requests.map(() =>
+                    this.sizes.map(() => [])
+                );
             }
         } else {
             stderr.write(`input 'sizes' must be an array of number\n`);
@@ -422,18 +420,16 @@ class S3Blaster {
                 if (avaiReq.indexOf(req) > -1) {
                     this.reqsToTest.push(req);
                 } else {
-                    stderr.write(`input 'reqsToTest' contains wrong ` +
+                    stderr.write('input `reqsToTest` contains wrong ' +
                                     `request ${req}\n`);
                 }
             });
             if (this.reqsToTest.length === 0) {
                 throw new Error(`no request to test\n`);
             }
-            this.dataToPlot = requests.map(() => {
-                return this.sizes.map(() => {
-                    return [];
-                });
-            });
+            this.dataToPlot = requests.map(() =>
+                this.sizes.map(() => [])
+            );
         }
     }
 
@@ -459,9 +455,7 @@ class S3Blaster {
      * @return {function} callback
      */
     createDataFiles(cb) {
-        this.dataFiles = requests.map(() => {
-            return '';
-        });
+        this.dataFiles = requests.map(() => '');
         this.reqsToTest.forEach(reqIdx => {
             const dataFile = this.prefixName + requests[reqIdx] +
                              this.suffixName + this.dataExt;
@@ -472,16 +466,20 @@ class S3Blaster {
         });
         this.sizeFile = this.prefixName + this.suffixName + this.sizeExt;
         this.threadFile = this.prefixName + this.suffixName + this.threadExt;
-        let outputDataFiles = [this.dataFiles, this.funcFiles,
+        const outputDataFiles = [this.dataFiles, this.funcFiles,
                                  this.sizeFile, this.threadFile];
         function createAvgStdFiles(cb) {
             let count = 0;
             const label =
-                `  nb_OK     Average    Std.-dev.  ||`;
+                '  nb_OK     Average    Std.-dev.  ||';
             let content = `# Configuration info\n`;
             /* add metadata info */
+            content += `# host ${this.host}:${this.port}\n`;
+            content += `# bucketsNb ${this.nBuckets}\n`;
+            content += `# processesNb ${nProcesses}\n`;
+            content += `# threadsNb ${this.nThreads}\n`;
             content += `# nOps ${this.threshold}\n`;
-            content += `# sizes`;
+            content += '# sizes';
             this.sizes.forEach(size => {
                 content += ` ${size}`;
             });
@@ -491,7 +489,7 @@ class S3Blaster {
             });
             content += `\n# End_configuration\n`;
             /* add column headers*/
-            content += `# Size  `;
+            content += '# Size  ';
             this.sizes.forEach(size => {
                 const len = (label.length - size.toString().length) / 2;
                 const space = toFixedLength(' ', len);
@@ -509,11 +507,11 @@ class S3Blaster {
                 realDataFiles.push(dataFile);
                 fs.writeFile(dataFile, content, err => {
                     if (err) {
-                        return cb(err);
+                        cb(err); return;
                     }
                     count += 1;
                     if (count === this.reqsToTest.length) {
-                        return cb(null, realDataFiles);
+                        cb(null, realDataFiles); return;
                     }
                 });
             });
@@ -524,16 +522,20 @@ class S3Blaster {
             const maxSize = Math.max.apply(Math, this.sizes);
             let content = `# Configuration info\n`;
             /* add metadata info */
+            content += `# host ${this.host}:${this.port}\n`;
+            content += `# bucketsNb ${this.nBuckets}\n`;
+            content += `# processesNb ${nProcesses}\n`;
+            content += `# threadsNb ${this.nThreads}\n`;
             content += `# nOps ${this.threshold}\n`;
             content += `# statSizes ${minSize} ${maxSize} ` +
                                             `${this.nbDataSizes}\n`;
-            content += `# requests`;
+            content += '# requests';
             this.reqsToTest.forEach(req => {
                 content += ` ${req}`;
             });
             content += `\n# End_configuration\n`;
             /* add column headers*/
-            content += `# ${toFixedLength(`Size`, 8)} `;
+            content += `# ${toFixedLength('Size', 8)} `;
             this.reqsToTest.forEach(req => {
                 content += ` ${toFixedLength(requests[req], 16)} `;
             });
@@ -547,11 +549,11 @@ class S3Blaster {
             this.funcFiles.forEach(funcFile => {
                 fs.writeFile(funcFile, `#\n`, err => {
                     if (err) {
-                        return cb(err);
+                        cb(err); return;
                     }
                     count += 1;
                     if (count === this.funcFiles.length) {
-                        return cb();
+                        cb(); return;
                     }
                 });
             });
@@ -560,8 +562,11 @@ class S3Blaster {
         function createThreadFile(cb) {
             let content = `# Configuration info\n`;
             /* add metadata info */
+            content += `# host ${this.host}:${this.port}\n`;
+            content += `# bucketsNb ${this.nBuckets}\n`;
+            content += `# processesNb ${nProcesses}\n`;
             content += `# nOps ${this.threshold}\n`;
-            content += `# sizes`;
+            content += '# sizes';
             this.sizes.forEach(dataSize => {
                 content += ` ${dataSize}`;
             });
@@ -575,8 +580,8 @@ class S3Blaster {
             });
             content += `\n# End_configuration\n`;
             /* add column headers*/
-            content += `# ${toFixedLength(`#Thread`, 8)} ` +
-                       `${toFixedLength(`Size`, 8)} `;
+            content += `# ${toFixedLength('#Thread', 8)} ` +
+                       `${toFixedLength('Size', 8)} `;
             this.reqsToTest.forEach(req => {
                 content += ` ${toFixedLength(requests[req], 16)} `;
             });
@@ -589,42 +594,42 @@ class S3Blaster {
         const totalFilesType = 4;
         createAvgStdFiles.bind(this)((err, dataFiles) => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             outputDataFiles.splice(0, 1, dataFiles);
             if (count === totalFilesType) {
-                return cb(null, outputDataFiles);
+                cb(null, outputDataFiles); return;
             }
         });
 
         createSizeFile.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             if (count === totalFilesType) {
-                return cb(null, outputDataFiles);
+                cb(null, outputDataFiles); return;
             }
         });
 
         createFuncFiles.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             if (count === totalFilesType) {
-                return cb(null, outputDataFiles);
+                cb(null, outputDataFiles); return;
             }
         });
 
         createThreadFile.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             if (count === totalFilesType) {
-                return cb(null, outputDataFiles);
+                cb(null, outputDataFiles); return;
             }
         });
     }
@@ -637,7 +642,8 @@ class S3Blaster {
                                     nSuccesses - latMu * latMu);
         const latMin = this.latMin[idx][this.currSizeIdx].toFixed(3);
         const latMax = this.latMax[idx][this.currSizeIdx].toFixed(3);
-        stderr.write(`${toFixedLength(this.nThreads, 8)}  `);
+        stderr.write(`${toFixedLength(process.pid, 6)}  `);
+        stderr.write(`${toFixedLength(this.nThreads, 6)}  `);
         stderr.write(`${toFixedLength(requests[idx], 6)} `);
         stderr.write(`${toFixedLength(this.size, 8)} `);
         stderr.write(`${toFixedLength(nSuccesses, 6)} `);
@@ -667,7 +673,7 @@ class S3Blaster {
         this.reqsToTest.forEach(actIdx => {
             const dataFile = this.dataFiles[actIdx];
             let nbPoints = this.dataToPlot[actIdx][0].length;
-            this.dataToPlot[actIdx].forEach((data) => {
+            this.dataToPlot[actIdx].forEach(data => {
                 nbPoints = Math.min(nbPoints, data.length);
             });
             let dataContent = '';
@@ -681,7 +687,7 @@ class S3Blaster {
             }
             fs.appendFile(dataFile, dataContent, err => {
                 if (err) {
-                    return cb(err);
+                    cb(err); return;
                 }
                 count += 1;
                 if (count === this.currActions.length) {
@@ -714,8 +720,12 @@ class S3Blaster {
         this.funcFiles.forEach((file, fileIdx) => {
             dataContent = `# Configuration info\n`;
             /* add metadata info */
+            dataContent += `# host ${this.host}:${this.port}\n`;
+            dataContent += `# bucketsNb ${this.nBuckets}\n`;
+            dataContent += `# processesNb ${nProcesses}\n`;
+            dataContent += `# threadsNb ${this.nThreads}\n`;
             dataContent += `# nOps ${this.threshold}\n`;
-            dataContent += `# sizes`;
+            dataContent += '# sizes';
             this.sizes.forEach(size => {
                 dataContent += ` ${size}`;
             });
@@ -777,7 +787,7 @@ class S3Blaster {
             dataContent += `\n`;
             fs.writeFile(file, dataContent, err => {
                 if (err) {
-                    return cb(err);
+                    cb(err); return;
                 }
                 /* distribution function */
                 dataContent = '';
@@ -797,11 +807,11 @@ class S3Blaster {
                 }
                 fs.appendFile(file, dataContent, err => {
                     if (err) {
-                        return cb(err);
+                        cb(err); return;
                     }
                     count += 1;
                     if (count === this.funcFiles.length) {
-                        return cb();
+                        cb(); return;
                     }
                 });
             });
@@ -822,7 +832,7 @@ class S3Blaster {
         let dataContent = '';
         this.sizes.forEach((size, sizeIdx) => {
             dataContent += `${toFixedLength(size, 10)} `;
-            this.reqsToTest.forEach((actIdx) => {
+            this.reqsToTest.forEach(actIdx => {
                 const arr = this.dataToPlot[actIdx][sizeIdx][
                                 this.dataToPlot[actIdx][sizeIdx].length - 1];
                 if (arr && arr.length > 2) {
@@ -851,7 +861,7 @@ class S3Blaster {
         this.sizes.forEach((size, sizeIdx) => {
             dataContent += `${toFixedLength(this.nThreads, 10)}` +
                            `${toFixedLength(size, 8)} `;
-            this.reqsToTest.forEach((actIdx) => {
+            this.reqsToTest.forEach(actIdx => {
                 const arr = this.dataToPlot[actIdx][sizeIdx][
                             this.dataToPlot[actIdx][sizeIdx].length - 1];
                 if (arr && arr.length > 2) {
@@ -878,32 +888,32 @@ class S3Blaster {
         let count = 0;
         this.updateFuncFiles.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             if (count === nbStatsFile) {
-                return cb();
+                cb(); return;
             }
         });
 
         this.updateSizeFile.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             count += 1;
             if (count === nbStatsFile) {
-                return cb();
+                cb(); return;
             }
         });
 
         this.updateThreadFile.bind(this)(err => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             this.dataForThreadPlot = '';
             count += 1;
             if (count === nbStatsFile) {
-                return cb();
+                cb(); return;
             }
         });
     }
@@ -930,26 +940,26 @@ class S3Blaster {
         this.latMin[req] = infinityArr.slice();
         this.latMax[req] = zeroArr.slice();
         if (this.resetStatsAfterEachTest) {
-            this.pdf[req] = this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
-            this.cdf[req] = this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
+            this.pdf[req] = this.sizes.map(() =>
+                this.zeroFunc.slice()
+            );
+            this.cdf[req] = this.sizes.map(() =>
+                this.zeroFunc.slice()
+            );
         }
     }
 
     resetPdfCdf() {
-        this.pdf = requests.map(() => {
-            return this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
-        });
-        this.cdf = requests.map(() => {
-            return this.sizes.map(() => {
-                return this.zeroFunc.slice();
-            });
-        });
+        this.pdf = requests.map(() =>
+            this.sizes.map(() =>
+                this.zeroFunc.slice()
+            )
+        );
+        this.cdf = requests.map(() =>
+            this.sizes.map(() =>
+                this.zeroFunc.slice()
+            )
+        );
     }
 
     resetDataToPlot(cb) {
@@ -1001,7 +1011,7 @@ class S3Blaster {
             }
             stderr.write(`list ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
-            callback(err);
+            return callback(err);
         });
     }
 
@@ -1025,7 +1035,7 @@ class S3Blaster {
             }
             stderr.write(`put ${data.key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
-            callback(err, value);
+            return callback(err, value);
         });
     }
 
@@ -1047,7 +1057,7 @@ class S3Blaster {
             }
             stderr.write(`get ${key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
-            callback(err);
+            return callback(err);
         });
     }
 
@@ -1069,7 +1079,7 @@ class S3Blaster {
             }
             stderr.write(`delete ${key} in ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
-            callback(err);
+            return callback(err);
         });
     }
 
@@ -1080,14 +1090,14 @@ class S3Blaster {
     /* get min value of 2D array */
     getMinValue(arr) {
         let arr1D = [];
-        this.currActions.forEach((idx) => {
+        this.currActions.forEach(idx => {
             arr1D = arr1D.concat(arr[idx]);
         });
         return Math.min.apply(Math, arr1D);
     }
 
     updateStats(idx, time) {
-        let lat = time;
+        let lat = time / nProcesses;
         this.latSum[idx][this.currSizeIdx] += lat;
         this.latSumSq[idx][this.currSizeIdx] += lat * lat;
         this.nBytes[idx][this.currSizeIdx] += this.size;
@@ -1144,10 +1154,10 @@ class S3Blaster {
         /* normalize pdf, then compute cdf */
         this.pdf.forEach((pdfPerReq, idxA) => {
             pdfPerReq.forEach((pdf, idxB) => {
-                const sum = pdf.reduce((a, b) => {return a + b;}, 0);
+                const sum = pdf.reduce((a, b) => a + b, 0);
                 if (sum > 0) {
                     pdf.forEach((val, idx) => {
-                        pdf[idx] = val / sum;
+                        pdf[idx] = val / sum; // eslint-disable-line
                     });
                     /* compute cdf from pdf */
                     pdf.reduce((a, b, idx) => {
@@ -1160,43 +1170,45 @@ class S3Blaster {
     }
 
     createBuckets(cb) {
+        if (cluster.isMaster && nWorkers > 0) {
+            cb(); return;
+        }
         const bucketName = `${this.bucketPrefix}${this.createdBucketsNb}`;
         stderr.write(`creating bucket ${bucketName}..`);
         this.createBucket(bucketName, err => {
             if (err) {
-                return cb(`error creating bucket ${bucketName}: ${err}\n`);
+                cb(`error creating bucket ${bucketName}: ${err}\n`);
+                return;
             }
             stderr.write(`done\n`);
             this.buckets.push(bucketName);
             this.createdBucketsNb += 1;
             if (this.createdBucketsNb === this.nBuckets) {
-                return cb();
+                cb(); return;
             }
-            process.nextTick(() => {
-                this.createBuckets(cb);
-            });
+            this.createBuckets(cb);
+            return;
         });
     }
 
     cleanBucket(bucketName, cb) {
         this.listObject(bucketName, (err, value) => {
             if (err) {
-                return cb(err);
+                cb(err); return;
             }
             if (value.Contents.length === 0) {
-                return cb();
+                cb(); return;
             }
             let count = 0;
-            value.Contents.forEach((obj) => {
+            value.Contents.forEach(obj => {
                 this.deleteObject(bucketName, obj.Key, err => {
                     if (err) {
-                        return cb(err);
+                        cb(err); return;
                     }
                     count += 1;
                     if (count === value.Contents.length) {
-                        // process.nextTick(() => {
-                        return this.cleanBucket(bucketName, cb);
-                        // });
+                        this.cleanBucket(bucketName, cb);
+                        return;
                     }
                 });
             });
@@ -1204,15 +1216,15 @@ class S3Blaster {
     }
 
     clearDataSimul(cb) {
-        stderr.write(`clearing databases..`);
+        stderr.write('clearing databases..');
         let count = 0;
-        this.buckets.forEach((bucketName) => {
+        this.buckets.forEach(bucketName => {
             this.cleanBucket(bucketName, err => {
                 if (err) {
                     return cb(err);
                 }
                 stderr.write(`deleting bucket ${bucketName}..\n`);
-                this.deleteBucket(bucketName, err => {
+                return this.deleteBucket(bucketName, err => {
                     if (err) {
                         cb(err);
                         return;
@@ -1236,15 +1248,30 @@ class S3Blaster {
             this.actionFlag[DEL_OBJ] || this.actionFlag[COM_OBJ] ||
             this.actionFlag[LST_OBJ]) {
             this.startSimul = process.hrtime();
-            this.latThread = requests.map(() => {
-                return createNewArray(this.nThreads, 0);
-            });
-            for (let idx = 0; idx < this.nThreads; idx++) {
-                this.threads++;
-                if (this.simulPolicy === simulMixed) {
-                    this.setNextRandomAction.bind(this)();
+            this.latThread = requests.map(() =>
+                createNewArray(this.nThreads, 0)
+            );
+            if (cluster.isMaster) {
+                for (let i = 0; i < nWorkers; i++) {
+                    cluster.fork();
                 }
-                this.actions[this.actionIdx].bind(this)(cb, idx);
+                if (nWorkers === 0) {
+                    for (let idx = 0; idx < this.nThreads; idx++) {
+                        this.threads++;
+                        if (this.simulPolicy === simulMixed) {
+                            this.setNextRandomAction.bind(this)();
+                        }
+                        this.actions[this.actionIdx].bind(this)(cb, idx);
+                    }
+                }
+            } else {
+                for (let idx = 0; idx < this.nThreads; idx++) {
+                    this.threads++;
+                    if (this.simulPolicy === simulMixed) {
+                        this.setNextRandomAction.bind(this)();
+                    }
+                    this.actions[this.actionIdx].bind(this)(cb, idx);
+                }
             }
         } else {
             cb();
@@ -1383,7 +1410,7 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(PUT_OBJ);
             }
-            this.doNextAction(PUT_OBJ, cb, threadIdx);
+            return this.doNextAction(PUT_OBJ, cb, threadIdx);
         }
         this.putObject(bucketName, data, putCb.bind(this));
     }
@@ -1424,7 +1451,7 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(GET_OBJ);
             }
-            this.doNextAction(GET_OBJ, cb, threadIdx);
+            return this.doNextAction(GET_OBJ, cb, threadIdx);
         }
         this.getObject(bucketName, key, getCb.bind(this), this.currSizeIdx);
     }
@@ -1464,7 +1491,7 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(DEL_OBJ);
             }
-            this.doNextAction(DEL_OBJ, cb, threadIdx);
+            return this.doNextAction(DEL_OBJ, cb, threadIdx);
         }
         this.deleteObject(bucketName, key, delCb.bind(this), this.currSizeIdx);
     }
@@ -1497,7 +1524,7 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(LST_OBJ);
             }
-            this.doNextAction(LST_OBJ, cb, threadIdx);
+            return this.doNextAction(LST_OBJ, cb, threadIdx);
         }
         const prefix = `key_S${this.size}_T${this.nThreads}`;
         this.listObject(bucketName, listCb.bind(this), null, prefix);
@@ -1532,7 +1559,7 @@ class S3Blaster {
                 this.printStats(DEL_OBJ);
                 this.printStats(COM_OBJ);
             }
-            this.doNextAction(COM_OBJ, cb, threadIdx);
+            return this.doNextAction(COM_OBJ, cb, threadIdx);
         }
 
         function getCb(err, data, gTime, params, sizeIdx) {
@@ -1548,7 +1575,7 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(GET_OBJ);
             }
-            this.deleteObject(params.Bucket, params.Key,
+            return this.deleteObject(params.Bucket, params.Key,
                                 delCb.bind(this), sizeIdx);
         }
 
@@ -1565,8 +1592,8 @@ class S3Blaster {
                     this.freqsToShow === 0) {
                 this.printStats(PUT_OBJ);
             }
-            this.getObject(storedKey.Bucket, storedKey.Key, getCb.bind(this),
-                            storedKey.SizeIdx);
+            return this.getObject(storedKey.Bucket, storedKey.Key,
+                                    getCb.bind(this), storedKey.SizeIdx);
         }
 
         this.putObject(bucketName, data, putCb.bind(this));
@@ -1614,7 +1641,7 @@ function helpS3blaster() {
     stderr.write(`(o)Order of requests:\n`);
     stderr.write(`  -o, --order-reqs: order of requests\n`);
     stderr.write(`(o)Simulation policy:\n`);
-    stderr.write(`  -m, --simul [simul]', 'Type of simulation, `);
+    stderr.write('  -m, --simul [simul]', 'Type of simulation, ');
     stderr.write(`either 'e' for simulEach, 'm' for simulMixed\n`);
     stderr.write(`(o)Number of operations per one set of parameters:\n`);
     stderr.write(`  -n, --n-ops: Number of operations\n`);
@@ -1623,22 +1650,24 @@ function helpS3blaster() {
     stderr.write(`  -u, --n-buckets: number of buckets\n`);
     stderr.write(`(o)Data sizes:\n`);
     stderr.write(`  -s, --sizes-set <items>: data sizes, separated by ','\n`);
-    stderr.write(`  -r, --sizes-arr <a>:<b>:<c>: range of data sizes, from `);
-    stderr.write(`'a' to 'c' with step 'b'. Its priority is less than `);
+    stderr.write('  -r, --sizes-arr <a>:<b>:<c>: range of data sizes, from ');
+    stderr.write('`a` to `c` with step `b`. Its priority is less than ');
     stderr.write(`--sizes-list\n`);
-    stderr.write(`  -u, --unit: data size unit, `);
+    stderr.write('  -u, --unit: data size unit, ');
     stderr.write(`either '1' for bytes, 'k' for KB, 'm' for MB\n`);
     stderr.write(`(o)Number of threads:\n`);
-    stderr.write(`  -N, --r-threads <a>:<b>:<c>: `);
+    stderr.write('  -N, --r-threads <a>:<b>:<c>: ');
     stderr.write(`Threads range from 'a' to 'c' with step 'b'\n`);
     stderr.write(`(o)Graphs to plot:\n`);
-    stderr.write(`  -g, --graphs <items>: 'a' for avg-std, 'p' for pdf-cdf, `);
+    stderr.write('  -g, --graphs <items>: `a` for avg-std, `p` for pdf-cdf, ');
     stderr.write(`'s' for data sizes, 't' for threads\n`);
     stderr.write(`(o)Suffix for output files:\n`);
     stderr.write(`  -f, --output: suffix for output files\n`);
+    stderr.write(`(o)Clustering:\n`);
+    stderr.write(`  -w, --n-workers: workers number\n`);
 }
 
-if (calledFileName === `s3blaster`) {
+function mochaTest() {
     const Plotter = require('./plotter');
 
     /* Available graph to be plotted:
@@ -1652,7 +1681,6 @@ if (calledFileName === `s3blaster`) {
     const graphs = Plotter.graphs;
     const KB = 1024;
     const MB = KB * KB;
-
 
     describe('Measure performance', function Perf() {
         this.timeout(0);
@@ -1685,7 +1713,7 @@ if (calledFileName === `s3blaster`) {
                 _simulPolicy = simulMixed;
             } else {
                 _simulPolicy = simulEach;
-                stderr.write(`wrong arg for 'simulPolicy'. `);
+                stderr.write('wrong arg for `simulPolicy`. ');
                 stderr.write(`Set it as simulEach\n`);
             }
         }
@@ -1794,7 +1822,7 @@ if (calledFileName === `s3blaster`) {
                 }
                 plotter = new Plotter(arrDataFiles, _prefSufName[0],
                                         _graphsToPlot);
-                done();
+                return done();
             });
         });
 
@@ -1812,7 +1840,7 @@ if (calledFileName === `s3blaster`) {
                 if (err) {
                     return done(err);
                 }
-                plotter.plotData(err => {
+                return plotter.plotData(err => {
                     if (err) {
                         process.stdout.write(err);
                     }
@@ -1826,4 +1854,8 @@ if (calledFileName === `s3blaster`) {
             });
         });
     });
+}
+
+if (calledFileName === 's3blaster') {
+    mochaTest();
 }

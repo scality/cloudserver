@@ -10,9 +10,7 @@ const reqsString = S3Blaster.requestsString.reqs;
 
 function getArrOfString(arr) {
     if (arr !== undefined && arr.constructor === Array) {
-        if (arr.every((dataFile) => {
-            return (typeof dataFile === 'string');
-        })) {
+        if (arr.every(dataFile => typeof dataFile === 'string')) {
             return arr.slice();
         }
     }
@@ -33,10 +31,10 @@ function convertSize(size) {
     return `${size / GB}GB`;
 }
 
-const avgStdGraph = `avg-std`;
-const pdfCdfGraph = `pdf-cdf`;
-const statSizeGraph = `stat-size`;
-const threadGraph = `thread`;
+const avgStdGraph = 'avg-std';
+const pdfCdfGraph = 'pdf-cdf';
+const statSizeGraph = 'stat-size';
+const threadGraph = 'thread';
 
 class Plotter {
     /**
@@ -51,9 +49,9 @@ class Plotter {
      * @return {this} Plotter
      */
     constructor(arrDataFiles, fileName, graphsToPlot) {
-        const gnuExt = `.gnu`;
-        const outputExt = `.pdf`;
-        const _fileName = fileName || `output`;
+        const gnuExt = '.gnu';
+        const outputExt = '.pdf';
+        const _fileName = fileName || 'output';
         this.gnuFile = _fileName + gnuExt;
         this.outputFile = _fileName + outputExt;
         this.gnuSizeFile = `${_fileName}_size${gnuExt}`;
@@ -97,6 +95,25 @@ class Plotter {
             sizes: [],
             threads: [],
         };
+        this.config = {
+            host: '',
+            nBkts: 0,
+            nProcs: 0,
+            nThreads: 0,
+        };
+    }
+
+    genLegend(skip) {
+        let legend = `host: ${this.config.host}\\n` +
+                     `number of buckets/worker: ${this.config.nBkts}\\n`;
+        if (skip && skip.indexOf('w') === -1) {
+            legend += `number of workers: ${this.config.nProcs}\\n`;
+        }
+        if (skip && skip.indexOf('t') === -1) {
+            legend += `number of threads/worker: ${this.config.nThreads}\\n`;
+        }
+        legend += `number of observations: ${this.stats.nOps}`;
+        return legend;
     }
 
     /**
@@ -111,9 +128,21 @@ class Plotter {
             terminal: true,
         });
         rl.on('line', line => {
-            const arr = line.toString().split(" ");
+            const arr = line.toString().split(' ');
             if (arr[1] === 'nOps') {
                 this.stats.nOps = parseInt(arr[2], 10);
+            }
+            if (arr[1] === 'host') {
+                this.config.host = arr.slice(2);
+            }
+            if (arr[1] === 'bucketsNb') {
+                this.config.nBkts = parseInt(arr.slice(2), 10);
+            }
+            if (arr[1] === 'processesNb') {
+                this.config.nProcs = parseInt(arr.slice(2), 10);
+            }
+            if (arr[1] === 'threadsNb') {
+                this.config.nThreads = parseInt(arr.slice(2), 10);
             }
             if (arr[1] === 'sizes') {
                 this.sizes = arr.slice(2);
@@ -142,9 +171,7 @@ class Plotter {
             if (arr[1] === 'End_configuration') {
                 rl.close();
             }
-        }).on('close', () => {
-            return cb(null);
-        });
+        }).on('close', () => cb());
     }
 
     /**
@@ -162,8 +189,10 @@ class Plotter {
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
                 `set grid\n` +
                 `set terminal postscript enhanced color font "CMR14"\n` +
+                `set label "${this.genLegend()}" ` +
+                    `at graph 0.8, graph 0.9 \n` +
                 `set output '| ps2pdf - ${this.outputFile}'\n` +
-                `plot `;
+                'plot ';
             let color = 1;
             this.dataFiles.forEach((dataFile, fileIdx) => {
                 let col = 1;
@@ -186,13 +215,11 @@ class Plotter {
                     }
                 }
             });
-            fs.writeFile(this.gnuFile, content, (err) => {
-                return genCb(err);
-            });
+            fs.writeFile(this.gnuFile, content, err => genCb(err));
         }
-        this.getConfigInfo(this.dataFiles[0], (err) => {
+        this.getConfigInfo(this.dataFiles[0], err => {
             if (err) return cb(err);
-            genGnuFile.bind(this)(cb);
+            return genGnuFile.bind(this)(cb);
         });
     }
 
@@ -215,9 +242,11 @@ class Plotter {
                 `set xlabel 'Data sizes (${unitString})'\n` +
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
                 `set grid\n` +
+                `set label "${this.genLegend()}" ` +
+                    `at graph 0.1, graph 0.9 \n` +
                 `set terminal postscript enhanced color font "CMR14"\n` +
                 `set output '| ps2pdf - ${this.outputSizeFile}'\n` +
-                `plot `;
+                'plot ';
             let color = 1;
             let col = 1;
             this.reqsToTest.forEach((req, idx) => {
@@ -234,23 +263,21 @@ class Plotter {
                     content += `,\\\n`;
                 }
             });
-            fs.writeFile(this.gnuSizeFile, content, (err) => {
-                return genCb(err);
-            });
+            fs.writeFile(this.gnuSizeFile, content, err => genCb(err));
         }
-        this.getConfigInfo(this.sizeFile, (err) => {
+        this.getConfigInfo(this.sizeFile, err => {
             if (err) return cb(err);
             if (this.stats.sizes[0] < KB) {
                 unit = 1;
-                unitString = `B`;
+                unitString = 'B';
             } else if (this.stats.sizes[0] < MB) {
                 unit = KB;
-                unitString = `KB`;
+                unitString = 'KB';
             } else {
                 unit = MB;
-                unitString = `MB`;
+                unitString = 'MB';
             }
-            genGnuFile.bind(this)(cb);
+            return genGnuFile.bind(this)(cb);
         });
     }
 
@@ -284,8 +311,8 @@ class Plotter {
                  *   -> graphs on a row correspond to a data size
                  */
                 `set multiplot layout ${layout} columnsfirst ` +
-                    `title "{/:Bold Latency vs. #threads, ` +
-                    ` ${this.stats.nOps} requests/point}"\n` +
+                    'title "{/:Bold Latency vs. #threads, ' +
+                    ` ${this.genLegend('t')}}"\n` +
                 `set style data linespoints\n` +
                 `set ylabel 'Latency (ms): average and standard deviation'\n` +
                 `set xtics ${xtics}; set mxtics ${mxtics}\n` +
@@ -293,7 +320,7 @@ class Plotter {
             this.reqsToTest.forEach((req, reqIdx) => {
                 let colorp = color;
                 let firstLine = 0;
-                content += `plot `;
+                content += 'plot ';
                 this.sizes.forEach((size, idx) => {
                     const title = `${reqsString[req]}`;
                     content = `${content}` +
@@ -334,7 +361,7 @@ class Plotter {
                         `fit f(x) "${this.threadFile}" ` +
                             `every ${step}::${firstLine} u 1:${col} ` +
                             `via a,b,c,d\n` +
-                        `ti = sprintf("Estimation ` +
+                        'ti = sprintf("Estimation ' +
                             `y = %.2f+(%.2f)/(%.2fx+%.2f)", a, b, c, d)\n` +
                         `plot "${this.threadFile}" ` +
                         `every ${step}::${firstLine} u 1:${col} ` +
@@ -351,13 +378,11 @@ class Plotter {
                 color = colorp;
             });
             content += `unset multiplot; set output\n`;
-            fs.writeFile(this.gnuThreadFile, content, (err) => {
-                return genCb(err);
-            });
+            fs.writeFile(this.gnuThreadFile, content, err => genCb(err));
         }
-        this.getConfigInfo(this.threadFile, (err) => {
+        this.getConfigInfo(this.threadFile, err => {
             if (err) return cb(err);
-            genGnuFile.bind(this)(cb);
+            return genGnuFile.bind(this)(cb);
         });
     }
 
@@ -369,9 +394,9 @@ class Plotter {
      */
     createGnuFilePdfCdf(cb) {
         function genGnuFile(genCb) {
-            const yLabel = [`Probability distribution function, ` +
+            const yLabel = ['Probability distribution function, ' +
                                 `${this.stats.nOps} operations`,
-                            `Cumulative distribution function, ` +
+                            'Cumulative distribution function, ' +
                                 `${this.stats.nOps} operations`];
             const nbX = this.reqsToTest.length;
             const nbY = this.sizes.length;
@@ -390,7 +415,8 @@ class Plotter {
                  */
                 content +=
                     `set multiplot layout ${layout} ` +
-                    `rowsfirst title "{/:Bold=6 ${yLabel[fileIdx]}}"\n`;
+                    `rowsfirst title "{/:Bold=6 ${yLabel[fileIdx]}, ` +
+                        `${this.genLegend()}}"\n`;
                 let color = 1;
                 let col = 2;
                 this.sizes.forEach((size, idx) => {
@@ -404,7 +430,7 @@ class Plotter {
                                 `set title '${reqsString[reqIdx]}'\n`;
                         }
                         content +=
-                            `set label ` +
+                            'set label ' +
                                 `"avg = ${this.stats.mu[col - 2]}\\n` +
                                 `std-dev = ${this.stats.sigma[col - 2]}" ` +
                                 `at graph 0.8, graph 0.9 \n` +
@@ -436,26 +462,24 @@ class Plotter {
                            `all sizes"\n`;
                 this.reqsToTest.forEach((reqIdx, idxp) => {
                     col = 2 + idxp;
-                    const minXReq = this.sizes.map((size, idx) => {
-                        return this.stats.min[idxp +
-                                              idx * this.reqsToTest.length];
-                    });
-                    const maxXReq = this.sizes.map((size, idx) => {
-                        return this.stats.max[idxp +
-                                              idx * this.reqsToTest.length];
-                    });
+                    const minXReq = this.sizes.map((size, idx) =>
+                        this.stats.min[idxp + idx * this.reqsToTest.length]
+                    );
+                    const maxXReq = this.sizes.map((size, idx) =>
+                        this.stats.max[idxp + idx * this.reqsToTest.length]
+                    );
                     const minXAllSizes = Math.min.apply(Math, minXReq);
                     const maxXAllSizes = Math.max.apply(Math, maxXReq);
                     content += `set xrange [${minXAllSizes}:${maxXAllSizes}]\n`;
                     content += `set ylabel '${reqsString[reqIdx]}'\n`;
-                    content += `plot `;
+                    content += 'plot ';
                     this.sizes.forEach((size, idx) => {
                         content +=
                             `"${dataFile}" u ${1}:${col} ` +
                             `title 'size = ${convertSize(size)}' ` +
                             `lc ${color} lt 1 lw 1`;
                         if (idx < this.sizes.length - 1) {
-                            content += `,\\`;
+                            content += ',\\';
                         }
                         content += `\n`;
                         col += this.reqsToTest.length;
@@ -465,7 +489,7 @@ class Plotter {
                 });
                 content += `unset multiplot; set output\n`;
                 fs.writeFile(this.gnuPdfCdf[fileIdx], content,
-                    (err) => { // eslint-disable-line
+                    err => { // eslint-disable-line
                         if (err) {
                             return genCb(err);
                         }
@@ -476,9 +500,9 @@ class Plotter {
                     });
             });
         }
-        this.getConfigInfo(this.funcFiles[0], (err) => {
+        this.getConfigInfo(this.funcFiles[0], err => {
             if (err) return cb(err);
-            genGnuFile.bind(this)(cb);
+            return genGnuFile.bind(this)(cb);
         });
     }
 
@@ -490,11 +514,13 @@ class Plotter {
             this.createGnuFilePdfCdf.bind(this)].forEach(createFile => {
                 createFile(err => {
                     if (err) {
-                        return cb(err);
+                        cb(err);
+                        return;
                     }
                     count++;
                     if (count === gnuFilesNb) {
-                        return cb();
+                        cb();
+                        return;
                     }
                 });
             });
@@ -504,9 +530,10 @@ class Plotter {
         stderr.write('plotting graphs..');
         this.createAllGnuFiles(err => {
             if (err) {
-                return cb(err);
+                cb(err);
+                return;
             }
-            let cmd = ``;
+            let cmd = '';
             if (this.graphsToPlot === undefined ||
                 (this.graphsToPlot.length === 0)) {
                 cmd += `gnuplot ${this.gnuFile}; `;
@@ -532,7 +559,7 @@ class Plotter {
             }
 
             const gnuplot = spawn('bash', ['-c', cmd]);
-            gnuplot.on('exit', (err) => {
+            gnuplot.on('exit', err => {
                 if (err) {
                     return cb(err);
                 }
@@ -540,7 +567,7 @@ class Plotter {
                 return cb();
             });
 
-            gnuplot.stderr.on('data', (err) => {
+            gnuplot.stderr.on('data', err => {
                 if (err) {
                     stderr.write(`gnuplot's message: ${err}\n`);
                 }
