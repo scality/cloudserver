@@ -36,15 +36,15 @@ const defaultFileName = statsFolder +
                           process.argv[2].lastIndexOf('.'));
 
 function doAfterTest(blaster, plotter, cb) {
-    blaster.updateStatsFiles((err) => {
+    blaster.updateStatsFiles(err => {
         if (err) {
             return cb(err);
         }
-        plotter.plotData((err) => {
+        return plotter.plotData(err => {
             if (err) {
                 process.stdout.write(err);
             }
-            blaster.clearDataSimul((err) => {
+            blaster.clearDataSimul(err => {
                 if (err) {
                     return cb(err);
                 }
@@ -126,7 +126,7 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
     const _prefSufName = [`${defaultFileName}PutOnlyThread`, ''];
     const _reqsToTest = [PUT_OBJ];
     const graphsToPlot = [graphs.thread];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -142,20 +142,20 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            done();
+            return done();
         });
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -165,7 +165,7 @@ describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
     const _prefSufName = [`${defaultFileName}Thread`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
     const graphsToPlot = [graphs.thread];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -181,30 +181,30 @@ describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            done();
+            return done();
         });
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only GET', (done) => {
+    it('Only GET', done => {
         blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only DELETE', (done) => {
+    it('Only DELETE', done => {
         blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -214,7 +214,7 @@ describe('Measure individual PUT vs. sizes', function indivPerf() {
     const _prefSufName = [`${defaultFileName}PutOnlySize`, ''];
     const _reqsToTest = [PUT_OBJ];
     const graphsToPlot = [graphs.statSize];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -230,20 +230,20 @@ describe('Measure individual PUT vs. sizes', function indivPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            done();
+            return done();
         });
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -253,7 +253,7 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
     const _prefSufName = [`${defaultFileName}Size`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
     const graphsToPlot = [graphs.statSize];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -269,30 +269,30 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            done();
+            return done();
         });
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only GET', (done) => {
+    it('Only GET', done => {
         blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only DELETE', (done) => {
+    it('Only DELETE', done => {
         blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -301,7 +301,7 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Each`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -317,30 +317,30 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            done();
+            return done();
         });
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only GET', (done) => {
+    it('Only GET', done => {
         blaster.setActions([GET_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only DELETE', (done) => {
+    it('Only DELETE', done => {
         blaster.setActions([DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -349,7 +349,7 @@ describe('Measure combined request PUT->GET->DELETE', function combPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Comb`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -360,20 +360,20 @@ describe('Measure combined request PUT->GET->DELETE', function combPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            done();
+            return done();
         });
     });
 
-    it('Only COMBINATON', (done) => {
+    it('Only COMBINATON', done => {
         blaster.setActions([COM_OBJ]);
         blaster.doSimul(done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
         blaster.updateDataFiles(done);
     });
 
-    after((done) => {
+    after(done => {
         doAfterTest(blaster, plotter, done);
     });
 });
@@ -382,7 +382,7 @@ describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Mixed`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -393,21 +393,21 @@ describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            done();
+            return done();
         });
     });
 
-    it('PUT <-> GET <-> DELETE <-> PUT', (done) => {
+    it('PUT <-> GET <-> DELETE <-> PUT', done => {
         blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    after((done) => {
-        blaster.updateDataFiles((err) => {
+    after(done => {
+        blaster.updateDataFiles(err => {
             if (err) {
                 return done(err);
             }
-            doAfterTest(blaster, plotter, done);
+            return doAfterTest(blaster, plotter, done);
         });
     });
 });
@@ -416,7 +416,7 @@ describe('Measure serial PUT/GET/DELETE', function serialPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Serial`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -427,36 +427,36 @@ describe('Measure serial PUT/GET/DELETE', function serialPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            done();
+            return done();
         });
     });
 
-    it('PUT -> GET', (done) => {
+    it('PUT -> GET', done => {
         blaster.setActions([PUT_OBJ, GET_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('GET -> DELETE', (done) => {
+    it('GET -> DELETE', done => {
         blaster.setActions([GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('PUT -> DELETE', (done) => {
+    it('PUT -> DELETE', done => {
         blaster.setActions([PUT_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('PUT -> GET -> DELETE', (done) => {
+    it('PUT -> GET -> DELETE', done => {
         blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    after((done) => {
-        blaster.updateDataFiles((err) => {
+    after(done => {
+        blaster.updateDataFiles(err => {
             if (err) {
                 return done(err);
             }
-            doAfterTest(blaster, plotter, done);
+            return doAfterTest(blaster, plotter, done);
         });
     });
 });
@@ -465,7 +465,7 @@ describe('Measure personalized PUT GET DELETE', function perPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Personalized`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ];
-    before((done) => {
+    before(done => {
         blaster.setParams({
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
@@ -476,48 +476,48 @@ describe('Measure personalized PUT GET DELETE', function perPerf() {
                 return done(err);
             }
             plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            done();
+            return done();
         });
     });
 
-    it('PUT -> GET', (done) => {
+    it('PUT -> GET', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Mixed PUT <-> GET <-> DELETE <-> PUT', (done) => {
+    it('Mixed PUT <-> GET <-> DELETE <-> PUT', done => {
         blaster.setSimulPolicy(simulMixed);
         blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setSimulPolicy(simulEach);
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only COMBINATON', (done) => {
+    it('Only COMBINATON', done => {
         blaster.setActions([COM_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('PUT -> GET -> DELETE', (done) => {
+    it('PUT -> GET -> DELETE', done => {
         blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 
-    it('Only PUT', (done) => {
+    it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
         blaster.doSimul(done);
     });
 
-    after((done) => {
-        blaster.updateDataFiles((err) => {
+    after(done => {
+        blaster.updateDataFiles(err => {
             if (err) {
                 return done(err);
             }
-            doAfterTest(blaster, plotter, done);
+            return doAfterTest(blaster, plotter, done);
         });
     });
 });
