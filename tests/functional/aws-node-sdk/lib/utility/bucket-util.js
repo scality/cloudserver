@@ -3,8 +3,6 @@ import { S3 } from 'aws-sdk';
 import projectFixture from '../fixtures/project';
 import getConfig from '../../test/support/config';
 
-const directoryRegExp = /\/$/;
-
 export default class BucketUtility {
     constructor(profile = 'default', config = {}) {
         const s3Config = getConfig(profile, config);
@@ -54,7 +52,7 @@ export default class BucketUtility {
     }
 
     /**
-     * Recursively delete all objects within the bucket and delete bucket
+     * Recursively delete all objects within the bucket
      * @param bucketName
      * @returns {Promise.<T>}
      */
@@ -69,17 +67,17 @@ export default class BucketUtility {
             .then(data =>
                 Promise.all(
                     data.Contents
-                        .filter(object => !directoryRegExp.test(object.Key))
+                        .filter(object => !object.Key.endsWith('/'))
                         // remove all objects
                         .map(object =>
                             this.s3.deleteObjectAsync({
                                 Bucket: bucketName,
                                 Key: object.Key,
                             })
-                            .then(() => object)
+                              .then(() => object)
                         )
                         .concat(data.Contents
-                            .filter(object => directoryRegExp.test(object.Key))
+                            .filter(object => object.Key.endsWith('/'))
                             // remove all directories
                             .map(object =>
                                 this.s3.deleteObjectAsync({

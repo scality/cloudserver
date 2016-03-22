@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://jsonschema.net",
+  "type": "object",
+  "properties": {
+    "Contents": {
+      "id": "http://jsonschema.net/Contents",
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "id": "http://jsonschema.net/Buckets/0",
+        "type": "object",
+        "properties": {
+          "Key": {
+            "id": "http://jsonschema.net/Contents/0/Key",
+            "type": "string"
+          },
+          "LastModified": {
+            "id": "http://jsonschema.net/Contents/0/LastModified",
+            "type": "object"
+          },
+          "ETag": {
+            "id": "http://jsonschema.net/Contents/0/ETag",
+            "type": "string"
+          },
+          "Size": {
+            "id": "http://jsonschema.net/Contents/0/Size",
+            "type": "integer"
+          },
+          "StorageClass": {
+            "id": "http://jsonschema.net/Contents/0/StorageClass",
+            "enum": [ "STANDARD", "REDUCED_REDUNDANCY", "GLACIER" ]
+          },
+          "Owner": {
+            "id": "http://jsonschema.net/Contents/0/Owner",
+            "type": "object",
+            "properties": {
+              "DisplayName": {
+                "id": "http://jsonschema.net/Contents/0/Owner/DisplayName",
+                "type": "string"
+              },
+              "ID": {
+                "id": "http://jsonschema.net/Contents/0/Owner/ID",
+                "type": "string"
+              }
+            },
+            "required": [ "DisplayName", "ID" ]
+          }
+        },
+        "required": [
+          "Key",
+          "LastModified",
+          "ETag",
+          "Size",
+          "StorageClass",
+          "Owner"
+        ]
+      }
+    },
+    "Marker": {
+      "id": "http://jsonschema.net/Marker",
+      "type": "string"
+    },
+    "Name": {
+      "id": "http://jsonschema.net/Name",
+      "type": "string"
+    },
+    "Prefix": {
+      "id": "http://jsonschema.net/Prefix",
+      "type": "string"
+    },
+    "MaxKeys": {
+      "id": "http://jsonschema.net/MaxKeys",
+      "type": "integer"
+    },
+    "CommonPrefixes": {
+      "id": "http://jsonschema.net/CommonPrefixes",
+      "type": "array"
+    },
+    "IsTruncated": {
+      "id": "http://jsonschema.net/IsTruncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "IsTruncated",
+    "Marker",
+    "Contents",
+    "Name",
+    "Prefix",
+    "MaxKeys",
+    "CommonPrefixes"
+  ]
+}
