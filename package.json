@@ -1,6 +1,6 @@
 {
   "name": "ironman-s3",
-  "version": "1.0.0-beta",
+  "version": "1.0.1-beta2",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
