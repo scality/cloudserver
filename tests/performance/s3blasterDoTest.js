@@ -6,7 +6,9 @@ const S3Blaster = require('./s3blaster');
 let plotter = undefined;
 let blaster = undefined;
 
-blaster = new S3Blaster();
+const host = 'nodea.ringr2.devsca.com';
+const port = 80;
+blaster = new S3Blaster(host, port);
 if (blaster === undefined) {
     process.exit('Failed to create S3Blaster');
 }
@@ -15,6 +17,7 @@ const PUT_OBJ = S3Blaster.requests.putObj;
 const GET_OBJ = S3Blaster.requests.getObj;
 const DEL_OBJ = S3Blaster.requests.delObj;
 const COM_OBJ = S3Blaster.requests.comObj;
+const LST_OBJ = S3Blaster.requests.lstObj;
 
 const simulEach = S3Blaster.simulPolicy.each;
 const simulMixed = S3Blaster.simulPolicy.mixed;
@@ -65,6 +68,8 @@ function genArray(min, max, step) {
 }
 /*
  * Explaination functions setting parameters of S3Blaster
+ * nbWorkers: number of workers
+ * nbBuckets: number of buckets (per process/worker)
  * prefSufName: prefix and suffix name for data files and output files
  * reqsToTest: array of requests to be testinng. `reqsToTest` should be
  *             a subset of [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ]
@@ -105,8 +110,9 @@ const KB = 1024;
 const MB = KB * KB;
 /* example parameters of S3Blaster */
 const params = {
+    nbBuckets: 10,
     prefSufName: [defaultFileName, ''],
-    reqsToTest: [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ],
+    reqsToTest: [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ],
     resetStatsAfterEachTest: false,
     simulPolicy: simulEach,
     freqsToShow: -1,
@@ -116,26 +122,27 @@ const params = {
 };
 blaster.setParams(params);
 
-const sizesToTest = genArray(KB, MB, 100 * KB).concat([16 * MB, 64 * MB]);
+const sizesToTest = genArray(10 * KB, MB, 50 * KB);
+const largeSizes = [16 * MB, 64 * MB, 256 * MB];
+const threadsToTest = genArray(1, 100, 1);
 
-const sizesToPut = genArray(KB, 200 * KB, KB);
-const threadsToTest = genArray(1, 60, 1);
-
-describe('Measure individual PUT vs. threads', function indivPerf() {
+describe('Measure perf. vs. threads with 10 buckets, 1 worker', function fn() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}PutOnlyThread`, ''];
-    const _reqsToTest = [PUT_OBJ];
-    const graphsToPlot = [graphs.thread];
+    const _prefSufName = [`${defaultFileName}Thread_10Bkts_1Wrk`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread, graphs.pdfCdf];
     before(done => {
         blaster.setParams({
+            nbWorkers: 1,
+            nbBuckets: 10,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
+            nOps: 1000,
+            freqsToShow: 1000,
             sizes: [KB, MB],
             arrThreads: threadsToTest,
-            distrFuncParams: [1, 3000],
+            distrFuncParams: [0.5, 2000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
@@ -151,6 +158,21 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
         blaster.doSimul(done);
     });
 
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', done => {
+        blaster.setActions([GET_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', done => {
+        blaster.setActions([DEL_OBJ]);
+        blaster.doSimul(done);
+    });
+
     afterEach(done => {
         blaster.updateDataFiles(done);
     });
@@ -160,21 +182,23 @@ describe('Measure individual PUT vs. threads', function indivPerf() {
     });
 });
 
-describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
+describe('Measure perf. vs.threads with 100 buckets, 1 worker', function fn() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Thread`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    const graphsToPlot = [graphs.thread];
+    const _prefSufName = [`${defaultFileName}Thread_100Bkts_1Wrk`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread, graphs.pdfCdf];
     before(done => {
         blaster.setParams({
+            nbWorkers: 1,
+            nbBuckets: 1000,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
-            sizes: [KB, 60 * KB, 150 * KB, MB],
+            nOps: 100000,
+            freqsToShow: 1000,
+            sizes: [KB, MB],
             arrThreads: threadsToTest,
-            distrFuncParams: [1, 5000],
+            distrFuncParams: [0.5, 2000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
@@ -187,6 +211,11 @@ describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
 
     it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -209,21 +238,23 @@ describe('Measure individual PUT/GET/DELETE vs. threads', function indivPerf() {
     });
 });
 
-describe('Measure individual PUT vs. sizes', function indivPerf() {
+describe('Measure perf. vs.threads with 10 buckets, 10 workers', function fn() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}PutOnlySize`, ''];
-    const _reqsToTest = [PUT_OBJ];
-    const graphsToPlot = [graphs.statSize];
+    const _prefSufName = [`${defaultFileName}Thread_10Bkts_10Wrks`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread, graphs.pdfCdf];
     before(done => {
         blaster.setParams({
+            nbWorkers: 10,
+            nbBuckets: 10,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
-            sizes: sizesToPut,
-            arrThreads: -1,
-            distrFuncParams: [1, 3000],
+            nOps: 1000,
+            freqsToShow: 1000,
+            sizes: [KB, MB],
+            arrThreads: threadsToTest,
+            distrFuncParams: [0.5, 2000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
@@ -239,42 +270,8 @@ describe('Measure individual PUT vs. sizes', function indivPerf() {
         blaster.doSimul(done);
     });
 
-    afterEach(done => {
-        blaster.updateDataFiles(done);
-    });
-
-    after(done => {
-        doAfterTest(blaster, plotter, done);
-    });
-});
-
-describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
-    this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Size`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    const graphsToPlot = [graphs.statSize];
-    before(done => {
-        blaster.setParams({
-            prefSufName: _prefSufName,
-            reqsToTest: _reqsToTest,
-            simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
-            sizes: sizesToPut,
-            arrThreads: -1,
-            distrFuncParams: [1, 5000],
-        });
-        blaster.init((err, arrDataFiles) => {
-            if (err) {
-                return done(err);
-            }
-            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
-            return done();
-        });
-    });
-
-    it('Only PUT', done => {
-        blaster.setActions([PUT_OBJ]);
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -297,32 +294,96 @@ describe('Measure individual PUT/GET/DELETE vs. sizes', function indivPerf() {
     });
 });
 
-describe('Measure individual PUT/GET/DELETE', function indivPerf() {
+describe('Measure perf.vs.threads with 100 buckets, 10workers', function fn() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Each`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
+    const _prefSufName = [`${defaultFileName}Thread_100Bkts_10Wrks`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.thread, graphs.pdfCdf];
     before(done => {
         blaster.setParams({
+            nbWorkers: 10,
+            nbBuckets: 10,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
-            nOps: -1,
-            freqsToShow: -1,
+            nOps: 100000,
+            freqsToShow: 1000,
+            sizes: [KB, MB],
+            arrThreads: threadsToTest,
+            distrFuncParams: [0.5, 2000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            return done();
+        });
+    });
+
+    it('Only PUT', done => {
+        blaster.setActions([PUT_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', done => {
+        blaster.setActions([GET_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', done => {
+        blaster.setActions([DEL_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    afterEach(done => {
+        blaster.updateDataFiles(done);
+    });
+
+    after(done => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure perf. vs. sizes with 10 buckets, 1 worker', function fn() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}Size_10Bkts_1Wrk`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.statSize];
+    before(done => {
+        blaster.setParams({
+            nbWorkers: 1,
+            nbBuckets: 10,
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: 1000,
+            freqsToShow: 1000,
             sizes: sizesToTest,
-            arrThreads: -1,
-            distrFuncParams: [2, 3000],
+            arrThreads: [1, 10, 60],
+            distrFuncParams: [1, 5000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
                 return done(err);
             }
-            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
             return done();
         });
     });
 
     it('Only PUT', done => {
         blaster.setActions([PUT_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
         blaster.doSimul(done);
     });
 
@@ -345,15 +406,134 @@ describe('Measure individual PUT/GET/DELETE', function indivPerf() {
     });
 });
 
-describe('Measure combined request PUT->GET->DELETE', function combPerf() {
+describe('Measure perf. vs. sizes with 100 buckets, 1 worker', function fn() {
     this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Comb`, ''];
+    const _prefSufName = [`${defaultFileName}Size_100Bkts_1Wrk`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.statSize];
+    before(done => {
+        blaster.setParams({
+            nbWorkers: 1,
+            nbBuckets: 100,
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: 100000,
+            freqsToShow: 100000,
+            sizes: sizesToTest,
+            arrThreads: [1, 10, 60],
+            distrFuncParams: [1, 5000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            return done();
+        });
+    });
+
+    it('Only PUT', done => {
+        blaster.setActions([PUT_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', done => {
+        blaster.setActions([GET_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', done => {
+        blaster.setActions([DEL_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    afterEach(done => {
+        blaster.updateDataFiles(done);
+    });
+
+    after(done => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure perf. vs. sizes with 10 buckets, 10 worker', function fn() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}Size_10Bkts_10Wrks`, ''];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
+    const graphsToPlot = [graphs.statSize];
+    before(done => {
+        blaster.setParams({
+            nbWorkers: 10,
+            nbBuckets: 10,
+            prefSufName: _prefSufName,
+            reqsToTest: _reqsToTest,
+            simulPolicy: simulEach,
+            nOps: 100000,
+            freqsToShow: 100000,
+            sizes: sizesToTest,
+            arrThreads: [1, 10, 60],
+            distrFuncParams: [1, 5000],
+        });
+        blaster.init((err, arrDataFiles) => {
+            if (err) {
+                return done(err);
+            }
+            plotter = new Plotter(arrDataFiles, _prefSufName[0], graphsToPlot);
+            return done();
+        });
+    });
+
+    it('Only PUT', done => {
+        blaster.setActions([PUT_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only LIST', done => {
+        blaster.setActions([LST_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only GET', done => {
+        blaster.setActions([GET_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    it('Only DELETE', done => {
+        blaster.setActions([DEL_OBJ]);
+        blaster.doSimul(done);
+    });
+
+    afterEach(done => {
+        blaster.updateDataFiles(done);
+    });
+
+    after(done => {
+        doAfterTest(blaster, plotter, done);
+    });
+});
+
+describe('Measure perf. of large sizes, 1 bkt, 10 workers', function fc() {
+    this.timeout(0);
+    const _prefSufName = [`${defaultFileName}LargeSizes_10Wrks`, ''];
     const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ];
     before(done => {
         blaster.setParams({
+            nbWorkers: 10,
+            nbBuckets: 1,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulEach,
+            nOps: 10000,
+            freqsToShow: 10000,
+            sizes: largeSizes,
+            arrThreads: [1, 10, 60],
+            distrFuncParams: [1, 5000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
@@ -378,15 +558,22 @@ describe('Measure combined request PUT->GET->DELETE', function combPerf() {
     });
 });
 
-describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
+describe('Measure mixed perf.', function mixedPerf() {
     this.timeout(0);
     const _prefSufName = [`${defaultFileName}Mixed`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
+    const _reqsToTest = [PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ];
     before(done => {
         blaster.setParams({
+            nbWorkers: 10,
+            nbBuckets: 100,
             prefSufName: _prefSufName,
             reqsToTest: _reqsToTest,
             simulPolicy: simulMixed,
+            nOps: 10000,
+            freqsToShow: 10000,
+            sizes: sizesToTest,
+            arrThreads: [1, 10, 60],
+            distrFuncParams: [0.5, 2000],
         });
         blaster.init((err, arrDataFiles) => {
             if (err) {
@@ -397,118 +584,8 @@ describe('Measure mixed PUT/GET/DELETE', function mixedPerf() {
         });
     });
 
-    it('PUT <-> GET <-> DELETE <-> PUT', done => {
-        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    after(done => {
-        blaster.updateDataFiles(err => {
-            if (err) {
-                return done(err);
-            }
-            return doAfterTest(blaster, plotter, done);
-        });
-    });
-});
-
-describe('Measure serial PUT/GET/DELETE', function serialPerf() {
-    this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Serial`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ];
-    before(done => {
-        blaster.setParams({
-            prefSufName: _prefSufName,
-            reqsToTest: _reqsToTest,
-            simulPolicy: simulEach,
-        });
-        blaster.init((err, arrDataFiles) => {
-            if (err) {
-                return done(err);
-            }
-            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            return done();
-        });
-    });
-
-    it('PUT -> GET', done => {
-        blaster.setActions([PUT_OBJ, GET_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('GET -> DELETE', done => {
-        blaster.setActions([GET_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('PUT -> DELETE', done => {
-        blaster.setActions([PUT_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('PUT -> GET -> DELETE', done => {
-        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    after(done => {
-        blaster.updateDataFiles(err => {
-            if (err) {
-                return done(err);
-            }
-            return doAfterTest(blaster, plotter, done);
-        });
-    });
-});
-
-describe('Measure personalized PUT GET DELETE', function perPerf() {
-    this.timeout(0);
-    const _prefSufName = [`${defaultFileName}Personalized`, ''];
-    const _reqsToTest = [PUT_OBJ, GET_OBJ, DEL_OBJ, COM_OBJ];
-    before(done => {
-        blaster.setParams({
-            prefSufName: _prefSufName,
-            reqsToTest: _reqsToTest,
-            simulPolicy: simulEach,
-        });
-        blaster.init((err, arrDataFiles) => {
-            if (err) {
-                return done(err);
-            }
-            plotter = new Plotter(arrDataFiles, _prefSufName[0]);
-            return done();
-        });
-    });
-
-    it('PUT -> GET', done => {
-        blaster.setActions([PUT_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('Mixed PUT <-> GET <-> DELETE <-> PUT', done => {
-        blaster.setSimulPolicy(simulMixed);
-        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('Only PUT', done => {
-        blaster.setSimulPolicy(simulEach);
-        blaster.setActions([PUT_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('Only COMBINATON', done => {
-        blaster.setActions([COM_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('PUT -> GET -> DELETE', done => {
-        blaster.setActions([PUT_OBJ, GET_OBJ, DEL_OBJ]);
-        blaster.doSimul(done);
-    });
-
-    it('Only PUT', done => {
-        blaster.setActions([PUT_OBJ]);
+    it('PUT <-> LIST <-> GET <-> DELETE <-> PUT', done => {
+        blaster.setActions([PUT_OBJ, LST_OBJ, GET_OBJ, DEL_OBJ]);
         blaster.doSimul(done);
     });
 

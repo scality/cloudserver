@@ -19,21 +19,6 @@ const GET_OBJ = idx; avaiReq.push(idx++);
 const DEL_OBJ = idx; avaiReq.push(idx++);
 const COM_OBJ = idx; avaiReq.push(idx++);
 
-/* get number of workers */
-commander.version('0.0.1')
-.option('-w, --n-workers <nWorkers>', 'Workers number', parseInt)
-.parse(process.argv);
-let nWorkers = 0;
-if (commander.nWorkers) {
-    nWorkers = commander.nWorkers;
-}
-const nProcesses = (nWorkers === 0) ? 1 : nWorkers;
-
-let idWorker = '';
-if (cluster.isWorker) {
-    idWorker = `${cluster.worker.id}`;
-}
-
 /* simulaton schedule:
  *  (1) `Each`: in each `it` test, a request type and a data size is
  *     simulated for a given number of times before go to next one.
@@ -47,8 +32,7 @@ const lastSlashIdx = process.argv[2].lastIndexOf('/');
 const statsFolder = `./${process.argv[2].slice(0, lastSlashIdx)}/stats/`;
 const calledFileName = process.argv[2].slice(lastSlashIdx + 1,
                         process.argv[2].length - 3);
-const defaultFileName = `${statsFolder}` + `${calledFileName}` +
-                        `${idWorker}_`;
+let defaultFileName = `${statsFolder}` + `${calledFileName}`;
 
 /**
  * stringify to a given length
@@ -82,7 +66,7 @@ function range(val) {
 }
 
 class S3Blaster {
-    constructor() {
+    constructor(host, port) {
         commander.version('0.0.1')
         .option('-P, --port <port>', 'Port number', parseInt)
         .option('-H, --host [host]', 'Host name')
@@ -91,9 +75,10 @@ class S3Blaster {
         .option('-u, --n-buckets <nBuckets>', 'Number of buckets', parseInt)
         .option('-B, --bucket-prefix [bucketPrefix]', 'Prefix for bucket name')
         .option('-s, --size <size>', 'Size of data', parseInt)
+        .option('-w, --n-workers <nWorkers>', 'Workers number', parseInt)
         .parse(process.argv);
-        this.host = commander.host || 'localhost';
-        this.port = commander.port || 8000;
+        this.host = (commander.host || host) || 'localhost';
+        this.port = (commander.port || port) || 8000;
         this.rThreads = commander.rThreads || [1, 2];
         this.nOps = commander.nOps || 10;
         this.bucketPrefix = commander.bucketPrefix || 'foo';
@@ -102,6 +87,17 @@ class S3Blaster {
         this.nbDataSizes = commander.nbDataSizes || 1;
         Object.keys(this).forEach(opt => stderr.write(`${opt}=${this[opt]}\n`));
         config.apiVersions = { s3: '2006-03-01' };
+
+        /* get number of workers */
+        this.nWorkers = commander.nWorkers || 0;
+        this.nProcesses = (this.nWorkers === 0) ? 1 : this.nWorkers;
+
+        this.idWorker = '';
+        if (cluster.isWorker) {
+            this.idWorker = `${cluster.worker.id}`;
+            defaultFileName += `_${this.idWorker}`;
+        }
+        this.bucketPrefix += `${this.idWorker}`;
 
         this.currThreadIdx = 0;
         this.nThreads = this.rThreads[this.currThreadIdx];
@@ -179,7 +175,8 @@ class S3Blaster {
 
         this.resetStatsAfterEachTest = false;
         this.simulPolicy = simulEach;
-        this.freqsToShow = Math.max(Math.ceil(this.nOps / 100), 100);
+        // this.freqsToShow = Math.max(Math.ceil(this.nOps / 100), 100);
+        this.freqsToShow = 1;
 
         /* for output data files */
         try {
@@ -220,11 +217,17 @@ class S3Blaster {
         );
 
         this.latThread = undefined;
-        this.bucketPrefix += `${idWorker}`;
     }
 
     setParams(params) {
         if (params === undefined) return;
+        if (params.nbBuckets !== undefined) {
+            this.nBuckets = parseInt(params.nbBuckets, 10);
+        }
+        if (params.nbWorkers !== undefined && cluster.isMaster) {
+            this.nWorkers = parseInt(params.nbWorkers, 10);
+            this.nProcesses = (this.nWorkers === 0) ? 1 : this.nWorkers;
+        }
         if (params.prefSufName !== undefined) {
             this.setPrefixSuffixName.bind(this)(params.prefSufName[0],
                                                 params.prefSufName[1]);
@@ -476,7 +479,7 @@ class S3Blaster {
             /* add metadata info */
             content += `# host ${this.host}:${this.port}\n`;
             content += `# bucketsNb ${this.nBuckets}\n`;
-            content += `# processesNb ${nProcesses}\n`;
+            content += `# processesNb ${this.nProcesses}\n`;
             content += `# threadsNb ${this.nThreads}\n`;
             content += `# nOps ${this.threshold}\n`;
             content += '# sizes';
@@ -524,7 +527,7 @@ class S3Blaster {
             /* add metadata info */
             content += `# host ${this.host}:${this.port}\n`;
             content += `# bucketsNb ${this.nBuckets}\n`;
-            content += `# processesNb ${nProcesses}\n`;
+            content += `# processesNb ${this.nProcesses}\n`;
             content += `# threadsNb ${this.nThreads}\n`;
             content += `# nOps ${this.threshold}\n`;
             content += `# statSizes ${minSize} ${maxSize} ` +
@@ -564,7 +567,7 @@ class S3Blaster {
             /* add metadata info */
             content += `# host ${this.host}:${this.port}\n`;
             content += `# bucketsNb ${this.nBuckets}\n`;
-            content += `# processesNb ${nProcesses}\n`;
+            content += `# processesNb ${this.nProcesses}\n`;
             content += `# nOps ${this.threshold}\n`;
             content += '# sizes';
             this.sizes.forEach(dataSize => {
@@ -722,7 +725,7 @@ class S3Blaster {
             /* add metadata info */
             dataContent += `# host ${this.host}:${this.port}\n`;
             dataContent += `# bucketsNb ${this.nBuckets}\n`;
-            dataContent += `# processesNb ${nProcesses}\n`;
+            dataContent += `# processesNb ${this.nProcesses}\n`;
             dataContent += `# threadsNb ${this.nThreads}\n`;
             dataContent += `# nOps ${this.threshold}\n`;
             dataContent += '# sizes';
@@ -996,18 +999,44 @@ class S3Blaster {
         });
     }
 
-    listObject(bucketName, callback, maxKeys, prefix) {
+    listAllObjects(bucketName, callback, prefix, marker, lat, totalNbObjs) {
+        this.listObject(bucketName, (err, value, time, nObjs, nextMarker) => {
+            if (!err) {
+                if (nextMarker) {
+                    // stderr.write(`-> ${(time / nObjs).toFixed(3)}ms\n`);
+                    return this.listAllObjects(bucketName, callback, prefix,
+                                            nextMarker, time, nObjs);
+                }
+                return callback(null, value, lat / nObjs);
+            }
+            return callback(err);
+        }, null, prefix, marker, lat, totalNbObjs);
+    }
+
+    listObject(bucketName, callback, maxKeys, prefix, marker, cumLat, nObjs) {
         const params = {
             Bucket: bucketName,
             MaxKeys: maxKeys || 1000,
             Prefix: prefix,
+            Marker: marker,
         };
         const begin = process.hrtime();
         this.s3.listObjects(params, (err, value) => {
             const end = process.hrtime(begin);
-            const lat = end[0] * 1e3 + end[1] / 1e6;
             if (!err) {
-                return callback(null, value, lat);
+                let nextMarker;
+                const currNbObjs = value.Contents.length;
+                if (currNbObjs === 0) {
+                    return callback(null, value, cumLat, nObjs);
+                }
+                if (value.IsTruncated) {
+                    nextMarker = value.Contents[currNbObjs - 1].Key;
+                }
+                let lat = (end[0] * 1e3 + end[1] / 1e6);
+            // stderr.write(`${marker}: ${(lat / currNbObjs).toFixed(3)}ms`);
+                lat += cumLat;
+                const newNbObjs = nObjs + currNbObjs;
+                return callback(null, value, lat, newNbObjs, nextMarker);
             }
             stderr.write(`list ${bucketName} NOK: `);
             stderr.write(`${err.code} ${err.message}\n`);
@@ -1097,7 +1126,7 @@ class S3Blaster {
     }
 
     updateStats(idx, time) {
-        let lat = time / nProcesses;
+        let lat = time / this.nProcesses;
         this.latSum[idx][this.currSizeIdx] += lat;
         this.latSumSq[idx][this.currSizeIdx] += lat * lat;
         this.nBytes[idx][this.currSizeIdx] += this.size;
@@ -1133,7 +1162,7 @@ class S3Blaster {
             const latMu = maxLatThread / nSuccesses;
             const latSigma = Math.sqrt(this.latSumSq[idx][this.currSizeIdx] /
                             nSuccesses - latMu * latMu) * coef;
-            stderr.write(`${toFixedLength('Final', 6)}`);
+            stderr.write(`${toFixedLength('Final', 12)}`);
             stderr.write(`${toFixedLength(this.nThreads, 2)}  `);
             stderr.write(`${toFixedLength(requests[idx], 6)} `);
             stderr.write(`${toFixedLength(this.size, 8)} `);
@@ -1170,7 +1199,7 @@ class S3Blaster {
     }
 
     createBuckets(cb) {
-        if (cluster.isMaster && nWorkers > 0) {
+        if (cluster.isMaster && this.nWorkers > 0) {
             cb(); return;
         }
         const bucketName = `${this.bucketPrefix}${this.createdBucketsNb}`;
@@ -1252,10 +1281,10 @@ class S3Blaster {
                 createNewArray(this.nThreads, 0)
             );
             if (cluster.isMaster) {
-                for (let i = 0; i < nWorkers; i++) {
+                for (let i = 0; i < this.nWorkers; i++) {
                     cluster.fork();
                 }
-                if (nWorkers === 0) {
+                if (this.nWorkers === 0) {
                     for (let idx = 0; idx < this.nThreads; idx++) {
                         this.threads++;
                         if (this.simulPolicy === simulMixed) {
@@ -1514,12 +1543,8 @@ class S3Blaster {
                 stderr.write(`get error: ${err}\n`);
                 return cb(err);
             }
-            let lat = time;
-            if (value.Contents.length > 0) {
-                lat /= value.Contents.length;
-            }
-            this.latThread[LST_OBJ][threadIdx] += lat;
-            this.updateStats(LST_OBJ, lat);
+            this.latThread[LST_OBJ][threadIdx] += time;
+            this.updateStats(LST_OBJ, time);
             if (this.nSuccesses[LST_OBJ][this.currSizeIdx] %
                     this.freqsToShow === 0) {
                 this.printStats(LST_OBJ);
@@ -1527,7 +1552,8 @@ class S3Blaster {
             return this.doNextAction(LST_OBJ, cb, threadIdx);
         }
         const prefix = `key_S${this.size}_T${this.nThreads}`;
-        this.listObject(bucketName, listCb.bind(this), null, prefix);
+        // const prefix = `key_S${this.size}_T10`;
+        this.listAllObjects(bucketName, listCb.bind(this), prefix, null, 0, 0);
     }
 
     /* put->get->del object */
@@ -1641,7 +1667,7 @@ function helpS3blaster() {
     stderr.write(`(o)Order of requests:\n`);
     stderr.write(`  -o, --order-reqs: order of requests\n`);
     stderr.write(`(o)Simulation policy:\n`);
-    stderr.write('  -m, --simul [simul]', 'Type of simulation, ');
+    stderr.write('  -m, --simul: type of simulation, ');
     stderr.write(`either 'e' for simulEach, 'm' for simulMixed\n`);
     stderr.write(`(o)Number of operations per one set of parameters:\n`);
     stderr.write(`  -n, --n-ops: Number of operations\n`);
@@ -1803,7 +1829,9 @@ function mochaTest() {
             _distrFuncParams = commander.distr.map(Number);
         }
 
-        const blaster = new S3Blaster();
+        const host = 'nodea.ringr2.devsca.com';
+        const port = 80;
+        const blaster = new S3Blaster(host, port);
         let plotter = undefined;
         before(done => {
             blaster.setParams({
