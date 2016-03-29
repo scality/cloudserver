@@ -415,6 +415,26 @@ describe('s3cmd put, get and delete object with spaces ' +
     });
 });
 
+describe('s3cmd info', () => {
+// test that CORS and POLICY are returned as 'none'
+    it('should find that policy has a value of none', done => {
+        checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
+    foundIt => {
+        assert(foundIt);
+        done();
+    });
+    });
+
+
+    it('should find that cors has a value of none', done => {
+        checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none',
+    foundIt => {
+        assert(foundIt);
+        done();
+    });
+    });
+});
+
 describe('s3cmd delBucket', () => {
     it('delete non-empty bucket, should fail', (done) => {
         exec(['rb', `s3://${bucket}`], done, 13);
