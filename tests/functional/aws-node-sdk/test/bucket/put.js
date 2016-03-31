@@ -1,11 +1,11 @@
 import assert from 'assert';
 import { S3 } from 'aws-sdk';
+
+import BucketUtility from '../../lib/utility/bucket-util';
 import getConfig from '../support/config';
 import withV4 from '../support/withV4';
 
 describe('PUT Bucket - AWS.S3.createBucket', () => {
-    let s3;
-
     describe('When user is unauthorized', () => {
         let s3;
         let config;
@@ -30,10 +30,10 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
     });
 
     withV4(sigCfg => {
-        before(() => {
-            const config = getConfig('default', sigCfg);
+        let bucketUtil;
 
-            s3 = new S3(config);
+        before(() => {
+            bucketUtil = new BucketUtility('default', sigCfg);
         });
 
         describe('bucket naming restriction', () => {
@@ -44,18 +44,20 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     const expectedStatus = 400;
                     const expectedCode = 'InvalidBucketName';
 
-                    s3.createBucket({ Bucket: bucketName }, (error, data) => {
-                        if (data) {
+                    bucketUtil
+                        .createOne(bucketName)
+                        .then(() => {
                             const e = new Error('Expect failure in creation, ' +
                                 'but it succeeded');
 
                             return done(e);
-                        }
-
-                        assert.strictEqual(error.code, expectedCode);
-                        assert.strictEqual(error.statusCode, expectedStatus);
-                        done();
-                    });
+                        })
+                        .catch(error => {
+                            assert.strictEqual(error.code, expectedCode);
+                            assert.strictEqual(error.statusCode,
+                                expectedStatus);
+                            done();
+                        });
                 };
             });
 
@@ -107,6 +109,30 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             it('should return 400 if name has special chars', done => {
                 const invalidName = 'my.#s3bucket';
                 testFn(invalidName, done);
+            });
+        });
+
+        describe('bucket creation success', () => {
+            it('should create bucket if name is valid', done => {
+                const validName = 'ironman-very-valid-bucket-name';
+
+                bucketUtil.s3
+                    .createBucket({ Bucket: validName }, (error, data) => {
+                        assert.ifError(error);
+
+                        if (process.env.AWS_ON_AIR) {
+                            assert(data.Location, 'No Location in response');
+                            assert(data.Location.indexOf(validName) > -1,
+                                'Does not include bucket name in Location');
+                        }
+
+                        bucketUtil
+                            .deleteOne(validName)
+                            .then(() => {
+                                done();
+                            })
+                            .catch(done);
+                    });
             });
         });
     });

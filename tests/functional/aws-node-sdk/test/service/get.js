@@ -1,7 +1,9 @@
 import assert from 'assert';
 import tv4 from 'tv4';
-import { S3 } from 'aws-sdk';
 import Promise from 'bluebird';
+import { S3 } from 'aws-sdk';
+
+import BucketUtility from '../../lib/utility/bucket-util';
 import getConfig from '../support/config';
 import withV4 from '../support/withV4';
 import svcSchema from '../../schema/service';
@@ -81,35 +83,20 @@ describe('GET Service - AWS.S3.listBuckets', () => {
         });
 
         describe('when user has credential', () => {
+            let bucketUtil;
             let s3;
-            let anotherS3;
-
-            const random = Math.round(Math.random() * 100).toString();
-            const baseName = `ft-awsnodesdk-bucket-${random}`;
-            const bucketsNumber = 5;
-
             let createdBuckets;
 
-            before(() => {
-                s3 = new S3(getConfig('default', sigCfg));
-                anotherS3 = new S3(getConfig('lisa'));
+            const bucketsNumber = 5;
 
-                s3 = Promise.promisifyAll(s3);
-                anotherS3 = Promise.promisifyAll(anotherS3);
+            before(() => {
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
             });
 
             before(done => {
-                let promises;
-
-                promises = Array.from(Array(bucketsNumber).keys()).reverse()
-                    .map(i => {
-                        const bucketName = `${baseName}-${i}`;
-                        return s3
-                            .createBucketAsync({ Bucket: bucketName })
-                            .then(() => bucketName);
-                    });
-
-                Promise.all(promises)
+                bucketUtil
+                    .createRandom(bucketsNumber)
                     .catch(done)
                     .then(data => {
                         createdBuckets = data;
@@ -118,13 +105,8 @@ describe('GET Service - AWS.S3.listBuckets', () => {
             });
 
             after(done => {
-                let promises;
-
-                promises = createdBuckets.map(bucketName => {
-                    return s3.deleteBucketAsync({ Bucket: bucketName });
-                });
-
-                Promise.all(promises)
+                bucketUtil
+                    .deleteMany(createdBuckets)
                     .catch(done)
                     .then(() => done());
             });
@@ -177,6 +159,12 @@ describe('GET Service - AWS.S3.listBuckets', () => {
             const filterFn = bucket => createdBuckets.indexOf(bucket.name) > -1;
 
             describeFn('two accounts are given', () => {
+                let anotherS3;
+
+                before(() => {
+                    anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')));
+                });
+
                 it('should not return other accounts bucket list', done => {
                     anotherS3
                         .listBucketsAsync()
