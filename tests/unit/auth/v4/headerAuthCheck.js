@@ -186,17 +186,19 @@ describe('v4 headerAuthCheck', () => {
         });
     });
 
-    it('should return error if unknown region', (done) => {
+    it('should not return error due to unknown region', done => {
+        // Returning an error causes an issue for certain clients.
         const alteredRequest = createAlteredRequest({
             authorization: 'AWS4-HMAC-SHA256 Credential=accessKey1/20160208' +
                 '/noSuchRegion/s3/aws4_request, SignedHeaders' +
                 '=host;x-amz-content-sha256;' +
-                'x-amz-date, Signature=abed924c06abf87' +
-                '72c670064d22eacd6ccb85c06befa15f' +
-                '4a789b0bae19307bc',
+                'x-amz-date, Signature=90235ffa4277d688072e16fa7a7560044f4f' +
+                '8e43e369f48ea6d3a5f1fe518e14',
         }, 'headers', request, headers);
-        headerAuthCheck(alteredRequest, log, (err) => {
-            assert.deepStrictEqual(err, errors.InvalidArgument);
+        const clock = lolex.install(1454962445000);
+        headerAuthCheck(alteredRequest, log, err => {
+            clock.uninstall();
+            assert.ifError(err);
             done();
         });
     });
