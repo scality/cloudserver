@@ -50,4 +50,44 @@ export default class BucketUtility {
 
         return Promise.all(promises);
     }
+
+    /**
+     * Recursively delete all objects within the bucket
+     * @param bucketName
+     * @returns {Promise.<T>}
+     */
+
+    empty(bucketName) {
+        const param = {
+            Bucket: bucketName,
+        };
+
+        return this.s3
+            .listObjectsAsync(param)
+            .then(data =>
+                Promise.all(
+                    data.Contents
+                        .filter(object => !object.Key.endsWith('/'))
+                        // remove all objects
+                        .map(object =>
+                            this.s3.deleteObjectAsync({
+                                Bucket: bucketName,
+                                Key: object.Key,
+                            })
+                              .then(() => object)
+                        )
+                        .concat(data.Contents
+                            .filter(object => object.Key.endsWith('/'))
+                            // remove all directories
+                            .map(object =>
+                                this.s3.deleteObjectAsync({
+                                    Bucket: bucketName,
+                                    Key: object.Key,
+                                })
+                                .then(() => object)
+                            )
+                        )
+                )
+            );
+    }
 }
