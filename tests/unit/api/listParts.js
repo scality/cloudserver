@@ -23,9 +23,9 @@ const uploadKey = '$makememulti';
 const sixMBObjectETag = 'f3a9fb2071d3503b703938a74eb99846';
 const lastPieceETag = '555e4cd2f9eff38109d7a3ab13995a32';
 const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
-    `d89d-49d3-9fa6-e9c2c1eb31b0`;
+    'd89d-49d3-9fa6-e9c2c1eb31b0';
 const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}1`;
-const partTwoKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0` +
+const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
     `${splitter}2`;
 const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}3`;
 const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}4`;

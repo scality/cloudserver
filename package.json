@@ -1,6 +1,6 @@
 {
   "name": "ironman-s3",
-  "version": "1.0.0-beta",
+  "version": "1.0.1-beta2",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/IronMan-S3#readme",
   "dependencies": {
-    "arsenal": "scality/IronMan-Arsenal#rel/1.0",
+    "arsenal": "scality/IronMan-Arsenal",
     "async": "~1.4.2",
     "aws-sdk": "^2.2.23",
     "babel-core": "^6.2.1",
@@ -40,10 +40,10 @@
   "devDependencies": {
     "aws-sdk": "^2.2.22",
     "babel-cli": "^6.2.0",
-    "babel-eslint": "^4.1.3",
+    "babel-eslint": "^6.0.0",
     "commander": "^2.9.0",
-    "eslint": "^1.5.1",
-    "eslint-config-airbnb": "^2.0.0",
+    "eslint": "^2.4.0",
+    "eslint-config-airbnb": "^6.0.0",
     "eslint-config-ironman": "scality/IronMan-Guidelines",
     "istanbul": "^1.0.0-alpha",
     "istanbul-api": "==1.0.0-alpha.9",

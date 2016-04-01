@@ -29,12 +29,12 @@ describe('putBucketACL API', () => {
         metadata.deleteBucket(bucketName, log, () => done());
     });
 
-    it("should parse a grantheader", function testGrantHeader() {
+    it('should parse a grantheader', function testGrantHeader() {
         const grantRead =
             `uri=${constants.logId}, ` +
-            `emailAddress="test@testing.com", ` +
-            `emailAddress="test2@testly.com", ` +
-            `id="sdfsdfsfwwiieohefs"`;
+            'emailAddress="test@testing.com", ' +
+            'emailAddress="test2@testly.com", ' +
+            'id="sdfsdfsfwwiieohefs"';
         const grantReadHeader =
             aclUtils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;

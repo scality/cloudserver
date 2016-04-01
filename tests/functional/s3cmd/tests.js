@@ -125,7 +125,7 @@ describe('s3cmd putBucket', () => {
     });
 });
 
-describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
+describe('s3cmd put and get bucket ACLs', function aclBuck() {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
@@ -135,7 +135,7 @@ describe(`s3cmd put and get bucket ACL's`, function aclBuck() {
     });
 
     it('should get canned ACL that was set', (done) => {
-        checkRawOutput(['info', `s3://${bucket}`], 'ACL', `*anon*: READ`,
+        checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
         (foundIt) => {
             assert(foundIt);
             done();
@@ -167,15 +167,14 @@ describe('s3cmd getBucket', () => {
 });
 
 describe('s3cmd getService', () => {
-    it(`should get a list of a user's buckets`, (done) => {
-        checkRawOutput(['ls'], 's3://',
-        `${bucket}`, (foundIt) => {
+    it("should get a list of a user's buckets", (done) => {
+        checkRawOutput(['ls'], 's3://', `${bucket}`, (foundIt) => {
             assert(foundIt);
             done();
         });
     });
 
-    it(`should have response headers matching AWS's response headers`,
+    it("should have response headers matching AWS's response headers",
         (done) => {
             provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response:',
             (lineOfInterest) => {
@@ -240,7 +239,7 @@ describe('s3cmd getObject', function toto() {
     });
 });
 
-describe(`s3cmd put and get object ACL's`, function aclObj() {
+describe('s3cmd put and get object ACLs', function aclObj() {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
@@ -251,7 +250,7 @@ describe(`s3cmd put and get object ACL's`, function aclObj() {
 
     it('should get canned ACL that was set', (done) => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `*anon*: READ`, (foundIt) => {
+        '*anon*: READ', (foundIt) => {
             assert(foundIt);
             done();
         });
