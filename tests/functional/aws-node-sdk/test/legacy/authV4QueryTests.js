@@ -115,6 +115,18 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    it('should put an object with native characters', done => {
+        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const params = { Bucket: bucket, Key };
+        const url = s3.getSignedUrl('putObject', params);
+        provideRawOutput(['-verbose', '-X', 'PUT', url,
+            '--upload-file', 'package.json'], httpCode => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
+    });
+
     it('should list objects in bucket', function listObjects(done) {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('listObjects', params);
@@ -154,6 +166,17 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
                 assert.strictEqual(httpCode, '204 NO CONTENT');
                 done();
             });
+    });
+
+    it('should delete an object with native characters', done => {
+        const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
+        'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
+        const params = { Bucket: bucket, Key };
+        const url = s3.getSignedUrl('deleteObject', params);
+        provideRawOutput(['-verbose', '-X', 'DELETE', url], httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            done();
+        });
     });
 
     it('should delete a bucket', function deleteBucket(done) {
