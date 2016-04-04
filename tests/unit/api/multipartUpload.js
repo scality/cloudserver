@@ -10,7 +10,7 @@ import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import metadata from '../metadataswitch';
+import inMemMetadata from '../../../lib/metadata/in_memory/metadata';
 import multipartDelete from '../../../lib/api/multipartDelete';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import DummyRequest from '../DummyRequest';
@@ -58,13 +58,11 @@ describe('Multipart Upload API', () => {
                         assert.strictEqual(json.InitiateMultipartUploadResult
                             .Key[0], objectKey);
                         assert(json.InitiateMultipartUploadResult.UploadId[0]);
-                        metadata.getBucket(mpuBucket, log, (err, md) => {
-                            assert.strictEqual(Object.keys(md.keyMap).length,
-                                               1);
-                            assert(Object.keys(md.keyMap)[0]
+                        const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                        assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                        assert(Object.keys(mpuKeys)[0]
                             .startsWith(`overview${splitter}${objectKey}`));
-                            done();
-                        });
+                        done();
                     });
                 });
         });
@@ -79,12 +77,11 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    assert(Object.keys(md.keyMap)[0]
-                        .startsWith(`overview${splitter}${objectKey}`));
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                assert(Object.keys(mpuKeys)[0]
+                    .startsWith(`overview${splitter}${objectKey}`));
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -107,28 +104,29 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, (err) => {
+            objectPutPart(authInfo, partRequest, log, err => {
                 assert.strictEqual(err, null);
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    const keysInMPUkeyMap = Object.keys(md.keyMap);
-                    const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                        if (a.slice(0, 8) === 'overview') {
-                            return -1;
-                        }
-                    });
-                    const overviewEntry = sortedKeyMap[0];
-                    const partKey = sortedKeyMap[1];
-                    const partEntryArray = partKey.split(splitter);
-                    const partUploadId = partEntryArray[0];
-                    const firstPartNumber = partEntryArray[1];
-                    const partETag = md.keyMap[partKey]['content-md5'];
-                    assert.strictEqual(keysInMPUkeyMap.length, 2);
-                    assert.strictEqual(md.keyMap[overviewEntry].key, objectKey);
-                    assert.strictEqual(partUploadId, testUploadId);
-                    assert.strictEqual(firstPartNumber, '00001');
-                    assert.strictEqual(partETag, calculatedHash);
-                    done();
+                const keysInMPUkeyMap =
+                    Object.keys(inMemMetadata.keyMaps[mpuBucket]);
+                const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                    if (a.slice(0, 8) === 'overview') {
+                        return -1;
+                    }
                 });
+                const overviewEntry = sortedKeyMap[0];
+                const partKey = sortedKeyMap[1];
+                const partEntryArray = partKey.split(splitter);
+                const partUploadId = partEntryArray[0];
+                const firstPartNumber = partEntryArray[1];
+                const partETag = inMemMetadata
+                    .keyMaps[mpuBucket][partKey]['content-md5'];
+                assert.strictEqual(keysInMPUkeyMap.length, 2);
+                assert.strictEqual(inMemMetadata
+                    .keyMaps[mpuBucket][overviewEntry].key, objectKey);
+                assert.strictEqual(partUploadId, testUploadId);
+                assert.strictEqual(firstPartNumber, '00001');
+                assert.strictEqual(partETag, calculatedHash);
+                done();
             });
         });
     });
@@ -167,19 +165,19 @@ describe('Multipart Upload API', () => {
             }, postBody);
             objectPutPart(authInfo, partRequest, log, (err) => {
                 assert.strictEqual(err, null);
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    const keysInMPUkeyMap = Object.keys(md.keyMap);
-                    const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                        if (a.slice(0, 8) === 'overview') {
-                            return -1;
-                        }
-                    });
-                    const partKey = sortedKeyMap[1];
-                    const partETag = md.keyMap[partKey]['content-md5'];
-                    assert.strictEqual(keysInMPUkeyMap.length, 2);
-                    assert.strictEqual(partETag, calculatedHash);
-                    done();
+                const keysInMPUkeyMap =
+                    Object.keys(inMemMetadata.keyMaps[mpuBucket]);
+                const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                    if (a.slice(0, 8) === 'overview') {
+                        return -1;
+                    }
                 });
+                const partKey = sortedKeyMap[1];
+                const partETag = inMemMetadata
+                    .keyMaps[mpuBucket][partKey]['content-md5'];
+                assert.strictEqual(keysInMPUkeyMap.length, 2);
+                assert.strictEqual(partETag, calculatedHash);
+                done();
             });
         });
     });
@@ -319,10 +317,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -366,28 +363,29 @@ describe('Multipart Upload API', () => {
                 }, postBody2);
                 objectPutPart(authInfo, partRequest2, log, err => {
                     assert.strictEqual(err, null);
-                    metadata.getBucket(mpuBucket, log, (err, md) => {
-                        const keysInMPUkeyMap = Object.keys(md.keyMap);
-                        const sortedKeyMap = keysInMPUkeyMap.sort((a) => {
-                            if (a.slice(0, 8) === 'overview') {
-                                return -1;
-                            }
-                        });
-                        const overviewEntry = sortedKeyMap[0];
-                        const partKey = sortedKeyMap[2];
-                        const secondPartEntryArray = partKey.split(splitter);
-                        const partUploadId = secondPartEntryArray[0];
-                        const secondPartETag = md
-                            .keyMap[partKey]['content-md5'];
-                        const secondPartNumber = secondPartEntryArray[1];
-                        assert.strictEqual(keysInMPUkeyMap.length, 3);
-                        assert.strictEqual(md.keyMap[overviewEntry].key,
-                                           objectKey);
-                        assert.strictEqual(partUploadId, testUploadId);
-                        assert.strictEqual(secondPartNumber, '00002');
-                        assert.strictEqual(secondPartETag, secondCalculatedMD5);
-                        done();
+
+                    const keysInMPUkeyMap =
+                        Object.keys(inMemMetadata.keyMaps[mpuBucket]);
+                    const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                        if (a.slice(0, 8) === 'overview') {
+                            return -1;
+                        }
                     });
+                    const overviewEntry = sortedKeyMap[0];
+                    const partKey = sortedKeyMap[2];
+                    const secondPartEntryArray = partKey.split(splitter);
+                    const partUploadId = secondPartEntryArray[0];
+                    const secondPartETag = inMemMetadata
+                        .keyMaps[mpuBucket][partKey]['content-md5'];
+                    const secondPartNumber = secondPartEntryArray[1];
+                    assert.strictEqual(keysInMPUkeyMap.length, 3);
+                    assert.strictEqual(inMemMetadata
+                        .keyMaps[mpuBucket][overviewEntry].key,
+                        objectKey);
+                    assert.strictEqual(partUploadId, testUploadId);
+                    assert.strictEqual(secondPartNumber, '00002');
+                    assert.strictEqual(secondPartETag, secondCalculatedMD5);
+                    done();
                 });
             });
         });
@@ -406,10 +404,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -474,13 +471,12 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(
                                 json.CompleteMultipartUploadResult.ETag[0],
                                 awsVerifiedETag);
-                            metadata.getBucket(bucketName, log, (err, md) => {
-                                assert(md.keyMap[objectKey]);
-                                const MD = md.keyMap[objectKey];
-                                assert.strictEqual(MD['x-amz-meta-stuff'],
-                                                   'I am some user metadata');
-                                done();
-                            });
+                            const MD = inMemMetadata
+                                .keyMaps[bucketName][objectKey];
+                            assert(MD);
+                            assert.strictEqual(MD['x-amz-meta-stuff'],
+                                'I am some user metadata');
+                            done();
                         });
                     });
             });
@@ -501,10 +497,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         (err, json) => {
@@ -562,13 +557,12 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(
                                 json.CompleteMultipartUploadResult.ETag[0],
                                 awsVerifiedETag);
-                            metadata.getBucket(bucketName, log, (err, md) => {
-                                assert(md.keyMap[objectKey]);
-                                const MD = md.keyMap[objectKey];
-                                assert.strictEqual(MD['x-amz-meta-stuff'],
-                                'I am some user metadata');
-                                done();
-                            });
+                            const MD = inMemMetadata
+                                  .keyMaps[bucketName][objectKey];
+                            assert(MD);
+                            assert.strictEqual(MD['x-amz-meta-stuff'],
+                                               'I am some user metadata');
+                            done();
                         });
                     });
             });
@@ -586,10 +580,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -627,11 +620,9 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err) => {
                         assert.deepStrictEqual(err, errors.MalformedXML);
-                        metadata.getBucket(mpuBucket, log, (err, md) => {
-                            assert.strictEqual(Object.keys(md.keyMap).length,
-                                               2);
-                            done();
-                        });
+                        assert.strictEqual(Object.keys(inMemMetadata
+                            .keyMaps[mpuBucket]).length, 2);
+                        done();
                     });
             });
         });
@@ -649,10 +640,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -709,10 +699,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -772,12 +761,10 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.deepStrictEqual(err,
-                                                   errors.InvalidPartOrder);
-                            metadata.getBucket(mpuBucket, log, (err, md) => {
-                                assert.strictEqual(Object.keys(md
-                                    .keyMap).length, 3);
-                                done();
-                            });
+                                errors.InvalidPartOrder);
+                            assert.strictEqual(Object.keys(inMemMetadata
+                                .keyMaps[mpuBucket]).length, 3);
+                            done();
                         });
                 });
             });
@@ -795,10 +782,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -856,14 +842,12 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    assert.strictEqual(Object.keys(
+                        inMemMetadata.keyMaps[mpuBucket]).length, 3);
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.deepStrictEqual(err, errors.InvalidPart);
-                            metadata.getBucket(mpuBucket, log, (err, md) => {
-                                assert.strictEqual(Object.keys(md
-                                    .keyMap).length, 3);
-                                done();
-                            });
+                            done();
                         });
                 });
             });
@@ -882,10 +866,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -948,15 +931,13 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    assert.strictEqual(Object.keys(
+                        inMemMetadata.keyMaps[mpuBucket]).length, 3);
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err) => {
                             assert.deepStrictEqual(err,
                                                    errors.EntityTooSmall);
-                            metadata.getBucket(mpuBucket, log, (err, md) => {
-                                assert.strictEqual(Object.keys(md.keyMap)
-                                                   .length, 3);
-                                done();
-                            });
+                            done();
                         });
                 });
             });
@@ -973,10 +954,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -1047,13 +1027,12 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(bucketName, log,
-                                    (err, md) => {
-                                        const MD = md.keyMap[objectKey];
-                                        assert.strictEqual(MD['content-length'],
-                                        6000100);
-                                        done();
-                                    });
+                                const MD = inMemMetadata
+                                      .keyMaps[bucketName][objectKey];
+                                assert(MD);
+                                assert.strictEqual(MD['content-length'],
+                                                   6000100);
+                                done();
                             });
                         });
                 });
@@ -1083,10 +1062,9 @@ describe('Multipart Upload API', () => {
                     authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -1155,13 +1133,12 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(bucketName, log,
-                                    (err, md) => {
-                                        const MD = md.keyMap[objectKey];
-                                        assert.strictEqual(MD.acl.Canned,
-                                            'authenticated-read');
-                                        done();
-                                    });
+                                const MD = inMemMetadata
+                                      .keyMaps[bucketName][objectKey];
+                                assert(MD);
+                                assert.strictEqual(MD.acl.Canned,
+                                                   'authenticated-read');
+                                done();
                             });
                         });
                 });
@@ -1193,10 +1170,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -1265,13 +1241,12 @@ describe('Multipart Upload API', () => {
                             assert.strictEqual(err, null);
                             parseString(result, (err) => {
                                 assert.strictEqual(err, null);
-                                metadata.getBucket(bucketName, log,
-                                    (err, md) => {
-                                        const MD = md.keyMap[objectKey];
-                                        assert.strictEqual(MD.acl.READ[0],
-                                            granteeId);
-                                        done();
-                                    });
+                                const MD = inMemMetadata
+                                      .keyMaps[bucketName][objectKey];
+                                assert(MD);
+                                assert.strictEqual(MD.acl.READ[0],
+                                                   granteeId);
+                                done();
                             });
                         });
                 });
@@ -1288,10 +1263,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -1321,16 +1295,13 @@ describe('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                 };
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 2);
-                    multipartDelete(authInfo, deleteRequest, log, err => {
-                        assert.strictEqual(err, null);
-                        metadata.getBucket(mpuBucket, log, (err, md) => {
-                            assert.strictEqual(Object.keys(md.keyMap).length,
-                                               0);
-                            done();
-                        });
-                    });
+                assert.strictEqual(Object.keys(
+                    inMemMetadata.keyMaps[mpuBucket]).length, 2);
+                multipartDelete(authInfo, deleteRequest, log, err => {
+                    assert.strictEqual(err, null);
+                    assert.strictEqual(Object.keys(
+                        inMemMetadata.keyMaps[mpuBucket]).length, 0);
+                    done();
                 });
             });
         });
@@ -1346,10 +1317,9 @@ describe('Multipart Upload API', () => {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
-                    parseString(result, next);
-                });
+                const mpuKeys = inMemMetadata.keyMaps[mpuBucket];
+                assert.strictEqual(Object.keys(mpuKeys).length, 1);
+                parseString(result, next);
             },
         ],
         function waterfallFinal(err, json) {
@@ -1379,12 +1349,11 @@ describe('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: 'non-existent-upload-id' },
                 };
-                metadata.getBucket(mpuBucket, log, (err, md) => {
-                    assert.strictEqual(Object.keys(md.keyMap).length, 2);
-                    multipartDelete(authInfo, deleteRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.NoSuchUpload);
-                        done();
-                    });
+                assert.strictEqual(Object.keys(
+                    inMemMetadata.keyMaps[mpuBucket]).length, 2);
+                multipartDelete(authInfo, deleteRequest, log, err => {
+                    assert.deepStrictEqual(err, errors.NoSuchUpload);
+                    done();
                 });
             });
         });
