@@ -1,12 +1,13 @@
 import assert from 'assert';
-import Bucket from '../../../lib/metadata/in_memory/Bucket';
+import BucketInfo from '../../../lib/metadata/BucketInfo';
 import constants from '../../../constants';
 import { isBucketAuthorized } from
     '../../../lib/api/apiUtils/authorization/aclChecks';
 
 const ownerCanonicalId = 'ownerCanonicalId';
-const bucket = new Bucket('niftyBucket', ownerCanonicalId,
-'iAmTheOwnerDisplayName');
+const creationDate = new Date().toJSON();
+const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
+    'iAmTheOwnerDisplayName', creationDate);
 const accountToVet = 'accountToVetId';
 
 describe('bucket authorization for bucketGet, bucketHead, ' +

@@ -60,6 +60,7 @@ export function createAlteredRequest(alteredItems, objToAlter,
 export function cleanup() {
     inMemMetadata.buckets = {};
     ds.length = 0;
+    inMemMetadata.keyMaps = {};
 }
 
 export class DummyRequestLogger {
