@@ -4,8 +4,7 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
-import metadata from '../metadataswitch';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
@@ -39,7 +38,8 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
 describe('objectDelete API', () => {
     let testPutObjectRequest;
 
-    beforeEach(done => {
+    beforeEach(() => {
+        cleanup();
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -47,11 +47,6 @@ describe('objectDelete API', () => {
             headers: {},
             url: `/${bucketName}/${objectKey}`,
         }, postBody);
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     const testBucketPutRequest = new DummyRequest({

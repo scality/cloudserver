@@ -3,7 +3,7 @@ import assert from 'assert';
 import async from 'async';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
-import { DummyRequestLogger } from '../helpers';
+import { cleanup, DummyRequestLogger } from '../helpers';
 import { isKeyInContents, } from
     '../../../lib/metadata/in_memory/bucket_utilities';
 import metadata from '../metadataswitch';
@@ -16,15 +16,12 @@ const log = new DummyRequestLogger();
 describe('bucket API for getting, putting and deleting ' +
          'objects in a bucket', () => {
     let bucket;
-    before(done => {
+    beforeEach(done => {
+        cleanup();
         bucket = new Bucket(bucketName, 'iAmTheOwnerId',
         'iAmTheOwnerDisplayName');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, done);
     });
 
     it('should be able to add an object to a bucket ' +
@@ -103,13 +100,10 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     let bucket;
 
     before(done => {
+        cleanup();
         bucket = new Bucket(bucketName, 'ownerid', 'ownerdisplayname');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, done);
     });
 
     it('should return individual key if key does not contain ' +
@@ -276,13 +270,10 @@ describe('stress test for bucket API', function describe() {
     let bucket;
 
     before(done => {
+        cleanup();
         bucket = new Bucket(bucketName, 'ownerid', 'ownerdisplayname');
         bucket.uid = bucketName;
         metadata.createBucket(bucketName, bucket, log, done);
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, done);
     });
 
     it(`should put ${numKeys} keys into bucket and retrieve bucket list ` +
