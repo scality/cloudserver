@@ -487,6 +487,94 @@ describe('Multipart Upload API', () => {
         });
     });
 
+    it('should complete a multipart upload even if etag is sent ' +
+        'in post body without quotes (a la Cyberduck)', done => {
+        const partBody = new Buffer('I am a part\n');
+        initiateRequest.headers['x-amz-meta-stuff'] =
+            'I am some user metadata';
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(authInfo, bucketPutRequest, log, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    authInfo, initiateRequest, log, next);
+            },
+            function waterfall3(result, next) {
+                metadata.getBucket(mpuBucket, log, (err, md) => {
+                    assert.strictEqual(Object.keys(md.keyMap).length, 1);
+                    parseString(result, next);
+                });
+            },
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5').update(partBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, partBody);
+            objectPutPart(authInfo, partRequest, log, () => {
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    // ETag without quotes
+                    `<ETag>${calculatedHash}</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                };
+                const awsVerifiedETag =
+                    '953e9e776f285afc0bfcf1ab4668299d-1';
+                completeMultipartUpload(authInfo,
+                    completeRequest, log, (err, result) => {
+                        parseString(result, (err, json) => {
+                            assert.strictEqual(
+                                json.CompleteMultipartUploadResult.Location[0],
+                                `http://${bucketName}.s3.amazonaws.com`
+                                + `/${objectKey}`);
+                            assert.strictEqual(
+                                json.CompleteMultipartUploadResult.Bucket[0],
+                                bucketName);
+                            assert.strictEqual(
+                                json.CompleteMultipartUploadResult.Key[0],
+                                objectKey);
+                            assert.strictEqual(
+                                json.CompleteMultipartUploadResult.ETag[0],
+                                awsVerifiedETag);
+                            metadata.getBucket(bucketName, log, (err, md) => {
+                                assert(md.keyMap[objectKey]);
+                                const MD = md.keyMap[objectKey];
+                                assert.strictEqual(MD['x-amz-meta-stuff'],
+                                'I am some user metadata');
+                                done();
+                            });
+                        });
+                    });
+            });
+        });
+    });
+
     it('should return an error if a complete multipart upload' +
     ' request contains malformed xml', done => {
         async.waterfall([
