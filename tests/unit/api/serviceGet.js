@@ -5,11 +5,8 @@ import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
-import metadata from '../metadataswitch';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import serviceGet from '../../../lib/api/serviceGet';
-
-const usersBucket = constants.usersBucket;
 
 const authInfo = makeAuthInfo('accessKey1');
 const log = new DummyRequestLogger();
@@ -19,24 +16,8 @@ const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
 
 describe('serviceGet API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket('bucketname', log, () => {
-            metadata.deleteBucket(usersBucket, log, () => {
-                done();
-            });
-        });
-    });
-
-    afterEach(done => {
-        metadata.deleteBucket(bucketName1, log, () => {
-            metadata.deleteBucket(bucketName2, log, () => {
-                metadata.deleteBucket(bucketName3, log, () => {
-                    metadata.deleteBucket(usersBucket, log, () => {
-                        done();
-                    });
-                });
-            });
-        });
+    beforeEach(() => {
+        cleanup();
     });
 
     const serviceGetRequest = {
@@ -46,9 +27,6 @@ describe('serviceGet API', () => {
     };
 
     it('should return the list of buckets owned by the user', done => {
-        const bucketName1 = 'bucketname1';
-        const bucketName2 = 'bucketname2';
-        const bucketName3 = 'bucketname3';
         const testbucketPutRequest1 = {
             namespace,
             bucketName: bucketName1,

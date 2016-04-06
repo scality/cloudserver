@@ -4,7 +4,7 @@ import { parseString } from 'xml2js';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 
@@ -33,6 +33,7 @@ const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5`;
 
 describe('List Parts API', () => {
     beforeEach(done => {
+        cleanup();
         const sampleNormalBucketInstance = new Bucket(bucketName,
             canonicalID, authInfo.getAccountDisplayName());
         const sampleMPUInstance = new Bucket(mpuBucket, 'admin', 'admin');
@@ -97,12 +98,6 @@ describe('List Parts API', () => {
             () => {
                 metadata.createBucket(mpuBucket, sampleMPUInstance, log, done);
             });
-    });
-
-    afterEach(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(mpuBucket, log, done);
-        });
     });
 
     it('should list all parts of a multipart upload', done => {

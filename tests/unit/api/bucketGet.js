@@ -5,9 +5,8 @@ import { parseString } from 'xml2js';
 
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketPut from '../../../lib/api/bucketPut';
-import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
 
 const authInfo = makeAuthInfo('accessKey1');
@@ -27,7 +26,8 @@ describe('bucketGet API', () => {
     const objectName2 = `${prefix}${delimiter}objectName2`;
     const objectName3 = 'notURIvalid$$';
 
-    beforeEach(done => {
+    beforeEach(() => {
+        cleanup();
         testPutBucketRequest = new DummyRequest({
             bucketName,
             headers: {},
@@ -55,11 +55,6 @@ describe('bucketGet API', () => {
             namespace,
             objectKey: objectName3,
         }, postBody);
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     it('should return the name of the common prefix of common prefix objects if'

@@ -4,7 +4,7 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -23,20 +23,8 @@ const testRequest = {
 };
 
 describe('bucketPut API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(usersBucket, log, () => {
-                done();
-            });
-        });
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(usersBucket, log, () => {
-                done();
-            });
-        });
+    beforeEach(() => {
+        cleanup();
     });
 
     it('should return an error if bucket already exists', done => {

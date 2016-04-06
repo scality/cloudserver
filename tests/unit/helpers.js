@@ -1,5 +1,6 @@
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
+import inMemMetadata from '../../lib/metadata/in_memory/metadata';
 
 export function makeid(size) {
     let text = '';
@@ -53,6 +54,10 @@ export function createAlteredRequest(alteredItems, objToAlter,
     });
     alteredRequest[objToAlter] = alteredNestedObj;
     return alteredRequest;
+}
+
+export function cleanup() {
+    inMemMetadata.buckets = {};
 }
 
 export class DummyRequestLogger {

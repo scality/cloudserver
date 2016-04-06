@@ -3,8 +3,7 @@ import assert from 'assert';
 
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
-import metadata from '../metadataswitch';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
@@ -17,12 +16,8 @@ const testRequest = {
     url: '/',
 };
 describe('bucketHead API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
+    beforeEach(() => {
+        cleanup();
     });
 
     it('should return an error if the bucket does not exist', done => {
