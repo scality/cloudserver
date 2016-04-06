@@ -3,11 +3,9 @@ import async from 'async';
 import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
-import metadata from '../metadataswitch';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
 
@@ -15,19 +13,10 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
 describe('listMultipartUploads API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(mpuBucket, log, () => done());
-        });
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(mpuBucket, log, () => done());
-        });
+    beforeEach(() => {
+        cleanup();
     });
 
     const prefix = 'sub';

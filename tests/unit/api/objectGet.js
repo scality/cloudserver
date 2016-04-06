@@ -2,8 +2,7 @@ import assert from 'assert';
 import crypto from 'crypto';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
-import metadata from '../metadataswitch';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
 import DummyRequest from '../DummyRequest';
@@ -19,8 +18,8 @@ const postBody = new Buffer('I am a body');
 describe('objectGet API', () => {
     let testPutObjectRequest;
 
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
+    beforeEach(() => {
+        cleanup();
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -28,10 +27,6 @@ describe('objectGet API', () => {
             headers: { 'x-amz-meta-test': 'some metadata' },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';

@@ -2,8 +2,7 @@ import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
-import metadata from '../metadataswitch';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import objectPut from '../../../lib/api/objectPut';
 import objectHead from '../../../lib/api/objectHead';
 import DummyRequest from '../DummyRequest';
@@ -32,7 +31,8 @@ const userMetadataValue = 'some metadata';
 let testPutObjectRequest;
 
 describe('objectHead API', () => {
-    beforeEach(done => {
+    beforeEach(() => {
+        cleanup();
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -41,11 +41,6 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
             calculatedHash: correctMD5,
         }, postBody);
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     it('should return NotModified if request header ' +

@@ -6,7 +6,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
@@ -18,12 +18,8 @@ const postBody = new Buffer('I am a body');
 const usersBucket = constants.usersBucket;
 
 describe('bucketDelete API', () => {
-    afterEach(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(usersBucket, log, () => {
-                done();
-            });
-        });
+    beforeEach(() => {
+        cleanup();
     });
 
     const testRequest = {

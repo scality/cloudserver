@@ -8,7 +8,7 @@ import { parseString } from 'xml2js';
 import bucketPut from '../../../lib/api/bucketPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import metadata from '../metadataswitch';
 import multipartDelete from '../../../lib/api/multipartDelete';
@@ -42,20 +42,8 @@ const initiateRequest = {
 
 
 describe('Multipart Upload API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(mpuBucket, log, () => {
-                done();
-            });
-        });
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => {
-            metadata.deleteBucket(mpuBucket, log, () => {
-                done();
-            });
-        });
+    beforeEach(() => {
+        cleanup();
     });
 
 
