@@ -59,4 +59,19 @@ describe('canonicalization', () => {
         const canonicalizedResource = getCanonicalizedResource(request);
         assert.strictEqual(canonicalizedResource, '/');
     });
+
+    it('should sort the subresources (included query params) in ' +
+        'lexicographical order', () => {
+        const request = {
+            headers: { host: 's3.amazonaws.com:80' },
+            url: '/',
+            query: {
+                uploadId: 'iamanuploadid',
+                partNumber: '5',
+            },
+        };
+        const canonicalizedResource = getCanonicalizedResource(request);
+        assert.strictEqual(canonicalizedResource,
+            '/?partNumber=5&uploadId=iamanuploadid');
+    });
 });
