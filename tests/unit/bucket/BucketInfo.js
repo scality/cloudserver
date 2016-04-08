@@ -53,24 +53,25 @@ Object.keys(acl).forEach(
         describe('constructor', () => {
             it('this should have the right BucketInfo types',
                () => {
-                   assert.strictEqual(typeof dummyBucket.name, 'string');
-                   assert.strictEqual(typeof dummyBucket.owner, 'string');
-                   assert.strictEqual(typeof dummyBucket.ownerDisplayName,
+                   assert.strictEqual(typeof dummyBucket.getName(), 'string');
+                   assert.strictEqual(typeof dummyBucket.getOwner(), 'string');
+                   assert.strictEqual(typeof dummyBucket.getOwnerDisplayName(),
                                       'string');
-                   assert.strictEqual(typeof dummyBucket.creationDate,
+                   assert.strictEqual(typeof dummyBucket.getCreationDate(),
                                       'string');
                });
             it('this should have the right acl\'s types', () => {
-                assert.strictEqual(typeof dummyBucket.acl, 'object');
-                assert.strictEqual(typeof dummyBucket.acl.Canned, 'string');
-                assert(Array.isArray(dummyBucket.acl.FULL_CONTROL));
-                assert(Array.isArray(dummyBucket.acl.WRITE));
-                assert(Array.isArray(dummyBucket.acl.WRITE_ACP));
-                assert(Array.isArray(dummyBucket.acl.READ));
-                assert(Array.isArray(dummyBucket.acl.READ_ACP));
+                assert.strictEqual(typeof dummyBucket.getAcl(), 'object');
+                assert.strictEqual(
+                    typeof dummyBucket.getAcl().Canned, 'string');
+                assert(Array.isArray(dummyBucket.getAcl().FULL_CONTROL));
+                assert(Array.isArray(dummyBucket.getAcl().WRITE));
+                assert(Array.isArray(dummyBucket.getAcl().WRITE_ACP));
+                assert(Array.isArray(dummyBucket.getAcl().READ));
+                assert(Array.isArray(dummyBucket.getAcl().READ_ACP));
             });
             it('this should have the right acls', () => {
-                assert.deepStrictEqual(dummyBucket.acl,
+                assert.deepStrictEqual(dummyBucket.getAcl(),
                                        acl[aclObj] || emptyAcl);
             });
         });
@@ -99,15 +100,17 @@ Object.keys(acl).forEach(
             it('setCannedAcl should set acl.Canned', () => {
                 const testAclCanned = 'public-read';
                 dummyBucket.setCannedAcl(testAclCanned);
-                assert.deepStrictEqual(dummyBucket.acl.Canned, testAclCanned);
+                assert.deepStrictEqual(
+                    dummyBucket.getAcl().Canned, testAclCanned);
             });
             it('setSpecificAcl should set the acl of a specified bucket',
                () => {
                    const typeOfGrant = 'WRITE';
                    dummyBucket.setSpecificAcl(owner, typeOfGrant);
-                   const lastIndex = dummyBucket.acl[typeOfGrant].length - 1;
+                   const lastIndex =
+                             dummyBucket.getAcl()[typeOfGrant].length - 1;
                    assert.deepStrictEqual(
-                       dummyBucket.acl[typeOfGrant][lastIndex], owner);
+                       dummyBucket.getAcl()[typeOfGrant][lastIndex], owner);
                });
             it('setFullAcl should set full set of ACLs', () => {
                 const newACLs = {
@@ -119,9 +122,9 @@ Object.keys(acl).forEach(
                     READ_ACP: [],
                 };
                 dummyBucket.setFullAcl(newACLs);
-                assert.deepStrictEqual(dummyBucket.acl.FULL_CONTROL,
+                assert.deepStrictEqual(dummyBucket.getAcl().FULL_CONTROL,
                                        ['someOtherAccount']);
-                assert.deepStrictEqual(dummyBucket.acl.WRITE_ACP,
+                assert.deepStrictEqual(dummyBucket.getAcl().WRITE_ACP,
                                        ['yetAnotherAccount']);
             });
             it('setName should set the bucket name', () => {

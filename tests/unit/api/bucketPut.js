@@ -92,8 +92,8 @@ describe('bucketPut API', () => {
                 return done(new Error(err));
             }
             return metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.name, bucketName);
-                assert.strictEqual(md.owner, canonicalID);
+                assert.strictEqual(md.getName(), bucketName);
+                assert.strictEqual(md.getOwner(), canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
                 metadata.listObject(usersBucket, prefix,
                     null, null, null, log, (err, listResponse) => {
@@ -188,7 +188,7 @@ describe('bucketPut API', () => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
-                assert.strictEqual(md.acl.Canned, 'public-read');
+                assert.strictEqual(md.getAcl().Canned, 'public-read');
                 done();
             });
         });
@@ -223,12 +223,16 @@ describe('bucketPut API', () => {
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, undefined, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.READ[0], constants.logId);
-                assert.strictEqual(md.acl.WRITE[0], constants.publicId);
-                assert(md.acl.FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
-                assert(md.acl.FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
-                assert(md.acl.READ_ACP.indexOf(canonicalIDforSample1) > -1);
-                assert(md.acl.WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
+                assert.strictEqual(md.getAcl().READ[0], constants.logId);
+                assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
+                assert(md.getAcl()
+                       .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl()
+                       .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
+                assert(md.getAcl()
+                       .READ_ACP.indexOf(canonicalIDforSample1) > -1);
+                assert(md.getAcl()
+                       .WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
                 done();
             });
         });

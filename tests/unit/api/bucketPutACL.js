@@ -78,7 +78,7 @@ describe('putBucketACL API', () => {
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.Canned, 'public-read-write');
+                assert.strictEqual(md.getAcl().Canned, 'public-read-write');
                 done();
             });
         });
@@ -109,11 +109,12 @@ describe('putBucketACL API', () => {
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.Canned, 'public-read');
+                assert.strictEqual(md.getAcl().Canned, 'public-read');
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.acl.Canned, 'authenticated-read');
+                        assert.strictEqual(md.getAcl().Canned,
+                                           'authenticated-read');
                         done();
                     });
                 });
@@ -147,11 +148,11 @@ describe('putBucketACL API', () => {
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.Canned, 'private');
+                assert.strictEqual(md.getAcl().Canned, 'private');
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.acl.Canned,
+                        assert.strictEqual(md.getAcl().Canned,
                                            'log-delivery-write');
                         done();
                     });
@@ -188,15 +189,14 @@ describe('putBucketACL API', () => {
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.READ[0], constants.logId);
-                assert.strictEqual(md.acl.WRITE[0], constants.publicId);
-                assert(md.acl.FULL_CONTROL
+                assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
+                assert(md.getAcl().FULL_CONTROL
                     .indexOf(canonicalIDforSample1) > -1);
-                assert(md.acl.FULL_CONTROL
+                assert(md.getAcl().FULL_CONTROL
                     .indexOf(canonicalIDforSample2) > -1);
-                assert(md.acl.READ_ACP
+                assert(md.getAcl().READ_ACP
                     .indexOf(canonicalIDforSample1) > -1);
-                assert(md.acl.WRITE_ACP
+                assert(md.getAcl().WRITE_ACP
                     .indexOf(canonicalIDforSample2) > -1);
                 done();
             });
@@ -282,14 +282,15 @@ describe('putBucketACL API', () => {
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.acl.Canned, '');
-                assert.strictEqual(md.acl.FULL_CONTROL[0],
+                assert.strictEqual(md.getAcl().Canned, '');
+                assert.strictEqual(md.getAcl().FULL_CONTROL[0],
                     '852b113e7a2f25102679df27bb0ae12b3f85be6' +
                     'BucketOwnerCanonicalUserID');
-                assert.strictEqual(md.acl.READ[0], constants.publicId);
-                assert.strictEqual(md.acl.WRITE[0], constants.logId);
-                assert.strictEqual(md.acl.WRITE_ACP[0], canonicalIDforSample1);
-                assert.strictEqual(md.acl.READ_ACP[0],
+                assert.strictEqual(md.getAcl().READ[0], constants.publicId);
+                assert.strictEqual(md.getAcl().WRITE[0], constants.logId);
+                assert.strictEqual(md.getAcl().WRITE_ACP[0],
+                                   canonicalIDforSample1);
+                assert.strictEqual(md.getAcl().READ_ACP[0],
                     'f30716ab7115dcb44a5e' +
                     'f76e9d74b8e20567f63' +
                     'TestAccountCanonicalUserID');
