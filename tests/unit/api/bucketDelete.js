@@ -41,7 +41,7 @@ describe('bucketDelete API', () => {
 
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
-            objectPut(authInfo, testPutObjectRequest, log, (err) => {
+            objectPut(authInfo, testPutObjectRequest, log, err => {
                 assert.strictEqual(err, undefined);
                 bucketDelete(authInfo, testRequest, log, err => {
                     assert.deepStrictEqual(err, errors.BucketNotEmpty);

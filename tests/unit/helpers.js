@@ -50,7 +50,7 @@ export function createAlteredRequest(alteredItems, objToAlter,
     baseOuterObj, baseInnerObj) {
     const alteredRequest = Object.assign({}, baseOuterObj);
     const alteredNestedObj = Object.assign({}, baseInnerObj);
-    Object.keys(alteredItems).forEach((key) => {
+    Object.keys(alteredItems).forEach(key => {
         alteredNestedObj[key] = alteredItems[key];
     });
     alteredRequest[objToAlter] = alteredNestedObj;
