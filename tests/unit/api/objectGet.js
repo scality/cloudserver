@@ -53,10 +53,10 @@ describe('objectGet API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectGet(authInfo, testGetRequest,
                     log, (err, result, responseMetaHeaders) => {
-                        assert.strictEqual(responseMetaHeaders
-                            [userMetadataKey], userMetadataValue);
+                        assert.strictEqual(responseMetaHeaders[userMetadataKey],
+                                           userMetadataValue);
                         assert.strictEqual(responseMetaHeaders.ETag,
-                            `"${correctMD5}"`);
+                                           `"${correctMD5}"`);
                         done();
                     });
             });
@@ -70,10 +70,10 @@ describe('objectGet API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectGet(authInfo, testGetRequest, log, (err, readable) => {
                     const chunks = [];
-                    readable.on('data', function chunkRcvd(chunk) {
+                    readable.on('data', chunk => {
                         chunks.push(chunk);
                     });
-                    readable.on('end', function combineChunks() {
+                    readable.on('end', () => {
                         assert.deepStrictEqual(chunks, [postBody]);
                         done();
                     });
@@ -101,12 +101,12 @@ describe('objectGet API', () => {
                 objectGet(authInfo, testGetRequest, log, (err, readable) => {
                     const md5Hash = crypto.createHash('md5');
                     const chunks = [];
-                    readable.on('data', function chunkRcvd(chunk) {
+                    readable.on('data', chunk => {
                         const cBuffer = new Buffer(chunk, 'binary');
                         chunks.push(cBuffer);
                         md5Hash.update(cBuffer);
                     });
-                    readable.on('end', function combineChunks() {
+                    readable.on('end', () => {
                         const resultmd5Hash = md5Hash.digest('hex');
                         assert.strictEqual(resultmd5Hash, correctBigMD5);
                         done();
