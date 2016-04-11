@@ -3,7 +3,7 @@ import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
@@ -27,7 +27,8 @@ const testPutBucketRequest = new DummyRequest({
 let testPutObjectRequest;
 
 describe('putObjectACL API', () => {
-    beforeEach(done => {
+    beforeEach(() => {
+        cleanup();
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -35,12 +36,6 @@ describe('putObjectACL API', () => {
             headers: {},
             url: `/${bucketName}/${objectName}`,
         }, postBody);
-
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
     it('should return an error if invalid canned ACL provided', done => {

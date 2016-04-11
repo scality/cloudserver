@@ -6,7 +6,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -21,12 +21,8 @@ const testBucketPutRequest = {
 };
 
 describe('putBucketACL API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
+    beforeEach(() => {
+        cleanup();
     });
 
     it('should parse a grantheader', function testGrantHeader() {

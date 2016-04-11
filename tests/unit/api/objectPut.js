@@ -3,7 +3,7 @@ import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import DummyRequest from '../DummyRequest';
@@ -41,7 +41,8 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
 }
 
 describe('objectPut API', () => {
-    beforeEach(done => {
+    beforeEach(() => {
+        cleanup();
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -49,11 +50,6 @@ describe('objectPut API', () => {
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
         }, postBody);
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
     });
 
 

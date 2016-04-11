@@ -6,8 +6,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
-import metadata from '../metadataswitch';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -17,12 +16,8 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 
 describe('bucketGetACL API', () => {
-    beforeEach(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
-    });
-
-    after(done => {
-        metadata.deleteBucket(bucketName, log, () => done());
+    beforeEach(() => {
+        cleanup();
     });
 
     const testBucketPutRequest = {
