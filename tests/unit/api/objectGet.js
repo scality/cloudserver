@@ -115,4 +115,35 @@ describe('objectGet API', () => {
             });
         });
     });
+
+    it('should get a 0 bytes object', done => {
+        const postBody = '';
+        const correctMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'content-length': '0',
+                'x-amz-meta-test': 'some metadata',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
+        }, postBody);
+        bucketPut(authInfo, testPutBucketRequest, log, (err, res) => {
+            assert.strictEqual(res, 'Bucket created');
+            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctMD5);
+                objectGet(authInfo, testGetRequest,
+                    log, (err, result, responseMetaHeaders) => {
+                        assert.strictEqual(result, null);
+                        assert.strictEqual(responseMetaHeaders
+                            [userMetadataKey], userMetadataValue);
+                        assert.strictEqual(responseMetaHeaders.ETag,
+                            `"${correctMD5}"`);
+                        done();
+                    });
+            });
+        });
+    });
 });
