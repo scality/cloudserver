@@ -125,7 +125,7 @@ describe('Multipart Upload API', () => {
                     assert.strictEqual(keysInMPUkeyMap.length, 2);
                     assert.strictEqual(md.keyMap[overviewEntry].key, objectKey);
                     assert.strictEqual(partUploadId, testUploadId);
-                    assert.strictEqual(firstPartNumber, '1');
+                    assert.strictEqual(firstPartNumber, '00001');
                     assert.strictEqual(partETag, calculatedHash);
                     done();
                 });
@@ -384,7 +384,7 @@ describe('Multipart Upload API', () => {
                         assert.strictEqual(md.keyMap[overviewEntry].key,
                                            objectKey);
                         assert.strictEqual(partUploadId, testUploadId);
-                        assert.strictEqual(secondPartNumber, '2');
+                        assert.strictEqual(secondPartNumber, '00002');
                         assert.strictEqual(secondPartETag, secondCalculatedMD5);
                         done();
                     });
