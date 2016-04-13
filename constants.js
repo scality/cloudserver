@@ -48,4 +48,5 @@ export default {
     // to be implemented later but the logId is used in the
     // ACLs.
     logId: 'http://acs.amazonaws.com/groups/s3/LogDelivery',
+    emptyFileMd5: 'd41d8cd98f00b204e9800998ecf8427e',
 };
