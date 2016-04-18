@@ -88,6 +88,29 @@ describe('objectDelete API', () => {
         });
     });
 
+    it('should delete a 0 bytes object', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {},
+            url: `/${bucketName}/${objectKey}`,
+        }, '');
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, log, () => {
+                objectDelete(authInfo, testDeleteRequest, log, err => {
+                    assert.strictEqual(err, undefined);
+                    objectGet(authInfo, testGetObjectRequest, log, err => {
+                        const expected = Object.assign({}, errors.NoSuchKey);
+                        const received = Object.assign({}, err);
+                        assert.deepStrictEqual(received, expected);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
     it('should prevent anonymous user deleteObject API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
