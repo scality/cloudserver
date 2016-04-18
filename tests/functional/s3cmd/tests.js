@@ -275,8 +275,28 @@ describe('s3cmd delObject', () => {
         exec(['rm', `s3://${bucket}/${upload}`], done);
     });
 
-    it('delete non existing object, should fail', done => {
-        exec(['rm', `s3://${bucket}/${nonexist}`], done, 12);
+    it('delete an already deleted object, should return a 204', done => {
+        provideLineOfInterest(['rm', `s3://${bucket}/${upload}`, '--debug'],
+        'DEBUG: Response: {', lineOfInterest => {
+            const openingBracket = lineOfInterest.indexOf('{');
+            const resObject = lineOfInterest.slice(openingBracket)
+                .replace(/"/g, '\\"').replace(/'/g, '"');
+            const parsedObject = JSON.parse(resObject);
+            assert.strictEqual(parsedObject.status, 204);
+            done();
+        });
+    });
+
+    it('delete non-existing object, should return a 204', done => {
+        provideLineOfInterest(['rm', `s3://${bucket}/${nonexist}`, '--debug'],
+        'DEBUG: Response: {', lineOfInterest => {
+            const openingBracket = lineOfInterest.indexOf('{');
+            const resObject = lineOfInterest.slice(openingBracket)
+                .replace(/"/g, '\\"').replace(/'/g, '"');
+            const parsedObject = JSON.parse(resObject);
+            assert.strictEqual(parsedObject.status, 204);
+            done();
+        });
     });
 
     it('try to get the deleted object, should fail', done => {
