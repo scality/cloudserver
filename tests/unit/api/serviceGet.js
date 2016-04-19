@@ -49,13 +49,13 @@ describe('serviceGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testbucketPutRequest1, log, next);
             },
-            function waterfall2(result, next) {
+            function waterfall2(next) {
                 bucketPut(authInfo, testbucketPutRequest2, log, next);
             },
-            function waterfall3(result, next) {
+            function waterfall3(next) {
                 bucketPut(authInfo, testbucketPutRequest3, log, next);
             },
-            function waterfall4(result, next) {
+            function waterfall4(next) {
                 serviceGet(authInfo, serviceGetRequest, log, next);
             },
             function waterfall4(result, next) {

@@ -59,8 +59,7 @@ describe('objectGetACL API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testBucketPutRequest, log, next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -84,8 +83,7 @@ describe('objectGetACL API', () => {
 
     it('should return an error if try to get an ACL ' +
         'for a nonexistent object', done => {
-        bucketPut(authInfo, testBucketPutRequest, log, (err, result) => {
-            assert.strictEqual(result, 'Bucket created');
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectGetACL(authInfo, testGetACLRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchKey);
                 done();
@@ -105,8 +103,7 @@ describe('objectGetACL API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testBucketPutRequest, log, next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -147,8 +144,7 @@ describe('objectGetACL API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testBucketPutRequest, log, next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -196,8 +192,7 @@ describe('objectGetACL API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testBucketPutRequest, log, next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -242,8 +237,7 @@ describe('objectGetACL API', () => {
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
                     next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -287,8 +281,7 @@ describe('objectGetACL API', () => {
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
                     next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -342,8 +335,7 @@ describe('objectGetACL API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testBucketPutRequest, log, next);
             },
-            function waterfall2(result, next) {
-                assert.strictEqual(result, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest, log, next);
             },
             function waterfall3(result, next) {

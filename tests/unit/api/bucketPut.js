@@ -87,12 +87,11 @@ describe('bucketPut API', () => {
     });
 
     it('should create a bucket', done => {
-        bucketPut(authInfo, testRequest, log, (err, success) => {
+        bucketPut(authInfo, testRequest, log, err => {
             if (err) {
                 return done(new Error(err));
             }
-            assert.strictEqual(success, 'Bucket created');
-            metadata.getBucket(bucketName, log, (err, md) => {
+            return metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.name, bucketName);
                 assert.strictEqual(md.owner, canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
@@ -186,7 +185,7 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
+            assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(md.acl.Canned, 'public-read');
@@ -222,7 +221,7 @@ describe('bucketPut API', () => {
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null, 'Error creating bucket');
+            assert.strictEqual(err, undefined, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.acl.READ[0], constants.logId);
                 assert.strictEqual(md.acl.WRITE[0], constants.publicId);
