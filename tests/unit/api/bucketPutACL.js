@@ -21,18 +21,17 @@ const testBucketPutRequest = {
 };
 
 describe('putBucketACL API', () => {
-    beforeEach(() => {
-        cleanup();
-    });
+    before(() => cleanup());
+    beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
+    afterEach(() => cleanup());
 
-    it('should parse a grantheader', function testGrantHeader() {
+    it('should parse a grantheader', () => {
         const grantRead =
             `uri=${constants.logId}, ` +
             'emailAddress="test@testing.com", ' +
             'emailAddress="test2@testly.com", ' +
             'id="sdfsdfsfwwiieohefs"';
-        const grantReadHeader =
-            aclUtils.parseGrant(grantRead, 'read');
+        const grantReadHeader = aclUtils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;
         assert.strictEqual(firstIdentifier, constants.logId);
         const secondIdentifier = grantReadHeader[1].identifier;
@@ -59,12 +58,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidArgument);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
         });
     });
 
@@ -79,14 +75,11 @@ describe('putBucketACL API', () => {
             url: '/?acl',
             query: { acl: '' },
         };
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(md.acl.Canned, 'public-read-write');
-                    done();
-                });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.acl.Canned, 'public-read-write');
+                done();
             });
         });
     });
@@ -113,19 +106,15 @@ describe('putBucketACL API', () => {
             url: '/?acl',
             query: { acl: '' },
         };
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(md.acl.Canned, 'public-read');
-                    bucketPutACL(authInfo, testACLRequest2, log, err => {
-                        assert.strictEqual(err, undefined);
-                        metadata.getBucket(bucketName, log, (err, md) => {
-                            assert.strictEqual(md.acl.Canned,
-                                               'authenticated-read');
-                            done();
-                        });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.acl.Canned, 'public-read');
+                bucketPutACL(authInfo, testACLRequest2, log, err => {
+                    assert.strictEqual(err, undefined);
+                    metadata.getBucket(bucketName, log, (err, md) => {
+                        assert.strictEqual(md.acl.Canned, 'authenticated-read');
+                        done();
                     });
                 });
             });
@@ -155,19 +144,16 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(md.acl.Canned, 'private');
-                    bucketPutACL(authInfo, testACLRequest2, log, err => {
-                        assert.strictEqual(err, undefined);
-                        metadata.getBucket(bucketName, log, (err, md) => {
-                            assert.strictEqual(md.acl.Canned,
-                                               'log-delivery-write');
-                            done();
-                        });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.acl.Canned, 'private');
+                bucketPutACL(authInfo, testACLRequest2, log, err => {
+                    assert.strictEqual(err, undefined);
+                    metadata.getBucket(bucketName, log, (err, md) => {
+                        assert.strictEqual(md.acl.Canned,
+                                           'log-delivery-write');
+                        done();
                     });
                 });
             });
@@ -199,23 +185,20 @@ describe('putBucketACL API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(md.acl.READ[0], constants.logId);
-                    assert.strictEqual(md.acl.WRITE[0], constants.publicId);
-                    assert(md.acl.FULL_CONTROL
-                        .indexOf(canonicalIDforSample1) > -1);
-                    assert(md.acl.FULL_CONTROL
-                        .indexOf(canonicalIDforSample2) > -1);
-                    assert(md.acl.READ_ACP
-                        .indexOf(canonicalIDforSample1) > -1);
-                    assert(md.acl.WRITE_ACP
-                        .indexOf(canonicalIDforSample2) > -1);
-                    done();
-                });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.acl.READ[0], constants.logId);
+                assert.strictEqual(md.acl.WRITE[0], constants.publicId);
+                assert(md.acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample1) > -1);
+                assert(md.acl.FULL_CONTROL
+                    .indexOf(canonicalIDforSample2) > -1);
+                assert(md.acl.READ_ACP
+                    .indexOf(canonicalIDforSample1) > -1);
+                assert(md.acl.WRITE_ACP
+                    .indexOf(canonicalIDforSample2) > -1);
+                done();
             });
         });
     });
@@ -235,13 +218,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err,
-                                       errors.UnresolvableGrantByEmailAddress);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.UnresolvableGrantByEmailAddress);
+            done();
         });
     });
 
@@ -300,25 +279,21 @@ describe('putBucketACL API', () => {
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.strictEqual(err, undefined);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.strictEqual(md.acl.Canned, '');
-                    assert.strictEqual(md.acl.FULL_CONTROL[0],
-                        '852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                        'BucketOwnerCanonicalUserID');
-                    assert.strictEqual(md.acl.READ[0], constants.publicId);
-                    assert.strictEqual(md.acl.WRITE[0], constants.logId);
-                    assert.strictEqual(md.acl.WRITE_ACP[0],
-                        canonicalIDforSample1);
-                    assert.strictEqual(md.acl.READ_ACP[0],
-                        'f30716ab7115dcb44a5e' +
-                        'f76e9d74b8e20567f63' +
-                        'TestAccountCanonicalUserID');
-                    done();
-                });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.acl.Canned, '');
+                assert.strictEqual(md.acl.FULL_CONTROL[0],
+                    '852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID');
+                assert.strictEqual(md.acl.READ[0], constants.publicId);
+                assert.strictEqual(md.acl.WRITE[0], constants.logId);
+                assert.strictEqual(md.acl.WRITE_ACP[0], canonicalIDforSample1);
+                assert.strictEqual(md.acl.READ_ACP[0],
+                    'f30716ab7115dcb44a5e' +
+                    'f76e9d74b8e20567f63' +
+                    'TestAccountCanonicalUserID');
+                done();
             });
         });
     });
@@ -348,13 +323,9 @@ describe('putBucketACL API', () => {
             url: '/?acl',
             query: { acl: '' },
         };
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err,
-                                       errors.UnresolvableGrantByEmailAddress);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.UnresolvableGrantByEmailAddress);
+            done();
         });
     });
 
@@ -388,12 +359,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.MalformedACLError);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.MalformedACLError);
+            done();
         });
     });
 
@@ -426,12 +394,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.MalformedXML);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.MalformedXML);
+            done();
         });
     });
 
@@ -463,12 +428,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidArgument);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
         });
     });
 
@@ -487,12 +449,9 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testBucketPutRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidArgument);
-                done();
-            });
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
         });
     });
 });

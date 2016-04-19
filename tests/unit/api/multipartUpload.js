@@ -74,7 +74,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -138,7 +138,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -188,7 +188,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -228,7 +228,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -271,7 +271,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -314,7 +314,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -400,7 +400,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -493,7 +493,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -576,7 +576,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -636,7 +636,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -696,7 +696,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -779,7 +779,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -862,7 +862,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -950,7 +950,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -1058,7 +1058,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
@@ -1167,7 +1167,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -1260,7 +1260,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -1314,7 +1314,7 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
@@ -1367,9 +1367,8 @@ describe('Multipart Upload API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, bucketPutRequest, log, next);
             },
-            function waterfall2(success, next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
+            function waterfall2(next) {
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             function waterfall3(result, next) {
                 parseString(result, next);
