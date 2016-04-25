@@ -9,6 +9,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { ds } from '../../../lib/data/in_memory/backend';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import inMemMetadata from '../../../lib/metadata/in_memory/metadata';
 import multipartDelete from '../../../lib/api/multipartDelete';
@@ -1356,6 +1357,146 @@ describe('Multipart Upload API', () => {
                     done();
                 });
             });
+        });
+    });
+
+    it('should not leave orphans in data when overwriting an object with an' +
+        ' MPU', done => {
+        const partBody = new Buffer('I am a part\n');
+        async.waterfall([
+            function waterfall1(next) {
+                bucketPut(authInfo, bucketPutRequest, log, next);
+            },
+            function waterfall2(success, next) {
+                initiateMultipartUpload(
+                    authInfo, initiateRequest, log, next);
+            },
+            function waterfall3(result, next) {
+                parseString(result, next);
+            },
+            function waterfall4(json, next) {
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const md5Hash = crypto.createHash('md5').update(partBody);
+                const calculatedHash = md5Hash.digest('hex');
+                const partRequest = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId: testUploadId,
+                    },
+                    calculatedHash,
+                }, partBody);
+                objectPutPart(authInfo, partRequest, log, () => {
+                    return next(null, testUploadId, calculatedHash);
+                });
+            },
+            function waterfall5(testUploadId, calculatedHash, next) {
+                const part2Request = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '2',
+                        uploadId: testUploadId,
+                    },
+                    calculatedHash,
+                }, partBody);
+                objectPutPart(authInfo, part2Request, log, () => {
+                    return next(null, testUploadId, calculatedHash);
+                });
+            },
+            function waterfall6(testUploadId, calculatedHash, next) {
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '<Part>' +
+                    '<PartNumber>2</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                };
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+            function waterfall7(result, next) {
+                assert.strictEqual(ds[0], undefined);
+                assert.deepStrictEqual(ds[1].value,
+                    new Buffer('I am a part\n'));
+                assert.deepStrictEqual(ds[2].value,
+                    new Buffer('I am a part\n'));
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
+            },
+            function waterfall8(result, next) {
+                parseString(result, next);
+            },
+            function waterfall9(json, next) {
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const overwritePartBody =
+                    new Buffer('I am an overwrite part\n');
+                const md5Hash = crypto.createHash('md5')
+                    .update(overwritePartBody);
+                const calculatedHash = md5Hash.digest('hex');
+                const partRequest = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId: testUploadId,
+                    },
+                    calculatedHash,
+                }, overwritePartBody);
+                objectPutPart(authInfo, partRequest, log, () => {
+                    return next(null, testUploadId, calculatedHash);
+                });
+            },
+            function waterfall10(testUploadId, calculatedHash, next) {
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                };
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ],
+        function waterfallFinal() {
+            assert.strictEqual(ds[0], undefined);
+            assert.strictEqual(ds[1], undefined);
+            assert.strictEqual(ds[2], undefined);
+            assert.deepStrictEqual(ds[3].value,
+                new Buffer('I am an overwrite part\n'));
+            done();
         });
     });
 });
