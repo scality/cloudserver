@@ -249,6 +249,21 @@ describe('s3curl putObject', () => {
         createFile(upload, 1048576, done);
     });
 
+    // curl behavior is not consistent across the environments
+    // skipping the test for now
+    it.skip('should not be able to put an object if request does not have ' +
+        'content-length header',
+        done => {
+            provideRawOutput(['--debug', `--put=${upload}`, '--',
+                '-H', 'content-length:',
+                `http://${ipAddress}:8000/${bucket}/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '411 LENGTH REQUIRED');
+                    assertError(rawOutput.stdout, 'MissingContentLength', done);
+                });
+        });
+
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
             provideRawOutput(['--debug', `--put=${upload}`, '--',

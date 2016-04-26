@@ -4,6 +4,7 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { ds } from '../../../lib/data/in_memory/backend';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import DummyRequest from '../DummyRequest';
@@ -39,7 +40,6 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
         });
     });
 }
-
 describe('objectPut API', () => {
     beforeEach(() => {
         cleanup();
@@ -146,6 +146,43 @@ describe('objectPut API', () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     const MD = md.keyMap[objectName];
                     assert(MD);
+                    assert.strictEqual(MD['x-amz-meta-test'], 'some metadata');
+                    assert.strictEqual(MD['x-amz-meta-test2'],
+                                       'some more metadata');
+                    assert.strictEqual(MD['x-amz-meta-test3'],
+                                       'even more metadata');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should put an object with user metadata but no data', done => {
+        const postBody = '';
+        const correctMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'content-length': '0',
+                'x-amz-meta-test': 'some metadata',
+                'x-amz-meta-test2': 'some more metadata',
+                'x-amz-meta-test3': 'even more metadata',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
+            assert.strictEqual(success, 'Bucket created');
+            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
+                assert.strictEqual(result, correctMD5);
+                assert.deepStrictEqual(ds, []);
+                metadata.getBucket(bucketName, log, (err, md) => {
+                    const MD = md.keyMap[objectName];
+                    assert(MD);
+                    assert.strictEqual(MD.location, null);
                     assert.strictEqual(MD['x-amz-meta-test'], 'some metadata');
                     assert.strictEqual(MD['x-amz-meta-test2'],
                                        'some more metadata');

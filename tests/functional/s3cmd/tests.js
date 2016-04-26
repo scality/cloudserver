@@ -176,7 +176,7 @@ describe('s3cmd getService', () => {
 
     it("should have response headers matching AWS's response headers",
         (done) => {
-            provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response:',
+            provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
             (lineOfInterest) => {
                 const openingBracket = lineOfInterest.indexOf('{');
                 const resObject = lineOfInterest.slice(openingBracket)
