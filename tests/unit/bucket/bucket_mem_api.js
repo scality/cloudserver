@@ -4,7 +4,7 @@ import async from 'async';
 
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import { cleanup, DummyRequestLogger } from '../helpers';
-import { isKeyInContents, } from
+import { isKeyInContents } from
     '../../../lib/metadata/in_memory/bucket_utilities';
 import metadata from '../metadataswitch';
 import { makeid, shuffle, timeDiff } from '../helpers';
