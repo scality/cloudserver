@@ -1,6 +1,6 @@
 import assert from 'assert';
 
-import { calculateSigningKey, } from
+import { calculateSigningKey } from
     '../../../../lib/auth/in_memory/vaultUtilities';
 
 describe('v4 signing key calculation', () => {

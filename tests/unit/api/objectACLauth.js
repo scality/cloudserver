@@ -1,7 +1,7 @@
 import assert from 'assert';
 import Bucket from '../../../lib/metadata/in_memory/Bucket';
 import constants from '../../../constants';
-import { isObjAuthorized, } from
+import { isObjAuthorized } from
     '../../../lib/api/apiUtils/authorization/aclChecks';
 
 const bucketOwnerCanonicalId = 'bucketOwnerCanonicalId';
