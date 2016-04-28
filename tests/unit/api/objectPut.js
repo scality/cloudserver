@@ -110,10 +110,9 @@ describe('objectPut API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    const MD = md.keyMap[objectName];
-                    assert(MD);
-                    assert.strictEqual(MD['content-md5'], correctMD5);
+                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md['content-md5'], correctMD5);
                     done();
                 });
             });
@@ -143,13 +142,12 @@ describe('objectPut API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    const MD = md.keyMap[objectName];
-                    assert(MD);
-                    assert.strictEqual(MD['x-amz-meta-test'], 'some metadata');
-                    assert.strictEqual(MD['x-amz-meta-test2'],
+                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
+                    assert.strictEqual(md['x-amz-meta-test2'],
                                        'some more metadata');
-                    assert.strictEqual(MD['x-amz-meta-test3'],
+                    assert.strictEqual(md['x-amz-meta-test3'],
                                        'even more metadata');
                     done();
                 });
@@ -179,14 +177,13 @@ describe('objectPut API', () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 assert.deepStrictEqual(ds, []);
-                metadata.getBucket(bucketName, log, (err, md) => {
-                    const MD = md.keyMap[objectName];
-                    assert(MD);
-                    assert.strictEqual(MD.location, null);
-                    assert.strictEqual(MD['x-amz-meta-test'], 'some metadata');
-                    assert.strictEqual(MD['x-amz-meta-test2'],
+                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
+                    assert(md);
+                    assert.strictEqual(md.location, null);
+                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
+                    assert.strictEqual(md['x-amz-meta-test2'],
                                        'some more metadata');
-                    assert.strictEqual(MD['x-amz-meta-test3'],
+                    assert.strictEqual(md['x-amz-meta-test3'],
                                        'even more metadata');
                     done();
                 });
