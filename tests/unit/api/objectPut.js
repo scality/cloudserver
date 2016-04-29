@@ -33,7 +33,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authUser, testPutObjectRequest, log, (err, res) => {
-                assert.strictEqual(err, undefined);
+                assert.strictEqual(err, null);
                 assert.strictEqual(res, correctMD5);
                 cb();
             });
@@ -187,6 +187,30 @@ describe('objectPut API', () => {
                                        'even more metadata');
                     done();
                 });
+            });
+        });
+    });
+
+    it('should not leave orphans in data when overwriting an object', done => {
+        const testPutObjectRequest2 = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        }, new Buffer('I am another body'));
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest2, log,
+                    () => {
+                        // Data store starts at index 1
+                        assert.strictEqual(ds[0], undefined);
+                        assert.strictEqual(ds[1], undefined);
+                        assert.deepStrictEqual(ds[2].value,
+                            new Buffer('I am another body'));
+                        done();
+                    });
             });
         });
     });
