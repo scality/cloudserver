@@ -61,8 +61,7 @@ describe('serviceGet API', () => {
             function waterfall4(result, next) {
                 parseString(result, next);
             },
-        ],
-        function waterfallFinal(err, result) {
+        ], (err, result) => {
             assert.strictEqual(result.ListAllMyBucketsResult
                 .Buckets[0].Bucket.length, 3);
             assert.strictEqual(result.ListAllMyBucketsResult
