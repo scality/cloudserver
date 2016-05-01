@@ -6,10 +6,14 @@ import getCanonicalizedResource from
     '../../../../lib/auth/v2/getCanonicalizedResource';
 
 describe('canonicalization', () => {
-    it('should construct a canonicalized header', () => {
+    it('should construct a canonicalized header in the correct order', () => {
         const headers = {
             'date': 'Mon, 21 Sep 2015 22:29:27 GMT',
             'x-amz-request-payer': 'requester',
+            'x-amz-meta-meta': 'something very meta',
+            'x-amz-meta-bits': '0',
+            'x-amz-meta-blksize': '2097152',
+            'x-amz-meta-compress': '0',
             'authorization': 'AWS accessKey1:V8g5UJUFmMzruMqUHVT6ZwvUw+M=',
             'host': 's3.amazonaws.com:80',
             'connection': 'Keep-Alive',
@@ -17,7 +21,11 @@ describe('canonicalization', () => {
         };
         const canonicalizedHeader = getCanonicalizedAmzHeaders(headers);
         assert.strictEqual(canonicalizedHeader,
-                           'x-amz-request-payer:requester\n');
+            'x-amz-meta-bits:0\n' +
+            'x-amz-meta-blksize:2097152\n' +
+            'x-amz-meta-compress:0\n' +
+            'x-amz-meta-meta:something very meta\n' +
+            'x-amz-request-payer:requester\n');
     });
 
     it('should return an empty string as the canonicalized ' +
