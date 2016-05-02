@@ -37,7 +37,14 @@ Object.keys(acl).forEach(
             it('should serialize', done => {
                 serialized = dummyBucket.serialize();
                 assert.strictEqual(typeof serialized, 'string');
-                assert.strictEqual(serialized, JSON.stringify(dummyBucket));
+                const bucketInfos = {
+                    acl: dummyBucket._acl,
+                    name: dummyBucket._name,
+                    owner: dummyBucket._owner,
+                    ownerDisplayName: dummyBucket._ownerDisplayName,
+                    creationDate: dummyBucket._creationDate,
+                };
+                assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
             });
 
