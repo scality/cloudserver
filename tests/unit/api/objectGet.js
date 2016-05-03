@@ -74,7 +74,8 @@ describe('objectGet API', () => {
                         chunks.push(chunk);
                     });
                     readable.on('end', () => {
-                        assert.deepStrictEqual(chunks, [postBody]);
+                        const buf = Buffer.concat(chunks);
+                        assert.deepStrictEqual(buf, postBody);
                         done();
                     });
                 });
