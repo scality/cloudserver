@@ -72,13 +72,14 @@ function provideRawOutput(args, cb) {
         let httpCode;
         if (procData.stderr !== '') {
             const lines = procData.stderr.replace(/[<>]/g, '').split(/[\r\n]/);
-            httpCode = lines.find((line) => {
+            httpCode = lines.find(line => {
                 const trimmed = line.trim().toUpperCase();
                 // ignore 100 Continue HTTP code
                 if (trimmed.startsWith('HTTP/1.1 ') &&
                     !trimmed.includes('100 CONTINUE')) {
                     return true;
                 }
+                return false;
             });
             if (httpCode) {
                 httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
@@ -87,16 +88,16 @@ function provideRawOutput(args, cb) {
         }
         return cb(httpCode, procData);
     });
-    child.stderr.on('data', (data) => {
+    child.stderr.on('data', data => {
         procData.stderr += data.toString();
     });
 }
 
-describe('s3curl put and delete buckets', function qwerty() {
+describe('s3curl put and delete buckets', () => {
     it('should put a valid bucket', done => {
         provideRawOutput(['--createBucket', '--',
             `http://${ipAddress}:8000/${bucket}`, '-v'],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
             });
@@ -125,7 +126,7 @@ describe('s3curl put and delete buckets', function qwerty() {
     it('should be able to delete a bucket', done => {
         provideRawOutput(['--delete', '--',
             `http://${ipAddress}:8000/${bucket}`, '-v'],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '204 NO CONTENT');
                 done();
             });
@@ -143,7 +144,7 @@ describe('s3curl put and delete buckets', function qwerty() {
         'of a bucket that has previously been deleted', done => {
         provideRawOutput(['--createBucket', '--',
             `http://${ipAddress}:8000/${bucket}`, '-v'],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
             });
@@ -192,7 +193,7 @@ describe('s3curl put and get bucket ACLs', () => {
     it('should be able to create a bucket with a specific ACL', done => {
         provideRawOutput(['--createBucket', '--', '-H',
         'x-amz-grant-read:uri=http://acs.amazonaws.com/groups/global/AllUsers',
-        `http://${ipAddress}:8000/${aclBucket}2`, '-v'], (httpCode) => {
+        `http://${ipAddress}:8000/${aclBucket}2`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -290,7 +291,7 @@ describe('s3curl putObject', () => {
     'and delimiter', done => {
         provideRawOutput(['--debug', `--put=${upload}`, '--',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}1`, '-v'], (httpCode) => {
+            `${prefix}${delimiter}${upload}1`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -300,7 +301,7 @@ describe('s3curl putObject', () => {
     'and delimiter', done => {
         provideRawOutput([`--put=${upload}`, '--',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}2`, '-v'], (httpCode) => {
+            `${prefix}${delimiter}${upload}2`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -310,7 +311,7 @@ describe('s3curl putObject', () => {
     'and delimiter', done => {
         provideRawOutput([`--put=${upload}`, '--',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${prefix}${delimiter}${upload}3`, '-v'], (httpCode) => {
+            `${prefix}${delimiter}${upload}3`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -396,7 +397,7 @@ describe('s3curl getBucket', () => {
 describe('s3curl head bucket', () => {
     it('should return a 404 response if bucket does not exist', done => {
         provideRawOutput(['--head', '--',
-        `http://${ipAddress}:8000/${nonexist}`, '-v'], (httpCode) => {
+        `http://${ipAddress}:8000/${nonexist}`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '404 NOT FOUND');
             done();
         });
@@ -405,7 +406,7 @@ describe('s3curl head bucket', () => {
     it('should return a 200 response if bucket exists' +
         ' and user is authorized', done => {
         provideRawOutput(['--head', '--',
-        `http://${ipAddress}:8000/${bucket}`, '-v'], (httpCode) => {
+        `http://${ipAddress}:8000/${bucket}`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -423,7 +424,7 @@ describe('s3curl getObject', () => {
         provideRawOutput([`--put=${upload}`, '--',
             '-H', 'x-amz-meta-mine:BestestObjectEver',
             `http://${ipAddress}:8000/${bucket}/getter`, '-v'],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
             });
@@ -431,7 +432,7 @@ describe('s3curl getObject', () => {
 
     it('should get an existing file in an existing bucket', done => {
         provideRawOutput(['--', '-o', download,
-            `http://${ipAddress}:8000/${bucket}/getter`, '-v'], (httpCode) => {
+            `http://${ipAddress}:8000/${bucket}/getter`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -469,7 +470,7 @@ describe('s3curl object ACLs', () => {
         provideRawOutput([`--put=${aclUpload}`, '--',
             '-H', 'x-amz-acl:public-read',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${aclUpload}withcannedacl`, '-v'], (httpCode) => {
+            `${aclUpload}withcannedacl`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -509,7 +510,7 @@ describe('s3curl object ACLs', () => {
             '-H', 'x-amz-grant-read:uri=' +
             'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
             `http://${ipAddress}:8000/${bucket}/` +
-            `${aclUpload}withspecificacl`, '-v'], (httpCode) => {
+            `${aclUpload}withspecificacl`, '-v'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });

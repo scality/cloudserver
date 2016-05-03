@@ -1,7 +1,7 @@
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
 import inMemMetadata from '../../lib/metadata/in_memory/metadata';
-import { ds } from '../../lib/data/in_memory/backend';
+import { resetCount, ds } from '../../lib/data/in_memory/backend';
 
 export function makeid(size) {
     let text = '';
@@ -50,7 +50,7 @@ export function createAlteredRequest(alteredItems, objToAlter,
     baseOuterObj, baseInnerObj) {
     const alteredRequest = Object.assign({}, baseOuterObj);
     const alteredNestedObj = Object.assign({}, baseInnerObj);
-    Object.keys(alteredItems).forEach((key) => {
+    Object.keys(alteredItems).forEach(key => {
         alteredNestedObj[key] = alteredItems[key];
     });
     alteredRequest[objToAlter] = alteredNestedObj;
@@ -59,7 +59,11 @@ export function createAlteredRequest(alteredItems, objToAlter,
 
 export function cleanup() {
     inMemMetadata.buckets = {};
+    inMemMetadata.keyMaps = {};
+    // Set data store array back to empty array
     ds.length = 0;
+    // Set data store key count back to 1
+    resetCount();
 }
 
 export class DummyRequestLogger {
