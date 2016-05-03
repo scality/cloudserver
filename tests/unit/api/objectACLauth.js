@@ -1,12 +1,14 @@
 import assert from 'assert';
-import Bucket from '../../../lib/metadata/in_memory/Bucket';
+
+import BucketInfo from '../../../lib/metadata/BucketInfo';
 import constants from '../../../constants';
-import { isObjAuthorized, } from
+import { isObjAuthorized } from
     '../../../lib/api/apiUtils/authorization/aclChecks';
 
 const bucketOwnerCanonicalId = 'bucketOwnerCanonicalId';
-const bucket = new Bucket('niftyBucket', bucketOwnerCanonicalId,
-'iAmTheOwnerDisplayName');
+const creationDate = new Date().toJSON();
+const bucket = new BucketInfo('niftyBucket', bucketOwnerCanonicalId,
+    'iAmTheOwnerDisplayName', creationDate);
 const accountToVet = 'accountToVetId';
 const objectOwnerCanonicalId = 'objectOwnerCanonicalId';
 const object = {
@@ -34,60 +36,50 @@ describe('object acl authorization for objectGet and objectHead', () => {
     const requestTypes = ['objectGet', 'objectHead'];
 
     it('should allow access to object owner', () => {
-        const results = requestTypes.map((type) => {
-            return isObjAuthorized(bucket, object, type,
-                objectOwnerCanonicalId);
-        });
+        const results = requestTypes.map(type =>
+                isObjAuthorized(bucket, object, type, objectOwnerCanonicalId));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should allow access to anyone if canned public-read ACL', () => {
         object.acl.Canned = 'public-read';
-        const results = requestTypes.map((type) => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should allow access to anyone if canned public-read-write ACL', () => {
         object.acl.Canned = 'public-read-write';
-        const results = requestTypes.map((type) => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should not allow access to public user if ' +
         'authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
-        const publicResults = requestTypes.map((type) => {
-            return isObjAuthorized(bucket, object, type,
-                constants.publicId);
-        });
+        const publicResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, constants.publicId));
         assert.deepStrictEqual(publicResults, [false, false]);
     });
 
     it('should allow access to any authenticated user if ' +
         'authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
-        const results = requestTypes.map((type) => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should allow access to bucker owner if ' +
         'bucket-owner-read ACL', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-read';
-        const authResults = requestTypes.map((type) => {
+        const authResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
@@ -96,13 +88,13 @@ describe('object acl authorization for objectGet and objectHead', () => {
 
     it('should allow access to bucker owner if ' +
         'bucket-owner-full-control ACL', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-full-control';
-        const authResults = requestTypes.map((type) => {
+        const authResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
@@ -111,13 +103,13 @@ describe('object acl authorization for objectGet and objectHead', () => {
 
     it('should allow access to account if ' +
         'account was granted FULL_CONTROL', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.FULL_CONTROL = [accountToVet];
-        const authResults = requestTypes.map((type) => {
+        const authResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
@@ -126,13 +118,13 @@ describe('object acl authorization for objectGet and objectHead', () => {
 
     it('should allow access to account if ' +
         'account was granted READ right', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.READ = [accountToVet];
-        const authResults = requestTypes.map((type) => {
+        const authResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
@@ -140,7 +132,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
     });
 
     it('should not allow access to public user if private canned ACL', () => {
-        const results = requestTypes.map((type) => {
+        const results = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
@@ -148,7 +140,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
     });
 
     it('should not allow access to just any user if private canned ACL', () => {
-        const results = requestTypes.map((type) => {
+        const results = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
@@ -160,12 +152,12 @@ describe('object authorization for objectPut and objectDelete', () => {
     it('should allow access to anyone since checks ' +
         'are done at bucket level', () => {
         const requestTypes = ['objectPut', 'objectDelete'];
-        const results = requestTypes.map((type) => {
+        const results = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
         assert.deepStrictEqual(results, [true, true]);
-        const publicUserResults = requestTypes.map((type) => {
+        const publicUserResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 constants.publicId);
         });
@@ -189,7 +181,7 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
     const requestTypes = ['objectGet', 'objectHead'];
 
     it('should allow access to object owner', () => {
-        const results = requestTypes.map((type) => {
+        const results = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 objectOwnerCanonicalId);
         });
@@ -198,13 +190,13 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
 
     it('should allow access to bucket owner if ' +
         'bucket-owner-full-control canned ACL set on object', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-full-control';
-        const authorizedResults = requestTypes.map((type) => {
+        const authorizedResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 bucketOwnerCanonicalId);
         });
@@ -213,13 +205,13 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
 
     it('should allow access to account if ' +
         'account was granted FULL_CONTROL right', () => {
-        const noAuthResults = requestTypes.map((type) => {
+        const noAuthResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
                 accountToVet);
         });
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.FULL_CONTROL = [accountToVet];
-        const authorizedResults = requestTypes.map((type) => {
+        const authorizedResults = requestTypes.map(type => {
             return isObjAuthorized(bucket, object, type,
             accountToVet);
         });

@@ -168,6 +168,26 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
             });
     });
 
+    it('should return a 204 on delete of an already deleted object', done => {
+        const params = { Bucket: bucket, Key: 'key' };
+        const url = s3.getSignedUrl('deleteObject', params);
+        provideRawOutput(['-verbose', '-X', 'DELETE', url],
+            httpCode => {
+                assert.strictEqual(httpCode, '204 NO CONTENT');
+                done();
+            });
+    });
+
+    it('should return 204 on delete of non-existing object', done => {
+        const params = { Bucket: bucket, Key: 'randomObject' };
+        const url = s3.getSignedUrl('deleteObject', params);
+        provideRawOutput(['-verbose', '-X', 'DELETE', url],
+            httpCode => {
+                assert.strictEqual(httpCode, '204 NO CONTENT');
+                done();
+            });
+    });
+
     it('should delete an object with native characters', done => {
         const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
         'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';

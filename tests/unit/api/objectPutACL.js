@@ -76,11 +76,12 @@ describe('putObjectACL API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
                     assert.strictEqual(err, undefined);
-                    metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.keyMap.objectName.acl.Canned,
-                                           'public-read-write');
-                        done();
-                    });
+                    metadata.getObjectMD(bucketName, objectName, log,
+                        (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                            'public-read-write');
+                            done();
+                        });
                 });
             });
         });
@@ -112,19 +113,22 @@ describe('putObjectACL API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest1, log, err => {
                     assert.strictEqual(err, undefined);
-                    metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.keyMap.objectName.acl.Canned,
-                                           'public-read');
-                        objectPutACL(authInfo, testObjACLRequest2, log, err => {
-                            assert.strictEqual(err, undefined);
-                            metadata.getBucket(bucketName, log, (err, md) => {
-                                assert.strictEqual(md.keyMap
-                                                   .objectName.acl.Canned,
+                    metadata.getObjectMD(bucketName, objectName, log,
+                        (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                            'public-read');
+                            objectPutACL(authInfo, testObjACLRequest2, log,
+                                err => {
+                                    assert.strictEqual(err, undefined);
+                                    metadata.getObjectMD(bucketName,
+                                        objectName, log, (err, md) => {
+                                            assert.strictEqual(md
+                                                   .acl.Canned,
                                                    'authenticated-read');
-                                done();
-                            });
+                                            done();
+                                        });
+                                });
                         });
-                    });
                 });
             });
         });
@@ -161,20 +165,21 @@ describe('putObjectACL API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
                     assert.strictEqual(err, undefined);
-                    metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(err, null);
-                        const acls = md.keyMap.objectName.acl;
-                        assert.strictEqual(acls.READ[0], constants.logId);
-                        assert(acls.FULL_CONTROL[0]
+                    metadata.getObjectMD(bucketName, objectName, log,
+                        (err, md) => {
+                            assert.strictEqual(err, null);
+                            const acls = md.acl;
+                            assert.strictEqual(acls.READ[0], constants.logId);
+                            assert(acls.FULL_CONTROL[0]
                                .indexOf(canonicalIDforSample1) > -1);
-                        assert(acls.FULL_CONTROL[1]
+                            assert(acls.FULL_CONTROL[1]
                                .indexOf(canonicalIDforSample2) > -1);
-                        assert(acls.READ_ACP[0]
-                            .indexOf(canonicalIDforSample1) > -1);
-                        assert(acls.WRITE_ACP[0]
-                            .indexOf(canonicalIDforSample2) > -1);
-                        done();
-                    });
+                            assert(acls.READ_ACP[0]
+                                .indexOf(canonicalIDforSample1) > -1);
+                            assert(acls.WRITE_ACP[0]
+                                .indexOf(canonicalIDforSample2) > -1);
+                            done();
+                        });
                 });
             });
         });
@@ -262,20 +267,20 @@ describe('putObjectACL API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
                     assert.strictEqual(err, undefined);
-                    metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.keyMap.objectName
-                            .acl.FULL_CONTROL[0],
-                            '852b113e7a2f25102679df27bb0ae12b3f85be6');
-                        assert.strictEqual(md.keyMap.objectName
-                            .acl.READ[0], constants.publicId);
-                        assert.strictEqual(md.keyMap.objectName
-                            .acl.WRITE_ACP[0],
-                            canonicalIDforSample1);
-                        assert.strictEqual(md.keyMap.objectName
-                            .acl.READ_ACP[0],
-                            'f30716ab7115dcb44a5ef76e9d74b8e20567f63');
-                        done();
-                    });
+                    metadata.getObjectMD(bucketName, objectName, log,
+                        (err, md) => {
+                            assert.strictEqual(md
+                                .acl.FULL_CONTROL[0],
+                                '852b113e7a2f25102679df27bb0ae12b3f85be6');
+                            assert.strictEqual(md
+                                .acl.READ[0], constants.publicId);
+                            assert.strictEqual(md
+                                .acl.WRITE_ACP[0], canonicalIDforSample1);
+                            assert.strictEqual(md
+                                .acl.READ_ACP[0],
+                                'f30716ab7115dcb44a5ef76e9d74b8e20567f63');
+                            done();
+                        });
                 });
             });
         });
@@ -321,25 +326,20 @@ describe('putObjectACL API', () => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
                     assert.strictEqual(err, undefined);
-                    metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.Canned, '');
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.FULL_CONTROL[0],
-                            '852b113e7a2f2510267' +
-                            '9df27bb0ae12b3f85be6');
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.WRITE, undefined);
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.READ[0], undefined);
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.WRITE_ACP[0],
-                            undefined);
-                        assert.strictEqual(md.keyMap
-                            .objectName.acl.READ_ACP[0],
-                            undefined);
-                        done();
-                    });
+                    metadata.getObjectMD(bucketName, objectName, log,
+                        (err, md) => {
+                            assert.strictEqual(md.acl.Canned, '');
+                            assert.strictEqual(md.acl.FULL_CONTROL[0],
+                                '852b113e7a2f2510267' +
+                                '9df27bb0ae12b3f85be6');
+                            assert.strictEqual(md.acl.WRITE, undefined);
+                            assert.strictEqual(md.acl.READ[0], undefined);
+                            assert.strictEqual(md.acl.WRITE_ACP[0],
+                                undefined);
+                            assert.strictEqual(md.acl.READ_ACP[0],
+                                undefined);
+                            done();
+                        });
                 });
             });
         });

@@ -25,7 +25,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(bucketOwner, objPutReq, log, err => {
-                assert.strictEqual(err, undefined);
+                assert.strictEqual(err, null);
                 objectDelete(authUser, objDelReq, log, err => {
                     assert.strictEqual(err, undefined);
                     cb();

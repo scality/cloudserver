@@ -58,7 +58,7 @@ describe('objectHead API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                objectHead(authInfo, testGetRequest, log, (err) => {
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, errors.NotModified);
                     done();
                 });
@@ -80,7 +80,7 @@ describe('objectHead API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                objectHead(authInfo, testGetRequest, log, (err) => {
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, errors.PreconditionFailed);
                     done();
                 });
@@ -103,7 +103,7 @@ describe('objectHead API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                objectHead(authInfo, testGetRequest, log, (err) => {
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, errors.PreconditionFailed);
                     done();
                 });
@@ -126,7 +126,7 @@ describe('objectHead API', () => {
             assert.strictEqual(success, 'Bucket created');
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
-                objectHead(authInfo, testGetRequest, log, (err) => {
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, errors.NotModified);
                     done();
                 });

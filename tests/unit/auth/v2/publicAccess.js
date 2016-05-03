@@ -1,5 +1,6 @@
-import { errors } from 'arsenal';
 import assert from 'assert';
+
+import { errors } from 'arsenal';
 
 import auth from '../../../../lib/auth/auth';
 import AuthInfo from '../../../../lib/auth/AuthInfo';
@@ -23,13 +24,13 @@ describe('Public Access', () => {
         auth(request, logger, (err, authInfo) => {
             assert.strictEqual(err, null);
             assert.strictEqual(authInfo.getCanonicalID(),
-                publicAuthInfo.getCanonicalID());
+                               publicAuthInfo.getCanonicalID());
             done();
         });
     });
 
     it('should not grant access to a request that contains ' +
-    'an authorization header without proper credentials', (done) => {
+    'an authorization header without proper credentials', done => {
         const request = {
             method: 'GET',
             headers: {
@@ -39,7 +40,6 @@ describe('Public Access', () => {
             url: '/bucket',
             query: {},
         };
-
         auth(request, logger, err => {
             assert.deepStrictEqual(err, errors.MissingSecurityHeader);
             done();

@@ -124,8 +124,7 @@ describe('utils.isValidBucketName', () => {
         assert.strictEqual(result, false);
     });
 
-    it('should return false if bucketname contains ' +
-        'capital letters', () => {
+    it('should return false if bucketname contains capital letters', () => {
         const result = utils.isValidBucketName('noSHOUTING');
         assert.strictEqual(result, false);
     });
