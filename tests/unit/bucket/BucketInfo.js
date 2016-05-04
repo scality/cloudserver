@@ -32,6 +32,24 @@ Object.keys(acl).forEach(
         const dummyBucket = new BucketInfo(
             bucketName, owner, ownerDisplayName, testDate, acl[aclObj]);
 
+        describe('serialize/deSerialize on BucketInfo class', () => {
+            let serialized;
+            it('should serialize', done => {
+                serialized = dummyBucket.serialize();
+                assert.strictEqual(typeof serialized, 'string');
+                assert.strictEqual(serialized, JSON.stringify(dummyBucket));
+                done();
+            });
+
+            it('should deSerialize into an  instance of BucketInfo', done => {
+                const deSerialized = BucketInfo.deSerialize(serialized);
+                assert.strictEqual(typeof deSerialized, 'object');
+                assert(deSerialized instanceof BucketInfo);
+                assert.deepStrictEqual(deSerialized, dummyBucket);
+                done();
+            });
+        });
+
         describe('constructor', () => {
             it('this should have the right BucketInfo types',
                () => {
