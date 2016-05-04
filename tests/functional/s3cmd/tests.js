@@ -101,7 +101,12 @@ function provideLineOfInterest(args, lineFinder, cb) {
     child.on('close', () => {
         const lineOfInterest = allData.find(item =>
                                             item.indexOf(lineFinder) > -1);
-        return cb(lineOfInterest);
+        const openingBracket = lineOfInterest.indexOf('{');
+        const newLine = lineOfInterest.indexOf('\n');
+        const endSlice = (newLine === -1) ? undefined : newLine;
+        const resObject = lineOfInterest.slice(openingBracket, endSlice)
+            .replace(/"/g, '\\"').replace(/'/g, '"');
+        return cb(JSON.parse(resObject));
     });
 }
 
@@ -171,11 +176,7 @@ describe('s3cmd getService', () => {
     it("should have response headers matching AWS's response headers",
         done => {
             provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
-            lineOfInterest => {
-                const openingBracket = lineOfInterest.indexOf('{');
-                const resObject = lineOfInterest.slice(openingBracket)
-                    .replace(/"/g, '\\"').replace(/'/g, '"');
-                const parsedObject = JSON.parse(resObject);
+            parsedObject => {
                 assert(parsedObject.headers['x-amz-id-2']);
                 assert.strictEqual(parsedObject.headers.server, 'AmazonS3');
                 assert(parsedObject.headers['transfer-encoding']);
@@ -277,11 +278,7 @@ describe('s3cmd delObject', () => {
 
     it('delete an already deleted object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${upload}`, '--debug'],
-        'DEBUG: Response: {', lineOfInterest => {
-            const openingBracket = lineOfInterest.indexOf('{');
-            const resObject = lineOfInterest.slice(openingBracket)
-                .replace(/"/g, '\\"').replace(/'/g, '"');
-            const parsedObject = JSON.parse(resObject);
+        'DEBUG: Response: {', parsedObject => {
             assert.strictEqual(parsedObject.status, 204);
             done();
         });
@@ -289,11 +286,7 @@ describe('s3cmd delObject', () => {
 
     it('delete non-existing object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${nonexist}`, '--debug'],
-        'DEBUG: Response: {', lineOfInterest => {
-            const openingBracket = lineOfInterest.indexOf('{');
-            const resObject = lineOfInterest.slice(openingBracket)
-                .replace(/"/g, '\\"').replace(/'/g, '"');
-            const parsedObject = JSON.parse(resObject);
+        'DEBUG: Response: {', parsedObject => {
             assert.strictEqual(parsedObject.status, 204);
             done();
         });
