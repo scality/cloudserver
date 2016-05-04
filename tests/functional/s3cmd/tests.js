@@ -78,13 +78,63 @@ function checkRawOutput(args, lineFinder, testString, cb) {
     const allData = [];
     const child = proc.spawn(program, av);
     child.stdout.on('data', data => {
-        allData.push(data.toString().trim());
+        allData.push(data.toString());
         process.stdout.write(data.toString());
     });
     child.on('close', () => {
-        const foundIt = allData.filter(item => item.indexOf(lineFinder) > -1)
-                               .some(item => item.indexOf(testString) > -1);
+        const foundIt = allData.join('').split('\n')
+            .filter(item => item.indexOf(lineFinder) > -1)
+            .some(item => item.indexOf(testString) > -1);
         return cb(foundIt);
+    });
+}
+
+
+function findEndString(data, start) {
+    const delimiter = data[start];
+    const end = data.length;
+    for (let i = start + 1; i < end; ++i) {
+        if (data[i] === delimiter) {
+            return (i);
+        } else if (data[i] === '\\') {
+            ++i;
+        }
+    }
+    return (-1);
+}
+
+function findEndJson(data, start) {
+    let count = 0;
+    const end = data.length;
+    for (let i = start; i < end; ++i) {
+        if (data[i] === '{') {
+            ++count;
+        } else if (data[i] === '}') {
+            --count;
+        } else if (data[i] === '"' || data[i] === "'") {
+            i = findEndString(data, i);
+        }
+        if (count === 0) {
+            return (i);
+        }
+    }
+    return (-1);
+}
+
+function readJsonFromChild(child, lineFinder, cb) {
+    const allData = [];
+    child.stderr.on('data', data => {
+        allData.push(data.toString());
+        process.stdout.write(data.toString());
+    });
+    child.on('close', () => {
+        const data = allData.join('');
+        const findLine = data.indexOf(lineFinder);
+        const findBrace = data.indexOf('{', findLine);
+        const findEnd = findEndJson(data, findBrace);
+        const endJson = data.substring(findBrace, findEnd + 1)
+            .replace(/"/g, '\\"').replace(/'/g, '"');
+        return cb(JSON.parse(endJson));
     });
 }
 
@@ -92,22 +142,8 @@ function checkRawOutput(args, lineFinder, testString, cb) {
 function provideLineOfInterest(args, lineFinder, cb) {
     const av = isIronman ? args.concat(isIronman) : args;
     process.stdout.write(`${program} ${av}\n`);
-    const allData = [];
     const child = proc.spawn(program, av);
-    child.stderr.on('data', data => {
-        allData.push(data.toString().trim());
-        process.stdout.write(data.toString());
-    });
-    child.on('close', () => {
-        const lineOfInterest = allData.find(item =>
-                                            item.indexOf(lineFinder) > -1);
-        const openingBracket = lineOfInterest.indexOf('{');
-        const newLine = lineOfInterest.indexOf('\n');
-        const endSlice = (newLine === -1) ? undefined : newLine;
-        const resObject = lineOfInterest.slice(openingBracket, endSlice)
-            .replace(/"/g, '\\"').replace(/'/g, '"');
-        return cb(JSON.parse(resObject));
-    });
+    readJsonFromChild(child, lineFinder, cb);
 }
 
 describe('s3cmd putBucket', () => {
@@ -135,7 +171,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
-        (foundIt) => {
+        foundIt => {
             assert(foundIt);
             done();
         });
@@ -148,7 +184,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
-        `${lowerCaseEmail}: WRITE`, (foundIt) => {
+        `${lowerCaseEmail}: WRITE`, foundIt => {
             assert(foundIt);
             done();
         });
@@ -167,7 +203,7 @@ describe('s3cmd getBucket', () => {
 
 describe('s3cmd getService', () => {
     it("should get a list of a user's buckets", done => {
-        checkRawOutput(['ls'], 's3://', `${bucket}`, (foundIt) => {
+        checkRawOutput(['ls'], 's3://', `${bucket}`, foundIt => {
             assert(foundIt);
             done();
         });
@@ -245,7 +281,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        '*anon*: READ', (foundIt) => {
+        '*anon*: READ', foundIt => {
             assert(foundIt);
             done();
         });
@@ -258,7 +294,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `${lowerCaseEmail}: READ`, (foundIt) => {
+        `${lowerCaseEmail}: READ`, foundIt => {
             assert(foundIt);
             done();
         });
