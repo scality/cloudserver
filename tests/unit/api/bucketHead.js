@@ -29,8 +29,7 @@ describe('bucketHead API', () => {
 
     it('should return an error if user is not authorized', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(otherAuthInfo, testRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(otherAuthInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
                 assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
@@ -40,11 +39,10 @@ describe('bucketHead API', () => {
 
     it('should return a success message if ' +
        'bucket exists and user is authorized', done => {
-        bucketPut(authInfo, testRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, (err, result) => {
                 assert.strictEqual(result,
-                'Bucket exists and user authorized -- 200');
+                                   'Bucket exists and user authorized -- 200');
                 done();
             });
         });

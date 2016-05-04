@@ -69,8 +69,7 @@ describe('listMultipartUploads API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo,
                     testInitiateMPURequest1, log, next);
             },
@@ -109,8 +108,7 @@ describe('listMultipartUploads API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo,
                     testInitiateMPURequest1, log, next);
             },
@@ -151,8 +149,7 @@ describe('listMultipartUploads API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo,
                     testInitiateMPURequest1, log, next);
             },
@@ -197,8 +194,7 @@ describe('listMultipartUploads API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo,
                     testInitiateMPURequest1, log, next);
             },
@@ -241,8 +237,7 @@ describe('listMultipartUploads API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 initiateMultipartUpload(authInfo,
                     testInitiateMPURequest1, log, next);
             },

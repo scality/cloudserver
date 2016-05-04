@@ -72,8 +72,7 @@ describe('bucketGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest1, log, next);
             },
             function waterfall3(result, next) {
@@ -108,8 +107,7 @@ describe('bucketGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest1, log, next);
             },
             function waterfall3(result, next) {
@@ -144,8 +142,7 @@ describe('bucketGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest1, log, next);
             },
             function waterfall3(result, next) {
@@ -179,8 +176,7 @@ describe('bucketGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(success, next) {
-                assert.strictEqual(success, 'Bucket created');
+            function waterfall2(next) {
                 objectPut(authInfo, testPutObjectRequest1, log, next);
             },
             function waterfall3(result, next) {
@@ -218,7 +214,7 @@ describe('bucketGet API', () => {
             function waterfall1(next) {
                 bucketPut(authInfo, testPutBucketRequest, log, next);
             },
-            function waterfall2(result, next) {
+            function waterfall2(next) {
                 bucketGet(authInfo, testGetRequest, log, next);
             },
             function waterfall3(result, next) {

@@ -48,8 +48,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -70,8 +69,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -107,8 +105,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest1, log, err => {
@@ -159,8 +156,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
         };
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -200,8 +196,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -261,8 +256,7 @@ describe('putObjectACL API', () => {
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -320,8 +314,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -374,8 +367,7 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -416,8 +408,7 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -456,8 +447,7 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -497,8 +487,7 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {
@@ -525,8 +514,7 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectPutACL(authInfo, testObjACLRequest, log, err => {

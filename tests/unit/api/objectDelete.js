@@ -20,8 +20,7 @@ const objectKey = 'objectName';
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
-    bucketPut(bucketOwner, bucketPutReq, log, (err, success) => {
-        assert.strictEqual(success, 'Bucket created');
+    bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(bucketOwner, objPutReq, log, err => {

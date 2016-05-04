@@ -28,8 +28,7 @@ const objectName = 'objectName';
 let testPutObjectRequest;
 
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
-    bucketPut(bucketOwner, bucketPutReq, log, (err, success) => {
-        assert.strictEqual(success, 'Bucket created');
+    bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authUser, testPutObjectRequest, log, (err, res) => {
@@ -62,8 +61,7 @@ describe('objectPut API', () => {
 
     it('should return an error if user is not authorized', done => {
         const putAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(putAuthInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(putAuthInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, err => {
                 assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
@@ -106,8 +104,7 @@ describe('objectPut API', () => {
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
@@ -138,8 +135,7 @@ describe('objectPut API', () => {
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
@@ -172,8 +168,7 @@ describe('objectPut API', () => {
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 assert.deepStrictEqual(ds, []);

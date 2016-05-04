@@ -47,8 +47,7 @@ describe('objectGet API', () => {
     };
 
     it('should get the object metadata', done => {
-        bucketPut(authInfo, testPutBucketRequest, log, (err, res) => {
-            assert.strictEqual(res, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectGet(authInfo, testGetRequest,
@@ -64,8 +63,7 @@ describe('objectGet API', () => {
     });
 
     it('should get the object data', done => {
-        bucketPut(authInfo, testPutBucketRequest, log, (err, res) => {
-            assert.strictEqual(res, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectGet(authInfo, testGetRequest, log, (err, readable) => {
@@ -95,8 +93,7 @@ describe('objectGet API', () => {
             headers: { 'x-amz-meta-test': 'some metadata' },
             url: `/${bucketName}/${objectName}`,
         }, testBigData);
-        bucketPut(authInfo, testPutBucketRequest, log, (err, success) => {
-            assert.strictEqual(success, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutBigObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctBigMD5);
                 objectGet(authInfo, testGetRequest, log, (err, readable) => {
@@ -131,8 +128,7 @@ describe('objectGet API', () => {
             url: `/${bucketName}/${objectName}`,
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
-        bucketPut(authInfo, testPutBucketRequest, log, (err, res) => {
-            assert.strictEqual(res, 'Bucket created');
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
                 assert.strictEqual(result, correctMD5);
                 objectGet(authInfo, testGetRequest,
