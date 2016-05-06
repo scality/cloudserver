@@ -29,7 +29,10 @@ describe('objectGet API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            headers: { 'x-amz-meta-test': 'some metadata' },
+            headers: {
+                'x-amz-meta-test': 'some metadata',
+                'content-length': 12,
+            },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
     });
@@ -75,6 +78,8 @@ describe('objectGet API', () => {
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
+                            start: 0,
+                            size: 12,
                             dataStoreName: 'mem',
                         }]);
                     done();
