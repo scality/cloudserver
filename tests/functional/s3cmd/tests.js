@@ -56,9 +56,9 @@ function exec(args, done, exitCode) {
     if (exit === undefined) {
         exit = 0;
     }
-    let av = args;
+    let av = ['-c', 's3cfg'].concat(args);
     if (isIronman) {
-        av = args.concat(isIronman);
+        av = av.concat(isIronman);
     }
     process.stdout.write(`${program} ${av}\n`);
     proc.spawn(program, av, { stdio: 'inherit' }).on('exit', code => {
@@ -70,9 +70,9 @@ function exec(args, done, exitCode) {
 
 // Test stdout against expected output
 function checkRawOutput(args, lineFinder, testString, cb) {
-    let av = args;
+    let av = ['-c', 's3cfg'].concat(args);
     if (isIronman) {
-        av = args.concat(isIronman);
+        av = av.concat(isIronman);
     }
     process.stdout.write(`${program} ${av}\n`);
     const allData = [];
@@ -140,7 +140,8 @@ function readJsonFromChild(child, lineFinder, cb) {
 
 // Pull line of interest from stderr (to get debug output)
 function provideLineOfInterest(args, lineFinder, cb) {
-    const av = isIronman ? args.concat(isIronman) : args;
+    const argsWithCfg = ['-c', 's3cfg'].concat(args);
+    const av = isIronman ? argsWithCfg.concat(isIronman) : argsWithCfg;
     process.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);
     readJsonFromChild(child, lineFinder, cb);
