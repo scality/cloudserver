@@ -113,4 +113,26 @@ describe('Error handling in checkAuth', () => {
             done();
         });
     });
+
+    it('should return an error message if accessKey is empty for' +
+        'v2header auth', done => {
+        const date = new Date();
+        const request = {
+            method: 'GET',
+            headers: {
+                date,
+                'host': 's3.amazoneaws.com',
+                'user-agent': 'curl/7.43.0',
+                'accept': '*/*',
+                'authorization': 'AWS :MJNF7AqNapSu32TlBOVkcAxj58c=',
+            },
+            url: '/bucket',
+            query: {},
+        };
+        auth(request, logger, err => {
+            assert.deepStrictEqual(err, errors.MissingSecurityHeader);
+            done();
+        });
+    });
 });
+
