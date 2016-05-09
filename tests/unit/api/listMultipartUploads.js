@@ -1,5 +1,6 @@
 import assert from 'assert';
 import async from 'async';
+import querystring from 'querystring';
 import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
@@ -216,9 +217,9 @@ describe('listMultipartUploads API', () => {
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], encodeURIComponent(objectName3));
+                .Upload[0].Key[0], querystring.escape(objectName3));
             assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1].Key[0], encodeURIComponent(objectName1));
+                .Upload[1].Key[0], querystring.escape(objectName1));
             done();
         });
     });

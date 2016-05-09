@@ -1,4 +1,5 @@
 import assert from 'assert';
+import querystring from 'querystring';
 
 import async from 'async';
 import { parseString } from 'xml2js';
@@ -16,6 +17,7 @@ const log = new DummyRequestLogger();
 const namespace = 'default';
 const postBody = new Buffer('I am a body');
 const prefix = 'sub';
+
 let testPutBucketRequest;
 let testPutObjectRequest1;
 let testPutObjectRequest2;
@@ -194,9 +196,9 @@ describe('bucketGet API', () => {
         ],
         function waterfallFinal(err, result) {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                               encodeURIComponent(objectName3));
+                               querystring.escape(objectName3));
             assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
-                               encodeURIComponent(objectName1));
+                               querystring.escape(objectName1));
             done();
         });
     });
