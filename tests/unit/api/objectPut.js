@@ -199,12 +199,16 @@ describe('objectPut API', () => {
             objectPut(authInfo, testPutObjectRequest, log, () => {
                 objectPut(authInfo, testPutObjectRequest2, log,
                     () => {
-                        // Data store starts at index 1
-                        assert.strictEqual(ds[0], undefined);
-                        assert.strictEqual(ds[1], undefined);
-                        assert.deepStrictEqual(ds[2].value,
-                            new Buffer('I am another body'));
-                        done();
+                        // orphan objects don't get deleted until the next tick
+                        // in memory
+                        process.nextTick(() => {
+                            // Data store starts at index 1
+                            assert.strictEqual(ds[0], undefined);
+                            assert.strictEqual(ds[1], undefined);
+                            assert.deepStrictEqual(ds[2].value,
+                                new Buffer('I am another body'));
+                            done();
+                        });
                     });
             });
         });
