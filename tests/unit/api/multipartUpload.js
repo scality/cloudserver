@@ -1498,4 +1498,24 @@ describe('Multipart Upload API', () => {
             done();
         });
     });
+
+    it('should throw an error on put of an object part with an invalid' +
+    'uploadId', done => {
+        const testUploadId = 'invalidUploadID';
+        const partRequest = new DummyRequest({
+            bucketName,
+            url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+            query: {
+                partNumber: '1',
+                uploadId: testUploadId,
+            },
+        }, postBody);
+
+        bucketPut(authInfo, bucketPutRequest, log, () =>
+          objectPutPart(authInfo, partRequest, log, err => {
+              assert.strictEqual(err, errors.NoSuchUpload);
+              done();
+          })
+        );
+    });
 });
