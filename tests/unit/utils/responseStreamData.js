@@ -44,7 +44,7 @@ describe('responseStreamData function', () => {
             done();
         });
         return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, response, log);
+            resHeaders, dataLocations, response, null, log);
     });
 
     it('should stream full requested object data for two part object', done => {
@@ -72,6 +72,6 @@ describe('responseStreamData function', () => {
             done();
         });
         return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, response, log);
+            resHeaders, dataLocations, response, null, log);
     });
 });
