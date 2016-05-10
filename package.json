@@ -28,7 +28,6 @@
     "babel-plugin-transform-es2015-parameters": "^6.2.0",
     "bucketclient": "scality/bucketclient#rel/1.0",
     "bunyan-logstash": "^0.3.4",
-    "natural-compare-lite": "^1.4.0",
     "node-uuid": "^1.4.3",
     "sproxydclient": "scality/sproxydclient#rel/1.0",
     "utf8": "~2.1.1",
