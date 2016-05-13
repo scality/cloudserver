@@ -164,6 +164,7 @@ describe('objectPut API', () => {
                 'x-amz-meta-test2': 'some more metadata',
                 'x-amz-meta-test3': 'even more metadata',
             },
+            parsedContentLength: 0,
             url: `/${bucketName}/${objectName}`,
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);

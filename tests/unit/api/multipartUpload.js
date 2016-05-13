@@ -292,7 +292,7 @@ describe('Multipart Upload API', () => {
                 objectKey,
                 headers: {
                     'host': `${bucketName}.s3.amazonaws.com`,
-                    'content-length': 5368709121,
+                    'content-length': '5368709121',
                 },
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
@@ -300,6 +300,7 @@ describe('Multipart Upload API', () => {
                     uploadId: testUploadId,
                 },
                 calculatedHash,
+                parsedContentLength: 5368709121,
             }, postBody);
             objectPutPart(authInfo, partRequest, log, (err, result) => {
                 assert.deepStrictEqual(err, errors.EntityTooLarge);
@@ -886,8 +887,9 @@ describe('Multipart Upload API', () => {
                 objectKey,
                 headers: {
                     'host': `${bucketName}.s3.amazonaws.com`,
-                    'content-length': 100,
+                    'content-length': '100',
                 },
+                parsedContentLength: 100,
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
@@ -901,8 +903,9 @@ describe('Multipart Upload API', () => {
                 objectKey,
                 headers: {
                     'host': `${bucketName}.s3.amazonaws.com`,
-                    'content-length': 200,
+                    'content-length': '200',
                 },
+                parsedContentLength: 200,
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '2',
@@ -976,8 +979,9 @@ describe('Multipart Upload API', () => {
                 objectKey,
                 headers: {
                     'host': `${bucketName}.s3.amazonaws.com`,
-                    'content-length': 6000000,
+                    'content-length': '6000000',
                 },
+                parsedContentLength: 6000000,
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '1',
@@ -991,8 +995,9 @@ describe('Multipart Upload API', () => {
                 objectKey,
                 headers: {
                     'host': `${bucketName}.s3.amazonaws.com`,
-                    'content-length': 100,
+                    'content-length': '100',
                 },
+                parsedContentLength: 100,
                 url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
                 query: {
                     partNumber: '2',

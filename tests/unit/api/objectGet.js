@@ -31,8 +31,9 @@ describe('objectGet API', () => {
             objectKey: objectName,
             headers: {
                 'x-amz-meta-test': 'some metadata',
-                'content-length': 12,
+                'content-length': '12',
             },
+            parsedContentLength: 12,
             url: `/${bucketName}/${objectName}`,
         }, postBody);
     });
@@ -123,6 +124,7 @@ describe('objectGet API', () => {
                             // Part (other than last part) must be at least 5MB
                             'content-length': '5242880',
                         },
+                        parsedContentLength: 5242880,
                         url: `/${objectName}?partNumber=1&uploadId` +
                             `=${testUploadId}`,
                         query: {
@@ -144,6 +146,7 @@ describe('objectGet API', () => {
                             'host': `${bucketName}.s3.amazonaws.com`,
                             'content-length': '12',
                         },
+                        parsedContentLength: 12,
                         url: `/${objectName}?partNumber=2&uploadId=` +
                             `${testUploadId}`,
                         query: {
@@ -212,6 +215,7 @@ describe('objectGet API', () => {
                 'content-length': '0',
                 'x-amz-meta-test': 'some metadata',
             },
+            parsedContentLength: 0,
             url: `/${bucketName}/${objectName}`,
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
