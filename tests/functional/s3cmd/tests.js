@@ -10,6 +10,11 @@ const emptyUpload = 'Utest0B';
 const emptyDownload = 'Dtest0B';
 const download = 'tmpfile';
 const MPUpload = 'test16MB';
+const MPUploadSplitter = [
+    'test16..|..MB',
+    '..|..test16MB',
+    'test16MB..|..',
+];
 const MPDownload = 'MPtmpfile';
 const bucket = 'universe';
 const nonexist = 'nonexist';
@@ -408,6 +413,47 @@ describe('s3cmd multipart upload', function titi() {
         exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 12);
     });
 });
+
+MPUploadSplitter.forEach(file => {
+    describe('s3cmd multipart upload with splitter in name', function titi() {
+        this.timeout(0);
+        before('create the multipart file', done => {
+            this.timeout(60000);
+            createFile(file, 16777216, done);
+        });
+
+        after('delete the multipart and the downloaded file', done => {
+            deleteFile(file, () => {
+                deleteFile(MPDownload, done);
+            });
+        });
+
+        it('should put an object via a multipart upload', done => {
+            exec(['put', file, `s3://${bucket}`], done);
+        });
+
+        it('should list multipart uploads', done => {
+            exec(['multipart', `s3://${bucket}`], done);
+        });
+
+        it('should get an object that was put via multipart upload', done => {
+            exec(['get', `s3://${bucket}/${file}`, MPDownload], done);
+        });
+
+        it('downloaded file should equal uploaded file', done => {
+            diff(file, MPDownload, done);
+        });
+
+        it('should delete multipart uploaded object', done => {
+            exec(['rm', `s3://${bucket}/${file}`], done);
+        });
+
+        it('should not be able to get deleted object', done => {
+            exec(['get', `s3://${bucket}/${file}`, download], done, 12);
+        });
+    });
+});
+
 
 describe('s3cmd put, get and delete object with spaces ' +
     'in object key names', function test() {
