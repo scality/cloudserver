@@ -575,12 +575,12 @@ describe('s3curl multipart upload', () => {
                 ], (httpCode, rawOutput) => {
                     assert.strictEqual(httpCode, '200 OK');
                     parseString(rawOutput.stdout, (err, result) => {
-                        assert.strictEqual(result.ListPartResult.UploadId[0],
+                        assert.strictEqual(result.ListPartsResult.UploadId[0],
                                            uploadId);
-                        assert.strictEqual(result.ListPartResult.Bucket[0],
+                        assert.strictEqual(result.ListPartsResult.Bucket[0],
                                            bucket);
-                        assert.strictEqual(result.ListPartResult.Key[0], key);
-                        assert.strictEqual(result.ListPartResult.Part,
+                        assert.strictEqual(result.ListPartsResult.Key[0], key);
+                        assert.strictEqual(result.ListPartsResult.Part,
                                            undefined);
                         done();
                     });
