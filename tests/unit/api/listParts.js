@@ -37,9 +37,9 @@ describe('List Parts API', () => {
         cleanup();
         const creationDate = new Date().toJSON();
         const sampleNormalBucketInstance = new BucketInfo(bucketName,
-            canonicalID, authInfo.getAccountDisplayName(), creationDate);
+            canonicalID, authInfo.getAccountDisplayName(), creationDate, 2);
         const sampleMPUInstance = new BucketInfo(mpuBucket,
-            'admin', 'admin', creationDate);
+            'admin', 'admin', creationDate, 2);
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
             () => {
                 metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {
@@ -62,6 +62,7 @@ describe('List Parts API', () => {
                             READ_ACP: [],
                         },
                         'eventualStorageBucket': 'freshestbucket',
+                        'mdBucketModelVersion': 2,
                     };
 
                     inMemMetadata.keyMaps[mpuBucket][partOneKey] = {
