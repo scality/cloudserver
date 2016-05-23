@@ -18,7 +18,7 @@
         "localregion": ["localhost"]
     },
     "sproxyd": {
-        "bootstrap": ["localhost:81"]
+        "bootstrap": ["localhost:8181"]
     },
     "bucketd": {
         "bootstrap": ["localhost"]
