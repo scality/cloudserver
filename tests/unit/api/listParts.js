@@ -5,7 +5,8 @@ import { parseString } from 'xml2js';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import inMemMetadata from '../../../lib/metadata/in_memory/metadata';
+import { metadata as inMemMetadata } from
+    '../../../lib/metadata/in_memory/metadata';
 import listParts from '../../../lib/api/listParts';
 import metadata from '../metadataswitch';
 
@@ -43,7 +44,7 @@ describe('List Parts API', () => {
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
             () => {
                 metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {
-                    inMemMetadata.keyMaps[mpuBucket][overviewKey] = {
+                    inMemMetadata.keyMaps.get(mpuBucket).set(overviewKey, {
                         'id': '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0',
                         'owner-display-name': authInfo.getAccountDisplayName(),
                         'owner-id': canonicalID,
@@ -63,43 +64,43 @@ describe('List Parts API', () => {
                         },
                         'eventualStorageBucket': 'freshestbucket',
                         'mdBucketModelVersion': 2,
-                    };
+                    });
 
-                    inMemMetadata.keyMaps[mpuBucket][partOneKey] = {
+                    inMemMetadata.keyMaps.get(mpuBucket).set(partOneKey, {
                         'key': partOneKey,
                         'last-modified': '2015-11-30T22:41:18.658Z',
                         'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
                         'content-length': '6000000',
                         'partLocations': ['068db6a6745a79d54c1b29ff99f9f131'],
-                    };
-                    inMemMetadata.keyMaps[mpuBucket][partTwoKey] = {
+                    });
+                    inMemMetadata.keyMaps.get(mpuBucket).set(partTwoKey, {
                         'key': partTwoKey,
                         'last-modified': '2015-11-30T22:41:40.207Z',
                         'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
                         'content-length': '6000000',
                         'partLocations': ['ff22f316b16956ff5118c93abce7d62d'],
-                    };
-                    inMemMetadata.keyMaps[mpuBucket][partThreeKey] = {
+                    });
+                    inMemMetadata.keyMaps.get(mpuBucket).set(partThreeKey, {
                         'key': partThreeKey,
                         'last-modified': '2015-11-30T22:41:52.102Z',
                         'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
                         'content-length': '6000000',
                         'partLocations': ['dea282f70edb6fc5f9433cd6f525d4a6'],
-                    };
-                    inMemMetadata.keyMaps[mpuBucket][partFourKey] = {
+                    });
+                    inMemMetadata.keyMaps.get(mpuBucket).set(partFourKey, {
                         'key': partFourKey,
                         'last-modified': '2015-11-30T22:42:03.493Z',
                         'content-md5': 'f3a9fb2071d3503b703938a74eb99846',
                         'content-length': '6000000',
                         'partLocations': ['afe24bc40153982e1f7f28066f7af6a4'],
-                    };
-                    inMemMetadata.keyMaps[mpuBucket][partFiveKey] = {
+                    });
+                    inMemMetadata.keyMaps.get(mpuBucket).set(partFiveKey, {
                         'key': partFiveKey,
                         'last-modified': '2015-11-30T22:42:22.876Z',
                         'content-md5': '555e4cd2f9eff38109d7a3ab13995a32',
                         'content-length': '18',
                         'partLocations': ['85bc16f5769687070fb13cfe66b5e41f'],
-                    };
+                    });
                     done();
                 });
             });

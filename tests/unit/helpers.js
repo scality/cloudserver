@@ -1,6 +1,6 @@
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
-import inMemMetadata from '../../lib/metadata/in_memory/metadata';
+import { metadata } from '../../lib/metadata/in_memory/metadata';
 import { resetCount, ds } from '../../lib/data/in_memory/backend';
 
 export function makeid(size) {
@@ -58,8 +58,8 @@ export function createAlteredRequest(alteredItems, objToAlter,
 }
 
 export function cleanup() {
-    inMemMetadata.buckets = {};
-    inMemMetadata.keyMaps = {};
+    metadata.buckets = new Map;
+    metadata.keyMaps = new Map;
     // Set data store array back to empty array
     ds.length = 0;
     // Set data store key count back to 1
