@@ -109,7 +109,7 @@ describe('s3curl put and delete buckets', () => {
             `http://${ipAddress}:8000/${bucket}`, '-v'],
             (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '409 CONFLICT');
-                assertError(rawOutput.stdout, 'BucketAlreadyExists',
+                assertError(rawOutput.stdout, 'BucketAlreadyOwnedByYou',
                     done);
             });
     });

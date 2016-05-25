@@ -30,7 +30,8 @@ const testDate = new Date().toJSON();
 Object.keys(acl).forEach(
     aclObj => describe(`different acl configurations : ${aclObj}`, () => {
         const dummyBucket = new BucketInfo(
-            bucketName, owner, ownerDisplayName, testDate, 2, acl[aclObj]);
+            bucketName, owner, ownerDisplayName, testDate, 2, acl[aclObj],
+            false, false);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             let serialized;
@@ -44,6 +45,8 @@ Object.keys(acl).forEach(
                     ownerDisplayName: dummyBucket._ownerDisplayName,
                     creationDate: dummyBucket._creationDate,
                     mdBucketModelVersion: dummyBucket._mdBucketModelVersion,
+                    transient: dummyBucket._transient,
+                    deleted: dummyBucket._deleted,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
