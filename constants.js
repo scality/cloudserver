@@ -25,13 +25,11 @@ export default {
      * canonicalID...!*!bucketname
      */
 
-    // TODO: Determine a splitter that is DNS compliant and will
-    // not cause an issue for multipartUpload.  This splitter
-    // will work for serviceGet.  This is GH Issue#218.
     splitter: '..|..',
     // BACKWARD: This line will be removed when removing backward compatibility
     oldSplitter: 'splitterfornow',
-    usersBucket: 'namespaceusersbucket',
+    usersBucket: 'users..bucket',
+    oldUsersBucket: 'namespaceusersbucket',
     // MPU Bucket Prefix is used to create the name of the shadow
     // bucket used for multipart uploads.  There is one shadow mpu
     // bucket per bucket and its name is the mpuBucketPrefix followed
