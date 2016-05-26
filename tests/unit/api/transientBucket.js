@@ -347,8 +347,7 @@ describe('transient bucket handling', () => {
             });
     });
 
-    // Skipped pending fix of Issue #432
-    it.skip('objectGet request on transient bucket should' +
+    it('objectGet request on transient bucket should' +
         'return NoSuchBucket error',
         done => {
             objectGet(authInfo, baseTestRequest,
