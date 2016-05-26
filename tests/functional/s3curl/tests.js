@@ -76,7 +76,14 @@ function provideRawOutput(args, cb) {
     child.stdout.on('data', data => {
         procData.stdout += data.toString();
     });
-    child.on('close', () => {
+    child.stderr.on('data', data => {
+        procData.stderr += data.toString();
+    });
+    child.on('error', err => {
+        return cb(err);
+    });
+    child.on('close', code => {
+        process.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;
         if (procData.stderr !== '') {
             const lines = procData.stderr.replace(/[<>]/g, '').split(/[\r\n]/);
@@ -92,12 +99,15 @@ function provideRawOutput(args, cb) {
             if (httpCode) {
                 httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
                                           .toUpperCase();
+            } else {
+                process.stdout.write(`${lines.join('\n')}\n`);
+                return cb(new Error("Can't find line in http response code"));
             }
+        } else {
+            process.stdout.write(`stdout: ${procData.stdout}`);
+            return cb(new Error('Cannot have stderr'));
         }
         return cb(httpCode, procData);
-    });
-    child.stderr.on('data', data => {
-        procData.stderr += data.toString();
     });
 }
 
