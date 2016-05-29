@@ -4,7 +4,7 @@
 
 ### Architecture
 
-- IronMan s3 running on a server with a testing framework such as Mocha with
+- s3 running on a server with a testing framework such as Mocha with
   an assertion library.
 
 ### Features tested
@@ -35,7 +35,7 @@
 
 ### Architecture
 
-- A Docker instance running IronMan S3 and a Docker instance running certain S3
+- A Docker instance running S3 and a Docker instance running certain S3
   clients (Node SDK, S3cmd and AWS S3API CLI).
 
 ### Features tested
@@ -50,23 +50,23 @@
 
 ### Architecture
 
-- Several IronMan s3 Docker instances, IronMan Metadata Docker instances,
-  IronMan Data Docker instances and several IronMan Vault Docker instances.
+- Several s3 Docker instances, Metadata Docker instances,
+  Data Docker instances and several Vault Docker instances.
 
 ### Features tested
 
-- Ability to access the same buckets through different IronMan s3 connectors.
+- Ability to access the same buckets through different s3 connectors.
 - Creating and destroying access and secret keys.
 - Stopping and restarting Docker instances of s3, Vault, Metadata and Data
   under load.
-- Load balancing between IronMan s3 instances?
-- Throughput of the system increases as we add IronMan s3 instances.
+- Load balancing between s3 instances?
+- Throughput of the system increases as we add s3 instances.
 - Operation time as we add disk (the more disk, the faster the system should be
   per operation).
 - Large buckets (1 billion objects in a single bucket).
 - Large objects (10 terabytes).
 - End to end streaming ability for large objects (put from a client through
-  IronMan s3 to IronMan Data and get from IronMan Data to IronMan s3 out to a
+  s3 to Data and get from Data to s3 out to a
   client).
 - End to end range requests.
 - Load testing during extended period of time to observe side effects (i.e.
