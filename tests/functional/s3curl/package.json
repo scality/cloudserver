@@ -1,7 +1,7 @@
 {
     "name": "s3curl-tests",
     "dependencies": {
-        "arsenal": "scality/IronMan-Arsenal#rel/1.0",
+        "arsenal": "scality/Arsenal#rel/1.0",
         "mocha": "2.3.3",
         "xml2js": "~0.4.12"
     },

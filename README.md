@@ -1,13 +1,13 @@
-# IronMan-S3
+# S3
 
-[![badge][badge]](https://ci.ironmann.io/gh/scality/IronMan-S3/tree/master)
+[![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
 
 Kick ass S3 server clone
 
 ## Installation
 
 ```shell
-npm install --save scality/IronMan-S3
+npm install --save scality/S3
 ```
 
 ## Run it
@@ -39,7 +39,7 @@ npm run ft_test
 
 ## s3cmd versions
 
-If using s3cmd as a client to IronMan-S3 be aware that v4 signature format
+If using s3cmd as a client to S3 be aware that v4 signature format
 is buggy in s3cmd versions < 1.6.1.
 
-[badge]: https://ci.ironmann.io/gh/scality/IronMan-S3.svg?style=shield&circle-token=83d0efd99242ca1bc15703b02d2beb72a77aadf2
+[badge]: https://ci.ironmann.io/gh/scality/S3.svg?style=shield&circle-token=83d0efd99242ca1bc15703b02d2beb72a77aadf2

@@ -114,7 +114,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         describe('bucket creation success', () => {
             it('should create bucket if name is valid', done => {
-                const validName = 'ironman-very-valid-bucket-name';
+                const validName = 'scality-very-valid-bucket-name';
 
                 bucketUtil.s3
                     .createBucket({ Bucket: validName }, (error, data) => {

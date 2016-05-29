@@ -1,12 +1,12 @@
 {
-  "name": "ironman-s3",
+  "name": "s3",
   "version": "1.0.1-beta2",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
     "node": "~4.2.0"
   },
-  "repository": "scality/IronMan-S3",
+  "repository": "scality/S3",
   "keywords": [
     "s3",
     "cloud",
@@ -15,11 +15,11 @@
   "author": "Giorgio Regni",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/scality/IronMan-S3/issues"
+    "url": "https://github.com/scality/S3/issues"
   },
-  "homepage": "https://github.com/scality/IronMan-S3#readme",
+  "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "scality/IronMan-Arsenal#rel/1.0",
+    "arsenal": "scality/Arsenal#rel/1.0",
     "async": "~1.4.2",
     "aws-sdk": "^2.2.23",
     "babel-core": "^6.2.1",
@@ -43,7 +43,7 @@
     "commander": "^2.9.0",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-ironman": "scality/IronMan-Guidelines#rel/1.0",
+    "eslint-config-scality": "scality/Guidelines#rel/1.0",
     "istanbul": "^1.0.0-alpha",
     "istanbul-api": "==1.0.0-alpha.9",
     "lolex": "^1.4.0",

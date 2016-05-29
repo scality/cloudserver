@@ -5,6 +5,7 @@
 The bucket API will be used for managing buckets behind the S3 interface.
 
 We plan to have only 2 backends using this interface:
+
 * One production backend
 * One debug backend purely in memory
 
