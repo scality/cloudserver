@@ -12,11 +12,10 @@ describe('PUT Object ACL', () => {
         before(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             bucketUtil.createRandom(1)
-                      .catch(done)
                       .then(created => {
                           bucketName = created;
                           done();
-                      });
+                      }).catch(done);
         });
 
         after(done => {
