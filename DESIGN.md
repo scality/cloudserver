@@ -1,13 +1,13 @@
-# IronMan-S3 connector
+# S3 connector
 
-IronMan-S3 handles the requests coming from S3 clients. It is based on the
+S3 handles the requests coming from S3 clients. It is based on the
 current amazon-S3 documentation.
 
 ## Implementation
 
 ### Architecture
 
-IronMan-S3 consists of multiple daemons listening RESTfully to http requests
+S3 consists of multiple daemons listening RESTfully to http requests
 on a single port. We then route the requests depending on the HTTP verbs
 used by the request. Parsing the header allows us to determine the request
 type. From there, authentication will be confirmed
