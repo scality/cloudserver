@@ -12,11 +12,11 @@ const upload = 'test1MB';
 const emptyUpload = 'Utest0B';
 const emptyDownload = 'Dtest0B';
 const download = 'tmpfile';
-const MPUpload = 'test16MB';
+const MPUpload = 'test60MB';
 const MPUploadSplitter = [
-    'test16..|..MB',
-    '..|..test16MB',
-    'test16MB..|..',
+    'test60..|..MB',
+    '..|..test60MB',
+    'test60MB..|..',
 ];
 const MPDownload = 'MPtmpfile';
 const bucket = 'universe';
@@ -383,7 +383,7 @@ describe('s3cmd multipart upload', function titi() {
     this.timeout(0);
     before('create the multipart file', done => {
         this.timeout(60000);
-        createFile(MPUpload, 16777216, done);
+        createFile(MPUpload, 62914560, done);
     });
 
     after('delete the multipart and the downloaded file', done => {
