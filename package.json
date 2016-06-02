@@ -21,7 +21,6 @@
   "dependencies": {
     "arsenal": "scality/Arsenal#rel/1.0",
     "async": "~1.4.2",
-    "aws-sdk": "^2.2.23",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-es2015-destructuring": "^6.1.18",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
@@ -37,7 +36,6 @@
     "xml2js": "~0.4.12"
   },
   "devDependencies": {
-    "aws-sdk": "^2.2.22",
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
     "commander": "^2.9.0",
