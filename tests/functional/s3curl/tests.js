@@ -23,7 +23,8 @@ const aclBucket = 'acluniverse';
 const nonexist = 'nonexist';
 const prefix = 'topLevel';
 const delimiter = '/';
-const ownerCanonicalId = 'accessKey1canonicalID';
+const ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d52'
+    + '18e7cd47ef2be';
 const endpoint = `${transport}://${ipAddress}:8000`;
 
 function diff(putFile, receivedFile, done) {
