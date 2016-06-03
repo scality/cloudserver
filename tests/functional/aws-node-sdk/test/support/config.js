@@ -4,9 +4,8 @@ import path from 'path';
 import AWS from 'aws-sdk';
 
 import memCredentials from '../../lib/json/mem_credentials.json';
-import Config from '../../../../../lib/Config';
+import conf from '../../../../../lib/Config';
 
-export const conf = new Config();
 const transport = conf.https ? 'https' : 'http';
 
 const ssl = conf.https;

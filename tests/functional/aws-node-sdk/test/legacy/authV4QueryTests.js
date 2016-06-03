@@ -4,9 +4,8 @@ import cp from 'child_process';
 import { parseString } from 'xml2js';
 import { S3 } from 'aws-sdk';
 import getConfig from '../support/config';
-import Config from '../../../../../lib/Config';
+import conf from '../../../../../lib/Config';
 
-const conf = new Config();
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
 const ssl = conf.https;
