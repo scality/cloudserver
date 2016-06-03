@@ -47,7 +47,8 @@ describe('bucketDelete API', () => {
                     assert.deepStrictEqual(err, errors.BucketNotEmpty);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getName(), bucketName);
-                        metadata.listObject(usersBucket, canonicalID,
+                        metadata.listObject(usersBucket,
+                            authInfo.getCanonicalID(),
                             null, null, null, log, (err, listResponse) => {
                                 assert.strictEqual(listResponse.Contents.length,
                                                    1);
