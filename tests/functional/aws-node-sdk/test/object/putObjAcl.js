@@ -4,7 +4,7 @@ import Promise from 'bluebird';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
-describe.only('PUT Object ACL', () => {
+describe('PUT Object ACL', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let bucketName;
