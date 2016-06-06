@@ -67,7 +67,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if LocationConstraint ' +
+    it('should not return an error if LocationConstraint ' +
        'specified is not valid', done => {
         const testRequest = {
             bucketName,
@@ -81,7 +81,7 @@ describe('bucketPut API', () => {
                 + '</CreateBucketConfiguration>',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.deepStrictEqual(err, errors.InvalidLocationConstraint);
+            assert.deepStrictEqual(err, undefined);
             done();
         });
     });
