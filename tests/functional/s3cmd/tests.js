@@ -4,9 +4,8 @@ const proc = require('child_process');
 const process = require('process');
 const assert = require('assert');
 require('babel-core/register');
-const Config = require('../../../lib/Config').default;
+const conf = require('../../../lib/Config').default;
 
-const conf = new Config();
 const configCfg = conf.https ? 's3cfg_ssl' : 's3cfg';
 const program = 's3cmd';
 const upload = 'test1MB';
