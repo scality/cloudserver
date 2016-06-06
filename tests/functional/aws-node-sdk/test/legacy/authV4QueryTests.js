@@ -4,14 +4,21 @@ import cp from 'child_process';
 import { parseString } from 'xml2js';
 import { S3 } from 'aws-sdk';
 import getConfig from '../support/config';
+import Config from '../../../../../lib/Config';
 
+const conf = new Config();
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
+const ssl = conf.https;
+let transportArgs = [];
+if (ssl && ssl.ca) {
+    transportArgs = ['--cacert', conf.httpsPath.ca];
+}
 
 // Get stdout and stderr stringified
 function provideRawOutput(args, cb) {
     process.stdout.write(`curl ${args}\n`);
-    const child = cp.spawn('curl', args);
+    const child = cp.spawn('curl', transportArgs.concat(args));
     const procData = {
         stdout: '',
         stderr: '',

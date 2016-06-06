@@ -1,0 +1,8 @@
+[default]
+access_key = accessKey1
+secret_key = verySecretKey1
+host_base = 127.0.0.1:8000
+host_bucket = %(bucket).localhost:8000
+signature_v2 = True
+use_https = True
+website_endpoint = http://127.0.0.1:8000/answertoall
