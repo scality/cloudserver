@@ -15,7 +15,8 @@ describe('PUT Object ACL', () => {
                       .then(created => {
                           bucketName = created;
                           done();
-                      }).catch(done);
+                      })
+                      .catch(done);
         });
 
         after(done => {
@@ -41,7 +42,8 @@ describe('PUT Object ACL', () => {
                 .then(data => {
                     assert(data);
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
 
         it('should return NoSuchKey if try to put object ACLs ' +
