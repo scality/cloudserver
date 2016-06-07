@@ -9,9 +9,9 @@ import conf from '../../../../../lib/Config';
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
 const ssl = conf.https;
-let transportArgs = [];
+let transportArgs = ['-s'];
 if (ssl && ssl.ca) {
-    transportArgs = ['--cacert', conf.httpsPath.ca];
+    transportArgs = ['-s --cacert', conf.httpsPath.ca];
 }
 
 // Get stdout and stderr stringified
