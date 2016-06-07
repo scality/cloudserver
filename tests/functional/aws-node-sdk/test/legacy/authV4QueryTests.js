@@ -11,7 +11,7 @@ const bucket = `mybucket-${random}`;
 const ssl = conf.https;
 let transportArgs = ['-s'];
 if (ssl && ssl.ca) {
-    transportArgs = ['-s --cacert', conf.httpsPath.ca];
+    transportArgs = ['-s', '--cacert', conf.httpsPath.ca];
 }
 
 // Get stdout and stderr stringified
