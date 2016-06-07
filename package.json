@@ -44,8 +44,8 @@
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
     "eslint-config-scality": "scality/Guidelines#rel/1.0",
-    "istanbul": "^1.0.0-alpha",
-    "istanbul-api": "==1.0.0-alpha.9",
+    "istanbul": "1.0.0-alpha.2",
+    "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
     "mocha": "^2.3.3",
     "node-mocks-http": "^1.5.2"
@@ -56,6 +56,6 @@
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
     "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
-    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem babel-node ./node_modules/istanbul/lib/cli.js cover --dir coverage/unit _mocha -- --recursive tests/unit"
+    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --recursive tests/unit"
   }
 }
