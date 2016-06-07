@@ -48,14 +48,16 @@
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
     "mocha": "^2.3.3",
+    "mocha-junit-reporter": "1.11.1",
     "node-mocks-http": "^1.5.2"
   },
   "scripts": {
+    "circle_prelude": "mkdir -p $CIRCLE_TEST_REPORTS/unit",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "start": "node index.js",
     "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
-    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --recursive tests/unit"
+    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --reporter mocha-junit-reporter --recursive tests/unit"
   }
 }
