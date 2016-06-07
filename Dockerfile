@@ -12,7 +12,7 @@ WORKDIR /usr/src/app
 
 COPY package.json /usr/src/app/
 COPY . /usr/src/app
-#RUN npm install
+RUN npm install
 
 RUN rm  /root/.ssh/id_rsa
 
