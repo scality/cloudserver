@@ -1,6 +1,6 @@
 # S3 Server
 
-![S3 Server logo](https://dl.dropboxusercontent.com/u/15463127/S3Server/Scality-S3-Server-Logo-Large.png)
+![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
 [![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
 
 ## Learn more @ http://s3.scality.com
