@@ -1,20 +1,35 @@
-# S3
+# S3 Server
 
+![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
 [![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
 
-Kick ass S3 server clone
+## Learn more @ http://s3.scality.com
 
 ## Installation
 
+### Clone source code
+
 ```shell
-npm install --save scality/S3
+git clone git@github.com:scality/S3.git
 ```
 
-## Run it
+### Install js dependencies
+
+Go to the ./S3 folder,
 
 ```shell
+npm install
+```
+
+## Run it with memory backend
+
+```shell
+export S3BACKEND="mem"
 npm start
 ```
+
+This starts an S3 server on port 8000
+with the default access key is accessKey1, and the secret key verySecretKey1
 
 ## Testing
 
@@ -33,6 +48,7 @@ npm run lint
 You can run local functional tests with:
 
 ```shell
+export S3BACKEND="mem"
 npm start &
 npm run ft_test
 ```
