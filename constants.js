@@ -49,4 +49,7 @@ export default {
     // ACLs.
     logId: 'http://acs.amazonaws.com/groups/s3/LogDelivery',
     emptyFileMd5: 'd41d8cd98f00b204e9800998ecf8427e',
+
+    // Number of sub-directories for file backend
+    folderHash: 3511, // Prime number
 };
