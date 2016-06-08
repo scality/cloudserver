@@ -2,13 +2,17 @@
 require('babel-core/register');
 
 const assert = require('assert');
-const async = require('async');
 const fs = require('fs');
+
+const async = require('async');
+
 const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
+const logger = require('./lib/utilities/logger.js').logger;
+
 
 if (config.backends.data !== 'file' && config.backends.metadata !== 'file') {
-    process.stdout.write('No init required.' + '\n');
+    logger.info('No init required. Go forth and store data.');
     process.exit(0);
 }
 
@@ -22,19 +26,19 @@ fs.accessSync(metadataPath, fs.F_OK | fs.R_OK | fs.W_OK);
 // with params FS_IOC_SETFLAGS and FS_DIRSYNC_FL
 
 
-// Create 3511 subfolders for the data file backend
-const arr = Array.from({ length: constants.folderHash },
+// Create 3511 subdirectories for the data file backend
+const subDirs = Array.from({ length: constants.folderHash },
     (v, k) => (k + 1).toString());
-async.eachSeries(arr, (fileName, next) => {
-    fs.mkdir(`${dataPath}/${fileName}`, err => {
+async.eachSeries(subDirs, (subDirName, next) => {
+    fs.mkdir(`${dataPath}/${subDirName}`, err => {
         // If already exists, move on
         if (err && err.errno !== -17) {
             return next(err);
         }
-        return next(null);
+        return next();
     });
 },
  err => {
      assert.strictEqual(err, null, `Error creating data files ${err}`);
-     process.stdout.write('Init complete.  Go forth and store data.' + '\n');
+     logger.info('Init complete.  Go forth and store data.');
  });
