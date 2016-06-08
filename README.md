@@ -1,18 +1,20 @@
-# S3
-
+![S3 Server logo](https://dl.dropboxusercontent.com/u/15463127/S3Server/Scality-S3-Server-Logo-Large.png)
 [![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
 
-Kick ass S3 server clone
+## Learn more @ http://s3.scality.com
 
 ## Installation
 
 ```shell
-npm install --save scality/S3
+npm install scality/S3
 ```
 
-## Run it
+This installs s3 into the current folder ./node_modules/s3
+
+## Run it with memory backend
 
 ```shell
+export S3BACKEND="mem"
 npm start
 ```
 
