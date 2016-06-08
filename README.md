@@ -17,7 +17,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 ### Clone source code
 
 ```shell
-git clone git@github.com:scality/S3.git
+git clone https://github.com/scality/S3.git
 ```
 
 ### Install js dependencies
