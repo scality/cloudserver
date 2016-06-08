@@ -71,23 +71,14 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                objectPut(authInfo, testPutObjectRequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                bucketGet(authInfo, testGetRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
+                                next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListBucketResult
                                .CommonPrefixes[0].Prefix[0],
                                commonPrefix);
@@ -106,23 +97,14 @@ describe('bucketGet API', () => {
 
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                objectPut(authInfo, testPutObjectRequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                bucketGet(authInfo, testGetRequest, log, next);
-            },
-            function waterfall5(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
+                                next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
@@ -141,23 +123,14 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                objectPut(authInfo, testPutObjectRequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                bucketGet(authInfo, testGetRequest, log, next);
-            },
-            function waterfall5(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
+                                next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
@@ -175,26 +148,16 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                objectPut(authInfo, testPutObjectRequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                objectPut(authInfo, testPutObjectRequest3, log, next);
-            },
-            function waterfall5(result, next) {
-                bucketGet(authInfo, testGetRequest, log, next);
-            },
-            function waterfall6(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
+                                next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest3, log,
+                                next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                querystring.escape(objectName3));
             assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
@@ -213,17 +176,11 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketGet(authInfo, testGetRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListBucketResult.$.xmlns,
                 'http://s3.amazonaws.com/doc/2006-03-01/');
             done();
