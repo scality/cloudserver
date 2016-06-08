@@ -5,11 +5,18 @@
 
 ## Installation
 
+### Clone source code
 ```shell
-npm install scality/S3
+git clone git@github.com:scality/S3.git
 ```
 
-This installs s3 into the current folder ./node_modules/s3
+### Install js dependencies
+
+Go to the ./S3 folder,
+
+```shell
+npm install
+```
 
 ## Run it with memory backend
 
@@ -17,6 +24,8 @@ This installs s3 into the current folder ./node_modules/s3
 export S3BACKEND="mem"
 npm start
 ```
+
+This starts an S3 server on port 8000 with the default access key is accessKey1, and the secret key verySecretKey1
 
 ## Testing
 
@@ -35,6 +44,7 @@ npm run lint
 You can run local functional tests with:
 
 ```shell
+export S3BACKEND="mem"
 npm start &
 npm run ft_test
 ```
