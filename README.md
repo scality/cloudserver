@@ -1,3 +1,5 @@
+# S3 Server
+
 ![S3 Server logo](https://dl.dropboxusercontent.com/u/15463127/S3Server/Scality-S3-Server-Logo-Large.png)
 [![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
 
@@ -6,6 +8,7 @@
 ## Installation
 
 ### Clone source code
+
 ```shell
 git clone git@github.com:scality/S3.git
 ```
@@ -25,7 +28,8 @@ export S3BACKEND="mem"
 npm start
 ```
 
-This starts an S3 server on port 8000 with the default access key is accessKey1, and the secret key verySecretKey1
+This starts an S3 server on port 8000
+with the default access key is accessKey1, and the secret key verySecretKey1
 
 ## Testing
 
