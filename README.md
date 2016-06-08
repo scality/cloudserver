@@ -1,7 +1,8 @@
 # S3 Server
 
 ![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
-[![badge][badge]](https://ci.ironmann.io/gh/scality/S3/tree/master)
+[![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
+[![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 
 ## Learn more @ http://s3.scality.com
 
@@ -58,4 +59,5 @@ npm run ft_test
 If using s3cmd as a client to S3 be aware that v4 signature format
 is buggy in s3cmd versions < 1.6.1.
 
-[badge]: https://ci.ironmann.io/gh/scality/S3.svg?style=shield&circle-token=83d0efd99242ca1bc15703b02d2beb72a77aadf2
+[badgepub]: https://circleci.com/gh/scality/S3.svg?style=svg
+[badgepriv]: http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae
