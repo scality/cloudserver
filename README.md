@@ -6,6 +6,12 @@
 
 ## Learn more @ http://s3.scality.com
 
+## Contributing
+
+In order to contribute, please follow the
+[Contributing Guidelines](
+https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
+
 ## Installation
 
 ### Clone source code
