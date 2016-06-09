@@ -67,26 +67,16 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                listMultipartUploads(authInfo,
-                    testListRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
+                        log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest2, log, next),
+            (result, next) => listMultipartUploads(authInfo, testListRequest,
+                                log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .CommonPrefixes[0].Prefix[0],
                 commonPrefix);
@@ -106,26 +96,16 @@ describe('listMultipartUploads API', () => {
 
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                listMultipartUploads(authInfo,
-                    testListRequest, log, next);
-            },
-            function waterfall5(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
+                        log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest2, log, next),
+            (result, next) => listMultipartUploads(authInfo, testListRequest,
+                                log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .Upload[0].Key[0], objectName1);
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -147,26 +127,16 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                listMultipartUploads(authInfo,
-                    testListRequest, log, next);
-            },
-            function waterfall5(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
+                        log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest2, log, next),
+            (result, next) => listMultipartUploads(authInfo, testListRequest,
+                                log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .Upload[0].Key[0], objectName1);
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -192,30 +162,18 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest3, log, next);
-            },
-            function waterfall5(result, next) {
-                listMultipartUploads(authInfo,
-                    testListRequest, log, next);
-            },
-            function waterfall6(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
+                        log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest2, log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest3, log, next),
+            (result, next) => listMultipartUploads(authInfo, testListRequest,
+                                log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .Upload[0].Key[0], querystring.escape(objectName3));
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -235,30 +193,18 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testPutBucketRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest1, log, next);
-            },
-            function waterfall3(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest2, log, next);
-            },
-            function waterfall4(result, next) {
-                initiateMultipartUpload(authInfo,
-                    testInitiateMPURequest3, log, next);
-            },
-            function waterfall5(result, next) {
-                listMultipartUploads(authInfo,
-                    testListRequest, log, next);
-            },
-            function waterfall6(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
+                        log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest2, log, next),
+            (result, next) => initiateMultipartUpload(authInfo,
+                                testInitiateMPURequest3, log, next),
+            (result, next) => listMultipartUploads(authInfo, testListRequest,
+                                log, next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .Upload[0].Key[0], objectName2);
             assert.strictEqual(result.ListMultipartUploadsResult
