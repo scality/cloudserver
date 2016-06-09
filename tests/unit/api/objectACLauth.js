@@ -73,77 +73,57 @@ describe('object acl authorization for objectGet and objectHead', () => {
 
     it('should allow access to bucker owner if ' +
         'bucket-owner-read ACL', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-read';
-        const authResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const authResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
     it('should allow access to bucker owner if ' +
         'bucket-owner-full-control ACL', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-full-control';
-        const authResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const authResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
     it('should allow access to account if ' +
         'account was granted FULL_CONTROL', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.FULL_CONTROL = [accountToVet];
-        const authResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const authResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
     it('should allow access to account if ' +
         'account was granted READ right', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.READ = [accountToVet];
-        const authResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const authResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(authResults, [true, true]);
     });
 
     it('should not allow access to public user if private canned ACL', () => {
-        const results = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [false, false]);
     });
 
     it('should not allow access to just any user if private canned ACL', () => {
-        const results = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [false, false]);
     });
 });
@@ -152,15 +132,11 @@ describe('object authorization for objectPut and objectDelete', () => {
     it('should allow access to anyone since checks ' +
         'are done at bucket level', () => {
         const requestTypes = ['objectPut', 'objectDelete'];
-        const results = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(results, [true, true]);
-        const publicUserResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                constants.publicId);
-        });
+        const publicUserResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, constants.publicId));
         assert.deepStrictEqual(publicUserResults, [true, true]);
     });
 });
@@ -181,40 +157,30 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
     const requestTypes = ['objectGet', 'objectHead'];
 
     it('should allow access to object owner', () => {
-        const results = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                objectOwnerCanonicalId);
-        });
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, objectOwnerCanonicalId));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should allow access to bucket owner if ' +
         'bucket-owner-full-control canned ACL set on object', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.Canned = 'bucket-owner-full-control';
-        const authorizedResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                bucketOwnerCanonicalId);
-        });
+        const authorizedResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, bucketOwnerCanonicalId));
         assert.deepStrictEqual(authorizedResults, [true, true]);
     });
 
     it('should allow access to account if ' +
         'account was granted FULL_CONTROL right', () => {
-        const noAuthResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-                accountToVet);
-        });
+        const noAuthResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(noAuthResults, [false, false]);
         object.acl.FULL_CONTROL = [accountToVet];
-        const authorizedResults = requestTypes.map(type => {
-            return isObjAuthorized(bucket, object, type,
-            accountToVet);
-        });
+        const authorizedResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, object, type, accountToVet));
         assert.deepStrictEqual(authorizedResults, [true, true]);
     });
 

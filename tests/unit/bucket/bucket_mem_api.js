@@ -110,21 +110,16 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     it('should return individual key if key does not contain ' +
        'the delimiter even if key contains prefix', done => {
         async.waterfall([
-            function waterfall1(next) {
-                metadata.putObjectMD(bucketName, 'key1', '{}', log, next);
-            },
-            function waterfall2(next) {
-                metadata.putObjectMD(bucketName, 'noMatchKey', '{}', log, next);
-            },
-            function waterfall3(next) {
-                metadata.putObjectMD(bucketName, 'key1/', '{}', log, next);
-            },
-            function waterfall4(next) {
-                metadata.listObject(bucketName,
-                    'key', null, delimiter, defaultLimit, log, next);
-            },
-        ],
-        function waterfallFinal(err, response) {
+            next =>
+                metadata.putObjectMD(bucketName, 'key1', '{}', log, next),
+            next =>
+                metadata.putObjectMD(bucketName, 'noMatchKey', '{}', log, next),
+            next =>
+                metadata.putObjectMD(bucketName, 'key1/', '{}', log, next),
+            next =>
+                metadata.listObject(bucketName, 'key', null, delimiter,
+                    defaultLimit, log, next),
+        ], (err, response) => {
             assert.strictEqual(isKeyInContents(response, 'key1'), true);
             assert.strictEqual(response.CommonPrefixes.indexOf('key1'), -1);
             assert.strictEqual(isKeyInContents(response, 'key1/'), false);
@@ -139,21 +134,16 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     it('should return grouped keys under common prefix if keys start with ' +
        'given prefix and contain given delimiter', done => {
         async.waterfall([
-            function waterfall1(next) {
-                metadata.putObjectMD(bucketName, 'key/one', '{}', log, next);
-            },
-            function waterfall2(next) {
-                metadata.putObjectMD(bucketName, 'key/two', '{}', log, next);
-            },
-            function waterfall3(next) {
-                metadata.putObjectMD(bucketName, 'key/three', '{}', log, next);
-            },
-            function waterfall4(next) {
+            next =>
+                metadata.putObjectMD(bucketName, 'key/one', '{}', log, next),
+            next =>
+                metadata.putObjectMD(bucketName, 'key/two', '{}', log, next),
+            next =>
+                metadata.putObjectMD(bucketName, 'key/three', '{}', log, next),
+            next =>
                 metadata.listObject(bucketName, 'ke', null, delimiter,
-                                    defaultLimit, log, next);
-            },
-        ],
-        function waterfallFinal(err, response) {
+                                    defaultLimit, log, next),
+        ], (err, response) => {
             assert(response.CommonPrefixes.indexOf('key/') > -1);
             assert.strictEqual(isKeyInContents(response, 'key/'), false);
             done();
@@ -222,22 +212,17 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     // Next marker should be the last common prefix or contents key returned
     it('should return a NextMarker if maxKeys reached', done => {
         async.waterfall([
-            function waterfall1(next) {
-                metadata.putObjectMD(bucketName, 'next/', '{}', log, next);
-            },
-            function waterfall2(next) {
+            next =>
+                metadata.putObjectMD(bucketName, 'next/', '{}', log, next),
+            next =>
                 metadata.putObjectMD(bucketName, 'next/rollUp', '{}', log,
-                    next);
-            },
-            function waterfall3(next) {
-                metadata.putObjectMD(bucketName, 'next1/', '{}', log, next);
-            },
-            function waterfall4(next) {
+                    next),
+            next =>
+                metadata.putObjectMD(bucketName, 'next1/', '{}', log, next),
+            next =>
                 metadata.listObject(bucketName, 'next', null, delimiter,
-                                    smallLimit, log, next);
-            },
-        ],
-        function waterfallFinal(err, response) {
+                                    smallLimit, log, next),
+        ], (err, response) => {
             assert(response.CommonPrefixes.indexOf('next/') > -1);
             assert.strictEqual(response.CommonPrefixes.indexOf('next1/'), -1);
             assert.strictEqual(response.NextMarker, 'next/');
