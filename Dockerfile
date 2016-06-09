@@ -9,7 +9,7 @@ COPY package.json /usr/src/app/
 COPY . /usr/src/app
 RUN npm install
 
-ENV S3BACKEND mem
+ENV S3BACKEND file
 
 CMD [ "npm", "start" ]
 

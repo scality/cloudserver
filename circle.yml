@@ -28,4 +28,5 @@ test:
     - yamllint $(git ls-files '*.yml')
     - npm run circle_prelude
     - npm run unit_coverage
-    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    # - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=file npm start & sleep 4 && npm run ft_test;
