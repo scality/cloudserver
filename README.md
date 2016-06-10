@@ -5,7 +5,7 @@
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 
-## Learn more @ http://s3.scality.com
+## Learn more at [s3.scality.com](http://s3.scality.com)
 
 ## Contributing
 
