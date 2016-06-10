@@ -3,7 +3,10 @@
 const proc = require('child_process');
 const process = require('process');
 const assert = require('assert');
+require('babel-core/register');
+const conf = require('../../../lib/Config').default;
 
+const configCfg = conf.https ? 's3cfg_ssl' : 's3cfg';
 const program = 's3cmd';
 const upload = 'test1MB';
 const emptyUpload = 'Utest0B';
@@ -22,7 +25,7 @@ const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
 
-const isScality = process.env.CI ? ['-c', `${__dirname}/s3cfg`] : null;
+const isScality = process.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
@@ -61,7 +64,7 @@ function exec(args, done, exitCode) {
     if (exit === undefined) {
         exit = 0;
     }
-    let av = ['-c', 's3cfg'].concat(args);
+    let av = ['-c', configCfg].concat(args);
     if (isScality) {
         av = av.concat(isScality);
     }
@@ -75,7 +78,7 @@ function exec(args, done, exitCode) {
 
 // Test stdout against expected output
 function checkRawOutput(args, lineFinder, testString, cb) {
-    let av = ['-c', 's3cfg'].concat(args);
+    let av = ['-c', configCfg].concat(args);
     if (isScality) {
         av = av.concat(isScality);
     }
@@ -145,7 +148,7 @@ function readJsonFromChild(child, lineFinder, cb) {
 
 // Pull line of interest from stderr (to get debug output)
 function provideLineOfInterest(args, lineFinder, cb) {
-    const argsWithCfg = ['-c', 's3cfg'].concat(args);
+    const argsWithCfg = ['-c', configCfg].concat(args);
     const av = isScality ? argsWithCfg.concat(isScality) : argsWithCfg;
     process.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);

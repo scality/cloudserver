@@ -100,17 +100,11 @@ describe('objectGet API', () => {
                 url: `/${objectName}?uploads`,
             };
             async.waterfall([
-                function waterfall1(next) {
-                    bucketPut(authInfo, testPutBucketRequest, log, next);
-                },
-                function waterfall2(next) {
-                    initiateMultipartUpload(
-                        authInfo, initiateRequest, log, next);
-                },
-                function waterfall3(result, next) {
-                    parseString(result, next);
-                },
-                function waterfall4(json, next) {
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                            next),
+                (result, next) => parseString(result, next),
+                (json, next) => {
                     const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
                     const md5Hash = crypto.createHash('md5').update(partBody);
@@ -137,7 +131,7 @@ describe('objectGet API', () => {
                         next(null, testUploadId, calculatedHash);
                     });
                 },
-                function waterfall5(testUploadId, calculatedHash, next) {
+                (testUploadId, calculatedHash, next) => {
                     const part2Request = new DummyRequest({
                         bucketName,
                         namespace,
@@ -159,7 +153,7 @@ describe('objectGet API', () => {
                         next(null, testUploadId, calculatedHash);
                     });
                 },
-                function waterfall6(testUploadId, calculatedHash, next) {
+                (testUploadId, calculatedHash, next) => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -184,24 +178,24 @@ describe('objectGet API', () => {
                         log, next);
                 },
             ],
-    function waterfallFinal() {
-        objectGet(authInfo, testGetRequest, log, (err, dataGetInfo) => {
-            assert.deepStrictEqual(dataGetInfo,
-                [{
-                    key: 1,
-                    dataStoreName: 'mem',
-                    size: 5242880,
-                    start: 0,
-                },
-                {
-                    key: 2,
-                    dataStoreName: 'mem',
-                    size: 12,
-                    start: 5242880,
-                }]);
-            done();
-        });
-    });
+            () => {
+                objectGet(authInfo, testGetRequest, log, (err, dataGetInfo) => {
+                    assert.deepStrictEqual(dataGetInfo,
+                        [{
+                            key: 1,
+                            dataStoreName: 'mem',
+                            size: 5242880,
+                            start: 0,
+                        },
+                        {
+                            key: 2,
+                            dataStoreName: 'mem',
+                            size: 12,
+                            start: 5242880,
+                        }]);
+                    done();
+                });
+            });
         });
 
     it('should get a 0 bytes object', done => {

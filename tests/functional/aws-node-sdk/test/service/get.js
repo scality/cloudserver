@@ -97,18 +97,18 @@ describe('GET Service - AWS.S3.listBuckets', () => {
             before(done => {
                 bucketUtil
                     .createRandom(bucketsNumber)
-                    .catch(done)
                     .then(data => {
                         createdBuckets = data;
                         done();
-                    });
+                    })
+                    .catch(done);
             });
 
             after(done => {
                 bucketUtil
                     .deleteMany(createdBuckets)
-                    .catch(done)
-                    .then(() => done());
+                    .then(() => done())
+                    .catch(done);
             });
 
             it('should return no error, owner info, ' +

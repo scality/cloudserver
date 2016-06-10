@@ -47,20 +47,13 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -86,20 +79,13 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -136,20 +122,13 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -180,20 +159,13 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -225,20 +197,13 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -290,20 +255,13 @@ describe('bucketGetACL API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                bucketPutACL(authInfo, testPutACLRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                bucketGetACL(authInfo, testGetACLRequest, log, next);
-            },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
+                                next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalIDforSample1);
