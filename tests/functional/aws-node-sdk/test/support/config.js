@@ -1,16 +1,32 @@
 import fs from 'fs';
+import https from 'https';
 import path from 'path';
 import AWS from 'aws-sdk';
+
 import memCredentials from '../../lib/json/mem_credentials.json';
+import conf from '../../../../../lib/Config';
+
+const transport = conf.https ? 'https' : 'http';
+
+const ssl = conf.https;
+let httpOptions = undefined;
+if (ssl && ssl.ca) {
+    httpOptions = {
+        agent: new https.Agent({
+            ca: [ssl.ca],
+        }),
+    };
+}
 
 const DEFAULT_GLOBAL_OPTIONS = {
     logger: process.stdout,
+    httpOptions,
     apiVersions: { s3: '2006-03-01' },
     signatureCache: false,
+    sslEnabled: ssl !== undefined,
 };
 const DEFAULT_MEM_OPTIONS = {
-    endpoint: 'http://localhost:8000',
-    sslEnabled: false,
+    endpoint: `${transport}://localhost:8000`,
     s3ForcePathStyle: true,
 };
 const DEFAULT_AWS_OPTIONS = {};
@@ -50,7 +66,7 @@ function _getMemConfig(profile, config) {
         , { credentials }, config);
 
     if (process.env.IP) {
-        memConfig.endpoint = `http://${process.env.IP}:8000`;
+        memConfig.endpoint = `${transport}://${process.env.IP}:8000`;
     }
 
     return memConfig;

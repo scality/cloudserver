@@ -56,21 +56,15 @@ describe('objectGetACL API', () => {
             post: postBody,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -100,21 +94,15 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -141,21 +129,15 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -189,21 +171,15 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -233,22 +209,17 @@ describe('objectGetACL API', () => {
             post: postBody,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
+            next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
-                    next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+                    next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -277,22 +248,17 @@ describe('objectGetACL API', () => {
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
+            next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest, log,
-                    next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+                    next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -332,21 +298,15 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, testBucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                objectPut(authInfo, testPutObjectRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            (result, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            function waterfall4(result, next) {
-                parseString(result, next);
-            },
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, result) {
+        (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +

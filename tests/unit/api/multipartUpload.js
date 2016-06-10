@@ -71,13 +71,10 @@ describe('Multipart Upload API', () => {
 
     it('should upload a part', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => {
                 const mpuKeys = metadata.keyMaps.get(mpuBucket);
                 assert.strictEqual(mpuKeys.size, 1);
                 assert(mpuKeys.keys().next().value
@@ -85,7 +82,7 @@ describe('Multipart Upload API', () => {
                 parseString(result, next);
             },
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -139,17 +136,12 @@ describe('Multipart Upload API', () => {
     it('should upload a part even if the client sent a base 64 ETag ' +
     '(and the stored ETag in metadata should be hex)', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -192,17 +184,12 @@ describe('Multipart Upload API', () => {
 
     it('should return an error if too many parts', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -232,17 +219,12 @@ describe('Multipart Upload API', () => {
 
     it('should return an error if part number is not an integer', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -275,17 +257,12 @@ describe('Multipart Upload API', () => {
         // by setting a large content-length.  It is not actually putting a
         // large file.  Functional tests will test actual large data.
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -319,17 +296,12 @@ describe('Multipart Upload API', () => {
 
     it('should upload two parts', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -406,17 +378,12 @@ describe('Multipart Upload API', () => {
         initiateRequest.headers['x-amz-meta-stuff'] =
             'I am some user metadata';
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId =
@@ -577,18 +544,12 @@ describe('Multipart Upload API', () => {
     it('should return an error if a complete multipart upload' +
     ' request contains malformed xml', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -621,7 +582,7 @@ describe('Multipart Upload API', () => {
                     calculatedHash,
                 };
                 completeMultipartUpload(authInfo,
-                    completeRequest, log, (err) => {
+                    completeRequest, log, err => {
                         assert.deepStrictEqual(err, errors.MalformedXML);
                         assert.strictEqual(metadata.keyMaps.get(mpuBucket).size,
                                            2);
@@ -635,18 +596,12 @@ describe('Multipart Upload API', () => {
     'multipart upload request contains xml that ' +
     'does not conform to the AWS spec', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -693,17 +648,12 @@ describe('Multipart Upload API', () => {
     'multipart upload request contains xml with ' +
     'a part list that is not in numerical order', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -758,7 +708,7 @@ describe('Multipart Upload API', () => {
                         calculatedHash,
                     };
                     completeMultipartUpload(authInfo,
-                        completeRequest, log, (err) => {
+                        completeRequest, log, err => {
                             assert.deepStrictEqual(err,
                                 errors.InvalidPartOrder);
                             assert.strictEqual(metadata.keyMaps
@@ -774,17 +724,12 @@ describe('Multipart Upload API', () => {
     + 'contains xml with a part ETag that does not match the md5 for '
     + 'the part that was actually sent', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -841,7 +786,7 @@ describe('Multipart Upload API', () => {
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
-                        completeRequest, log, (err) => {
+                        completeRequest, log, err => {
                             assert.deepStrictEqual(err, errors.InvalidPart);
                             done();
                         });
@@ -854,18 +799,12 @@ describe('Multipart Upload API', () => {
     'other than the last part that is less than 5MB ' +
     'in size', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -941,18 +880,12 @@ describe('Multipart Upload API', () => {
 
     it('should aggregate the sizes of the parts', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(
-                    authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until her
             const testUploadId =
@@ -1019,7 +952,7 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
-                            parseString(result, (err) => {
+                            parseString(result, err => {
                                 assert.strictEqual(err, null);
                                 const MD = metadata.keyMaps
                                                    .get(bucketName)
@@ -1049,17 +982,12 @@ describe('Multipart Upload API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId =
@@ -1123,7 +1051,7 @@ describe('Multipart Upload API', () => {
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
-                            parseString(result, (err) => {
+                            parseString(result, err => {
                                 assert.strictEqual(err, null);
                                 const MD = metadata.keyMaps
                                                    .get(bucketName)
@@ -1156,17 +1084,12 @@ describe('Multipart Upload API', () => {
         };
 
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -1247,17 +1170,12 @@ describe('Multipart Upload API', () => {
 
     it('should abort/delete a multipart upload', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -1297,19 +1215,16 @@ describe('Multipart Upload API', () => {
     it('should return an error if attempt to abort/delete ' +
         'a multipart upload that does not exist', done => {
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => {
                 const mpuKeys = metadata.keyMaps.get(mpuBucket);
                 assert.strictEqual(mpuKeys.size, 1);
                 parseString(result, next);
             },
         ],
-        function waterfallFinal(err, json) {
+        (err, json) => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -1349,16 +1264,11 @@ describe('Multipart Upload API', () => {
     done => {
         const partBody = new Buffer('I am a part\n');
         async.waterfall([
-            function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest, log, next);
-            },
-            function waterfall2(next) {
-                initiateMultipartUpload(authInfo, initiateRequest, log, next);
-            },
-            function waterfall3(result, next) {
-                parseString(result, next);
-            },
-            function waterfall4(json, next) {
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
+            (json, next) => {
                 const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
                 const md5Hash = crypto.createHash('md5').update(partBody);
@@ -1375,11 +1285,10 @@ describe('Multipart Upload API', () => {
                     },
                     calculatedHash,
                 }, partBody);
-                objectPutPart(authInfo, partRequest, log, () => {
-                    return next(null, testUploadId, calculatedHash);
-                });
+                objectPutPart(authInfo, partRequest, log, () =>
+                    next(null, testUploadId, calculatedHash));
             },
-            function waterfall5(testUploadId, calculatedHash, next) {
+            (testUploadId, calculatedHash, next) => {
                 const part2Request = new DummyRequest({
                     bucketName,
                     namespace,
@@ -1392,11 +1301,10 @@ describe('Multipart Upload API', () => {
                     },
                     calculatedHash,
                 }, partBody);
-                objectPutPart(authInfo, part2Request, log, () => {
-                    return next(null, testUploadId, calculatedHash);
-                });
+                objectPutPart(authInfo, part2Request, log, () =>
+                    next(null, testUploadId, calculatedHash));
             },
-            function waterfall6(testUploadId, calculatedHash, next) {
+            (testUploadId, calculatedHash, next) => {
                 const completeBody = '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
@@ -1419,7 +1327,7 @@ describe('Multipart Upload API', () => {
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
-            function waterfall7(result, next) {
+            (result, next) => {
                 assert.strictEqual(ds[0], undefined);
                 assert.deepStrictEqual(ds[1].value,
                     new Buffer('I am a part\n'));
@@ -1427,10 +1335,8 @@ describe('Multipart Upload API', () => {
                     new Buffer('I am a part\n'));
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
-            function waterfall8(result, next) {
-                parseString(result, next);
-            },
-            function waterfall9(json, next) {
+            (result, next) => parseString(result, next),
+            (json, next) => {
                 const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
                 const overwritePartBody =
@@ -1450,11 +1356,10 @@ describe('Multipart Upload API', () => {
                     },
                     calculatedHash,
                 }, overwritePartBody);
-                objectPutPart(authInfo, partRequest, log, () => {
-                    return next(null, testUploadId, calculatedHash);
-                });
+                objectPutPart(authInfo, partRequest, log, () =>
+                    next(null, testUploadId, calculatedHash));
             },
-            function waterfall10(testUploadId, calculatedHash, next) {
+            (testUploadId, calculatedHash, next) => {
                 const completeBody = '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
@@ -1474,7 +1379,7 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
         ],
-        function waterfallFinal() {
+        () => {
             assert.strictEqual(ds[0], undefined);
             assert.strictEqual(ds[1], undefined);
             assert.strictEqual(ds[2], undefined);

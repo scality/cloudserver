@@ -13,11 +13,12 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
         before(done => {
             bucketUtil = new BucketUtility();
-            bucketUtil.createRandom(1).catch(done)
+            bucketUtil.createRandom(1)
                       .then(created => {
                           bucketName = created;
                           done();
-                      });
+                      })
+                      .catch(done);
         });
 
         after(done => {
@@ -46,11 +47,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         before(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             bucketUtil.createRandom(1)
-                      .catch(done)
                       .then(created => {
                           bucketName = created;
                           done();
-                      });
+                      })
+                      .catch(done);
         });
 
         after(done => {
@@ -92,7 +93,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         'testB/test.json',
                     ], 'Bucket content mismatch');
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
 
         it('should return multiple common prefixes', done => {
@@ -123,7 +125,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         'testB/',
                     ], 'Bucket content mismatch');
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
 
         it('should list object titles with white spaces', done => {
@@ -162,7 +165,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         'whiteSpace/two white spaces',
                     ], 'Bucket content mismatch');
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
 
         it('should list object titles that begin with special chars', done => {
@@ -335,7 +339,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         '日japaneseMountainObjTitle/日japaneseMountainObjTitle',
                     ], 'Bucket content mismatch');
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
     });
 });
