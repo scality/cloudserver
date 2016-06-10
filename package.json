@@ -50,7 +50,6 @@
     "node-mocks-http": "^1.5.2"
   },
   "scripts": {
-    "circle_prelude": "mkdir -p $CIRCLE_TEST_REPORTS/unit",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "init": "node init.js",
     "lint": "eslint $(git ls-files '*.js')",
