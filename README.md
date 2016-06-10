@@ -35,8 +35,7 @@ export S3BACKEND="mem"
 npm start
 ```
 
-This starts an S3 server on port 8000
-with the default access key is accessKey1, and the secret key verySecretKey1
+This starts an S3 server on port 8000. The default access key is accessKey1 with a secret key of verySecretKey1.
 
 ## Testing
 
