@@ -28,6 +28,6 @@ test:
     # lint the python used for testing
     - flake8 $(git ls-files '*.py')
     - yamllint $(git ls-files '*.yml')
-    - npm run circle_prelude
+    - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
     - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
