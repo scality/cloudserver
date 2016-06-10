@@ -9,6 +9,8 @@ general:
 machine:
   node:
     version: 4.2
+  environment:
+    CXX: g++-4.9
 
 dependencies:
   post:
