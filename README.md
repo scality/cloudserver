@@ -1,6 +1,7 @@
 # S3 Server
 
 ![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
+
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 
@@ -28,14 +29,39 @@ Go to the ./S3 folder,
 npm install
 ```
 
-## Run it with memory backend
+## Run it with a file backend
 
 ```shell
-export S3BACKEND="mem"
 npm start
 ```
 
-This starts an S3 server on port 8000. The default access key is accessKey1 with a secret key of verySecretKey1.
+This starts an S3 server on port 8000.
+The default access key is accessKey1 with
+a secret key of verySecretKey1.
+
+By default the metadata files will be saved in the
+localMetadata directory and the data files will be saved
+in the localData directory within the ./S3 directory on your
+machine.  These directories have been pre-created within the
+repository.  If you would like to save the data or metadata in
+different locations of your choice, you must specify them. So,
+when starting the server:
+
+```shell
+export S3DATAPATH="/s3/myFavoriteDataPath"
+export S3METADATAPATH="/s3/myFavoriteMetadataPath"
+npm start
+```
+
+## Run it with an in-memory backend
+
+```shell
+npm run mem_backend
+```
+
+This starts an S3 server on port 8000.
+The default access key is accessKey1 with
+a secret key of verySecretKey1.
 
 ## Testing
 
@@ -54,8 +80,7 @@ npm run lint
 You can run local functional tests with:
 
 ```shell
-export S3BACKEND="mem"
-npm start &
+npm run mem_backend &
 npm run ft_test
 ```
 
