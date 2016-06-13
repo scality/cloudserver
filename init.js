@@ -44,15 +44,19 @@ const metadataPath = config.filePaths.metadataPath;
 
 fs.accessSync(dataPath, fs.F_OK | fs.R_OK | fs.W_OK);
 fs.accessSync(metadataPath, fs.F_OK | fs.R_OK | fs.W_OK);
-
+const warning = 'WARNING: Synchronization directory updates are not ' +
+    'supported on this platform. Newly written data could be lost ' +
+    'if your system crashes before the operating system is able to ' +
+    'write directory updates.';
 if (os.type() === 'Linux' && os.endianness() === 'LE') {
-    _setDirSyncFlag(dataPath);
-    _setDirSyncFlag(metadataPath);
+    try {
+        _setDirSyncFlag(dataPath);
+        _setDirSyncFlag(metadataPath);
+    } catch (err) {
+        logger.warn(warning, { error: err });
+    }
 } else {
-    logger.warn('WARNING: Synchronization directory updates are not ' +
-        'supported on this platform. Newly written data could be lost ' +
-        'if your system crashes before the operating system is able to ' +
-        'write directory updates.');
+    logger.warn(warning);
 }
 
 // Create 3511 subdirectories for the data file backend
