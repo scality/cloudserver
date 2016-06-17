@@ -6,10 +6,16 @@ const fs = require('fs');
 const os = require('os');
 
 const async = require('async');
-const ioctl = require('ioctl');
 const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
 const logger = require('./lib/utilities/logger.js').logger;
+
+let ioctl;
+try {
+    ioctl = require('ioctl');
+} catch (err) {
+    logger.warn('ioctl dependency is unavailable. skipping...');
+}
 
 function _setDirSyncFlag(path) {
     const GETFLAGS = 2148034049;
@@ -48,7 +54,7 @@ const warning = 'WARNING: Synchronization directory updates are not ' +
     'supported on this platform. Newly written data could be lost ' +
     'if your system crashes before the operating system is able to ' +
     'write directory updates.';
-if (os.type() === 'Linux' && os.endianness() === 'LE') {
+if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
     try {
         _setDirSyncFlag(dataPath);
         _setDirSyncFlag(metadataPath);
