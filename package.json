@@ -38,6 +38,9 @@
     "xml": "~1.0.0",
     "xml2js": "~0.4.12"
   },
+  "optionalDependencies": {
+      "ioctl": "2.0.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
