@@ -166,6 +166,29 @@ describe('bucketGet API', () => {
         });
     });
 
+    it('should escape invalid xml characters in object key names', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: {},
+        };
+
+        testPutObjectRequest1.objectKey += '&><"\'';
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
+                              testPutObjectRequest1.objectKey);
+            done();
+        });
+    });
+
     it('should return xml that refers to the s3 docs for xml specs', done => {
         const testGetRequest = {
             bucketName,

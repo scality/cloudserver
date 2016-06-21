@@ -169,10 +169,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 .catch(done);
         });
 
-        it('should list object titles that begin with special chars', done => {
+        it('should list object titles that contain special chars', done => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
             const objects = [
+                { Bucket, Key: 'foo&<>\'"' },
                 { Bucket, Key: '*asterixObjTitle/' },
                 { Bucket, Key: '*asterixObjTitle/objTitleA', Body: '{}' },
                 { Bucket, Key: '*asterixObjTitle/*asterixObjTitle',
@@ -304,6 +305,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         '_underscoreObjTitle/',
                         '_underscoreObjTitle/_underscoreObjTitle',
                         '_underscoreObjTitle/objTitleA',
+                        'foo&<>\'"',
                         'ÀaGraveUpperCaseObjTitle',
                         'ÀaGraveUpperCaseObjTitle/objTitleA',
                         'ÀaGraveUpperCaseObjTitle/ÀaGraveUpperCaseObjTitle',
