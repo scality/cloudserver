@@ -1,5 +1,6 @@
 import assert from 'assert';
 import querystring from 'querystring';
+import { errors } from 'arsenal';
 
 import async from 'async';
 import { parseString } from 'xml2js';
@@ -134,6 +135,20 @@ describe('bucketGet API', () => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+            done();
+        });
+    });
+
+    it('should return an InvalidArgument error if max-keys == -1', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '-1' },
+        };
+        bucketGet(authInfo, testGetRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
             done();
         });
     });
