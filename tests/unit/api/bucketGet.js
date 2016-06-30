@@ -10,6 +10,8 @@ import objectPut from '../../../lib/api/objectPut';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
 
+import { errors } from 'arsenal';
+
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
@@ -134,6 +136,43 @@ describe('bucketGet API', () => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+            done();
+        });
+    });
+
+    it('should return an InvalidArgument error if max-keys == -1', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '-1' },
+        };
+        bucketGet(authInfo, testGetRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
+        });
+    });
+
+    it('should return max-keys: 1000 if max-keys > 1000', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '9999' },
+        };
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, log, next),
+            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
+                                next),
+            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.MaxKeys[0],
+                               '1000');
             done();
         });
     });
