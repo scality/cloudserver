@@ -23,8 +23,21 @@ const aclBucket = 'acluniverse';
 const nonexist = 'nonexist';
 const prefix = 'topLevel';
 const delimiter = '/';
-const ownerCanonicalId = 'accessKey1canonicalID';
+let ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d52'
+    + '18e7cd47ef2be';
 const endpoint = `${transport}://${ipAddress}:8000`;
+
+/*
+ * XXX TODO FIXME TODO XXX
+ * The following codeblock aims at improving flexibility of this tests by
+ * overriding some specific test values from the environment. This is partly
+ * aimed at re-using this test suite in a different context (end-to-end
+ * testing rather than functional testing)
+ * XXX TODO FIXME TODO XXX
+ */
+if (process.env.S3_TESTVAL_OWNERCANONICALID) {
+    ownerCanonicalId = process.env.S3_TESTVAL_OWNERCANONICALID;
+}
 
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
