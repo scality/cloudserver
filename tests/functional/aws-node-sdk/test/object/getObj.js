@@ -9,16 +9,16 @@ describe('Bucket GET (object listing)', () => {
     const bucketName = 'test-get-bucket';
     const validPrefix = ['/validPrefix/ThatIsPresent/InTheTest/',
     '|validPrefix|ThatIsPresent|InTheTest|'];
+    const validMaxKeys = [undefined, 1, 42, 1000, 1001];
 
     const params = {
         auth: [{}, { signatureVersion: 'v4' }],
         Bucket: [undefined, 'invalid-bucket-name', bucketName, null],
         Delimiter: [undefined, '/', '', '|', null],
         Prefix: [undefined, '/validPrefix/ThatIsNot/InTheSet',
-        validPrefix[0], 'InvalidPrefix',
-        '/ThatIsPresent/validPrefix/InTheTest',
-        validPrefix[1]],
-        MaxKeys: [undefined, 0, -1, 1, 42, 1001, 1000, 'string'],
+        'InvalidPrefix', '/ThatIsPresent/validPrefix/InTheTest']
+        .concat(validPrefix),
+        MaxKeys: [undefined, -1, 'string', 0].concat(validMaxKeys),
         EncodingType: [undefined, 'url', null],
     };
 
@@ -138,7 +138,8 @@ describe('Bucket GET (object listing)', () => {
                 }
                 done();
             });
-        }).if({ Bucket: [undefined, 'invalid-bucket-name', null] },
+        }, "should get objects")
+        .if({ Bucket: [undefined, 'invalid-bucket-name', null] },
         (matrix, done) => {
             /**
             * Invalid bucket name test
@@ -149,7 +150,8 @@ describe('Bucket GET (object listing)', () => {
                 assert.equal(data === null, true);
                 done();
             });
-        }).if({ MaxKeys: [0, -1, 'string'] }, (matrix, done) => {
+        }, "should have error on invalid bucket")
+        .if({ MaxKeys: [0, -1, 'string'] }, (matrix, done) => {
             /**
             * Invalid max key test
             */
@@ -158,8 +160,9 @@ describe('Bucket GET (object listing)', () => {
                 assert.equal(err !== null, true);
                 done();
             });
-        }).if({ Bucket: [bucketName], EncodingType: ['url'],
-        MaxKeys: [1000, 42, 1001, 1], Delimiter: ['/'],
+        }, "should have error on invalid max keys")
+        .if({ Bucket: [bucketName], EncodingType: ['url'],
+        MaxKeys: validMaxKeys, Delimiter: ['/'],
         Prefix: ['/validPrefix/ThatIsPresent/InTheTest/'] },
         (matrix, done) => {
             /**
@@ -175,8 +178,9 @@ describe('Bucket GET (object listing)', () => {
                 }
                 done();
             });
-        }).if({ Bucket: [bucketName], Delimiter: ['|'],
-        MaxKeys: [1000, 42, 1001, 1],
+        }, "should have url encoding on object")
+        .if({ Bucket: [bucketName], Delimiter: ['|'],
+        MaxKeys: validMaxKeys,
         Prefix: ['|validPrefix|ThatIsPresent|InTheTest'] },
         (matrix, done) => {
             /**
@@ -190,10 +194,11 @@ describe('Bucket GET (object listing)', () => {
                 assert.equal(data.Contents.length <= maxNumberOfKeys, true);
                 done();
             });
-        }).if({ Bucket: [bucketName], Delimiter: ['/'],
+        }, "should have object with specific prefix")
+        .if({ Bucket: [bucketName], Delimiter: ['/'],
         Prefix: ['/validPrefix/ThatIsNot/InTheSet', 'InvalidPrefix',
         '/ThatIsPresent/validPrefix/InTheTest', null],
-        MaxKeys: [1, 42, 1001, 1000] },
+        MaxKeys: validMaxKeys },
         (matrix, done) => {
             /**
             * Invalid prefix
@@ -206,6 +211,6 @@ describe('Bucket GET (object listing)', () => {
                 assert.equal(dataIsEmpty, true);
                 done();
             });
-        });
+        }, "should have no data on invalid prefix");
     }).execute();
 });
