@@ -138,7 +138,7 @@ describe('Bucket GET (object listing)', () => {
                 }
                 done();
             });
-        }, "should get objects")
+        }, "should list objects")
         .if({ Bucket: [undefined, 'invalid-bucket-name', null] },
         (matrix, done) => {
             /**
