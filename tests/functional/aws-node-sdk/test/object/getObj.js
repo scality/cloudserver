@@ -111,12 +111,12 @@ describe('Bucket GET (object listing)', () => {
                 const isGoodPrefix = validPrefix.indexOf(prefix) !== -1
                 || prefix === undefined;
                 if (isGoodPrefix === false) {
-                    assert.equal(err === null, true);
+                    assert.equal(err, null);
                     assert.equal(data.Contents.length === 0
                         || data.Contents === undefined, true);
                 } else if (matrix.params.MaxKeys !== undefined
                     && isGoodPrefix && isPrefixMatch) {
-                    assert.equal(err === null, true);
+                    assert.equal(err, null);
 
                     const NumberOfData = data.Contents.length;
                     assert.equal(NumberOfData <= maxNumberOfKeys, true);
@@ -147,7 +147,7 @@ describe('Bucket GET (object listing)', () => {
             delete matrix.params.auth;
             bucketUtil.s3.listObjects(matrix.params, (err, data) => {
                 assert.equal(err !== null, true);
-                assert.equal(data === null, true);
+                assert.equal(data, null);
                 done();
             });
         }, "should have error on invalid bucket")
@@ -170,7 +170,7 @@ describe('Bucket GET (object listing)', () => {
             */
             delete matrix.params.auth;
             bucketUtil.s3.listObjects(matrix.params, (err, data) => {
-                assert.equal(err === null, true);
+                assert.equal(err, null);
                 assert.equal(data.Contents !== null, true);
                 if (data.Contents !== null) {
                     assert.equal(data.Contents[0].Key.indexOf('%01') !== -1,
@@ -190,7 +190,7 @@ describe('Bucket GET (object listing)', () => {
             delete matrix.params.auth;
 
             bucketUtil.s3.listObjects(matrix.params, (err, data) => {
-                assert.equal(err === null, true);
+                assert.equal(err, null);
                 assert.equal(data.Contents.length <= maxNumberOfKeys, true);
                 done();
             });
@@ -207,7 +207,7 @@ describe('Bucket GET (object listing)', () => {
             bucketUtil.s3.listObjects(matrix.params, (err, data) => {
                 const dataIsNull = data.Contents === null;
                 const dataIsEmpty = dataIsNull || data.Contents.length === 0;
-                assert.equal(err === null, true);
+                assert.equal(err, null);
                 assert.equal(dataIsEmpty, true);
                 done();
             });
