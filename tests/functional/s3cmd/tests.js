@@ -167,6 +167,14 @@ describe('s3cmd putBucket', () => {
     it('put an invalid bucket, should fail', done => {
         exec(['mb', `s3://${invalidName}`], done, 11);
     });
+
+    it('should put a valid bucket with region (regardless of region)', done => {
+        exec(['mb', `s3://regioned`, '--region=wherever'], done);
+    });
+
+    it('should delete bucket put with region', done => {
+        exec(['rb', `s3://regioned`, '--region=wherever'], done);
+    });
 });
 
 describe('s3cmd put and get bucket ACLs', function aclBuck() {

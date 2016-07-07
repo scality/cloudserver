@@ -14,6 +14,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
+const locationConstraint = 'us-west-1';
 
 describe('listMultipartUploads API', () => {
     beforeEach(() => {
@@ -67,7 +68,8 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
                         log, next),
             (result, next) => initiateMultipartUpload(authInfo,
@@ -96,7 +98,8 @@ describe('listMultipartUploads API', () => {
 
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
                         log, next),
             (result, next) => initiateMultipartUpload(authInfo,
@@ -127,7 +130,8 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
                         log, next),
             (result, next) => initiateMultipartUpload(authInfo,
@@ -162,7 +166,8 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
                         log, next),
             (result, next) => initiateMultipartUpload(authInfo,
@@ -193,7 +198,8 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
                         log, next),
             (result, next) => initiateMultipartUpload(authInfo,

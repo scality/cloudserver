@@ -17,6 +17,7 @@ const log = new DummyRequestLogger();
 const namespace = 'default';
 const postBody = new Buffer('I am a body');
 const prefix = 'sub';
+const locationConstraint = 'us-west-1';
 
 let testPutBucketRequest;
 let testPutObjectRequest1;
@@ -71,7 +72,8 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest1, log, next),
             (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
                                 next),
@@ -97,7 +99,8 @@ describe('bucketGet API', () => {
 
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest1, log, next),
             (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
                                 next),
@@ -123,7 +126,8 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest1, log, next),
             (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
                                 next),
@@ -148,7 +152,8 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest1, log, next),
             (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
                                 next),
@@ -176,7 +181,8 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
             next => bucketGet(authInfo, testGetRequest, log, next),
             (result, next) => parseString(result, next),
         ],

@@ -9,6 +9,7 @@ const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const namespace = 'default';
 const bucketName = 'bucketname';
+const locationConstraint = 'us-west-1';
 const testRequest = {
     bucketName,
     namespace,
@@ -29,7 +30,7 @@ describe('bucketHead API', () => {
 
     it('should return an error if user is not authorized', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(otherAuthInfo, testRequest, log, () => {
+        bucketPut(otherAuthInfo, testRequest, locationConstraint, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
                 assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
@@ -39,7 +40,7 @@ describe('bucketHead API', () => {
 
     it('should return a success message if ' +
        'bucket exists and user is authorized', done => {
-        bucketPut(authInfo, testRequest, log, () => {
+        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
             bucketHead(authInfo, testRequest, log, (err, result) => {
                 assert.strictEqual(result,
                                    'Bucket exists and user authorized -- 200');

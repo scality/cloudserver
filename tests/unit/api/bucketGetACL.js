@@ -14,6 +14,7 @@ const authInfo = makeAuthInfo(accessKey);
 const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
+const locationConstraint = 'us-west-1';
 
 describe('bucketGetACL API', () => {
     beforeEach(() => {
@@ -47,7 +48,8 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),
@@ -79,7 +81,8 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),
@@ -122,7 +125,8 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),
@@ -159,7 +163,8 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),
@@ -197,7 +202,8 @@ describe('bucketGetACL API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),
@@ -255,7 +261,8 @@ describe('bucketGetACL API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest,
+                locationConstraint, log, next),
             next => bucketPutACL(authInfo, testPutACLRequest, log, next),
             (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
                                 next),

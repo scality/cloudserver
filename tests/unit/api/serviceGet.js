@@ -14,6 +14,8 @@ const namespace = 'default';
 const bucketName1 = 'bucketname1';
 const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
+const locationConstraint = 'us-west-1';
+
 
 describe('serviceGet API', () => {
     beforeEach(() => {
@@ -47,13 +49,16 @@ describe('serviceGet API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testbucketPutRequest1, log, next);
+                bucketPut(authInfo, testbucketPutRequest1, locationConstraint,
+                    log, next);
             },
             function waterfall2(next) {
-                bucketPut(authInfo, testbucketPutRequest2, log, next);
+                bucketPut(authInfo, testbucketPutRequest2, locationConstraint,
+                    log, next);
             },
             function waterfall3(next) {
-                bucketPut(authInfo, testbucketPutRequest3, log, next);
+                bucketPut(authInfo, testbucketPutRequest3, locationConstraint,
+                    log, next);
             },
             function waterfall4(next) {
                 serviceGet(authInfo, serviceGetRequest, log, next);

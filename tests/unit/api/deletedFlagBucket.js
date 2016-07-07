@@ -39,6 +39,7 @@ const otherAccountAuthInfo = makeAuthInfo('accessKey2');
 const namespace = 'default';
 const usersBucketName = constants.usersBucket;
 const bucketName = 'bucketname';
+const locationConstraint = 'us-west-1';
 const baseTestRequest = {
     bucketName,
     namespace,
@@ -109,7 +110,7 @@ describe('deleted flag bucket handling', () => {
 
     it('putBucket request should recreate bucket with deleted flag if ' +
         'request is from same account that originally put', done => {
-        bucketPut(authInfo, baseTestRequest, log, err => {
+        bucketPut(authInfo, baseTestRequest, locationConstraint, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
                 assert.strictEqual(data._transient, false);
@@ -123,16 +124,17 @@ describe('deleted flag bucket handling', () => {
     it('putBucket request should return error if ' +
         'different account sends put bucket request for bucket with ' +
         'deleted flag', done => {
-        bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
-            assert.deepStrictEqual(err, errors.BucketAlreadyExists);
-            metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._deleted, true);
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                return checkBucketListing(otherAccountAuthInfo,
-                    bucketName, 0, done);
+        bucketPut(otherAccountAuthInfo, baseTestRequest, locationConstraint,
+            log, err => {
+                assert.deepStrictEqual(err, errors.BucketAlreadyExists);
+                metadata.getBucket(bucketName, log, (err, data) => {
+                    assert.strictEqual(data._transient, false);
+                    assert.strictEqual(data._deleted, true);
+                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    return checkBucketListing(otherAccountAuthInfo,
+                        bucketName, 0, done);
+                });
             });
-        });
     });
 
     it('ACLs from new putBucket request should overwrite ACLs saved ' +
@@ -140,7 +142,7 @@ describe('deleted flag bucket handling', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-acl': 'public-read' }, 'headers',
             baseTestRequest, baseTestRequest.headers);
-        bucketPut(authInfo, alteredRequest, log, err => {
+        bucketPut(authInfo, alteredRequest, locationConstraint, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
                 assert.strictEqual(data._transient, false);

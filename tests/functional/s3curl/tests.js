@@ -145,6 +145,28 @@ describe('s3curl put and delete buckets', () => {
             });
     });
 
+    it('should not be able to put a bucket with invalid xml' +
+        ' in the post body', done => {
+        provideRawOutput(['--createBucket', '--',
+            '--data', 'malformedxml', `${endpoint}/${bucket}`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'MalformedXML',
+                    done);
+            });
+    });
+
+    it('should not be able to put a bucket with xml that does' +
+        ' not conform to s3 docs for locationConstraint', done => {
+        provideRawOutput(['--createBucket', '--',
+            '--data', '<Hello>a</Hello>', `${endpoint}/${bucket}`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'MalformedXML',
+                    done);
+            });
+    });
+
     it('should not be able to put a bucket with an invalid name', done => {
         provideRawOutput(['--createBucket', '--',
             `${endpoint}/2`, '-v'],
