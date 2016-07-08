@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "scality/Arsenal#rel/1.1",
+    "arsenal": "scality/Arsenal#master",
     "async": "~1.4.2",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-es2015-destructuring": "^6.1.18",
@@ -33,7 +33,7 @@
     "node-uuid": "^1.4.3",
     "sproxydclient": "scality/sproxydclient#rel/1.1",
     "utf8": "~2.1.1",
-    "vaultclient": "scality/vaultclient#rel/1.1",
+    "vaultclient": "scality/vaultclient#master",
     "werelogs": "scality/werelogs#rel/1.1",
     "xml": "~1.0.0",
     "xml2js": "~0.4.12"
