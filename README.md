@@ -15,6 +15,12 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
+### Dependencies
+
+Building and running the S3 Server requires node.js 4.2 or greater and npm 2.7
+or greater. Up-to-date versions can be found at
+[Nodesource](https://github.com/nodesource/distributions).
+
 ### Clone source code
 
 ```shell
