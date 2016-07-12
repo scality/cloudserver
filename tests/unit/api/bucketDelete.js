@@ -16,6 +16,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
 const usersBucket = constants.usersBucket;
+const locationConstraint = 'us-west-1';
 
 describe('bucketDelete API', () => {
     beforeEach(() => {
@@ -39,7 +40,7 @@ describe('bucketDelete API', () => {
             objectKey: objectName,
         }, postBody);
 
-        bucketPut(authInfo, testRequest, log, err => {
+        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authInfo, testPutObjectRequest, log, err => {
                 assert.strictEqual(err, null);
@@ -61,7 +62,7 @@ describe('bucketDelete API', () => {
     });
 
     it('should delete a bucket', done => {
-        bucketPut(authInfo, testRequest, log, () => {
+        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);

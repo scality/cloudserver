@@ -22,13 +22,14 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
+const locationConstraint = 'us-west-1';
 
 const objectName = 'objectName';
 
 let testPutObjectRequest;
 
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
-    bucketPut(bucketOwner, bucketPutReq, log, () => {
+    bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authUser, testPutObjectRequest, log, (err, res) => {
@@ -61,12 +62,13 @@ describe('objectPut API', () => {
 
     it('should return an error if user is not authorized', done => {
         const putAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(putAuthInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
-                done();
+        bucketPut(putAuthInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log, err => {
+                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
+                });
             });
-        });
     });
 
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
@@ -104,16 +106,20 @@ describe('objectPut API', () => {
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
-                assert.strictEqual(result, correctMD5);
-                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
-                    assert(md);
-                    assert.strictEqual(md['content-md5'], correctMD5);
-                    done();
-                });
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log,
+                    (err, result) => {
+                        assert.strictEqual(result, correctMD5);
+                        metadata.getObjectMD(bucketName, objectName,
+                            log, (err, md) => {
+                                assert(md);
+                                assert
+                                .strictEqual(md['content-md5'], correctMD5);
+                                done();
+                            });
+                    });
             });
-        });
     });
 
     it('should successfully put an object with user metadata', done => {
@@ -135,20 +141,24 @@ describe('objectPut API', () => {
             calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
-                assert.strictEqual(result, correctMD5);
-                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
-                    assert(md);
-                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
-                    assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
-                    assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
-                    done();
-                });
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log,
+                    (err, result) => {
+                        assert.strictEqual(result, correctMD5);
+                        metadata.getObjectMD(bucketName, objectName, log,
+                            (err, md) => {
+                                assert(md);
+                                assert.strictEqual(md['x-amz-meta-test'],
+                                'some metadata');
+                                assert.strictEqual(md['x-amz-meta-test2'],
+                                           'some more metadata');
+                                assert.strictEqual(md['x-amz-meta-test3'],
+                                           'even more metadata');
+                                done();
+                            });
+                    });
             });
-        });
     });
 
     it('should put an object with user metadata but no data', done => {
@@ -169,22 +179,26 @@ describe('objectPut API', () => {
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, (err, result) => {
-                assert.strictEqual(result, correctMD5);
-                assert.deepStrictEqual(ds, []);
-                metadata.getObjectMD(bucketName, objectName, log, (err, md) => {
-                    assert(md);
-                    assert.strictEqual(md.location, null);
-                    assert.strictEqual(md['x-amz-meta-test'], 'some metadata');
-                    assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
-                    assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
-                    done();
-                });
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log,
+                    (err, result) => {
+                        assert.strictEqual(result, correctMD5);
+                        assert.deepStrictEqual(ds, []);
+                        metadata.getObjectMD(bucketName, objectName, log,
+                            (err, md) => {
+                                assert(md);
+                                assert.strictEqual(md.location, null);
+                                assert.strictEqual(md['x-amz-meta-test'],
+                                'some metadata');
+                                assert.strictEqual(md['x-amz-meta-test2'],
+                                           'some more metadata');
+                                assert.strictEqual(md['x-amz-meta-test3'],
+                                           'even more metadata');
+                                done();
+                            });
+                    });
             });
-        });
     });
 
     it('should not leave orphans in data when overwriting an object', done => {
@@ -196,22 +210,24 @@ describe('objectPut API', () => {
             url: `/${bucketName}/${objectName}`,
         }, new Buffer('I am another body'));
 
-        bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, () => {
-                objectPut(authInfo, testPutObjectRequest2, log,
-                    () => {
-                        // orphan objects don't get deleted until the next tick
-                        // in memory
-                        process.nextTick(() => {
-                            // Data store starts at index 1
-                            assert.strictEqual(ds[0], undefined);
-                            assert.strictEqual(ds[1], undefined);
-                            assert.deepStrictEqual(ds[2].value,
-                                new Buffer('I am another body'));
-                            done();
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log, () => {
+                    objectPut(authInfo, testPutObjectRequest2, log,
+                        () => {
+                            // orphan objects don't get deleted
+                            // until the next tick
+                            // in memory
+                            process.nextTick(() => {
+                                // Data store starts at index 1
+                                assert.strictEqual(ds[0], undefined);
+                                assert.strictEqual(ds[1], undefined);
+                                assert.deepStrictEqual(ds[2].value,
+                                    new Buffer('I am another body'));
+                                done();
+                            });
                         });
-                    });
+                });
             });
-        });
     });
 });

@@ -17,10 +17,11 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = new Buffer('I am a body');
 const objectKey = 'objectName';
+const locationConstraint = 'us-west-1';
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
-    bucketPut(bucketOwner, bucketPutReq, log, () => {
+    bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(bucketOwner, objPutReq, log, err => {
@@ -74,17 +75,18 @@ describe('objectDelete API', () => {
     });
 
     it('should delete an object', done => {
-        bucketPut(authInfo, testBucketPutRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, () => {
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.strictEqual(err, undefined);
-                    objectGet(authInfo, testGetObjectRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.NoSuchKey);
-                        done();
+        bucketPut(authInfo, testBucketPutRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, undefined);
+                        objectGet(authInfo, testGetObjectRequest, log, err => {
+                            assert.deepStrictEqual(err, errors.NoSuchKey);
+                            done();
+                        });
                     });
                 });
             });
-        });
     });
 
     it('should delete a 0 bytes object', done => {
@@ -95,19 +97,21 @@ describe('objectDelete API', () => {
             headers: {},
             url: `/${bucketName}/${objectKey}`,
         }, '');
-        bucketPut(authInfo, testBucketPutRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, log, () => {
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.strictEqual(err, undefined);
-                    objectGet(authInfo, testGetObjectRequest, log, err => {
-                        const expected = Object.assign({}, errors.NoSuchKey);
-                        const received = Object.assign({}, err);
-                        assert.deepStrictEqual(received, expected);
-                        done();
+        bucketPut(authInfo, testBucketPutRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, undefined);
+                        objectGet(authInfo, testGetObjectRequest, log, err => {
+                            const expected =
+                                Object.assign({}, errors.NoSuchKey);
+                            const received = Object.assign({}, err);
+                            assert.deepStrictEqual(received, expected);
+                            done();
+                        });
                     });
                 });
             });
-        });
     });
 
     it('should prevent anonymous user deleteObject API access', done => {

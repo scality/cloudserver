@@ -56,6 +56,8 @@ const userBucketOwner = 'admin';
 const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
+const locationConstraint = 'us-west-1';
+
 
 describe('transient bucket handling', () => {
     beforeEach(done => {
@@ -74,7 +76,7 @@ describe('transient bucket handling', () => {
 
     it('putBucket request should complete creation of transient bucket if ' +
         'request is from same account that originally put', done => {
-        bucketPut(authInfo, baseTestRequest, log, err => {
+        bucketPut(authInfo, baseTestRequest, locationConstraint, log, err => {
             assert.ifError(err);
             serviceGet(authInfo, serviceGetRequest, log, (err, data) => {
                 parseString(data, (err, result) => {
@@ -90,17 +92,18 @@ describe('transient bucket handling', () => {
 
     it('putBucket request should return error if ' +
         'transient bucket created by different account', done => {
-        bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
-            assert.deepStrictEqual(err, errors.BucketAlreadyExists);
-            serviceGet(otherAccountAuthInfo, serviceGetRequest,
-                log, (err, data) => {
-                    parseString(data, (err, result) => {
-                        assert.strictEqual(result.ListAllMyBucketsResult
-                        .Buckets[0], '');
-                        done();
+        bucketPut(otherAccountAuthInfo, baseTestRequest, locationConstraint,
+            log, err => {
+                assert.deepStrictEqual(err, errors.BucketAlreadyExists);
+                serviceGet(otherAccountAuthInfo, serviceGetRequest,
+                    log, (err, data) => {
+                        parseString(data, (err, result) => {
+                            assert.strictEqual(result.ListAllMyBucketsResult
+                            .Buckets[0], '');
+                            done();
+                        });
                     });
-                });
-        });
+            });
     });
 
     it('ACLs from clean up putBucket request should overwrite ACLs from ' +
@@ -108,7 +111,7 @@ describe('transient bucket handling', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-acl': 'public-read' }, 'headers',
             baseTestRequest, baseTestRequest.headers);
-        bucketPut(authInfo, alteredRequest, log, err => {
+        bucketPut(authInfo, alteredRequest, locationConstraint, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
                 assert.strictEqual(data._transient, false);
