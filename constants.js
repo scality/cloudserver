@@ -52,4 +52,8 @@ export default {
 
     // Number of sub-directories for file backend
     folderHash: 3511, // Prime number
+    // AWS sets a hard limit on the listing maxKeys
+    // http://docs.aws.amazon.com/AmazonS3/latest/API/
+    //      RESTBucketGET.html#RESTBucketGET-requests
+    listingHardLimit: 1000,
 };
