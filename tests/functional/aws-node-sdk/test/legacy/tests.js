@@ -20,6 +20,7 @@ md5HashSecondPart.update(secondBufferBody);
 const calculatedFirstPartHash = md5HashFirstPart.digest('hex');
 const calculatedSecondPartHash = md5HashSecondPart.digest('hex');
 const combinedETag = '0ea4f0f688a0be07ae1d92eb298d5218-2';
+const objectKey = 'toAbort&<>"\'';
 
 // Store uploadId's in memory so can do multiple tests with
 // same uploadId
@@ -61,14 +62,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should create a multipart upload', function createMPU(done) {
-        s3.createMultipartUpload({ Bucket: bucket, Key: 'toAbort' },
+        s3.createMultipartUpload({ Bucket: bucket, Key: objectKey },
             (err, data) => {
                 if (err) {
                     return done(new Error(
                         `error initiating multipart upload: ${err}`));
                 }
                 assert.strictEqual(data.Bucket, bucket);
-                assert.strictEqual(data.Key, 'toAbort');
+                assert.strictEqual(data.Key, objectKey);
                 assert.ok(data.UploadId);
                 multipartUploadData.firstUploadId = data.UploadId;
                 done();
@@ -79,7 +80,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         function uploadpart(done) {
             const params = {
                 Bucket: bucket,
-                Key: 'toAbort',
+                Key: objectKey,
                 PartNumber: 1,
                 UploadId: multipartUploadData.firstUploadId,
                 Body: firstBufferBody,
@@ -96,7 +97,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     it('should abort a multipart upload', function abortMPU(done) {
         const params = {
             Bucket: bucket,
-            Key: 'toAbort',
+            Key: objectKey,
             UploadId: multipartUploadData.firstUploadId,
         };
         s3.abortMultipartUpload(params, (err, data) => {
