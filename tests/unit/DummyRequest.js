@@ -6,7 +6,13 @@ export default class DummyRequest extends http.IncomingMessage {
         Object.keys(obj).forEach(x => {
             this[x] = obj[x];
         });
-        this.push(msg);
+        if (Array.isArray(msg)) {
+            msg.forEach( part => {
+                this.push(part);
+            });
+        } else {
+            this.push(msg);
+        }
         this.push(null);
     }
 }
