@@ -437,6 +437,7 @@ describe('Multipart Upload API', () => {
                 };
                 const awsVerifiedETag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
+                completeRequest.relaxedSizeCheckingForTests = true;
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
@@ -522,6 +523,7 @@ describe('Multipart Upload API', () => {
                 };
                 const awsVerifiedETag =
                     '953e9e776f285afc0bfcf1ab4668299d-1';
+                completeRequest.relaxedSizeCheckingForTests = true;
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
@@ -591,6 +593,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                     calculatedHash,
                 };
+                completeRequest.relaxedSizeCheckingForTests = true;
                 completeMultipartUpload(authInfo,
                     completeRequest, log, err => {
                         assert.deepStrictEqual(err, errors.MalformedXML);
@@ -647,6 +650,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                     calculatedHash,
                 };
+                completeRequest.relaxedSizeCheckingForTests = true;
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     assert.deepStrictEqual(err, errors.MalformedPOSTRequest);
                     done();
@@ -719,6 +723,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    completeRequest.relaxedSizeCheckingForTests = true;
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
                             assert.deepStrictEqual(err,
@@ -798,6 +803,7 @@ describe('Multipart Upload API', () => {
                         calculatedHash,
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
+                    completeRequest.relaxedSizeCheckingForTests = true;
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
                             assert.deepStrictEqual(err, errors.InvalidPart);
@@ -964,6 +970,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    completeRequest.relaxedSizeCheckingForTests = true;
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
@@ -1064,6 +1071,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    completeRequest.relaxedSizeCheckingForTests = true;
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
@@ -1167,6 +1175,7 @@ describe('Multipart Upload API', () => {
                         post: completeBody,
                         calculatedHash,
                     };
+                    completeRequest.relaxedSizeCheckingForTests = true;
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
                             assert.strictEqual(err, null);
@@ -1345,6 +1354,7 @@ describe('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                 };
+                completeRequest.relaxedSizeCheckingForTests = true;
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
             (result, next) => {
