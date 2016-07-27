@@ -97,13 +97,14 @@ describe('Bucket GET (object listing)', () => {
             /**
             * usual test
             */
-            delete matrix.params.auth;
-            bucketUtil.s3.listObjects(matrix.params, (err, data) => {
-                const MaxKeys = matrix.params.MaxKeys;
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
+            bucketUtil.s3.listObjects(awsParams, (err, data) => {
+                const MaxKeys = awsParams.MaxKeys;
                 const maxNumberOfKeys = Math.min(1200, MaxKeys);
 
-                const prefix = matrix.params.Prefix;
-                const delimiter = matrix.params.Delimiter;
+                const prefix = awsParams.Prefix;
+                const delimiter = awsParams.Delimiter;
 
                 const isPrefixMatch = (delimiter && prefix)
                 ? prefix.indexOf(delimiter) !== -1
@@ -114,7 +115,7 @@ describe('Bucket GET (object listing)', () => {
                     assert.equal(err, null);
                     assert.equal(data.Contents.length === 0
                         || data.Contents === undefined, true);
-                } else if (matrix.params.MaxKeys !== undefined
+                } else if (awsParams.MaxKeys !== undefined
                     && isGoodPrefix && isPrefixMatch) {
                     assert.equal(err, null);
 
@@ -126,7 +127,7 @@ describe('Bucket GET (object listing)', () => {
                     * EncodingType is not null because we want to see
                     * they didn't encode string.
                     **/
-                    if (matrix.params.EncodingType === 'url') {
+                    if (awsParams.EncodingType === 'url') {
                         done();
                         return;
                     }
@@ -138,29 +139,31 @@ describe('Bucket GET (object listing)', () => {
                 }
                 done();
             });
-        }, "should list objects")
+        }, 'should list objects')
         .if({ Bucket: [undefined, 'invalid-bucket-name', null] },
         (matrix, done) => {
             /**
             * Invalid bucket name test
             */
-            delete matrix.params.auth;
-            bucketUtil.s3.listObjects(matrix.params, (err, data) => {
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
+            bucketUtil.s3.listObjects(awsParams, (err, data) => {
                 assert.equal(err !== null, true);
                 assert.equal(data, null);
                 done();
             });
-        }, "should have error on invalid bucket")
+        }, 'should have error on invalid bucket')
         .if({ MaxKeys: [0, -1, 'string'] }, (matrix, done) => {
             /**
             * Invalid max key test
             */
-            delete matrix.params.auth;
-            bucketUtil.s3.listObjects(matrix.params, err => {
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
+            bucketUtil.s3.listObjects(awsParams, err => {
                 assert.equal(err !== null, true);
                 done();
             });
-        }, "should have error on invalid max keys")
+        }, 'should have error on invalid max keys')
         .if({ Bucket: [bucketName], EncodingType: ['url'],
         MaxKeys: validMaxKeys, Delimiter: ['/'],
         Prefix: ['/validPrefix/ThatIsPresent/InTheTest/'] },
@@ -168,8 +171,9 @@ describe('Bucket GET (object listing)', () => {
             /**
             * Url encode test
             */
-            delete matrix.params.auth;
-            bucketUtil.s3.listObjects(matrix.params, (err, data) => {
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
+            bucketUtil.s3.listObjects(awsParams, (err, data) => {
                 assert.equal(err, null);
                 assert.equal(data.Contents !== null, true);
                 if (data.Contents !== null) {
@@ -178,7 +182,7 @@ describe('Bucket GET (object listing)', () => {
                 }
                 done();
             });
-        }, "should have url encoding on object")
+        }, 'should have url encoding on object')
         .if({ Bucket: [bucketName], Delimiter: ['|'],
         MaxKeys: validMaxKeys,
         Prefix: ['|validPrefix|ThatIsPresent|InTheTest'] },
@@ -186,15 +190,16 @@ describe('Bucket GET (object listing)', () => {
             /**
             * Specific prefix test
             */
-            const maxNumberOfKeys = Math.min(matrix.params.MaxKeys, 250);
-            delete matrix.params.auth;
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
 
-            bucketUtil.s3.listObjects(matrix.params, (err, data) => {
+            const maxNumberOfKeys = Math.min(awsParams.MaxKeys, 250);
+            bucketUtil.s3.listObjects(awsParams, (err, data) => {
                 assert.equal(err, null);
                 assert.equal(data.Contents.length <= maxNumberOfKeys, true);
                 done();
             });
-        }, "should have object with specific prefix")
+        }, 'should have object with specific prefix')
         .if({ Bucket: [bucketName], Delimiter: ['/'],
         Prefix: ['/validPrefix/ThatIsNot/InTheSet', 'InvalidPrefix',
         '/ThatIsPresent/validPrefix/InTheTest', null],
@@ -203,14 +208,15 @@ describe('Bucket GET (object listing)', () => {
             /**
             * Invalid prefix
             */
-            delete matrix.params.auth;
-            bucketUtil.s3.listObjects(matrix.params, (err, data) => {
+            const awsParams = Object.assign({}, matrix.params);
+            delete awsParams.auth;
+            bucketUtil.s3.listObjects(awsParams, (err, data) => {
                 const dataIsNull = data.Contents === null;
                 const dataIsEmpty = dataIsNull || data.Contents.length === 0;
                 assert.equal(err, null);
                 assert.equal(dataIsEmpty, true);
                 done();
             });
-        }, "should have no data on invalid prefix");
+        }, 'should have no data on invalid prefix');
     }).execute();
 });
