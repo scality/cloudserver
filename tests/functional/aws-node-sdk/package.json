@@ -8,7 +8,7 @@
     "test"
   ],
   "dependencies": {
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#dev/FT/MatrixTesting",
     "aws-sdk": "^2.2.11",
     "babel-core": "^6.5.1",
     "babel-plugin-transform-es2015-destructuring": "^6.5.0",
