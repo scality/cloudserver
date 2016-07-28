@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "scality/Arsenal#fix/checkHeaders",
+    "arsenal": "scality/Arsenal#fix/checkHeadersRel",
     "async": "~1.4.2",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-es2015-destructuring": "^6.1.18",
