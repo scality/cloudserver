@@ -121,13 +121,14 @@ describe('Bucket GET (object listing)', () => {
 
                     const NumberOfData = data.Contents.length;
                     assert.equal(NumberOfData <= maxNumberOfKeys, true);
-                    assert.equal(NumberOfData > 0, true);
+                    assert.equal(NumberOfData === 0 || NumberOfData > 0, true);
                     /**
                     * No need to implement the other test if
                     * EncodingType is not null because we want to see
                     * they didn't encode string.
                     **/
-                    if (awsParams.EncodingType === 'url') {
+                    if (awsParams.EncodingType === 'url'
+			|| NumberOfData === 0) {
                         done();
                         return;
                     }
@@ -153,7 +154,7 @@ describe('Bucket GET (object listing)', () => {
                 done();
             });
         }, 'should have error on invalid bucket')
-        .if({ MaxKeys: [0, -1, 'string'] }, (matrix, done) => {
+        .if({ MaxKeys: [-1, 'string'] }, (matrix, done) => {
             /**
             * Invalid max key test
             */
