@@ -92,6 +92,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         'testB/',
                         'testB/test.json',
                     ], 'Bucket content mismatch');
+                    // ETag should include quotes around value
+                    const emptyObjectHash =
+                        '"d41d8cd98f00b204e9800998ecf8427e"';
+                    assert.deepStrictEqual(data.Contents[0].ETag,
+                        emptyObjectHash, 'Object hash mismatch');
                     done();
                 })
                 .catch(done);
