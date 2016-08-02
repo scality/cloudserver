@@ -37,7 +37,8 @@
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
     "xml": "~1.0.0",
-    "xml2js": "~0.4.12"
+    "xml2js": "~0.4.12",
+    "node-bitmap-ewah":"dimitriosvasilas/node-bitmap-ewah"
   },
   "optionalDependencies": {
       "ioctl": "2.0.0"
