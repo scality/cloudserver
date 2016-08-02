@@ -32,7 +32,12 @@ Object.keys(acl).forEach(
         const dummyBucket = new BucketInfo(
             bucketName, owner, ownerDisplayName, testDate,
             BucketInfo.currentModelVersion(), acl[aclObj],
-            false, false);
+            false, false, {
+                cryptoScheme: 1,
+                algorithm: 'sha1',
+                masterKeyId: 'somekey',
+                mandatory: true,
+            });
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             let serialized;
@@ -48,6 +53,7 @@ Object.keys(acl).forEach(
                     mdBucketModelVersion: dummyBucket._mdBucketModelVersion,
                     transient: dummyBucket._transient,
                     deleted: dummyBucket._deleted,
+                    serverSideEncryption: dummyBucket._serverSideEncryption,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();

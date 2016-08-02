@@ -30,3 +30,15 @@ this._deleted = deleted || false;
 ### Usage
 
 Used to determine which splitter to use ( < 2 means old splitter)
+
+## Model version 3
+
+### Properties Added
+
+```
+this._serverSideEncryption = serverSideEncryption || null;
+```
+
+### Usage
+
+Used to store the server bucket encryption info
