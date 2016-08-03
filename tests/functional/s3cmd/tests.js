@@ -20,6 +20,8 @@ const MPUploadSplitter = [
     'test60MB..|..',
 ];
 const MPDownload = 'MPtmpfile';
+const MPDownloadCopy = 'MPtmpfile2';
+const downloadCopy = 'tmpfile2';
 const bucket = 'universe';
 const nonexist = 'nonexist';
 const invalidName = 'VOID';
@@ -365,6 +367,66 @@ describe('s3cmd getObject', function toto() {
     });
 });
 
+describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
+    this.timeout(40000);
+
+    after('delete downloaded copy file', done => {
+        deleteFile(downloadCopy, done);
+    });
+
+    it('should copy an object to the same bucket', done => {
+        exec(['cp', `s3://${bucket}/${upload}`,
+        `s3://${bucket}/${upload}copy`], done);
+    });
+
+    it('should get an object that was copied', done => {
+        exec(['get', `s3://${bucket}/${upload}copy`, downloadCopy], done);
+    });
+
+    it('downloaded copy file should equal original uploaded file', done => {
+        diff(upload, downloadCopy, done);
+    });
+
+    it('should delete copy of object', done => {
+        exec(['rm', `s3://${bucket}/${upload}copy`], done);
+    });
+});
+
+describe('s3cmd copyObject without MPU to different bucket ' +
+    '(always unencrypted)',
+    function copyStuff() {
+        const copyBucket = 'receiverbucket';
+        this.timeout(40000);
+
+        before('create receiver bucket', done => {
+            exec(['mb', `s3://${copyBucket}`], done);
+        });
+
+        after('delete downloaded file and receiver bucket' +
+            'copied', done => {
+            deleteFile(downloadCopy, () => {
+                exec(['rb', `s3://${copyBucket}`], done);
+            });
+        });
+
+        it('should copy an object to the new bucket', done => {
+            exec(['cp', `s3://${bucket}/${upload}`,
+            `s3://${copyBucket}/${upload}`], done);
+        });
+
+        it('should get an object that was copied', done => {
+            exec(['get', `s3://${copyBucket}/${upload}`, downloadCopy], done);
+        });
+
+        it('downloaded copy file should equal original uploaded file', done => {
+            diff(upload, downloadCopy, done);
+        });
+
+        it('should delete copy of object', done => {
+            exec(['rm', `s3://${copyBucket}/${upload}`], done);
+        });
+    });
+
 describe('s3cmd put and get object ACLs', function aclObj() {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
@@ -473,7 +535,9 @@ describe('s3cmd multipart upload', function titi() {
 
     after('delete the multipart and the downloaded file', done => {
         deleteFile(MPUpload, () => {
-            deleteFile(MPDownload, done);
+            deleteFile(MPDownload, () => {
+                deleteFile(MPDownloadCopy, done);
+            });
         });
     });
 
@@ -493,8 +557,25 @@ describe('s3cmd multipart upload', function titi() {
         diff(MPUpload, MPDownload, done);
     });
 
+    it('should copy an object that was put via multipart upload', done => {
+        exec(['cp', `s3://${bucket}/${MPUpload}`,
+        `s3://${bucket}/${MPUpload}copy`], done);
+    });
+
+    it('should get an object that was copied', done => {
+        exec(['get', `s3://${bucket}/${MPUpload}copy`, MPDownloadCopy], done);
+    });
+
+    it('downloaded copy file should equal original uploaded file', done => {
+        diff(MPUpload, MPDownloadCopy, done);
+    });
+
     it('should delete multipart uploaded object', done => {
         exec(['rm', `s3://${bucket}/${MPUpload}`], done);
+    });
+
+    it('should delete copy of multipart uploaded object', done => {
+        exec(['rm', `s3://${bucket}/${MPUpload}copy`], done);
     });
 
     it('should not be able to get deleted object', done => {
