@@ -670,7 +670,8 @@ describe('Multipart Upload API', () => {
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
             const md5Hash = crypto.createHash('md5');
-            const bufferBody = new Buffer(postBody, 'binary');
+            const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+            const bufferBody = new Buffer(fullSizedPart, 'binary');
             md5Hash.update(bufferBody);
             const calculatedHash = md5Hash.digest('hex');
             const partRequest1 = new DummyRequest({
@@ -684,7 +685,7 @@ describe('Multipart Upload API', () => {
                     uploadId: testUploadId,
                 },
                 calculatedHash,
-            }, postBody);
+            }, fullSizedPart);
             const partRequest2 = new DummyRequest({
                 bucketName,
                 namespace,
@@ -746,11 +747,8 @@ describe('Multipart Upload API', () => {
             // Need to build request in here since do not have uploadId
             // until here
             const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-            const md5Hash = crypto.createHash('md5');
-            const bufferBody = new Buffer(postBody, 'binary');
-            md5Hash.update(bufferBody);
-            const calculatedHash = md5Hash.digest('hex');
             const wrongMD5 = '3858f62230ac3c915f300c664312c11f-9';
+            const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
             const partRequest1 = new DummyRequest({
                 bucketName,
                 namespace,
@@ -761,8 +759,7 @@ describe('Multipart Upload API', () => {
                     partNumber: '1',
                     uploadId: testUploadId,
                 },
-                calculatedHash,
-            }, postBody);
+            }, fullSizedPart);
             const partRequest2 = new DummyRequest({
                 bucketName,
                 namespace,
@@ -773,10 +770,12 @@ describe('Multipart Upload API', () => {
                     partNumber: '2',
                     uploadId: testUploadId,
                 },
-                calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, log, err => {
+                assert.deepStrictEqual(err, null);
+                const calculatedHash = partRequest1.calculatedHash;
+                objectPutPart(authInfo, partRequest2, log, err => {
+                    assert.deepStrictEqual(err, null);
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -1281,6 +1280,7 @@ describe('Multipart Upload API', () => {
 
     it('should not leave orphans in data when overwriting an object with a MPU',
     done => {
+        const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
         const partBody = new Buffer('I am a part\n');
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
@@ -1290,9 +1290,7 @@ describe('Multipart Upload API', () => {
             (result, next) => parseString(result, next),
             (json, next) => {
                 const testUploadId =
-                    json.InitiateMultipartUploadResult.UploadId[0];
-                const md5Hash = crypto.createHash('md5').update(partBody);
-                const calculatedHash = md5Hash.digest('hex');
+                          json.InitiateMultipartUploadResult.UploadId[0];
                 const partRequest = new DummyRequest({
                     bucketName,
                     namespace,
@@ -1303,12 +1301,13 @@ describe('Multipart Upload API', () => {
                         partNumber: '1',
                         uploadId: testUploadId,
                     },
-                    calculatedHash,
-                }, partBody);
-                objectPutPart(authInfo, partRequest, log, () =>
-                    next(null, testUploadId, calculatedHash));
+                }, fullSizedPart);
+                objectPutPart(authInfo, partRequest, log, err => {
+                    assert.deepStrictEqual(err, null);
+                    next(null, testUploadId, partRequest.calculatedHash);
+                });
             },
-            (testUploadId, calculatedHash, next) => {
+            (testUploadId, part1CalculatedHash, next) => {
                 const part2Request = new DummyRequest({
                     bucketName,
                     namespace,
@@ -1319,20 +1318,22 @@ describe('Multipart Upload API', () => {
                         partNumber: '2',
                         uploadId: testUploadId,
                     },
-                    calculatedHash,
                 }, partBody);
-                objectPutPart(authInfo, part2Request, log, () =>
-                    next(null, testUploadId, calculatedHash));
+                objectPutPart(authInfo, part2Request, log, err => {
+                    assert.deepStrictEqual(err, null);
+                    next(null, testUploadId, part1CalculatedHash,
+                         part2Request.calculatedHash);
+                });
             },
-            (testUploadId, calculatedHash, next) => {
+            (testUploadId, part1CalculatedHash, part2CalculatedHash, next) => {
                 const completeBody = '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
-                    `<ETag>"${calculatedHash}"</ETag>` +
+                    `<ETag>"${part1CalculatedHash}"</ETag>` +
                     '</Part>' +
                     '<Part>' +
                     '<PartNumber>2</PartNumber>' +
-                    `<ETag>"${calculatedHash}"</ETag>` +
+                    `<ETag>"${part2CalculatedHash}"</ETag>` +
                     '</Part>' +
                     '</CompleteMultipartUpload>';
                 const completeRequest = {
@@ -1345,14 +1346,16 @@ describe('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                 };
-                completeMultipartUpload(authInfo, completeRequest, log, next);
+                completeMultipartUpload(authInfo, completeRequest, log,
+                                        (err, result) => {
+                                            assert.deepStrictEqual(err, null);
+                                            next(null, result);
+                                        });
             },
             (result, next) => {
                 assert.strictEqual(ds[0], undefined);
-                assert.deepStrictEqual(ds[1].value,
-                    new Buffer('I am a part\n'));
-                assert.deepStrictEqual(ds[2].value,
-                    new Buffer('I am a part\n'));
+                assert.deepStrictEqual(ds[1].value, fullSizedPart);
+                assert.deepStrictEqual(ds[2].value, partBody);
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
             (result, next) => parseString(result, next),
@@ -1399,7 +1402,8 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
         ],
-        () => {
+        (err) => {
+            assert.deepStrictEqual(err, null);
             assert.strictEqual(ds[0], undefined);
             assert.strictEqual(ds[1], undefined);
             assert.strictEqual(ds[2], undefined);

@@ -127,4 +127,8 @@ export class DummyRequestLogger {
     addDefaultFields(fields) {
         Object.assign(this.defaultFields, fields);
     }
+
+    end() {
+        return this;
+    }
 }
