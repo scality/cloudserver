@@ -8,7 +8,7 @@ RUN npm install
 
 CMD [ "npm", "start" ]
 
-VOLUME ["usr/src/app/localData","usr/src/app/localMetadata"]
+VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
 EXPOSE 8000
 
