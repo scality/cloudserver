@@ -38,9 +38,10 @@ describe('List Parts API', () => {
         cleanup();
         const creationDate = new Date().toJSON();
         const sampleNormalBucketInstance = new BucketInfo(bucketName,
-            canonicalID, authInfo.getAccountDisplayName(), creationDate, 2);
+            canonicalID, authInfo.getAccountDisplayName(), creationDate,
+            BucketInfo.currentModelVersion());
         const sampleMPUInstance = new BucketInfo(mpuBucket,
-            'admin', 'admin', creationDate, 2);
+            'admin', 'admin', creationDate, BucketInfo.currentModelVersion());
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
             () => {
                 metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {
