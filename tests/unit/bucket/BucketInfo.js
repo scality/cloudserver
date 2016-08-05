@@ -30,7 +30,8 @@ const testDate = new Date().toJSON();
 Object.keys(acl).forEach(
     aclObj => describe(`different acl configurations : ${aclObj}`, () => {
         const dummyBucket = new BucketInfo(
-            bucketName, owner, ownerDisplayName, testDate, 2, acl[aclObj],
+            bucketName, owner, ownerDisplayName, testDate,
+            BucketInfo.currentModelVersion(), acl[aclObj],
             false, false);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
