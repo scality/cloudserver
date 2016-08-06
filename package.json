@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#ft/dynamicSignedHeaders",
     "async": "~1.4.2",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-es2015-destructuring": "^6.1.18",
@@ -34,7 +34,7 @@
     "ready-set-stream": "^1.0.0",
     "sproxydclient": "scality/sproxydclient",
     "utf8": "~2.1.1",
-    "vaultclient": "scality/vaultclient",
+    "vaultclient": "scality/vaultclient#test/arsenalHeaders",
     "werelogs": "scality/werelogs",
     "xml": "~1.0.0",
     "xml2js": "~0.4.12"
