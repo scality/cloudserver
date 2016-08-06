@@ -194,12 +194,16 @@ describe('objectGet API', () => {
                             dataStoreName: 'mem',
                             size: 5242880,
                             start: 0,
+                            cryptoScheme: null,
+                            cipheredDataKey: null,
                         },
                         {
                             key: 2,
                             dataStoreName: 'mem',
                             size: 12,
                             start: 5242880,
+                            cryptoScheme: null,
+                            cipheredDataKey: null,
                         }]);
                     done();
                 });
