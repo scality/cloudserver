@@ -2,7 +2,7 @@
 general:
   branches:
     ignore:
-      - /^ultron\/.*/ # Ignore ultron/* branches
+      - /^ultron\/.*/   # Ignore ultron/* branches
   artifacts:
     - coverage/
 
@@ -31,4 +31,9 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
     - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=mem npm start & sleep 4 &&
+      ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start & sleep 4 && npm run ft_test;
+    - rm -rf localData/* localMetadata/*
+    - S3BACKEND=file S3VAULT=mem npm start & sleep 4 &&
+      ENABLE_KMS_ENCRYPTION=true npm run ft_test;
