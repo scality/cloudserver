@@ -48,19 +48,17 @@ describe('Put object with same key as prior object', () => {
         after(() => bucketUtil.deleteOne(bucketName));
 
         it('should overwrite all user metadata and data on overwrite put',
-            () => {
-                s3.putObjectAsync({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Body: 'Much different',
-                    Metadata: secondPutMetadata,
-                }).then(() =>
-                    s3.getObjectAsync({ Bucket: bucketName, Key: objectName })
-                ).then(res => {
-                    assert.deepStrictEqual(res.Metadata, secondPutMetadata);
-                    assert.deepStrictEqual(res.Body.toString(),
-                        'Much different');
-                });
-            });
+            () => s3.putObjectAsync({
+                Bucket: bucketName,
+                Key: objectName,
+                Body: 'Much different',
+                Metadata: secondPutMetadata,
+            }).then(() =>
+                s3.getObjectAsync({ Bucket: bucketName, Key: objectName })
+            ).then(res => {
+                assert.deepStrictEqual(res.Metadata, secondPutMetadata);
+                assert.deepStrictEqual(res.Body.toString(),
+                    'Much different');
+            }));
     });
 });
