@@ -26,7 +26,11 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
     const requestTypes = ['bucketGet', 'bucketHead', 'objectGet', 'objectHead'];
 
     const trueArray = [true, true, true, true];
-    const falseArray = [false, false, false, false];
+    // An account can have the ability to do objectHead or objectGet even
+    // if the account has no rights to the bucket holding the object.
+    // So isBucketAuthorized should return true for 'objectGet' and 'objectHead'
+    // requests but false for 'bucketGet' and 'bucketHead'
+    const falseArrayBucketTrueArrayObject = [false, false, true, true];
 
     const orders = [
         { it: 'should allow access to bucket owner', canned: '',
@@ -35,16 +39,24 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
           canned: 'public-read', id: accountToVet, response: trueArray },
         { it: 'should allow access to anyone if canned public-read-write ACL',
           canned: 'public-read-write', id: accountToVet, response: trueArray },
-        { it: 'should not allow access to public user if authenticated-read ' +
-          'ACL', canned: 'authenticated-read', id: constants.publicId,
-          response: falseArray },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to public user if authenticated-read  ACL',
+          canned: 'authenticated-read', id: constants.publicId,
+          response: falseArrayBucketTrueArrayObject },
         { it: 'should allow access to any authenticated user if authenticated' +
           '-read ACL', canned: 'authenticated-read', id: accountToVet,
           response: trueArray },
-        { it: 'should not allow access to public user if private canned ACL',
-          canned: '', id: accountToVet, response: falseArray },
-        { it: 'should not allow access to just any user if private canned ACL',
-          canned: '', id: accountToVet, response: falseArray },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to public user if private canned ACL',
+          canned: '', id: accountToVet,
+          response: falseArrayBucketTrueArrayObject },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to just any user if private canned ACL',
+          canned: '', id: accountToVet,
+          response: falseArrayBucketTrueArrayObject },
         { it: 'should allow access to user if account was granted FULL_CONTROL',
           canned: '', id: accountToVet, response: trueArray,
           aclParam: ['FULL_CONTROL', accountToVet] },
