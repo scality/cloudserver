@@ -3,6 +3,7 @@
 const proc = require('child_process');
 const process = require('process');
 const assert = require('assert');
+const fs = require('fs');
 require('babel-core/register');
 const conf = require('../../../lib/Config').default;
 
@@ -155,6 +156,69 @@ function provideLineOfInterest(args, lineFinder, cb) {
     readJsonFromChild(child, lineFinder, cb);
 }
 
+function retrieveInfo() {
+    const configFile = isScality ? `${__dirname}/${configCfg}` : configCfg;
+    const data = fs.readFileSync(configFile, 'utf8').split('\n');
+    const res = {
+        accessKey: null,
+        secretKey: null,
+        host: null,
+        port: 0,
+    };
+    data.forEach(item => {
+        const keyValue = item.split('=');
+        if (keyValue.length === 2) {
+            const key = keyValue[0].trim();
+            const value = keyValue[1].trim();
+            if (key === 'access_key') {
+                res.accessKey = value;
+            } else if (key === 'secret_key') {
+                res.secretKey = value;
+            } else if (key === 'host_base') {
+                const hostInfo = value.split(':');
+                if (hostInfo.length > 1) {
+                    res.host = hostInfo[0];
+                    res.port = parseInt(hostInfo[1], 10);
+                } else {
+                    res.host = hostInfo[0];
+                    res.port = 80;
+                }
+            }
+        }
+    });
+    return res;
+}
+
+function createEncryptedBucket(name, cb) {
+    const res = retrieveInfo();
+    const prog = `${__dirname}/../../../bin/create_encrypted_bucket.js`;
+    let args = [
+        prog,
+        '-a', res.accessKey,
+        '-k', res.secretKey,
+        '-b', name,
+        '-h', res.host,
+        '-p', res.port,
+        '-v',
+    ];
+    if (conf.https) {
+        args = args.concat('-s');
+    }
+    const body = [];
+    const child = proc.spawn(args[0], args)
+    .on('exit', () => {
+        const hasSucceed = body.join('').split('\n').find(item =>
+            item.startsWith('{"name":"S3","statusCode":200'));
+        if (!hasSucceed) {
+            process.stderr.write(`${body.join('')}\n`);
+            return cb(new Error('Cannot create encrypted bucket'));
+        }
+        return cb();
+    })
+    .on('error', cb);
+    child.stdout.on('data', chunk => body.push(chunk.toString()));
+}
+
 describe('s3cmd putBucket', () => {
     it('should put a valid bucket', done => {
         exec(['mb', `s3://${bucket}`], done);
@@ -169,12 +233,25 @@ describe('s3cmd putBucket', () => {
     });
 
     it('should put a valid bucket with region (regardless of region)', done => {
-        exec(['mb', `s3://regioned`, '--region=wherever'], done);
+        exec(['mb', 's3://regioned', '--region=wherever'], done);
     });
 
     it('should delete bucket put with region', done => {
-        exec(['rb', `s3://regioned`, '--region=wherever'], done);
+        exec(['rb', 's3://regioned', '--region=wherever'], done);
     });
+
+    if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+        it('creates a valid bucket with server side encryption',
+            function (done) {
+                this.timeout(5000);
+                exec(['rb', `s3://${bucket}`], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return createEncryptedBucket(bucket, done);
+                });
+            });
+    }
 });
 
 describe('s3cmd put and get bucket ACLs', function aclBuck() {
