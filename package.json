@@ -33,6 +33,7 @@
     "node-uuid": "^1.4.3",
     "ready-set-stream": "^1.0.0",
     "sproxydclient": "scality/sproxydclient",
+    "utapi": "scality/utapi",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
@@ -40,7 +41,7 @@
     "xml2js": "~0.4.12"
   },
   "optionalDependencies": {
-      "ioctl": "2.0.0"
+    "ioctl": "2.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.2.0",
@@ -63,6 +64,7 @@
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
     "start": "node init.js && node index.js",
+    "start_utapi": "node utapiServer.js",
     "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
     "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --reporter mocha-junit-reporter --recursive tests/unit"
   }
