@@ -13,8 +13,12 @@ machine:
     version: "2.0"
   environment:
     CXX: g++-4.9
+    LD_LIBRARY_PATH: $HOME/$CIRCLE_PROJECT_REPONAME/node_modules/eclib/libs/lib
 
 dependencies:
+  pre:
+    # eclib dependencies
+    - sudo apt-get install automake-1.14
   post:
     - sudo pip install flake8 yamllint
     # s3cmd dependencies
@@ -43,9 +47,13 @@ test:
     - S3BACKEND=mem npm start & sleep 15 &&
       cd ./tests/functional/jaws && mvn test
     - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=mem S3DP=dp_mem npm start & sleep 4 && npm run ft_test;
     - S3BACKEND=mem npm start & sleep 4 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
+    - rm -rf localData/* localMetadata/*
+    - S3BACKEND=file S3VAULT=mem S3DP=dp_file npm start & sleep 15 &&
+      npm run ft_test;
     - rm -rf localData/* localMetadata/*
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
