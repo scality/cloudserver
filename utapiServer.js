@@ -12,4 +12,4 @@ require('babel-core/register')({
         filename.startsWith(`${__dirname}/node_modules/utapi/validators/`) ||
         filename.startsWith(`${__dirname}/node_modules/utapi/handlers/`)),
 });
-require('./lib/server.js').default();
+require('./lib/utapi.js').default();
