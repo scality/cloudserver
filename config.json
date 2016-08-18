@@ -31,5 +31,6 @@
     "log": {
         "logLevel": "info",
         "dumpLevel": "error"
-    }
+    },
+    "metaIndexing":true
 }
