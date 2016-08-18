@@ -33,7 +33,7 @@
     "node-uuid": "^1.4.3",
     "ready-set-stream": "^1.0.0",
     "sproxydclient": "scality/sproxydclient",
-    "utapi": "scality/utapi",
+    "utapi": "scality/utapi#dev/cleanup/schema",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
