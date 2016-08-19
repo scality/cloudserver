@@ -32,5 +32,6 @@
         "logLevel": "info",
         "dumpLevel": "error"
     },
-    "metaIndexing":true
+    "userMetaIndexing":true,
+    "systemMetaIndexing":true
 }
