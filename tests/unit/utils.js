@@ -159,6 +159,16 @@ describe('utils.normalizeRequest', () => {
         assert.strictEqual(result.parsedHost, 's3.amazonaws.com');
     });
 
+    it('should parse bucket name from path when no slash', () => {
+        const request = {
+            url: `${bucketName}`,
+            headers: { host: 's3.amazonaws.com' },
+        };
+        const result = utils.normalizeRequest(request);
+        assert.strictEqual(result.bucketName, bucketName);
+        assert.strictEqual(result.parsedHost, 's3.amazonaws.com');
+    });
+
     it('should parse bucket name from host', () => {
         const request = {
             url: '/',
