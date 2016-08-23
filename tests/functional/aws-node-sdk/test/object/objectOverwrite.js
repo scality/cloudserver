@@ -43,7 +43,9 @@ describe('Put object with same key as prior object', () => {
             assert.deepStrictEqual(res.Metadata, firstPutMetadata);
         }));
 
-        afterEach(() => bucketUtil.empty(bucketName));
+        afterEach(done => {
+            bucketUtil.empty(bucketName).then(() => done());
+        });
 
         after(() => bucketUtil.deleteOne(bucketName));
 
