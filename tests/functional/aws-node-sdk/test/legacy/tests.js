@@ -19,7 +19,7 @@ md5HashFirstPart.update(firstBufferBody);
 md5HashSecondPart.update(secondBufferBody);
 const calculatedFirstPartHash = md5HashFirstPart.digest('hex');
 const calculatedSecondPartHash = md5HashSecondPart.digest('hex');
-const combinedETag = '0ea4f0f688a0be07ae1d92eb298d5218-2';
+const combinedETag = '"0ea4f0f688a0be07ae1d92eb298d5218-2"';
 const objectKey = 'toAbort&<>"\'';
 
 // Store uploadId's in memory so can do multiple tests with
@@ -275,7 +275,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     `error getting object put by mpu: ${err}`));
             }
             assert.strictEqual(data.ETag,
-                `"${combinedETag}"`);
+                combinedETag);
             const uploadedObj = Buffer.concat([firstBufferBody,
                 secondBufferBody]);
             assert.deepStrictEqual(data.Body, uploadedObj);
@@ -339,7 +339,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 assert.strictEqual(data.AcceptRanges, 'bytes');
                 assert.strictEqual(data.ContentRange, test.contentRange);
                 assert.strictEqual(data.ETag,
-                    `"${combinedETag}"`);
+                    combinedETag);
                 assert.deepStrictEqual(data.Body, test.expectedBuff);
                 return done();
             });

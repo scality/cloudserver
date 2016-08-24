@@ -436,7 +436,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                 };
                 const awsVerifiedETag =
-                    '953e9e776f285afc0bfcf1ab4668299d-1';
+                    '"953e9e776f285afc0bfcf1ab4668299d-1"';
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
@@ -521,7 +521,7 @@ describe('Multipart Upload API', () => {
                     post: completeBody,
                 };
                 const awsVerifiedETag =
-                    '953e9e776f285afc0bfcf1ab4668299d-1';
+                    '"953e9e776f285afc0bfcf1ab4668299d-1"';
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
