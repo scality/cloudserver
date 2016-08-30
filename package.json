@@ -26,6 +26,7 @@
     "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
     "babel-plugin-transform-es2015-parameters": "^6.2.0",
     "bucketclient": "scality/bucketclient",
+    "commander": "^2.9.0",
     "ioctl": "^2.0.0",
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
@@ -46,7 +47,6 @@
   "devDependencies": {
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
-    "commander": "^2.9.0",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
     "eslint-config-scality": "scality/Guidelines",
