@@ -121,6 +121,24 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    it('should put an object with an acl setting and a storage class setting',
+        done => {
+            // This will test that upper case query parameters and lowercase
+            // query parameters (i.e., 'x-amz-acl') are being sorted properly.
+            // This will also test that query params that contain "x-amz-"
+            // are being added to the canonical headers list in our string
+            // to sign.
+            const params = { Bucket: bucket, Key: 'key',
+            ACL: 'public-read', StorageClass: 'STANDARD',
+            ContentType: 'text/plain' };
+            const url = s3.getSignedUrl('putObject', params);
+            provideRawOutput(['-verbose', '-X', 'PUT', url,
+                '--upload-file', 'package.json'], httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
+        });
+
     it('should put an object with native characters', done => {
         const Key = 'key-pâtisserie-中文-español-English-हिन्दी-العربية-' +
         'português-বাংলা-русский-日本語-ਪੰਜਾਬੀ-한국어-தமிழ்';
