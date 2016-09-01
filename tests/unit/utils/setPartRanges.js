@@ -28,7 +28,7 @@ describe('setPartRanges function', () => {
             const actual =
                 setPartRanges(dataLocations, outerRange);
             assert.deepStrictEqual(actual, [{ key: '1', size: '4', start: '0' },
-                { key: '2', size: '10', start: '4', range: [0, 6] }]);
+                { key: '2', size: '7', start: '4', range: [0, 6] }]);
         });
 
     it('for a 3-part object, should include part of first part, all of ' +
@@ -42,10 +42,10 @@ describe('setPartRanges function', () => {
             const outerRange = [2, 18];
             const actual =
                 setPartRanges(dataLocations, outerRange);
-            assert.deepStrictEqual(actual, [{ key: '1', size: '4', start: '0',
-                range: [2, 4] },
+            assert.deepStrictEqual(actual, [{ key: '1', size: '2', start: '0',
+                range: [2, 3] },
             { key: '2', size: '10', start: '4' },
-            { key: '3', size: '20', start: '14', range: [0, 4] },
+            { key: '3', size: '5', start: '14', range: [0, 4] },
             ]);
         });
 
@@ -59,7 +59,7 @@ describe('setPartRanges function', () => {
             const outerRange = [5, 7];
             const actual =
                 setPartRanges(dataLocations, outerRange);
-            assert.deepStrictEqual(actual, [{ key: '2', size: '10', start: '4',
+            assert.deepStrictEqual(actual, [{ key: '2', size: '3', start: '4',
                 range: [1, 3] },
             ]);
         });
@@ -75,9 +75,9 @@ describe('setPartRanges function', () => {
             const outerRange = [5, 34];
             const actual =
                 setPartRanges(dataLocations, outerRange);
-            assert.deepStrictEqual(actual, [{ key: '2', size: '10', start: '4',
-                range: [1, 10] },
-            { key: '3', size: '20', start: '14', range: [0, 20] },
+            assert.deepStrictEqual(actual, [{ key: '2', size: '9', start: '4',
+                range: [1, 9] },
+            { key: '3', size: '20', start: '14' },
         ]);
         });
 });
