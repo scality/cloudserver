@@ -23,6 +23,13 @@
     "bucketd": {
         "bootstrap": ["localhost"]
     },
+    "utapi": {
+	"workers": 2,
+	"redis": {
+	    "host": "localhost",
+	    "port": 6379
+	}
+    },
     "vaultd": {
         "host": "localhost",
         "port": 8500
