@@ -60,7 +60,7 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -100,7 +100,7 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -136,7 +136,7 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -179,7 +179,7 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -218,8 +218,9 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(
+                authInfo, testPutObjectRequest, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -258,7 +259,7 @@ describe('objectGetACL API', () => {
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -307,7 +308,7 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
             next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
