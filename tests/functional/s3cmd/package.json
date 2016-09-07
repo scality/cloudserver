@@ -5,6 +5,6 @@
         "arsenal": "scality/Arsenal"
     },
     "scripts": {
-        "test": "mocha *.js"
+        "test": "mocha -t 40000 *.js"
     }
 }

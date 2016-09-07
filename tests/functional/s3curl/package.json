@@ -6,6 +6,6 @@
         "xml2js": "~0.4.12"
     },
     "scripts": {
-        "test": "mocha *.js"
+        "test": "mocha -t 40000 *.js"
     }
 }
