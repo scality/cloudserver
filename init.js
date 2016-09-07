@@ -87,7 +87,7 @@ function createDirsTopo(topo, dataPath, callback) {
     }, err => callback(err));
 }
 
-if (!constants.topoMD) {
+if ((process.env.ENABLE_DP !== 'true') || !constants.topoMD) {
     // Create 3511 subdirectories for the data file backend
     const subDirs = Array.from({ length: constants.folderHash },
         (v, k) => (k).toString());
