@@ -34,7 +34,7 @@ function installDependency(dir) {
 function runTest(dir, fileName) {
     const testFile = path.join(dir, fileName);
 
-    const test = cp.spawnSync('mocha', [testFile], {
+    const test = cp.spawnSync('mocha', ['-t', '40000', testFile], {
         stdio: 'inherit',
         cwd: dir,
     });
