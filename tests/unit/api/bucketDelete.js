@@ -49,8 +49,8 @@ describe('bucketDelete API', () => {
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getName(), bucketName);
                         metadata.listObject(usersBucket,
-                            authInfo.getCanonicalID(),
-                            null, null, null, log, (err, listResponse) => {
+                            { prefix: authInfo.getCanonicalID() },
+                            log, (err, listResponse) => {
                                 assert.strictEqual(listResponse.Contents.length,
                                                    1);
                                 done();
@@ -67,8 +67,8 @@ describe('bucketDelete API', () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);
                     assert.strictEqual(md, undefined);
-                    metadata.listObject(usersBucket, canonicalID,
-                        null, null, null, log, (err, listResponse) => {
+                    metadata.listObject(usersBucket, { prefix: canonicalID },
+                        log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length, 0);
                             done();
                         });

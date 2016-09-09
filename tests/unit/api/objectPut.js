@@ -203,6 +203,9 @@ describe('objectPut API', () => {
             });
     });
 
+    // <versioning_and_replication>
+    // data deletion is now the job of garbage collector
+    /*
     it('should not leave orphans in data when overwriting an object', done => {
         const testPutObjectRequest2 = new DummyRequest({
             bucketName,
@@ -234,4 +237,6 @@ describe('objectPut API', () => {
                     });
             });
     });
+    */
+    // </versioning_and_replication>
 });
