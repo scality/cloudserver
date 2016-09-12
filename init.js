@@ -10,6 +10,8 @@ const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
 const logger = require('./lib/utilities/logger.js').logger;
 
+const genTopo = require('./lib/data/dpa/topology').default;
+
 let ioctl;
 try {
     ioctl = require('ioctl');
@@ -65,19 +67,74 @@ if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
     logger.warn(warning);
 }
 
-// Create 3511 subdirectories for the data file backend
-const subDirs = Array.from({ length: constants.folderHash },
-    (v, k) => (k).toString());
-async.eachSeries(subDirs, (subDirName, next) => {
-    fs.mkdir(`${dataPath}/${subDirName}`, err => {
-        // If already exists, move on
-        if (err && err.code !== 'EEXIST') {
-            return next(err);
+function createDirsTopo(topo, dataPath, callback) {
+    // Create dirsNb subdirectories for the data file backend
+    async.eachSeries(Object.keys(topo), (key, next) => {
+        if (topo[key].constructor !== Object) {
+            return next();
         }
-        return next();
+        const path = `${dataPath}/${topo[key].id}`;
+        return fs.mkdir(path, err => {
+            // If already exists, move on
+            if (err && err.errno !== -17) {
+                return next(err);
+            }
+            if (topo[key].leaf) {
+                return next();
+            }
+            return createDirsTopo(topo[key], path, next);
+        });
+    }, err => callback(err));
+}
+
+if (!constants.topoMD) {
+    // Create 3511 subdirectories for the data file backend
+    const subDirs = Array.from({ length: constants.folderHash },
+        (v, k) => (k).toString());
+    async.eachSeries(subDirs, (subDirName, next) => {
+        fs.mkdir(`${dataPath}/${subDirName}`, err => {
+            // If already exists, move on
+            if (err && err.errno !== -17) {
+                return next(err);
+            }
+            return next();
+        });
+    },
+     err => {
+         assert.strictEqual(err, null, `Error creating data files ${err}`);
+         logger.info('Init complete.  Go forth and store data.');
+     });
+} else {
+    // if topology does not exist, create it
+    // otherwise, import it
+    const file = `${__dirname}/${constants.topoFile}.json`;
+    let topology;
+    try {
+        const fileStat = fs.statSync(file);
+        if (fileStat.isFile()) {
+            // import topology
+            try {
+                const topo = JSON.parse(fs.readFileSync(file));
+                // update weigth distribution
+                topology = genTopo.update(topo);
+            } catch (error) {
+                logger.warn('Failed to import topology', { file, error });
+            }
+        }
+    } catch (error) {
+        logger.debug('Not found topology file. Create it');
+    }
+
+    if (!topology) {
+        // create topology
+        topology = genTopo.init(constants.topoMD);
+    }
+    // write/update topology into file
+    fs.writeFileSync(file, JSON.stringify(topology, null, 4), 'utf8');
+
+    // create directories according to the topology
+    createDirsTopo(topology, dataPath, err => {
+        assert.strictEqual(err, null, `Error creating data files ${err}`);
+        logger.info('Init complete.  Go forth and store data.');
     });
-},
- err => {
-     assert.strictEqual(err, null, `Error creating data files ${err}`);
-     logger.info('Init complete.  Go forth and store data.');
- });
+}

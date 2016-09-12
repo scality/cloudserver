@@ -58,6 +58,32 @@ export default {
     // http://docs.aws.amazon.com/AmazonS3/latest/API/
     //      RESTBucketGET.html#RESTBucketGET-requests
     listingHardLimit: 1000,
+    // Metadata for storage system topology
+    // A real topology is generated automatically in init.js and saved in
+    // `./${topoFile}.json`
+    topoFile: 'topology',
+    topoMD: [{
+        field: 'Rack',
+        number: 20,
+        // true -> a component can contain multiple fragments of an object,
+        // false otherwise.
+        replacement: false,
+        // #bits encoding the field
+        size: 6,
+    }, {
+        field: 'Server',
+        number: 30,
+        replacement: false,
+        size: 8,
+    }, {
+        field: 'Drive',
+        number: 50,
+        // drive capacity
+        // number of `[min, max]` -> uniformly random between min and max
+        weight: [0.2, 1.5],
+        replacement: false,
+        size: 10,
+    }],
 
     // AWS sets a minimum size limit for parts except for the last part.
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
