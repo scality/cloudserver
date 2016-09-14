@@ -59,7 +59,7 @@ describe('objectGet API', () => {
     it('should get the object metadata', done => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest,
+                objectPut(authInfo, testPutObjectRequest, undefined,
                     log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest,
@@ -78,7 +78,7 @@ describe('objectGet API', () => {
     it('should get the object data retrieval info', done => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest, log,
@@ -135,7 +135,7 @@ describe('objectGet API', () => {
                         },
                         calculatedHash,
                     }, partBody);
-                    objectPutPart(authInfo, partRequest, log, () => {
+                    objectPutPart(authInfo, partRequest, undefined, log, () => {
                         next(null, testUploadId, calculatedHash);
                     });
                 },
@@ -157,9 +157,10 @@ describe('objectGet API', () => {
                         },
                         calculatedHash,
                     }, partBody);
-                    objectPutPart(authInfo, part2Request, log, () => {
-                        next(null, testUploadId, calculatedHash);
-                    });
+                    objectPutPart(authInfo, part2Request, undefined,
+                        log, () => {
+                            next(null, testUploadId, calculatedHash);
+                        });
                 },
                 (testUploadId, calculatedHash, next) => {
                     const completeBody = '<CompleteMultipartUpload>' +
@@ -227,7 +228,7 @@ describe('objectGet API', () => {
         }, postBody);
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest,

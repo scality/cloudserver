@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export default {
     /*
      * Splitter is used to build the object name for the overview of a
@@ -60,4 +62,7 @@ export default {
     // AWS sets a minimum size limit for parts except for the last part.
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
+
+    // hex digest of sha256 hash of empty string:
+    emptyStringHash: crypto.createHash('sha256').update('').digest('hex'),
 };

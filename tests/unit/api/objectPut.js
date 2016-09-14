@@ -32,11 +32,12 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(authUser, testPutObjectRequest, log, (err, res) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(res, correctMD5);
-                cb();
-            });
+            objectPut(authUser, testPutObjectRequest, undefined,
+                log, (err, res) => {
+                    assert.strictEqual(err, null);
+                    assert.strictEqual(res, correctMD5);
+                    cb();
+                });
         });
     });
 }
@@ -54,7 +55,7 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', done => {
-        objectPut(authInfo, testPutObjectRequest, log, err => {
+        objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
@@ -64,10 +65,11 @@ describe('objectPut API', () => {
         const putAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(putAuthInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.AccessDenied);
-                    done();
-                });
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, err => {
+                        assert.deepStrictEqual(err, errors.AccessDenied);
+                        done();
+                    });
             });
     });
 
@@ -108,7 +110,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
@@ -143,7 +145,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName, log,
@@ -181,7 +183,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         assert.deepStrictEqual(ds, []);
@@ -212,8 +214,10 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, () => {
-                    objectPut(authInfo, testPutObjectRequest2, log,
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, () => {
+                        objectPut(authInfo, testPutObjectRequest2, undefined,
+                            log,
                         () => {
                             // orphan objects don't get deleted
                             // until the next tick
@@ -227,7 +231,7 @@ describe('objectPut API', () => {
                                 done();
                             });
                         });
-                });
+                    });
             });
     });
 });

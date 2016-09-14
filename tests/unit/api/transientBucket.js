@@ -173,7 +173,7 @@ describe('transient bucket handling', () => {
             const md5Hash = crypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);
-            objectPut(authInfo, putObjRequest, log, err => {
+            objectPut(authInfo, putObjRequest, undefined, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
@@ -331,7 +331,7 @@ describe('transient bucket handling', () => {
         putPartRequest.query = {
             uploadId,
             partNumber: '1' };
-        objectPutPart(authInfo, putPartRequest,
+        objectPutPart(authInfo, putPartRequest, undefined,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();

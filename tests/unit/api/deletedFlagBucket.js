@@ -228,7 +228,7 @@ describe('deleted flag bucket handling', () => {
             const md5Hash = crypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);
-            objectPut(authInfo, putObjRequest, log, err => {
+            objectPut(authInfo, putObjRequest, undefined, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
@@ -253,7 +253,7 @@ describe('deleted flag bucket handling', () => {
         setUpRequest.objectKey = 'objectName';
         const postBody = new Buffer('I am a body');
         const putObjRequest = new DummyRequest(setUpRequest, postBody);
-        objectPut(otherAccountAuthInfo, putObjRequest, log, err => {
+        objectPut(otherAccountAuthInfo, putObjRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
@@ -351,13 +351,21 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    function checkForNoSuchUploadError(apiAction, partNumber, done) {
+    function checkForNoSuchUploadError(apiAction, partNumber, done,
+        extraArgNeeded) {
         const mpuRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         mpuRequest.objectKey = 'objectName';
         mpuRequest.query = { uploadId, partNumber };
-        apiAction(authInfo, mpuRequest,
+        if (extraArgNeeded) {
+            return apiAction(authInfo, mpuRequest, undefined,
+                log, err => {
+                    assert.deepStrictEqual(err, errors.NoSuchUpload);
+                    return done();
+                });
+        }
+        return apiAction(authInfo, mpuRequest,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 return done();
@@ -381,7 +389,7 @@ describe('deleted flag bucket handling', () => {
 
     it('objectPutPart request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
-        checkForNoSuchUploadError(objectPutPart, '1', done);
+        checkForNoSuchUploadError(objectPutPart, '1', done, true);
     });
 
     it('list multipartUploads request on bucket with deleted flag should ' +
