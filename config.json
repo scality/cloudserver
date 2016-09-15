@@ -29,7 +29,7 @@
     },
     "clusters": 10,
     "log": {
-        "logLevel": "info",
+        "logLevel": "trace",
         "dumpLevel": "error"
     }
 }
