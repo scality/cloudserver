@@ -5,6 +5,7 @@ require('babel-core/register')({
         !(filename.startsWith(`${__dirname}/constants.js`) ||
         filename.startsWith(`${__dirname}/lib/`) ||
         filename.startsWith(`${__dirname}/tests/`) ||
+        filename.startsWith(`${__dirname}/utapi/`) ||
         filename.startsWith(`${__dirname}/node_modules/utapi/lib/`) ||
         filename.startsWith(`${__dirname}/node_modules/utapi/utils/`) ||
         filename.startsWith(`${__dirname}/node_modules/utapi/router/`) ||
@@ -12,4 +13,4 @@ require('babel-core/register')({
         filename.startsWith(`${__dirname}/node_modules/utapi/validators/`) ||
         filename.startsWith(`${__dirname}/node_modules/utapi/handlers/`)),
 });
-require('./lib/utapi.js').default();
+require('./lib/utapi/utapi.js').default();
