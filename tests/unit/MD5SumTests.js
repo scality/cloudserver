@@ -34,8 +34,7 @@ describe('utilities.MD5Sum', () => {
          * md5sum computed by hand with:
          * $ dd if=/dev/zero of=/dev/stdout bs=1M count=16 2>/dev/null | md5sum
          */
-        const buffer = new Buffer(4 * 1024 * 1024);
-        buffer.fill(0);
+        const buffer = Buffer.alloc(4 * 1024 * 1024);
         testMD5([buffer, buffer, buffer, buffer],
                 '2c7ab85a893283e98c931e9511add182', done);
     });

@@ -154,7 +154,7 @@ describe('KMS unit tests', () => {
                         }
                         const creatingSseInfo = sseInfo;
                         creatingSseInfo.cipheredDataKey =
-                            new Buffer(cipherBundle.cipheredDataKey, 'base64');
+                            Buffer.from(cipherBundle.cipheredDataKey, 'base64');
                         KMS.createDecipherBundle(
                             sseInfo, 0, log, (err, decipherBundle) => {
                                 if (err) {
@@ -179,8 +179,7 @@ describe('KMS unit tests', () => {
             // note that node stream high water mark is 16kb
             // so this data will be written into and read from stream buffer
             // with just the write() and read() calls
-            const target = new Buffer(10000);
-            target.fill('e');
+            const target = Buffer.alloc(10000, 'e');
             cipherBundle.cipher.write(target);
             const result = decipherBundle.decipher.read();
             assert.deepEqual(result, target);
@@ -190,31 +189,28 @@ describe('KMS unit tests', () => {
 
     it('should increment the IV by modifying the last two positions of ' +
         'the buffer', () => {
-        const derivedIV = new Buffer('aaaaaaff', 'hex');
+        const derivedIV = Buffer.from('aaaaaaff', 'hex');
         const counter = 6;
         const incrementedIV = Common._incrementIV(derivedIV, counter);
-        const expected =
-            new Buffer('aaaaab05', 'hex');
+        const expected = Buffer.from('aaaaab05', 'hex');
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
     it('should increment the IV by incrementing the last position of the ' +
         'buffer', () => {
-        const derivedIV = new Buffer('aaaaaaf0', 'hex');
+        const derivedIV = Buffer.from('aaaaaaf0', 'hex');
         const counter = 6;
         const incrementedIV = Common._incrementIV(derivedIV, counter);
-        const expected =
-            new Buffer('aaaaaaf6', 'hex');
+        const expected = Buffer.from('aaaaaaf6', 'hex');
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
     it('should increment the IV by shifting each position in the ' +
         'buffer', () => {
-        const derivedIV = new Buffer('ffffffff', 'hex');
+        const derivedIV = Buffer.from('ffffffff', 'hex');
         const counter = 1;
         const incrementedIV = Common._incrementIV(derivedIV, counter);
-        const expected =
-            new Buffer('00000001', 'hex');
+        const expected = Buffer.from('00000001', 'hex');
         assert.deepStrictEqual(incrementedIV, expected);
     });
 });

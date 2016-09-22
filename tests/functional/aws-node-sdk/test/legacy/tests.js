@@ -10,11 +10,9 @@ const bucket = `ftest-mybucket-${random}`;
 // Create a buffer to put as a multipart upload part
 // and get its ETag
 const md5HashFirstPart = crypto.createHash('md5');
-const firstBufferBody =
-    new Buffer(5242880).fill(0);
+const firstBufferBody = Buffer.alloc(5242880, 0);
 const md5HashSecondPart = crypto.createHash('md5');
-const secondBufferBody =
-    new Buffer(5242880).fill(1);
+const secondBufferBody = Buffer.alloc(5242880, 1);
 md5HashFirstPart.update(firstBufferBody);
 md5HashSecondPart.update(secondBufferBody);
 const calculatedFirstPartHash = md5HashFirstPart.digest('hex');
@@ -305,7 +303,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // Uploaded object is 5MB of 0 in the first part and
             // 5 MB of 1 in the second part so a range from the
             // first part should just contain 0
-            expectedBuff: new Buffer(10).fill(0),
+            expectedBuff: Buffer.alloc(10, 0),
         },
         { it: 'should get a range from the second part of an object ' +
             'put by multipart upload',
@@ -313,7 +311,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             contentLength: '10',
             contentRange: 'bytes 5242881-5242890/10485760',
             // A range from the second part should just contain 1
-            expectedBuff: new Buffer(10).fill(1),
+            expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get a range that spans both parts of an object put ' +
             'by multipart upload',
@@ -322,7 +320,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             contentRange: 'bytes 5242875-5242884/10485760',
             // Range that spans the two parts should contain 5 bytes
             // of 0 and 5 bytes of 1
-            expectedBuff: new Buffer(10).fill(0, 0, 5).fill(1, 5, 10),
+            expectedBuff: Buffer.allocUnsafe(10).fill(0, 0, 5).fill(1, 5, 10),
         },
         { it: 'should get a range from the second part of an object put by ' +
             'multipart upload and include the end even if the range ' +
@@ -332,7 +330,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             contentLength: '10',
             contentRange: 'bytes 10485750-10485759/10485760',
             // Range from the second part should just contain 1
-            expectedBuff: new Buffer(10).fill(1),
+            expectedBuff: Buffer.alloc(10, 1),
         },
     ];
 
@@ -379,7 +377,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
-            Body: new Buffer(200).fill(0, 0, 50).fill(1, 50),
+            Body: Buffer.allocUnsafe(200).fill(0, 0, 50).fill(1, 50),
         };
         s3.putObject(params, (err, data) => {
             if (err) {
@@ -397,21 +395,21 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             contentLength: '90',
             contentRange: 'bytes 10-99/200',
             // Buffer.fill(value, offset, end)
-            expectedBuff: new Buffer(90).fill(0, 0, 40).fill(1, 40),
+            expectedBuff: Buffer.allocUnsafe(90).fill(0, 0, 40).fill(1, 40),
         },
         { it: 'should get a range for an object using only an end ' +
             'offset in the request',
             range: 'bytes=-10',
             contentLength: '10',
             contentRange: 'bytes 190-199/200',
-            expectedBuff: new Buffer(10).fill(1),
+            expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get a range for an object using only a start offset ' +
             'in the request',
             range: 'bytes=190-',
             contentLength: '10',
             contentRange: 'bytes 190-199/200',
-            expectedBuff: new Buffer(10).fill(1),
+            expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get full object if range header is invalid',
             range: 'bytes=-',
@@ -419,7 +417,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // Since range header is invalid full object should be returned
             // and there should be no Content-Range header
             contentRange: undefined,
-            expectedBuff: new Buffer(200).fill(0, 0, 50).fill(1, 50),
+            expectedBuff: Buffer.allocUnsafe(200).fill(0, 0, 50).fill(1, 50),
         },
     ];
 
