@@ -276,13 +276,11 @@ describe('Object Part Copy', () => {
             beforeEach(() => {
                 const parts = [];
                 const md5HashPart = crypto.createHash('md5');
-                const partBuff =
-                    new Buffer(5242880).fill(0);
+                const partBuff = Buffer.alloc(5242880);
                 md5HashPart.update(partBuff);
                 const partHash = md5HashPart.digest('hex');
                 const otherMd5HashPart = crypto.createHash('md5');
-                const otherPartBuff =
-                    new Buffer(5242880).fill(1);
+                const otherPartBuff = Buffer.alloc(5242880, 1);
                 otherMd5HashPart.update(otherPartBuff);
                 const otherPartHash = otherMd5HashPart.digest('hex');
                 return s3.createMultipartUploadAsync({
