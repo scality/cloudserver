@@ -23,6 +23,11 @@
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
                         "s3-website.scality.test"],
+    "cdmi": {
+        "host": "localhost",
+        "port": 80,
+        "path": "/dewpoint"
+    },
     "bucketd": {
         "bootstrap": ["localhost"]
     },
@@ -30,9 +35,9 @@
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 10,
+    "clusters": 1,
     "log": {
-        "logLevel": "info",
+        "logLevel": "trace",
         "dumpLevel": "error"
     },
     "healthChecks": {

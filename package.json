@@ -32,7 +32,9 @@
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
-    "xml2js": "~0.4.16"
+    "xml2js": "~0.4.16",
+    "xml": "~1.0.0",
+    "cdmiclient": "scality/cdmiclient#test/cdmi-s3"
   },
   "devDependencies": {
     "bluebird": "^3.3.1",

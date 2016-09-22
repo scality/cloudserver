@@ -17,6 +17,7 @@ RUN apt-get update \
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+ENV S3BACKEND=cdmi
 CMD [ "npm", "start" ]
 
 EXPOSE 8000
