@@ -169,7 +169,7 @@ describe('transient bucket handling', () => {
             const setUpRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
             setUpRequest.objectKey = objName;
-            const postBody = new Buffer('I am a body');
+            const postBody = Buffer.from('I am a body', 'utf8');
             const md5Hash = crypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);

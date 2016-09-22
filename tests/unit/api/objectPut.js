@@ -14,7 +14,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const testPutBucketRequest = new DummyRequest({
     bucketName,
@@ -210,7 +210,7 @@ describe('objectPut API', () => {
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}`,
-        }, new Buffer('I am another body'));
+        }, Buffer.from('I am another body', 'utf8'));
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
@@ -227,7 +227,7 @@ describe('objectPut API', () => {
                                 assert.strictEqual(ds[0], undefined);
                                 assert.strictEqual(ds[1], undefined);
                                 assert.deepStrictEqual(ds[2].value,
-                                    new Buffer('I am another body'));
+                                    Buffer.from('I am another body', 'utf8'));
                                 done();
                             });
                         });
