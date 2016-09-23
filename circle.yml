@@ -9,6 +9,8 @@ general:
 machine:
   node:
     version: 4.2
+  ruby:
+    version: "2.0"
   environment:
     CXX: g++-4.9
 
@@ -19,6 +21,12 @@ dependencies:
     - sudo apt-get install -y -q python-dateutil python-magic
     - wget http://launchpadlibrarian.net/222422124/s3cmd_1.6.0-2_all.deb
     - sudo dpkg -i s3cmd*.deb
+    # fog and ruby testing dependencies
+    - gem install fog
+    - gem install mime-types
+    - gem install rspec
+    - gem install json
+    - gem install digest
 
 
 test:
@@ -30,10 +38,12 @@ test:
     - yamllint $(git ls-files '*.yml')
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
-    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
-    - S3BACKEND=mem npm start & sleep 4 &&
+    - S3BACKEND=mem npm start & sleep 15 && npm run ft_test;
+    - S3BACKEND=mem npm start & sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
-    - S3BACKEND=file S3VAULT=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
     - rm -rf localData/* localMetadata/*
-    - S3BACKEND=file S3VAULT=mem npm start & sleep 4 &&
+    - S3BACKEND=file S3VAULT=mem npm start & sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
+    - S3BACKEND=mem npm start & sleep 15 &&
+      cd tests/functional/fog && rspec tests.rb
