@@ -68,9 +68,7 @@ function main() {
 
     const dirs = fs.readdirSync(rootPath);
 
-    return dirs.reduce((prev, dir) => {
-        return prev && testing(dir);
-    }, true);
+    return dirs.reduce((prev, dir) => prev && testing(dir), true);
 }
 
 if (main()) {

@@ -30,12 +30,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     this.timeout(60000);
     let s3;
 
+    // eslint-disable-next-line prefer-arrow-callback
     before(function setup() {
         const config = getConfig('default', { signatureVersion: 'v4' });
 
         s3 = new S3(config);
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should do bucket listing', function bucketListing(done) {
         s3.listBuckets((err, data) => {
             if (err) {
@@ -48,19 +50,21 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert(data.Owner.DisplayName, 'DisplayName not sent back');
             const owner = Object.keys(data.Owner);
             assert.strictEqual(owner.length, 2, 'Too much fields in owner');
-            done();
+            return done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should create a bucket', function createbucket(done) {
-        s3.createBucket({ Bucket: bucket }, (err) => {
+        s3.createBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error creating bucket: ${err}`));
             }
-            done();
+            return done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should create a multipart upload', function createMPU(done) {
         s3.createMultipartUpload({ Bucket: bucket, Key: objectKey },
             (err, data) => {
@@ -72,11 +76,12 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 assert.strictEqual(data.Key, objectKey);
                 assert.ok(data.UploadId);
                 multipartUploadData.firstUploadId = data.UploadId;
-                done();
+                return done();
             });
     });
 
     it('should upload a part of a multipart upload to be aborted',
+        // eslint-disable-next-line prefer-arrow-callback
         function uploadpart(done) {
             const params = {
                 Bucket: bucket,
@@ -90,10 +95,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(`error uploading a part: ${err}`));
                 }
                 assert.strictEqual(data.ETag, `"${calculatedFirstPartHash}"`);
-                done();
+                return done();
             });
         });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should abort a multipart upload', function abortMPU(done) {
         const params = {
             Bucket: bucket,
@@ -106,10 +112,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     `error aborting multipart upload: ${err}`));
             }
             assert.ok(data);
-            done();
+            return done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should upload a part of a multipart upload', function createMPU(done) {
         s3.createMultipartUpload({ Bucket: bucket, Key: 'toComplete' },
             (err, data) => {
@@ -133,12 +140,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     }
                     assert.strictEqual(data.ETag,
                         `"${calculatedFirstPartHash}"`);
-                    done();
+                    return done();
                 });
+                return undefined;
             });
     });
 
     it('should upload a second part of a multipart upload',
+        // eslint-disable-next-line prefer-arrow-callback
         function createMPU(done) {
             const params = {
                 Bucket: bucket,
@@ -152,10 +161,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(`error uploading a part: ${err}`));
                 }
                 assert.strictEqual(data.ETag, `"${calculatedSecondPartHash}"`);
-                done();
+                return done();
             });
         });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should list the parts of a multipart upload', function listparts(done) {
         const params = {
             Bucket: bucket,
@@ -186,11 +196,12 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // will need the canonicalId.
             // assert.strictEqual(data.Owner.ID, config.accessKeyId);
             assert.strictEqual(data.StorageClass, 'STANDARD');
+            return {};
         });
-        done();
+        return done();
     });
 
-    it('should list ongoing multipart uploads', (done) => {
+    it('should list ongoing multipart uploads', done => {
         const params = {
             Bucket: bucket,
         };
@@ -201,11 +212,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.Uploads.length, 1);
             assert.strictEqual(data.Uploads[0].UploadId,
                 multipartUploadData.secondUploadId);
-            done();
+            return done();
         });
     });
 
-    it('should list ongoing multipart uploads with params', (done) => {
+    it('should list ongoing multipart uploads with params', done => {
         const params = {
             Bucket: bucket,
             Prefix: 'to',
@@ -218,23 +229,25 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.Uploads.length, 1);
             assert.strictEqual(data.Uploads[0].UploadId,
                 multipartUploadData.secondUploadId);
-            done();
+            return done();
         });
     });
 
     it('should return an error if do not provide correct ' +
+        // eslint-disable-next-line prefer-arrow-callback
         'xml when completing a multipart upload', function completempu(done) {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
             UploadId: multipartUploadData.secondUploadId,
         };
-        s3.completeMultipartUpload(params, (err) => {
+        s3.completeMultipartUpload(params, err => {
             assert.strictEqual(err.code, 'MalformedXML');
-            done();
+            return done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should complete a multipart upload', function completempu(done) {
         const params = {
             Bucket: bucket,
@@ -260,7 +273,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.Bucket, bucket);
             assert.strictEqual(data.Key, 'toComplete');
             assert.strictEqual(data.ETag, combinedETag);
-            done();
+            return done();
         });
     });
 
@@ -347,6 +360,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should delete object created by multipart upload',
+        // eslint-disable-next-line prefer-arrow-callback
         function deleteObject(done) {
             const params = {
                 Bucket: bucket,
@@ -357,7 +371,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(`error deleting object: ${err}`));
                 }
                 assert.ok(data);
-                done();
+                return done();
             });
         });
 
@@ -430,6 +444,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should delete an object put without MPU',
+        // eslint-disable-next-line prefer-arrow-callback
         function deleteObject(done) {
             const params = {
                 Bucket: bucket,
@@ -440,16 +455,17 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(`error deleting object: ${err}`));
                 }
                 assert.ok(data);
-                done();
+                return done();
             });
         });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should delete a bucket', function deletebucket(done) {
-        s3.deleteBucket({ Bucket: bucket }, (err) => {
+        s3.deleteBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error deleting bucket: ${err}`));
             }
-            done();
+            return done();
         });
     });
 });

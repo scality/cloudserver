@@ -29,29 +29,33 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     this.timeout(60000);
     let s3;
 
+    // eslint-disable-next-line prefer-arrow-callback
     before(function setup() {
         const config = getConfig('default', { signatureVersion: 'v4' });
 
         s3 = new S3(config);
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should do an empty bucket listing', function emptyListing(done) {
         const url = s3.getSignedUrl('listBuckets');
-        provideRawOutput(['-verbose', url], (httpCode) => {
+        provideRawOutput(['-verbose', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should create a bucket', function createBucket(done) {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('createBucket', params);
-        provideRawOutput(['-verbose', '-X', 'PUT', url], (httpCode) => {
+        provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should do a bucket listing with result', function fullListing(done) {
         const url = s3.getSignedUrl('listBuckets');
         provideRawOutput(['-verbose', url], (httpCode, rawOutput) => {
@@ -61,9 +65,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
                     assert.ifError(err);
                 }
                 const bucketNames = xml.ListAllMyBucketsResult
-                    .Buckets[0].Bucket.map((item) => {
-                        return item.Name[0];
-                    });
+                    .Buckets[0].Bucket.map(item => item.Name[0]);
                 const whereIsMyBucket = bucketNames.indexOf(bucket);
                 assert(whereIsMyBucket > -1);
                 done();
@@ -71,11 +73,12 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should put an object', function putObject(done) {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'package.json'], (httpCode) => {
+            '--upload-file', 'package.json'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -111,6 +114,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should list objects in bucket', function listObjects(done) {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('listObjects', params);
@@ -127,26 +131,28 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should get an object', function getObject(done) {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('getObject', params);
-        provideRawOutput(['-verbose', '-o', 'download', url], (httpCode) => {
+        provideRawOutput(['-verbose', '-o', 'download', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
-    it('downloaded file should equal file that was put', (done) => {
+    it('downloaded file should equal file that was put', done => {
         diff('package.json', 'download', () => {
             deleteFile('download', done);
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should delete an object', function deleteObject(done) {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '204 NO CONTENT');
                 done();
             });
@@ -183,11 +189,12 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
+    // eslint-disable-next-line prefer-arrow-callback
     it('should delete a bucket', function deleteBucket(done) {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('deleteBucket', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
-            (httpCode) => {
+            httpCode => {
                 assert.strictEqual(httpCode, '204 NO CONTENT');
                 done();
             });
