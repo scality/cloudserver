@@ -73,7 +73,7 @@ function createDirsTopo(topo, dataPath, callback) {
         if (topo[key].constructor !== Object) {
             return next();
         }
-        const path = `${dataPath}/${topo[key].id}`;
+        const path = `${dataPath}/${key}`;
         return fs.mkdir(path, err => {
             // If already exists, move on
             if (err && err.errno !== -17) {
