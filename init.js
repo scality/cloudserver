@@ -69,20 +69,17 @@ if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
 
 function createDirsTopo(topo, dataPath, callback) {
     // Create dirsNb subdirectories for the data file backend
-    async.eachSeries(Object.keys(topo), (key, next) => {
-        if (topo[key].constructor !== Object) {
-            return next();
-        }
+    async.eachSeries(topo.ids, (key, next) => {
         const path = `${dataPath}/${key}`;
         return fs.mkdir(path, err => {
             // If already exists, move on
             if (err && err.errno !== -17) {
                 return next(err);
             }
-            if (topo[key].leaf) {
-                return next();
+            if (topo[key]) {
+                return createDirsTopo(topo[key], path, next);
             }
-            return createDirsTopo(topo[key], path, next);
+            return next();
         });
     }, callback);
 }
