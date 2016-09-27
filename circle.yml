@@ -27,6 +27,8 @@ dependencies:
     - gem install rspec
     - gem install json
     - gem install digest
+    # java sdk dependencies
+    - sudo apt-get install -y -q default-jdk
 
 
 test:
@@ -38,8 +40,10 @@ test:
     - yamllint $(git ls-files '*.yml')
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
-    - S3BACKEND=mem npm start & sleep 15 && npm run ft_test;
     - S3BACKEND=mem npm start & sleep 15 &&
+      cd ./tests/functional/jaws && mvn test
+    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=mem npm start & sleep 4 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
     - rm -rf localData/* localMetadata/*
