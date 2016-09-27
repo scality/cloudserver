@@ -90,6 +90,37 @@ npm run mem_backend &
 npm run ft_test
 ```
 
+## Configuration
+
+If you want to specify an endpoint (other than localhost),
+you need to add it to your config.json:
+
+```json
+"regions": {
+
+     "localregion": ["localhost"],
+     "specifiedregion": ["myhostname.com"]
+},
+```
+
+Note that our S3server supports both:
+
+- path-style: http://myhostname.com/mybucket
+- hosted-style: http://mybucket.myhostname.com
+
+However, hosted-style requests will not hit the server if you are
+using an ip address for your host.
+So, make sure you are using path-style requests in that case.
+For instance, if you are using the AWS SDK for JavaScript,
+you would instantiate your client like this:
+
+```js
+const s3 = new aws.S3({
+   endpoint: 'http://127.0.0.1:8000',
+   s3ForcePathStyle: true,
+});
+```
+
 ## s3cmd versions
 
 If using s3cmd as a client to S3 be aware that v4 signature format
