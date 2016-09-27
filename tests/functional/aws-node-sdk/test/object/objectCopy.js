@@ -292,7 +292,8 @@ describe('Object Copy', () => {
             });
         });
 
-        it('should copy an object and change the server side encryption' +
+        // skipping test as object level encryption is not implemented yet
+        it.skip('should copy an object and change the server side encryption' +
             'option if server side encryption header provided', done => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
@@ -307,6 +308,28 @@ describe('Object Copy', () => {
                         done();
                     });
                 });
+        });
+
+        it('should return Not Implemented error for obj. encryption using ' +
+            'AWS-managed encryption keys', done => {
+            const params = { Bucket: destBucketName, Key: 'key',
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ServerSideEncryption: 'AES256' };
+            s3.copyObject(params, err => {
+                assert.strictEqual(err.code, 'NotImplemented');
+                done();
+            });
+        });
+
+        it('should return Not Implemented error for obj. encryption using ' +
+            'customer-provided encryption keys', done => {
+            const params = { Bucket: destBucketName, Key: 'key',
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                SSECustomerAlgorithm: 'AES256' };
+            s3.copyObject(params, err => {
+                assert.strictEqual(err.code, 'NotImplemented');
+                done();
+            });
         });
 
         it('should copy an object and set the acl on the new object', done => {
