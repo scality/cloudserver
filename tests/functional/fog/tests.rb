@@ -52,8 +52,7 @@ describe Fog do
     after(:all) do
         File.unlink(fileToStream)
         File.unlink(smallFile)
-        # RESTORE ME WHEN ENABLING STREAMING TESTS
-        # File.unlink(downloadFile)
+        File.unlink(downloadFile)
     end
 
     $bucketName = "myrubybucket"
@@ -83,7 +82,7 @@ describe Fog do
         connection.delete_object($bucketName, "helloFog")
     end
 
-    xit "should put a streaming object (streaming v4 auth)" do
+    it "should put a streaming object (streaming v4 auth)" do
         streamObject = $bucket.files.create(
             :key => "streamObject",
             :body => File.open(fileToStream),
@@ -92,7 +91,7 @@ describe Fog do
         expect(streamObject.etag).to eq($fileToStreamMd5)
     end
 
-    xit "should get a streamed object (regular v4 auth)" do
+    it "should get a streamed object (regular v4 auth)" do
         open(downloadFile, "wb") do |f|
           $bucket.files.get("streamObject") do
             |chunk,remainingBytes,totalBytes|
@@ -103,18 +102,18 @@ describe Fog do
         expect(downloadedFileMd5).to eq($fileToStreamMd5)
     end
 
-    xit "should delete a streamed object (regular v4 auth)" do
+    it "should delete a streamed object (regular v4 auth)" do
         connection.delete_object($bucketName, "streamObject")
     end
 
-    xit "should put a small streaming object (streaming v4 auth)" do
+    it "should put a small streaming object (streaming v4 auth)" do
         streamObject = $bucket.files.create(
             :key => "smallStream",
             :body => File.open(smallFile))
         expect(streamObject.etag).to eq($smallFileMd5)
     end
 
-    xit "should get a small streamed object (regular v4 auth)" do
+    it "should get a small streamed object (regular v4 auth)" do
         open(downloadFile, "wb") do |f|
           $bucket.files.get("smallStream") do
             |chunk,remainingBytes,totalBytes|
@@ -125,7 +124,7 @@ describe Fog do
         expect(downloadedFileMd5).to eq($smallFileMd5)
     end
 
-    xit "should delete a small streamed object (regular v4 auth)" do
+    it "should delete a small streamed object (regular v4 auth)" do
         connection.delete_object($bucketName, "smallStream")
     end
 
@@ -136,14 +135,14 @@ describe Fog do
         $uploadId = response.body["UploadId"]
     end
 
-    xit "should upload a streaming part (streaming v4 auth)" do
+    it "should upload a streaming part (streaming v4 auth)" do
         response = connection.upload_part($bucketName,
             "mpuObject", $uploadId, 1, File.open(fileToStream)
         )
         expect(response.headers["ETag"]).to eq("\"#{$fileToStreamMd5}\"")
     end
 
-    xit "should upload a small streaming part (streaming v4 auth)" do
+    it "should upload a small streaming part (streaming v4 auth)" do
         response = connection.upload_part($bucketName,
             "mpuObject", $uploadId, 2, File.open(smallFile)
         )
