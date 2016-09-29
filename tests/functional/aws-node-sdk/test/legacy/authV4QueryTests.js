@@ -29,15 +29,15 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     this.timeout(60000);
     let s3;
 
-    // eslint-disable-next-line prefer-arrow-callback
-    before(function setup() {
+    // setup test
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
 
         s3 = new S3(config);
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should do an empty bucket listing', function emptyListing(done) {
+    // emptyListing test
+    it('should do an empty bucket listing', done => {
         const url = s3.getSignedUrl('listBuckets');
         provideRawOutput(['-verbose', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
@@ -45,8 +45,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should create a bucket', function createBucket(done) {
+    // createBucket test
+    it('should create a bucket', done => {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
@@ -55,8 +55,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should do a bucket listing with result', function fullListing(done) {
+    // fullListing test
+    it('should do a bucket listing with result', done => {
         const url = s3.getSignedUrl('listBuckets');
         provideRawOutput(['-verbose', url], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
@@ -73,8 +73,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should put an object', function putObject(done) {
+    // putObject test
+    it('should put an object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
@@ -114,8 +114,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should list objects in bucket', function listObjects(done) {
+    // listObjects test
+    it('should list objects in bucket', done => {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('listObjects', params);
         provideRawOutput(['-verbose', url], (httpCode, rawOutput) => {
@@ -131,8 +131,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should get an object', function getObject(done) {
+    // getObject test
+    it('should get an object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('getObject', params);
         provideRawOutput(['-verbose', '-o', 'download', url], httpCode => {
@@ -147,8 +147,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should delete an object', function deleteObject(done) {
+    // deleteObject test
+    it('should delete an object', done => {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
@@ -189,8 +189,8 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should delete a bucket', function deleteBucket(done) {
+    // deleteBucket test
+    it('should delete a bucket', done => {
         const params = { Bucket: bucket };
         const url = s3.getSignedUrl('deleteBucket', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],

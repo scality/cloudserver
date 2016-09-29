@@ -30,15 +30,15 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     this.timeout(60000);
     let s3;
 
-    // eslint-disable-next-line prefer-arrow-callback
-    before(function setup() {
+    // setup test
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
 
         s3 = new S3(config);
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should do bucket listing', function bucketListing(done) {
+    // bucketListing test
+    it('should do bucket listing', done => {
         s3.listBuckets((err, data) => {
             if (err) {
                 return done(new Error(`error listing buckets: ${err}`));
@@ -54,8 +54,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should create a bucket', function createbucket(done) {
+    // createbucket test
+    it('should create a bucket', done => {
         s3.createBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error creating bucket: ${err}`));
@@ -64,8 +64,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should create a multipart upload', function createMPU(done) {
+    // createMPU test
+    it('should create a multipart upload', done => {
         s3.createMultipartUpload({ Bucket: bucket, Key: objectKey },
             (err, data) => {
                 if (err) {
@@ -81,8 +81,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should upload a part of a multipart upload to be aborted',
-        // eslint-disable-next-line prefer-arrow-callback
-        function uploadpart(done) {
+        // uploadpart test
+        done => {
             const params = {
                 Bucket: bucket,
                 Key: objectKey,
@@ -99,8 +99,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             });
         });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should abort a multipart upload', function abortMPU(done) {
+    // abortMPU test
+    it('should abort a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: objectKey,
@@ -116,8 +116,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should upload a part of a multipart upload', function createMPU(done) {
+    // createMPU test
+    it('should upload a part of a multipart upload', done => {
         s3.createMultipartUpload({ Bucket: bucket, Key: 'toComplete' },
             (err, data) => {
                 if (err) {
@@ -147,8 +147,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should upload a second part of a multipart upload',
-        // eslint-disable-next-line prefer-arrow-callback
-        function createMPU(done) {
+        // createMPU test
+        done => {
             const params = {
                 Bucket: bucket,
                 Key: 'toComplete',
@@ -165,8 +165,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             });
         });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should list the parts of a multipart upload', function listparts(done) {
+    // listparts test
+    it('should list the parts of a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -234,8 +234,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should return an error if do not provide correct ' +
-        // eslint-disable-next-line prefer-arrow-callback
-        'xml when completing a multipart upload', function completempu(done) {
+        // completempu test
+        'xml when completing a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -247,8 +247,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
     });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should complete a multipart upload', function completempu(done) {
+    // completempu test
+    it('should complete a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -360,8 +360,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should delete object created by multipart upload',
-        // eslint-disable-next-line prefer-arrow-callback
-        function deleteObject(done) {
+        // deleteObject test
+        done => {
             const params = {
                 Bucket: bucket,
                 Key: 'toComplete',
@@ -444,8 +444,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     it('should delete an object put without MPU',
-        // eslint-disable-next-line prefer-arrow-callback
-        function deleteObject(done) {
+        // deleteObject test
+        done => {
             const params = {
                 Bucket: bucket,
                 Key: 'normalput',
@@ -459,8 +459,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             });
         });
 
-    // eslint-disable-next-line prefer-arrow-callback
-    it('should delete a bucket', function deletebucket(done) {
+    // deletebucket test
+    it('should delete a bucket', done => {
         s3.deleteBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error deleting bucket: ${err}`));
