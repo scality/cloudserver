@@ -53,5 +53,14 @@ describe('PUT object', () => {
                 done();
             });
         });
+
+        it('should return InvalidArgument if negative PartNumber', done => {
+            const params = { Bucket: bucket, Key: 'key', PartNumber: -1,
+                UploadId: uploadId };
+            s3.uploadPart(params, err => {
+                assert.strictEqual(err.code, 'InvalidArgument');
+                done();
+            });
+        });
     });
 });
