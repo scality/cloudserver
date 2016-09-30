@@ -71,7 +71,7 @@ const subDirs = Array.from({ length: constants.folderHash },
 async.eachSeries(subDirs, (subDirName, next) => {
     fs.mkdir(`${dataPath}/${subDirName}`, err => {
         // If already exists, move on
-        if (err && err.errno !== -17) {
+        if (err && err.code !== 'EEXIST') {
             return next(err);
         }
         return next();
