@@ -104,7 +104,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, err => {
+            objectPutPart(authInfo, partRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
                 const keysInMPUkeyMap = [];
                 metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
@@ -163,7 +163,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, err => {
+            objectPutPart(authInfo, partRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
                 const keysInMPUkeyMap = [];
                 metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
@@ -213,11 +213,12 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, (err, result) => {
-                assert.deepStrictEqual(err, errors.TooManyParts);
-                assert.strictEqual(result, undefined);
-                done();
-            });
+            objectPutPart(authInfo, partRequest, undefined, log,
+                (err, result) => {
+                    assert.deepStrictEqual(err, errors.TooManyParts);
+                    assert.strictEqual(result, undefined);
+                    done();
+                });
         });
     });
 
@@ -249,11 +250,12 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, (err, result) => {
-                assert.deepStrictEqual(err, errors.InvalidArgument);
-                assert.strictEqual(result, undefined);
-                done();
-            });
+            objectPutPart(authInfo, partRequest, undefined, log,
+                (err, result) => {
+                    assert.deepStrictEqual(err, errors.InvalidArgument);
+                    assert.strictEqual(result, undefined);
+                    done();
+                });
         });
     });
 
@@ -292,11 +294,12 @@ describe('Multipart Upload API', () => {
                 calculatedHash,
                 parsedContentLength: 5368709121,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, (err, result) => {
-                assert.deepStrictEqual(err, errors.EntityTooLarge);
-                assert.strictEqual(result, undefined);
-                done();
-            });
+            objectPutPart(authInfo, partRequest, undefined,
+                log, (err, result) => {
+                    assert.deepStrictEqual(err, errors.EntityTooLarge);
+                    assert.strictEqual(result, undefined);
+                    done();
+                });
         });
     });
 
@@ -328,7 +331,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
                 const postBody2 = new Buffer('I am a second part');
                 const md5Hash2 = crypto.createHash('md5');
                 const bufferBody2 = new Buffer(postBody2, 'binary');
@@ -347,7 +350,7 @@ describe('Multipart Upload API', () => {
                     },
                     calculatedHash: secondCalculatedMD5,
                 }, postBody2);
-                objectPutPart(authInfo, partRequest2, log, err => {
+                objectPutPart(authInfo, partRequest2, undefined, log, err => {
                     assert.strictEqual(err, null);
 
                     const keysInMPUkeyMap = [];
@@ -418,7 +421,7 @@ describe('Multipart Upload API', () => {
                 // of the multipart upload.
                 calculatedHash,
             }, partBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 const completeBody = '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
@@ -502,7 +505,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, partBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 const completeBody = '<CompleteMultipartUpload>' +
                     '<Part>' +
                     '<PartNumber>1</PartNumber>' +
@@ -579,7 +582,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 const completeBody = 'Malformed xml';
                 const completeRequest = {
                     bucketName,
@@ -632,7 +635,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 // XML is missing any part listing so does
                 // not conform to the AWS spec
                 const completeBody = '<CompleteMultipartUpload>' +
@@ -698,8 +701,8 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>2</PartNumber>' +
@@ -771,10 +774,10 @@ describe('Multipart Upload API', () => {
                     uploadId: testUploadId,
                 },
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, err => {
+            objectPutPart(authInfo, partRequest1, undefined, log, err => {
                 assert.deepStrictEqual(err, null);
                 const calculatedHash = partRequest1.calculatedHash;
-                objectPutPart(authInfo, partRequest2, log, err => {
+                objectPutPart(authInfo, partRequest2, undefined, log, err => {
                     assert.deepStrictEqual(err, null);
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
@@ -857,8 +860,8 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -941,8 +944,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -1041,8 +1044,8 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -1144,8 +1147,8 @@ describe('Multipart Upload API', () => {
                 post: postBody,
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest1, log, () => {
-                objectPutPart(authInfo, partRequest2, log, () => {
+            objectPutPart(authInfo, partRequest1, undefined, log, () => {
+                objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
                         '<Part>' +
                         '<PartNumber>1</PartNumber>' +
@@ -1210,7 +1213,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 const deleteRequest = {
                     bucketName,
                     namespace,
@@ -1260,7 +1263,7 @@ describe('Multipart Upload API', () => {
                 },
                 calculatedHash,
             }, postBody);
-            objectPutPart(authInfo, partRequest, log, () => {
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
                 const deleteRequest = {
                     bucketName,
                     namespace,
@@ -1302,9 +1305,10 @@ describe('Multipart Upload API', () => {
                         uploadId: testUploadId,
                     },
                 }, fullSizedPart);
-                objectPutPart(authInfo, partRequest, log, err => {
+                objectPutPart(authInfo, partRequest, undefined, log, (err,
+                    partCalculatedHash) => {
                     assert.deepStrictEqual(err, null);
-                    next(null, testUploadId, partRequest.calculatedHash);
+                    next(null, testUploadId, partCalculatedHash);
                 });
             },
             (testUploadId, part1CalculatedHash, next) => {
@@ -1319,10 +1323,11 @@ describe('Multipart Upload API', () => {
                         uploadId: testUploadId,
                     },
                 }, partBody);
-                objectPutPart(authInfo, part2Request, log, err => {
+                objectPutPart(authInfo, part2Request, undefined, log, (err,
+                    part2CalculatedHash) => {
                     assert.deepStrictEqual(err, null);
                     next(null, testUploadId, part1CalculatedHash,
-                         part2Request.calculatedHash);
+                         part2CalculatedHash);
                 });
             },
             (testUploadId, part1CalculatedHash, part2CalculatedHash, next) => {
@@ -1379,7 +1384,7 @@ describe('Multipart Upload API', () => {
                     },
                     calculatedHash,
                 }, overwritePartBody);
-                objectPutPart(authInfo, partRequest, log, () =>
+                objectPutPart(authInfo, partRequest, undefined, log, () =>
                     next(null, testUploadId, calculatedHash));
             },
             (testUploadId, calculatedHash, next) => {
@@ -1426,7 +1431,7 @@ describe('Multipart Upload API', () => {
         }, postBody);
 
         bucketPut(authInfo, bucketPutRequest, locationConstraint, log, () =>
-          objectPutPart(authInfo, partRequest, log, err => {
+          objectPutPart(authInfo, partRequest, undefined, log, err => {
               assert.strictEqual(err, errors.NoSuchUpload);
               done();
           })

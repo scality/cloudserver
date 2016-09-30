@@ -47,4 +47,5 @@ Right now, the following operations are implemented:
 - Multipart Upload
 - GetService
 - v2 Authentication
-- v4 Authentication
+- v4 Authentication (Transferring Payload in a Single Chunk)
+- v4 Authentication (Transferring Payload in Multiple Chunks)

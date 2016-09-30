@@ -59,7 +59,8 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -99,7 +100,8 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -135,7 +137,8 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -178,7 +181,8 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -219,7 +223,7 @@ describe('objectGetACL API', () => {
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
             next => objectPut(
-                authInfo, testPutObjectRequest, log, next),
+                authInfo, testPutObjectRequest, undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -258,7 +262,8 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
@@ -307,7 +312,8 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
             (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
