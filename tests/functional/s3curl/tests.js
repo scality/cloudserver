@@ -92,9 +92,7 @@ function provideRawOutput(args, cb) {
     child.stderr.on('data', data => {
         procData.stderr += data.toString();
     });
-    child.on('error', err => {
-        return cb(err);
-    });
+    child.on('error', err => cb(err));
     child.on('close', code => {
         process.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;

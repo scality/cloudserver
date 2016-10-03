@@ -1407,7 +1407,7 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
         ],
-        (err) => {
+        err => {
             assert.deepStrictEqual(err, null);
             assert.strictEqual(ds[0], undefined);
             assert.strictEqual(ds[1], undefined);
