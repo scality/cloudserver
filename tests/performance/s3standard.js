@@ -32,11 +32,15 @@ const params = {
     forksNb: 1,
     bucketsNb: 1,
     bucketPrefix: 'bkts3std',
-    objectsNb: 1e3,
-    fillObjs: false,
+    objectsNb: 2000,
     sizes: [0, 10],
     unit: 'KB',
     requests: 'put,get,delete',
+    range: ['0:1000', '1000:2000', '0:1000'],
+    // put 1000 objects whose keys are in [1000, 2000]
+    fillObjs: true,
+    fillRange: '1000:2000',
+    fillThreads: 64,
     paralReqs: 1,
     schedule: 'each',
     simulDelay: 5,
@@ -44,7 +48,8 @@ const params = {
     observationsNb: 1e6,
     workOnCurrObjs: false,
     runTime: 10,
-    dontCleanDB: true,
+    // clean database after each test
+    dontCleanDB: false,
     ssm: false,
     dirPath: outputDir,
     output: 's3standard',
@@ -124,29 +129,6 @@ describe('Multiple buckets, throughput', function fn() {
 
     it('Put, get, then delete', done => {
         params.output = `bkt${params.bucketsNb}_throughput`;
-        process.nextTick(runS3Blaster.start, params, done);
-    });
-});
-
-/*
- * Clean databases
- */
-describe('Clean databases of simulation', function fn() {
-    this.timeout(0);
-
-    before(() => {
-        params.forksNb = 1;
-        params.statsFolder = 'clean';
-        params.paralReqs = [128];
-        params.dontCleanDB = false;
-        params.schedule = 'each';
-        params.fillObjs = false;
-        params.requests = 'delete';
-        params.observationsNb = 1;
-    });
-
-    it('Clean databases', done => {
-        params.output = 'cleanDB';
         process.nextTick(runS3Blaster.start, params, done);
     });
 });
