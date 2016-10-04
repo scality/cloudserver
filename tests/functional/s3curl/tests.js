@@ -670,3 +670,16 @@ describe('s3curl multipart upload', () => {
         });
     });
 });
+
+describe('s3curl multi-object delete', () => {
+    it('should return an error if md5 is wrong', done => {
+        provideRawOutput(['--post', 'multiDelete.xml', '--contentMd5',
+            'p5/WA/oEr30qrEEl21PAqw==', '--',
+            `${endpoint}/${bucket}/?delete`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'BadDigest',
+                    done);
+            });
+    });
+});

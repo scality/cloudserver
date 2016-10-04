@@ -43,6 +43,7 @@ Right now, the following operations are implemented:
 - GetObject
 - HeadObject
 - DeleteObject
+- Multi-Object Delete
 - PutObjectACL
 - GetObjectACL
 - Multipart Upload

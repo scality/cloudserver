@@ -4,6 +4,7 @@ const proc = require('child_process');
 const process = require('process');
 const assert = require('assert');
 const fs = require('fs');
+const async = require('async');
 require('babel-core/register');
 const conf = require('../../../lib/Config').default;
 
@@ -707,5 +708,28 @@ describe('s3cmd delBucket', () => {
 
     it('try to get the deleted bucket, should fail', done => {
         exec(['ls', `s3://${bucket}`], done, 12);
+    });
+});
+
+describe('s3cmd recursive delete with objects put by MPU', () => {
+    const upload16MB = 'test16MB';
+    before('create file, put bucket and objects', function setup(done) {
+        this.timeout(120000);
+        exec(['mb', `s3://${bucket}`], () => {
+            createFile(upload16MB, 16777216, () => {
+                async.timesLimit(50, 1, (n, next) => {
+                    exec(['put', upload16MB, `s3://${bucket}/key${n}`,
+                    '--multipart-chunk-size-mb=5'], next);
+                }, done);
+            });
+        });
+    });
+
+    it('should delete all the objects and the bucket', done => {
+        exec(['rb', '-r', `s3://${bucket}`, '--debug'], done);
+    });
+
+    after('delete the downloaded file', done => {
+        deleteFile(upload16MB, done);
     });
 });
