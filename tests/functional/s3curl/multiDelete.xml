@@ -1,0 +1,9 @@
+<Delete>
+    <Quiet>true</Quiet>
+    <Object>
+      <Key>file_1</Key>
+    </Object>
+    <Object>
+      <Key>file_2</Key>
+    </Object>
+</Delete>
