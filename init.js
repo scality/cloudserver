@@ -84,13 +84,13 @@ function createDirsTopo(topo, dataPath, callback) {
             }
             return createDirsTopo(topo[key], path, next);
         });
-    }, err => callback(err));
+    }, callback);
 }
 
 if ((process.env.ENABLE_DP !== 'true') || !constants.topoMD) {
     // Create 3511 subdirectories for the data file backend
     const subDirs = Array.from({ length: constants.folderHash },
-        (v, k) => (k).toString());
+        (v, k) => k.toString());
     async.eachSeries(subDirs, (subDirName, next) => {
         fs.mkdir(`${dataPath}/${subDirName}`, err => {
             // If already exists, move on
@@ -110,16 +110,14 @@ if ((process.env.ENABLE_DP !== 'true') || !constants.topoMD) {
     const file = `${__dirname}/${constants.topoFile}.json`;
     let topology;
     try {
-        const fileStat = fs.statSync(file);
-        if (fileStat.isFile()) {
-            // import topology
-            try {
-                const topo = JSON.parse(fs.readFileSync(file));
-                // update weigth distribution
-                topology = genTopo.update(topo);
-            } catch (error) {
-                logger.warn('Failed to import topology', { file, error });
-            }
+        fs.statSync(file);
+        // import topology
+        try {
+            const topo = JSON.parse(fs.readFileSync(file));
+            // update weigth distribution
+            topology = genTopo.update(topo);
+        } catch (error) {
+            logger.warn('Failed to import topology', { file, error });
         }
     } catch (error) {
         logger.debug('Not found topology file. Create it');
