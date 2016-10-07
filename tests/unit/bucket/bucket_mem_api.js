@@ -117,8 +117,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             next =>
                 metadata.putObjectMD(bucketName, 'key1/', '{}', log, next),
             next =>
-                metadata.listObject(bucketName, 'key', null, delimiter,
-                    defaultLimit, log, next),
+                metadata.listObject(bucketName, { prefix: 'key', delimiter,
+                    maxKeys: defaultLimit }, log, next),
         ], (err, response) => {
             assert.strictEqual(isKeyInContents(response, 'key1'), true);
             assert.strictEqual(response.CommonPrefixes.indexOf('key1'), -1);
@@ -141,8 +141,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             next =>
                 metadata.putObjectMD(bucketName, 'key/three', '{}', log, next),
             next =>
-                metadata.listObject(bucketName, 'ke', null, delimiter,
-                                    defaultLimit, log, next),
+                metadata.listObject(bucketName, { prefix: 'ke', delimiter,
+                    maxKeys: defaultLimit }, log, next),
         ], (err, response) => {
             assert(response.CommonPrefixes.indexOf('key/') > -1);
             assert.strictEqual(isKeyInContents(response, 'key/'), false);
@@ -154,8 +154,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
        'given and keys match before delimiter', done => {
         metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', log, () => {
             metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', log, () => {
-                metadata.listObject(bucketName, null, null, delimiter,
-                    defaultLimit, log, (err, response) => {
+                metadata.listObject(bucketName, { delimiter,
+                    maxKeys: defaultLimit }, log, (err, response) => {
                         assert(response.CommonPrefixes.indexOf('noPrefix/')
                                > -1);
                         assert.strictEqual(isKeyInContents(response,
@@ -168,7 +168,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 
     it('should return no grouped keys if no ' +
        'delimiter specified in getBucketListObjects', done => {
-        metadata.listObject(bucketName, 'key', null, null, defaultLimit, log,
+        metadata.listObject(bucketName,
+            { prefix: 'key', maxKeys: defaultLimit }, log,
             (err, response) => {
                 assert.strictEqual(response.CommonPrefixes.length, 0);
                 done();
@@ -179,7 +180,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
        'AFTER marker when no delimiter specified', done => {
         metadata.putObjectMD(bucketName, 'a', '{}', log, () => {
             metadata.putObjectMD(bucketName, 'b', '{}', log, () => {
-                metadata.listObject(bucketName, null, 'a', null, defaultLimit,
+                metadata.listObject(bucketName,
+                    { marker: 'a', maxKeys: defaultLimit },
                     log, (err, response) => {
                         assert(isKeyInContents(response, 'b'));
                         assert.strictEqual(isKeyInContents(response, 'a'),
@@ -192,7 +194,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter specified', done => {
-        metadata.listObject(bucketName, null, 'a', delimiter, defaultLimit,
+        metadata.listObject(bucketName,
+            { marker: 'a', delimiter, maxKeys: defaultLimit },
             log, (err, response) => {
                 assert(isKeyInContents(response, 'b'));
                 assert.strictEqual(isKeyInContents(response, 'a'), false);
@@ -202,7 +205,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 
     it('should only return keys occurring alphabetically AFTER ' +
        'marker when delimiter and prefix specified', done => {
-        metadata.listObject(bucketName, 'b', 'a', delimiter, defaultLimit,
+        metadata.listObject(bucketName,
+            { prefix: 'b', marker: 'a', delimiter, maxKeys: defaultLimit },
             log, (err, response) => {
                 assert(isKeyInContents(response, 'b'));
                 assert.strictEqual(isKeyInContents(response, 'a'), false);
@@ -220,8 +224,9 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             next =>
                 metadata.putObjectMD(bucketName, 'next1/', '{}', log, next),
             next =>
-                metadata.listObject(bucketName, 'next', null, delimiter,
-                                    smallLimit, log, next),
+                metadata.listObject(bucketName,
+                    { prefix: 'next', delimiter, maxKeys: smallLimit },
+                    log, next),
         ], (err, response) => {
             assert(response.CommonPrefixes.indexOf('next/') > -1);
             assert.strictEqual(response.CommonPrefixes.indexOf('next1/'), -1);
@@ -302,7 +307,7 @@ describe('stress test for bucket API', function describe() {
                 assert.strictEqual(err, undefined);
                 done();
             } else {
-                metadata.listObject(bucketName, null, null, delimiter, null,
+                metadata.listObject(bucketName, { delimiter },
                     log, (err, response) => {
                     // Stop timing and calculate millisecond time difference
                         const diff = timeDiff(startTime);
@@ -320,7 +325,8 @@ describe('stress test for bucket API', function describe() {
     it('should return all keys as Contents if delimiter ' +
        'does not match and specify NextMarker', done => {
         metadata.listObject(bucketName,
-            null, null, oddDelimiter, testLimit, log, (err, response) => {
+            { delimiter: oddDelimiter, maxKeys: testLimit },
+            log, (err, response) => {
                 assert.strictEqual(response.CommonPrefixes.length, 0);
                 assert.strictEqual(response.Contents.length, testLimit);
                 assert.strictEqual(response.IsTruncated, true);
@@ -331,7 +337,7 @@ describe('stress test for bucket API', function describe() {
 
     it('should return only keys occurring ' +
        'after specified marker', done => {
-        metadata.listObject(bucketName, null, testMarker, delimiter, null, log,
+        metadata.listObject(bucketName, { marker: testMarker, delimiter }, log,
             (err, res) => {
                 assert.strictEqual(res.CommonPrefixes.length,
                                    prefixes.length - 1);

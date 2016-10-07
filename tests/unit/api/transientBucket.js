@@ -214,8 +214,8 @@ describe('transient bucket handling', () => {
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
                     metadata.listObject(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`,
-                        `overview${constants.splitter}${objName}`,
-                        null, null, null, log, (err, results) => {
+                        { prefix: `overview${constants.splitter}${objName}` },
+                        log, (err, results) => {
                             assert.ifError(err);
                             assert.strictEqual(results.Contents.length, 1);
                             done();
