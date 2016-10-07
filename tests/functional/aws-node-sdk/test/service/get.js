@@ -125,9 +125,9 @@ describe('GET Service - AWS.S3.listBuckets', () => {
                         return data;
                     })
                     .then(data => {
-                        const buckets = data.Buckets.filter(bucket => {
-                            return createdBuckets.indexOf(bucket.Name) > -1;
-                        });
+                        const buckets = data.Buckets.filter(bucket =>
+                            createdBuckets.indexOf(bucket.Name) > -1
+                        );
 
                         assert.equal(buckets.length, createdBuckets.length,
                             'Created buckets are missing in response');
@@ -135,12 +135,10 @@ describe('GET Service - AWS.S3.listBuckets', () => {
                         return buckets;
                     })
                     .then(buckets => {
-                        let isCorrectOrder;
-
                         // Sort createdBuckets in alphabetical order
                         createdBuckets.sort();
 
-                        isCorrectOrder = buckets
+                        const isCorrectOrder = buckets
                             .reduce(
                                 (prev, bucket, idx) =>
                                 prev && bucket.Name === createdBuckets[idx]

@@ -18,7 +18,7 @@ export default class DummyRequest extends http.IncomingMessage {
         }
 
         if (Array.isArray(msg)) {
-            msg.forEach( part => {
+            msg.forEach(part => {
                 this.push(part);
             });
         } else {

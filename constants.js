@@ -64,5 +64,6 @@ export default {
     minimumAllowedPartSize: 5242880,
 
     // hex digest of sha256 hash of empty string:
-    emptyStringHash: crypto.createHash('sha256').update('').digest('hex'),
+    emptyStringHash: crypto.createHash('sha256')
+        .update('', 'binary').digest('hex'),
 };

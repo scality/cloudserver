@@ -244,15 +244,15 @@ describe('s3cmd putBucket', () => {
 
     if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
         it('creates a valid bucket with server side encryption',
-            function (done) {
-                this.timeout(5000);
-                exec(['rb', `s3://${bucket}`], err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    return createEncryptedBucket(bucket, done);
-                });
-            });
+           function f(done) {
+               this.timeout(5000);
+               exec(['rb', `s3://${bucket}`], err => {
+                   if (err) {
+                       return done(err);
+                   }
+                   return createEncryptedBucket(bucket, done);
+               });
+           });
     }
 });
 

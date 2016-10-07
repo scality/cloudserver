@@ -8,7 +8,7 @@ general:
 
 machine:
   node:
-    version: 4.2
+    version: 4.5.0
   ruby:
     version: "2.0"
   environment:
@@ -27,19 +27,23 @@ dependencies:
     - gem install rspec
     - gem install json
     - gem install digest
+    # java sdk dependencies
+    - sudo apt-get install -y -q default-jdk
 
 
 test:
   override:
-    - npm run --silent lint
+    - npm run --silent lint -- --max-warnings 0
     - npm run --silent lint_md
     # lint the python used for testing
     - flake8 $(git ls-files '*.py')
     - yamllint $(git ls-files '*.yml')
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
-    - S3BACKEND=mem npm start & sleep 15 && npm run ft_test;
     - S3BACKEND=mem npm start & sleep 15 &&
+      cd ./tests/functional/jaws && mvn test
+    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
+    - S3BACKEND=mem npm start & sleep 4 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
     - rm -rf localData/* localMetadata/*
