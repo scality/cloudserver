@@ -8,10 +8,6 @@ import getConfig from '../support/config';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
-const config = getConfig();
-const endpointWithoutHttp = config.endpoint.split('//')[1];
-const host = endpointWithoutHttp.split(':')[0];
-const port = endpointWithoutHttp.split(':')[1];
 
 const sourceBucketName = 'supersourcebucket81033016532';
 const sourceObjName = 'supersourceobject';
@@ -35,6 +31,10 @@ function checkError(err, code) {
 function createEncryptedBucket(bucketParams, cb) {
     process.stdout.write('Creating encrypted bucket' +
     `${bucketParams.Bucket}`);
+    const config = getConfig();
+    const endpointWithoutHttp = config.endpoint.split('//')[1];
+    const host = endpointWithoutHttp.split(':')[0];
+    const port = endpointWithoutHttp.split(':')[1];
 
     const prog = `${__dirname}/../../../../../bin/create_encrypted_bucket.js`;
     let args = [
