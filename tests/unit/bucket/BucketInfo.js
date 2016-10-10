@@ -25,6 +25,8 @@ const filledAcl = {
 const acl = { undefined, emptyAcl, filledAcl };
 
 const testDate = new Date().toJSON();
+
+const testVersioningConfiguration = { Status: 'Enabled' };
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
@@ -37,7 +39,7 @@ Object.keys(acl).forEach(
                 algorithm: 'sha1',
                 masterKeyId: 'somekey',
                 mandatory: true,
-            });
+            }, testVersioningConfiguration);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             let serialized;
@@ -54,6 +56,8 @@ Object.keys(acl).forEach(
                     transient: dummyBucket._transient,
                     deleted: dummyBucket._deleted,
                     serverSideEncryption: dummyBucket._serverSideEncryption,
+                    versioningConfiguration:
+                        dummyBucket._versioningConfiguration,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
@@ -112,6 +116,10 @@ Object.keys(acl).forEach(
             it('getCreationDate should return creationDate', () => {
                 assert.deepStrictEqual(dummyBucket.getCreationDate(), testDate);
             });
+            it('getVersioningConfiguration should return configuration', () => {
+                assert.deepStrictEqual(dummyBucket.getVersioningConfiguration(),
+                        testVersioningConfiguration);
+            });
         });
 
         describe('setters on BucketInfo class', () => {
@@ -168,6 +176,14 @@ Object.keys(acl).forEach(
                    assert.deepStrictEqual(
                        dummyBucket.locationConstraint, newLocation);
                });
+            it('setVersioningConfiguration should set configuration', () => {
+                const newVersioningConfiguration =
+                    { Status: 'Enabled', MfaDelete: 'Enabled' };
+                dummyBucket
+                    .setVersioningConfiguration(newVersioningConfiguration);
+                assert.deepStrictEqual(dummyBucket.getVersioningConfiguration(),
+                    newVersioningConfiguration);
+            });
         });
     })
 );
