@@ -1,0 +1,11 @@
+FROM node:4
+MAINTAINER Giorgio Regni <gr@scality.com>
+
+WORKDIR /usr/src/app
+
+COPY . /usr/src/app
+RUN npm install
+ENV S3BACKEND mem
+CMD [ "npm", "start" ]
+
+EXPOSE 8000
