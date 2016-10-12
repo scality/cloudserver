@@ -48,8 +48,8 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.getName(), bucketName);
                 assert.strictEqual(md.getOwner(), canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
-                metadata.listObject(usersBucket, prefix,
-                    null, null, null, log, (err, listResponse) => {
+                metadata.listObject(usersBucket, { prefix },
+                    log, (err, listResponse) => {
                         assert.strictEqual(listResponse.Contents[0].key,
                             `${canonicalID}${splitter}${bucketName}`);
                         done();
