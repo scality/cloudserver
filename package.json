@@ -28,7 +28,7 @@
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "ioctl": "^2.0.0",
-    "kinetic": "scality/kineticlib#dev/FIX/tag",
+    "kinetic": "scality/kineticlib#dev/ft/removeIO",
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
     "multilevel": "^7.3.0",
