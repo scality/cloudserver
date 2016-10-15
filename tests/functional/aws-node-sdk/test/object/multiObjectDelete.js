@@ -1,10 +1,15 @@
 import assert from 'assert';
 
+import config from '../../../../../lib/Config';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
+
+const userBucketUtility = new BucketUtility('userBart', {});
+const userS3 = userBucketUtility.s3;
+
 const bucketName = 'multi-object-delete-234-634';
 const key = 'key';
 
@@ -227,9 +232,16 @@ describe('Multi-Object Delete Access', function access() {
         });
     });
 
+
     it('should batch delete objects where requester has permission', () => {
+        // if test run with file or mem backend, test user access for
+        // in memory implementation (which should grant user access).
+        // if using distributed backend, test with account since need
+        // policy authorizaing user for user to have access.
+        // tests of user with a distributed backend are in integration.
+        const requester = config.backends.auth === 'mem' ? userS3 : s3;
         const objects = createObjectsList(500);
-        return s3.deleteObjectsAsync({
+        return requester.deleteObjectsAsync({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
