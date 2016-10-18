@@ -32,19 +32,19 @@ function deepCopy(options) {
 }
 
 describe('Healthcheck routes', () => {
-    it('should return 200 OK on GET request', done => {
+    it.skip('should return 200 OK on GET request', done => {
         const getOptions = deepCopy(options);
         getOptions.method = 'GET';
         const req = transport.request(getOptions, makeChecker(200, done));
         req.end();
     });
-    it('should return 200 OK on POST request', done => {
+    it.skip('should return 200 OK on POST request', done => {
         const postOptions = deepCopy(options);
         postOptions.method = 'POST';
         const req = transport.request(postOptions, makeChecker(200, done));
         req.end();
     });
-    it('should return 400 on other requests', done => {
+    it.skip('should return 400 on other requests', done => {
         const putOptions = deepCopy(options);
         putOptions.method = 'PUT';
         const req = transport.request(putOptions, makeChecker(400, done));
