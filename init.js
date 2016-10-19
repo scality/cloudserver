@@ -10,6 +10,61 @@ const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
 const logger = require('./lib/utilities/logger.js').logger;
 
+const genTopo = require('dpclient').topology;
+
+function createTopoFile(topoMD) {
+    const topoFile = `${topoMD.name}.json`;
+    let topology;
+    let rawTopo;
+    try {
+        fs.statSync(topoFile);
+        // import topology
+        topology = JSON.parse(fs.readFileSync(topoFile));
+    } catch (error) {
+        logger.debug('Not found topology file. Check raw topology', { error });
+        const rawTopoFile = `${topoMD.name}.raw.json`;
+        try {
+            fs.statSync(rawTopoFile);
+            // import raw topology
+            rawTopo = JSON.parse(fs.readFileSync(rawTopoFile));
+        } catch (error) {
+            logger.debug('Not found raw topology file. Create topology',
+                { error });
+        }
+    } finally {
+        if (topology) {
+            return topology;
+        }
+        if (rawTopo) {
+            // create topology from the raw one
+            topology = genTopo.update(rawTopo, topoMD);
+            // write/update topology into file
+            fs.writeFileSync(topoFile, JSON.stringify(topology, null, 4),
+                'utf8');
+            return topology;
+        }
+        // create topology
+        topology = genTopo.init(topoMD);
+        // write/update topology into file
+        fs.writeFileSync(topoFile, JSON.stringify(topology, null, 4),
+            'utf8');
+
+        return topology;
+    }
+}
+
+// create topology for data backends
+let topologyFile;
+if (process.env.ENABLE_DP === 'true' && constants.topology) {
+    Object.keys(constants.topology).forEach(be => {
+        if (be === 'file') {
+            topologyFile = createTopoFile(constants.topology.file);
+        } else {
+            createTopoFile(constants.topology[be]);
+        }
+    });
+}
+
 let ioctl;
 try {
     ioctl = require('ioctl');
@@ -40,7 +95,11 @@ function _setDirSyncFlag(path) {
     fs.closeSync(pathFD2);
 }
 
-if (config.backends.data !== 'file' && config.backends.metadata !== 'file') {
+if (((typeof config.backends.data === 'string' &&
+            config.backends.data !== 'file') ||
+        (Array.isArray(config.backends.data) &&
+            config.backends.data.indexOf('file') === -1)) &&
+    config.backends.metadata !== 'file') {
     logger.info('No init required. Go forth and store data.');
     process.exit(0);
 }
@@ -65,19 +124,45 @@ if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
     logger.warn(warning);
 }
 
-// Create 3511 subdirectories for the data file backend
-const subDirs = Array.from({ length: constants.folderHash },
-    (v, k) => (k).toString());
-async.eachSeries(subDirs, (subDirName, next) => {
-    fs.mkdir(`${dataPath}/${subDirName}`, err => {
-        // If already exists, move on
-        if (err && err.code !== 'EEXIST') {
-            return next(err);
-        }
-        return next();
+function createDirsTopo(topo, dataPath, callback) {
+    // Create dirsNb subdirectories for the data file backend
+    async.eachSeries(topo.ids, (key, next) => {
+        const path = `${dataPath}/${key}`;
+        return fs.mkdir(path, err => {
+            // If already exists, move on
+            if (err && err.errno !== -17) {
+                return next(err);
+            }
+            if (topo[key]) {
+                return createDirsTopo(topo[key], path, next);
+            }
+            return next();
+        });
+    }, callback);
+}
+
+if ((process.env.ENABLE_DP !== 'true') || !constants.topology ||
+    !constants.topology.file) {
+    // Create 3511 subdirectories for the data file backend
+    const subDirs = Array.from({ length: constants.folderHash },
+        (v, k) => k.toString());
+    async.eachSeries(subDirs, (subDirName, next) => {
+        fs.mkdir(`${dataPath}/${subDirName}`, err => {
+            // If already exists, move on
+            if (err && err.errno !== -17) {
+                return next(err);
+            }
+            return next();
+        });
+    },
+     err => {
+         assert.strictEqual(err, null, `Error creating data files ${err}`);
+         logger.info('Init complete.  Go forth and store data.');
+     });
+} else {
+    // create directories according to the topology
+    createDirsTopo(topologyFile, dataPath, err => {
+        assert.strictEqual(err, null, `Error creating data files ${err}`);
+        logger.info('Init complete.  Go forth and store data.');
     });
-},
- err => {
-     assert.strictEqual(err, null, `Error creating data files ${err}`);
-     logger.info('Init complete.  Go forth and store data.');
- });
+}
