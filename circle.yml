@@ -12,9 +12,15 @@ machine:
   ruby:
     version: "2.0"
   environment:
-    CXX: g++-4.9
+    CXX: g++-4.8
+    LD_LIBRARY_PATH: "$HOME/$CIRCLE_PROJECT_REPONAME/node_modules/\
+    dpclient/node_modules/eclib/libs/lib"
 
 dependencies:
+  pre:
+    # eclib dependencies
+    - sudo apt-get install automake-1.14
+
   post:
     - sudo pip install flake8 yamllint
     # s3cmd dependencies
@@ -47,6 +53,8 @@ test:
       sleep 4 && npm run ft_test;
     - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/memServerEnryptTest.txt &
       sleep 4 && ENABLE_KMS_ENCRYPTION=true npm run ft_test;
+    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/memServerEnryptTest.txt &
+      sleep 4 && ENABLE_DP=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/fileTest.txt &
       sleep 15 &&
       npm run ft_test;
@@ -54,6 +62,11 @@ test:
       S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/fileEncryptTest.txt &
       sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
-    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/rubyServerTest.txt &
+    - S3BACKEND=file
+      S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/fileEncryptTest.txt &
       sleep 15 &&
-      cd tests/functional/fog && rspec tests.rb;
+      ENABLE_DP=true npm run ft_test;
+    - S3BACKEND=mem S3SPROXYD=mem,file &
+      npm start > $CIRCLE_ARTIFACTS/memServerEnryptTest.txt &
+      sleep 15 &&
+      ENABLE_DP=true npm run ft_test;
