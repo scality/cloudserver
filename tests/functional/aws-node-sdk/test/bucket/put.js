@@ -40,10 +40,9 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             let testFn;
 
             before(() => {
-                testFn = (bucketName, done) => {
-                    const expectedStatus = 400;
-                    const expectedCode = 'InvalidBucketName';
-
+                testFn = (bucketName, done, errStatus, errCode) => {
+                    const expectedStatus = errStatus || 400;
+                    const expectedCode = errCode || 'InvalidBucketName';
                     bucketUtil
                         .createOne(bucketName)
                         .then(() => {
@@ -65,6 +64,12 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             // they described in their document.
             // Hence it skips some of test suites.
             const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
+
+            it('should return 405 if empty name', done => {
+                const shortName = '';
+
+                testFn(shortName, done, 405, 'MethodNotAllowed');
+            });
 
             it('should return 400 if name is shorter than 3 chars', done => {
                 const shortName = 'as';
