@@ -7,14 +7,25 @@ const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
 const destBucketName = 'destinationbucket8102016';
 const destObjName = 'copycatobject';
+
 const originalMetadata = {
     oldmetadata: 'same old',
     overwriteme: 'wipe me out with replace',
 };
+const originalCacheControl = 'max-age=1337';
+const originalContentDisposition = 'attachment; filename="1337.txt";';
+const originalContentEncoding = 'base64,aws-chunked';
+const originalExpires = new Date(12345678);
+
 const newMetadata = {
     newmetadata: 'new kid in town',
     overwriteme: 'wiped',
 };
+const newCacheControl = 'max-age=86400';
+const newContentDisposition = 'attachment; filename="fname.ext";';
+const newContentEncoding = 'gzip,aws-chunked';
+const newExpires = new Date();
+
 const content = 'I am the best content ever';
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
@@ -79,6 +90,10 @@ describe('Object Copy', () => {
             Key: sourceObjName,
             Body: content,
             Metadata: originalMetadata,
+            CacheControl: originalCacheControl,
+            ContentDisposition: originalContentDisposition,
+            ContentEncoding: originalContentEncoding,
+            Expires: originalExpires,
         }).then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
@@ -134,6 +149,35 @@ describe('Object Copy', () => {
                 );
         });
 
+        it('should also copy additional headers (CacheControl, ' +
+        'ContentDisposition, ContentEncoding, Expires) when copying an ' +
+        'object from a source bucket to a different destination bucket',
+          done => {
+              s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                  CopySource: `${sourceBucketName}/${sourceObjName}` },
+                  err => {
+                      checkNoError(err);
+                      s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                        (err, res) => {
+                            if (err) {
+                                done(err);
+                            }
+                            assert.strictEqual(res.CacheControl,
+                              originalCacheControl);
+                            assert.strictEqual(res.ContentDisposition,
+                              originalContentDisposition);
+                            // Should remove V4 streaming value 'aws-chunked'
+                            // to be compatible with AWS behavior
+                            assert.strictEqual(res.ContentEncoding,
+                              'base64,'
+                            );
+                            assert.strictEqual(res.Expires,
+                                originalExpires.toGMTString());
+                            done();
+                        });
+                  });
+          });
+
         it('should copy an object from a source bucket to a different ' +
             'key in the same bucket',
             done => {
@@ -170,6 +214,35 @@ describe('Object Copy', () => {
                 );
         });
 
+        it('should also replace additional headers if replace ' +
+            'included as metadata directive header and new headers are ' +
+            'specified', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'REPLACE',
+                CacheControl: newCacheControl,
+                ContentDisposition: newContentDisposition,
+                ContentEncoding: newContentEncoding,
+                Expires: newExpires,
+            }, err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName,
+                  Key: destObjName }, (err, res) => {
+                    if (err) {
+                        done(err);
+                    }
+                    assert.strictEqual(res.CacheControl, newCacheControl);
+                    assert.strictEqual(res.ContentDisposition,
+                      newContentDisposition);
+                    // Should remove V4 streaming value 'aws-chunked'
+                    // to be compatible with AWS behavior
+                    assert.strictEqual(res.ContentEncoding, 'gzip,');
+                    assert.strictEqual(res.Expires, newExpires.toGMTString());
+                    done();
+                });
+            });
+        });
+
         it('should copy an object and the metadata if copy ' +
             'included as metadata directive header (and ignore any new ' +
             'metadata sent with copy request)', done => {
@@ -186,6 +259,37 @@ describe('Object Copy', () => {
                         done();
                     });
                 });
+        });
+
+        it('should copy an object and its additional headers if copy ' +
+            'included as metadata directive header (and ignore any new ' +
+            'headers sent with copy request)', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'COPY',
+                Metadata: newMetadata,
+                CacheControl: newCacheControl,
+                ContentDisposition: newContentDisposition,
+                ContentEncoding: newContentEncoding,
+                Expires: newExpires,
+            }, err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                  (err, res) => {
+                      if (err) {
+                          done(err);
+                      }
+                      assert.strictEqual(res.CacheControl,
+                        originalCacheControl);
+                      assert.strictEqual(res.ContentDisposition,
+                        originalContentDisposition);
+                      assert.strictEqual(res.ContentEncoding,
+                        'base64,');
+                      assert.strictEqual(res.Expires,
+                        originalExpires.toGMTString());
+                      done();
+                  });
+            });
         });
 
         it('should copy a 0 byte object to different destination', done => {
