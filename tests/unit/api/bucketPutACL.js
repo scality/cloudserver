@@ -301,6 +301,105 @@ describe('putBucketACL API', () => {
         });
     });
 
+    it('should set ACLs with an empty AccessControlList section', done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: '<AccessControlPolicy xmlns=' +
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList></AccessControlList>' +
+                '</AccessControlPolicy>',
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.strictEqual(err, undefined);
+            metadata.getBucket(bucketName, log, (err, md) => {
+                assert.strictEqual(md.getAcl().Canned, '');
+                assert.strictEqual(md.getAcl().FULL_CONTROL.length, 0);
+                assert.strictEqual(md.getAcl().READ.length, 0);
+                assert.strictEqual(md.getAcl().WRITE.length, 0);
+                assert.strictEqual(md.getAcl().WRITE_ACP.length, 0);
+                assert.strictEqual(md.getAcl().READ_ACP.length, 0);
+                done();
+            });
+        });
+    });
+
+    it('should not be able to set ACLs without AccessControlList section',
+    done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: '<AccessControlPolicy xmlns=' +
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                '</AccessControlPolicy>',
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.MalformedACLError);
+            done();
+        });
+    });
+
+    it('should return an error if multiple AccessControlList section', done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: '<AccessControlPolicy xmlns=' +
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="CanonicalUser">' +
+                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<DisplayName>OwnerDisplayName</DisplayName>' +
+                      '</Grantee>' +
+                      '<Permission>FULL_CONTROL</Permission>' +
+                    '</Grant>' +
+                  '</AccessControlList>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="CanonicalUser">' +
+                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<DisplayName>OwnerDisplayName</DisplayName>' +
+                      '</Grantee>' +
+                      '<Permission>READ</Permission>' +
+                    '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>',
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.MalformedACLError);
+            done();
+        });
+    });
+
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', done => {
         const testACLRequest = {
@@ -350,6 +449,51 @@ describe('putBucketACL API', () => {
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
+                    '<PowerGrant>' +
+                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
+                        '<EmailAddress>xyz@amazon.com</EmailAddress>' +
+                      '</Grantee>' +
+                      '<Permission>WRITE_ACP</Permission>' +
+                    '</PowerGrant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>',
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.MalformedACLError);
+            done();
+        });
+    });
+
+
+    it('should return an error if xml provided does not match s3 '
+       + 'scheme for setting ACLs using multiple Grant section', done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            /** XML below uses the term "PowerGrant" instead of
+            * "Grant" which is part of the s3 xml scheme for ACLs
+            * so an error should be returned
+            */
+            post: '<AccessControlPolicy xmlns=' +
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                    '<Grant>' +
+                      '<Grantee xsi:type="CanonicalUser">' +
+                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
+                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<DisplayName>OwnerDisplayName</DisplayName>' +
+                      '</Grantee>' +
+                      '<Permission>FULL_CONTROL</Permission>' +
+                    '</Grant>' +
                     '<PowerGrant>' +
                       '<Grantee xsi:type="AmazonCustomerByEmail">' +
                         '<EmailAddress>xyz@amazon.com</EmailAddress>' +
