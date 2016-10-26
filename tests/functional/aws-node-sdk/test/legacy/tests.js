@@ -180,10 +180,12 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 .secondUploadId);
             assert.strictEqual(data.IsTruncated, false);
             assert.strictEqual(data.Parts[0].PartNumber, 1);
-            assert.strictEqual(data.Parts[0].ETag, calculatedFirstPartHash);
+            assert.strictEqual(data.Parts[0].ETag,
+              `"${calculatedFirstPartHash}"`);
             assert.strictEqual(data.Parts[0].Size, 5242880);
             assert.strictEqual(data.Parts[1].PartNumber, 2);
-            assert.strictEqual(data.Parts[1].ETag, calculatedSecondPartHash);
+            assert.strictEqual(data.Parts[1].ETag,
+              `"${calculatedSecondPartHash}"`);
             assert.strictEqual(data.Parts[1].Size, 5242880);
             // Must disable for now when running with Vault
             // since will need to pull actual ARN and canonicalId
@@ -207,9 +209,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             if (err) {
                 return done(new Error(`error in listMultipartUploads: ${err}`));
             }
-            assert.strictEqual(data.Uploads.length, 1);
+            assert.strictEqual(data.Uploads.length, 1, 'data.Uploads.length ' +
+            'is incorrect');
             assert.strictEqual(data.Uploads[0].UploadId,
-                multipartUploadData.secondUploadId);
+                multipartUploadData.secondUploadId, 'multipartUploadData.' +
+                'secondUploadId is incorrect');
             return done();
         });
     });
@@ -254,11 +258,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             MultipartUpload: {
                 Parts: [
                     {
-                        ETag: `"${calculatedFirstPartHash}"`,
+                        ETag: calculatedFirstPartHash,
                         PartNumber: 1,
                     },
                     {
-                        ETag: `"${calculatedSecondPartHash}"`,
+                        ETag: calculatedSecondPartHash,
                         PartNumber: 2,
                     },
                 ],
