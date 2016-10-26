@@ -101,7 +101,7 @@ function provideRawOutput(args, cb) {
             httpCode = lines.find(line => {
                 const trimmed = line.trim().toUpperCase();
                 // ignore 100 Continue HTTP code
-                if (trimmed.startsWith('HTTP/1.1 ') &&
+                if (trimmed.includes('HTTP/1.1 ') &&
                     !trimmed.includes('100 CONTINUE')) {
                     return true;
                 }
@@ -325,6 +325,8 @@ describe('s3curl putObject', () => {
                 `${endpoint}/${bucket}/` +
                 `${prefix}${delimiter}${upload}1`, '-v'],
                 (httpCode, rawOutput) => {
+                    console.log('InvalidDigest httpCode!!!', httpCode);
+                    console.log('InvalidDigest rawOutput!!!', rawOutput);
                     assert.strictEqual(httpCode, '400 BAD REQUEST');
                     assertError(rawOutput.stdout, 'InvalidDigest', done);
                 });
@@ -339,6 +341,8 @@ describe('s3curl putObject', () => {
                 `${endpoint}/${bucket}/` +
                 `${prefix}${delimiter}${upload}1`, '-v'],
                 (httpCode, rawOutput) => {
+                    console.log('mismatched httpCode!!!', httpCode);
+                    console.log('mismatched rawOutput!!!', rawOutput);
                     assert.strictEqual(httpCode, '400 BAD REQUEST');
                     assertError(rawOutput.stdout, 'BadDigest', done);
                 });
