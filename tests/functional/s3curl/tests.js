@@ -317,6 +317,32 @@ describe('s3curl putObject', () => {
                 });
         });
 
+    it('should not be able to put an object if content-md5 header is' +
+    'invalid',
+        done => {
+            provideRawOutput(['--debug', `--put=${upload}`,
+                '--contentMd5', 'toto', '--',
+                `${endpoint}/${bucket}/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'InvalidDigest', done);
+                });
+        });
+
+    it('should not be able to put an object if content-md5 header is' +
+    'mismatched MD5',
+        done => {
+            provideRawOutput(['--debug', `--put=${upload}`,
+                '--contentMd5', 'rL0Y20zC+Fzt72VPzMSk2A==', '--',
+                `${endpoint}/${bucket}/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'BadDigest', done);
+                });
+        });
+
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
             provideRawOutput(['--debug', `--put=${upload}`, '--',
