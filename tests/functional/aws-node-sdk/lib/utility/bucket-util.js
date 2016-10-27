@@ -90,4 +90,10 @@ export default class BucketUtility {
                 )
             );
     }
+
+    getOwner() {
+        return this.s3
+            .listBucketsAsync()
+            .then(data => data.Owner);
+    }
 }
