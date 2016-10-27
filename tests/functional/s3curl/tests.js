@@ -9,9 +9,9 @@ require('babel-core/register');
 const conf = require('../../../lib/Config').default;
 
 const transport = conf.https ? 'https' : 'http';
-let sslArguments = ['-s'];
+let sslArguments = [];
 if (conf.https && conf.https.ca) {
-    sslArguments = ['-s', '--cacert', conf.httpsPath.ca];
+    sslArguments = ['--cacert', conf.httpsPath.ca];
 }
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const program = `${__dirname}/s3curl.pl`;
