@@ -97,6 +97,7 @@ function provideRawOutput(args, httpCode, cb) {
         process.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;
         if (procData.stderr !== '') {
+            console.log('procData.stderr', procData.stderr);
             if (procData.stderr.indexOf(`HTTP/1.1 ${httpCode}`)) {
                 return cb(null, procData);
             }
