@@ -40,7 +40,7 @@ describe('GET object', () => {
                 s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
                     assert.notEqual(err, null,
                         'Expected failure but got success');
-                    assert.strictEqual(err.code, 'NoSuchBucket');
+                    assert.strictEqual(err.code, 'MethodNotAllowed');
                     return done();
                 });
             });
