@@ -45,6 +45,16 @@ describe('GET object', () => {
                 });
             });
 
+        it('should return NoSuchKey error when no such object',
+            done => {
+                s3.getObject({ Bucket: bucketName, Key: 'nope' }, err => {
+                    assert.notEqual(err, null,
+                        'Expected failure but got success');
+                    assert.strictEqual(err.code, 'NoSuchKey');
+                    return done();
+                });
+            });
+
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
         'Content-Encoding, Expires]', () => {
             before(done => {
