@@ -1,0 +1,39 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.0",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-east-1",
+            "eventTime": "2016-10-28T20:22:02.802Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:AROAJ43DHZFRGAA6HV5CY:CognitoIdentityCredentials"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "198.232.218.254"
+            },
+            "responseElements": {
+                "x-amz-request-id": "2EBF1CBEAB6361A8",
+                "x-amz-id-2": "KLJ3MAym74JhvukYKgXNtu20PEp3uhvIV5gV2dCq4nVA601C3N9qOBiVE4dpVuZus/O1wgxYDOc="
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "fdbd0365-b202-428b-bb45-29858b53cd9f",
+                "bucket": {
+                    "name": "ssiprojects",
+                    "ownerIdentity": {
+                        "principalId": "A292DS9GIWX7XL"
+                    },
+                    "arn": "arn:aws:s3:::ssiprojects"
+                },
+                "object": {
+                    "key": "Confirmit/Uploads/p65579533/p65579533_r4060_sENCYJQAP_q128_Loop1_Loop2.mov",
+                    "size": 51852,
+                    "eTag": "63f31b88ab784c63a7d479b8fadbf340",
+                    "versionId": ".wymY0bFrMwszwoJMpzsumW00hPgXlcu",
+                    "sequencer": "005813B36AA9EEE869"
+                }
+            }
+        }
+    ]
+}
