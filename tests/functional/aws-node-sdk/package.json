@@ -8,9 +8,9 @@
     "test"
   ],
   "scripts": {
-    "test-aws": "AWS_ON_AIR=true mocha",
-    "test": "mocha",
-    "test-debug": "_mocha"
+    "test-aws": "AWS_ON_AIR=true mocha -t 40000 test/",
+    "test": "mocha -t 40000 test/",
+    "test-debug": "_mocha -t 40000 test/"
   },
   "author": ""
 }

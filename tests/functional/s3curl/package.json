@@ -1,6 +1,6 @@
 {
     "name": "s3curl-tests",
     "scripts": {
-        "test": "mocha *.js"
+        "test": "mocha -t 40000 *.js"
     }
 }

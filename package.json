@@ -62,6 +62,9 @@
     "tv4": "^1.2.7"
   },
   "scripts": {
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && npm test",
+    "ft_s3cmd": "cd tests/functional/s3cmd && npm test",
+    "ft_s3curl": "cd tests/functional/s3curl && npm test",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "init": "node init.js",
     "lint": "eslint $(git ls-files '*.js')",
