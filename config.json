@@ -28,7 +28,11 @@
         "host": "localhost",
         "port": 8500
     },
-    "kinetic": ["localhost:8123"],
+    "kinetic": ["localhost:8123",
+                "localhost:8123",
+                "localhost:8123",
+                "localhost:8123",
+                "localhost:8123"],
     "clusters": 10,
     "log": {
         "logLevel": "info",
