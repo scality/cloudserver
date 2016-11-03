@@ -736,6 +736,63 @@ describe('Multipart Upload API', () => {
         });
     });
 
+    it('should return InvalidPart error if the complete ' +
+    'multipart upload request contains xml with a missing part', done => {
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest,
+                locationConstraint, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5');
+            const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+            const bufferBody = Buffer.from(fullSizedPart);
+            md5Hash.update(bufferBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, fullSizedPart);
+            objectPutPart(authInfo, partRequest, undefined, log, () => {
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>99999</PartNumber>' +
+                    `<ETag>"${calculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                    calculatedHash,
+                };
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    assert.deepStrictEqual(err,
+                        errors.InvalidPart);
+                    assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
+                    done();
+                });
+            });
+        });
+    });
+
     it('should return an error if the complete multipart upload request '
     + 'contains xml with a part ETag that does not match the md5 for '
     + 'the part that was actually sent', done => {
