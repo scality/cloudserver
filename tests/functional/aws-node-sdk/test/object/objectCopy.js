@@ -214,6 +214,44 @@ describe('Object Copy', () => {
                 );
         });
 
+        it('should copy an object and replace ContentType if replace ' +
+            'included as a metadata directive header, and new ContentType is ' +
+            'provided', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'REPLACE',
+                ContentType: 'image',
+            }, () => {
+                s3.getObject({ Bucket: destBucketName,
+                Key: destObjName }, (err, res) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(res.ContentType, 'image');
+                    return done();
+                });
+            });
+        });
+
+        it('should copy an object and keep ContentType if replace ' +
+            'included as a metadata directive header, but no new ContentType ' +
+            'is provided', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+            CopySource: `${sourceBucketName}/${sourceObjName}`,
+            MetadataDirective: 'REPLACE',
+        }, () => {
+                s3.getObject({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(res.ContentType,
+                        'application/octet-stream');
+                    return done();
+                });
+            });
+        });
+
         it('should also replace additional headers if replace ' +
             'included as metadata directive header and new headers are ' +
             'specified', done => {
