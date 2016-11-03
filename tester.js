@@ -9,28 +9,6 @@ function log(message) {
     return process.stdout.write(`${message}\n`);
 }
 
-function installDependency(dir) {
-    log(`installing dependencies ${dir}`);
-
-    try {
-        fs.statSync(path.join(dir, 'package.json'));
-    } catch (e) {
-        return log('package.json file not found, skip installation');
-    }
-
-    try {
-        cp.execSync('npm install', {
-            stdio: 'inherit',
-            cwd: dir,
-        });
-    } catch (e) {
-        log('`npm install` fail');
-        return false;
-    }
-
-    return true;
-}
-
 function runTest(dir, fileName) {
     const testFile = path.join(dir, fileName);
 
@@ -55,10 +33,6 @@ function testing(dir) {
 
     return masterConfig.tests.files.reduce((prev, file) => {
         const cwd = path.join(rootPath, dir);
-        if (!installDependency(cwd)) {
-            return false;
-        }
-
         return prev && runTest(cwd, file);
     }, true);
 }
