@@ -10,8 +10,7 @@
   "scripts": {
     "test-aws": "AWS_ON_AIR=true mocha",
     "test": "mocha",
-    "test-debug": "_mocha",
-    "test-old": "mocha -u tdd tests.js"
+    "test-debug": "_mocha"
   },
   "author": ""
 }
