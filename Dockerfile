@@ -1,10 +1,14 @@
-FROM node:4
+FROM node:4-slim
 MAINTAINER Giorgio Regni <gr@scality.com>
 
 WORKDIR /usr/src/app
 
 COPY . /usr/src/app
-RUN npm install
+
+RUN apt-get update \
+    && apt-get install -y python git build-essential \
+    && npm install \
+    && apt-get autoremove -y python git build-essential
 
 CMD [ "npm", "start" ]
 
