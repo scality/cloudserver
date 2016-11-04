@@ -7,6 +7,7 @@ import provideRawOutput from '../../lib/utility/provideRawOutput';
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
+const almostOutsideTime = 99990;
 const itSkipAWS = process.env.AWS_ON_AIR
     ? it.skip
     : it;
@@ -38,9 +39,10 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     });
 
     // AWS allows an expiry further in the future
+    // 100001 seconds is higher that the Expires time limit: 100000 seconds
     itSkipAWS('should return an error code if expires header is too far ' +
         'in the future', done => {
-        const params = { Bucket: bucket, Expires: 3605 };
+        const params = { Bucket: bucket, Expires: 100001 };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
             assert.strictEqual(httpCode, '403 FORBIDDEN');
@@ -61,7 +63,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         });
 
     it('should create a bucket', done => {
-        const params = { Bucket: bucket, Expires: 3601 };
+        const params = { Bucket: bucket, Expires: almostOutsideTime };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
@@ -71,7 +73,8 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
 
 
     it('should put an object', done => {
-        const params = { Bucket: bucket, Key: 'key', Expires: 3601 };
+        const params = { Bucket: bucket, Key: 'key', Expires:
+        almostOutsideTime };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
             '--upload-file', 'package.json'], httpCode => {
@@ -99,7 +102,8 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
 
 
     it('should get an object', done => {
-        const params = { Bucket: bucket, Key: 'key', Expires: 3601 };
+        const params = { Bucket: bucket, Key: 'key', Expires:
+        almostOutsideTime };
         const url = s3.getSignedUrl('getObject', params);
         provideRawOutput(['-verbose', '-o', 'download', url], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
@@ -114,7 +118,8 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     });
 
     it('should delete an object', done => {
-        const params = { Bucket: bucket, Key: 'key', Expires: 3601 };
+        const params = { Bucket: bucket, Key: 'key', Expires:
+        almostOutsideTime };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             httpCode => {
@@ -125,7 +130,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
 
 
     it('should delete a bucket', done => {
-        const params = { Bucket: bucket, Expires: 3601 };
+        const params = { Bucket: bucket, Expires: almostOutsideTime };
         const url = s3.getSignedUrl('deleteBucket', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             httpCode => {
