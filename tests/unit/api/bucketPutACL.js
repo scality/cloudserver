@@ -20,6 +20,10 @@ const testBucketPutRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 };
+const canonicalIDforSample1 =
+    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+const canonicalIDforSample2 =
+    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
 describe('putBucketACL API', () => {
     before(() => cleanup());
@@ -184,10 +188,6 @@ describe('putBucketACL API', () => {
             url: '/?acl',
             query: { acl: '' },
         };
-        const canonicalIDforSample1 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
-        const canonicalIDforSample2 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
@@ -202,6 +202,27 @@ describe('putBucketACL API', () => {
                     .indexOf(canonicalIDforSample2) > -1);
                 done();
             });
+        });
+    });
+
+    it('should return an error if invalid grantee user ID ' +
+    'provided in ACL header request', done => {
+        // Canonical ID should be a 64-digit hex string
+        const invalidCanonicalID = 'id="invalid_id"';
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'x-amz-grant-full-control': invalidCanonicalID,
+            },
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        return bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
         });
     });
 
@@ -234,15 +255,15 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
                     '<Grant>' +
                       '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<ID>79a59df900b949e55d96a1e698fbaced' +
+                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                         '<DisplayName>OwnerDisplayName</DisplayName>' +
                       '</Grantee>' +
                       '<Permission>FULL_CONTROL</Permission>' +
@@ -268,8 +289,8 @@ describe('putBucketACL API', () => {
                     '</Grant>' +
                     '<Grant>' +
                       '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>f30716ab7115dcb44a5ef76e9d74b8e20567f63' +
-                        'TestAccountCanonicalUserID</ID>' +
+                        '<ID>79a59df900b949e55d96a1e698fbacedfd' +
+                        '6e09d98eacf8f8d5218e7cd47ef2bf</ID>' +
                       '</Grantee>' +
                       '<Permission>READ_ACP</Permission>' +
                     '</Grant>' +
@@ -278,24 +299,19 @@ describe('putBucketACL API', () => {
             url: '/?acl',
             query: { acl: '' },
         };
-        const canonicalIDforSample1 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().Canned, '');
                 assert.strictEqual(md.getAcl().FULL_CONTROL[0],
-                    '852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID');
+                    canonicalIDforSample1);
                 assert.strictEqual(md.getAcl().READ[0], constants.publicId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.logId);
                 assert.strictEqual(md.getAcl().WRITE_ACP[0],
                                    canonicalIDforSample1);
                 assert.strictEqual(md.getAcl().READ_ACP[0],
-                    'f30716ab7115dcb44a5e' +
-                    'f76e9d74b8e20567f63' +
-                    'TestAccountCanonicalUserID');
+                    canonicalIDforSample2);
                 done();
             });
         });
@@ -309,8 +325,8 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList></AccessControlList>' +
@@ -342,8 +358,8 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                 '</AccessControlPolicy>',
@@ -365,15 +381,15 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
                     '<Grant>' +
                       '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<ID>79a59df900b949e55d96a1e698fbaced' +
+                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                         '<DisplayName>OwnerDisplayName</DisplayName>' +
                       '</Grantee>' +
                       '<Permission>FULL_CONTROL</Permission>' +
@@ -382,8 +398,8 @@ describe('putBucketACL API', () => {
                   '<AccessControlList>' +
                     '<Grant>' +
                       '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<ID>79a59df900b949e55d96a1e698fbaced' +
+                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                         '<DisplayName>OwnerDisplayName</DisplayName>' +
                       '</Grantee>' +
                       '<Permission>READ</Permission>' +
@@ -400,6 +416,38 @@ describe('putBucketACL API', () => {
         });
     });
 
+    it('should return an error if invalid grantee user ID ' +
+    'provided in ACL request body', done => {
+        const testACLRequest = {
+            bucketName,
+            namespace,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            post: '<AccessControlPolicy xmlns=' +
+                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                  '<Owner>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                    '<DisplayName>OwnerDisplayName</DisplayName>' +
+                  '</Owner>' +
+                  '<AccessControlList>' +
+                  '<Grant>' +
+                    '<Grantee xsi:type="CanonicalUser">' +
+                      '<ID>invalid_id</ID>' +
+                    '</Grantee>' +
+                    '<Permission>READ_ACP</Permission>' +
+                  '</Grant>' +
+                  '</AccessControlList>' +
+                '</AccessControlPolicy>',
+            url: '/?acl',
+            query: { acl: '' },
+        };
+
+        return bucketPutACL(authInfo, testACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
+        });
+    });
+
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', done => {
         const testACLRequest = {
@@ -409,8 +457,8 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
@@ -444,8 +492,8 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
@@ -481,15 +529,15 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
                     '<Grant>' +
                       '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                        'BucketOwnerCanonicalUserID</ID>' +
+                        '<ID>79a59df900b949e55d96a1e698fbaced' +
+                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                         '<DisplayName>OwnerDisplayName</DisplayName>' +
                       '</Grantee>' +
                       '<Permission>FULL_CONTROL</Permission>' +
@@ -523,8 +571,8 @@ describe('putBucketACL API', () => {
                 '<AccessControlPolicy xmlns':
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '<Owner>' +
                   '<AccessControlList>' +
@@ -557,8 +605,8 @@ describe('putBucketACL API', () => {
             post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6' +
-                    'BucketOwnerCanonicalUserID</ID>' +
+                    '<ID>79a59df900b949e55d96a1e698fbaced' +
+                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                   '<AccessControlList>' +
