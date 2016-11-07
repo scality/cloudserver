@@ -651,7 +651,7 @@ describe('Multipart Upload API', () => {
                     calculatedHash,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.MalformedPOSTRequest);
+                    assert.deepStrictEqual(err, errors.MalformedXML);
                     done();
                 });
             });
