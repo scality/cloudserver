@@ -50,12 +50,14 @@ localMetadata directory and the data files will be saved
 in the localData directory within the ./S3 directory on your
 machine.  These directories have been pre-created within the
 repository.  If you would like to save the data or metadata in
-different locations of your choice, you must specify them. So,
-when starting the server:
+different locations of your choice, you must specify them with absolute paths.
+So, when starting the server:
 
 ```shell
-export S3DATAPATH="/s3/myFavoriteDataPath"
-export S3METADATAPATH="/s3/myFavoriteMetadataPath"
+mkdir -m 700 $(pwd)/myFavoriteDataPath
+mkdir -m 700 $(pwd)/myFavoriteMetadataPath
+export S3DATAPATH="$(pwd)/myFavoriteDataPath"
+export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
 npm start
 ```
 
