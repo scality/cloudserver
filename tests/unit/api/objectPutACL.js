@@ -3,7 +3,11 @@ import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup,
+    DummyRequestLogger,
+    makeAuthInfo,
+    AccessControlPolicy,
+} from '../helpers';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
@@ -12,6 +16,13 @@ import DummyRequest from '../DummyRequest';
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
+const ownerID = authInfo.getCanonicalID();
+const anotherID = '79a59df900b949e55d96a1e698fba' +
+    'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';
+const defaultAcpParams = {
+    ownerID,
+    ownerDisplayName: 'OwnerDisplayName',
+};
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
@@ -139,10 +150,6 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request headers', done => {
-        const canonicalIDforSample1 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
-        const canonicalIDforSample2 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         const testObjACLRequest = {
             bucketName,
             namespace,
@@ -151,14 +158,9 @@ describe('putObjectACL API', () => {
                 'x-amz-grant-full-control':
                     'emailaddress="sampleaccount1@sampling.com"' +
                     ',emailaddress="sampleaccount2@sampling.com"',
-                'x-amz-grant-read':
-                    `uri=${constants.logId}`,
-                'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
-                'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',
+                'x-amz-grant-read': `uri=${constants.logId}`,
+                'x-amz-grant-read-acp': `id=${ownerID}`,
+                'x-amz-grant-write-acp': `id=${anotherID}`,
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
@@ -177,13 +179,13 @@ describe('putObjectACL API', () => {
                                 assert.strictEqual(acls.READ[0],
                                     constants.logId);
                                 assert(acls.FULL_CONTROL[0]
-                                   .indexOf(canonicalIDforSample1) > -1);
+                                   .indexOf(ownerID) > -1);
                                 assert(acls.FULL_CONTROL[1]
-                                   .indexOf(canonicalIDforSample2) > -1);
+                                   .indexOf(anotherID) > -1);
                                 assert(acls.READ_ACP[0]
-                                    .indexOf(canonicalIDforSample1) > -1);
+                                    .indexOf(ownerID) > -1);
                                 assert(acls.WRITE_ACP[0]
-                                    .indexOf(canonicalIDforSample2) > -1);
+                                    .indexOf(anotherID) > -1);
                                 done();
                             });
                         });
@@ -221,52 +223,22 @@ describe('putObjectACL API', () => {
     });
 
     it('should set ACLs provided in request body', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL',
+            'OwnerDisplayName');
+        acp.addGrantee('Group', constants.publicId, 'READ');
+        acp.addGrantee('AmazonCustomerByEmail', 'sampleaccount1@sampling.com',
+            'WRITE_ACP');
+        acp.addGrantee('CanonicalUser', anotherID, 'READ_ACP');
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>FULL_CONTROL</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="Group">' +
-                        `<URI>${constants.publicId}</URI>` +
-                      '</Grantee>' +
-                      '<Permission>READ</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>sampleaccount1@sampling.com' +
-                        '</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>f30716ab7115dcb44a5ef76e9d74b8e20567f63</ID>' +
-                      '</Grantee>' +
-                      '<Permission>READ_ACP</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
         };
-        const canonicalIDforSample1 =
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
@@ -278,15 +250,13 @@ describe('putObjectACL API', () => {
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(md
-                                    .acl.FULL_CONTROL[0],
-                                    '852b113e7a2f25102679df27bb0ae12b3f85be6');
+                                    .acl.FULL_CONTROL[0], ownerID);
                                 assert.strictEqual(md
                                     .acl.READ[0], constants.publicId);
                                 assert.strictEqual(md
-                                    .acl.WRITE_ACP[0], canonicalIDforSample1);
+                                    .acl.WRITE_ACP[0], ownerID);
                                 assert.strictEqual(md
-                                    .acl.READ_ACP[0],
-                                    'f30716ab7115dcb44a5ef76e9d74b8e20567f63');
+                                    .acl.READ_ACP[0], anotherID);
                                 done();
                             });
                         });
@@ -294,37 +264,45 @@ describe('putObjectACL API', () => {
             });
     });
 
-    it('should ignore if WRITE ACL permission is ' +
-        'provided in request body', done => {
+    it('should return an error if wrong owner ID ' +
+    'provided in ACLs set out in request body', done => {
+        const acp = new AccessControlPolicy({ ownerID: anotherID });
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="CanonicalUser">' +
-                        '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                        '<DisplayName>OwnerDisplayName</DisplayName>' +
-                      '</Grantee>' +
-                      '<Permission>FULL_CONTROL</Permission>' +
-                    '</Grant>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="Group">' +
-                        `<URI>${constants.publicId}</URI>` +
-                      '</Grantee>' +
-                      '<Permission>WRITE</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(acp.getXml(), 'utf8')],
+            query: { acl: '' },
+        };
+
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+            log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    () => {
+                        objectPutACL(authInfo, testObjACLRequest, log, err => {
+                            assert.deepStrictEqual(err,
+                                errors.AccessDenied);
+                            done();
+                        });
+                    });
+            });
+    });
+
+    it('should ignore if WRITE ACL permission is ' +
+        'provided in request body', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL',
+            'OwnerDisplayName');
+        acp.addGrantee('Group', constants.publicId, 'WRITE');
+        const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}?acl`,
+            post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
         };
 
@@ -339,8 +317,7 @@ describe('putObjectACL API', () => {
                             (err, md) => {
                                 assert.strictEqual(md.acl.Canned, '');
                                 assert.strictEqual(md.acl.FULL_CONTROL[0],
-                                    '852b113e7a2f2510267' +
-                                    '9df27bb0ae12b3f85be6');
+                                    ownerID);
                                 assert.strictEqual(md.acl.WRITE, undefined);
                                 assert.strictEqual(md.acl.READ[0], undefined);
                                 assert.strictEqual(md.acl.WRITE_ACP[0],
@@ -356,29 +333,15 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com' +
-                        '</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</Grant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
         };
 
@@ -399,29 +362,17 @@ describe('putObjectACL API', () => {
 
     it('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
+        const originalXml = acp.getXml();
+        const modifiedXml = originalXml.replace(/Grant/g, 'PowerGrant');
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<PowerGrant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com' +
-                        '</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '</PowerGrant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(modifiedXml, 'utf8')],
             query: { acl: '' },
         };
 
@@ -441,29 +392,17 @@ describe('putObjectACL API', () => {
     });
 
     it('should return an error if malformed xml provided', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', '');
+        const originalXml = acp.getXml();
+        const modifiedXml = originalXml.replace(/<Grant/, '</Grant');
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                      '<Grantee xsi:type="AmazonCustomerByEmail">' +
-                        '<EmailAddress>xyz@amazon.com' +
-                        '</EmailAddress>' +
-                      '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '<Grant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(modifiedXml, 'utf8')],
             query: { acl: '' },
         };
 
@@ -483,29 +422,16 @@ describe('putObjectACL API', () => {
 
     it('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', done => {
+        const acp = new AccessControlPolicy(defaultAcpParams);
+        acp.addGrantee('Group', 'http://acs.amazonaws.com/groups/' +
+        'global/NOTAVALIDGROUP', 'WRITE_ACP');
         const testObjACLRequest = {
             bucketName,
             namespace,
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}?acl`,
-            post: [Buffer.from(
-                '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>852b113e7a2f25102679df27bb0ae12b3f85be6</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                  '<AccessControlList>' +
-                    '<Grant>' +
-                    '<Grantee xsi:type="Group">' +
-                      '<URI>http://acs.amazonaws.com/groups/' +
-                      'global/NOTAVALIDGROUP</URI>' +
-                    '</Grantee>' +
-                      '<Permission>WRITE_ACP</Permission>' +
-                    '<Grant>' +
-                  '</AccessControlList>' +
-                '</AccessControlPolicy>', 'utf8')],
+            post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
         };
 
@@ -516,7 +442,7 @@ describe('putObjectACL API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.MalformedXML);
+                            assert.deepStrictEqual(err, errors.InvalidArgument);
                             done();
                         });
                     });

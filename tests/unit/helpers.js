@@ -133,3 +133,56 @@ export class DummyRequestLogger {
         return this;
     }
 }
+
+export class AccessControlPolicy {
+    constructor(params) {
+        this.Owner = {};
+        this.Owner.ID = params.ownerID;
+        this.Owner.DisplayName = params.ownerDisplayName;
+        this.AccessControlList = [];
+    }
+    setOwnerID(ownerID) {
+        this.Owner.ID = ownerID;
+    }
+    addGrantee(type, value, permission, displayName) {
+        const grant = {
+            Grantee: {
+                Type: type,
+                DisplayName: displayName,
+            },
+            Permission: permission,
+        };
+        if (type === 'AmazonCustomerByEmail') {
+            grant.Grantee.EmailAddress = value;
+        } else if (type === 'CanonicalUser') {
+            grant.Grantee.ID = value;
+        } else if (type === 'Group') {
+            grant.Grantee.URI = value;
+        }
+        this.AccessControlList.push(grant);
+    }
+    getXml() {
+        const xml = [];
+
+        function _pushChildren(obj) {
+            Object.keys(obj).forEach(element => {
+                if (obj[element] !== undefined && element !== 'Type') {
+                    xml.push(`<${element}>${obj[element]}</${element}>`);
+                }
+            });
+        }
+        xml.push('<AccessControlPolicy xmlns=' +
+            '"http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
+        _pushChildren(this.Owner);
+        xml.push('</Owner>', '<AccessControlList>');
+        this.AccessControlList.forEach(grant => {
+            xml.push('<Grant>', `<Grantee xsi:type="${grant.Grantee.Type}">`);
+            _pushChildren(grant.Grantee);
+            xml.push('</Grantee>',
+                `<Permission>${grant.Permission}</Permission>`,
+                '</Grant>');
+        });
+        xml.push('</AccessControlList>', '</AccessControlPolicy>');
+        return xml.join('');
+    }
+}
