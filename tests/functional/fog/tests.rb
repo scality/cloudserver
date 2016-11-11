@@ -44,7 +44,8 @@ describe Fog do
         $fileToStreamMd5 = Digest::MD5.file(fileToStream).hexdigest
 
         File.open(smallFile, "wb") do |f|
-            f.write('smallfile\r\nwith\r\nline\r\nbreaks\r\neverywhere\r\n')
+            f.write('\r\n\r\nsmallfile\r\nwith\r\nline\r\n' +
+            'breaks\r\neverywhere\r\n\r\n\r\n')
         end
         $smallFileMd5 = Digest::MD5.file(smallFile).hexdigest
     end

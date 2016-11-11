@@ -31,7 +31,7 @@
     "level-sublevel": "^6.5.4",
     "multilevel": "^7.3.0",
     "node-uuid": "^1.4.3",
-    "ready-set-stream": "^1.0.0",
+    "ready-set-stream": "1.0.7",
     "sproxydclient": "scality/sproxydclient",
     "utapi": "scality/utapi",
     "utf8": "~2.1.1",
