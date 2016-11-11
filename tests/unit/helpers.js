@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
 import { metadata } from '../../lib/metadata/in_memory/metadata';
@@ -43,7 +44,7 @@ export function makeAuthInfo(accessKey) {
             + 'cd47ef2be',
         accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2bf',
-        default: `${accessKey}canonicalID`,
+        default: crypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
 
