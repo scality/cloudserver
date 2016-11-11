@@ -6,9 +6,13 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 
 RUN apt-get update \
-    && apt-get install -y python git build-essential \
-    && npm install \
-    && apt-get autoremove -y python build-essential
+    && apt-get install -y python git build-essential --no-install-recommends \
+    && npm install --production \
+    && apt-get autoremove -y python build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm cache clear \
+    && rm -rf ~/.node-gyp \
+    && rm -rf /tmp/npm-*
 
 ENV S3BACKEND mem
 
