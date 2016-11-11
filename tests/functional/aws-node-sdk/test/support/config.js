@@ -19,7 +19,6 @@ if (ssl && ssl.ca) {
 }
 
 const DEFAULT_GLOBAL_OPTIONS = {
-    logger: process.stdout,
     httpOptions,
     apiVersions: { s3: '2006-03-01' },
     signatureCache: false,
