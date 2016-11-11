@@ -46,7 +46,6 @@ test:
     - S3BACKEND=mem npm start & sleep 4 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
-    - rm -rf localData/* localMetadata/*
     - S3BACKEND=file S3VAULT=mem npm start & sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
     - S3BACKEND=mem npm start & sleep 15 &&

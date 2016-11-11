@@ -27,6 +27,11 @@ let ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d52'
     + '18e7cd47ef2be';
 const endpoint = `${transport}://${ipAddress}:8000`;
 
+// Let's precompute a few paths
+const bucketPath = `${endpoint}/${bucket}`;
+const basePath = `${prefix}${delimiter}`;
+const prefixedPath = `${bucketPath}/${basePath}`;
+
 /*
  * XXX TODO FIXME TODO XXX
  * The following codeblock aims at improving flexibility of this tests by
@@ -92,7 +97,7 @@ function provideRawOutput(args, cb) {
     child.stderr.on('data', data => {
         procData.stderr += data.toString();
     });
-    child.on('error', err => cb(err));
+    child.on('error', cb);
     child.on('close', code => {
         process.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;
@@ -122,184 +127,310 @@ function provideRawOutput(args, cb) {
     });
 }
 
-describe('s3curl put and delete buckets', () => {
-    it('should put a valid bucket', done => {
-        provideRawOutput(['--createBucket', '--',
-            `${endpoint}/${bucket}`, '-v'],
-            httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                done();
-            });
-    });
+/**
+ * @brief This function creates a bunch of objects, using a file as a basis for
+ * the data to PUT
+ *
+ * @param {String} filepath The path of the file to use as source data for the
+ *                          creation of all objects requested to this function
+ * @param {String[]} objectPaths  The paths of the objects to create, in order.
+ * @param {Callback} cb The callback to call once all objects have been created.
+ *
+ * @return {undefined}
+ */
+function putObjects(filepath, objectPaths, cb) {
+    provideRawOutput(
+        [`--put=${filepath}`, '--', objectPaths[0], '-v'],
+        httpCode => {
+            assert.strictEqual(httpCode, '200 OK');
+            if (objectPaths.length > 1) {
+                return putObjects(filepath, objectPaths.slice(1), cb);
+            }
+            return cb();
+        });
+}
 
-    it('should not be able to put a bucket with a name ' +
-        'already being used', done => {
-        provideRawOutput(['--createBucket', '--',
-            `${endpoint}/${bucket}`, '-v'],
-            (httpCode, rawOutput) => {
-                assert.strictEqual(httpCode, '409 CONFLICT');
-                assertError(rawOutput.stdout, 'BucketAlreadyOwnedByYou',
-                    done);
-            });
-    });
+/**
+ * @brief This function deletes a list of objects and buckets.
+ * Items can be either objects or buckets, since s3curl manages them all
+ * the same through only a --delete option.
+ *
+ * @param {String[]} items The paths of buckets and/or objects to delete, in
+ *                         order.
+ * @param {Callback} cb The callback to call once all items have been deleted.
+ *
+ * @return {undefined}
+ */
+function deleteRemoteItems(items, cb) {
+    provideRawOutput(
+        ['--delete', '--', items[0], '-v'],
+        httpCode => {
+            assert.strictEqual(httpCode, '204 NO CONTENT');
+            if (items.length > 1) {
+                return deleteRemoteItems(items.slice(1), cb);
+            }
+            return cb();
+        });
+}
 
-    it('should not be able to put a bucket with invalid xml' +
-        ' in the post body', done => {
-        provideRawOutput(['--createBucket', '--',
-            '--data', 'malformedxml', `${endpoint}/${bucket}`, '-v'],
-            (httpCode, rawOutput) => {
+describe('s3curl put delete buckets', () => {
+    describe('s3curl put buckets', () => {
+        after(done => {
+            deleteRemoteItems([bucketPath], done);
+        });
+
+        it('should put a valid bucket', done => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    done();
+                });
+        });
+
+        it('should not be able to put a bucket with a name ' +
+            'already being used', done => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '409 CONFLICT');
+                    assertError(rawOutput.stdout, 'BucketAlreadyOwnedByYou',
+                        done);
+                });
+        });
+
+        it('should not be able to put a bucket with invalid xml' +
+            ' in the post body', done => {
+            provideRawOutput([
+                '--createBucket',
+                '--',
+                '--data',
+                'malformedxml',
+                bucketPath,
+                '-v',
+            ], (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '400 BAD REQUEST');
                 assertError(rawOutput.stdout, 'MalformedXML',
                     done);
             });
-    });
+        });
 
-    it('should not be able to put a bucket with xml that does' +
-        ' not conform to s3 docs for locationConstraint', done => {
-        provideRawOutput(['--createBucket', '--',
-            '--data', '<Hello>a</Hello>', `${endpoint}/${bucket}`, '-v'],
-            (httpCode, rawOutput) => {
+        it('should not be able to put a bucket with xml that does' +
+            ' not conform to s3 docs for locationConstraint', done => {
+            provideRawOutput([
+                '--createBucket',
+                '--',
+                '--data',
+                '<Hello>a</Hello>',
+                bucketPath,
+                '-v',
+            ], (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '400 BAD REQUEST');
                 assertError(rawOutput.stdout, 'MalformedXML',
                     done);
             });
+        });
+
+        it('should not be able to put a bucket with an invalid name', done => {
+            provideRawOutput(
+                ['--createBucket', '--', `${endpoint}/2`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'InvalidBucketName', done);
+                });
+        });
     });
 
-    it('should not be able to put a bucket with an invalid name', done => {
-        provideRawOutput(['--createBucket', '--',
-            `${endpoint}/2`, '-v'],
-            (httpCode, rawOutput) => {
-                assert.strictEqual(httpCode, '400 BAD REQUEST');
-                assertError(rawOutput.stdout, 'InvalidBucketName', done);
-            });
-    });
+    describe('s3curl delete bucket', () => {
+        before(done => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    done();
+                });
+        });
 
-    it('should be able to delete a bucket', done => {
-        provideRawOutput(['--delete', '--',
-            `${endpoint}/${bucket}`, '-v'],
-            httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
-                done();
-            });
-    });
+        after(done => {
+            deleteRemoteItems([bucketPath], done);
+        });
 
-    it('should not be able to get a bucket that was deleted', done => {
-        provideRawOutput(
-            ['--', `${endpoint}/${bucket}`, '-v'],
-            (httpCode, rawOutput) => {
-                assert.strictEqual(httpCode, '404 NOT FOUND');
-                assertError(rawOutput.stdout, 'NoSuchBucket', done);
-            });
-    });
+        it('should be able to delete a bucket', done => {
+            deleteRemoteItems([bucketPath], done);
+        });
 
-    it('should be able to create a bucket with a name' +
-        'of a bucket that has previously been deleted', done => {
-        provideRawOutput(['--createBucket', '--',
-            `${endpoint}/${bucket}`, '-v'],
-            httpCode => {
-                assert.strictEqual(httpCode, '200 OK');
-                done();
-            });
+        it('should not be able to get a bucket that was deleted', done => {
+            provideRawOutput(
+                ['--', bucketPath, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '404 NOT FOUND');
+                    assertError(rawOutput.stdout, 'NoSuchBucket', done);
+                });
+        });
+
+        it('should be able to create a bucket with a name' +
+            'of a bucket that has previously been deleted', done => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    done();
+                });
+        });
     });
 });
 
 describe('s3curl put and get bucket ACLs', () => {
+    after(done => {
+        deleteRemoteItems([
+            `${endpoint}/${aclBucket}`,
+            `${endpoint}/${aclBucket}2`,
+        ], done);
+    });
+
     it('should be able to create a bucket with a canned ACL', done => {
-        provideRawOutput(['--createBucket', '--', '-H',
-        'x-amz-acl:public-read',
-        `${endpoint}/${aclBucket}`, '-v'], httpCode => {
+        provideRawOutput([
+            '--createBucket',
+            '--',
+            '-H',
+            'x-amz-acl:public-read',
+            `${endpoint}/${aclBucket}`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
     it('should be able to get a canned ACL', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${aclBucket}?acl`, '-v'],
-        (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, xml) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                assert.strictEqual(xml.AccessControlPolicy
-                    .Owner[0].ID[0], ownerCanonicalId);
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[0]
-                    .Grantee[0].ID[0], ownerCanonicalId);
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[0]
-                    .Permission[0], 'FULL_CONTROL');
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[1]
-                    .Grantee[0].URI[0],
-                    'http://acs.amazonaws.com/groups/global/AllUsers');
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[1]
-                    .Permission[0], 'READ');
-                done();
+        provideRawOutput(
+            ['--', `${endpoint}/${aclBucket}?acl`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, xml) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .Owner[0].ID[0], ownerCanonicalId);
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[0]
+                        .Grantee[0].ID[0], ownerCanonicalId);
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[0]
+                        .Permission[0], 'FULL_CONTROL');
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[1]
+                        .Grantee[0].URI[0],
+                        'http://acs.amazonaws.com/groups/global/AllUsers');
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[1]
+                        .Permission[0], 'READ');
+                    done();
+                });
             });
-        });
     });
 
     it('should be able to create a bucket with a specific ACL', done => {
-        provideRawOutput(['--createBucket', '--', '-H',
-        'x-amz-grant-read:uri=http://acs.amazonaws.com/groups/global/AllUsers',
-        `${endpoint}/${aclBucket}2`, '-v'], httpCode => {
+        provideRawOutput([
+            '--createBucket',
+            '--',
+            '-H',
+            'x-amz-grant-read:uri=' +
+                'http://acs.amazonaws.com/groups/global/AllUsers',
+            `${endpoint}/${aclBucket}2`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
     it('should be able to get a specifically set ACL', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${aclBucket}2?acl`, '-v'],
-        (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, xml) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                assert.strictEqual(xml.AccessControlPolicy
-                    .Owner[0].ID[0], ownerCanonicalId);
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[0]
-                    .Grantee[0].URI[0],
-                    'http://acs.amazonaws.com/groups/global/AllUsers');
-                assert.strictEqual(xml.AccessControlPolicy
-                    .AccessControlList[0].Grant[0]
-                    .Permission[0], 'READ');
-                done();
+        provideRawOutput(
+            ['--', `${endpoint}/${aclBucket}2?acl`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, xml) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .Owner[0].ID[0], ownerCanonicalId);
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[0]
+                        .Grantee[0].URI[0],
+                        'http://acs.amazonaws.com/groups/global/AllUsers');
+                    assert.strictEqual(xml.AccessControlPolicy
+                        .AccessControlList[0].Grant[0]
+                        .Permission[0], 'READ');
+                    done();
+                });
             });
-        });
     });
 });
 
 describe('s3curl getService', () => {
-    it('should get a list of all buckets created by user account', done => {
-        provideRawOutput(['--', `${endpoint}`, '-v'],
-        (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, xml) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                const bucketNames = xml.ListAllMyBucketsResult
-                                       .Buckets[0].Bucket
-                                       .map(item => item.Name[0]);
-                const whereIsMyBucket = bucketNames.indexOf(bucket);
-                assert(whereIsMyBucket > -1);
-                const whereIsMyAclBucket = bucketNames.indexOf(aclBucket);
-                assert(whereIsMyAclBucket > -1);
-                done();
+    before(done => {
+        provideRawOutput(
+            ['--createBucket', '--', bucketPath, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                provideRawOutput(
+                    ['--createBucket', '--', `${endpoint}/${aclBucket}`, '-v'],
+                    httpCode => {
+                        assert.strictEqual(httpCode, '200 OK');
+                        done();
+                    });
             });
-        });
+    });
+
+    after(done => {
+        deleteRemoteItems([
+            bucketPath,
+            `${endpoint}/${aclBucket}`,
+        ], done);
+    });
+
+    it('should get a list of all buckets created by user account', done => {
+        provideRawOutput(
+            ['--', `${endpoint}`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, xml) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    const bucketNames = xml.ListAllMyBucketsResult
+                                           .Buckets[0].Bucket
+                                           .map(item => item.Name[0]);
+                    const whereIsMyBucket = bucketNames.indexOf(bucket);
+                    assert(whereIsMyBucket > -1);
+                    const whereIsMyAclBucket = bucketNames.indexOf(aclBucket);
+                    assert(whereIsMyAclBucket > -1);
+                    done();
+                });
+            });
     });
 });
 
 describe('s3curl putObject', () => {
-    before('create file to put', done => {
-        createFile(upload, 1048576, done);
+    before(done => {
+        provideRawOutput(
+            ['--createBucket', '--', bucketPath, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                createFile(upload, 1048576, done);
+            });
+    });
+
+    after(done => {
+        deleteRemoteItems([
+            `${prefixedPath}${upload}1`,
+            `${prefixedPath}${upload}2`,
+            `${prefixedPath}${upload}3`,
+            bucketPath,
+        ], done);
     });
 
     // curl behavior is not consistent across the environments
@@ -307,14 +438,18 @@ describe('s3curl putObject', () => {
     it.skip('should not be able to put an object if request does not have ' +
         'content-length header',
         done => {
-            provideRawOutput(['--debug', `--put=${upload}`, '--',
-                '-H', 'content-length:',
-                `${endpoint}/${bucket}/` +
-                `${prefix}${delimiter}${upload}1`, '-v'],
-                (httpCode, rawOutput) => {
-                    assert.strictEqual(httpCode, '411 LENGTH REQUIRED');
-                    assertError(rawOutput.stdout, 'MissingContentLength', done);
-                });
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                '-H',
+                'content-length:',
+                `${prefixedPath}${upload}1`,
+                '-v',
+            ], (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '411 LENGTH REQUIRED');
+                assertError(rawOutput.stdout, 'MissingContentLength', done);
+            });
         });
 
     it('should not be able to put an object if content-md5 header is ' +
@@ -346,31 +481,41 @@ describe('s3curl putObject', () => {
 
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
-            provideRawOutput(['--debug', `--put=${upload}`, '--',
-                `${endpoint}/2/` +
-                `${prefix}${delimiter}${upload}1`, '-v'],
-                (httpCode, rawOutput) => {
-                    assert.strictEqual(httpCode, '400 BAD REQUEST');
-                    assertError(rawOutput.stdout, 'InvalidBucketName', done);
-                });
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                `${endpoint}/2/${basePath}${upload}1`,
+                '-v',
+            ], (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'InvalidBucketName', done);
+            });
         });
 
     it('should not be able to put an object in a bucket that does not exist',
         done => {
-            provideRawOutput(['--debug', `--put=${upload}`, '--',
-                `${endpoint}/${nonexist}/` +
-                `${prefix}${delimiter}${upload}1`, '-v'],
-                (httpCode, rawOutput) => {
-                    assert.strictEqual(httpCode, '404 NOT FOUND');
-                    assertError(rawOutput.stdout, 'NoSuchBucket', done);
-                });
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                `${endpoint}/${nonexist}/${basePath}${upload}1`,
+                '-v',
+            ], (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '404 NOT FOUND');
+                assertError(rawOutput.stdout, 'NoSuchBucket', done);
+            });
         });
 
     it('should put first object in existing bucket with prefix ' +
     'and delimiter', done => {
-        provideRawOutput(['--debug', `--put=${upload}`, '--',
-            `${endpoint}/${bucket}/` +
-            `${prefix}${delimiter}${upload}1`, '-v'], httpCode => {
+        provideRawOutput([
+            '--debug',
+            `--put=${upload}`,
+            '--',
+            `${prefixedPath}${upload}1`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -378,19 +523,22 @@ describe('s3curl putObject', () => {
 
     it('should put second object in existing bucket with prefix ' +
     'and delimiter', done => {
-        provideRawOutput([`--put=${upload}`, '--',
-            `${endpoint}/${bucket}/` +
-            `${prefix}${delimiter}${upload}2`, '-v'], httpCode => {
-            assert.strictEqual(httpCode, '200 OK');
-            done();
-        });
+        provideRawOutput(
+            [`--put=${upload}`, '--', `${prefixedPath}${upload}2`, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
     });
 
     it('should put third object in existing bucket with prefix ' +
     'and delimiter', done => {
-        provideRawOutput([`--put=${upload}`, '--',
-            `${endpoint}/${bucket}/` +
-            `${prefix}${delimiter}${upload}3`, '-v'], httpCode => {
+        provideRawOutput([
+            `--put=${upload}`,
+            '--',
+            `${prefixedPath}${upload}3`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -398,121 +546,179 @@ describe('s3curl putObject', () => {
 });
 
 describe('s3curl getBucket', () => {
-    it('should list all objects if no prefix or delimiter specified', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}`, '-v'],
-        (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, result) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                assert.strictEqual(result.ListBucketResult
-                    .Contents[0].Key[0], 'topLevel/test1MB1');
-                assert.strictEqual(result.ListBucketResult
-                    .Contents[1].Key[0], 'topLevel/test1MB2');
-                assert.strictEqual(result.ListBucketResult
-                    .Contents[2].Key[0], 'topLevel/test1MB3');
-                done();
+    const objects = [
+        `${prefixedPath}${upload}1`,
+        `${prefixedPath}${upload}2`,
+        `${prefixedPath}${upload}3`,
+    ];
+
+    before(done => {
+        provideRawOutput(
+            ['--createBucket', '--', bucketPath, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                createFile(upload, 1048576, () => {
+                    putObjects(upload, objects, done);
+                });
             });
-        });
+    });
+
+    after(done => {
+        const toRemove = objects.concat([bucketPath]);
+        deleteRemoteItems(toRemove, done);
+    });
+
+    it('should list all objects if no prefix or delimiter specified', done => {
+        provideRawOutput(
+            ['--', bucketPath, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(result.ListBucketResult
+                        .Contents[0].Key[0], `${basePath}${upload}1`);
+                    assert.strictEqual(result.ListBucketResult
+                        .Contents[1].Key[0], `${basePath}${upload}2`);
+                    assert.strictEqual(result.ListBucketResult
+                        .Contents[2].Key[0], `${basePath}${upload}3`);
+                    done();
+                });
+            });
     });
 
     it('should list a common prefix if a common prefix and delimiter are ' +
     'specified', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}?delimiter=${delimiter}` +
-        `&prefix=${prefix}`, '-v'], (httpCode, rawOutput) => {
+        provideRawOutput([
+            '--',
+            `${bucketPath}?delimiter=${delimiter}&prefix=${prefix}`,
+            '-v',
+        ], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
                 if (err) {
                     assert.ifError(err);
                 }
                 assert.strictEqual(result.ListBucketResult
-                    .CommonPrefixes[0].Prefix[0], 'topLevel/');
+                    .CommonPrefixes[0].Prefix[0], basePath);
                 done();
             });
         });
     });
 
     it('should not list a common prefix if no delimiter is specified', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}?` +
-        `&prefix=${prefix}`, '-v'], (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, result) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                const keys = Object.keys(result.ListBucketResult);
-                const location = keys.indexOf('CommonPrefixes');
-                assert.strictEqual(location, -1);
-                assert.strictEqual(result.ListBucketResult
-                    .Contents[0].Key[0], 'topLevel/test1MB1');
-                done();
+        provideRawOutput(
+            ['--', `${bucketPath}?&prefix=${prefix}`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    const keys = Object.keys(result.ListBucketResult);
+                    const location = keys.indexOf('CommonPrefixes');
+                    assert.strictEqual(location, -1);
+                    assert.strictEqual(result.ListBucketResult
+                        .Contents[0].Key[0], `${basePath}${upload}1`);
+                    done();
+                });
             });
-        });
     });
 
     it('should provide a next marker if maxs keys exceeded ' +
         'and delimiter specified', done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}?` +
-        'delimiter=x&max-keys=2', '-v'], (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '200 OK');
-            parseString(rawOutput.stdout, (err, result) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                assert.strictEqual(result.ListBucketResult
-                    .NextMarker[0], 'topLevel/test1MB2');
-                assert.strictEqual(result.ListBucketResult
-                    .IsTruncated[0], 'true');
-                done();
+        provideRawOutput(
+            ['--', `${bucketPath}?delimiter=x&max-keys=2`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(result.ListBucketResult
+                        .NextMarker[0], `${basePath}${upload}2`);
+                    assert.strictEqual(result.ListBucketResult
+                        .IsTruncated[0], 'true');
+                    done();
+                });
             });
-        });
     });
 });
 
 describe('s3curl head bucket', () => {
-    it('should return a 404 response if bucket does not exist', done => {
-        provideRawOutput(['--head', '--',
-        `${endpoint}/${nonexist}`, '-v'], httpCode => {
-            assert.strictEqual(httpCode, '404 NOT FOUND');
-            done();
-        });
-    });
-
-    it('should return a 200 response if bucket exists' +
-        ' and user is authorized', done => {
-        provideRawOutput(['--head', '--',
-        `${endpoint}/${bucket}`, '-v'], httpCode => {
-            assert.strictEqual(httpCode, '200 OK');
-            done();
-        });
-    });
-});
-
-describe('s3curl getObject', () => {
-    after('delete created file and downloaded file', done => {
-        deleteFile(upload, () => {
-            deleteFile(download, done);
-        });
-    });
-
-    it('should put object with metadata', done => {
-        provideRawOutput([`--put=${upload}`, '--',
-            '-H', 'x-amz-meta-mine:BestestObjectEver',
-            `${endpoint}/${bucket}/getter`, '-v'],
+    before(done => {
+        provideRawOutput(
+            ['--createBucket', '--', bucketPath, '-v'],
             httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
             });
     });
 
+    after(done => {
+        deleteRemoteItems([bucketPath], done);
+    });
+
+    it('should return a 404 response if bucket does not exist', done => {
+        provideRawOutput(
+            ['--head', '--', `${endpoint}/${nonexist}`, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '404 NOT FOUND');
+                done();
+            });
+    });
+
+    it('should return a 200 response if bucket exists' +
+        ' and user is authorized', done => {
+        provideRawOutput(
+            ['--head', '--', bucketPath, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
+    });
+});
+
+describe('s3curl getObject', () => {
+    before(done => {
+        createFile(upload, 1048576, () => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    done();
+                });
+        });
+    });
+
+    after('delete created file and downloaded file', done => {
+        const objects = [
+            `${bucketPath}/getter`,
+            bucketPath,
+        ];
+        deleteRemoteItems(objects, () => {
+            deleteFile(upload, () => deleteFile(download, done));
+        });
+    });
+
+    it('should put object with metadata', done => {
+        provideRawOutput([
+            `--put=${upload}`,
+            '--',
+            '-H',
+            'x-amz-meta-mine:BestestObjectEver',
+            `${bucketPath}/getter`,
+            '-v',
+        ], httpCode => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
+    });
+
     it('should get an existing file in an existing bucket', done => {
-        provideRawOutput(['--', '-o', download,
-            `${endpoint}/${bucket}/getter`, '-v'],
+        provideRawOutput(
+            ['--', '-o', download, `${bucketPath}/getter`, '-v'],
             httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
@@ -525,9 +731,37 @@ describe('s3curl getObject', () => {
 });
 
 describe('s3curl head object', () => {
+    before(done => {
+        createFile(upload, 1048576, () => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    provideRawOutput([
+                        `--put=${upload}`,
+                        '--',
+                        '-H',
+                        'x-amz-meta-mine:BestestObjectEver',
+                        `${bucketPath}/getter`,
+                        '-v',
+                    ], httpCode => {
+                        assert.strictEqual(httpCode, '200 OK');
+                        done();
+                    });
+                });
+        });
+    });
+
+    after(done => {
+        deleteRemoteItems([
+            `${bucketPath}/getter`,
+            bucketPath,
+        ], done);
+    });
+
     it("should get object's metadata", done => {
-        provideRawOutput(['--head', '--',
-            `${endpoint}/${bucket}/getter`, '-v'],
+        provideRawOutput(
+            ['--head', '--', `${bucketPath}/getter`, '-v'],
             (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '200 OK');
                 const lines = rawOutput.stdout.split('\n');
@@ -540,27 +774,45 @@ describe('s3curl head object', () => {
 });
 
 describe('s3curl object ACLs', () => {
-    before('create file to put', done => {
-        createFile(aclUpload, 512000, done);
+    before(done => {
+        createFile(aclUpload, 512000, () => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    done();
+                });
+        });
     });
-    after('delete created file', done => {
-        deleteFile(aclUpload, done);
+
+    after(done => {
+        deleteRemoteItems([
+            `${bucketPath}/${aclUpload}withcannedacl`,
+            `${bucketPath}/${aclUpload}withspecificacl`,
+            bucketPath,
+        ], () => deleteFile(aclUpload, done));
     });
 
     it('should put an object with a canned ACL', done => {
-        provideRawOutput([`--put=${aclUpload}`, '--',
-            '-H', 'x-amz-acl:public-read',
-            `${endpoint}/${bucket}/` +
-            `${aclUpload}withcannedacl`, '-v'], httpCode => {
+        provideRawOutput([
+            `--put=${aclUpload}`,
+            '--',
+            '-H',
+            'x-amz-acl:public-read',
+            `${bucketPath}/${aclUpload}withcannedacl`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
     it("should get an object's canned ACL", done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}/` +
-        `${aclUpload}withcannedacl?acl`, '-v'], (httpCode, rawOutput) => {
+        provideRawOutput([
+            '--',
+            `${bucketPath}/${aclUpload}withcannedacl?acl`,
+            '-v',
+        ], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
                 if (err) {
@@ -587,20 +839,26 @@ describe('s3curl object ACLs', () => {
     });
 
     it('should put an object with a specific ACL', done => {
-        provideRawOutput([`--put=${aclUpload}`, '--',
-            '-H', 'x-amz-grant-read:uri=' +
-            'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
-            `${endpoint}/${bucket}/` +
-            `${aclUpload}withspecificacl`, '-v'], httpCode => {
+        provideRawOutput([
+            `--put=${aclUpload}`,
+            '--',
+            '-H',
+            'x-amz-grant-read:uri=' +
+                'http://acs.amazonaws.com/groups/global/AuthenticatedUsers',
+            `${bucketPath}/${aclUpload}withspecificacl`,
+            '-v',
+        ], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
     });
 
     it("should get an object's specific ACL", done => {
-        provideRawOutput(['--',
-        `${endpoint}/${bucket}/` +
-        `${aclUpload}withspecificacl?acl`, '-v'], (httpCode, rawOutput) => {
+        provideRawOutput([
+            '--',
+            `${bucketPath}/${aclUpload}withspecificacl?acl`,
+            '-v',
+        ], (httpCode, rawOutput) => {
             assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
                 if (err) {
@@ -623,35 +881,51 @@ describe('s3curl object ACLs', () => {
 
     it('should return a NoSuchKey error if try to get an object' +
         'ACL for an object that does not exist', done => {
-        provideRawOutput(['--',
-            `${endpoint}/${bucket}/` +
-            'keydoesnotexist?acl', '-v'], (httpCode, rawOutput) => {
-            assert.strictEqual(httpCode, '404 NOT FOUND');
-            assertError(rawOutput.stdout, 'NoSuchKey', done);
-        });
+        provideRawOutput(
+            ['--', `${bucketPath}/keydoesnotexist?acl`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '404 NOT FOUND');
+                assertError(rawOutput.stdout, 'NoSuchKey', done);
+            });
     });
 });
 
 describe('s3curl multipart upload', () => {
+    const key = 'multipart';
+    let uploadId = null;
+
+    before(done => {
+        provideRawOutput(
+            ['--createBucket', '--', bucketPath, '-v'],
+            httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
+    });
+
+    after(done => {
+        deleteRemoteItems([
+            `${bucketPath}/${key}?uploadId=${uploadId}`,
+            bucketPath,
+        ], done);
+    });
+
     it('should list parts of multipart upload with no parts', done => {
-        const key = 'multipart';
         provideRawOutput([
             '--',
             '-X',
             'POST',
-            `${endpoint}/${bucket}/${key}?uploads`,
+            `${bucketPath}/${key}?uploads`,
             '-v',
         ], (httpCode, rawOutput) => {
             parseString(rawOutput.stdout, (err, result) => {
                 if (err) {
                     assert.ifError(err);
                 }
-                const uploadId =
-                    result.InitiateMultipartUploadResult.UploadId[0];
+                uploadId = result.InitiateMultipartUploadResult.UploadId[0];
                 provideRawOutput([
                     '--',
-                    `${endpoint}/${bucket}/${key}?` +
-                    `uploadId=${uploadId}`,
+                    `${bucketPath}/${key}?uploadId=${uploadId}`,
                     '-v',
                 ], (httpCode, rawOutput) => {
                     assert.strictEqual(httpCode, '200 OK');
