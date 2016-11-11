@@ -1,4 +1,5 @@
 import assert from 'assert';
+import Promise from 'bluebird';
 
 import config from '../../../../../lib/Config';
 import withV4 from '../support/withV4';
@@ -61,31 +62,25 @@ describe('Multi-Object Delete Success', function success() {
             throw err;
         })
         .then(() => {
-            const createFirstHalfObjects = [];
-            for (let i = 1; i < 500; i ++) {
-                createFirstHalfObjects.push(s3.putObjectAsync({
-                    Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }));
+            const objects = [];
+            for (let i = 1; i < 1001; i ++) {
+                objects.push(`${key}${i}`);
             }
-            return Promise.all(createFirstHalfObjects)
-            .catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
-                throw err;
+            const queued = [];
+            const parallel = 20;
+            const putPromises = objects.map(key => {
+                const mustComplete = Math.max(0, queued.length - parallel + 1);
+                const result = Promise.some(queued, mustComplete).then(() =>
+                    s3.putObjectAsync({
+                        Bucket: bucketName,
+                        Key: key,
+                        Body: 'somebody',
+                    })
+                );
+                queued.push(result);
+                return result;
             });
-        })
-        .then(() => {
-            const createSecondHalfObjects = [];
-            for (let i = 501; i < 1001; i ++) {
-                createSecondHalfObjects.push(s3.putObjectAsync({
-                    Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }));
-            }
-            return Promise.all(createSecondHalfObjects)
-            .catch(err => {
+            return Promise.all(putPromises).catch(err => {
                 process.stdout.write(`Error creating objects: ${err}\n`);
                 throw err;
             });
