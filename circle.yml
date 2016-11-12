@@ -40,13 +40,20 @@ test:
     - yamllint $(git ls-files '*.yml')
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
-    - S3BACKEND=mem npm start & sleep 15 &&
-      cd ./tests/functional/jaws && mvn test
-    - S3BACKEND=mem npm start & sleep 4 && npm run ft_test;
-    - S3BACKEND=mem npm start & sleep 4 &&
+    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/javaServerTest.txt &
+      sleep 15 &&
+      cd ./tests/functional/jaws && mvn test;
+    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/memServerTest.txt &
+      sleep 4 && npm run ft_test;
+    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/memServerEnryptTest.txt &
+      sleep 4 && ENABLE_KMS_ENCRYPTION=true npm run ft_test;
+    - S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/fileTest.txt &
+      sleep 15 &&
+      npm run ft_test;
+    - S3BACKEND=file
+      S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/fileEncryptTest.txt &
+      sleep 15 &&
       ENABLE_KMS_ENCRYPTION=true npm run ft_test;
-    - S3BACKEND=file S3VAULT=mem npm start & sleep 15 && npm run ft_test;
-    - S3BACKEND=file S3VAULT=mem npm start & sleep 15 &&
-      ENABLE_KMS_ENCRYPTION=true npm run ft_test;
-    - S3BACKEND=mem npm start & sleep 15 &&
-      cd tests/functional/fog && rspec tests.rb
+    - S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/rubyServerTest.txt &
+      sleep 15 &&
+      cd tests/functional/fog && rspec tests.rb;
