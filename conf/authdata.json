@@ -14,7 +14,7 @@
             "email": "user1.sampleaccount2@sampling.com",
             "arn": "aws::iam:123456789013:bart",
             "keys": [{
-                "access": "accessKey1/1",
+                "access": "USERBARTFUNACCESSKEY",
                 "secret": "verySecretKey1"
             }]
         }]
