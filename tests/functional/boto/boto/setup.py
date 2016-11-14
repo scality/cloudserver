@@ -17,6 +17,7 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+
 setup(
     name='test-boto',
     url='http://www.scality.com',

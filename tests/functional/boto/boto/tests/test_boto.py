@@ -23,6 +23,7 @@ class Test(object):
         """delete this function once the below 2 are uncommented"""
         assert True
 
+
 ''' 2015/10/28 commented as crashing the server
     def test_create_bucket(self):
         """Can we create a bucket ?"""
