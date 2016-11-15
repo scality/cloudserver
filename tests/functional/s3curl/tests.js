@@ -644,6 +644,24 @@ describe('s3curl getBucket', () => {
                 });
             });
     });
+
+    it('should return InvalidArgument error with negative max-keys', done => {
+        provideRawOutput(
+            ['--', `${bucketPath}?&max-keys=-2`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'InvalidArgument', done);
+            });
+    });
+
+    it('should return InvalidArgument error with invalid max-keys', done => {
+        provideRawOutput(
+            ['--', `${bucketPath}?max-keys='slash'`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                assertError(rawOutput.stdout, 'InvalidArgument', done);
+            });
+    });
 });
 
 describe('s3curl head bucket', () => {
