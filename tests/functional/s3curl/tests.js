@@ -662,6 +662,22 @@ describe('s3curl getBucket', () => {
                 assertError(rawOutput.stdout, 'InvalidArgument', done);
             });
     });
+
+    it('should return an EncodingType XML tag with the value "url"', done => {
+        provideRawOutput(
+            ['--', bucketPath, '-G', '-d', 'encoding-type=url', '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(result.ListBucketResult
+                        .EncodingType[0], 'url');
+                    done();
+                });
+            });
+    });
 });
 
 describe('s3curl head bucket', () => {
@@ -910,6 +926,7 @@ describe('s3curl object ACLs', () => {
 
 describe('s3curl multipart upload', () => {
     const key = 'multipart';
+    const upload = 'smallUpload';
     let uploadId = null;
 
     before(done => {
@@ -917,49 +934,110 @@ describe('s3curl multipart upload', () => {
             ['--createBucket', '--', bucketPath, '-v'],
             httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
-                done();
+                // initiate mpu
+                provideRawOutput([
+                    '--',
+                    '-X',
+                    'POST',
+                    `${bucketPath}/${key}?uploads`,
+                    '-v',
+                ], (httpCode, rawOutput) => {
+                    parseString(rawOutput.stdout, (err, result) => {
+                        if (err) {
+                            assert.ifError(err);
+                        }
+                        uploadId =
+                        result.InitiateMultipartUploadResult.UploadId[0];
+                        // create file to copy
+                        createFile(upload, 100, () => {
+                            // put file to copy
+                            putObjects(upload, [`${bucketPath}/copyme`], done);
+                        });
+                    });
+                });
             });
     });
 
     after(done => {
         deleteRemoteItems([
+            `${bucketPath}/copyme`,
             `${bucketPath}/${key}?uploadId=${uploadId}`,
             bucketPath,
-        ], done);
+        ], () => deleteFile(upload, done));
     });
 
     it('should list parts of multipart upload with no parts', done => {
         provideRawOutput([
             '--',
-            '-X',
-            'POST',
-            `${bucketPath}/${key}?uploads`,
+            `${bucketPath}/${key}?uploadId=${uploadId}`,
             '-v',
         ], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '200 OK');
             parseString(rawOutput.stdout, (err, result) => {
-                if (err) {
-                    assert.ifError(err);
-                }
-                uploadId = result.InitiateMultipartUploadResult.UploadId[0];
-                provideRawOutput([
-                    '--',
-                    `${bucketPath}/${key}?uploadId=${uploadId}`,
-                    '-v',
-                ], (httpCode, rawOutput) => {
-                    assert.strictEqual(httpCode, '200 OK');
-                    parseString(rawOutput.stdout, (err, result) => {
-                        assert.strictEqual(result.ListPartsResult.UploadId[0],
-                                           uploadId);
-                        assert.strictEqual(result.ListPartsResult.Bucket[0],
-                                           bucket);
-                        assert.strictEqual(result.ListPartsResult.Key[0], key);
-                        assert.strictEqual(result.ListPartsResult.Part,
-                                           undefined);
-                        done();
-                    });
-                });
+                assert.strictEqual(result.ListPartsResult.UploadId[0],
+                                   uploadId);
+                assert.strictEqual(result.ListPartsResult.Bucket[0],
+                                   bucket);
+                assert.strictEqual(result.ListPartsResult.Key[0], key);
+                assert.strictEqual(result.ListPartsResult.Part,
+                                   undefined);
+                done();
             });
         });
+    });
+
+    it('should copy a part and return lastModified as ISO', done => {
+        provideRawOutput(
+            ['--', `${bucketPath}/${key}?uploadId=${uploadId}&partNumber=1`,
+            '-X', 'PUT', '-H',
+            `x-amz-copy-source:${bucket}/copyme`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    const lastModified = result.CopyPartResult
+                        .LastModified[0];
+                    const isoDateString = new Date(lastModified).toISOString();
+                    assert.strictEqual(lastModified, isoDateString);
+                    done();
+                });
+            });
+    });
+});
+
+describe('s3curl copy object', () => {
+    before(done => {
+        createFile(upload, 1048576, () => {
+            provideRawOutput(
+                ['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert.strictEqual(httpCode, '200 OK');
+                    putObjects(upload, [`${bucketPath}/copyme`], done);
+                });
+        });
+    });
+
+    after(done => {
+        deleteRemoteItems([
+            `${bucketPath}/copyme`,
+            `${bucketPath}/iamacopy`,
+            bucketPath,
+        ], () => deleteFile(upload, done));
+    });
+
+    it('should copy an object and return lastModified as ISO', done => {
+        provideRawOutput(
+            ['--', `${bucketPath}/iamacopy`, '-X', 'PUT', '-H',
+            `x-amz-copy-source:${bucket}/copyme`, '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    const lastModified = result.CopyObjectResult
+                        .LastModified[0];
+                    const isoDateString = new Date(lastModified).toISOString();
+                    assert.strictEqual(lastModified, isoDateString);
+                    done();
+                });
+            });
     });
 });
 
