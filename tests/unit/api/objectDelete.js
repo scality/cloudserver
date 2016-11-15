@@ -131,7 +131,7 @@ describe('objectDelete API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-full-control'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
     });
@@ -140,7 +140,7 @@ describe('objectDelete API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-write'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
     });
