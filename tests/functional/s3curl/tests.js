@@ -617,6 +617,22 @@ describe('s3curl getBucket', () => {
                 });
             });
     });
+
+    it('should return an EncodingType XML tag with the value "url"', done => {
+        provideRawOutput(
+            ['--', bucketPath, '-G', '-d', 'encoding-type=url', '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(result.ListBucketResult
+                        .EncodingType[0], 'url');
+                    done();
+                });
+            });
+    });
 });
 
 describe('s3curl head bucket', () => {
