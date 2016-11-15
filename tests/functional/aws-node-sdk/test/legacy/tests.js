@@ -361,6 +361,21 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
     });
 
+    it('should return InvalidRange if the range of the resource does ' +
+    'not cover the byte range',
+    done => {
+        const params = {
+            Bucket: bucket,
+            Key: 'normalput',
+            Range: 'bytes=200-200',
+        };
+        s3.getObject(params, err => {
+            assert.notEqual(err, null, 'Expected failure but got success');
+            assert.strictEqual(err.code, 'InvalidRange');
+            return done();
+        });
+    });
+
     const regularObjectRangeGetTests = [
         { it: 'should get a range for an object put without MPU',
             range: 'bytes=10-99',
