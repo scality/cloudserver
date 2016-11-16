@@ -60,4 +60,12 @@ describe('Healthcheck routes', () => {
         const req = transport.request(putOptions, makeChecker(400, done));
         req.end();
     });
+    it('should return 200 on deep GET request', done => {
+        const deepOptions = deepCopy(options);
+        deepOptions.method = 'GET';
+        deepOptions.path = '/_/healthcheck/deep';
+        deepOptions.agent = makeAgent();
+        const req = transport.request(deepOptions, makeChecker(200, done));
+        req.end();
+    });
 });
