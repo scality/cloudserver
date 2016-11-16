@@ -439,6 +439,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(
                         `error getting object range: ${err}`));
                 }
+                assert.strictEqual(data.AcceptRanges, 'bytes');
                 assert.strictEqual(data.ContentLength, test.contentLength);
                 assert.strictEqual(data.ContentRange, test.contentRange);
                 assert.deepStrictEqual(data.Body, test.expectedBuff);
