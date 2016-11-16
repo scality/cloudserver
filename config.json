@@ -28,6 +28,10 @@
         "host": "localhost",
         "port": 8500
     },
+    "dpserver": {
+        "host": "localhost",
+        "port": 5000
+    },
     "clusters": 10,
     "log": {
         "logLevel": "info",
