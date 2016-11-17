@@ -18,6 +18,16 @@ const content = 'I am the best content ever';
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
 
+function safeJSONParse(s) {
+    let res;
+    try {
+        res = JSON.parse(s);
+    } catch (e) {
+        return e;
+    }
+    return res;
+}
+
 function checkNoError(err) {
     assert.equal(err, null,
         `Expected success, got error ${JSON.stringify(err)}`);
@@ -52,8 +62,15 @@ function createEncryptedBucket(bucketParams, cb) {
     const body = [];
     const child = childProcess.spawn(args[0], args)
     .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item =>
-            item.startsWith('{"name":"S3","statusCode":200'));
+        const hasSucceed = body.join('').split('\n').find(item => {
+            const json = safeJSONParse(item);
+            const test = !(json instanceof Error) && json.name === 'S3' &&
+                json.statusCode === 200;
+            if (test) {
+                return true;
+            }
+            return false;
+        });
         if (!hasSucceed) {
             process.stderr.write(`${body.join('')}\n`);
             return cb(new Error('Cannot create encrypted bucket'));
