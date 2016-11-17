@@ -58,6 +58,8 @@ describe('predicate.registry', () => {
                 'x-amz-meta-tool-version': '1.0.0',
                 'x-amz-meta-use-google-vision': 'true',
             };
+            request.bucketName = 'foo';
+            request.objectKey = 'food.json';
             request.namespace = 'default';
             request.parsedHost = '127.0.0.1';
             request.parsedContentLength = buf.length;
@@ -73,35 +75,33 @@ describe('predicate.registry', () => {
                 path.join(__dirname, 'simpleHandler.js'));
             registry.run({
                 eventName: 'ObjectCreated:Put',
-                bucket: 'foo',
-                key: 'key1.json',
                 request,
                 log: logger,
-            }, (err, output) => {
+            }, err => {
                 assert.ifError(err);
-                assert(output instanceof stream.Readable);
                 done();
             });
         });
 
-        it('should should handle error thrown by in user code', done => {
+        it('should should handle error thrown by user code', done => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
                 (params, callback) => {
-                    if (callback) {
-                        throw new TypeError('Boom!');
+                    if (!callback) {
+                        return;
                     }
+                    process.nextTick(() => {
+                        throw new TypeError('Boom!');
+                    });
                 });
             registry.run({
                 eventName: 'ObjectCreated:Put',
-                bucket: 'foo',
-                key: 'key1.json',
                 request,
                 log: logger,
-            }, (err, output) => {
+            }, err => {
                 assert.ok(err);
-                assert.strictEqual(undefined, output);
+                assert.strictEqual(true, err.OperationAborted);
                 done();
             });
         });
@@ -115,10 +115,16 @@ describe('predicate.registry', () => {
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
                 (params, callback) => {
-                    const data = params.Records[0].s3.object.data;
-                    assert.strictEqual(buf.toString(), data.toString());
-                    callback(null, 'changing uploaded data',
-                      JSON.stringify(userData));
+                    const body = params.Records[0].s3.object.body;
+                    body.setMode('transform');
+                    const chunks = [];
+                    body.on('data', d => chunks.push(d))
+                    .on('end', () => {
+                        const got = Buffer.concat(chunks);
+                        assert.strictEqual(buf.toString(), got.toString());
+                        body.end(JSON.stringify(userData));
+                        callback();
+                    });
                 });
             registry.run({
                 eventName: 'ObjectCreated:Put',
@@ -129,7 +135,7 @@ describe('predicate.registry', () => {
             }, (err, output) => {
                 assert.ifError(err);
                 const chunks = [];
-                output.on('data', c => chunks.push(c));
+                output.on('data', d => chunks.push(d));
                 output.on('end', () => {
                     const userBuf = Buffer.concat(chunks);
                     assert.equal(output.parsedContentLength, userBuf.length);

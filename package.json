@@ -34,7 +34,6 @@
     "node-uuid": "^1.4.3",
     "ready-set-stream": "1.0.7",
     "sproxydclient": "scality/sproxydclient",
-    "swerrs": "0.0.8",
     "utapi": "scality/utapi",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",

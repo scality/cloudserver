@@ -1,6 +1,5 @@
 import assert from 'assert';
 import validate from '../../../lib/predicate/validate';
-import SwError from 'swerrs';
 
 const s3spec = {
     bucket: {
@@ -169,12 +168,6 @@ describe('predicate.validate', () => {
             const verrs = validate(d.spec, d.candidate, errs);
             assert.equal(d.n, errs.length);
             assert.strictEqual(errs, verrs);
-
-            const swerr = new SwError();
-            const swerrs = validate(d.spec, d.candidate, swerr);
-
-            assert.equal(d.n, swerr.values.length);
-            assert.strictEqual(swerr, swerrs);
         });
     });
 });
