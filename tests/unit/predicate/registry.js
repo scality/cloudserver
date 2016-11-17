@@ -83,6 +83,27 @@ describe('predicate.registry', () => {
             });
         });
 
+        it('should update metadata correctly', done => {
+            registry.put({
+                eventName: 'ObjectCreated:Put',
+                bucket: 'foo' },
+                path.join(__dirname, 'simpleHandler.js'));
+            registry.run({
+                eventName: 'ObjectCreated:Put',
+                request,
+                log: logger,
+            }, err => {
+                assert.ifError(err);
+                const headers = request.headers;
+                assert.strictEqual('passed',
+                    headers['x-amz-meta-simple-handler']);
+                assert.strictEqual('text/plain',
+                    headers['content-type']);
+                assert.strictEqual('food.txt', request.objectKey);
+                done();
+            });
+        });
+
         it('should should handle error thrown by user code', done => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
