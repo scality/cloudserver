@@ -104,7 +104,22 @@ describe('predicate.registry', () => {
             });
         });
 
-        it('should should handle error thrown by user code', done => {
+        it('should allow a predicate to reject the request', done => {
+            registry.put({
+                eventName: 'ObjectCreated:Put',
+                bucket: 'foo' },
+                (params, callback) => callback('FAIL'));
+            registry.run({
+                eventName: 'ObjectCreated:Put',
+                request,
+                log: logger,
+            }, err => {
+                assert.strictEqual(true, err.PreconditionFailed);
+                done();
+            });
+        });
+
+        it('should NOT handle error thrown by user code', done => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
@@ -112,19 +127,24 @@ describe('predicate.registry', () => {
                     if (!callback) {
                         return;
                     }
-                    process.nextTick(() => {
-                        throw new TypeError('Boom!');
-                    });
+                    // NOTE: you can't catch this even in a test
+                    //      This means when the user's code takes a poop
+                    //      we drop the request. Just saying...
+                    // process.nextTick(() => {
+                    //     throw new TypeError('Boom!');
+                    // });
+                    throw new TypeError('Boom!');
                 });
-            registry.run({
-                eventName: 'ObjectCreated:Put',
-                request,
-                log: logger,
-            }, err => {
-                assert.ok(err);
-                assert.strictEqual(true, err.OperationAborted);
-                done();
-            });
+            assert.throws(() => {
+                registry.run({
+                    eventName: 'ObjectCreated:Put',
+                    request,
+                    log: logger,
+                }, () => {
+                    done(new Error('should never reach here'));
+                });
+            }, TypeError);
+            process.nextTick(() => done());
         });
 
         it('should allow user to change the object data', done => {
