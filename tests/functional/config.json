@@ -2,5 +2,9 @@
     "accessKey": "accessKey1",
     "secretKey": "verySecretKey1",
     "transport": "http",
-    "ipAddress": "127.0.0.1"
+    "ipAddress": "127.0.0.1",
+    "localCache": {
+        "host": "127.0.0.1",
+        "port": 6379
+    }
 }

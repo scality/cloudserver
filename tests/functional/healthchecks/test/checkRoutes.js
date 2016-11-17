@@ -1,8 +1,21 @@
+'use strict'; // eslint-disable-line strict
 const assert = require('assert');
 const http = require('http');
 const https = require('https');
-const conf = require('../../config.json');
 const fs = require('fs');
+const async = require('async');
+const Redis = require('ioredis');
+
+const conf = require('../../config.json');
+
+const redis = new Redis({
+    host: conf.localCache.host,
+    port: conf.localCache.port,
+    // disable offline queue
+    enableOfflineQueue: false,
+});
+
+redis.on('error', () => {});
 
 const transportStr = conf.transport;
 const transport = transportStr === 'http' ? http : https;
@@ -30,12 +43,33 @@ function deepCopy(options) {
 
 function makeAgent() {
     if (transportStr === 'https') {
-        const newAgent = new https.Agent({
+        return new https.Agent({
             ca: fs.readFileSync(conf.caCertPath),
         });
-        return newAgent;
     }
     return undefined;
+}
+
+function makeDummyS3Request(cb) {
+    const getOptions = deepCopy(options);
+    getOptions.path = '/';
+    getOptions.method = 'GET';
+    getOptions.agent = makeAgent();
+    const req = transport.request(getOptions);
+    req.end(() => cb());
+}
+
+function makeStatsRequest(cb) {
+    const getOptions = deepCopy(options);
+    getOptions.method = 'GET';
+    getOptions.agent = makeAgent();
+    const req = transport.request(getOptions, res => {
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks).toString()));
+    });
+    req.on('error', err => cb(err));
+    req.end();
 }
 
 describe('Healthcheck routes', () => {
@@ -68,4 +102,27 @@ describe('Healthcheck routes', () => {
         const req = transport.request(deepOptions, makeChecker(200, done));
         req.end();
     });
+});
+
+describe('Healthcheck stats', () => {
+    const totalReqs = 5;
+    beforeEach(done => {
+        redis.flushdb(() => {
+            async.times(totalReqs, (n, next) => makeDummyS3Request(next), done);
+        });
+    });
+
+    afterEach(() => redis.flushdb());
+
+    it('should respond back with total requests', done =>
+        makeStatsRequest((err, res) => {
+            if (err) {
+                return done(err);
+            }
+            const expectedStatsRes = { 'requests': totalReqs, '500s': 0,
+                'sampleDuration': 30 };
+            assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
+            return done();
+        })
+    );
 });
