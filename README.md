@@ -17,7 +17,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Dependencies
 
-Building and running the S3 Server requires node.js 4.5 or greater and npm v2
+Building and running the S3 Server requires node.js 4.5 and npm v2
 . Up-to-date versions can be found at
 [Nodesource](https://github.com/nodesource/distributions).
 
