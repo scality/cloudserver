@@ -29,6 +29,16 @@ const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
 
+function safeJSONParse(s) {
+    let res;
+    try {
+        res = JSON.parse(s);
+    } catch (e) {
+        return e;
+    }
+    return res;
+}
+
 const isScality = process.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
 
 function diff(putFile, receivedFile, done) {
@@ -210,8 +220,15 @@ function createEncryptedBucket(name, cb) {
     const body = [];
     const child = proc.spawn(args[0], args)
     .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item =>
-            item.startsWith('{"name":"S3","statusCode":200'));
+        const hasSucceed = body.join('').split('\n').find(item => {
+            const json = safeJSONParse(item);
+            const test = !(json instanceof Error) && json.name === 'S3' &&
+                json.statusCode === 200;
+            if (test) {
+                return true;
+            }
+            return false;
+        });
         if (!hasSucceed) {
             process.stderr.write(`${body.join('')}\n`);
             return cb(new Error('Cannot create encrypted bucket'));
