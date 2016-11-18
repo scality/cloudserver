@@ -59,7 +59,7 @@ if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
         _setDirSyncFlag(dataPath);
         _setDirSyncFlag(metadataPath);
     } catch (err) {
-        logger.warn(warning, { error: err });
+        logger.warn(warning, { error: err.stack });
     }
 } else {
     logger.warn(warning);
