@@ -678,6 +678,24 @@ describe('s3curl getBucket', () => {
                 });
             });
     });
+
+    it('should return an InvalidArgument error when given an invalid ' +
+        'encoding type', done => {
+        provideRawOutput(
+            ['--', bucketPath, '-G', '-d', 'encoding-type=invalidURI', '-v'],
+            (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '400 BAD REQUEST');
+                parseString(rawOutput.stdout, (err, result) => {
+                    if (err) {
+                        assert.ifError(err);
+                    }
+                    assert.strictEqual(result.Error.Code[0], 'InvalidArgument');
+                    assert.strictEqual(result.Error.Message[0],
+                        'Invalid Encoding Method specified in Request');
+                    done();
+                });
+            });
+    });
 });
 
 describe('s3curl head bucket', () => {
