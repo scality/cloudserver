@@ -77,7 +77,7 @@ describe('objectPut API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-full-control'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
@@ -85,7 +85,7 @@ describe('objectPut API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-write'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
 
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
