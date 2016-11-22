@@ -16,7 +16,8 @@
         "us-gov-west-1": ["s3-us-gov-west-1.amazonaws.com",
                           "s3-fips-us-gov-west-1.amazonaws.com"],
         "localregion": ["localhost"],
-        "test-region": ["s3.scality.test"]
+        "test-region": ["s3.scality.test"],
+        "docker-region": ["s3.docker.test"]
     },
     "sproxyd": {
         "bootstrap": ["localhost:8181"]
