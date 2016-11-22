@@ -201,40 +201,6 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         return done();
     });
 
-    it('should list ongoing multipart uploads', done => {
-        const params = {
-            Bucket: bucket,
-        };
-        s3.listMultipartUploads(params, (err, data) => {
-            if (err) {
-                return done(new Error(`error in listMultipartUploads: ${err}`));
-            }
-            assert.strictEqual(data.Uploads.length, 1, 'data.Uploads.length ' +
-            'is incorrect');
-            assert.strictEqual(data.Uploads[0].UploadId,
-                multipartUploadData.secondUploadId, 'multipartUploadData.' +
-                'secondUploadId is incorrect');
-            return done();
-        });
-    });
-
-    it('should list ongoing multipart uploads with params', done => {
-        const params = {
-            Bucket: bucket,
-            Prefix: 'to',
-            MaxUploads: 2,
-        };
-        s3.listMultipartUploads(params, (err, data) => {
-            if (err) {
-                return done(new Error(`error in listMultipartUploads: ${err}`));
-            }
-            assert.strictEqual(data.Uploads.length, 1);
-            assert.strictEqual(data.Uploads[0].UploadId,
-                multipartUploadData.secondUploadId);
-            return done();
-        });
-    });
-
     it('should return an error if do not provide correct ' +
         // completempu test
         'xml when completing a multipart upload', done => {
