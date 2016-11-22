@@ -49,7 +49,7 @@ describe('Config', () => {
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo',
             },
-            path(params, callback) {
+            path(event, context, callback) {
                 return callback();
             },
         }];

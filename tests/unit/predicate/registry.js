@@ -13,7 +13,7 @@ describe('predicate.registry', () => {
                     eventName: 'ObjectCreated:Put',
                     bucket: 'foo',
                 },
-                fn(params, callback) {
+                fn(event, context, callback) {
                     callback();
                 },
             },
@@ -28,17 +28,21 @@ describe('predicate.registry', () => {
                 fn: path.join(__dirname, 'simpleHandler.js'),
             },
         }].forEach(t => {
-            it(`should register ${t.tag} correctly`, done => {
+            it(`should register ${t.tag} correctly`, () => {
                 registry.purge();
-                registry.put(t.inp.eventInfo, t.inp.fn, err => {
-                    assert.ifError(err);
-                    done();
+                assert.doesNotThrow(() => {
+                    registry.put(t.inp.eventInfo, t.inp.fn);
                 });
             });
         });
     });
 
     describe('run', () => {
+        const userInfo = {
+            getShortid() {
+                return 'Zelig';
+            },
+        };
         let request;
         let buf;
         beforeEach(done => {
@@ -75,10 +79,28 @@ describe('predicate.registry', () => {
                 path.join(__dirname, 'simpleHandler.js'));
             registry.run({
                 eventName: 'ObjectCreated:Put',
+                userInfo,
                 request,
                 log: logger,
             }, err => {
                 assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should run a simple retrieve handler correctly', done => {
+            registry.put({
+                eventName: 'ObjectRetrieved:Get',
+                bucket: 'foo' },
+                path.join(__dirname, 'retrieveHandler.js'));
+            registry.run({
+                eventName: 'ObjectRetrieved:Get',
+                userInfo,
+                request,
+                log: logger,
+            }, err => {
+                assert.ifError(err);
+                assert.strictEqual('food.txt', request.objectKey);
                 done();
             });
         });
@@ -90,6 +112,7 @@ describe('predicate.registry', () => {
                 path.join(__dirname, 'simpleHandler.js'));
             registry.run({
                 eventName: 'ObjectCreated:Put',
+                userInfo,
                 request,
                 log: logger,
             }, err => {
@@ -108,9 +131,10 @@ describe('predicate.registry', () => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
-                (params, callback) => callback('FAIL'));
+                (event, context, callback) => callback('FAIL'));
             registry.run({
                 eventName: 'ObjectCreated:Put',
+                userInfo,
                 request,
                 log: logger,
             }, err => {
@@ -123,7 +147,7 @@ describe('predicate.registry', () => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
-                (params, callback) => {
+                (event, context, callback) => {
                     if (!callback) {
                         return;
                     }
@@ -138,6 +162,7 @@ describe('predicate.registry', () => {
             assert.throws(() => {
                 registry.run({
                     eventName: 'ObjectCreated:Put',
+                    userInfo,
                     request,
                     log: logger,
                 }, () => {
@@ -155,8 +180,8 @@ describe('predicate.registry', () => {
             registry.put({
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo' },
-                (params, callback) => {
-                    const body = params.Records[0].s3.object.body;
+                (event, context, callback) => {
+                    const body = event.Records[0].s3.object.body;
                     body.setMode('transform');
                     const chunks = [];
                     body.on('data', d => chunks.push(d))
@@ -171,6 +196,7 @@ describe('predicate.registry', () => {
                 eventName: 'ObjectCreated:Put',
                 bucket: 'foo',
                 key: 'key1.json',
+                userInfo,
                 request,
                 log: logger,
             }, (err, output) => {
