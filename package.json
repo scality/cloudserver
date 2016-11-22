@@ -27,6 +27,7 @@
     "babel-plugin-transform-es2015-parameters": "^6.2.0",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
+    "dpclient": "scality/dpclient#ft/dpserver",
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
     "multilevel": "^7.3.0",
