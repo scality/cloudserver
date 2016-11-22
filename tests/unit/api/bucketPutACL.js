@@ -179,11 +179,11 @@ describe('putBucketACL API', () => {
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
                 'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be',
                 'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf',
             },
             url: '/?acl',
             query: { acl: '' },
