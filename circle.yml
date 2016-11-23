@@ -11,8 +11,11 @@ machine:
     version: 4.5.0
   ruby:
     version: "2.0"
+  services:
+    - redis
   environment:
     CXX: g++-4.9
+    ENABLE_LOCAL_CACHE: true
 
 dependencies:
   post:
