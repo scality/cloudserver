@@ -6,10 +6,16 @@ const fs = require('fs');
 const os = require('os');
 
 const async = require('async');
-const ioctl = require('ioctl');
 const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
 const logger = require('./lib/utilities/logger.js').logger;
+
+let ioctl;
+try {
+    ioctl = require('ioctl');
+} catch (err) {
+    logger.warn('ioctl dependency is unavailable. skipping...');
+}
 
 function _setDirSyncFlag(path) {
     const GETFLAGS = 2148034049;
@@ -45,7 +51,7 @@ const metadataPath = config.filePaths.metadataPath;
 fs.accessSync(dataPath, fs.F_OK | fs.R_OK | fs.W_OK);
 fs.accessSync(metadataPath, fs.F_OK | fs.R_OK | fs.W_OK);
 
-if (os.type() === 'Linux' && os.endianness() === 'LE') {
+if (os.type() === 'Linux' && os.endianness() === 'LE' && ioctl) {
     _setDirSyncFlag(dataPath);
     _setDirSyncFlag(metadataPath);
 } else {
