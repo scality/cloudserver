@@ -16,6 +16,8 @@ machine:
   environment:
     CXX: g++-4.9
     ENABLE_LOCAL_CACHE: true
+  hosts:
+    bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
 
 dependencies:
   post:

@@ -16,7 +16,8 @@
     "bluebird": "^3.3.1",
     "mocha": "^2.3.4",
     "tv4": "^1.2.7",
-    "xml2js": "^0.4.16"
+    "xml2js": "^0.4.16",
+    "zombie": "^5.0.5"
   },
   "scripts": {
     "test-aws": "AWS_ON_AIR=true mocha",
