@@ -21,7 +21,9 @@ export function shuffle(array) {
     array.forEach((item, currentIndex, array) => {
         randomIndex = Math.floor(Math.random() * length);
         temporaryValue = array[currentIndex];
+        // eslint-disable-next-line no-param-reassign
         array[currentIndex] = array[randomIndex];
+        // eslint-disable-next-line no-param-reassign
         array[randomIndex] = temporaryValue;
     });
     return array;
@@ -36,10 +38,17 @@ export function timeDiff(startTime) {
 }
 
 export function makeAuthInfo(accessKey) {
-    const canonicalID = accessKey === constants.publicId ?
-        constants.publicId : `${accessKey}canonicalID`;
+    const canIdMap = {
+        accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
+            + 'cd47ef2be',
+        accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
+            + 'cd47ef2bf',
+        default: `${accessKey}canonicalID`,
+    };
+    canIdMap[constants.publicId] = constants.publicId;
+
     return new AuthInfo({
-        canonicalID,
+        canonicalID: canIdMap[accessKey] || canIdMap.default,
         shortid: 'shortid',
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
