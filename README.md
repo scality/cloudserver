@@ -109,6 +109,12 @@ where `REDIS_HOST` is your Redis instance IP address (`"127.0.0.1"` if your
 Redis is running locally)
 and `REDIS_PORT` is your Redis instance port (`6379` by default)
 
+* Add the following to the etc/hosts file on your machine:
+
+```shell
+127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com
+```
+
 * Start the S3 server in memory and run the functional tests:
 
 ```shell
