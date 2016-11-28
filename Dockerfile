@@ -10,8 +10,9 @@ RUN apt-get update \
     && npm install \
     && apt-get autoremove -y python build-essential
 
-CMD [ "npm", "start" ]
-
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
+
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+CMD [ "npm", "start" ]
 
 EXPOSE 8000

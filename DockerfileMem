@@ -11,6 +11,8 @@ RUN apt-get update \
     && apt-get autoremove -y python build-essential
 
 ENV S3BACKEND mem
+
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "npm", "start" ]
 
 EXPOSE 8000
