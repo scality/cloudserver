@@ -1,0 +1,5 @@
+{
+  "name": "indexServer",
+  "description": "S3 indexing service",
+  "main": "index.js"
+}

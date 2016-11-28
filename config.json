@@ -34,7 +34,7 @@
     },
     "userMetaIndexing":true,
     "systemMetaIndexing":true,
-    "indexingHost":"127.0.0.1",
-    "indexingPort":7000
+    "indexServerHost":"127.0.0.1",
+    "indexServerPort":7000
 
 }
