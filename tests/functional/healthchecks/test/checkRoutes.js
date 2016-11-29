@@ -52,7 +52,7 @@ function makeAgent() {
 
 function makeDummyS3Request(cb) {
     const getOptions = deepCopy(options);
-    getOptions.path = '/';
+    getOptions.path = '/foo/bar';
     getOptions.method = 'GET';
     getOptions.agent = makeAgent();
     const req = transport.request(getOptions);
@@ -108,7 +108,8 @@ describe('Healthcheck stats', () => {
     const totalReqs = 5;
     beforeEach(done => {
         redis.flushdb(() => {
-            async.times(totalReqs, (n, next) => makeDummyS3Request(next), done);
+            async.timesSeries(totalReqs,
+                (n, next) => makeDummyS3Request(next), done);
         });
     });
 
