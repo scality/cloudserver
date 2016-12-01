@@ -5,9 +5,11 @@ import crypto from 'crypto';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
+import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
@@ -340,6 +342,29 @@ describe('deleted flag bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 confirmDeleted(done);
             });
+    });
+
+    it('bucketGetWebsite request on bucket with delete flag should return ' +
+    'NoSuchBucket error and complete deletion', done => {
+        bucketGetWebsite(authInfo, baseTestRequest,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
+    });
+
+    it('bucketPutWebsite request on bucket with delete flag should return ' +
+    'NoSuchBucket error and complete deletion', done => {
+        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutWebsiteRequest.post = '<WebsiteConfiguration>' +
+        '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
+        '</WebsiteConfiguration>';
+        bucketPutWebsite(authInfo, bucketPutWebsiteRequest,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
     });
 
     it('bucketHead request on bucket with delete flag should return ' +
