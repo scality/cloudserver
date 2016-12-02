@@ -116,14 +116,17 @@ describe('Healthcheck stats', () => {
     afterEach(() => redis.flushdb());
 
     it('should respond back with total requests', done =>
-        makeStatsRequest((err, res) => {
-            if (err) {
-                return done(err);
-            }
-            const expectedStatsRes = { 'requests': totalReqs, '500s': 0,
-                'sampleDuration': 30 };
-            assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
-            return done();
-        })
+        // interm fix to avoid race condition with Redis
+        setTimeout(() => {
+            makeStatsRequest((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                const expectedStatsRes = { 'requests': totalReqs, '500s': 0,
+                    'sampleDuration': 30 };
+                assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
+                return done();
+            });
+        }, 500)
     );
 });
