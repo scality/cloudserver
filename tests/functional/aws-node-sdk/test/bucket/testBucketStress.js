@@ -12,7 +12,7 @@ function generateRandomName(length) {
     const count = length || 15;
     let name = '';
     for (let i = 0; i < count; i++) {
-        name += String.fromCharCode(Math.floor(Math.random() * 92 + 33));
+        name += String.fromCharCode(Math.floor(Math.random() * 26 + 97));
     }
     return name;
 }
