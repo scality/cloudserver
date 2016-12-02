@@ -71,6 +71,10 @@ This starts an S3 server on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 
+## Run it for continuous integration testing or in production with Docker
+
+[DOCKER.md](DOCKER.md)
+
 ## Testing
 
 You can run the unit tests with the following command:
