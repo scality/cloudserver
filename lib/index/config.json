@@ -1,4 +1,4 @@
 {
     "port": 7000,
-    "db": "../../indexdb0"
+    "db": "../../indexdb0",
 }
