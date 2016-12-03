@@ -89,10 +89,30 @@ You can run the linter with:
 npm run lint
 ```
 
-You can run local functional tests with:
+Running functional tests locally:
+
+The test suite requires additional tools, **s3cmd** and **Redis** installed
+in the environment the tests are running in.
+
+* Install [s3cmd](http://s3tools.org/download)
+* Install [redis](https://redis.io/download) and start Redis.
+* Add localCache section to your `config.json`:
+
+```
+"localCache": {
+    "host": REDIS_HOST,
+    "port": REDIS_PORT
+}
+```
+
+where `REDIS_HOST` is your Redis instance IP address (`"127.0.0.1"` if your
+Redis is running locally)
+and `REDIS_PORT` is your Redis instance port (`6379` by default)
+
+* Start the S3 server in memory and run the functional tests:
 
 ```shell
-npm run mem_backend &
+npm run mem_backend
 npm run ft_test
 ```
 
