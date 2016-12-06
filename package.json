@@ -67,6 +67,7 @@
     "ft_s3curl": "cd tests/functional/s3curl && npm test",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "init": "node init.js",
+    "install_ft_deps": "npm install aws-sdk@2.2.11 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
