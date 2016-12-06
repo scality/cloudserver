@@ -465,6 +465,19 @@ describe('s3curl putObject', () => {
                 });
         });
 
+    it('should not be able to put an object if content-md5 header is ' +
+    'unreadable',
+        done => {
+            provideRawOutput(['--debug', `--put=${upload}`,
+                '--contentMd5', '\x07', '--',
+                `${endpoint}/${bucket}/` +
+                `${prefix}${delimiter}${upload}1`, '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '403 FORBIDDEN');
+                    assertError(rawOutput.stdout, 'AccessDenied', done);
+                });
+        });
+
     // skip until we figure out how to parse the response in the CI
     it.skip('should not be able to put an object if content-md5 header is ' +
     'mismatched MD5',
