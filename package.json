@@ -21,10 +21,10 @@
   "dependencies": {
     "arsenal": "scality/Arsenal#rel/6.2.1",
     "async": "~1.4.2",
-    "babel-core": "^6.2.1",
-    "babel-plugin-transform-es2015-destructuring": "^6.1.18",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.2.0",
-    "babel-plugin-transform-es2015-parameters": "^6.2.0",
+    "babel-core": "^6.5.2",
+    "babel-plugin-transform-es2015-destructuring": "^6.5.2",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.5.2",
+    "babel-plugin-transform-es2015-parameters": "^6.5.2",
     "bucketclient": "scality/bucketclient#rel/6.2.1",
     "commander": "^2.9.0",
     "ioctl": "^2.0.0",
@@ -39,28 +39,35 @@
     "vaultclient": "scality/vaultclient#rel/6.2.1",
     "werelogs": "scality/werelogs#rel/6.2.1",
     "xml": "~1.0.0",
-    "xml2js": "~0.4.12"
+    "xml2js": "~0.4.16"
   },
   "optionalDependencies": {
     "ioctl": "2.0.0"
   },
   "devDependencies": {
+    "aws-sdk": "^2.2.11",
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
+    "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
     "eslint-config-scality": "scality/Guidelines#rel/6.2.1",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
-    "mocha": "^2.3.3",
+    "mocha": "^2.3.4",
     "mocha-junit-reporter": "1.11.1",
     "node-mocks-http": "^1.5.2",
-    "s3blaster": "scality/s3blaster"
+    "s3blaster": "scality/s3blaster",
+    "tv4": "^1.2.7"
   },
   "scripts": {
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && npm test",
+    "ft_s3cmd": "cd tests/functional/s3cmd && npm test",
+    "ft_s3curl": "cd tests/functional/s3curl && npm test",
     "ft_test": "mocha tester.js --compilers js:babel-core/register",
     "init": "node init.js",
+    "install_ft_deps": "npm install aws-sdk@2.2.11 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
