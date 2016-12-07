@@ -1494,4 +1494,78 @@ describe('Multipart Upload API', () => {
           })
         );
     });
+
+    it('should complete an MPU with fewer parts than were originally ' +
+        'put and delete data from left out parts', done => {
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest,
+                locationConstraint, log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                        next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+            const partRequest1 = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+            }, fullSizedPart);
+            const partRequest2 = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                query: {
+                    partNumber: '2',
+                    uploadId: testUploadId,
+                },
+            }, postBody);
+            objectPutPart(authInfo, partRequest1, undefined, log, err => {
+                assert.deepStrictEqual(err, null);
+                const md5Hash = crypto.createHash('md5').update(fullSizedPart);
+                const calculatedHash = md5Hash.digest('hex');
+                objectPutPart(authInfo, partRequest2, undefined, log, err => {
+                    assert.deepStrictEqual(err, null);
+                    const completeBody = '<CompleteMultipartUpload>' +
+                            '<Part>' +
+                            '<PartNumber>1</PartNumber>' +
+                            `<ETag>"${calculatedHash}"</ETag>` +
+                            '</Part>' +
+                            '</CompleteMultipartUpload>';
+                    const completeRequest = {
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        url: `/${objectKey}?uploadId=${testUploadId}`,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        query: { uploadId: testUploadId },
+                        post: completeBody,
+                        calculatedHash,
+                    };
+                    // show that second part data is there
+                    assert(ds[2]);
+                    completeMultipartUpload(authInfo,
+                        completeRequest, log, err => {
+                            assert.strictEqual(err, null);
+                            process.nextTick(() => {
+                                // data has been deleted
+                                assert.strictEqual(ds[2], undefined);
+                                done();
+                            });
+                        });
+                });
+            });
+        });
+    });
 });
