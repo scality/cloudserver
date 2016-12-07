@@ -328,7 +328,6 @@ describe('s3cmd getService', () => {
             provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
             parsedObject => {
                 assert(parsedObject.headers['x-amz-id-2']);
-                assert.strictEqual(parsedObject.headers.server, 'AmazonS3');
                 assert(parsedObject.headers['transfer-encoding']);
                 assert(parsedObject.headers['x-amz-request-id']);
                 const gmtDate = new Date(parsedObject.headers.date)
