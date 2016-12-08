@@ -781,6 +781,20 @@ describe('s3curl getObject', () => {
         });
     });
 
+    it('should put object with metadata unreadable', done => {
+        provideRawOutput([
+            `--put=${upload}`,
+            '--',
+            '-H',
+            'x-amz-meta-mine:\x07',
+            `${bucketPath}/getter`,
+            '-v',
+        ], httpCode => {
+            assert.strictEqual(httpCode, '200 OK');
+            done();
+        });
+    });
+
     it('should get an existing file in an existing bucket', done => {
         provideRawOutput(
             ['--', '-o', download, `${bucketPath}/getter`, '-v'],
