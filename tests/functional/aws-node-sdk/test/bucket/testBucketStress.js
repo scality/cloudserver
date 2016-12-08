@@ -23,7 +23,7 @@ function deleteObjects(s3, loopId, cb) {
 }
 
 describe('aws-node-sdk stress test bucket', function testSuite() {
-    this.timeout(120000);
+    this.timeout(150000);
     let s3;
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
