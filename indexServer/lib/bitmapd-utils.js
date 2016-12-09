@@ -1,23 +1,22 @@
-import fs from 'fs'
-import io from 'socket.io-client';
-import levelup from 'levelup'
-import leveldown from 'leveldown'
-import { logger } from '../utilities/logger';
+const fs = require('fs');
+const io = require('socket.io-client');
+const levelup = require('levelup');
+const leveldown = require('leveldown');
+const antidoteClient = require('antidote_ts_client');
 
-const data = fs.readFileSync('./config.json', { encoding: 'utf-8' });
-const config = JSON.parse(data);
+let config = fs.readFileSync('./config.json', { encoding: 'utf-8' });
+config = JSON.parse(config);
 
+let antidote;
 let client = null;
 let db = null;
-const msgarr = [];
 
-export default {
-    connectToS3(host, port) {
-        client = io.connect(`http://${host}:${port}`, {
+const utils = {
+    connectToS3() {
+        client = io.connect(`http://${config.S3.host}:${config.S3.port}`, {
             reconnection: true,
         });
         client.on('connect', function() {
-            console.log('connected');
             client.emit('subscribe', 'puts');
             client.emit('subscribe', 'deletes');
             client.emit('subscribe', 'queries');
@@ -25,7 +24,6 @@ export default {
         client.on('reconnecting', function(number) {
         });
         client.on('error', function(err) {
-            console.log('error', err);
         });
         client.on('put', function(msg) {
             require('./utils.js').default.updateIndex(msg.bucketName, msg.objName, msg.objVal);
@@ -44,6 +42,40 @@ export default {
         });
     },
 
+    connectToDB() {
+        antidote = antidoteClient.connect(config.antidote.port, config.antidote.host);
+        leveldown.destroy(config.leveldb_path, function (err) {
+            if (!err) {
+                db = levelup(config.leveldb_path);
+            }
+        });
+    },
+
+    updateAntidoteSet(key, elem, cb) {
+        const set = antidote.set(key);
+        antidote.update(
+            set.add(elem)
+        ).then( (resp) => {
+            return cb();
+        });
+    },
+
+    readAntidoteSet(key, cb) {
+        const set = antidote.set(key);
+        set.read().then(objs => {
+            return cb(null, objs);
+        });
+    },
+
+    removeFromAntidoteSet(key, objName, cb) {
+        const set = antidote.set(key);
+        antidote.update(
+            set.remove(objName)
+        ).then( (resp) => {
+            return cb();
+        });
+    },
+
     respondQuery(params, queryTerms) {
         client.emit('query_response', {
             result: queryTerms,
@@ -51,18 +83,12 @@ export default {
         })
     },
 
-    opendb() {
-        leveldown.destroy(config.db, function (err) {
-            if (!err) {
-                db = levelup(config.db);
-            }
-        })
-    },
     put(key, value, cb) {
         db.put(key, value, function(err) {
             return cb(err);
         });
     },
+
     get(key, cb) {
         db.get(key, function(err, data) {
             return cb(err, data);
@@ -111,3 +137,6 @@ export default {
         })
     }
 }
+
+exports.default = utils;
+exports.config = config;
