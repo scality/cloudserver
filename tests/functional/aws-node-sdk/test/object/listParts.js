@@ -5,8 +5,8 @@ import BucketUtility from '../../lib/utility/bucket-util';
 
 const bucket = 'bucketlistparts';
 const key = 'key';
-const bodyFirstPart = Buffer.allocUnsafe(10);
-const bodySecondPart = Buffer.allocUnsafe(20);
+const bodyFirstPart = Buffer.allocUnsafe(10).fill(0);
+const bodySecondPart = Buffer.allocUnsafe(20).fill(0);
 
 function checkNoError(err) {
     assert.equal(err, null,
