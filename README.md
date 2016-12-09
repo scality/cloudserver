@@ -163,6 +163,14 @@ const s3 = new aws.S3({
 
 - https://www.youtube.com/watch?v=2hhtBtmBSxE
 
+#### [CloudBerry Lab](http://www.cloudberrylab.com)
+
+- [Backup for Microsoft Windows](http://www.cloudberrylab.com/backup) 
+- [Backup for Linux](http://www.cloudberrylab.com/linux) 
+- [Backup for Mac OS X](http://www.cloudberrylab.com/mac) 
+- [CloudBerry Explorer (File Manager)](http://www.cloudberrylab.com/explorer)
+- [CloudBerry Drive (Bucket as disk)](http://www.cloudberrylab.com/drive)
+
 ### Command Line Tools
 
 #### [s3curl](https://github.com/rtdp/s3curl)
