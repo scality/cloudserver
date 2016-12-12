@@ -32,8 +32,11 @@ export class WebsiteConfigTester {
         this.RoutingRules.push(newRule);
     }
 
-    static checkHTML(browser, type, bucketName) {
+    static checkHTML(browser, type, url, bucketName) {
         // 404 error
+        if (url) {
+            browser.assert.url(url);
+        }
         if (type.startsWith('404')) {
             browser.assert.status(404);
             browser.assert.text('title', '404 Not Found');
@@ -99,6 +102,10 @@ export class WebsiteConfigTester {
             browser.assert.status(403);
             browser.assert.text('title', 'Error!!');
             browser.assert.text('h1', 'It appears you messed up');
+        } else if (type === 'redirect-user') {
+            browser.assert.status(200);
+            browser.assert.text('title', 'Best redirect link ever');
+            browser.assert.text('h1', 'Welcome to your redirection file');
         } else {
             throw new Error('This is not checked in checkHTML()');
         }
