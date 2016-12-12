@@ -452,6 +452,23 @@ describe('s3curl putObject', () => {
             });
         });
 
+
+    it('should be able to handle a non rfc header',
+        done => {
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                '-H',
+                'x-amz-custom/header: foo',
+                `${prefixedPath}${upload}1`,
+                '-v',
+            ], httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
+        });
+
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
             provideRawOutput([
