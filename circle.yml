@@ -13,6 +13,7 @@ machine:
     version: "2.0"
   environment:
     CXX: g++-4.9
+    CHILL: true
 
 dependencies:
   post:
