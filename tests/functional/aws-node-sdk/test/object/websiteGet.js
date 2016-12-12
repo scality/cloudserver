@@ -33,7 +33,24 @@ const endpoint = `${transport}://${hostname}:80`;
 
 // TODO: Add this endpoint in Integration for CI
 
-describe('User visits bucket website endpoint', () => {
+function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
+    const webConfig = new WebsiteConfigTester('index.html');
+    webConfig.addRoutingRule(redirect, condition);
+    s3.putBucketWebsite({ Bucket: bucket,
+        WebsiteConfiguration: webConfig }, err => {
+        if (err) {
+            done(err);
+        }
+        return s3.putObject({ Bucket: bucket,
+        Key: key,
+        ACL: 'public-read',
+        Body: fs.readFileSync(path.join(__dirname,
+            '/websiteFiles/redirect.html')),
+        ContentType: 'text/html' }, done);
+    });
+}
+
+describe.only('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce that using postman for ex
@@ -63,7 +80,7 @@ describe('User visits bucket website endpoint', () => {
 
     it('should return 404 when no such bucket', done => {
         browser.visit(endpoint, () => {
-            WebsiteConfigTester.checkHTML(browser, '404-no-such-bucket',
+            WebsiteConfigTester.checkHTML(browser, '404-no-such-bucket', null,
               bucket);
             done();
         });
@@ -87,7 +104,7 @@ describe('User visits bucket website endpoint', () => {
         it('should return 404 when no website configuration', done => {
             browser.visit(endpoint, () => {
                 WebsiteConfigTester.checkHTML(browser,
-                  '404-no-such-website-configuration', bucket);
+                  '404-no-such-website-configuration', null, bucket);
                 done();
             });
         });
@@ -222,12 +239,12 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        // If redirectAllTo protocol return an http (not https) request,
-        // this test will fail.
-        describe('redirect all requests to https://scality.com', () => {
+        // 10
+        describe('redirect all requests to https://www.scality.com',
+        () => {
             beforeEach(done => {
                 const redirectAllTo = {
-                    HostName: 'scality.com',
+                    HostName: 'www.scality.com',
                     Protocol: 'https',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
@@ -236,21 +253,23 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to http://scality.com', done => {
+            it('should redirect to https://scality.com', done => {
                 browser.visit(endpoint, () => {
-                    WebsiteConfigTester.checkHTML(browser, 'scality');
+                    WebsiteConfigTester.checkHTML(browser, 'scality',
+                      'https://www.scality.com');
                     done();
                 });
             });
 
             it('should redirect to https://scality.com/about-us', done => {
                 browser.visit(`${endpoint}/about-us`, () => {
-                    WebsiteConfigTester.checkHTML(browser, 'scality-about-us');
+                    WebsiteConfigTester.checkHTML(browser, 'scality-about-us',
+                      'https://www.scality.com/about-us/');
                     done();
                 });
             });
         });
-
+        // 11
         describe('with user\'s error', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
@@ -279,7 +298,7 @@ describe('User visits bucket website endpoint', () => {
                 });
             });
         });
-
+        // 12
         describe('error with unfound user\'s error', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
@@ -293,6 +312,170 @@ describe('User visits bucket website endpoint', () => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser,
                       '403-retrieve-error-document');
+                    done();
+                });
+            });
+        });
+
+        // 13
+        describe('redirect to hostname with error code condition', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    HttpErrorCodeReturnedEquals: '403',
+                };
+                const redirect = {
+                    HostName: 'www.scality.com',
+                    ReplaceKeyPrefixWith: '/about-us',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, done);
+            });
+
+            it('should redirect to www.scality.com/about-us if error 403' +
+            ' occured', done => {
+                browser.visit(endpoint, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'scality-about-us');
+                    done();
+                });
+            });
+        });
+
+        // 14
+        describe('redirect to hostname with prefix and error condition',
+        () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    KeyPrefixEquals: 'about/',
+                    HttpErrorCodeReturnedEquals: '403',
+                };
+                const redirect = {
+                    Protocol: 'https',
+                    HostName: 'www.scality.com',
+                    ReplaceKeyPrefixWith: '/about-us',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, done);
+            });
+
+            it('should redirect to https://www.scality.com/about-us if ' +
+            'key prefix is equal to "about" and error 403', done => {
+                browser.visit(`${endpoint}/about/`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'scality-about-us',
+                      'https://www.scality.com/about-us/');
+                    done();
+                });
+            });
+        });
+
+        // 15
+        describe('redirect to hostname with prefix condition', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    KeyPrefixEquals: 'about/',
+                };
+                const redirect = {
+                    Protocol: 'https',
+                    HostName: 'www.scality.com',
+                    ReplaceKeyPrefixWith: '/about-us',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, done);
+            });
+
+            it('should redirect to https://www.scality.com/about-us if ' +
+            'key prefix is equal to "about"', done => {
+                browser.visit(`${endpoint}/about/`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'scality-about-us',
+                      'https://www.scality.com/about-us/');
+                    done();
+                });
+            });
+        });
+
+        // MIXING
+        describe('redirect to key with error code condition', () => {
+            beforeEach(done => {
+                const condition = {
+                    HttpErrorCodeReturnedEquals: '403',
+                };
+                const redirect = {
+                    ReplaceKeyWith: 'redirect.html',
+                };
+                putBucketWebsiteAndPutObjectRedirect(redirect, condition,
+                  'redirect.html', done);
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'redirect.html' },
+                err => done(err));
+            });
+
+            it('should serve redirect file if error 403 error occured',
+            done => {
+                browser.visit(endpoint, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'redirect-user');
+                    done();
+                });
+            });
+        });
+
+        describe('redirect requests with prefix /about to redirect/',
+        () => {
+            beforeEach(done => {
+                const condition = {
+                    KeyPrefixEquals: 'about/',
+                };
+                const redirect = {
+                    ReplaceKeyPrefixWith: 'redirect/',
+                };
+                putBucketWebsiteAndPutObjectRedirect(redirect, condition,
+                  'redirect/index.html', done);
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
+                err => done(err));
+            });
+
+            it('should serve redirect file if key prefix is equal to "about"',
+            done => {
+                browser.visit(`${endpoint}/about/`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'redirect-user');
+                    done();
+                });
+            });
+        });
+
+        describe('redirect requests, with prefix /about and that return ' +
+        '403 error, to prefix redirect/', () => {
+            beforeEach(done => {
+                const condition = {
+                    KeyPrefixEquals: 'about/',
+                    HttpErrorCodeReturnedEquals: '403',
+                };
+                const redirect = {
+                    ReplaceKeyPrefixWith: 'redirect/',
+                };
+                putBucketWebsiteAndPutObjectRedirect(redirect, condition,
+                  'redirect/index.html', done);
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
+                err => done(err));
+            });
+
+            it('should serve redirect file if key prefix is equal to ' +
+            '"about" and error 403',
+            done => {
+                browser.visit(`${endpoint}/about/`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'redirect-user');
                     done();
                 });
             });
