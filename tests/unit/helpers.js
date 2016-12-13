@@ -57,6 +57,101 @@ export function makeAuthInfo(accessKey) {
     });
 }
 
+export class WebsiteConfig {
+    constructor(indexDocument, errorDocument, redirectAllReqTo) {
+        if (indexDocument) {
+            this.IndexDocument = {};
+            this.IndexDocument.Suffix = indexDocument;
+        }
+        if (errorDocument) {
+            this.ErrorDocument = {};
+            this.ErrorDocument.Key = errorDocument;
+        }
+        if (redirectAllReqTo) {
+            this.RedirectAllRequestsTo = redirectAllReqTo;
+        }
+    }
+    addRoutingRule(redirectParams, conditionParams) {
+        const newRule = {};
+        if (!this.RoutingRules) {
+            this.RoutingRules = [];
+        }
+        if (redirectParams) {
+            newRule.Redirect = {};
+            Object.keys(redirectParams).forEach(key => {
+                newRule.Redirect[key] = redirectParams[key];
+            });
+        }
+        if (conditionParams) {
+            newRule.Condition = {};
+            Object.keys(conditionParams).forEach(key => {
+                newRule.Condition[key] = conditionParams[key];
+            });
+        }
+        this.RoutingRules.push(newRule);
+    }
+    getXml() {
+        const xml = [];
+        function _pushChildren(obj) {
+            Object.keys(obj).forEach(element => {
+                xml.push(`<${element}>${obj[element]}</${element}>`);
+            });
+        }
+
+        xml.push('<WebsiteConfiguration xmlns=' +
+            '"http://s3.amazonaws.com/doc/2006-03-01/">');
+
+        if (this.IndexDocument) {
+            xml.push('<IndexDocument>',
+            `<Suffix>${this.IndexDocument.Suffix}</Suffix>`,
+            '</IndexDocument>');
+        }
+
+        if (this.ErrorDocument) {
+            xml.push('<ErrorDocument>',
+            `<Key>${this.ErrorDocument.Key}</Key>`,
+            '</ErrorDocument>');
+        }
+
+        if (this.RedirectAllRequestsTo) {
+            xml.push('<RedirectAllRequestsTo>');
+            if (this.RedirectAllRequestsTo.HostName) {
+                xml.push('<HostName>',
+                `${this.RedirectAllRequestsTo.HostName})`,
+                '</HostName>');
+            }
+            if (this.RedirectAllRequestsTo.Protocol) {
+                xml.push('<Protocol>',
+                `${this.RedirectAllRequestsTo.Protocol})`,
+                '</Protocol>');
+            }
+            xml.push('</RedirectAllRequestsTo>');
+        }
+
+        if (this.RoutingRules) {
+            xml.push('<RoutingRules>');
+            this.RoutingRules.forEach(rule => {
+                xml.push('<RoutingRule>');
+                if (rule.Condition) {
+                    xml.push('<Condition>');
+                    _pushChildren(rule.Condition);
+                    xml.push('</Condition>');
+                }
+                if (rule.Redirect) {
+                    xml.push('<Redirect>');
+                    _pushChildren(rule.Redirect);
+                    xml.push('</Redirect>');
+                }
+                xml.push('</RoutingRule>');
+            });
+            xml.push('</RoutingRules>');
+        }
+
+        xml.push('</WebsiteConfiguration>');
+        return xml.join('');
+    }
+}
+
 export function createAlteredRequest(alteredItems, objToAlter,
     baseOuterObj, baseInnerObj) {
     const alteredRequest = Object.assign({}, baseOuterObj);

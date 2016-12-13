@@ -42,3 +42,15 @@ this._serverSideEncryption = serverSideEncryption || null;
 ### Usage
 
 Used to store the server bucket encryption info
+
+## Model version 4
+
+### Properties Added
+
+```
+this._websiteConfiguration = websiteConfiguration || null;
+```
+
+### Usage
+
+Used to store the bucket website configuration info
