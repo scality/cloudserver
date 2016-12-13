@@ -11,6 +11,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
@@ -323,6 +324,15 @@ describe('deleted flag bucket handling', () => {
             log, err => {
                 assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
+            });
+    });
+
+    it('bucketDeleteWebsite request on bucket with delete flag should return ' +
+        'NoSuchBucket error and complete deletion', done => {
+        bucketDeleteWebsite(authInfo, baseTestRequest,
+            log, err => {
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                confirmDeleted(done);
             });
     });
 
