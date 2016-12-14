@@ -77,12 +77,7 @@ describe.only('User visits bucket website endpoint', () => {
     describe('with existing bucket', () => {
         beforeEach(done => {
             // s3.createBucket({ Bucket: bucket }, err => done(err));
-            s3.createBucket({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return setTimeout(() => done(), 5000);
-            });
+            s3.createBucket({ Bucket: bucket }, done);
         });
 
         afterEach(done => {
