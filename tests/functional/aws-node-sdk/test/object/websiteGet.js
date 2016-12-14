@@ -2,34 +2,22 @@ import assert from 'assert';
 import fs from 'fs';
 import http from 'http';
 import path from 'path';
-const AWS = require('aws-sdk');
 
-// import { S3 } from 'aws-sdk';
+import { S3 } from 'aws-sdk';
 import Browser from 'zombie';
 
 import conf from '../../../../../lib/Config';
-// import getConfig from '../support/config';
+import getConfig from '../support/config';
 import { WebsiteConfigTester } from '../../lib/utility/website-util';
 
-// const config = getConfig('default', { signatureVersion: 'v4' });
-// const s3 = new S3(config);
-
-// against real AWS
-const s3 = new AWS.S3({
-    accessKeyId: process.env.A,
-    secretAccessKey: process.env.S,
-    endpoint: 's3.amazonaws.com',
-    sslEnabled: false,
-    s3ForcePathStyle: true,
-    signatureVersion: 'v4',
-});
+const config = getConfig('default', { signatureVersion: 'v4' });
+const s3 = new S3(config);
 
 const transport = conf.https ? 'https' : 'http';
-const bucket = 'mybucketwebsite';
+const bucket = 'bucketwebsitetester';
 const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
 
-// const endpoint = `${transport}://${hostname}:8000`;
-const endpoint = `${transport}://${hostname}:80`;
+const endpoint = `${transport}://${hostname}:8000`;
 
 // TODO: Add this endpoint in Integration for CI
 
@@ -50,17 +38,16 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe.only('User visits bucket website endpoint', () => {
+describe('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
-    // Have not manage to reproduce that using postman for ex
+    // Have not manage to reproduce agains AWS
     it.skip('should return 405 when user requests method other than get or ' +
     ' head',
         done => {
             const options = {
                 hostname,
-                // port: 8000
-                port: 80,
+                port: 8000,
                 method: 'POST',
             };
             const req = http.request(options, res => {
