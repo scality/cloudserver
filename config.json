@@ -32,9 +32,11 @@
         "logLevel": "info",
         "dumpLevel": "error"
     },
+    "antidote": {
+        "host": "localhost",
+        "port": 8087
+    },
     "userMetaIndexing":true,
     "systemMetaIndexing":true,
-    "indexServerHost":"127.0.0.1",
     "indexServerPort":7000
-
 }
