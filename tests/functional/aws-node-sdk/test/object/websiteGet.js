@@ -38,7 +38,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe('User visits bucket website endpoint', () => {
+describe.only('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce agains AWS
@@ -186,14 +186,14 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('with no key', () => {
+        describe('with nonexisting index document key', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should return 403 if no key', done => {
+            it('should return 403 if nonexisting index document key', done => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser, '403-access-denied');
                     done();
@@ -259,7 +259,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
         // 11
-        describe('with user\'s error', () => {
+        describe('with custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
                 'error.html');
@@ -280,7 +280,8 @@ describe('User visits bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'error.html' }, done);
             });
 
-            it('should serve user\'s error file if an error occurred', done => {
+            it('should serve custom error document if an error occurred',
+            done => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser, 'error-user');
                     done();
@@ -288,7 +289,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
         // 12
-        describe('error with unfound user\'s error', () => {
+        describe('unfound custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
                 'error.html');
@@ -296,7 +297,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should serve s3 error file if unfound user\'s error file ' +
+            it('should serve s3 error file if unfound custom error document ' +
             'and an error occurred', done => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser,
@@ -582,7 +583,7 @@ describe('User visits bucket website endpoint', () => {
 // 16) redirect with multiple condition rules and show that first one wins
 // 17) redirect with protocol specified
 // DEFAULT 18) redirect with hostname specified
-// 19) reirect with replaceKeyWith specified
+// 19) redirect with replaceKeyWith specified
 // 20) redirect with replaceKeyPrefixWith specified
 // 21) redirect with httpRedirect Code specified
 // 22) redirect with combination of redirect items applicable
