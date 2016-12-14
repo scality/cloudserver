@@ -230,6 +230,81 @@ export class DummyRequestLogger {
     }
 }
 
+export class CorsConfigTester {
+    constructor(params) {
+        this._cors = [
+          { allowedMethods: ['PUT', 'POST', 'DELETE'],
+            allowedOrigins: ['http://www.example.com'],
+            allowedHeaders: ['*'],
+            maxAgeSeconds: 3000,
+            exposeHeaders: ['x-amz-server-side-encryption'] },
+          { id: 'testid',
+            allowedMethods: ['GET'],
+            allowedOrigins: ['*'],
+            allowedHeaders: ['*'],
+            maxAgeSeconds: 3000 },
+        ];
+
+        if (params) {
+            Object.keys(params).forEach(key => {
+                this._cors[0][key] = params[key];
+            });
+        }
+    }
+
+    getCors() {
+        return this._cors;
+    }
+
+    constructXml() {
+        const xml = [];
+        xml.push('<CORSConfiguration>');
+        this._cors.forEach(rule => {
+            xml.push('<CORSRule>');
+            ['allowedMethods', 'allowedOrigins', 'allowedHeaders',
+            'exposeHeaders', 'maxAgeSeconds']
+            .forEach(key => {
+                if (rule[key] && Array.isArray(rule[key])) {
+                    const element = key === 'maxAgeSeconds' ?
+                    key.charAt(0).toUpperCase() + key.slice(1) :
+                    key.charAt(0).toUpperCase() +
+                    key.slice(1, -1);
+                    rule[key].forEach(value => {
+                        xml.push(`<${element}>${value}</${element}>`);
+                    });
+                }
+            });
+            if (rule.id) {
+                xml.push(`<ID>${rule.id}</ID>`);
+            }
+            if (rule.maxAgeSeconds && !Array.isArray(rule.maxAgeSeconds)) {
+                xml.push(`<MaxAgeSeconds>${rule.maxAgeSeconds}` +
+                    '</MaxAgeSeconds>');
+            }
+            xml.push('</CORSRule>');
+        });
+        xml.push('</CORSConfiguration>');
+        return xml.join('');
+    }
+
+    createBucketCorsRequest(method, bucketName, body) {
+        const request = {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?cors',
+            query: { cors: '' },
+        };
+        if (method === 'PUT') {
+            request.post = body || this.constructXml();
+            request.headers['content-md5'] = crypto.createHash('md5')
+                .update(request.post, 'utf8').digest('base64');
+        }
+        return request;
+    }
+}
+
 export class AccessControlPolicy {
     constructor(params) {
         this.Owner = {};

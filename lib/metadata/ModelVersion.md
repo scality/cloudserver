@@ -61,8 +61,10 @@ Used to store the location constraint of the bucket
 
 ```javascript
 this._websiteConfiguration = websiteConfiguration || null;
+this._cors = cors || null;
 ```
 
 ### Usage
 
 Used to store the bucket website configuration info
+and to store CORS rules to apply to cross-domain requests
