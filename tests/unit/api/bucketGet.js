@@ -164,13 +164,14 @@ describe('bucketGet API', () => {
         });
     });
 
-    it('should return max-keys: 1000 if max-keys > 1000', done => {
+    it('should return max-keys number from request even if greater than ' +
+        'actual keys returned', done => {
         const testGetRequest = {
             bucketName,
             namespace,
             headers: { host: '/' },
             url: `/${bucketName}`,
-            query: { 'max-keys': '9999' },
+            query: { 'max-keys': '99999' },
         };
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
@@ -185,7 +186,7 @@ describe('bucketGet API', () => {
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult.MaxKeys[0],
-                               '1000');
+                               '99999');
             done();
         });
     });

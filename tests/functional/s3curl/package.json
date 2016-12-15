@@ -1,11 +1,6 @@
 {
     "name": "s3curl-tests",
-    "dependencies": {
-        "arsenal": "scality/Arsenal",
-        "mocha": "2.3.3",
-        "xml2js": "~0.4.12"
-    },
     "scripts": {
-        "test": "mocha *.js"
+        "test": "mocha -t 40000 *.js"
     }
 }
