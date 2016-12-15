@@ -76,12 +76,16 @@ describe.only('User visits bucket website endpoint', () => {
 
     describe('with existing bucket', () => {
         beforeEach(done => {
-            // s3.createBucket({ Bucket: bucket }, err => done(err));
-            s3.createBucket({ Bucket: bucket }, done);
+            s3.createBucket({ Bucket: bucket }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return setTimeout(() => done(), 5000);
+            });
         });
 
         afterEach(done => {
-            s3.deleteBucket({ Bucket: bucket }, err => done(err));
+            s3.deleteBucket({ Bucket: bucket }, done);
         });
 
         it('should return 404 when no website configuration', done => {
@@ -146,7 +150,7 @@ describe.only('User visits bucket website endpoint', () => {
 
             it('should serve indexDocument if path request without key',
             done => {
-                browser.visit(`${endpoint}/www`, () => {
+                browser.visit(`${endpoint}/www/`, () => {
                     WebsiteConfigTester.checkHTML(browser, 'index-user');
                     done();
                 });
@@ -479,7 +483,7 @@ describe.only('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to www.scality.com/about-us if' +
+            it('should redirect to www.scality.com/about-us if ' +
             'ReplaceKeyPrefixWith equals "about-us/"', done => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser, '200',
