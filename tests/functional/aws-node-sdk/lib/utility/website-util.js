@@ -47,7 +47,7 @@ export class WebsiteConfigTester {
                     browser.assert.text('ul:first-of-type > li:first-child',
                     'Code: NoSuchBucket');
                     browser.assert.text('ul:first-of-type > li:nth-child(2)',
-                    'Message: The specified bucket does not exist');
+                    'Message: The specified bucket does not exist.');
                     browser.assert.text('ul:first-of-type > li:nth-child(3)',
                     `BucketName: ${bucketName}`);
                 } else if (type === '404-no-such-website-configuration') {
