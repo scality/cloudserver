@@ -54,12 +54,10 @@ export default {
 
     // Number of sub-directories for file backend
     folderHash: 3511, // Prime number
-    // AWS does not set a hard limit on the listing maxKeys.
-    // Nonetheless, we should not consume the whole memory when
-    // listing some large buckets
+    // AWS only returns 1000 on a listing
     // http://docs.aws.amazon.com/AmazonS3/latest/API/
     //      RESTBucketGET.html#RESTBucketGET-requests
-    listingHardLimit: 20000,
+    listingHardLimit: 1000,
 
     // AWS sets a minimum size limit for parts except for the last part.
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
