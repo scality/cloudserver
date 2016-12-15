@@ -42,3 +42,15 @@ this._serverSideEncryption = serverSideEncryption || null;
 ### Usage
 
 Used to store the server bucket encryption info
+
+## Model version 4
+
+### Properties Added
+
+```javascript
+this._locationConstraint = LocationConstraint || null;
+```
+
+### Usage
+
+Used to store the location constraint of the bucket

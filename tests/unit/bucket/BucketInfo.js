@@ -27,6 +27,7 @@ const acl = { undefined, emptyAcl, filledAcl };
 const testDate = new Date().toJSON();
 
 const testVersioningConfiguration = { Status: 'Enabled' };
+const testLocationConstraint = 'us-west-1';
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
@@ -39,7 +40,7 @@ Object.keys(acl).forEach(
                 algorithm: 'sha1',
                 masterKeyId: 'somekey',
                 mandatory: true,
-            }, testVersioningConfiguration);
+            }, testVersioningConfiguration, testLocationConstraint);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             let serialized;
@@ -58,6 +59,7 @@ Object.keys(acl).forEach(
                     serverSideEncryption: dummyBucket._serverSideEncryption,
                     versioningConfiguration:
                         dummyBucket._versioningConfiguration,
+                    locationConstraint: dummyBucket._locationConstraint,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
@@ -120,6 +122,10 @@ Object.keys(acl).forEach(
                 assert.deepStrictEqual(dummyBucket.getVersioningConfiguration(),
                         testVersioningConfiguration);
             });
+            it('getLocationConstraint should return locationConstraint', () => {
+                assert.deepStrictEqual(dummyBucket.getLocationConstraint(),
+                testLocationConstraint);
+            });
         });
 
         describe('setters on BucketInfo class', () => {
@@ -174,7 +180,7 @@ Object.keys(acl).forEach(
                    const newLocation = 'newLocation';
                    dummyBucket.setLocationConstraint(newLocation);
                    assert.deepStrictEqual(
-                       dummyBucket.locationConstraint, newLocation);
+                       dummyBucket.getLocationConstraint(), newLocation);
                });
             it('setVersioningConfiguration should set configuration', () => {
                 const newVersioningConfiguration =
