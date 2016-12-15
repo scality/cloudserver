@@ -164,7 +164,8 @@ describe('bucketGet API', () => {
         });
     });
 
-    it('should return max-keys: 20000 if max-keys > 20000', done => {
+    it('should return max-keys number from request even if greater than ' +
+        'actual keys returned', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -185,7 +186,7 @@ describe('bucketGet API', () => {
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult.MaxKeys[0],
-                               '20000');
+                               '99999');
             done();
         });
     });
