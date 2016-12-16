@@ -38,7 +38,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe.only('User visits bucket website endpoint', () => {
+describe('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce agains AWS
@@ -126,8 +126,14 @@ describe.only('User visits bucket website endpoint', () => {
                     done();
                 });
             });
+            it('should serve indexDocument if key requested', done => {
+                browser.visit(`${endpoint}/index.html`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'index-user');
+                    done();
+                });
+            });
         });
-        describe('with path in request without key', () => {
+        describe('with path in request with/without key', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
@@ -151,6 +157,14 @@ describe.only('User visits bucket website endpoint', () => {
             it('should serve indexDocument if path request without key',
             done => {
                 browser.visit(`${endpoint}/www/`, () => {
+                    WebsiteConfigTester.checkHTML(browser, 'index-user');
+                    done();
+                });
+            });
+
+            it('should serve indexDocument if path request with key',
+            done => {
+                browser.visit(`${endpoint}/www/index.html`, () => {
                     WebsiteConfigTester.checkHTML(browser, 'index-user');
                     done();
                 });
