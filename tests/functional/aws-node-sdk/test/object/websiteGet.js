@@ -38,7 +38,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe('User visits bucket website endpoint', () => {
+describe.only('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce agains AWS
