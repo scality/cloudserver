@@ -159,6 +159,46 @@ describe('bucket authorization for bucketPutACL', () => {
     });
 });
 
+describe('bucket authorization for bucketOwnerAction', () => {
+    // Reset the bucket ACLs
+    afterEach(() => {
+        bucket.setFullAcl({
+            Canned: 'private',
+            FULL_CONTROL: [],
+            WRITE: [],
+            WRITE_ACP: [],
+            READ: [],
+            READ_ACP: [],
+        });
+    });
+
+    it('should allow access to bucket owner', () => {
+        const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+            ownerCanonicalId);
+        assert.strictEqual(result, true);
+    });
+
+    const orders = [
+        { it: 'other account (even if other account has FULL_CONTROL rights ' +
+          'in bucket)', id: accountToVet, canned: '',
+          aclParam: ['FULL_CONTROL', accountToVet] },
+        { it: 'public user (even if bucket is public read write)',
+          id: constants.publicId, canned: 'public-read-write' },
+    ];
+    orders.forEach(value => {
+        it(`should not allow access to ${value.it}`, done => {
+            if (value.aclParam) {
+                bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
+            }
+            bucket.setCannedAcl(value.canned);
+            const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+                value.id);
+            assert.strictEqual(result, false);
+            done();
+        });
+    });
+});
+
 describe('bucket authorization for bucketDelete', () => {
     // Reset the bucket ACLs
     afterEach(() => {
