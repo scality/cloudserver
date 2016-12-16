@@ -69,7 +69,11 @@ function searchIntRange(bucketName, op, term, not, callback) {
     term = term.replace('--integer', '');
     const attr = term.split('/')[0];
     const value = parseInt(term.split('/')[1], 10);
-    readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
+    if (config.backend === "leveldb") {
+        readFromLevelDB(`${bucketName}/${attr}/${value}`, not, callback);
+    } else if (config.backend === "antidote") {
+        readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
+    }
 }
 
 function searchRegExp(bucketName, searchTerm, not, callback) {
@@ -235,7 +239,11 @@ function updateIndexEntry(key, rowId) {
 }
 
 function updateIntIndex(bucketName, objName, attribute, value, rowId) {
-    indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {});
+    if (config.backend === "leveldb") {
+        updateIndexEntry(`${bucketName}/${attribute}/${value}`, rowId);
+    } else if (config.backend === "antidote") {
+        indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {});
+    }
 }
 
 function updateACLIndex(bucketName, objName, objVal, rowId) {
