@@ -52,11 +52,16 @@ const utils = {
     },
 
     updateAntidoteSet(key, elem, cb) {
-        const set = antidote.set(key);
+        const keyset = antidote.set('keys');
         antidote.update(
-            set.add(elem)
+            keyset.add(key)
         ).then( (resp) => {
-            return cb();
+            const set = antidote.set(key);
+            antidote.update(
+                set.add(elem)
+            ).then( (resp) => {
+                return cb();
+            });
         });
     },
 

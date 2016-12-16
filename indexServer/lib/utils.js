@@ -69,72 +69,7 @@ function searchIntRange(bucketName, op, term, not, callback) {
     term = term.replace('--integer', '');
     const attr = term.split('/')[0];
     const value = parseInt(term.split('/')[1], 10);
-    indexd.get(`${bucketName}/${attr}`, (err, data) => {
-        if (err) {
-            callback(err, null)
-        }
-        else {
-            const valList = JSON.parse(data)
-            if (isNaN(value)) {
-                callback(null, bitmap.createObject());
-            }
-            let nearVal = nearValue(valList, value);
-            if (valList[nearVal] < value) {
-                nearVal = nearVal + 1;
-            }
-            indexd.get(`${bucketName}/${attr}/${padLeft(value, 30)}`, (err, term) => {
-                if (!err) {
-                    term = JSON.parse(term)
-                }
-                term = storeToBitmap(term)
-                indexd.get(`${bucketName}/${attr}/${padLeft(valList[0], 30)}`, (err, lowestValue) => {
-                    if (!err) {
-                        lowestValue = JSON.parse(lowestValue)
-                    }
-                    lowestValue = storeToBitmap(lowestValue)
-                    indexd.get(`${bucketName}/${attr}/${padLeft(valList[nearVal], 30)}`, (err, nearestValue) => {
-                        if (!err) {
-                            nearestValue = JSON.parse(nearestValue)
-                        }
-                        nearestValue = storeToBitmap(nearestValue)
-                        indexd.get(`${bucketName}/${attr}/${padLeft(valList[nearVal-1], 30)}`, (err, prevValue) => {
-                            if (!err) {
-                                prevValue = JSON.parse(prevValue)
-                            }
-                            prevValue = storeToBitmap(prevValue)
-                            indexd.get(`${bucketName}/${attr}/${padLeft(valList[valList.indexOf(value) + 1], 30)}`, (err, nextValue) => {
-                                if (!err) {
-                                    nextValue = JSON.parse(nextValue)
-                                }
-                                nextValue = storeToBitmap(nextValue)
-                                let result = bitmap.createObject();
-                                if (op.indexOf('=') !== -1) {
-                                    if (valList.indexOf(value) !== -1) {
-                                        result = result.or(term).xor(nextValue);
-                                    }
-                                }
-                                if (op.indexOf('<') !== -1) {
-                                    if (value > valList[valList.length - 1]) {
-                                        result = result.or(lowestValue);
-                                    } else if (value > valList[0]) {
-                                        result = result.or((nearestValue).xor(lowestValue));
-                                    }
-                                }
-                                if (op.indexOf('>') !== -1) {
-                                    if (value < valList[0]) {
-                                        result = result.or(lowestValue);
-                                    } else if (value < valList[valList.length - 1]) {
-                                        result = result.or((prevValue).and(nearestValue));
-                                    }
-                                }
-                                parseNotOperator(result, not, callback);
-                            })
-                        })
-                    })
-                })
-            })
-        }
-    })
+    readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
 }
 
 function searchRegExp(bucketName, searchTerm, not, callback) {
@@ -300,61 +235,7 @@ function updateIndexEntry(key, rowId) {
 }
 
 function updateIntIndex(bucketName, objName, attribute, value, rowId) {
-    indexd.get(`${bucketName}/${attribute}`, (err, data) => {
-        if (err) {
-            data = []
-        }
-        else {
-            data = JSON.parse(data)
-        }
-        if (data.indexOf(value) === -1) {
-            data.push(value);
-        }
-        data.sort(function (a, b) { return a - b; });
-        indexd.put(`${bucketName}/${attribute}`, JSON.stringify(data), err =>{
-            if (err) {
-                return ;
-            }
-        })
-
-        const ind = data.indexOf(value);
-        const nextTag = `${attribute}/${padLeft(data[ind + 1], 30)}`
-        indexd.get(`${bucketName}/${nextTag}`, (err, data) => {
-            if (err) {
-            }
-            else {
-                data = JSON.parse(data)
-            }
-            indexd.put(`${bucketName}/${attribute}/${padLeft(value, 30)}`, JSON.stringify(updateBitmap(storeToBitmap(data), rowId)), err =>{
-                if (err) {
-                    return ;
-                }
-            })
-        })
-
-        let end = ind - 1;
-        if (end < 0) {
-            end = 0;
-        }
-        const first = `${attribute}/${padLeft(data[0], 30)}`
-        const last = `${attribute}/${padLeft(data[end], 30)}`
-        indexd.getRange(`${bucketName}/${first}`, `${bucketName}/${last}`, (err, list) => {
-            if (list.length > 0) {
-                var ops = []
-                list.forEach(elem => {
-                    elem.value = JSON.parse(elem.value)
-                    const index = storeToBitmap(elem.value);
-                    index.push(rowId);
-                    ops.push({ 'type':'put', 'key': elem.key, 'value':JSON.stringify(bitmapToStore(index))})
-                })
-                indexd.batchWrite(ops, (err) =>{
-                    if (err) {
-                        return ;
-                    }
-                })
-            }
-        })
-    })
+    indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {});
 }
 
 function updateACLIndex(bucketName, objName, objVal, rowId) {
