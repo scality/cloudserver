@@ -14,10 +14,12 @@ const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
 
 const transport = conf.https ? 'https' : 'http';
-const bucket = 'bucketwebsitetester';
+const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
+    'bucketwebsitetester';
 const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
 
-const endpoint = `${transport}://${hostname}:8000`;
+const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` :
+    `${transport}://${hostname}:8000`;
 
 // TODO: Add this endpoint in Integration for CI
 
