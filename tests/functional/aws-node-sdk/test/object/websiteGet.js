@@ -40,7 +40,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe.only('User visits bucket website endpoint', () => {
+describe('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce agains AWS
@@ -201,7 +201,7 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('with nonexisting index document key', () => {
+        describe.only('with nonexisting index document key', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
