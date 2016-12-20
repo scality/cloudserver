@@ -40,6 +40,9 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
+// Note: Timeouts are set on tests with redirects to a URL as they are flaky
+// without them. If they still fail, consider increasing the timeout or using
+// mocha's this.retries method to auto-retry the test after failure.
 describe.only('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
@@ -77,18 +80,9 @@ describe.only('User visits bucket website endpoint', () => {
     });
 
     describe('with existing bucket', () => {
-        beforeEach(done => {
-            s3.createBucket({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return setTimeout(() => done(), 5000);
-            });
-        });
+        beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
 
-        afterEach(done => {
-            s3.deleteBucket({ Bucket: bucket }, done);
-        });
+        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
         it('should return 404 when no website configuration', done => {
             browser.visit(endpoint, () => {
@@ -216,10 +210,10 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect all requests to http://www.scality.com', () => {
+        describe('redirect all requests to http://www.google.com', () => {
             beforeEach(done => {
                 const redirectAllTo = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
                   redirectAllTo);
@@ -227,28 +221,28 @@ describe.only('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to http://www.scality.com', done => {
-                browser.visit(endpoint, () => {
+            it('should redirect to http://www.google.com', done => {
+                browser.visit(endpoint, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'http://www.scality.com');
+                      'http://www.google.com');
                     done();
-                });
+                }, 5000));
             });
 
-            it('should redirect to http://www.scality.com/about-us', done => {
-                browser.visit(`${endpoint}/about-us`, () => {
+            it('should redirect to http://www.google.com/about', done => {
+                browser.visit(`${endpoint}/about`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'http://www.scality.com/about-us/');
+                      'http://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
         // 10
-        describe('redirect all requests to https://www.scality.com', () => {
+        describe('redirect all requests to https://www.google.com', () => {
             beforeEach(done => {
                 const redirectAllTo = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                     Protocol: 'https',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
@@ -257,20 +251,20 @@ describe.only('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://scality.com', done => {
-                browser.visit(endpoint, () => {
+            it('should redirect to https://google.com', done => {
+                browser.visit(endpoint, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'https://www.scality.com');
+                      'https://www.google.com');
                     done();
-                });
+                }, 5000));
             });
 
-            it('should redirect to https://scality.com/about-us', done => {
-                browser.visit(`${endpoint}/about-us`, () => {
+            it('should redirect to https://google.com/about', done => {
+                browser.visit(`${endpoint}/about`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'https://www.scality.com/about-us/');
+                      'https://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
         // 11
@@ -330,20 +324,20 @@ describe.only('User visits bucket website endpoint', () => {
                     HttpErrorCodeReturnedEquals: '403',
                 };
                 const redirect = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to http://www.scality.com if error 403' +
+            it('should redirect to http://www.google.com if error 403' +
             ' occured', done => {
-                browser.visit(endpoint, () => {
+                browser.visit(endpoint, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                    'http://www.scality.com');
+                    'http://www.google.com');
                     done();
-                });
+                }, 5000));
             });
         });
 
@@ -352,23 +346,23 @@ describe.only('User visits bucket website endpoint', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
-                    KeyPrefixEquals: 'about-us/',
+                    KeyPrefixEquals: 'about/',
                 };
                 const redirect = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://www.scality.com/about-us if ' +
-            'key prefix is equal to "about-us"', done => {
-                browser.visit(`${endpoint}/about-us/`, () => {
+            it('should redirect to https://www.google.com/about if ' +
+            'key prefix is equal to "about"', done => {
+                browser.visit(`${endpoint}/about/`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                    'http://www.scality.com/about-us/');
+                    'http://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
@@ -378,24 +372,24 @@ describe.only('User visits bucket website endpoint', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
-                    KeyPrefixEquals: 'about-us/',
+                    KeyPrefixEquals: 'about/',
                     HttpErrorCodeReturnedEquals: '403',
                 };
                 const redirect = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to http://www.scality.com if ' +
-            'key prefix is equal to "about-us" AND error code 403', done => {
-                browser.visit(`${endpoint}/about-us/`, () => {
+            it('should redirect to http://www.google.com if ' +
+            'key prefix is equal to "about" AND error code 403', done => {
+                browser.visit(`${endpoint}/about/`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'http://www.scality.com/about-us/');
+                      'http://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
@@ -404,13 +398,13 @@ describe.only('User visits bucket website endpoint', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const conditions = {
-                    KeyPrefixEquals: 'about-us/',
+                    KeyPrefixEquals: 'about/',
                 };
                 const redirectOne = {
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 const redirectTwo = {
-                    HostName: 's3.scality.com',
+                    HostName: 's3.google.com',
                 };
                 webConfig.addRoutingRule(redirectOne, conditions);
                 webConfig.addRoutingRule(redirectTwo, conditions);
@@ -419,11 +413,11 @@ describe.only('User visits bucket website endpoint', () => {
             });
 
             it('should redirect to the first one', done => {
-                browser.visit(`${endpoint}/about-us/`, () => {
+                browser.visit(`${endpoint}/about/`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'http://www.scality.com/about-us/');
+                      'http://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
@@ -433,24 +427,24 @@ describe.only('User visits bucket website endpoint', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
-                    KeyPrefixEquals: 'about-us/',
+                    KeyPrefixEquals: 'about/',
                 };
                 const redirect = {
                     Protocol: 'https',
-                    HostName: 'www.scality.com',
+                    HostName: 'www.google.com',
                 };
                 webConfig.addRoutingRule(redirect, condition);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://www.scality.com/about-us if ' +
+            it('should redirect to https://www.google.com/about if ' +
             'https protocols', done => {
-                browser.visit(`${endpoint}/about-us/`, () => {
+                browser.visit(`${endpoint}/about/`, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                      'https://www.scality.com/about-us/');
+                      'https://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
@@ -491,21 +485,21 @@ describe.only('User visits bucket website endpoint', () => {
                     HttpErrorCodeReturnedEquals: '403',
                 };
                 const redirect = {
-                    HostName: 'www.scality.com',
-                    ReplaceKeyPrefixWith: '/about-us',
+                    HostName: 'www.google.com',
+                    ReplaceKeyPrefixWith: '/about',
                 };
                 webConfig.addRoutingRule(redirect, condition);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to www.scality.com/about-us if ' +
-            'ReplaceKeyPrefixWith equals "/about-us"', done => {
-                browser.visit(endpoint, () => {
+            it('should redirect to www.google.com/about if ' +
+            'ReplaceKeyPrefixWith equals "/about"', done => {
+                browser.visit(endpoint, () => setTimeout(() => {
                     WebsiteConfigTester.checkHTML(browser, '200',
-                    'http://www.scality.com/about-us/');
+                    'http://www.google.com/about/');
                     done();
-                });
+                }, 5000));
             });
         });
 
