@@ -7,17 +7,39 @@ function padLeft(nr, n){
     return Array(n-String(nr).length+1).join('0')+nr;
 }
 
-function nearValue(array, value) {
-    let current = 0;
-    let diff = Math.abs(value - current);
-    for (let i = 0; i < array.length; i++) {
-        let tmpdiff = Math.abs(value - array[i]);
-        if (tmpdiff < diff) {
-            diff = tmpdiff;
-            current = i;
+function binaryIndexOf(arr, searchElement, op) {
+    let minIndex = 0;
+    let maxIndex = arr.length - 1;
+    let currentIndex;
+    let currentElement;
+
+    while (minIndex <= maxIndex) {
+        currentIndex = (minIndex + maxIndex) / 2 | 0;
+        currentElement = arr[currentIndex];
+
+        if (currentElement < searchElement) {
+            minIndex = currentIndex + 1;
+        }
+        else if (currentElement > searchElement) {
+            maxIndex = currentIndex - 1;
+        }
+        else {
+            return currentIndex;
         }
     }
-    return current;
+    if (op === '>') {
+        if (arr[currentIndex] < searchElement) {
+            currentIndex += 1
+        }
+    } else {
+        if (arr[currentIndex] > searchElement) {
+            currentIndex -= 1
+        }
+    }
+    if (currentIndex > arr.length-1 || currentIndex < 0) {
+        return -1;
+    }
+    return currentIndex;
 }
 
 function storeToBitmap(stored) {
@@ -65,14 +87,57 @@ function filterRemoved(results, params) {
     });
 }
 
+function constructRange(value, callback) {
+    indexd.readAntidoteSet(value, (err, result) => {
+        callback(null, result);
+    });
+}
+
 function searchIntRange(bucketName, op, term, not, callback) {
     term = term.replace('--integer', '');
     const attr = term.split('/')[0];
-    const value = parseInt(term.split('/')[1], 10);
-    if (config.backend === "leveldb") {
-        readFromLevelDB(`${bucketName}/${attr}/${value}`, not, callback);
-    } else if (config.backend === "antidote") {
-        readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
+    let value = parseInt(term.split('/')[1], 10);
+    if (op === '=') {
+        if (config.backend === "leveldb") {
+            readFromLevelDB(`${bucketName}/${attr}/${value}`, not, callback);
+        } else if (config.backend === "antidote") {
+            readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
+        }
+    } else {
+        if (config.backend === "antidote") {
+            indexd.readAntidoteSet(`${bucketName}/${attr}`, (err, result) => {
+                const range = []
+                const index = binaryIndexOf(result, value, 1)
+                if (index === -1) {
+                    return parseNotOperator([], not, callback);
+                }
+                if (op.indexOf('>') !== -1) {
+                    if (op.indexOf('=') === -1) {
+                        value += 1
+                    }
+                    for (let i = index; i < result.length; i+=1) {
+                        range.push(`${bucketName}/${attr}/${result[i]}`)
+                    }
+                } else if (op.indexOf('<') !== -1) {
+                    if (op.indexOf('=') === -1) {
+                        value -= 1
+                    }
+                    for (let i = index; i >= 0; i-=1) {
+                        range.push(`${bucketName}/${attr}/${result[i]}`)
+                    }
+                }
+                const objRange = [];
+                async.map(range, constructRange, function(err, res) {
+                    res.forEach(arr => {
+                        arr.forEach(elem => {
+                            objRange.push(elem)
+                        })
+                    })
+                    objRange.sort();
+                    parseNotOperator(objRange, not, callback);
+                });
+            });
+        }
     }
 }
 
@@ -242,7 +307,10 @@ function updateIntIndex(bucketName, objName, attribute, value, rowId) {
     if (config.backend === "leveldb") {
         updateIndexEntry(`${bucketName}/${attribute}/${value}`, rowId);
     } else if (config.backend === "antidote") {
-        indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {});
+        indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {
+            indexd.updateAntidoteSet(`${bucketName}/${attribute}`, value, () => {});
+        });
+
     }
 }
 
