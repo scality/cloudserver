@@ -40,7 +40,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe('User visits bucket website endpoint', () => {
+describe.only('User visits bucket website endpoint', () => {
     const browser = new Browser();
 
     // Have not manage to reproduce agains AWS
@@ -201,7 +201,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe.only('with nonexisting index document key', () => {
+        describe('with nonexisting index document key', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
@@ -500,7 +500,7 @@ describe('User visits bucket website endpoint', () => {
             });
 
             it('should redirect to www.scality.com/about-us if ' +
-            'ReplaceKeyPrefixWith equals "about-us/"', done => {
+            'ReplaceKeyPrefixWith equals "/about-us"', done => {
                 browser.visit(endpoint, () => {
                     WebsiteConfigTester.checkHTML(browser, '200',
                     'http://www.scality.com/about-us/');
