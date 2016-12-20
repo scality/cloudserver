@@ -41,33 +41,8 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
 // Note: Timeouts are set on tests with redirects to a URL as they are flaky
 // without them. If they still fail, consider increasing the timeout or using
 // mocha's this.retries method to auto-retry the test after failure.
-describe.only('User visits bucket website endpoint', () => {
+describe('User visits bucket website endpoint', () => {
     const browser = new Browser();
-
-    // Have not manage to reproduce agains AWS
-    it.skip('should return 405 when user requests method other than get or ' +
-    ' head',
-        done => {
-            const options = {
-                hostname,
-                port: 8000,
-                method: 'POST',
-            };
-            const req = http.request(options, res => {
-                const body = [];
-                res.on('data', chunk => {
-                    body.push(chunk);
-                });
-                res.on('end', () => {
-                    assert.strictEqual(res.statusCode, 405);
-                    const total = body.join('');
-                    assert(total.indexOf('<head><title>405 ' +
-                        'Method Not Allowed</title></head>') > -1);
-                    done();
-                });
-            });
-            req.end();
-        });
 
     it('should return 404 when no such bucket', done => {
         browser.visit(endpoint, () => {
@@ -113,6 +88,30 @@ describe.only('User visits bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
                 err => done(err));
             });
+
+            it('should return 405 when user requests method other than get ' +
+            'or head',
+                done => {
+                    const options = {
+                        hostname,
+                        port: process.env.AWS_ON_AIR ? 80 : 8000,
+                        method: 'POST',
+                    };
+                    const req = http.request(options, res => {
+                        const body = [];
+                        res.on('data', chunk => {
+                            body.push(chunk);
+                        });
+                        res.on('end', () => {
+                            assert.strictEqual(res.statusCode, 405);
+                            const total = body.join('');
+                            assert(total.indexOf('<head><title>405 ' +
+                                'Method Not Allowed</title></head>') > -1);
+                            done();
+                        });
+                    });
+                    req.end();
+                });
 
             it('should serve indexDocument if no key requested', done => {
                 browser.visit(endpoint, () => {
@@ -236,7 +235,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 10
         describe('redirect all requests to https://www.google.com', () => {
             beforeEach(done => {
                 const redirectAllTo = {
@@ -265,7 +263,7 @@ describe.only('User visits bucket website endpoint', () => {
                 }, 5000));
             });
         });
-        // 11
+
         describe('with custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
@@ -295,7 +293,7 @@ describe.only('User visits bucket website endpoint', () => {
                 });
             });
         });
-        // 12
+
         describe('unfound custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
@@ -314,7 +312,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 13
         describe('redirect to hostname with error code condition', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -339,7 +336,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 14
         describe('redirect to hostname with prefix condition', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -364,7 +360,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 15
         describe('redirect to hostname with prefix and error condition',
         () => {
             beforeEach(done => {
@@ -391,7 +386,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 16 redirect with multiple redirect rules and show that first one wins
         describe('redirect with multiple redirect rules', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -419,7 +413,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 17
         describe('redirect with protocol',
         () => {
             beforeEach(done => {
@@ -446,9 +439,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 18 SKIP because redirect to hostname is the default redirection
-
-        // 19
         describe('redirect to key using ReplaceKeyWith', () => {
             beforeEach(done => {
                 const condition = {
@@ -475,7 +465,6 @@ describe.only('User visits bucket website endpoint', () => {
             });
         });
 
-        // 20
         describe('redirect using ReplaceKeyPrefixWith', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -500,9 +489,6 @@ describe.only('User visits bucket website endpoint', () => {
                 }, 5000));
             });
         });
-
-
-        // MIXING
 
         describe('redirect requests with prefix /about to redirect/',
         () => {
@@ -561,36 +547,3 @@ describe.only('User visits bucket website endpoint', () => {
         });
     });
 });
-
-// Tests:
-// 1) website endpoint method other than get or head X
-// 2) website endpoint without a bucket name (would need separate etc/hosts
-// entry -- SKIP it)
-// 3) no such bucket X
-// 4) no website configuration X
-// 5) no key in request -- uses index document X
-// 6) path in request without key (for example: docs/) -- uses index document
-//  a) put website config like in prior test
-//  b) put key called docs/index.html in bucket (must be public).  the key value
-//  should be some small document file that you save in websiteFiles.
-//  c) use zombie to call endpoint/docs/
-//  d) should get the document file
-//
-//
-// 7) key is not public
-// 8) no such key error from metadata
-// 9) redirect all requests with no protocol specified (should use
-// same as request)
-// 10) redirect all requests with protocol specified
-// 11) return user's errordocument
-// 12) return our error page for when user's error document can't be retrieved
-// 13) redirect with just error code condition
-// 14) redirect with just prefix condition
-// 15) redirect with error code and prefix condition
-// 16) redirect with multiple condition rules and show that first one wins
-// 17) redirect with protocol specified
-// DEFAULT 18) redirect with hostname specified
-// 19) redirect with replaceKeyWith specified
-// 20) redirect with replaceKeyPrefixWith specified
-// 21) redirect with httpRedirect Code specified
-// 22) redirect with combination of redirect items applicable
