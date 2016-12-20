@@ -21,8 +21,6 @@ const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
 const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` :
     `${transport}://${hostname}:8000`;
 
-// TODO: Add this endpoint in Integration for CI
-
 function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     const webConfig = new WebsiteConfigTester('index.html');
     webConfig.addRoutingRule(redirect, condition);
