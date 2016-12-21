@@ -2,6 +2,31 @@ const bitmap = require('node-bitmap-ewah');
 const indexd = require('./bitmapd-utils').default;
 const config = require('./bitmapd-utils').config;
 const async = require('async');
+const _ = require('underscore')
+
+function intersection(a, b) {
+    if (config.backend === "leveldb") {
+        return a.and(b);
+    } else if (config.backend === "antidote") {
+        return _.intersection(a, b);
+    }
+}
+
+function union(a, b) {
+    if (config.backend === "leveldb") {
+        return a.and(b);
+    } else if (config.backend === "antidote") {
+        return _.union(a, b);
+    }
+}
+
+function difference(u, a) {
+    if (config.backend === "leveldb") {
+        return a.not()
+    } else if (config.backend === "antidote") {
+        return _.difference(u, a);
+    }
+}
 
 function padLeft(nr, n){
     return Array(n-String(nr).length+1).join('0')+nr;
@@ -78,12 +103,47 @@ function updateObjectMapping(objMapping, objName) {
     return rowId;
 }
 
-function filterRemoved(results, params) {
+function getObjectMeta(bucketName, cb) {
+    if (config.backend === "leveldb") {
+        return cb(null);
+    } else if (config.backend === "antidote") {
+        indexd.readAntidoteSet(`${bucketName}`, (err, allObjects) => {
+            return cb(allObjects);
+        });
+    }
+}
+
+function updateIndexMeta(bucketName, objName, cb) {
+    if (config.backend === "leveldb") {
+        let rowId;
+        indexd.get(`${bucketName}`, (err, objMapping) => {
+            if (err) {
+                objMapping = {nextAvail: [], length:1, mapping:{}}
+            }
+            else {
+                objMapping = JSON.parse(objMapping);
+            }
+            rowId = updateObjectMapping(objMapping, objName);
+            indexd.put(`${bucketName}`, JSON.stringify(objMapping), err => {
+                if (err) {
+                    return ;
+                }
+                return cb(err, rowId)
+            })
+        })
+    } else if (config.backend === "antidote") {
+        indexd.updateAntidoteSet(`${bucketName}`, objName, () => {
+            return cb(null, -1);
+        });
+    }
+}
+
+function filterRemoved(results, params, cb) {
     indexd.readAntidoteSet(`${params.bucketName}/removed`, (err, removed) => {
         results = results.filter(elem => {
             return removed.indexOf(elem) === -1;
         });
-        indexd.respondQuery(params, results);
+        return cb(results);
     });
 }
 
@@ -93,16 +153,30 @@ function constructRange(value, callback) {
     });
 }
 
+function readDB(key, cb) {
+    if (config.backend === "leveldb") {
+        indexd.get(key, (err, data) => {
+            if (!err) {
+                data = JSON.parse(data)
+            }
+            return (err, data)
+            //parseNotOperator(storeToBitmap(data), not, callback);
+        });
+    } else if (config.backend === "antidote") {
+        indexd.readAntidoteSet(key, (err, data) => {
+            return cb(err, data);
+        });
+    }
+}
+
 function searchIntRange(bucketName, op, term, not, callback) {
     term = term.replace('--integer', '');
     const attr = term.split('/')[0];
     let value = parseInt(term.split('/')[1], 10);
     if (op === '=') {
-        if (config.backend === "leveldb") {
-            readFromLevelDB(`${bucketName}/${attr}/${value}`, not, callback);
-        } else if (config.backend === "antidote") {
-            readFromAntidote(`${bucketName}/${attr}/${value}`, not, callback);
-        }
+        readDB(`${bucketName}/${attr}/${value}`, (err, data) =>{
+            callback(err, data);
+        });
     } else {
         if (config.backend === "antidote") {
             indexd.readAntidoteSet(`${bucketName}/${attr}`, (err, result) => {
@@ -157,22 +231,7 @@ function searchRegExp(bucketName, searchTerm, not, callback) {
 }
 
 function readFromLevelDB(key, not, callback) {
-    indexd.get(key, (err, data) => {
-        if (!err) {
-            data = JSON.parse(data)
-        }
-        parseNotOperator(storeToBitmap(data), not, callback);
-    });
-}
 
-function readFromAntidote(key, not, callback) {
-    indexd.readAntidoteSet(key, (err, result) => {
-        if (err) {
-            callback(err, null);
-        } else {
-            callback(null, result);
-        }
-    });
 }
 
 function readTagIndex(bucketName, searchTerm, not, callback) {
@@ -188,11 +247,9 @@ function readTagIndex(bucketName, searchTerm, not, callback) {
         searchTerm = searchTerm.substring(11);
         searchRegExp(bucketName, searchTerm, not, callback);
     } else {
-        if (config.backend === "leveldb") {
-            readFromLevelDB(`${bucketName}/${searchTerm}`, not, callback);
-        } else if (config.backend === "antidote") {
-            readFromAntidote(`${bucketName}/${searchTerm}`, not, callback);
-        }
+        readDB(`${bucketName}/${searchTerm}`, (err, data) =>{
+            callback(err, data);
+        });
     }
 }
 
@@ -211,32 +268,24 @@ function readModDateIndex(bucketName, searchTerm, not, callback) {
 }
 
 function readACLIndex(bucketName, searchTerm, not, callback) {
-    if (config.backend === "leveldb") {
-        readFromLevelDB(`${bucketName}/${searchTerm}`, not, callback);
-    } else if (config.backend === "antidote") {
-        readFromAntidote(`${bucketName}/${searchTerm}`, not, callback);
-    }
+    readDB(`${bucketName}/${searchTerm}`, (err, data) =>{
+        callback(err, data);
+    });
 }
 
 function readContentTypeIndex(bucketName, searchTerm, not, callback) {
-    if (config.backend === "leveldb") {
-        readFromLevelDB(`${bucketName}/${searchTerm}`, not, callback);
-    } else if (config.backend === "antidote") {
-        readFromAntidote(`${bucketName}/${searchTerm}`, not, callback);
-    }
-
+    readDB(`${bucketName}/${searchTerm}`, (err, data) =>{
+        callback(err, data);
+    });
 }
 
 function readIndex(bucketName, searchTerm, callback) {
     if (searchTerm.indexOf('op/AND') !== -1
-        || searchTerm.indexOf('op/OR') !== -1) {
-        callback(null, searchTerm);
+        || searchTerm.indexOf('op/OR') !== -1
+        || searchTerm.indexOf('op/NOT') !== -1) {
+            callback(null, searchTerm);
     }
     let notOperator = false;
-    if (searchTerm.indexOf('op/NOT') !== -1) {
-        searchTerm = searchTerm.split('&')[1];
-        notOperator = true;
-    }
     let result;
     if (searchTerm.indexOf('x-amz-meta') !== -1) {
         return readTagIndex(bucketName, searchTerm, notOperator, callback);
@@ -393,64 +442,59 @@ const index = {
     evaluateQuery: (queryTerms, params) => {
         const bucketName = params.bucketName;
         async.map(queryTerms, readIndex.bind(null, bucketName), function(err, queryTerms) {
-            if (config.backend === "leveldb") {
+            getObjectMeta(bucketName, (allObjects) => {
+                let i;
                 while (queryTerms.length > 1) {
-                    let operatorPos = -1;
-                    for (let i = queryTerms.length - 1; i >= 0; i--) {
+                    for (i = queryTerms.length - 1; i >= 0; i--) {
                         if (queryTerms[i] === 'op/AND'
-                        || queryTerms[i] === 'op/OR') {
-                            operatorPos = i;
-                            break;
+                            || queryTerms[i] === 'op/OR'
+                            || queryTerms[i] === 'op/NOT') {
+                                break;
+                            }
+                    }
+                    if (queryTerms[i] === 'op/NOT') {
+                        const op1 = allObjects;
+                        const op2 = queryTerms[i + 1];
+                        queryTerms.splice(i, 2, difference(op1, op2));
+                    } else {
+                        const op1 = queryTerms[i + 1];
+                        const op2 = queryTerms[i + 2];
+                        if (queryTerms[i] === 'op/AND') {
+                            queryTerms.splice(i, 3, intersection(op1, op2));
+                        } else {
+                            queryTerms.splice(i, 3, union(op1, op2));
                         }
                     }
-                    if (queryTerms[operatorPos] === 'op/AND') {
-                        const op1 = queryTerms[operatorPos + 1];
-                        const op2 = queryTerms[operatorPos + 2];
-                        queryTerms.splice(operatorPos, 3, op1.and(op2));
-                    } else if (queryTerms[operatorPos] === 'op/OR') {
-                        const op1 = queryTerms[operatorPos + 1];
-                        const op2 = queryTerms[operatorPos + 2];
-                        queryTerms.splice(operatorPos, 3, op1.or(op2));
-                    }
                 }
-                indexd.get(`${bucketName}`, (err, objMapping) => {
-                    if (err) {
-                        return ;
-                    }
-                    objMapping = JSON.parse(objMapping);
-                    queryTerms = queryTerms[0].toString(':').split(':');
-                    queryTerms = queryTerms.map(function (elem) {
-                        return objMapping.mapping[elem];
+                if (config.backend === "leveldb") {
+                    indexd.get(`${bucketName}`, (err, objMapping) => {
+                        if (err) {
+                            return ;
+                        }
+                        objMapping = JSON.parse(objMapping);
+                        queryTerms = queryTerms[0].toString(':').split(':');
+                        queryTerms = queryTerms.map(function (elem) {
+                            return objMapping.mapping[elem];
+                        });
+                        indexd.respondQuery(params, queryTerms)
                     });
-                    indexd.respondQuery(params, queryTerms)
-                });
-            } else if (config.backend === "antidote") {
-                filterRemoved(queryTerms[0], params);
-            }
+                } else if (config.backend === "antidote") {
+                    filterRemoved(queryTerms[0], params, (results) => {
+                        indexd.respondQuery(params, results);
+                    });
+                }
+            });
         });
     },
 
     updateIndex: (bucketName, objName, objVal) => {
-        let rowId;
-        indexd.get(`${bucketName}`, (err, objMapping) => {
-            if (err) {
-                objMapping = {nextAvail: [], length:1, mapping:{}}
-            }
-            else {
-                objMapping = JSON.parse(objMapping);
-            }
-            rowId = updateObjectMapping(objMapping, objName);
-            indexd.put(`${bucketName}`, JSON.stringify(objMapping), err => {
-                if (err) {
-                    return ;
-                }
-            });
-                updateFileSizeIndex(bucketName, objName, objVal['content-length'], rowId);
-                updateΜodDateIndex(bucketName, objName, objVal['last-modified'], rowId);
-                updateContentTypeIndex(bucketName, objName, objVal['content-type'], rowId);
-                updateACLIndex(bucketName, objName, objVal['acl'], rowId);
-                updateTagIndex(bucketName, objName, objVal, rowId);
-        })
+        updateIndexMeta(bucketName, objName, (err, rowId) => {
+            updateFileSizeIndex(bucketName, objName, objVal['content-length'], rowId);
+            updateΜodDateIndex(bucketName, objName, objVal['last-modified'], rowId);
+            updateContentTypeIndex(bucketName, objName, objVal['content-type'], rowId);
+            updateACLIndex(bucketName, objName, objVal['acl'], rowId);
+            updateTagIndex(bucketName, objName, objVal, rowId);
+        });
     },
 
     deleteObject: (bucketName, objName) => {
