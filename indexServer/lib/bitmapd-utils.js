@@ -44,6 +44,7 @@ const utils = {
 
     connectToDB() {
         antidote = antidoteClient.connect(config.antidote.port, config.antidote.host);
+        antidote.defaultBucket = 'index';
         leveldown.destroy(config.leveldb_path, function (err) {
             if (!err) {
                 db = levelup(config.leveldb_path);

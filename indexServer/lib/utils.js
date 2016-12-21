@@ -308,24 +308,28 @@ function bitmapToStore(bitmap) {
 }
 
 function deleteOldEntries(bucketName, rowId, cb) {
-    indexd.getPrefix(`${bucketName}/acl/`, (err, list) => {
-        if (!list) {
-            return cb();
-        }
-        const ops = []
-        list.forEach(elem => {
-            const tmp = storeToBitmap(JSON.parse(elem.value));
-            tmp.unset(rowId);
-            ops.push({ 'type':'put', 'key': elem.key, 'value':JSON.stringify(bitmapToStore(tmp))})
-        });
-        indexd.batchWrite(ops, (err) =>{
-            if (err) {
-                return null
-            } else {
+    if (config.backend === "leveldb") {
+        indexd.getPrefix(`${bucketName}/acl/`, (err, list) => {
+            if (!list) {
                 return cb();
             }
+            const ops = []
+            list.forEach(elem => {
+                const tmp = storeToBitmap(JSON.parse(elem.value));
+                tmp.unset(rowId);
+                ops.push({ 'type':'put', 'key': elem.key, 'value':JSON.stringify(bitmapToStore(tmp))})
+            });
+            indexd.batchWrite(ops, (err) =>{
+                if (err) {
+                    return null
+                } else {
+                    return cb();
+                }
+            });
         });
-    });
+    } else if (config.backend === "antidote") {
+        return cb();
+    }
 }
 
 function updateBitmap(bitmap, rowId) {
