@@ -8,7 +8,9 @@ import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
+import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
@@ -269,6 +271,27 @@ describe('transient bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
+    });
+
+    it('bucketGetWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        bucketGetWebsite(authInfo, baseTestRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
+    });
+
+    it('bucketPutWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutWebsiteRequest.post = '<WebsiteConfiguration>' +
+        '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
+        '</WebsiteConfiguration>';
+        bucketPutWebsite(authInfo, bucketPutWebsiteRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
     });
 
     it('bucketHead request on transient bucket should return NoSuchBucket' +
