@@ -181,7 +181,8 @@ function searchIntRange(bucketName, op, term, not, callback) {
         if (config.backend === "antidote") {
             indexd.readAntidoteSet(`${bucketName}/${attr}`, (err, result) => {
                 const range = []
-                const index = binaryIndexOf(result, value, 1)
+                const index = binaryIndexOf(result, value, op)
+                console.log('search range', result, value, index);
                 if (index === -1) {
                     return parseNotOperator([], not, callback);
                 }
