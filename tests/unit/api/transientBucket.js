@@ -5,12 +5,13 @@ import { errors } from 'arsenal';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
-import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
+import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
@@ -289,6 +290,14 @@ describe('transient bucket handling', () => {
         '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
         '</WebsiteConfiguration>';
         bucketPutWebsite(authInfo, bucketPutWebsiteRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
+    });
+
+    it('bucketDeleteWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        bucketDeleteWebsite(authInfo, baseTestRequest, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
