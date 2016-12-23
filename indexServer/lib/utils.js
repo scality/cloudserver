@@ -49,14 +49,18 @@ function binaryIndexOf(arr, searchElement, op) {
             maxIndex = currentIndex - 1;
         }
         else {
-            return currentIndex;
+            break;
         }
     }
-    if (op === '>') {
-        if (arr[currentIndex] < searchElement) {
-            currentIndex += 1
-        }
-    } else {
+    if (op === '=') {
+        return currentIndex;
+    } else if (op === '>' && arr[currentIndex] <= searchElement) {
+        currentIndex += 1
+    } else if (op === '>=' && arr[currentIndex] < searchElement) {
+        currentIndex += 1
+    } else if (op === '<' && arr[currentIndex] >= searchElement) {
+            currentIndex -= 1
+    } else if (op === '<=') {
         if (arr[currentIndex] > searchElement) {
             currentIndex -= 1
         }
@@ -160,7 +164,6 @@ function readDB(key, cb) {
                 data = JSON.parse(data)
             }
             return (err, data)
-            //parseNotOperator(storeToBitmap(data), not, callback);
         });
     } else if (config.backend === "antidote") {
         indexd.readAntidoteSet(key, (err, data) => {
@@ -182,7 +185,6 @@ function searchIntRange(bucketName, op, term, not, callback) {
             indexd.readAntidoteSet(`${bucketName}/${attr}`, (err, result) => {
                 const range = []
                 const index = binaryIndexOf(result, value, op)
-                console.log('search range', result, value, index);
                 if (index === -1) {
                     return parseNotOperator([], not, callback);
                 }
