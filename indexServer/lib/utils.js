@@ -172,6 +172,18 @@ function readDB(key, cb) {
     }
 }
 
+function writeDB(key, objName, attribute, value, rowId, cb) {
+    if (config.backend === "leveldb") {
+        updateIndexEntry(key, rowId, cb);
+    } else if (config.backend === "antidote") {
+        indexd.updateAntidoteSet(key, objName, () => {
+            indexd.updateAntidoteSet(attribute, value, () => {
+                return cb(null)
+            });
+        });
+    }
+}
+
 function searchIntRange(bucketName, op, term, not, callback) {
     term = term.replace('--integer', '');
     const attr = term.split('/')[0];
@@ -344,48 +356,37 @@ function updateBitmap(bitmap, rowId) {
     return bitmapToStore(bitmap);
 }
 
-function updateIndexEntry(key, rowId) {
+function updateIndexEntry(key, rowId, cb) {
     indexd.get(key, (err, data) => {
         if (err) {
-        }
-        else {
+            return (err);
+        } else {
             data = JSON.parse(data)
         }
         indexd.put(key, JSON.stringify(updateBitmap(storeToBitmap(data), rowId)), err =>{
-            if (err) {
-                return ;
-            }
-        })
-    })
+                return (err);
+        });
+    });
 }
 
 function updateIntIndex(bucketName, objName, attribute, value, rowId) {
-    if (config.backend === "leveldb") {
-        updateIndexEntry(`${bucketName}/${attribute}/${value}`, rowId);
-    } else if (config.backend === "antidote") {
-        indexd.updateAntidoteSet(`${bucketName}/${attribute}/${value}`, objName, () => {
-            indexd.updateAntidoteSet(`${bucketName}/${attribute}`, value, () => {});
-        });
-
-    }
+    writeDB(`${bucketName}/${attribute}/${value}`, objName, `${bucketName}/${attribute}`, value, rowId, (err) =>{
+        return ;
+    })
 }
 
 function updateACLIndex(bucketName, objName, objVal, rowId) {
     deleteOldEntries(bucketName, rowId, () => {
         Object.keys(objVal).forEach(elem => {
             if (typeof objVal[elem] === 'string') {
-                if (config.backend === "leveldb") {
-                    updateIndexEntry(`${bucketName}/acl/${elem}/${objVal[elem]}`, rowId);
-                } else if (config.backend === "antidote") {
-                    indexd.updateAntidoteSet(`${bucketName}/acl/${elem}/${objVal[elem]}`, objName, () => {});
-                }
+                writeDB(`${bucketName}/acl/${elem}/${objVal[elem]}`, objName, `${bucketName}/acl`, `${elem}/${objVal[elem]}`, rowId, (err) =>{
+                    return ;
+                });
             } else {
                 objVal[elem].forEach(item => {
-                    if (config.backend === "leveldb") {
-                        updateIndexEntry(`${bucketName}/acl/${elem}/${item}`, rowId);
-                    } else if (config.backend === "antidote") {
-                        indexd.updateAntidoteSet(`${bucketName}/acl/${elem}/${item}`, objName, () => {});
-                    }
+                    writeDB(`${bucketName}/acl/${elem}/${item}`, objName, `${bucketName}/acl`, `${elem}/${item}`, rowId, (err) =>{
+                        return ;
+                    });
                 });
             }
         });
@@ -395,13 +396,11 @@ function updateACLIndex(bucketName, objName, objVal, rowId) {
 function updateContentTypeIndex(bucketName, objName, objVal, rowId) {
     const type = objVal.split('/')[0];
     const subtype = objVal.split('/')[1];
-    if (config.backend === "leveldb") {
-        updateIndexEntry(`${bucketName}/contenttype/${type}`, rowId);
-        updateIndexEntry(`${bucketName}/contentsubtype/${subtype}`, rowId);
-    } else if (config.backend === "antidote") {
-        indexd.updateAntidoteSet(`${bucketName}/contenttype/${type}`, objName, () => {});
-        indexd.updateAntidoteSet(`${bucketName}/contentsubtype/${subtype}`, objName, () => {});
-    }
+    writeDB(`${bucketName}/contenttype/${type}`, objName, `${bucketName}/contenttype`, type, rowId, (err) =>{
+        writeDB(`${bucketName}/contentsubtype/${subtype}`, objName, `${bucketName}/contentsubtype`, subtype, rowId, (err) =>{
+            return ;
+        });
+    });
 }
 
 function updateΜodDateIndex(bucketName, objName, objVal, rowId) {
@@ -436,11 +435,9 @@ function updateTagIndex(bucketName, objName, objVal, rowId) {
             tag.key = tag.key.replace('--integer', '');
             updateIntIndex(bucketName, objName, `x-amz-meta/${tag.key}`, parseInt(tag.value, 10), rowId);
         } else {
-            if (config.backend === "leveldb") {
-                updateIndexEntry(`${bucketName}/x-amz-meta/${tag.key}/${tag.value}`, rowId);
-            } else if (config.backend === "antidote") {
-                indexd.updateAntidoteSet(`${bucketName}/x-amz-meta/${tag.key}/${tag.value}`, objName, () => {});
-            }
+            writeDB(`${bucketName}/x-amz-meta/${tag.key}/${tag.value}`, objName, `${bucketName}/x-amz-meta`, `${tag.key}/${tag.value}`, rowId, (err) =>{
+                return ;
+            });
         }
     });
 }
