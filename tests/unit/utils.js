@@ -24,7 +24,7 @@ describe('utils.getBucketNameFromHost', () => {
             'in-french.bucket.is-seau.s3-website-eu-west-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-us-east-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-ap-southeast-2.amazonaws.com',
-            'in-french.bucket.is-seau.s3-website-eu-central-1.amazonaws.com',
+            'in-french.bucket.is-seau.s3-website.eu-central-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-ap-northeast-1.amazonaws.com',
         ].forEach(host => {
             const headers = { host };
