@@ -3,6 +3,8 @@
 const proc = require('child_process');
 const process = require('process');
 const assert = require('assert');
+const fs = require('fs');
+const async = require('async');
 require('babel-core/register');
 const conf = require('../../../lib/Config').default;
 
@@ -19,11 +21,23 @@ const MPUploadSplitter = [
     'test60MB..|..',
 ];
 const MPDownload = 'MPtmpfile';
+const MPDownloadCopy = 'MPtmpfile2';
+const downloadCopy = 'tmpfile2';
 const bucket = 'universe';
 const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
+
+function safeJSONParse(s) {
+    let res;
+    try {
+        res = JSON.parse(s);
+    } catch (e) {
+        return e;
+    }
+    return res;
+}
 
 const isScality = process.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
 
@@ -155,6 +169,76 @@ function provideLineOfInterest(args, lineFinder, cb) {
     readJsonFromChild(child, lineFinder, cb);
 }
 
+function retrieveInfo() {
+    const configFile = isScality ? `${__dirname}/${configCfg}` : configCfg;
+    const data = fs.readFileSync(configFile, 'utf8').split('\n');
+    const res = {
+        accessKey: null,
+        secretKey: null,
+        host: null,
+        port: 0,
+    };
+    data.forEach(item => {
+        const keyValue = item.split('=');
+        if (keyValue.length === 2) {
+            const key = keyValue[0].trim();
+            const value = keyValue[1].trim();
+            if (key === 'access_key') {
+                res.accessKey = value;
+            } else if (key === 'secret_key') {
+                res.secretKey = value;
+            } else if (key === 'host_base') {
+                const hostInfo = value.split(':');
+                if (hostInfo.length > 1) {
+                    res.host = hostInfo[0];
+                    res.port = parseInt(hostInfo[1], 10);
+                } else {
+                    res.host = hostInfo[0];
+                    res.port = 80;
+                }
+            }
+        }
+    });
+    return res;
+}
+
+function createEncryptedBucket(name, cb) {
+    const res = retrieveInfo();
+    const prog = `${__dirname}/../../../bin/create_encrypted_bucket.js`;
+    let args = [
+        prog,
+        '-a', res.accessKey,
+        '-k', res.secretKey,
+        '-b', name,
+        '-h', res.host,
+        '-p', res.port,
+        '-v',
+    ];
+    if (conf.https) {
+        args = args.concat('-s');
+    }
+    const body = [];
+    const child = proc.spawn(args[0], args)
+    .on('exit', () => {
+        const hasSucceed = body.join('').split('\n').find(item => {
+            const json = safeJSONParse(item);
+            const test = !(json instanceof Error) && json.name === 'S3' &&
+                json.statusCode === 200;
+            if (test) {
+                return true;
+            }
+            return false;
+        });
+        if (!hasSucceed) {
+            process.stderr.write(`${body.join('')}\n`);
+            return cb(new Error('Cannot create encrypted bucket'));
+        }
+        return cb();
+    })
+    .on('error', cb);
+    child.stdout.on('data', chunk => body.push(chunk.toString()));
+}
+
 describe('s3cmd putBucket', () => {
     it('should put a valid bucket', done => {
         exec(['mb', `s3://${bucket}`], done);
@@ -169,12 +253,25 @@ describe('s3cmd putBucket', () => {
     });
 
     it('should put a valid bucket with region (regardless of region)', done => {
-        exec(['mb', `s3://regioned`, '--region=wherever'], done);
+        exec(['mb', 's3://regioned', '--region=wherever'], done);
     });
 
     it('should delete bucket put with region', done => {
-        exec(['rb', `s3://regioned`, '--region=wherever'], done);
+        exec(['rb', 's3://regioned', '--region=wherever'], done);
     });
+
+    if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+        it('creates a valid bucket with server side encryption',
+           function f(done) {
+               this.timeout(5000);
+               exec(['rb', `s3://${bucket}`], err => {
+                   if (err) {
+                       return done(err);
+                   }
+                   return createEncryptedBucket(bucket, done);
+               });
+           });
+    }
 });
 
 describe('s3cmd put and get bucket ACLs', function aclBuck() {
@@ -231,7 +328,6 @@ describe('s3cmd getService', () => {
             provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
             parsedObject => {
                 assert(parsedObject.headers['x-amz-id-2']);
-                assert.strictEqual(parsedObject.headers.server, 'AmazonS3');
                 assert(parsedObject.headers['transfer-encoding']);
                 assert(parsedObject.headers['x-amz-request-id']);
                 const gmtDate = new Date(parsedObject.headers.date)
@@ -287,6 +383,66 @@ describe('s3cmd getObject', function toto() {
         exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2'], done, 12);
     });
 });
+
+describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
+    this.timeout(40000);
+
+    after('delete downloaded copy file', done => {
+        deleteFile(downloadCopy, done);
+    });
+
+    it('should copy an object to the same bucket', done => {
+        exec(['cp', `s3://${bucket}/${upload}`,
+        `s3://${bucket}/${upload}copy`], done);
+    });
+
+    it('should get an object that was copied', done => {
+        exec(['get', `s3://${bucket}/${upload}copy`, downloadCopy], done);
+    });
+
+    it('downloaded copy file should equal original uploaded file', done => {
+        diff(upload, downloadCopy, done);
+    });
+
+    it('should delete copy of object', done => {
+        exec(['rm', `s3://${bucket}/${upload}copy`], done);
+    });
+});
+
+describe('s3cmd copyObject without MPU to different bucket ' +
+    '(always unencrypted)',
+    function copyStuff() {
+        const copyBucket = 'receiverbucket';
+        this.timeout(40000);
+
+        before('create receiver bucket', done => {
+            exec(['mb', `s3://${copyBucket}`], done);
+        });
+
+        after('delete downloaded file and receiver bucket' +
+            'copied', done => {
+            deleteFile(downloadCopy, () => {
+                exec(['rb', `s3://${copyBucket}`], done);
+            });
+        });
+
+        it('should copy an object to the new bucket', done => {
+            exec(['cp', `s3://${bucket}/${upload}`,
+            `s3://${copyBucket}/${upload}`], done);
+        });
+
+        it('should get an object that was copied', done => {
+            exec(['get', `s3://${copyBucket}/${upload}`, downloadCopy], done);
+        });
+
+        it('downloaded copy file should equal original uploaded file', done => {
+            diff(upload, downloadCopy, done);
+        });
+
+        it('should delete copy of object', done => {
+            exec(['rm', `s3://${copyBucket}/${upload}`], done);
+        });
+    });
 
 describe('s3cmd put and get object ACLs', function aclObj() {
     this.timeout(60000);
@@ -396,7 +552,9 @@ describe('s3cmd multipart upload', function titi() {
 
     after('delete the multipart and the downloaded file', done => {
         deleteFile(MPUpload, () => {
-            deleteFile(MPDownload, done);
+            deleteFile(MPDownload, () => {
+                deleteFile(MPDownloadCopy, done);
+            });
         });
     });
 
@@ -416,8 +574,25 @@ describe('s3cmd multipart upload', function titi() {
         diff(MPUpload, MPDownload, done);
     });
 
+    it('should copy an object that was put via multipart upload', done => {
+        exec(['cp', `s3://${bucket}/${MPUpload}`,
+        `s3://${bucket}/${MPUpload}copy`], done);
+    });
+
+    it('should get an object that was copied', done => {
+        exec(['get', `s3://${bucket}/${MPUpload}copy`, MPDownloadCopy], done);
+    });
+
+    it('downloaded copy file should equal original uploaded file', done => {
+        diff(MPUpload, MPDownloadCopy, done);
+    });
+
     it('should delete multipart uploaded object', done => {
         exec(['rm', `s3://${bucket}/${MPUpload}`], done);
+    });
+
+    it('should delete copy of multipart uploaded object', done => {
+        exec(['rm', `s3://${bucket}/${MPUpload}copy`], done);
     });
 
     it('should not be able to get deleted object', done => {
@@ -549,5 +724,28 @@ describe('s3cmd delBucket', () => {
 
     it('try to get the deleted bucket, should fail', done => {
         exec(['ls', `s3://${bucket}`], done, 12);
+    });
+});
+
+describe('s3cmd recursive delete with objects put by MPU', () => {
+    const upload16MB = 'test16MB';
+    before('create file, put bucket and objects', function setup(done) {
+        this.timeout(120000);
+        exec(['mb', `s3://${bucket}`], () => {
+            createFile(upload16MB, 16777216, () => {
+                async.timesLimit(50, 1, (n, next) => {
+                    exec(['put', upload16MB, `s3://${bucket}/key${n}`,
+                    '--multipart-chunk-size-mb=5'], next);
+                }, done);
+            });
+        });
+    });
+
+    it('should delete all the objects and the bucket', done => {
+        exec(['rb', '-r', `s3://${bucket}`, '--debug'], done);
+    });
+
+    after('delete the downloaded file', done => {
+        deleteFile(upload16MB, done);
     });
 });

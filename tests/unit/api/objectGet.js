@@ -18,7 +18,7 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const locationConstraint = 'us-west-1';
 
 describe('objectGet API', () => {
@@ -59,7 +59,7 @@ describe('objectGet API', () => {
     it('should get the object metadata', done => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest,
+                objectPut(authInfo, testPutObjectRequest, undefined,
                     log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest,
@@ -78,7 +78,7 @@ describe('objectGet API', () => {
     it('should get the object data retrieval info', done => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest, log,
@@ -88,7 +88,7 @@ describe('objectGet API', () => {
                                 key: 1,
                                 start: 0,
                                 size: 12,
-                                dataStoreName: 'mem',
+                                dataStoreName: 'dataMem',
                             }]);
                                 done();
                             });
@@ -98,7 +98,7 @@ describe('objectGet API', () => {
 
     it('should get the object data retrieval info for an object put by MPU',
         done => {
-            const partBody = new Buffer('I am a part\n');
+            const partBody = Buffer.from('I am a part\n', 'utf8');
             const initiateRequest = {
                 bucketName,
                 namespace,
@@ -135,7 +135,7 @@ describe('objectGet API', () => {
                         },
                         calculatedHash,
                     }, partBody);
-                    objectPutPart(authInfo, partRequest, log, () => {
+                    objectPutPart(authInfo, partRequest, undefined, log, () => {
                         next(null, testUploadId, calculatedHash);
                     });
                 },
@@ -157,9 +157,10 @@ describe('objectGet API', () => {
                         },
                         calculatedHash,
                     }, partBody);
-                    objectPutPart(authInfo, part2Request, log, () => {
-                        next(null, testUploadId, calculatedHash);
-                    });
+                    objectPutPart(authInfo, part2Request, undefined,
+                        log, () => {
+                            next(null, testUploadId, calculatedHash);
+                        });
                 },
                 (testUploadId, calculatedHash, next) => {
                     const completeBody = '<CompleteMultipartUpload>' +
@@ -191,13 +192,13 @@ describe('objectGet API', () => {
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
-                            dataStoreName: 'mem',
+                            dataStoreName: 'dataMem',
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
-                            dataStoreName: 'mem',
+                            dataStoreName: 'dataMem',
                             size: 12,
                             start: 5242880,
                         }]);
@@ -223,7 +224,7 @@ describe('objectGet API', () => {
         }, postBody);
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectGet(authInfo, testGetRequest,

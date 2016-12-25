@@ -5,10 +5,13 @@ import crypto from 'crypto';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
+import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
@@ -224,11 +227,11 @@ describe('deleted flag bucket handling', () => {
             const setUpRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
             setUpRequest.objectKey = objName;
-            const postBody = new Buffer('I am a body');
+            const postBody = Buffer.from('I am a body', 'utf8');
             const md5Hash = crypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);
-            objectPut(authInfo, putObjRequest, log, err => {
+            objectPut(authInfo, putObjRequest, undefined, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
@@ -251,9 +254,9 @@ describe('deleted flag bucket handling', () => {
         const setUpRequest = createAlteredRequest({}, 'headers',
         baseTestRequest, baseTestRequest.headers);
         setUpRequest.objectKey = 'objectName';
-        const postBody = new Buffer('I am a body');
+        const postBody = Buffer.from('I am a body', 'utf8');
         const putObjRequest = new DummyRequest(setUpRequest, postBody);
-        objectPut(otherAccountAuthInfo, putObjRequest, log, err => {
+        objectPut(otherAccountAuthInfo, putObjRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
@@ -284,8 +287,8 @@ describe('deleted flag bucket handling', () => {
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
                     metadata.listObject(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`,
-                        `overview${constants.splitter}${objName}`,
-                        null, null, null, log, (err, results) => {
+                        { prefix: `overview${constants.splitter}${objName}` },
+                        log, (err, results) => {
                             assert.ifError(err);
                             assert.strictEqual(results.Contents.length, 1);
                             done();
@@ -324,6 +327,15 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
+    it('bucketDeleteWebsite request on bucket with delete flag should return ' +
+        'NoSuchBucket error and complete deletion', done => {
+        bucketDeleteWebsite(authInfo, baseTestRequest,
+            log, err => {
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                confirmDeleted(done);
+            });
+    });
+
     it('bucketGet request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketGet(authInfo, baseTestRequest,
@@ -342,6 +354,29 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
+    it('bucketGetWebsite request on bucket with delete flag should return ' +
+    'NoSuchBucket error and complete deletion', done => {
+        bucketGetWebsite(authInfo, baseTestRequest,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
+    });
+
+    it('bucketPutWebsite request on bucket with delete flag should return ' +
+    'NoSuchBucket error and complete deletion', done => {
+        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutWebsiteRequest.post = '<WebsiteConfiguration>' +
+        '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
+        '</WebsiteConfiguration>';
+        bucketPutWebsite(authInfo, bucketPutWebsiteRequest,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
+    });
+
     it('bucketHead request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketHead(authInfo, baseTestRequest,
@@ -351,13 +386,21 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    function checkForNoSuchUploadError(apiAction, partNumber, done) {
+    function checkForNoSuchUploadError(apiAction, partNumber, done,
+        extraArgNeeded) {
         const mpuRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         mpuRequest.objectKey = 'objectName';
         mpuRequest.query = { uploadId, partNumber };
-        apiAction(authInfo, mpuRequest,
+        if (extraArgNeeded) {
+            return apiAction(authInfo, mpuRequest, undefined,
+                log, err => {
+                    assert.deepStrictEqual(err, errors.NoSuchUpload);
+                    return done();
+                });
+        }
+        return apiAction(authInfo, mpuRequest,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 return done();
@@ -381,7 +424,7 @@ describe('deleted flag bucket handling', () => {
 
     it('objectPutPart request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
-        checkForNoSuchUploadError(objectPutPart, '1', done);
+        checkForNoSuchUploadError(objectPutPart, '1', done, true);
     });
 
     it('list multipartUploads request on bucket with deleted flag should ' +

@@ -39,12 +39,17 @@ Right now, the following operations are implemented:
 - PutBucketACL
 - GetBucketACL
 - PutObject
+- PutObject - Copy
 - GetObject
 - HeadObject
 - DeleteObject
+- Multi-Object Delete
 - PutObjectACL
 - GetObjectACL
 - Multipart Upload
+- Upload Part
+- Upload Part - Copy
 - GetService
 - v2 Authentication
-- v4 Authentication
+- v4 Authentication (Transferring Payload in a Single Chunk)
+- v4 Authentication (Transferring Payload in Multiple Chunks)

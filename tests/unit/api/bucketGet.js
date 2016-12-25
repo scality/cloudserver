@@ -10,12 +10,14 @@ import objectPut from '../../../lib/api/objectPut';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
 
+import { errors } from 'arsenal';
+
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
 const log = new DummyRequestLogger();
 const namespace = 'default';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const prefix = 'sub';
 const locationConstraint = 'us-west-1';
 
@@ -36,7 +38,7 @@ describe('bucketGet API', () => {
             headers: {},
             url: `/${bucketName}`,
             namespace,
-        }, new Buffer(0));
+        }, Buffer.alloc(0));
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
             headers: {},
@@ -74,10 +76,12 @@ describe('bucketGet API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest1, log, next),
-            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
-                                next),
-            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
             (result, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -101,10 +105,12 @@ describe('bucketGet API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest1, log, next),
-            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
-                                next),
-            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
             (result, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -128,16 +134,59 @@ describe('bucketGet API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest1, log, next),
-            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
-                                next),
-            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
             (result, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+            done();
+        });
+    });
+
+    it('should return an InvalidArgument error if max-keys == -1', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '-1' },
+        };
+        bucketGet(authInfo, testGetRequest, log, err => {
+            assert.deepStrictEqual(err, errors.InvalidArgument);
+            done();
+        });
+    });
+
+    it('should return max-keys number from request even if greater than ' +
+        'actual keys returned', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '99999' },
+        };
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.MaxKeys[0],
+                               '99999');
             done();
         });
     });
@@ -154,12 +203,14 @@ describe('bucketGet API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest1, log, next),
-            (result, next) => objectPut(authInfo, testPutObjectRequest2, log,
-                                next),
-            (result, next) => objectPut(authInfo, testPutObjectRequest3, log,
-                                next),
-            (result, next) => bucketGet(authInfo, testGetRequest, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (result, prevLen, next) => objectPut(authInfo,
+                testPutObjectRequest3, undefined, log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
             (result, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -167,6 +218,32 @@ describe('bucketGet API', () => {
                                querystring.escape(objectName3));
             assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
                                querystring.escape(objectName1));
+            done();
+        });
+    });
+
+    it('should escape invalid xml characters in object key names', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: {},
+        };
+
+        testPutObjectRequest1.objectKey += '&><"\'';
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest,
+                locationConstraint, log, next),
+            next => objectPut(authInfo, testPutObjectRequest1, undefined,
+                log, next),
+            (result, prevLen, next) => bucketGet(authInfo, testGetRequest, log,
+                next),
+            (result, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
+                              testPutObjectRequest1.objectKey);
             done();
         });
     });

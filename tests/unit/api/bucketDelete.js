@@ -14,7 +14,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const usersBucket = constants.usersBucket;
 const locationConstraint = 'us-west-1';
 
@@ -42,15 +42,15 @@ describe('bucketDelete API', () => {
 
         bucketPut(authInfo, testRequest, locationConstraint, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(authInfo, testPutObjectRequest, log, err => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
                 bucketDelete(authInfo, testRequest, log, err => {
                     assert.deepStrictEqual(err, errors.BucketNotEmpty);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getName(), bucketName);
                         metadata.listObject(usersBucket,
-                            authInfo.getCanonicalID(),
-                            null, null, null, log, (err, listResponse) => {
+                            { prefix: authInfo.getCanonicalID() },
+                            log, (err, listResponse) => {
                                 assert.strictEqual(listResponse.Contents.length,
                                                    1);
                                 done();
@@ -67,8 +67,8 @@ describe('bucketDelete API', () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);
                     assert.strictEqual(md, undefined);
-                    metadata.listObject(usersBucket, canonicalID,
-                        null, null, null, log, (err, listResponse) => {
+                    metadata.listObject(usersBucket, { prefix: canonicalID },
+                        log, (err, listResponse) => {
                             assert.strictEqual(listResponse.Contents.length, 0);
                             done();
                         });

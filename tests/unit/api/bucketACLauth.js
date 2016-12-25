@@ -26,7 +26,11 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
     const requestTypes = ['bucketGet', 'bucketHead', 'objectGet', 'objectHead'];
 
     const trueArray = [true, true, true, true];
-    const falseArray = [false, false, false, false];
+    // An account can have the ability to do objectHead or objectGet even
+    // if the account has no rights to the bucket holding the object.
+    // So isBucketAuthorized should return true for 'objectGet' and 'objectHead'
+    // requests but false for 'bucketGet' and 'bucketHead'
+    const falseArrayBucketTrueArrayObject = [false, false, true, true];
 
     const orders = [
         { it: 'should allow access to bucket owner', canned: '',
@@ -35,16 +39,24 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
           canned: 'public-read', id: accountToVet, response: trueArray },
         { it: 'should allow access to anyone if canned public-read-write ACL',
           canned: 'public-read-write', id: accountToVet, response: trueArray },
-        { it: 'should not allow access to public user if authenticated-read ' +
-          'ACL', canned: 'authenticated-read', id: constants.publicId,
-          response: falseArray },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to public user if authenticated-read  ACL',
+          canned: 'authenticated-read', id: constants.publicId,
+          response: falseArrayBucketTrueArrayObject },
         { it: 'should allow access to any authenticated user if authenticated' +
           '-read ACL', canned: 'authenticated-read', id: accountToVet,
           response: trueArray },
-        { it: 'should not allow access to public user if private canned ACL',
-          canned: '', id: accountToVet, response: falseArray },
-        { it: 'should not allow access to just any user if private canned ACL',
-          canned: '', id: accountToVet, response: falseArray },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to public user if private canned ACL',
+          canned: '', id: accountToVet,
+          response: falseArrayBucketTrueArrayObject },
+        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
+        + ' but should allow request on the object (objectGet, objectHead)'
+        + ' to just any user if private canned ACL',
+          canned: '', id: accountToVet,
+          response: falseArrayBucketTrueArrayObject },
         { it: 'should allow access to user if account was granted FULL_CONTROL',
           canned: '', id: accountToVet, response: trueArray,
           aclParam: ['FULL_CONTROL', accountToVet] },
@@ -142,6 +154,46 @@ describe('bucket authorization for bucketPutACL', () => {
             const authorizedResult = isBucketAuthorized(bucket, 'bucketPutACL',
                 accountToVet);
             assert.strictEqual(authorizedResult, true);
+            done();
+        });
+    });
+});
+
+describe('bucket authorization for bucketOwnerAction', () => {
+    // Reset the bucket ACLs
+    afterEach(() => {
+        bucket.setFullAcl({
+            Canned: 'private',
+            FULL_CONTROL: [],
+            WRITE: [],
+            WRITE_ACP: [],
+            READ: [],
+            READ_ACP: [],
+        });
+    });
+
+    it('should allow access to bucket owner', () => {
+        const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+            ownerCanonicalId);
+        assert.strictEqual(result, true);
+    });
+
+    const orders = [
+        { it: 'other account (even if other account has FULL_CONTROL rights ' +
+          'in bucket)', id: accountToVet, canned: '',
+          aclParam: ['FULL_CONTROL', accountToVet] },
+        { it: 'public user (even if bucket is public read write)',
+          id: constants.publicId, canned: 'public-read-write' },
+    ];
+    orders.forEach(value => {
+        it(`should not allow access to ${value.it}`, done => {
+            if (value.aclParam) {
+                bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
+            }
+            bucket.setCannedAcl(value.canned);
+            const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+                value.id);
+            assert.strictEqual(result, false);
             done();
         });
     });

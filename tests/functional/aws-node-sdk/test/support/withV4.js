@@ -12,11 +12,11 @@ function withV4(testFn) {
             config = {};
         }
 
-        describe(`With ${version} signature`, (cfg => {
-            return function tcWrap() {
+        describe(`With ${version} signature`, (cfg =>
+            function tcWrap() {
                 testFn.call(this, cfg);
-            };
-        })(config));
+            }
+        )(config));
     });
 }
 

@@ -22,25 +22,26 @@ const uploadId = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0';
 const bucketName = 'freshestbucket';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const uploadKey = '$makememulti';
-const sixMBObjectETag = 'f3a9fb2071d3503b703938a74eb99846';
-const lastPieceETag = '555e4cd2f9eff38109d7a3ab13995a32';
+const sixMBObjectETag = '"f3a9fb2071d3503b703938a74eb99846"';
+const lastPieceETag = '"555e4cd2f9eff38109d7a3ab13995a32"';
 const overviewKey = `overview${splitter}$makememulti${splitter}4db92ccc-` +
     'd89d-49d3-9fa6-e9c2c1eb31b0';
-const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}1`;
+const partOneKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00001`;
 const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
-    `${splitter}2`;
-const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}3`;
-const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}4`;
-const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}5`;
+    `${splitter}00002`;
+const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00003`;
+const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00004`;
+const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00005`;
 
 describe('List Parts API', () => {
     beforeEach(done => {
         cleanup();
         const creationDate = new Date().toJSON();
         const sampleNormalBucketInstance = new BucketInfo(bucketName,
-            canonicalID, authInfo.getAccountDisplayName(), creationDate, 2);
+            canonicalID, authInfo.getAccountDisplayName(), creationDate,
+            BucketInfo.currentModelVersion());
         const sampleMPUInstance = new BucketInfo(mpuBucket,
-            'admin', 'admin', creationDate, 2);
+            'admin', 'admin', creationDate, BucketInfo.currentModelVersion());
         metadata.createBucket(bucketName, sampleNormalBucketInstance, log,
             () => {
                 metadata.createBucket(mpuBucket, sampleMPUInstance, log, () => {

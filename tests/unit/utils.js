@@ -24,7 +24,7 @@ describe('utils.getBucketNameFromHost', () => {
             'in-french.bucket.is-seau.s3-website-eu-west-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-us-east-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-ap-southeast-2.amazonaws.com',
-            'in-french.bucket.is-seau.s3-website-eu-central-1.amazonaws.com',
+            'in-french.bucket.is-seau.s3-website.eu-central-1.amazonaws.com',
             'in-french.bucket.is-seau.s3-website-ap-northeast-1.amazonaws.com',
         ].forEach(host => {
             const headers = { host };
@@ -152,6 +152,16 @@ describe('utils.normalizeRequest', () => {
     it('should parse bucket name from path', () => {
         const request = {
             url: `/${bucketName}`,
+            headers: { host: 's3.amazonaws.com' },
+        };
+        const result = utils.normalizeRequest(request);
+        assert.strictEqual(result.bucketName, bucketName);
+        assert.strictEqual(result.parsedHost, 's3.amazonaws.com');
+    });
+
+    it('should parse bucket name from path when no slash', () => {
+        const request = {
+            url: `${bucketName}`,
             headers: { host: 's3.amazonaws.com' },
         };
         const result = utils.normalizeRequest(request);

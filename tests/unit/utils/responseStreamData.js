@@ -1,17 +1,19 @@
 import assert from 'assert';
 import httpMocks from 'node-mocks-http';
 import { EventEmitter } from 'events';
+import { errors } from 'arsenal';
 
 import { cleanup, DummyRequestLogger } from '../helpers';
 import { ds } from '../../../lib/data/in_memory/backend';
 import routesUtils from '../../../lib/routes/routesUtils';
+import data from '../../../lib/data/wrapper';
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();
 const owner = 'accessKey1canonicalID';
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const errCode = null;
 const overrideHeaders = {};
 const resHeaders = {};
@@ -24,7 +26,7 @@ const dataStoreEntry = {
     },
 };
 
-describe('responseStreamData function', () => {
+describe('responseStreamData:', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -70,6 +72,34 @@ describe('responseStreamData function', () => {
             const doublePostBody = postBody.toString().concat(postBody);
             assert.strictEqual(data, doublePostBody);
             done();
+        });
+        return responseStreamData(errCode, overrideHeaders,
+            resHeaders, dataLocations, response, null, log);
+    });
+
+    it('#334 non-regression test, destroy connection on error', done => {
+        const dataLocations = [{
+            key: 1,
+            dataStore: 'mem',
+            start: 0,
+            size: 11,
+        }];
+        const prev = data.get;
+        data.get = (objectGetInfo, log, cb) => {
+            setTimeout(() => cb(errors.InternalError), 1000);
+        };
+        const response = httpMocks.createResponse({
+            eventEmitter: EventEmitter,
+        });
+        response.connection = {
+            destroy: () => {
+                data.get = prev;
+                done();
+            },
+        };
+        response.on('end', () => {
+            data.get = prev;
+            done(new Error('end reached instead of destroying connection'));
         });
         return responseStreamData(errCode, overrideHeaders,
             resHeaders, dataLocations, response, null, log);

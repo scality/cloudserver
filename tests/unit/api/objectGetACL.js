@@ -20,7 +20,7 @@ const otherAccountAuthInfo = makeAuthInfo(otherAccountAccessKey);
 const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const locationConstraint = 'us-west-1';
 
 describe('objectGetACL API', () => {
@@ -59,8 +59,9 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -99,8 +100,9 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -135,8 +137,9 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -178,8 +181,9 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -218,8 +222,9 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(
+                authInfo, testPutObjectRequest, undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -257,8 +262,9 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
@@ -295,19 +301,20 @@ describe('objectGetACL API', () => {
                 'x-amz-grant-read': `uri=${constants.allAuthedUsersId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
                 'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be',
                 'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf',
             },
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest, log, next),
-            (result, next) => {
+            next => objectPut(authInfo, testPutObjectRequest,
+                undefined, log, next),
+            (result, prevLen, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },

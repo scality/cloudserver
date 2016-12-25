@@ -19,7 +19,6 @@ if (ssl && ssl.ca) {
 }
 
 const DEFAULT_GLOBAL_OPTIONS = {
-    logger: process.stdout,
     httpOptions,
     apiVersions: { s3: '2006-03-01' },
     signatureCache: false,
@@ -58,10 +57,9 @@ function _getAwsCredentials(profile) {
 }
 
 function _getMemConfig(profile, config) {
-    let memConfig;
     const credentials = _getMemCredentials(profile);
 
-    memConfig = Object.assign({}
+    const memConfig = Object.assign({}
         , DEFAULT_GLOBAL_OPTIONS, DEFAULT_MEM_OPTIONS
         , { credentials }, config);
 
@@ -73,10 +71,9 @@ function _getMemConfig(profile, config) {
 }
 
 function _getAwsConfig(profile, config) {
-    let awsConfig;
     const credentials = _getAwsCredentials(profile);
 
-    awsConfig = Object.assign({}
+    const awsConfig = Object.assign({}
         , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS
         , { credentials }, config);
 

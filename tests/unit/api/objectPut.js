@@ -14,7 +14,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const testPutBucketRequest = new DummyRequest({
     bucketName,
@@ -32,11 +32,12 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(authUser, testPutObjectRequest, log, (err, res) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(res, correctMD5);
-                cb();
-            });
+            objectPut(authUser, testPutObjectRequest, undefined,
+                log, (err, res) => {
+                    assert.strictEqual(err, null);
+                    assert.strictEqual(res, correctMD5);
+                    cb();
+                });
         });
     });
 }
@@ -54,7 +55,7 @@ describe('objectPut API', () => {
 
 
     it('should return an error if the bucket does not exist', done => {
-        objectPut(authInfo, testPutObjectRequest, log, err => {
+        objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
@@ -64,10 +65,11 @@ describe('objectPut API', () => {
         const putAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(putAuthInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.AccessDenied);
-                    done();
-                });
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, err => {
+                        assert.deepStrictEqual(err, errors.AccessDenied);
+                        done();
+                    });
             });
     });
 
@@ -75,7 +77,7 @@ describe('objectPut API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-full-control'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
@@ -83,7 +85,7 @@ describe('objectPut API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-write'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
 
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
@@ -108,7 +110,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
@@ -143,7 +145,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName, log,
@@ -181,7 +183,7 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         assert.deepStrictEqual(ds, []);
@@ -208,12 +210,14 @@ describe('objectPut API', () => {
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}`,
-        }, new Buffer('I am another body'));
+        }, Buffer.from('I am another body', 'utf8'));
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, () => {
-                    objectPut(authInfo, testPutObjectRequest2, log,
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, () => {
+                        objectPut(authInfo, testPutObjectRequest2, undefined,
+                            log,
                         () => {
                             // orphan objects don't get deleted
                             // until the next tick
@@ -223,11 +227,11 @@ describe('objectPut API', () => {
                                 assert.strictEqual(ds[0], undefined);
                                 assert.strictEqual(ds[1], undefined);
                                 assert.deepStrictEqual(ds[2].value,
-                                    new Buffer('I am another body'));
+                                    Buffer.from('I am another body', 'utf8'));
                                 done();
                             });
                         });
-                });
+                    });
             });
     });
 });

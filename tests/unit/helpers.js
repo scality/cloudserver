@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
 import { metadata } from '../../lib/metadata/in_memory/metadata';
@@ -43,7 +45,7 @@ export function makeAuthInfo(accessKey) {
             + 'cd47ef2be',
         accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2bf',
-        default: `${accessKey}canonicalID`,
+        default: crypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
 
@@ -53,6 +55,101 @@ export function makeAuthInfo(accessKey) {
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
     });
+}
+
+export class WebsiteConfig {
+    constructor(indexDocument, errorDocument, redirectAllReqTo) {
+        if (indexDocument) {
+            this.IndexDocument = {};
+            this.IndexDocument.Suffix = indexDocument;
+        }
+        if (errorDocument) {
+            this.ErrorDocument = {};
+            this.ErrorDocument.Key = errorDocument;
+        }
+        if (redirectAllReqTo) {
+            this.RedirectAllRequestsTo = redirectAllReqTo;
+        }
+    }
+    addRoutingRule(redirectParams, conditionParams) {
+        const newRule = {};
+        if (!this.RoutingRules) {
+            this.RoutingRules = [];
+        }
+        if (redirectParams) {
+            newRule.Redirect = {};
+            Object.keys(redirectParams).forEach(key => {
+                newRule.Redirect[key] = redirectParams[key];
+            });
+        }
+        if (conditionParams) {
+            newRule.Condition = {};
+            Object.keys(conditionParams).forEach(key => {
+                newRule.Condition[key] = conditionParams[key];
+            });
+        }
+        this.RoutingRules.push(newRule);
+    }
+    getXml() {
+        const xml = [];
+        function _pushChildren(obj) {
+            Object.keys(obj).forEach(element => {
+                xml.push(`<${element}>${obj[element]}</${element}>`);
+            });
+        }
+
+        xml.push('<WebsiteConfiguration xmlns=' +
+            '"http://s3.amazonaws.com/doc/2006-03-01/">');
+
+        if (this.IndexDocument) {
+            xml.push('<IndexDocument>',
+            `<Suffix>${this.IndexDocument.Suffix}</Suffix>`,
+            '</IndexDocument>');
+        }
+
+        if (this.ErrorDocument) {
+            xml.push('<ErrorDocument>',
+            `<Key>${this.ErrorDocument.Key}</Key>`,
+            '</ErrorDocument>');
+        }
+
+        if (this.RedirectAllRequestsTo) {
+            xml.push('<RedirectAllRequestsTo>');
+            if (this.RedirectAllRequestsTo.HostName) {
+                xml.push('<HostName>',
+                `${this.RedirectAllRequestsTo.HostName})`,
+                '</HostName>');
+            }
+            if (this.RedirectAllRequestsTo.Protocol) {
+                xml.push('<Protocol>',
+                `${this.RedirectAllRequestsTo.Protocol})`,
+                '</Protocol>');
+            }
+            xml.push('</RedirectAllRequestsTo>');
+        }
+
+        if (this.RoutingRules) {
+            xml.push('<RoutingRules>');
+            this.RoutingRules.forEach(rule => {
+                xml.push('<RoutingRule>');
+                if (rule.Condition) {
+                    xml.push('<Condition>');
+                    _pushChildren(rule.Condition);
+                    xml.push('</Condition>');
+                }
+                if (rule.Redirect) {
+                    xml.push('<Redirect>');
+                    _pushChildren(rule.Redirect);
+                    xml.push('</Redirect>');
+                }
+                xml.push('</RoutingRule>');
+            });
+            xml.push('</RoutingRules>');
+        }
+
+        xml.push('</WebsiteConfiguration>');
+        return xml.join('');
+    }
 }
 
 export function createAlteredRequest(alteredItems, objToAlter,
@@ -126,5 +223,62 @@ export class DummyRequestLogger {
 
     addDefaultFields(fields) {
         Object.assign(this.defaultFields, fields);
+    }
+
+    end() {
+        return this;
+    }
+}
+
+export class AccessControlPolicy {
+    constructor(params) {
+        this.Owner = {};
+        this.Owner.ID = params.ownerID;
+        this.Owner.DisplayName = params.ownerDisplayName;
+        this.AccessControlList = [];
+    }
+    setOwnerID(ownerID) {
+        this.Owner.ID = ownerID;
+    }
+    addGrantee(type, value, permission, displayName) {
+        const grant = {
+            Grantee: {
+                Type: type,
+                DisplayName: displayName,
+            },
+            Permission: permission,
+        };
+        if (type === 'AmazonCustomerByEmail') {
+            grant.Grantee.EmailAddress = value;
+        } else if (type === 'CanonicalUser') {
+            grant.Grantee.ID = value;
+        } else if (type === 'Group') {
+            grant.Grantee.URI = value;
+        }
+        this.AccessControlList.push(grant);
+    }
+    getXml() {
+        const xml = [];
+
+        function _pushChildren(obj) {
+            Object.keys(obj).forEach(element => {
+                if (obj[element] !== undefined && element !== 'Type') {
+                    xml.push(`<${element}>${obj[element]}</${element}>`);
+                }
+            });
+        }
+        xml.push('<AccessControlPolicy xmlns=' +
+            '"http://s3.amazonaws.com/doc/2006-03-01/">', '<Owner>');
+        _pushChildren(this.Owner);
+        xml.push('</Owner>', '<AccessControlList>');
+        this.AccessControlList.forEach(grant => {
+            xml.push('<Grant>', `<Grantee xsi:type="${grant.Grantee.Type}">`);
+            _pushChildren(grant.Grantee);
+            xml.push('</Grantee>',
+                `<Permission>${grant.Permission}</Permission>`,
+                '</Grant>');
+        });
+        xml.push('</AccessControlList>', '</AccessControlPolicy>');
+        return xml.join('');
     }
 }

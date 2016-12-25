@@ -5,10 +5,13 @@ import { errors } from 'arsenal';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
+import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
@@ -169,11 +172,11 @@ describe('transient bucket handling', () => {
             const setUpRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
             setUpRequest.objectKey = objName;
-            const postBody = new Buffer('I am a body');
+            const postBody = Buffer.from('I am a body', 'utf8');
             const md5Hash = crypto.createHash('md5');
             const etag = md5Hash.update(postBody).digest('hex');
             const putObjRequest = new DummyRequest(setUpRequest, postBody);
-            objectPut(authInfo, putObjRequest, log, err => {
+            objectPut(authInfo, putObjRequest, undefined, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
@@ -214,8 +217,8 @@ describe('transient bucket handling', () => {
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
                     metadata.listObject(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`,
-                        `overview${constants.splitter}${objName}`,
-                        null, null, null, log, (err, results) => {
+                        { prefix: `overview${constants.splitter}${objName}` },
+                        log, (err, results) => {
                             assert.ifError(err);
                             assert.strictEqual(results.Contents.length, 1);
                             done();
@@ -269,6 +272,35 @@ describe('transient bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
+    });
+
+    it('bucketGetWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        bucketGetWebsite(authInfo, baseTestRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
+    });
+
+    it('bucketPutWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutWebsiteRequest.post = '<WebsiteConfiguration>' +
+        '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
+        '</WebsiteConfiguration>';
+        bucketPutWebsite(authInfo, bucketPutWebsiteRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
+    });
+
+    it('bucketDeleteWebsite request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        bucketDeleteWebsite(authInfo, baseTestRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
     });
 
     it('bucketHead request on transient bucket should return NoSuchBucket' +
@@ -331,7 +363,7 @@ describe('transient bucket handling', () => {
         putPartRequest.query = {
             uploadId,
             partNumber: '1' };
-        objectPutPart(authInfo, putPartRequest,
+        objectPutPart(authInfo, putPartRequest, undefined,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();

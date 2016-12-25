@@ -6,6 +6,11 @@ import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 import bucketSchema from '../../schema/bucket';
 
+function checkNoError(err) {
+    assert.equal(err, null,
+        `Expected success, got error ${JSON.stringify(err)}`);
+}
+
 describe('GET Bucket - AWS.S3.listObjects', () => {
     describe('When user is unauthorized', () => {
         let bucketUtil;
@@ -92,6 +97,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         'testB/',
                         'testB/test.json',
                     ], 'Bucket content mismatch');
+                    // ETag should include quotes around value
+                    const emptyObjectHash =
+                        '"d41d8cd98f00b204e9800998ecf8427e"';
+                    assert.deepStrictEqual(data.Contents[0].ETag,
+                        emptyObjectHash, 'Object hash mismatch');
                     done();
                 })
                 .catch(done);
@@ -127,6 +137,31 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                     done();
                 })
                 .catch(done);
+        });
+
+        it('should list objects with percentage delimiter', () => {
+            const s3 = bucketUtil.s3;
+            const Bucket = bucketName;
+            const objects = [
+                { Bucket, Key: 'testB%' },
+                { Bucket, Key: 'testC%test.json', Body: '{}' },
+                { Bucket, Key: 'testA%' },
+            ];
+
+            return Promise
+                .mapSeries(objects, param => s3.putObjectAsync(param))
+                .then(() => s3.listObjectsAsync({ Bucket, Delimiter: '%' }))
+                .then(data => {
+                    const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
+                    assert.deepEqual(prefixes, [
+                        'testA%',
+                        'testB%',
+                        'testC%',
+                    ], 'Bucket content mismatch');
+                })
+                .catch(err => {
+                    checkNoError(err);
+                });
         });
 
         it('should list object titles with white spaces', done => {
@@ -169,10 +204,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 .catch(done);
         });
 
-        it('should list object titles that begin with special chars', done => {
+        it('should list object titles that contain special chars', done => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
             const objects = [
+                { Bucket, Key: 'foo&<>\'"' },
                 { Bucket, Key: '*asterixObjTitle/' },
                 { Bucket, Key: '*asterixObjTitle/objTitleA', Body: '{}' },
                 { Bucket, Key: '*asterixObjTitle/*asterixObjTitle',
@@ -304,6 +340,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         '_underscoreObjTitle/',
                         '_underscoreObjTitle/_underscoreObjTitle',
                         '_underscoreObjTitle/objTitleA',
+                        'foo&<>\'"',
                         'ÀaGraveUpperCaseObjTitle',
                         'ÀaGraveUpperCaseObjTitle/objTitleA',
                         'ÀaGraveUpperCaseObjTitle/ÀaGraveUpperCaseObjTitle',

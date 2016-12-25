@@ -15,7 +15,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const objectKey = 'objectName';
 const locationConstraint = 'us-west-1';
 
@@ -24,7 +24,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(bucketOwner, objPutReq, log, err => {
+            objectPut(bucketOwner, objPutReq, undefined, log, err => {
                 assert.strictEqual(err, null);
                 objectDelete(authUser, objDelReq, log, err => {
                     assert.strictEqual(err, undefined);
@@ -77,15 +77,18 @@ describe('objectDelete API', () => {
     it('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, () => {
-                    objectDelete(authInfo, testDeleteRequest, log, err => {
-                        assert.strictEqual(err, undefined);
-                        objectGet(authInfo, testGetObjectRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.NoSuchKey);
-                            done();
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, () => {
+                        objectDelete(authInfo, testDeleteRequest, log, err => {
+                            assert.strictEqual(err, undefined);
+                            objectGet(authInfo, testGetObjectRequest,
+                                log, err => {
+                                    assert.deepStrictEqual(err,
+                                        errors.NoSuchKey);
+                                    done();
+                                });
                         });
                     });
-                });
             });
     });
 
@@ -99,18 +102,20 @@ describe('objectDelete API', () => {
         }, '');
         bucketPut(authInfo, testBucketPutRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log, () => {
-                    objectDelete(authInfo, testDeleteRequest, log, err => {
-                        assert.strictEqual(err, undefined);
-                        objectGet(authInfo, testGetObjectRequest, log, err => {
-                            const expected =
-                                Object.assign({}, errors.NoSuchKey);
-                            const received = Object.assign({}, err);
-                            assert.deepStrictEqual(received, expected);
-                            done();
+                objectPut(authInfo, testPutObjectRequest,
+                    undefined, log, () => {
+                        objectDelete(authInfo, testDeleteRequest, log, err => {
+                            assert.strictEqual(err, undefined);
+                            objectGet(authInfo, testGetObjectRequest,
+                                log, err => {
+                                    const expected =
+                                    Object.assign({}, errors.NoSuchKey);
+                                    const received = Object.assign({}, err);
+                                    assert.deepStrictEqual(received, expected);
+                                    done();
+                                });
                         });
                     });
-                });
             });
     });
 
@@ -126,7 +131,7 @@ describe('objectDelete API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-full-control'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
     });
@@ -135,7 +140,7 @@ describe('objectDelete API', () => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-write'] =
-            `id="${authUser.getCanonicalID()}"`;
+            `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
     });

@@ -14,7 +14,7 @@
             "email": "user1.sampleaccount2@sampling.com",
             "arn": "aws::iam:123456789013:bart",
             "keys": [{
-                "access": "accessKey1/1",
+                "access": "USERBARTFUNACCESSKEY",
                 "secret": "verySecretKey1"
             }]
         }]
@@ -27,6 +27,16 @@
         "keys": [{
             "access": "accessKey2",
             "secret": "verySecretKey2"
+        }]
+    }, {
+        "name": "Docker",
+        "email": "sampleaccount3@sampling.com",
+        "arn": "aws::iam:accessKeyDocker:user/Docker",
+        "canonicalID": "sd359df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47eh3hd",
+        "shortid": "123456789012",
+        "keys": [{
+            "access": "accessKeyDocker",
+            "secret": "verySecretKeyDocker"
         }]
     }]
 }

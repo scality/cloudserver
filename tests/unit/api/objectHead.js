@@ -12,7 +12,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const postBody = new Buffer('I am a body');
+const postBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
 const objectName = 'objectName';
@@ -57,7 +57,7 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
@@ -80,7 +80,7 @@ describe('objectHead API', () => {
         };
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
@@ -105,7 +105,7 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
@@ -130,7 +130,7 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
@@ -152,7 +152,7 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest,
             locationConstraint, log, () => {
-                objectPut(authInfo, testPutObjectRequest, log,
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log,

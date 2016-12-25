@@ -40,10 +40,9 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             let testFn;
 
             before(() => {
-                testFn = (bucketName, done) => {
-                    const expectedStatus = 400;
-                    const expectedCode = 'InvalidBucketName';
-
+                testFn = (bucketName, done, errStatus, errCode) => {
+                    const expectedStatus = errStatus || 400;
+                    const expectedCode = errCode || 'InvalidBucketName';
                     bucketUtil
                         .createOne(bucketName)
                         .then(() => {
@@ -65,6 +64,12 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             // they described in their document.
             // Hence it skips some of test suites.
             const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
+
+            it('should return 405 if empty name', done => {
+                const shortName = '';
+
+                testFn(shortName, done, 405, 'MethodNotAllowed');
+            });
 
             it('should return 400 if name is shorter than 3 chars', done => {
                 const shortName = 'as';
@@ -113,27 +118,26 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         });
 
         describe('bucket creation success', () => {
-            it('should create bucket if name is valid', done => {
-                const validName = 'scality-very-valid-bucket-name';
+            function _test(name, done) {
+                bucketUtil.s3.createBucket({ Bucket: name }, (err, res) => {
+                    assert.ifError(err);
+                    if (process.env.AWS_ON_AIR) {
+                        assert(res.Location, 'No Location in response');
+                        assert(res.Location.indexOf(name) > -1,
+                            'Does not include bucket name in Location');
+                    }
 
-                bucketUtil.s3
-                    .createBucket({ Bucket: validName }, (error, data) => {
-                        assert.ifError(error);
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                });
+            }
+            it('should create bucket if name is valid', done =>
+                _test('scality-very-valid-bucket-name', done));
 
-                        if (process.env.AWS_ON_AIR) {
-                            assert(data.Location, 'No Location in response');
-                            assert(data.Location.indexOf(validName) > -1,
-                                'Does not include bucket name in Location');
-                        }
+            it('should create bucket if name is some prefix and an IP address',
+                done => _test('prefix-192.168.5.4', done));
 
-                        bucketUtil
-                            .deleteOne(validName)
-                            .then(() => {
-                                done();
-                            })
-                            .catch(done);
-                    });
-            });
+            it('should create bucket if name is an IP address with some suffix',
+                done => _test('192.168.5.4-suffix', done));
         });
     });
 });

@@ -1,5 +1,7 @@
 import assert from 'assert';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
+import { WebsiteConfiguration } from
+    '../../../lib/metadata/WebsiteConfiguration';
 // create variables to populate dummyBucket
 const bucketName = 'nameOfBucket';
 const owner = 'canonicalID';
@@ -25,18 +27,53 @@ const filledAcl = {
 const acl = { undefined, emptyAcl, filledAcl };
 
 const testDate = new Date().toJSON();
+
+const testVersioningConfiguration = { Status: 'Enabled' };
+
+const testWebsiteConfiguration = new WebsiteConfiguration({
+    indexDocument: 'index.html',
+    errorDocument: 'error.html',
+    routingRules: [
+        {
+            redirect: {
+                httpRedirectCode: '301',
+                hostName: 'www.example.com',
+                replaceKeyPrefixWith: '/documents',
+            },
+            condition: {
+                httpErrorCodeReturnedEquals: 400,
+                keyPrefixEquals: '/docs',
+            },
+        },
+        {
+            redirect: {
+                protocol: 'http',
+                replaceKeyWith: 'error.html',
+            },
+            condition: {
+                keyPrefixEquals: 'ExamplePage.html',
+            },
+        },
+    ],
+});
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
     aclObj => describe(`different acl configurations : ${aclObj}`, () => {
         const dummyBucket = new BucketInfo(
-            bucketName, owner, ownerDisplayName, testDate, 2, acl[aclObj],
-            false, false);
+            bucketName, owner, ownerDisplayName, testDate,
+            BucketInfo.currentModelVersion(), acl[aclObj],
+            false, false, {
+                cryptoScheme: 1,
+                algorithm: 'sha1',
+                masterKeyId: 'somekey',
+                mandatory: true,
+            }, testVersioningConfiguration,
+            testWebsiteConfiguration);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
-            let serialized;
+            const serialized = dummyBucket.serialize();
             it('should serialize', done => {
-                serialized = dummyBucket.serialize();
                 assert.strictEqual(typeof serialized, 'string');
                 const bucketInfos = {
                     acl: dummyBucket._acl,
@@ -47,12 +84,18 @@ Object.keys(acl).forEach(
                     mdBucketModelVersion: dummyBucket._mdBucketModelVersion,
                     transient: dummyBucket._transient,
                     deleted: dummyBucket._deleted,
+                    serverSideEncryption: dummyBucket._serverSideEncryption,
+                    versioningConfiguration:
+                        dummyBucket._versioningConfiguration,
+                    websiteConfiguration: dummyBucket._websiteConfiguration
+                        .getConfig(),
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
             });
 
-            it('should deSerialize into an  instance of BucketInfo', done => {
+            it('should deSerialize into an instance of BucketInfo', done => {
+                const serialized = dummyBucket.serialize();
                 const deSerialized = BucketInfo.deSerialize(serialized);
                 assert.strictEqual(typeof deSerialized, 'object');
                 assert(deSerialized instanceof BucketInfo);
@@ -85,6 +128,15 @@ Object.keys(acl).forEach(
                 assert.deepStrictEqual(dummyBucket.getAcl(),
                                        acl[aclObj] || emptyAcl);
             });
+            it('this should have the right website config types', () => {
+                const websiteConfig = dummyBucket.getWebsiteConfiguration();
+                assert.strictEqual(typeof websiteConfig, 'object');
+                assert.strictEqual(typeof websiteConfig._indexDocument,
+                    'string');
+                assert.strictEqual(typeof websiteConfig._errorDocument,
+                    'string');
+                assert(Array.isArray(websiteConfig._routingRules));
+            });
         });
 
         describe('getters on BucketInfo class', () => {
@@ -104,6 +156,14 @@ Object.keys(acl).forEach(
             });
             it('getCreationDate should return creationDate', () => {
                 assert.deepStrictEqual(dummyBucket.getCreationDate(), testDate);
+            });
+            it('getVersioningConfiguration should return configuration', () => {
+                assert.deepStrictEqual(dummyBucket.getVersioningConfiguration(),
+                        testVersioningConfiguration);
+            });
+            it('getWebsiteConfiguration should return configuration', () => {
+                assert.deepStrictEqual(dummyBucket.getWebsiteConfiguration(),
+                        testWebsiteConfiguration);
             });
         });
 
@@ -161,6 +221,26 @@ Object.keys(acl).forEach(
                    assert.deepStrictEqual(
                        dummyBucket.locationConstraint, newLocation);
                });
+            it('setVersioningConfiguration should set configuration', () => {
+                const newVersioningConfiguration =
+                    { Status: 'Enabled', MfaDelete: 'Enabled' };
+                dummyBucket
+                    .setVersioningConfiguration(newVersioningConfiguration);
+                assert.deepStrictEqual(dummyBucket.getVersioningConfiguration(),
+                    newVersioningConfiguration);
+            });
+            it('setWebsiteConfiguration should set configuration', () => {
+                const newWebsiteConfiguration = {
+                    redirectAllRequestsTo: {
+                        hostName: 'www.example.com',
+                        protocol: 'https',
+                    },
+                };
+                dummyBucket
+                    .setWebsiteConfiguration(newWebsiteConfiguration);
+                assert.deepStrictEqual(dummyBucket.getWebsiteConfiguration(),
+                    newWebsiteConfiguration);
+            });
         });
     })
 );

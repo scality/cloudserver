@@ -48,8 +48,8 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.getName(), bucketName);
                 assert.strictEqual(md.getOwner(), canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
-                metadata.listObject(usersBucket, prefix,
-                    null, null, null, log, (err, listResponse) => {
+                metadata.listObject(usersBucket, { prefix },
+                    log, (err, listResponse) => {
                         assert.strictEqual(listResponse.Contents[0].key,
                             `${canonicalID}${splitter}${bucketName}`);
                         done();
@@ -160,11 +160,11 @@ describe('bucketPut API', () => {
                 'x-amz-grant-read': `uri=${constants.logId}`,
                 'x-amz-grant-write': `uri=${constants.publicId}`,
                 'x-amz-grant-read-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2be"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2be',
                 'x-amz-grant-write-acp':
-                    'id="79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
-                    'f8f8d5218e7cd47ef2bf"',
+                    'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                    'f8f8d5218e7cd47ef2bf',
             },
             url: '/',
             post: '',
