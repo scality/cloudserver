@@ -10,7 +10,7 @@ machine:
   node:
     version: 4.5.0
   ruby:
-    version: "2.0"
+    version: "2.1"
   environment:
     CXX: g++-4.9
 
