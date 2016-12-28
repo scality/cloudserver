@@ -56,6 +56,9 @@ const testWebsiteConfiguration = new WebsiteConfiguration({
         },
     ],
 });
+
+const testLocationConstraint = 'us-west-1';
+
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
@@ -69,7 +72,8 @@ Object.keys(acl).forEach(
                 masterKeyId: 'somekey',
                 mandatory: true,
             }, testVersioningConfiguration,
-            testWebsiteConfiguration);
+            testWebsiteConfiguration,
+            testLocationConstraint);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             const serialized = dummyBucket.serialize();
@@ -89,6 +93,7 @@ Object.keys(acl).forEach(
                         dummyBucket._versioningConfiguration,
                     websiteConfiguration: dummyBucket._websiteConfiguration
                         .getConfig(),
+                    locationConstraint: dummyBucket._locationConstraint,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
@@ -165,6 +170,10 @@ Object.keys(acl).forEach(
                 assert.deepStrictEqual(dummyBucket.getWebsiteConfiguration(),
                         testWebsiteConfiguration);
             });
+            it('getLocationConstraint should return locationConstraint', () => {
+                assert.deepStrictEqual(dummyBucket.getLocationConstraint(),
+                testLocationConstraint);
+            });
         });
 
         describe('setters on BucketInfo class', () => {
@@ -219,7 +228,7 @@ Object.keys(acl).forEach(
                    const newLocation = 'newLocation';
                    dummyBucket.setLocationConstraint(newLocation);
                    assert.deepStrictEqual(
-                       dummyBucket.locationConstraint, newLocation);
+                       dummyBucket.getLocationConstraint(), newLocation);
                });
             it('setVersioningConfiguration should set configuration', () => {
                 const newVersioningConfiguration =

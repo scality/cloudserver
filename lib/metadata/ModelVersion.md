@@ -47,10 +47,12 @@ Used to store the server bucket encryption info
 
 ### Properties Added
 
-```
+```javascript
 this._websiteConfiguration = websiteConfiguration || null;
+this._locationConstraint = LocationConstraint || null;
 ```
 
 ### Usage
 
-Used to store the bucket website configuration info
+Used to store the bucket website configuration info and the location constraint
+of the bucket
