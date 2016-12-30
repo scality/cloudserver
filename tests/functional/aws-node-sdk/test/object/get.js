@@ -56,7 +56,7 @@ describe('GET object', () => {
             });
 
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
-        'Content-Encoding, Expires]', () => {
+            'Content-Encoding, Expires]', () => {
             before(done => {
                 const params = {
                     Bucket: bucketName,
@@ -69,7 +69,7 @@ describe('GET object', () => {
                 s3.putObject(params, err => done(err));
             });
             it('should return additional headers if specified in objectPUT ' +
-              'request', done => {
+                'request', done => {
                 s3.getObject({ Bucket: bucketName, Key: objectName },
                   (err, res) => {
                       if (err) {
@@ -85,6 +85,28 @@ describe('GET object', () => {
                         'gzip');
                       assert.strictEqual(res.Expires,
                           expires.toGMTString());
+                      return done();
+                  });
+            });
+        });
+
+        describe('x-amz-website-redirect-location header', () => {
+            before(done => {
+                const params = {
+                    Bucket: bucketName,
+                    Key: objectName,
+                    WebsiteRedirectLocation: '/',
+                };
+                s3.putObject(params, err => done(err));
+            });
+            it('should return website redirect header if specified in ' +
+                'objectPUT request', done => {
+                s3.getObject({ Bucket: bucketName, Key: objectName },
+                  (err, res) => {
+                      if (err) {
+                          return done(err);
+                      }
+                      assert.strictEqual(res.WebsiteRedirectLocation, '/');
                       return done();
                   });
             });
