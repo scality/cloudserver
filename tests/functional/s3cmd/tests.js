@@ -691,7 +691,7 @@ describe('s3cmd put, get and delete object with spaces ' +
 });
 
 describe('s3cmd info', () => {
-    // test that POLICY is returned as 'none'
+    // test that POLICY and CORS are returned as 'none'
     it('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
         foundIt => {
@@ -700,12 +700,37 @@ describe('s3cmd info', () => {
         });
     });
 
-    // TODO: unskip when getBucketCORS has been implemented & check that it
-    // returns correct value when cors exists
-    it.skip('should find that cors has a value of none', done => {
+    it('should find that cors has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none', foundIt => {
             assert(foundIt);
             done();
+        });
+    });
+
+    describe('after putting cors configuration', () => {
+        const corsConfig = '<?xml version="1.0" encoding="UTF-8" ' +
+        'standalone="yes"?><CORSConfiguration><CORSRule>' +
+        '<AllowedMethod>PUT</AllowedMethod>' +
+        '<AllowedOrigin>http://www.allowedorigin.com</AllowedOrigin>' +
+        '</CORSRule></CORSConfiguration>';
+        const filename = 'corss3cmdfile';
+
+        beforeEach(done => {
+            fs.writeFile(filename, corsConfig, () => {
+                exec(['setcors', filename, `s3://${bucket}`], done);
+            });
+        });
+
+        afterEach(done => {
+            deleteFile(filename, done);
+        });
+
+        it('should find that cors has a value', done => {
+            checkRawOutput(['info', `s3://${bucket}`], 'cors', corsConfig,
+            foundIt => {
+                assert(foundIt, 'Did not find value for cors');
+                done();
+            });
         });
     });
 });
