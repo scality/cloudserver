@@ -53,6 +53,10 @@ describe('utils.getBucketNameFromHost', () => {
         [
             '127.0.0.1',
             '8.8.8.8',
+            '[::1]',
+            '[2001:db8:a0b:12f0::1]',
+            // IPv4-mapped IPv6 address
+            '[::ffff:127.0.0.1]',
         ].forEach(host => {
             const headers = { host };
             const result = utils.getBucketNameFromHost({ headers });
@@ -188,6 +192,17 @@ describe('utils.normalizeRequest', () => {
         assert.strictEqual(result.bucketName, bucketName);
         assert.strictEqual(result.objectKey, objName);
         assert.strictEqual(result.parsedHost, 's3.amazonaws.com');
+    });
+
+    it('should parse bucket and object name from path with IP address', () => {
+        const request = {
+            url: `/${bucketName}/${objName}`,
+            headers: { host: '[::1]' },
+        };
+        const result = utils.normalizeRequest(request);
+        assert.strictEqual(result.bucketName, bucketName);
+        assert.strictEqual(result.objectKey, objName);
+        assert.strictEqual(result.parsedHost, '[::1]');
     });
 
     it('should parse bucket name from host ' +
