@@ -691,7 +691,7 @@ describe('s3cmd put, get and delete object with spaces ' +
 });
 
 describe('s3cmd info', () => {
-// test that CORS and POLICY are returned as 'none'
+    // test that POLICY is returned as 'none'
     it('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
         foundIt => {
@@ -700,8 +700,9 @@ describe('s3cmd info', () => {
         });
     });
 
-
-    it('should find that cors has a value of none', done => {
+    // TODO: unskip when getBucketCORS has been implemented & check that it
+    // returns correct value when cors exists
+    it.skip('should find that cors has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none', foundIt => {
             assert(foundIt);
             done();

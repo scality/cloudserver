@@ -9,6 +9,7 @@ import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
+import bucketPutCors from '../../../lib/api/bucketPutCors';
 import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
 import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
@@ -272,6 +273,22 @@ describe('transient bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
+    });
+
+    it('bucketPutCors request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        const bucketPutCorsRequest = createAlteredRequest({}, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutCorsRequest.post = '<CORSConfiguration><CORSRule>' +
+        '<AllowedMethod>PUT</AllowedMethod>' +
+        '<AllowedOrigin>http://www.example.com</AllowedOrigin>' +
+        '</CORSRule></CORSConfiguration>';
+        bucketPutCorsRequest.headers['content-md5'] = crypto.createHash('md5')
+            .update(bucketPutCorsRequest.post, 'utf8').digest('base64');
+        bucketPutCors(authInfo, bucketPutCorsRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
     });
 
     it('bucketGetWebsite request on transient bucket should return ' +
