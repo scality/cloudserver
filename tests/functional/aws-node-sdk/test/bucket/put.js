@@ -121,12 +121,9 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             function _test(name, done) {
                 bucketUtil.s3.createBucket({ Bucket: name }, (err, res) => {
                     assert.ifError(err);
-                    if (process.env.AWS_ON_AIR) {
-                        assert(res.Location, 'No Location in response');
-                        assert(res.Location.indexOf(name) > -1,
-                            'Does not include bucket name in Location');
-                    }
-
+                    assert(res.Location, 'No Location in response');
+                    assert.deepStrictEqual(res.Location, `/${name}`,
+                      'Wrong Location header');
                     bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
