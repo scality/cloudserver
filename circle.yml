@@ -52,7 +52,7 @@ test:
             > $CIRCLE_ARTIFACTS/server_mem_fog.txt
         & bash wait_for_local_port.bash 8000 40
         && cd tests/functional/fog && rspec tests.rb
-    - S3BACKEND=mem npm start
+    - S3BACKEND=mem MPU_TESTING=yes npm start
             > $CIRCLE_ARTIFACTS/server_mem_awssdk.txt
         & bash wait_for_local_port.bash 8000 40
         && npm run ft_awssdk
@@ -66,7 +66,7 @@ test:
         && npm run ft_s3curl
 
     # Run S3 with mem Backend + KMS Encryption ; run ft_tests
-    - S3BACKEND=mem npm start
+    - S3BACKEND=mem MPU_TESTING=yes npm start
             > $CIRCLE_ARTIFACTS/server_mem_kms_awssdk.txt
         & bash wait_for_local_port.bash 8000 40
         && ENABLE_KMS_ENCRYPTION=true npm run ft_awssdk
@@ -80,7 +80,7 @@ test:
         && ENABLE_KMS_ENCRYPTION=true npm run ft_s3curl
 
     # Run S3 with file Backend ; run ft_tests
-    - S3BACKEND=file S3VAULT=mem npm start
+    - S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start
             > $CIRCLE_ARTIFACTS/server_file_awssdk.txt
         & bash wait_for_local_port.bash 8000 40
         && npm run ft_awssdk
@@ -94,7 +94,7 @@ test:
         && npm run ft_s3curl
 
     # Run S3 with file Backend + KMS Encryption ; run ft_tests
-    - S3BACKEND=file S3VAULT=mem npm start
+    - S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start
             > $CIRCLE_ARTIFACTS/server_file_kms_awssdk.txt
         & bash wait_for_local_port.bash 8000 40
         && ENABLE_KMS_ENCRYPTION=true npm run ft_awssdk
