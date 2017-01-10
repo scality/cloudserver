@@ -102,22 +102,17 @@ function provideRawOutput(args, cb) {
         process.stdout.write(`s3curl return code : ${code}\n`);
         let httpCode;
         if (procData.stderr !== '') {
-            const lines = procData.stderr.replace(/[<>]/g, '').split(/[\r\n]/);
-            httpCode = lines.find(line => {
-                const trimmed = line.trim().toUpperCase();
-                // ignore 100 Continue HTTP code
-                if (trimmed.startsWith('HTTP/1.1 ') &&
-                    !trimmed.includes('100 CONTINUE')) {
-                    return true;
-                }
-                return false;
-            });
-            if (httpCode) {
-                httpCode = httpCode.trim().replace('HTTP/1.1 ', '')
-                                          .toUpperCase();
+            // use lastIndexOf to skip 100 continue http code (if any).
+            // 9 is the length of 'HTTP/1.1 ' so we +9 to get the end of
+            // that expression.
+            const httpCodeIndex = procData.stderr.lastIndexOf('HTTP/1.1 ') + 9;
+            const endingIndex = procData.stderr.indexOf('<', httpCodeIndex);
+            if (httpCodeIndex > -1 && endingIndex > -1) {
+                httpCode = procData.stderr.slice(httpCodeIndex, endingIndex)
+                                          .trim().toUpperCase();
             } else {
-                process.stdout.write(`${lines.join('\n')}\n`);
-                return cb(new Error("Can't find line in http response code"));
+                process.stdout.write(procData.stderr);
+                return cb(new Error("Can't find http response code"));
             }
         } else {
             process.stdout.write(`stdout: ${procData.stdout}`);
