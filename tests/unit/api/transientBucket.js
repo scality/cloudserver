@@ -5,6 +5,7 @@ import { errors } from 'arsenal';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetCors from '../../../lib/api/bucketGetCors';
 import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
@@ -273,6 +274,14 @@ describe('transient bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();
             });
+    });
+
+    it('bucketGetCors request on transient bucket should return ' +
+        'NoSuchBucket error', done => {
+        bucketGetCors(authInfo, baseTestRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            done();
+        });
     });
 
     it('bucketPutCors request on transient bucket should return ' +

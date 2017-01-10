@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketGetACL from '../../../lib/api/bucketGetACL';
+import bucketGetCors from '../../../lib/api/bucketGetCors';
 import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
 import bucketHead from '../../../lib/api/bucketHead';
 import bucketPut from '../../../lib/api/bucketPut';
@@ -353,6 +354,15 @@ describe('deleted flag bucket handling', () => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 confirmDeleted(done);
             });
+    });
+
+    it('bucketGetCors request on bucket with delete flag should return ' +
+    'NoSuchBucket error and complete deletion', done => {
+        bucketGetCors(authInfo, baseTestRequest,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
     });
 
     it('bucketPutCors request on bucket with delete flag should return ' +
