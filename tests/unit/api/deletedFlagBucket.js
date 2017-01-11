@@ -13,6 +13,7 @@ import bucketPutACL from '../../../lib/api/bucketPutACL';
 import bucketPutCors from '../../../lib/api/bucketPutCors';
 import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
 import bucketDelete from '../../../lib/api/bucketDelete';
+import bucketDeleteCors from '../../../lib/api/bucketDeleteCors';
 import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
@@ -376,6 +377,14 @@ describe('deleted flag bucket handling', () => {
         bucketPutCorsRequest.headers['content-md5'] = crypto.createHash('md5')
             .update(bucketPutCorsRequest.post, 'utf8').digest('base64');
         bucketPutCors(authInfo, bucketPutCorsRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
+        });
+    });
+
+    it('bucketDeleteCors request on bucket with delete flag should return ' +
+        'NoSuchBucket error and complete deletion', done => {
+        bucketDeleteCors(authInfo, baseTestRequest, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             confirmDeleted(done);
         });
