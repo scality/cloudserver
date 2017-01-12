@@ -8,12 +8,12 @@ let config = fs.readFileSync('./config.json', { encoding: 'utf-8' });
 config = JSON.parse(config);
 
 let antidote;
-let client = null;
+const clients = [];
 let db = null;
 
 const utils = {
-    connectToS3() {
-        client = io.connect(`http://${config.S3.host}:${config.S3.port}`, {
+    connectToS3(host, port) {
+        let client = io.connect(`http://${host}:${port}`, {
             reconnection: true,
         });
         client.on('connect', function() {
@@ -40,6 +40,7 @@ const utils = {
         client.on('delete', function(msg) {
             require('./utils.js').default.deleteObject(msg.bucketName, msg.objName);
         });
+        clients.push(client)
     },
 
     connectToDB() {

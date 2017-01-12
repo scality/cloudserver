@@ -431,14 +431,9 @@ function updateTagIndex(bucketName, objName, objVal, rowId) {
         }
     });
     tags.forEach(tag => {
-        if (tag.key.indexOf('--integer') !== -1) {
-            tag.key = tag.key.replace('--integer', '');
-            updateIntIndex(bucketName, objName, `x-amz-meta/${tag.key}`, parseInt(tag.value, 10), rowId);
-        } else {
-            writeDB(`${bucketName}/x-amz-meta/${tag.key}/${tag.value}`, objName, `${bucketName}/x-amz-meta`, `${tag.key}/${tag.value}`, rowId, (err) =>{
+        writeDB(`${bucketName}/x-amz-meta/${tag.key}/${tag.value}`, objName, `${bucketName}/x-amz-meta`, `${tag.key}/${tag.value}`, rowId, (err) =>{
                 return ;
-            });
-        }
+        });
     });
 }
 
@@ -493,11 +488,21 @@ const index = {
 
     updateIndex: (bucketName, objName, objVal) => {
         updateIndexMeta(bucketName, objName, (err, rowId) => {
-            updateFileSizeIndex(bucketName, objName, objVal['content-length'], rowId);
-            updateΜodDateIndex(bucketName, objName, objVal['last-modified'], rowId);
-            updateContentTypeIndex(bucketName, objName, objVal['content-type'], rowId);
-            updateACLIndex(bucketName, objName, objVal['acl'], rowId);
-            updateTagIndex(bucketName, objName, objVal, rowId);
+            if (config.index.indexOf("tags") !== -1) {
+                updateTagIndex(bucketName, objName, objVal, rowId);
+            }
+            if (config.index.indexOf("filesize") !== -1) {
+                updateFileSizeIndex(bucketName, objName, objVal['content-length'], rowId);
+            }
+            if (config.index.indexOf("date") !== -1) {
+                updateΜodDateIndex(bucketName, objName, objVal['last-modified'], rowId);
+            }
+            if (config.index.indexOf("contenttype") !== -1) {
+                updateContentTypeIndex(bucketName, objName, objVal['content-type'], rowId);
+            }
+            if (config.index.indexOf("acl") !== -1) {
+                updateACLIndex(bucketName, objName, objVal['acl'], rowId);
+            }
         });
     },
 
