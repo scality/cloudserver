@@ -89,7 +89,7 @@ describe('putObjectACL API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(md.acl.Canned,
@@ -127,14 +127,14 @@ describe('putObjectACL API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest1, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(md.acl.Canned,
                                 'public-read');
                                 objectPutACL(authInfo, testObjACLRequest2, log,
                                     err => {
-                                        assert.strictEqual(err, undefined);
+                                        assert.strictEqual(err, null);
                                         metadata.getObjectMD(bucketName,
                                             objectName, log, (err, md) => {
                                                 assert.strictEqual(md
@@ -171,7 +171,7 @@ describe('putObjectACL API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(err, null);
@@ -246,7 +246,7 @@ describe('putObjectACL API', () => {
                     log, (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(md
@@ -312,7 +312,7 @@ describe('putObjectACL API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, log,
                             (err, md) => {
                                 assert.strictEqual(md.acl.Canned, '');

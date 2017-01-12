@@ -70,13 +70,14 @@ describe('listMultipartUploads API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
-                        log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest2, log, next),
-            (result, next) => listMultipartUploads(authInfo, testListRequest,
-                                log, next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo,
+                testListRequest, log, next),
+            (result, corsHeaders, next) =>
+                parseString(result, corsHeaders, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -100,13 +101,14 @@ describe('listMultipartUploads API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
-                        log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest2, log, next),
-            (result, next) => listMultipartUploads(authInfo, testListRequest,
-                                log, next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) =>
+                listMultipartUploads(authInfo, testListRequest, log, next),
+            (result, corsHeaders, next) =>
+                parseString(result, corsHeaders, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -132,13 +134,14 @@ describe('listMultipartUploads API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
-                        log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest2, log, next),
-            (result, next) => listMultipartUploads(authInfo, testListRequest,
-                                log, next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo,
+                testListRequest, log, next),
+            (result, corsHeaders, next) =>
+                parseString(result, corsHeaders, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -168,15 +171,16 @@ describe('listMultipartUploads API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
-                        log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest2, log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest3, log, next),
-            (result, next) => listMultipartUploads(authInfo, testListRequest,
-                                log, next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest3, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo,
+                testListRequest, log, next),
+            (result, corsHeaders, next) =>
+                parseString(result, corsHeaders, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
@@ -200,15 +204,16 @@ describe('listMultipartUploads API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, testInitiateMPURequest1,
-                        log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest2, log, next),
-            (result, next) => initiateMultipartUpload(authInfo,
-                                testInitiateMPURequest3, log, next),
-            (result, next) => listMultipartUploads(authInfo, testListRequest,
-                                log, next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest1, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest2, log, next),
+            (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
+                testInitiateMPURequest3, log, next),
+            (result, corsHeaders, next) => listMultipartUploads(authInfo,
+                testListRequest, log, next),
+            (result, corsHeaders, next) =>
+                parseString(result, corsHeaders, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult

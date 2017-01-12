@@ -52,15 +52,15 @@ describe('serviceGet API', () => {
                 bucketPut(authInfo, testbucketPutRequest1, locationConstraint,
                     log, next);
             },
-            function waterfall2(next) {
+            function waterfall2(corsHeaders, next) {
                 bucketPut(authInfo, testbucketPutRequest2, locationConstraint,
                     log, next);
             },
-            function waterfall3(next) {
+            function waterfall3(corsHeaders, next) {
                 bucketPut(authInfo, testbucketPutRequest3, locationConstraint,
                     log, next);
             },
-            function waterfall4(next) {
+            function waterfall4(corsHeaders, next) {
                 serviceGet(authInfo, serviceGetRequest, log, next);
             },
             function waterfall4(result, next) {

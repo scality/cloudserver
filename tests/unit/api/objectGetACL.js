@@ -42,6 +42,7 @@ describe('objectGetACL API', () => {
     const testGetACLRequest = {
         bucketName,
         namespace,
+        headers: {},
         objectKey: objectName,
         url: `/${bucketName}/${objectName}?acl`,
         query: { acl: '' },
@@ -59,13 +60,13 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -100,13 +101,13 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -137,13 +138,13 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -181,13 +182,13 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -222,13 +223,13 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(
+            (corsHeaders, next) => objectPut(
                 authInfo, testPutObjectRequest, undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -262,13 +263,13 @@ describe('objectGetACL API', () => {
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
                     locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -312,13 +313,13 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => objectPut(authInfo, testPutObjectRequest,
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, prevLen, next) => {
+            (result, corsHeaders, next) => {
                 assert.strictEqual(result, correctMD5);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.

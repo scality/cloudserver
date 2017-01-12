@@ -50,10 +50,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo,
+                testGetACLRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -83,10 +84,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -127,10 +129,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -165,10 +168,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -204,10 +208,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
@@ -263,10 +268,11 @@ describe('bucketGetACL API', () => {
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
                 locationConstraint, log, next),
-            next => bucketPutACL(authInfo, testPutACLRequest, log, next),
-            (result, next) => bucketGetACL(authInfo, testGetACLRequest, log,
-                                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) =>
+                bucketPutACL(authInfo, testPutACLRequest, log, next),
+            (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
