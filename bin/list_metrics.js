@@ -2,4 +2,4 @@
 'use strict'; // eslint-disable-line strict
 
 require('babel-core/register');
-require('../lib/utapi/utilities.js').listMetrics('buckets');
+require('../lib/utapi/utilities.js').listMetrics();
