@@ -405,7 +405,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
                 Promise
                     .mapSeries(objects, param => s3.putObjectAsync(param))
-                    .then(() => s3.listObjectsAsync({ Bucket, MaxKeys: 1 }))
+                    .then(() => s3.listObjectsAsync({ Bucket, MaxKeys: 1,
+                        Delimiter: 'foo' }))
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchema);
