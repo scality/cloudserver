@@ -34,7 +34,6 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
         it('should return 403 and AccessDenied on a private bucket', done => {
             const params = { Bucket: bucketName };
-
             bucketUtil.s3
                 .makeUnauthenticatedRequest('listObjects', params, error => {
                     assert(error);
@@ -375,6 +374,106 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         '日japaneseMountainObjTitle/objTitleA',
                         '日japaneseMountainObjTitle/日japaneseMountainObjTitle',
                     ], 'Bucket content mismatch');
+                    done();
+                })
+                .catch(done);
+        });
+
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as Prefix`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }];
+
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsAsync({ Bucket, Prefix: k }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchema);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.deepStrictEqual(data.Prefix, k);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as Marker`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }];
+
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsAsync({ Bucket, Marker: k }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchema);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.deepStrictEqual(data.Marker, k);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as NextMarker`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
+
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsAsync({ Bucket, MaxKeys: 1,
+                        Delimiter: 'foo' }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchema);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.strictEqual(data.NextMarker, k);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        it('should list objects with special chars in CommonPrefixes', done => {
+            const s3 = bucketUtil.s3;
+            const Bucket = bucketName;
+            const objects = [{ Bucket, Key: '&amp#' },
+            { Bucket, Key: '"quot#' }, { Bucket, Key: '\'apos#' },
+            { Bucket, Key: '<lt#' }, { Bucket, Key: '<gt#' }];
+
+            Promise
+                .mapSeries(objects, param => s3.putObjectAsync(param))
+                .then(() => s3.listObjectsAsync({ Bucket, Delimiter: '#' }))
+                .then(data => {
+                    const isValidResponse = tv4.validate(data,
+                        bucketSchema);
+                    if (!isValidResponse) {
+                        throw new Error(tv4.error);
+                    }
+                    return data;
+                }).then(data => {
+                    assert.deepStrictEqual(data.CommonPrefixes, [
+                        { Prefix: '"quot#' }, { Prefix: '&amp#' },
+                        { Prefix: '\'apos#' }, { Prefix: '<gt#' },
+                        { Prefix: '<lt#' }]);
                     done();
                 })
                 .catch(done);
