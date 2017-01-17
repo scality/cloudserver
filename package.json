@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
+    "aws-sdk": "^2.2.11",
     "arsenal": "scality/Arsenal",
     "async": "~1.4.2",
     "babel-core": "^6.5.2",
@@ -44,7 +45,6 @@
     "ioctl": "2.0.0"
   },
   "devDependencies": {
-    "aws-sdk": "^2.2.11",
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
     "bluebird": "^3.3.1",
