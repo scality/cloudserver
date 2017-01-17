@@ -28,6 +28,7 @@
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "ioredis": "2.4.0",
+    "kinetic": "Kinetic/kinetic-js",
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
     "multilevel": "^7.3.0",
