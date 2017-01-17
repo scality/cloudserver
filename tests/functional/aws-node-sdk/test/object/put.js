@@ -55,6 +55,16 @@ describe('PUT object', () => {
                 });
             });
 
+        it('should put an object with key slash',
+            done => {
+                const params = { Bucket: bucket, Key: '/' };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                    `got error ${JSON.stringify(err)}`);
+                    done();
+                });
+            });
+
         it('should return Not Implemented error for obj. encryption using ' +
             'AWS-managed encryption keys', done => {
             const params = { Bucket: bucket, Key: 'key',
