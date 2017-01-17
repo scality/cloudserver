@@ -1475,6 +1475,76 @@ describe('Multipart Upload API', () => {
         });
     });
 
+    it('should not leave orphans in data when overwriting an object part',
+    done => {
+        const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+        const overWritePart = Buffer.from('Overwrite content', 'utf8');
+        let uploadId;
+
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
+                log, next),
+            next => initiateMultipartUpload(authInfo, initiateRequest, log,
+                next),
+            (result, next) => parseString(result, next),
+            (json, next) => {
+                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const requestObj = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId,
+                    },
+                };
+                const partRequest = new DummyRequest(requestObj, fullSizedPart);
+                objectPutPart(authInfo, partRequest, undefined, log, err => {
+                    assert.deepStrictEqual(err, null);
+                    next(null, requestObj);
+                });
+            },
+            (requestObj, next) => {
+                assert.deepStrictEqual(ds[1].value, fullSizedPart);
+                const partRequest = new DummyRequest(requestObj, overWritePart);
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, partCalculatedHash) => {
+                        assert.deepStrictEqual(err, null);
+                        next(null, partCalculatedHash);
+                    });
+            },
+            (partCalculatedHash, next) => {
+                const completeBody = '<CompleteMultipartUpload>' +
+                    '<Part>' +
+                    '<PartNumber>1</PartNumber>' +
+                    `<ETag>"${partCalculatedHash}"</ETag>` +
+                    '</Part>' +
+                    '</CompleteMultipartUpload>';
+
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${uploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId },
+                    post: completeBody,
+                };
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ],
+        err => {
+            assert.deepStrictEqual(err, null);
+            assert.strictEqual(ds[0], undefined);
+            assert.deepStrictEqual(ds[1], undefined);
+            assert.deepStrictEqual(ds[2].value, overWritePart);
+            done();
+        });
+    });
+
     it('should throw an error on put of an object part with an invalid' +
     'uploadId', done => {
         const testUploadId = 'invalidUploadID';
