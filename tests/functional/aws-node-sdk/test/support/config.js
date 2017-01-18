@@ -25,7 +25,7 @@ const DEFAULT_GLOBAL_OPTIONS = {
     sslEnabled: ssl !== undefined,
 };
 const DEFAULT_MEM_OPTIONS = {
-    endpoint: `${transport}://localhost:8000`,
+    endpoint: `${transport}://127.0.0.1:8000`,
     s3ForcePathStyle: true,
 };
 const DEFAULT_AWS_OPTIONS = {};
