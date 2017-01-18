@@ -6,6 +6,7 @@ import getConfig from '../support/config';
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `ftest-mybucket-${random}`;
+const bucketEmptyObj = `ftest-bucketemptyobj-${random}`;
 
 // Create a buffer to put as a multipart upload part
 // and get its ETag
@@ -373,6 +374,67 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.notEqual(err, null, 'Expected failure but got success');
             assert.strictEqual(err.code, 'InvalidRange');
             return done();
+        });
+    });
+
+    describe('Get range on empty object', () => {
+        const params = {
+            Bucket: bucketEmptyObj,
+            Key: 'emptyobj',
+        };
+        beforeEach(done => {
+            s3.createBucket({ Bucket: bucketEmptyObj }, err => {
+                if (err) {
+                    return done(new Error(`error creating bucket: ${err}`));
+                }
+                return s3.putObject(params, err => {
+                    if (err) {
+                        return done(new Error(
+                            `error putting object regularly: ${err}`));
+                    }
+                    return done();
+                });
+            });
+        });
+        afterEach(done => {
+            s3.deleteObject(params, err => {
+                if (err) {
+                    return done(new Error(
+                        `error deletting object regularly: ${err}`));
+                }
+                return s3.deleteBucket({ Bucket: bucketEmptyObj }, err => {
+                    if (err) {
+                        return done(new Error(`error deleting bucket: ${err}`));
+                    }
+                    return done();
+                });
+            });
+        });
+        it('should return InvalidRange error if get range on empty object',
+        done => {
+            const params = {
+                Bucket: bucketEmptyObj,
+                Key: 'emptyobj',
+                Range: 'bytes=1-2',
+            };
+            s3.getObject(params, err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidRange');
+                return done();
+            });
+        });
+        it('should return InvalidRange error if get range bytes=0-0 on empty ' +
+        'object', done => {
+            const params = {
+                Bucket: bucketEmptyObj,
+                Key: 'emptyobj',
+                Range: 'bytes=0-0',
+            };
+            s3.getObject(params, err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidRange');
+                return done();
+            });
         });
     });
 
