@@ -12,30 +12,25 @@ const clients = [];
 let db = null;
 
 const utils = {
-    connectToS3(host, port) {
+    connectToS3(host, port, attributes) {
         let client = io.connect(`http://${host}:${port}`, {
             reconnection: true,
         });
         client.on('connect', function() {
-            client.emit('subscribe', 'puts');
-            client.emit('subscribe', 'deletes');
-            client.emit('subscribe', 'queries');
+            for (let i = 0; i < attributes.length; i++) {
+                client.emit('subscribe', attributes[i]);
+            }
         });
         client.on('reconnecting', function(number) {
         });
         client.on('error', function(err) {
         });
         client.on('put', function(msg) {
-            require('./utils.js').default.updateIndex(msg.bucketName, msg.objName, msg.objVal);
+            require('./utils.js').default.updateIndex(msg.bucketName, msg.objName, msg.attribute, msg.objVal);
         });
         client.on('query', function(msg) {
-            if (!msg.params.prefix)
-                msg.params.prefix = undefined;
-            if (!msg.params.marker)
-                msg.params.marker = undefined;
-            if (!msg.params.delimiter)
-                msg.params.delimiter = undefined;
-            require('./utils.js').default.evaluateQuery(msg.query, msg.params);
+            msg.client = client;
+            require('./utils.js').default.evaluateQuery(msg);
         });
         client.on('delete', function(msg) {
             require('./utils.js').default.deleteObject(msg.bucketName, msg.objName);
@@ -84,9 +79,11 @@ const utils = {
     },
 
     respondQuery(params, queryTerms) {
+        let client = params.client;
         client.emit('query_response', {
             result: queryTerms,
-            params
+            id: params.id,
+            term: params.term
         })
     },
 
