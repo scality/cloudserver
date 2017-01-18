@@ -66,4 +66,7 @@ export default {
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
+
+    // user metadata header to set object locationConstraint
+    objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
 };
