@@ -10,6 +10,15 @@
                 "credentialsProfile": "default"
             }
         },
+        "aws-us-east-test": {
+            "type": "aws_s3",
+            "information": {
+                "region": "us-east-1",
+                "endpoint": "s3.amazonaws.com",
+                "bucketName": "putobjecttester444",
+                "credentialsProfile": "default"
+            }
+        },
         "scality-us-east-1": {
             "type": "scality_s3",
             "information": {
@@ -44,7 +53,7 @@
         },
         "mem": {
             "type": "mem",
-            "information": { 
+            "information": {
             }
         }
     },
