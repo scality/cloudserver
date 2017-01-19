@@ -12,7 +12,7 @@ describe('utils.getBucketNameFromHost', () => {
             'buck.et', 'bu.ck.et', 'bu.ck-et',
         ].forEach(bucket => {
             const headers = {
-                host: `${bucket}.s3.eu-west-1.amazonaws.com`,
+                host: `${bucket}.s3.amazonaws.com`,
             };
             const result = utils.getBucketNameFromHost({ headers });
             assert.strictEqual(result, bucket);
@@ -36,12 +36,6 @@ describe('utils.getBucketNameFromHost', () => {
     it('should return undefined when non dns-style', () => {
         [
             's3.amazonaws.com',
-            's3.eu.central-1.amazonaws.com',
-            's3.eu-west-1.amazonaws.com',
-            's3-external-1.amazonaws.com',
-            's3.us-east-1.amazonaws.com',
-            's3-us-gov-west-1.amazonaws.com',
-            's3-fips-us-gov-west-1.amazonaws.com',
         ].forEach(host => {
             const headers = { host };
             const result = utils.getBucketNameFromHost({ headers });
@@ -97,7 +91,9 @@ describe('utils.getAllRegions', () => {
     it('should return regions from config', () => {
         const allRegions = utils.getAllRegions();
 
-        assert(allRegions.indexOf('localregion') >= 0);
+        assert(allRegions.indexOf('scality-us-east-1') >= 0);
+        assert(allRegions.indexOf('scality-us-west-1') >= 0);
+        assert(allRegions.indexOf('aws-us-east-1') >= 0);
     });
 });
 
@@ -105,11 +101,10 @@ describe('utils.getAllEndpoints', () => {
     it('should return endpoints from config', () => {
         const allEndpoints = utils.getAllEndpoints();
 
-        assert(allEndpoints.indexOf('s3-us-west-2.amazonaws.com') >= 0);
+        assert(allEndpoints.indexOf('127.0.0.1') >= 0);
+        assert(allEndpoints.indexOf('s3.docker.test') >= 0);
+        assert(allEndpoints.indexOf('127.0.0.2') >= 0);
         assert(allEndpoints.indexOf('s3.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('s3-external-1.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('s3.us-east-1.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('localhost') >= 0);
     });
 });
 
