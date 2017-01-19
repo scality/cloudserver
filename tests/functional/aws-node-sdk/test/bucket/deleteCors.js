@@ -41,8 +41,12 @@ describe('DELETE bucket cors', () => {
             afterEach(() => bucketUtil.deleteOne(bucketName));
 
             describe('without existing cors configuration', () => {
-                it('should return a 200 response', done => {
-                    s3.deleteBucketCors({ Bucket: bucketName }, err => {
+                it('should return a 204 response', done => {
+                    s3.deleteBucketCors({ Bucket: bucketName },
+                    function deleteBucketCors(err) {
+                        const statusCode = this.httpResponse.statusCode;
+                        assert.strictEqual(statusCode, 204,
+                            `Found unexpected statusCode ${statusCode}`);
                         assert.strictEqual(err, null,
                             `Found unexpected err ${err}`);
                         return done();
@@ -57,7 +61,11 @@ describe('DELETE bucket cors', () => {
                 });
 
                 it('should delete bucket configuration successfully', done => {
-                    s3.deleteBucketCors({ Bucket: bucketName }, err => {
+                    s3.deleteBucketCors({ Bucket: bucketName },
+                    function deleteBucketCors(err) {
+                        const statusCode = this.httpResponse.statusCode;
+                        assert.strictEqual(statusCode, 204,
+                            `Found unexpected statusCode ${statusCode}`);
                         assert.strictEqual(err, null,
                             `Found unexpected err ${err}`);
                         s3.getBucketCors({ Bucket: bucketName }, err => {
