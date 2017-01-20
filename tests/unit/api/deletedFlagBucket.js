@@ -46,7 +46,8 @@ const otherAccountAuthInfo = makeAuthInfo('accessKey2');
 const namespace = 'default';
 const usersBucketName = constants.usersBucket;
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 const baseTestRequest = {
     bucketName,
     namespace,
@@ -108,7 +109,7 @@ describe('deleted flag bucket handling', () => {
         bucketMD.addDeletedFlag();
         bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
             'FULL_CONTROL');
-        bucketMD.setLocationConstraint('us-east-1');
+        bucketMD.setLocationConstraint(locationConstraint);
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
                 done();
@@ -465,12 +466,22 @@ describe('deleted flag bucket handling', () => {
 
         it('should return NoSuchUpload error if usEastBehavior is enabled',
         done => {
-            config.usEastBehavior = true;
+            if (config.locationConstraints) {
+                config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = true;
+            } else {
+                config.usEastBehavior = true;
+            }
             checkForNoSuchUploadError(multipartDelete, null, done);
         });
 
         it('should return no error if usEastBehavior is not enabled', done => {
-            config.usEastBehavior = false;
+            if (config.locationConstraints) {
+                config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = false;
+            } else {
+                config.usEastBehavior = false;
+            }
             const mpuRequest = createAlteredRequest({}, 'headers',
                 baseTestRequest, baseTestRequest.headers);
             const uploadId = '5555';

@@ -7,6 +7,7 @@ import bucketGetACL from '../../../lib/api/bucketGetACL';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -14,7 +15,8 @@ const authInfo = makeAuthInfo(accessKey);
 const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 describe('bucketGetACL API', () => {
     beforeEach(() => {

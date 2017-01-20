@@ -8,6 +8,7 @@ import { ds } from '../../../lib/data/in_memory/backend';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import DummyRequest from '../DummyRequest';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -22,7 +23,8 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 const objectName = 'objectName';
 

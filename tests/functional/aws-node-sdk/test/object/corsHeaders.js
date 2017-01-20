@@ -61,6 +61,15 @@ const apiMethods = [
         },
     },
     {
+        description: 'GET bucket location',
+        action: s3.getBucketLocation,
+        params: { Bucket: bucket },
+        onlyRun: {
+            checkForCorsHeaders: false,
+            checkNoCorsHeaders: false,
+        },
+    },
+    {
         description: 'GET bucket website',
         action: s3.getBucketWebsite,
         params: { Bucket: bucket },

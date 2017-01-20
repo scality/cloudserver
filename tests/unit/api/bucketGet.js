@@ -9,6 +9,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
+import config from '../../../lib/Config';
 
 import { errors } from 'arsenal';
 
@@ -19,7 +20,8 @@ const log = new DummyRequestLogger();
 const namespace = 'default';
 const postBody = Buffer.from('I am a body', 'utf8');
 const prefix = 'sub';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 let testPutBucketRequest;
 let testPutObjectRequest1;

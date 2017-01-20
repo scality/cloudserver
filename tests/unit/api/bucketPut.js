@@ -5,6 +5,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -14,7 +15,8 @@ const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 const testRequest = {
     bucketName,
     namespace,
