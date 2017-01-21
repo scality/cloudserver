@@ -939,6 +939,53 @@ describe('s3curl multipart upload', () => {
         ], () => deleteFile(upload, done));
     });
 
+    it('should return error for list parts call if no key sent', done => {
+        provideRawOutput([
+            '--',
+            `${bucketPath}?uploadId=${uploadId}`,
+            '-v',
+        ], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '400 BAD REQUEST');
+            assertError(rawOutput.stdout, 'InvalidRequest', done);
+        });
+    });
+
+    it('should return error for put part call if no key sent', done => {
+        provideRawOutput([
+            '--',
+            '-X', 'PUT',
+            `${bucketPath}?partNumber=1&uploadId=${uploadId}`,
+            '-v',
+        ], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '400 BAD REQUEST');
+            assertError(rawOutput.stdout, 'InvalidRequest', done);
+        });
+    });
+
+    it('should return error for complete mpu call if no key sent', done => {
+        provideRawOutput([
+            '--',
+            '-X', 'POST',
+            `${bucketPath}?uploadId=${uploadId}`,
+            '-v',
+        ], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '400 BAD REQUEST');
+            assertError(rawOutput.stdout, 'InvalidRequest', done);
+        });
+    });
+
+    it('should return error for abort mpu call if no key sent', done => {
+        provideRawOutput([
+            '--',
+            '-X', 'DELETE',
+            `${bucketPath}?uploadId=${uploadId}`,
+            '-v',
+        ], (httpCode, rawOutput) => {
+            assert.strictEqual(httpCode, '400 BAD REQUEST');
+            assertError(rawOutput.stdout, 'InvalidRequest', done);
+        });
+    });
+
     it('should list parts of multipart upload with no parts', done => {
         provideRawOutput([
             '--',
