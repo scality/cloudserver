@@ -99,6 +99,12 @@ describe('PUT bucket cors', () => {
             _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
         });
 
+        it('should return InvalidRequest for lowercase value for ' +
+        'AllowedMethod', done => {
+            const testCors = _corsTemplate({ AllowedMethods: ['put', 'get'] });
+            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+        });
+
         it('should return InvalidRequest if more than one asterisk in ' +
         'AllowedHeader', done => {
             const testCors = _corsTemplate({ AllowedHeaders: ['*-amz-*'] });
