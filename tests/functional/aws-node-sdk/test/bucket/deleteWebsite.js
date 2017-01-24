@@ -29,8 +29,13 @@ describe('DELETE bucket website', () => {
             afterEach(() => bucketUtil.deleteOne(bucketName));
 
             describe('without existing configuration', () => {
-                it('should return a 200 response', done => {
+                it('should return a 204 response', done => {
+                    const request =
                     s3.deleteBucketWebsite({ Bucket: bucketName }, err => {
+                        const statusCode =
+                            request.response.httpResponse.statusCode;
+                        assert.strictEqual(statusCode, 204,
+                            `Found unexpected statusCode ${statusCode}`);
                         assert.strictEqual(err, null,
                             `Found unexpected err ${err}`);
                         return done();
