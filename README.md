@@ -186,10 +186,16 @@ aws_access_key_id = accessKey1
 aws_secret_access_key = verySecretKey1
 ```
 
+Create a bucket:
+
+```shell
+aws s3api create-buket --endpoint-url=http://localhost:8000 --bucket mybucket
+```
+
 See all buckets:
 
 ```shell
-aws s3 ls --endpoint-url=http://localhost:8000
+aws s3api list-buckets --endpoint-url=http://localhost:8000 --output=text
 ```
 
 #### [s3cmd](http://s3tools.org/s3cmd)
