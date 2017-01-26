@@ -19,6 +19,7 @@ const utils = {
         client.on('connect', function() {
             for (let i = 0; i < attributes.length; i++) {
                 client.emit('subscribe', attributes[i]);
+                client.emit('subscribe', 'put');
             }
         });
         client.on('reconnecting', function(number) {
@@ -26,7 +27,7 @@ const utils = {
         client.on('error', function(err) {
         });
         client.on('put', function(msg) {
-            require('./utils.js').default.updateIndex(msg.bucketName, msg.objName, msg.attribute, msg.objVal);
+            require('./utils.js').default.updateIndex(msg.bucketName, msg.objName, msg.objVal);
         });
         client.on('query', function(msg) {
             msg.client = client;

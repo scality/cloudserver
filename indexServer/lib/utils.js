@@ -4,6 +4,17 @@ const config = require("./bitmapd-utils").config;
 const async = require("async");
 const _ = require("underscore")
 
+const indexedAttributes = [];
+
+config.S3.forEach(connector => {
+        connector.index.forEach(tag => {
+            indexedAttributes.push(tag)
+        });
+
+})
+
+console.log(indexedAttributes);
+
 function padLeft(nr, n){
     return Array(n-String(nr).length+1).join("0")+nr;
 }
@@ -399,7 +410,14 @@ function updateFileSizeIndex(bucketName, objName, objVal, rowId) {
 }
 
 function updateTagIndex(bucketName, objName, objVal, rowId) {
-    objVal.forEach(tag => {
+    const tags = [];
+    Object.keys(objVal).forEach(elem => {
+         if (elem.indexOf("x-amz-meta") !== -1 &&
+                elem !== "x-amz-meta-s3cmd-attrs") {
+            tags.push({key: elem.replace("x-amz-meta-", ""), value: objVal[elem]});
+        }
+    });
+    tags.forEach(tag => {
         writeDB(`${bucketName}/tags/${tag.key}/${tag.value}`, objName, `${bucketName}/tags`, `${tag.key}/${tag.value}`, rowId, (err) =>{
                 return ;
         });
@@ -431,18 +449,23 @@ const index = {
         });
     },
 
-    updateIndex: (bucketName, objName, attribute, objVal) => {
+    updateIndex: (bucketName, objName, objVal) => {
+
         updateIndexMeta(bucketName, objName, (err, rowId) => {
-            if (attribute === "tags") {
+            if (indexedAttributes.indexOf("tags") !== -1) {
                 updateTagIndex(bucketName, objName, objVal, rowId);
-            } else if (attribute === "filesize") {
-                updateFileSizeIndex(bucketName, objName, objVal, rowId);
-            } else if (attribute === "date") {
-                updateΜodDateIndex(bucketName, objName, objVal, rowId);
-            } else if (attribute === "contenttype") {
-                updateContentTypeIndex(bucketName, objName, objVal, rowId);
-            } else if (attribute === "acl") {
-                updateACLIndex(bucketName, objName, objVal, rowId);
+            }
+            if (indexedAttributes.indexOf("filesize") !== -1) {
+                updateFileSizeIndex(bucketName, objName, objVal["content-length"], rowId);
+            }
+            if (indexedAttributes.indexOf("date") !== -1) {
+                updateΜodDateIndex(bucketName, objName, objVal["last-modified"], rowId);
+            }
+            if (indexedAttributes.indexOf("contenttype") !== -1) {
+                updateContentTypeIndex(bucketName, objName, objVal["content-type"], rowId);
+            }
+            if (indexedAttributes.indexOf("acl") !== -1) {
+                updateACLIndex(bucketName, objName, objVal["acl"], rowId);
             }
         });
     },
