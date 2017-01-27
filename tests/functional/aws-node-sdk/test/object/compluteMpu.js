@@ -7,8 +7,8 @@ const bucket = `bucketcompletempu-bucket-${Date.now()}`;
 
 const parts = [];
 
-// results in body of 589824 bytes
-for (let i = 0; i < 100000; i ++) {
+// results in body of 1049793 bytes (1 MB = 1048576)
+for (let i = 0; i < 15600; i ++) {
     // an mpu of this many parts would not be allowed.
     // testing here to make sure we are not sent excess xml
     parts.push({
@@ -31,7 +31,7 @@ describe('aws-node-sdk test bucket complete mpu', () => {
     after(done => s3.deleteBucket({ Bucket: bucket }, done));
 
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
-    itSkipIfAWS('should not accept xml body larger than 512 KB', done => {
+    itSkipIfAWS('should not accept xml body larger than 1 MB', done => {
         const params = {
             Bucket: bucket,
             Key: 'STRING_VALUE',
@@ -47,7 +47,7 @@ describe('aws-node-sdk test bucket complete mpu', () => {
                     error.code, 'InvalidRequest');
                 done();
             } else {
-                done('accepted xml body larger than 512 KB');
+                done('accepted xml body larger than 1 MB');
             }
         });
     });
