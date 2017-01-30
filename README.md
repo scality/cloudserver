@@ -186,16 +186,24 @@ aws_access_key_id = accessKey1
 aws_secret_access_key = verySecretKey1
 ```
 
+Also, `~/.aws/config` on Linux, OS X, or Unix or
+`C:\Users\USERNAME\.aws\config` on Windows
+
+```shell
+[default]
+region = us-east-1
+```
+
 Create a bucket:
 
 ```shell
-aws s3api create-buket --endpoint-url=http://localhost:8000 --bucket mybucket
+aws s3 --endpoint-url=http://localhost:8000 mb s3://mybucket
 ```
 
 See all buckets:
 
 ```shell
-aws s3api list-buckets --endpoint-url=http://localhost:8000 --output=text
+aws s3 --endpoint-url=http://localhost:8000 ls
 ```
 
 #### [s3cmd](http://s3tools.org/s3cmd)
