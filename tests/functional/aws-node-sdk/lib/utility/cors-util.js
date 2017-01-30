@@ -15,6 +15,7 @@ const statusCode = {
     200: 200,
     301: 301, // website redirect
     403: 403, // website AccessDenied error
+    404: 404, // website NoSuchBucket error
     AccessForbidden: 403,
     AccessDenied: 403,
     BadRequest: 400,
