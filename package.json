@@ -27,6 +27,7 @@
     "babel-plugin-transform-es2015-parameters": "^6.5.2",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
+    "http-parser-js": "^0.4.4",
     "ioredis": "2.4.0",
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
