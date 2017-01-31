@@ -452,6 +452,43 @@ describe('s3curl putObject', () => {
             });
         });
 
+    const itSkipIfNotChill = process.env.CHILL || process.env.IP ?
+        it : it.skip;
+
+    itSkipIfNotChill('should be able to put a non rfc ' +
+        'header (token contains slash)',
+        done => {
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                '-H',
+                'x-amz-meta-custom/header: foo',
+                `${prefixedPath}${upload}1`,
+                '-v',
+            ], httpCode => {
+                assert.strictEqual(httpCode, '200 OK');
+                done();
+            });
+        });
+
+    itSkipIfNotChill('should be able to get a non rfc header ' +
+        '(token contains slash)',
+        done => {
+            provideRawOutput([
+                '--debug',
+                '--head',
+                '--',
+                `${prefixedPath}${upload}1`,
+                '-v',
+            ], (httpCode, rawOutput) => {
+                assert.strictEqual(httpCode, '200 OK');
+                assert(rawOutput.stdout
+                    .indexOf('x-amz-meta-custom/header: foo') > -1);
+                done();
+            });
+        });
+
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
             provideRawOutput([
