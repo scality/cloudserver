@@ -53,7 +53,7 @@ describe('Multipart Upload API', () => {
         bucketPut(authInfo, bucketPutRequest, locationConstraint, log, () => {
             initiateMultipartUpload(authInfo, initiateRequest,
                 log, (err, result) => {
-                    assert.strictEqual(err, undefined);
+                    assert.strictEqual(err, null);
                     parseString(result, (err, json) => {
                         assert.strictEqual(json.InitiateMultipartUploadResult
                             .Bucket[0], bucketName);
