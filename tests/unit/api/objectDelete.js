@@ -27,7 +27,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
             objectPut(bucketOwner, objPutReq, undefined, log, err => {
                 assert.strictEqual(err, null);
                 objectDelete(authUser, objDelReq, log, err => {
-                    assert.strictEqual(err, undefined);
+                    assert.strictEqual(err, null);
                     cb();
                 });
             });
@@ -80,7 +80,7 @@ describe('objectDelete API', () => {
                 objectPut(authInfo, testPutObjectRequest,
                     undefined, log, () => {
                         objectDelete(authInfo, testDeleteRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             objectGet(authInfo, testGetObjectRequest,
                                 log, err => {
                                     assert.deepStrictEqual(err,
@@ -105,7 +105,7 @@ describe('objectDelete API', () => {
                 objectPut(authInfo, testPutObjectRequest,
                     undefined, log, () => {
                         objectDelete(authInfo, testDeleteRequest, log, err => {
-                            assert.strictEqual(err, undefined);
+                            assert.strictEqual(err, null);
                             objectGet(authInfo, testGetObjectRequest,
                                 log, err => {
                                     const expected =

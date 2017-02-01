@@ -13,22 +13,37 @@ const port = process.env.AWS_ON_AIR ? 80 : 8000;
 
 const statusCode = {
     200: 200,
-    NoSuchBucket: 404,
-    BadRequest: 400,
+    301: 301, // website redirect
+    403: 403, // website AccessDenied error
     AccessForbidden: 403,
+    AccessDenied: 403,
+    BadRequest: 400,
+    InvalidAccessKeyId: 403,
+    InvalidArgument: 400,
+    NoSuchBucket: 404,
 };
 
 export default function methodRequest(params, callback) {
-    const { method, bucket, objectKey, headers, code, headersResponse } =
-        params;
+    const { method, bucket, objectKey, query, headers, code,
+        headersResponse, headersOmitted, isWebsite } = params;
+    const websiteHostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
+
     const options = {
-        hostname,
         port,
         method,
         headers,
-        path: objectKey ? `/${bucket}/${objectKey}` : `/${bucket}`,
         rejectUnauthorized: false,
     };
+    if (isWebsite) {
+        options.hostname = websiteHostname;
+        options.path = objectKey ? `/${objectKey}` : '/';
+    } else {
+        options.hostname = hostname;
+        options.path = objectKey ? `/${bucket}/${objectKey}` : `/${bucket}`;
+    }
+    if (query) {
+        options.path = `${options.path}?${query}`;
+    }
     const req = transport.request(options, res => {
         const body = [];
         res.on('data', chunk => {
@@ -41,7 +56,8 @@ export default function methodRequest(params, callback) {
         res.on('end', () => {
             const total = body.join('');
             if (code) {
-                const message = code === 200 ? '' : `<Code>${code}</Code>`;
+                const message = isNaN(parseInt(code, 10)) ?
+                    `<Code>${code}</Code>` : '';
                 assert(total.indexOf(message) > -1, `Expected ${message}`);
                 assert.deepEqual(res.statusCode, statusCode[code],
                 `status code expected: ${statusCode[code]}`);
@@ -62,13 +78,36 @@ export default function methodRequest(params, callback) {
                         `Error: ${key} should not have value`);
                 });
             }
+            if (headersOmitted) {
+                headersOmitted.forEach(key => {
+                    assert.strictEqual(res.headers[key], undefined,
+                        `Error: ${key} should not have value`);
+                });
+            }
             return callback();
         });
     });
-
     req.on('error', err => {
         process.stdout.write('err sending request');
         return callback(err);
     });
     req.end();
+}
+
+// for testing needs usually only need one rule, if support for more CORS
+// rules is desired, can refactor
+export function generateCorsParams(bucket, params) {
+    const corsParams = {
+        Bucket: bucket,
+        CORSConfiguration: {
+            CORSRules: [],
+        },
+    };
+    const rule = {};
+    Object.keys(params).forEach(key => {
+        rule[`${key.charAt(0).toUpperCase()}${key.slice(1)}`] = params[key];
+    });
+    corsParams.CORSConfiguration.CORSRules[0] = rule;
+
+    return corsParams;
 }
