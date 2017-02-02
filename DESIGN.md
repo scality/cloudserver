@@ -38,6 +38,9 @@ Right now, the following operations are implemented:
 - DeleteBucket
 - PutBucketACL
 - GetBucketACL
+- PutBucketCors
+- DeleteBucketCors
+- GetBucketCors
 - PutObject
 - PutObject - Copy
 - GetObject
