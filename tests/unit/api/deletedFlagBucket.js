@@ -382,7 +382,10 @@ describe('deleted flag bucket handling', () => {
         checkForNoSuchUploadError(listParts, null, done);
     });
 
-    it('multipartDelete request on bucket with deleted flag should ' +
+    // TODO: multipartDelete should return NoSuchUpload in us-east-1 if
+    // usEastBehavior enabled in config; unskip when usEastBehavior is
+    // implemented
+    it.skip('multipartDelete request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
         checkForNoSuchUploadError(multipartDelete, null, done);
     });
