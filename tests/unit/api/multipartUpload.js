@@ -1232,7 +1232,10 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it('should return an error if attempt to abort/delete ' +
+    // TODO: multipartDelete should return NoSuchUpload in us-east-1 when
+    // usEastBehavior enabled in config; unskip when usEastBehavior is
+    // implemented
+    it.skip('should return an error if attempt to abort/delete ' +
         'a multipart upload that does not exist', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
