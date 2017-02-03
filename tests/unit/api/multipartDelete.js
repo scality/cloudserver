@@ -66,7 +66,7 @@ describe('Multipart Delete API', () => {
     it('should not return error if uploadId exists on multipart abort call',
     done => {
         _createAndAbortMpu(false, err => {
-            assert.strictEqual(err, undefined, `Expected no error, got ${err}`);
+            assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done(err);
         });
     });
@@ -74,7 +74,7 @@ describe('Multipart Delete API', () => {
     it('should still not return error if uploadId does not exist on ' +
     'multipart abort call', done => {
         _createAndAbortMpu(true, err => {
-            assert.strictEqual(err, undefined, `Expected no error, got ${err}`);
+            assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done(err);
         });
     });
