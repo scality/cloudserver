@@ -12,6 +12,8 @@ import DummyRequest from '../DummyRequest';
 
 import { errors } from 'arsenal';
 
+import utils from '../../../lib/utils';
+
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
@@ -44,21 +46,21 @@ describe('bucketGet API', () => {
             headers: {},
             url: `/${bucketName}/${objectName1}`,
             namespace,
-            objectKey: objectName1,
+            objectKey: utils.encodeObjectKey(objectName1),
         }, postBody);
         testPutObjectRequest2 = new DummyRequest({
             bucketName,
             headers: {},
             url: `/${bucketName}/${objectName2}`,
             namespace,
-            objectKey: objectName2,
+            objectKey: utils.encodeObjectKey(objectName2),
         }, postBody);
         testPutObjectRequest3 = new DummyRequest({
             bucketName,
             headers: {},
             url: `/${bucketName}/${objectName3}`,
             namespace,
-            objectKey: objectName3,
+            objectKey: utils.encodeObjectKey(objectName3),
         }, postBody);
     });
 
@@ -231,7 +233,7 @@ describe('bucketGet API', () => {
             query: {},
         };
 
-        testPutObjectRequest1.objectKey += '&><"\'';
+        testPutObjectRequest1.objectKey += utils.encodeObjectKey('&><"\'');
         async.waterfall([
             next => bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
@@ -243,7 +245,7 @@ describe('bucketGet API', () => {
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                              testPutObjectRequest1.objectKey);
+                    utils.decodeObjectKey(testPutObjectRequest1.objectKey));
             done();
         });
     });
