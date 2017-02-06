@@ -53,7 +53,7 @@ describe('Multipart Upload API', () => {
         bucketPut(authInfo, bucketPutRequest, locationConstraint, log, () => {
             initiateMultipartUpload(authInfo, initiateRequest,
                 log, (err, result) => {
-                    assert.strictEqual(err, undefined);
+                    assert.strictEqual(err, null);
                     parseString(result, (err, json) => {
                         assert.strictEqual(json.InitiateMultipartUploadResult
                             .Bucket[0], bucketName);
@@ -74,9 +74,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => {
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => {
                 const mpuKeys = metadata.keyMaps.get(mpuBucket);
                 assert.strictEqual(mpuKeys.size, 1);
                 assert(mpuKeys.keys().next().value
@@ -140,9 +140,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -189,9 +189,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -226,9 +226,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -266,9 +266,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -307,9 +307,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -390,9 +390,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -478,11 +478,11 @@ describe('Multipart Upload API', () => {
                 bucketPut(authInfo, bucketPutRequest,
                     locationConstraint, log, next);
             },
-            function waterfall2(next) {
+            function waterfall2(corsHeaders, next) {
                 initiateMultipartUpload(
                     authInfo, initiateRequest, log, next);
             },
-            function waterfall3(result, next) {
+            function waterfall3(result, corsHeaders, next) {
                 parseString(result, next);
             },
         ],
@@ -558,9 +558,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -611,9 +611,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -664,9 +664,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -741,9 +741,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -799,9 +799,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -873,9 +873,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -955,9 +955,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -1058,9 +1058,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -1161,9 +1161,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -1248,9 +1248,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
@@ -1289,14 +1289,17 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it('should return an error if attempt to abort/delete ' +
+    // TODO: multipartDelete should return NoSuchUpload in us-east-1 when
+    // usEastBehavior enabled in config; unskip when usEastBehavior is
+    // implemented
+    it.skip('should return an error if attempt to abort/delete ' +
         'a multipart upload that does not exist', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => {
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => {
                 const mpuKeys = metadata.keyMaps.get(mpuBucket);
                 assert.strictEqual(mpuKeys.size, 1);
                 parseString(result, next);
@@ -1345,9 +1348,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
                 log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
             (json, next) => {
                 const testUploadId =
                           json.InitiateMultipartUploadResult.UploadId[0];
@@ -1420,7 +1423,7 @@ describe('Multipart Upload API', () => {
                 assert.deepStrictEqual(ds[2].value, partBody);
                 initiateMultipartUpload(authInfo, initiateRequest, log, next);
             },
-            (result, next) => parseString(result, next),
+            (result, corsHeaders, next) => parseString(result, next),
             (json, next) => {
                 const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];
@@ -1484,9 +1487,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
                 log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
             (json, next) => {
                 uploadId = json.InitiateMultipartUploadResult.UploadId[0];
                 const requestObj = {
@@ -1570,9 +1573,9 @@ describe('Multipart Upload API', () => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
                 locationConstraint, log, next),
-            next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                        next),
-            (result, next) => parseString(result, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, json) => {
             // Need to build request in here since do not have uploadId
