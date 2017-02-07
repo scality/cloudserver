@@ -30,7 +30,7 @@ function uploadPart(n, uploadId, s3, next) {
     });
 }
 
-describe('large mpu', function tester() {
+describe.only('large mpu', function tester() {
     this.timeout(600000);
     let s3;
     before(done => {
