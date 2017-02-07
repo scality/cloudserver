@@ -92,7 +92,10 @@ describe.only('large mpu', function tester() {
                         Parts: parts,
                     },
                 };
+                const timeStart = Date.now();
                 return s3.completeMultipartUpload(params, err => {
+                    const timeElapsed = Date.now() - timeStart;
+                    console.log(`completempu time elapsed: ${timeElapsed} ms`);
                     if (err) {
                         process.stdout.write('err complting mpu: ', err);
                         return next(err);
