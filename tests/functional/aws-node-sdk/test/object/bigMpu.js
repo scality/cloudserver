@@ -36,9 +36,9 @@ describe.only('large mpu', function tester() {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
-        // normal retry base is 100, want to avoid retrying request due to
-        // timeout
-        s3.config.update({ retryDelayOptions: { base: 1000 } });
+        // normal retry base is 100, want see if can duplicate test
+        // failure by reducing
+        s3.config.update({ retryDelayOptions: { base: 50 } });
         s3.createBucket({ Bucket: bucket }, done);
     });
 
