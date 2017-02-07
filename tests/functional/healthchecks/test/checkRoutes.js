@@ -104,7 +104,7 @@ describe('Healthcheck routes', () => {
     });
 });
 
-describe('Healthcheck stats', () => {
+describe.skip('Healthcheck stats', () => {
     const totalReqs = 5;
     beforeEach(done => {
         redis.flushdb(() => {

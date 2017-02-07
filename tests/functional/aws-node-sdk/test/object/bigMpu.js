@@ -30,12 +30,15 @@ function uploadPart(n, uploadId, s3, next) {
     });
 }
 
-describe('large mpu', function tester() {
+describe.only('large mpu', function tester() {
     this.timeout(600000);
     let s3;
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
+        // normal retry base is 100, want see if can duplicate test
+        // failure by reducing
+        s3.config.update({ retryDelayOptions: { base: 50 } });
         s3.createBucket({ Bucket: bucket }, done);
     });
 
@@ -89,7 +92,10 @@ describe('large mpu', function tester() {
                         Parts: parts,
                     },
                 };
+                const timeStart = Date.now();
                 return s3.completeMultipartUpload(params, err => {
+                    const timeElapsed = Date.now() - timeStart;
+                    console.log(`completempu time elapsed: ${timeElapsed} ms`);
                     if (err) {
                         process.stdout.write('err complting mpu: ', err);
                         return next(err);

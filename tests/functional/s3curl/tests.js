@@ -173,8 +173,8 @@ function deleteRemoteItems(items, cb) {
         });
 }
 
-describe('s3curl put delete buckets', () => {
-    describe('s3curl put buckets', () => {
+describe.skip('s3curl put delete buckets', () => {
+    describe.skip('s3curl put buckets', () => {
         after(done => {
             deleteRemoteItems([bucketPath], done);
         });
@@ -243,7 +243,7 @@ describe('s3curl put delete buckets', () => {
         });
     });
 
-    describe('s3curl delete bucket', () => {
+    describe.skip('s3curl delete bucket', () => {
         before(done => {
             provideRawOutput(
                 ['--createBucket', '--', bucketPath, '-v'],
@@ -282,7 +282,7 @@ describe('s3curl put delete buckets', () => {
     });
 });
 
-describe('s3curl put and get bucket ACLs', () => {
+describe.skip('s3curl put and get bucket ACLs', () => {
     after(done => {
         deleteRemoteItems([
             `${endpoint}/${aclBucket}`,
@@ -372,7 +372,7 @@ describe('s3curl put and get bucket ACLs', () => {
     });
 });
 
-describe('s3curl getService', () => {
+describe.skip('s3curl getService', () => {
     before(done => {
         provideRawOutput(
             ['--createBucket', '--', bucketPath, '-v'],
@@ -416,7 +416,7 @@ describe('s3curl getService', () => {
     });
 });
 
-describe('s3curl putObject', () => {
+describe.skip('s3curl putObject', () => {
     before(done => {
         provideRawOutput(
             ['--createBucket', '--', bucketPath, '-v'],
@@ -547,7 +547,7 @@ describe('s3curl putObject', () => {
     });
 });
 
-describe('s3curl getBucket', () => {
+describe.skip('s3curl getBucket', () => {
     const objects = [
         `${prefixedPath}${upload}1`,
         `${prefixedPath}${upload}2`,
@@ -700,7 +700,7 @@ describe('s3curl getBucket', () => {
     });
 });
 
-describe('s3curl head bucket', () => {
+describe.skip('s3curl head bucket', () => {
     before(done => {
         provideRawOutput(
             ['--createBucket', '--', bucketPath, '-v'],
@@ -734,7 +734,7 @@ describe('s3curl head bucket', () => {
     });
 });
 
-describe('s3curl getObject', () => {
+describe.skip('s3curl getObject', () => {
     before(done => {
         createFile(upload, 1048576, () => {
             provideRawOutput(
@@ -784,7 +784,7 @@ describe('s3curl getObject', () => {
     });
 });
 
-describe('s3curl head object', () => {
+describe.skip('s3curl head object', () => {
     before(done => {
         createFile(upload, 1048576, () => {
             provideRawOutput(
@@ -827,7 +827,7 @@ describe('s3curl head object', () => {
     });
 });
 
-describe('s3curl object ACLs', () => {
+describe.skip('s3curl object ACLs', () => {
     before(done => {
         createFile(aclUpload, 512000, () => {
             provideRawOutput(
@@ -944,7 +944,7 @@ describe('s3curl object ACLs', () => {
     });
 });
 
-describe('s3curl multipart upload', () => {
+describe.skip('s3curl multipart upload', () => {
     const key = 'multipart';
     const upload = 'smallUpload';
     let uploadId = null;
@@ -1071,7 +1071,7 @@ describe('s3curl multipart upload', () => {
     });
 });
 
-describe('s3curl copy object', () => {
+describe.skip('s3curl copy object', () => {
     before(done => {
         createFile(upload, 1048576, () => {
             provideRawOutput(
@@ -1108,7 +1108,7 @@ describe('s3curl copy object', () => {
     });
 });
 
-describe('s3curl multi-object delete', () => {
+describe.skip('s3curl multi-object delete', () => {
     it('should return an error if md5 is wrong', done => {
         provideRawOutput(['--post', 'multiDelete.xml', '--contentMd5',
             'p5/WA/oEr30qrEEl21PAqw==', '--',
