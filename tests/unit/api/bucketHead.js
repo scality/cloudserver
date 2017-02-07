@@ -38,12 +38,11 @@ describe('bucketHead API', () => {
         });
     });
 
-    it('should return a success message if ' +
-       'bucket exists and user is authorized', done => {
+    it('should return no error if bucket exists and user is authorized',
+    done => {
         bucketPut(authInfo, testRequest, locationConstraint, log, () => {
-            bucketHead(authInfo, testRequest, log, (err, result) => {
-                assert.strictEqual(result,
-                                   'Bucket exists and user authorized -- 200');
+            bucketHead(authInfo, testRequest, log, err => {
+                assert.strictEqual(err, null);
                 done();
             });
         });

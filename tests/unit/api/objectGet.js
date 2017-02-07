@@ -109,9 +109,9 @@ describe('objectGet API', () => {
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest,
                     locationConstraint, log, next),
-                next => initiateMultipartUpload(authInfo, initiateRequest, log,
-                            next),
-                (result, next) => parseString(result, next),
+                (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                    initiateRequest, log, next),
+                (result, corsHeaders, next) => parseString(result, next),
                 (json, next) => {
                     const testUploadId =
                     json.InitiateMultipartUploadResult.UploadId[0];

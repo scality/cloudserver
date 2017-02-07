@@ -138,7 +138,7 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, locationConstraint, log, err => {
-            assert.strictEqual(err, undefined);
+            assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(md.getAcl().Canned, 'public-read');
@@ -174,7 +174,7 @@ describe('bucketPut API', () => {
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPut(authInfo, testRequest, locationConstraint, log, err => {
-            assert.strictEqual(err, undefined, 'Error creating bucket');
+            assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().READ[0], constants.logId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
