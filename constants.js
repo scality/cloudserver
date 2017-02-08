@@ -71,4 +71,24 @@ export default {
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
+
+    // Queries supported by AWS that we do not currently support.
+    unsupportedQueries: [
+        'accelerate',
+        'analytics',
+        'inventory',
+        'lifecycle',
+        'list-type',
+        'location',
+        'logging',
+        'metrics',
+        'notification',
+        'policy',
+        'replication',
+        'requestPayment',
+        'restore',
+        'tagging',
+        'torrent',
+        'versions',
+    ],
 };
