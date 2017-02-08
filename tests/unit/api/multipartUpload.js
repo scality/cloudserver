@@ -1289,10 +1289,7 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    // TODO: multipartDelete should return NoSuchUpload in us-east-1 when
-    // usEastBehavior enabled in config; unskip when usEastBehavior is
-    // implemented
-    it.skip('should return an error if attempt to abort/delete ' +
+    it('should return no error if attempt to abort/delete ' +
         'a multipart upload that does not exist', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
@@ -1334,7 +1331,8 @@ describe('Multipart Upload API', () => {
                 };
                 assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                 multipartDelete(authInfo, deleteRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.NoSuchUpload);
+                    assert.strictEqual(err, undefined,
+                        `Expected no err but got ${err}`);
                     done();
                 });
             });
