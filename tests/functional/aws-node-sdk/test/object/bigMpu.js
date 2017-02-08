@@ -36,9 +36,6 @@ describe('large mpu', function tester() {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
-        // disable retries so sdk will not resend request because complete mpu
-        // is taking long, causing test to fail
-        s3.config.update({ maxRetries: 0 });
         s3.createBucket({ Bucket: bucket }, done);
     });
 
