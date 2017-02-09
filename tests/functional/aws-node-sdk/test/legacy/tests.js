@@ -305,6 +305,13 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // Range from the second part should just contain 1
             expectedBuff: Buffer.alloc(10, 1),
         },
+        {
+            it: 'should get entire object if range is invalid',
+            range: 'bytes=-10485761',
+            contentLength: '10485760',
+            contentRange: 'bytes 0-10485759/10485760',
+            expectedBuff: Buffer.concat([firstBufferBody, secondBufferBody]),
+        },
     ];
 
     mpuRangeGetTests.forEach(test => {
