@@ -37,5 +37,11 @@
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
     },
+    "utapi": {
+        "redis": {
+            "host": "127.0.0.1",
+            "port": 6379
+        }
+    },
     "usEastBehavior": false
 }
