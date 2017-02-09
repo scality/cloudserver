@@ -30,6 +30,9 @@ function uploadPart(n, uploadId, s3, next) {
     });
 }
 
+// NOTE: This test has a history of failing in end-to-end Integration tests.
+// See Integration#449 for more details. A possible cause for its flakiness
+// could be poor system resources.
 describe('large mpu', function tester() {
     this.timeout(600000);
     let s3;
@@ -37,7 +40,7 @@ describe('large mpu', function tester() {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         // disable retries so sdk will not resend request because complete mpu
-        // is taking long, causing test to fail
+        // is taking long, the retry causing test to fail (see Integration#449)
         s3.config.update({ maxRetries: 0 });
         s3.createBucket({ Bucket: bucket }, done);
     });
