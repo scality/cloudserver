@@ -17,6 +17,7 @@ import bucketDeleteCors from '../../../lib/api/bucketDeleteCors';
 import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
+import config from '../../../lib/Config';
 import constants from '../../../constants';
 import DummyRequest from '../DummyRequest';
 import initiateMultipartUpload from
@@ -107,6 +108,7 @@ describe('deleted flag bucket handling', () => {
         bucketMD.addDeletedFlag();
         bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
             'FULL_CONTROL');
+        bucketMD.setLocationConstraint('us-east-1');
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
                 done();
@@ -453,12 +455,32 @@ describe('deleted flag bucket handling', () => {
         checkForNoSuchUploadError(listParts, null, done);
     });
 
-    // TODO: multipartDelete should return NoSuchUpload in us-east-1 if
-    // usEastBehavior enabled in config; unskip when usEastBehavior is
-    // implemented
-    it.skip('multipartDelete request on bucket with deleted flag should ' +
-        'return NoSuchUpload error', done => {
-        checkForNoSuchUploadError(multipartDelete, null, done);
+    describe('multipartDelete request on a bucket with deleted flag', () => {
+        const originalUsEastBehavior = config.usEastBehavior;
+
+        afterEach(done => {
+            config.usEastBehavior = originalUsEastBehavior;
+            done();
+        });
+
+        it('should return NoSuchUpload error if usEastBehavior is enabled',
+        done => {
+            config.usEastBehavior = true;
+            checkForNoSuchUploadError(multipartDelete, null, done);
+        });
+
+        it('should return no error if usEastBehavior is not enabled', done => {
+            config.usEastBehavior = false;
+            const mpuRequest = createAlteredRequest({}, 'headers',
+                baseTestRequest, baseTestRequest.headers);
+            const uploadId = '5555';
+            mpuRequest.objectKey = 'objectName';
+            mpuRequest.query = { uploadId };
+            multipartDelete(authInfo, mpuRequest, log, err => {
+                assert.strictEqual(err, null);
+                return done();
+            });
+        });
     });
 
     it('objectPutPart request on bucket with deleted flag should ' +

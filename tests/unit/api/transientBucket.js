@@ -17,6 +17,7 @@ import bucketDeleteCors from '../../../lib/api/bucketDeleteCors';
 import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
 import completeMultipartUpload from
     '../../../lib/api/completeMultipartUpload';
+import config from '../../../lib/Config';
 import constants from '../../../constants';
 import DummyRequest from '../DummyRequest';
 import initiateMultipartUpload from
@@ -73,6 +74,7 @@ describe('transient bucket handling', () => {
         bucketMD.addTransientFlag();
         bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
             'WRITE_ACP');
+        bucketMD.setLocationConstraint('us-east-1');
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
                 done();
@@ -375,21 +377,35 @@ describe('transient bucket handling', () => {
             });
     });
 
-    // TODO: multipartDelete should return NoSuchUpload in us-east-1 when
-    // usEastBehavior enabled in config; unskip when usEastBehavior is
-    // implemented
-    it.skip('multipartDelete request on transient bucket should ' +
-        'return NoSuchUpload error', done => {
+    describe('multipartDelete request on a transient bucket', () => {
+        const originalUsEastBehavior = config.usEastBehavior;
         const deleteRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         deleteRequest.objectKey = 'objectName';
         deleteRequest.query = { uploadId };
-        multipartDelete(authInfo, deleteRequest,
-            log, err => {
+
+        afterEach(done => {
+            config.usEastBehavior = originalUsEastBehavior;
+            done();
+        });
+
+        it('should return NoSuchUpload error if usEastBehavior is enabled',
+        done => {
+            config.usEastBehavior = true;
+            multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();
             });
+        });
+
+        it('should return no error if usEastBehavior is not enabled', done => {
+            config.usEastBehavior = false;
+            multipartDelete(authInfo, deleteRequest, log, err => {
+                assert.strictEqual(err, null);
+                return done();
+            });
+        });
     });
 
     it('objectPutPart request on transient bucket should ' +
