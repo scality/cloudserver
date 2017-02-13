@@ -39,9 +39,13 @@ describe('large mpu', function tester() {
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
-        // disable retries so sdk will not resend request because complete mpu
-        // is taking long, the retry causing test to fail (see Integration#449)
+        // disable node sdk retries and timeout to prevent InvalidPart
+        // and SocketHangUp errors. If retries are allowed, sdk will send
+        // another request after first request has already deleted parts,
+        // causing InvalidPart. Meanwhile, if request takes too long to finish,
+        // sdk will create SocketHangUp error before response.
         s3.config.update({ maxRetries: 0 });
+        s3.config.update({ httpOptions: { timeout: 0 } });
         s3.createBucket({ Bucket: bucket }, done);
     });
 
