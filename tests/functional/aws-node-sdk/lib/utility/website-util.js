@@ -1,3 +1,7 @@
+import async from 'async';
+import fs from 'fs';
+import path from 'path';
+
 export class WebsiteConfigTester {
     constructor(indexDocument, errorDocument, redirectAllReqTo) {
         if (indexDocument) {
@@ -58,6 +62,11 @@ export class WebsiteConfigTester {
                     'configuration');
                     browser.assert.text('ul:first-of-type > li:nth-child(3)',
                     `BucketName: ${bucketName}`);
+                } else if (type === '404-not-found') {
+                    browser.assert.text('ul:first-of-type > li:first-child',
+                    'Code: NoSuchKey');
+                    browser.assert.text('ul:first-of-type > li:nth-child(2)',
+                    'Message: The specified key does not exist.');
                 } else {
                     throw new Error('This 404 error is not checked in ' +
                     'checkHTML()');
@@ -99,6 +108,10 @@ export class WebsiteConfigTester {
                 browser.assert.status(403);
                 browser.assert.text('title', 'Error!!');
                 browser.assert.text('h1', 'It appears you messed up');
+            } else if (type === 'error-user-404') {
+                browser.assert.status(404);
+                browser.assert.text('title', 'Error!!');
+                browser.assert.text('h1', 'It appears you messed up');
             } else if (type === 'redirect-user') {
                 browser.assert.status(200);
                 browser.assert.text('title', 'Best redirect link ever');
@@ -107,5 +120,43 @@ export class WebsiteConfigTester {
                 throw new Error('This is not checked in checkHTML()');
             }
         }
+    }
+    static createPutBucketWebsite(s3, bucket, bucketACL, objects, done) {
+        s3.createBucket({ Bucket: bucket, ACL: bucketACL },
+        err => {
+            if (err) {
+                return done(err);
+            }
+            const webConfig = new WebsiteConfigTester('index.html',
+              'error.html');
+            return s3.putBucketWebsite({ Bucket: bucket,
+            WebsiteConfiguration: webConfig }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return async.forEachOf(objects,
+                (acl, object, next) => {
+                    s3.putObject({ Bucket: bucket,
+                        Key: `${object}.html`,
+                        ACL: acl,
+                        Body: fs.readFileSync(path.join(__dirname,
+                            `/../../test/object/websiteFiles/${object}.html`)),
+                        },
+                        next);
+                }, done);
+            });
+        });
+    }
+
+    static deleteObjectsThenBucket(s3, bucket, objects, done) {
+        async.forEachOf(objects, (acl, object, next) => {
+            s3.deleteObject({ Bucket: bucket,
+                Key: `${object}.html` }, next);
+        }, err => {
+            if (err) {
+                return done(err);
+            }
+            return s3.deleteBucket({ Bucket: bucket }, done);
+        });
     }
 }

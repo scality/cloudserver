@@ -579,10 +579,8 @@ describe('Cross Origin Resource Sharing requests', () => {
         'even in case of error',
         done => {
             const headers = { Origin: allowedOrigin };
-            // NOTE: separate PR to address Issue #553 will result in
-            // different error code
             methodRequest({ method: 'GET', bucket, objectKey: 'test',
-            headers, headersResponse, code: 403, isWebsite: true }, done);
+            headers, headersResponse, code: 404, isWebsite: true }, done);
         });
 
         it('should respond with CORS headers at website endpoint (GET) ' +
