@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import utils from '../../lib/utils';
-
+import config from '../../lib/Config';
 
 describe('utils.getBucketNameFromHost', () => {
     it('should extract valid buckets for one endpoint', () => {
@@ -12,7 +12,7 @@ describe('utils.getBucketNameFromHost', () => {
             'buck.et', 'bu.ck.et', 'bu.ck-et',
         ].forEach(bucket => {
             const headers = {
-                host: `${bucket}.s3.eu-west-1.amazonaws.com`,
+                host: `${bucket}.s3.amazonaws.com`,
             };
             const result = utils.getBucketNameFromHost({ headers });
             assert.strictEqual(result, bucket);
@@ -36,12 +36,6 @@ describe('utils.getBucketNameFromHost', () => {
     it('should return undefined when non dns-style', () => {
         [
             's3.amazonaws.com',
-            's3.eu.central-1.amazonaws.com',
-            's3.eu-west-1.amazonaws.com',
-            's3-external-1.amazonaws.com',
-            's3.us-east-1.amazonaws.com',
-            's3-us-gov-west-1.amazonaws.com',
-            's3-fips-us-gov-west-1.amazonaws.com',
         ].forEach(host => {
             const headers = { host };
             const result = utils.getBucketNameFromHost({ headers });
@@ -78,31 +72,19 @@ describe('utils.getBucketNameFromHost', () => {
     });
 });
 
-describe('utils.getAllRegions', () => {
-    it('should return official AWS regions', () => {
-        const allRegions = utils.getAllRegions();
-
-        assert(allRegions.indexOf('ap-northeast-1') >= 0);
-        assert(allRegions.indexOf('ap-southeast-1') >= 0);
-        assert(allRegions.indexOf('ap-southeast-2') >= 0);
-        assert(allRegions.indexOf('eu-central-1') >= 0);
-        assert(allRegions.indexOf('eu-west-1') >= 0);
-        assert(allRegions.indexOf('sa-east-1') >= 0);
-        assert(allRegions.indexOf('us-west-1') >= 0);
-        assert(allRegions.indexOf('us-west-2') >= 0);
-        assert(allRegions.indexOf('us-east-1') >= 0);
-        assert(allRegions.indexOf('us-gov-west-1') >= 0);
-    });
-
-    it('should return regions from config', () => {
-        const allRegions = utils.getAllRegions();
-
-        assert(allRegions.indexOf('localregion') >= 0);
-    });
-});
-
+const itSkipIfLegacyConfig = config.regions ? it.skip : it;
+const itSkipIfNewConfig = config.locationConstraints ? it.skip : it;
 describe('utils.getAllEndpoints', () => {
-    it('should return endpoints from config', () => {
+    itSkipIfLegacyConfig('should return endpoints from config', () => {
+        const allEndpoints = utils.getAllEndpoints();
+
+        assert(allEndpoints.indexOf('127.0.0.1') >= 0);
+        assert(allEndpoints.indexOf('s3.docker.test') >= 0);
+        assert(allEndpoints.indexOf('127.0.0.2') >= 0);
+        assert(allEndpoints.indexOf('s3.amazonaws.com') >= 0);
+    });
+
+    itSkipIfNewConfig('should return endpoints from legacy config', () => {
         const allEndpoints = utils.getAllEndpoints();
 
         assert(allEndpoints.indexOf('s3-us-west-2.amazonaws.com') >= 0);
