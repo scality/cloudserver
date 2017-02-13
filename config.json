@@ -15,7 +15,7 @@
             "information": {
                 "region": "us-east-1",
                 "endpoint": "s3.amazonaws.com",
-                "bucketName": "putobjecttester444",
+                "bucketName": "multitester444",
                 "credentialsProfile": "default"
             }
         },
