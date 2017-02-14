@@ -1,5 +1,4 @@
 import { S3 } from 'aws-sdk';
-import Browser from 'zombie';
 
 import conf from '../../../../../lib/Config';
 import getConfig from '../support/config';
@@ -12,7 +11,6 @@ const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
     'bucketwebsitetester';
 const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
-
 const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` :
     `${transport}://${hostname}:8000`;
 
@@ -118,11 +116,6 @@ const aclTests = [
 ];
 
 describe('User visits bucket website endpoint with ACL', () => {
-    const browser = new Browser({ strictSSL: false });
-    browser.on('error', err => {
-        process.stdout.write('zombie encountered err loading resource or ' +
-            'evaluating javascript:', err);
-    });
     aclTests.forEach(test => {
         aclEquivalent[test.bucketACL].forEach(bucketACL => {
             describe(`with existing bucket with ${bucketACL} acl`, () => {
@@ -136,10 +129,8 @@ describe('User visits bucket website endpoint with ACL', () => {
                 });
 
                 it(`${test.it}`, done => {
-                    browser.visit(endpoint, () => {
-                        WebsiteConfigTester.checkHTML(browser, test.html);
-                        done();
-                    });
+                    WebsiteConfigTester.checkHTML(endpoint, test.html,
+                    null, null, done);
                 });
             });
         });

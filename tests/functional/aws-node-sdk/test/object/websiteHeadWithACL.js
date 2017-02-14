@@ -3,7 +3,6 @@ import https from 'https';
 import assert from 'assert';
 
 import { S3 } from 'aws-sdk';
-import Browser from 'zombie';
 
 import conf from '../../../../../lib/Config';
 import getConfig from '../support/config';
@@ -171,11 +170,6 @@ const aclTests = [
 ];
 
 describe('Head request on bucket website endpoint with ACL', () => {
-    const browser = new Browser({ strictSSL: false });
-    browser.on('error', err => {
-        process.stdout.write('zombie encountered err loading resource or ' +
-            'evaluating javascript:', err);
-    });
     aclTests.forEach(test => {
         aclEquivalent[test.bucketACL].forEach(bucketACL => {
             describe(`with existing bucket with ${bucketACL} acl`, () => {
