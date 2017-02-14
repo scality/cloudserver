@@ -239,7 +239,7 @@ function createEncryptedBucket(name, cb) {
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 
-describe('s3cmd putBucket', () => {
+describe.skip('s3cmd putBucket', () => {
     it('should put a valid bucket', done => {
         exec(['mb', `s3://${bucket}`], done);
     });
@@ -274,7 +274,7 @@ describe('s3cmd putBucket', () => {
     }
 });
 
-describe('s3cmd put and get bucket ACLs', function aclBuck() {
+describe.skip('s3cmd put and get bucket ACLs', function aclBuck() {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
@@ -305,7 +305,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
     });
 });
 
-describe('s3cmd getBucket', () => {
+describe.skip('s3cmd getBucket', () => {
     it('should list existing bucket', done => {
         exec(['ls', `s3://${bucket}`], done);
     });
@@ -315,7 +315,7 @@ describe('s3cmd getBucket', () => {
     });
 });
 
-describe('s3cmd getService', () => {
+describe.skip('s3cmd getService', () => {
     it("should get a list of a user's buckets", done => {
         checkRawOutput(['ls'], 's3://', `${bucket}`, foundIt => {
             assert(foundIt);
@@ -342,7 +342,7 @@ describe('s3cmd getService', () => {
         });
 });
 
-describe('s3cmd putObject', function toto() {
+describe.skip('s3cmd putObject', function toto() {
     this.timeout(10000);
     before('create file to put', done => {
         createFile(upload, 1048576, done);
@@ -361,7 +361,7 @@ describe('s3cmd putObject', function toto() {
     });
 });
 
-describe('s3cmd getObject', function toto() {
+describe.skip('s3cmd getObject', function toto() {
     this.timeout(0);
     after('delete downloaded file', done => {
         deleteFile(download, done);
@@ -384,7 +384,7 @@ describe('s3cmd getObject', function toto() {
     });
 });
 
-describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
+describe.skip('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     this.timeout(40000);
 
     after('delete downloaded copy file', done => {
@@ -409,7 +409,7 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     });
 });
 
-describe('s3cmd copyObject without MPU to different bucket ' +
+describe.skip('s3cmd copyObject without MPU to different bucket ' +
     '(always unencrypted)',
     function copyStuff() {
         const copyBucket = 'receiverbucket';
@@ -444,7 +444,7 @@ describe('s3cmd copyObject without MPU to different bucket ' +
         });
     });
 
-describe('s3cmd put and get object ACLs', function aclObj() {
+describe.skip('s3cmd put and get object ACLs', function aclObj() {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
@@ -481,7 +481,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
     });
 });
 
-describe('s3cmd delObject', () => {
+describe.skip('s3cmd delObject', () => {
     it('should delete existing object', done => {
         exec(['rm', `s3://${bucket}/${upload}`], done);
     });
@@ -507,7 +507,7 @@ describe('s3cmd delObject', () => {
     });
 });
 
-describe('connector edge cases', function tata() {
+describe.skip('connector edge cases', function tata() {
     this.timeout(0);
     before('create file to put', done => {
         createEmptyFile(emptyUpload, done);
@@ -543,7 +543,7 @@ describe('connector edge cases', function tata() {
     });
 });
 
-describe('s3cmd multipart upload', function titi() {
+describe.skip('s3cmd multipart upload', function titi() {
     this.timeout(0);
     before('create the multipart file', done => {
         this.timeout(60000);
@@ -601,7 +601,7 @@ describe('s3cmd multipart upload', function titi() {
 });
 
 MPUploadSplitter.forEach(file => {
-    describe('s3cmd multipart upload with splitter in name', function titi() {
+    describe.skip('s3cmd multipart upload with splitter in name', function titi() {
         this.timeout(0);
         before('create the multipart file', done => {
             this.timeout(60000);
@@ -641,7 +641,7 @@ MPUploadSplitter.forEach(file => {
 });
 
 
-describe('s3cmd put, get and delete object with spaces ' +
+describe.skip('s3cmd put, get and delete object with spaces ' +
     'in object key names', function test() {
     this.timeout(0);
     const keyWithSpacesAndPluses = 'key with spaces and + pluses +';
@@ -690,7 +690,7 @@ describe('s3cmd put, get and delete object with spaces ' +
     });
 });
 
-describe('s3cmd info', () => {
+describe.skip('s3cmd info', () => {
     // test that POLICY and CORS are returned as 'none'
     it('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
@@ -707,7 +707,7 @@ describe('s3cmd info', () => {
         });
     });
 
-    describe('after putting cors configuration', () => {
+    describe.skip('after putting cors configuration', () => {
         const corsConfig = '<?xml version="1.0" encoding="UTF-8" ' +
         'standalone="yes"?><CORSConfiguration><CORSRule>' +
         '<AllowedMethod>PUT</AllowedMethod>' +
@@ -735,7 +735,7 @@ describe('s3cmd info', () => {
     });
 });
 
-describe('s3cmd delBucket', () => {
+describe.skip('s3cmd delBucket', () => {
     it('delete non-empty bucket, should fail', done => {
         exec(['rb', `s3://${bucket}`], done, 13);
     });
@@ -753,7 +753,7 @@ describe('s3cmd delBucket', () => {
     });
 });
 
-describe('s3cmd recursive delete with objects put by MPU', () => {
+describe.skip('s3cmd recursive delete with objects put by MPU', () => {
     const upload16MB = 'test16MB';
     before('create file, put bucket and objects', function setup(done) {
         this.timeout(120000);
