@@ -13,7 +13,7 @@ class LocationConstraint {
     }
 }
 
-describe.only('locationConstraintAssert', () => {
+describe('locationConstraintAssert', () => {
     it('should throw error if locationConstraints is not an object', () => {
         assert.throws(() => {
             locationConstraintAssert('');
