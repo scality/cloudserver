@@ -10,6 +10,10 @@ const config = getConfig('default', { signatureVersion: 'v4' });
 const bucketUtil = new BucketUtility('default', config);
 const s3 = bucketUtil.s3;
 
+// Note: To run these tests locally, you may need to edit the machine's
+// /etc/hosts file to include the following line:
+// `127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com`
+
 const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
     'bucketwebsitetester';
@@ -48,13 +52,21 @@ describe('User visits bucket website endpoint and requests resource ' +
         afterEach(() => bucketUtil.empty(bucket));
 
         it('should serve redirect file on GET request', done => {
-            WebsiteConfigTester.checkHTML('GET', endpoint, 'redirect',
-            '/redirect.html', null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: '/redirect.html',
+            }, done);
         });
 
         it('should redirect to redirect file on HEAD request', done => {
-            WebsiteConfigTester.checkHTML('HEAD', endpoint, 'redirect',
-            '/redirect.html', null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'HEAD',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: '/redirect.html',
+            }, done);
         });
     });
 
@@ -76,14 +88,22 @@ describe('User visits bucket website endpoint and requests resource ' +
         afterEach(() => bucketUtil.empty(bucket));
 
         it('should redirect to https://www.google.com', done => {
-            WebsiteConfigTester.checkHTML('GET', endpoint, 'redirect',
-            'https://www.google.com', null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: 'https://www.google.com',
+            }, done);
         });
 
         it('should redirect to https://www.google.com on HEAD request',
             done => {
-                WebsiteConfigTester.checkHTML('HEAD', endpoint, 'redirect',
-                'https://www.google.com', null, done);
+                WebsiteConfigTester.checkHTML({
+                    method: 'HEAD',
+                    url: endpoint,
+                    responseType: 'redirect',
+                    redirectUrl: 'https://www.google.com',
+                }, done);
             });
     });
 
@@ -104,14 +124,20 @@ describe('User visits bucket website endpoint and requests resource ' +
 
         it('should return 403 instead of x-amz-website-redirect-location ' +
         'header location', done => {
-            WebsiteConfigTester.checkHTML('GET', endpoint, '403-access-denied',
-            null, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: endpoint,
+                responseType: '403-access-denied',
+            }, done);
         });
 
         it('should return 403 instead of x-amz-website-redirect-location ' +
         'header location on HEAD request', done => {
-            WebsiteConfigTester.checkHTML('HEAD', endpoint, '403-access-denied',
-            null, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'HEAD',
+                url: endpoint,
+                responseType: '403-access-denied',
+            }, done);
         });
     });
 
@@ -147,16 +173,24 @@ describe('User visits bucket website endpoint and requests resource ' +
         it(`should redirect to ${redirectEndpoint} since error 403 ` +
         'occurred instead of x-amz-website-redirect-location header ' +
         'location on GET request', done => {
-            WebsiteConfigTester.checkHTML('GET', endpoint, 'redirect',
-            redirectEndpoint, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: redirectEndpoint,
+            }, done);
         });
 
         it(`should redirect to ${redirectEndpoint} since error 403 ` +
         'occurred instead of x-amz-website-redirect-location header ' +
         'location on HEAD request',
         done => {
-            WebsiteConfigTester.checkHTML('HEAD', endpoint, 'redirect',
-            redirectEndpoint, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'HEAD',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: redirectEndpoint,
+            }, done);
         });
     });
 
@@ -183,15 +217,23 @@ describe('User visits bucket website endpoint and requests resource ' +
         it(`should redirect to ${redirectEndpoint} instead of ` +
         'x-amz-website-redirect-location header location on GET request',
         done => {
-            WebsiteConfigTester.checkHTML('GET', endpoint, 'redirect',
-            redirectEndpoint, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: redirectEndpoint,
+            }, done);
         });
 
         it(`should redirect to ${redirectEndpoint} instead of ` +
         'x-amz-website-redirect-location header location on HEAD request',
         done => {
-            WebsiteConfigTester.checkHTML('HEAD', endpoint, 'redirect',
-            redirectEndpoint, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'HEAD',
+                url: endpoint,
+                responseType: 'redirect',
+                redirectUrl: redirectEndpoint,
+            }, done);
         });
     });
 
@@ -222,15 +264,23 @@ describe('User visits bucket website endpoint and requests resource ' +
         it(`should redirect GET request to ${redirectEndpoint}about/ ` +
             'instead of about/ key x-amz-website-redirect-location ' +
             'header location', done => {
-            WebsiteConfigTester.checkHTML('GET', `${endpoint}/about/`,
-            'redirect', `${redirectEndpoint}about/`, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: `${endpoint}/about/`,
+                responseType: 'redirect',
+                redirectUrl: `${redirectEndpoint}about/`,
+            }, done);
         });
 
         it(`should redirect HEAD request to ${redirectEndpoint}about ` +
             'instead of about/ key x-amz-website-redirect-location ' +
             'header location', done => {
-            WebsiteConfigTester.checkHTML('HEAD', `${endpoint}/about/`,
-            'redirect', `${redirectEndpoint}about/`, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'HEAD',
+                url: `${endpoint}/about/`,
+                responseType: 'redirect',
+                redirectUrl: `${redirectEndpoint}about/`,
+            }, done);
         });
     });
 
@@ -266,15 +316,23 @@ describe('User visits bucket website endpoint and requests resource ' +
         it('should replace key instead of redirecting to key ' +
         'x-amz-website-redirect-location header location on GET request',
         done => {
-            WebsiteConfigTester.checkHTML('GET', `${endpoint}/index.html`,
-            'redirect-user', `${endpoint}/redirect.html`, null, done);
+            WebsiteConfigTester.checkHTML({
+                method: 'GET',
+                url: `${endpoint}/index.html`,
+                responseType: 'redirect-user',
+                redirectUrl: `${endpoint}/redirect.html`,
+            }, done);
         });
 
         it('should replace key instead of redirecting to key ' +
         'x-amz-website-redirect-location header location on HEAD request',
             done => {
-                WebsiteConfigTester.checkHTML('HEAD', `${endpoint}/index.html`,
-                'redirect-user', `${endpoint}/redirect.html`, null, done);
+                WebsiteConfigTester.checkHTML({
+                    method: 'HEAD',
+                    url: `${endpoint}/index.html`,
+                    responseType: 'redirect-user',
+                    redirectUrl: `${endpoint}/redirect.html`,
+                }, done);
             });
     });
 });

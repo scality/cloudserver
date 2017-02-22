@@ -1,3 +1,5 @@
+import { auth } from 'arsenal';
+
 import http from 'http';
 import https from 'https';
 import querystring from 'querystring';
@@ -24,16 +26,19 @@ function _parseError(responseBody) {
 /** makeRequest - utility function to generate a request
  * @param {object} params - params for making request
  * @param {string} params.hostname - request hostname
- * @param {number} params.port - request port
+ * @param {number} [params.port] - request port
  * @param {string} params.method - request method
- * @param {object} params.queryObj - query fields and their string values
- * @param {object} params.headers - headers and their string values
- * @param {string} params.path - request path
+ * @param {object} [params.queryObj] - query fields and their string values
+ * @param {object} [params.headers] - headers and their string values
+ * @param {string} [params.path] - request path
+ * @param {object} [params.authCredentials] - authentication credentials
+ * @param {object} params.authCredentials.accessKey - access key
+ * @param {object} params.authCredentials.secretKey - access key
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
 export default function makeRequest(params, callback) {
-    const { hostname, port, method, queryObj, headers, path }
+    const { hostname, port, method, queryObj, headers, path, authCredentials }
         = params;
     const options = {
         hostname,
@@ -75,22 +80,38 @@ export default function makeRequest(params, callback) {
         process.stdout.write('err sending request');
         return callback(err);
     });
+    // generate v4 headers if authentication credentials are provided
+    if (authCredentials) {
+        if (queryObj) {
+            auth.client.generateV4Headers(req, queryObj,
+                authCredentials.accessKey, authCredentials.secretKey, 's3');
+        // may update later if request may contain POST body
+        } else {
+            auth.client.generateV4Headers(req, '', authCredentials.accessKey,
+                authCredentials.secretKey, 's3');
+        }
+    }
     req.end();
 }
 
 /** makeS3Request - utility function to generate a request against S3
  * @param {object} params - params for making request
  * @param {string} params.method - request method
- * @param {object} params.queryObj - query fields and their string values
- * @param {object} params.headers - headers and their string values
- * @param {string} params.bucket - bucket name
- * @param {string} params.objectKey - object key name
+ * @param {object} [params.queryObj] - query fields and their string values
+ * @param {object} [params.headers] - headers and their string values
+ * @param {string} [params.bucket] - bucket name
+ * @param {string} [params.objectKey] - object key name
+ * @param {object} [params.authCredentials] - authentication credentials
+ * @param {object} params.authCredentials.accessKey - access key
+ * @param {object} params.authCredentials.secretKey - access key
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
 export function makeS3Request(params, callback) {
-    const { method, queryObj, headers, bucket, objectKey } = params;
+    const { method, queryObj, headers, bucket, objectKey, authCredentials }
+        = params;
     const options = {
+        authCredentials,
         hostname: process.env.AWS_ON_AIR ? 's3.amazonaws.com' : ipAddress,
         port: process.env.AWS_ON_AIR ? 80 : 8000,
         method,
