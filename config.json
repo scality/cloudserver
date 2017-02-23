@@ -59,6 +59,7 @@
         }
     },
     "restEndpoints": {
+        "localhost": "file",
         "127.0.0.1": "file",
         "s3.docker.test": "scality-us-west-1",
         "127.0.0.2": "aws-us-east-1",
