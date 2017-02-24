@@ -92,27 +92,37 @@ function exec(args, done, exitCode) {
     });
 }
 
-// Test stdout against expected output
-function checkRawOutput(args, lineFinder, testString, cb) {
+// Test stdout or stderr against expected output
+function checkRawOutput(args, lineFinder, testString, stream, cb) {
     let av = ['-c', configCfg].concat(args);
     if (isScality) {
         av = av.concat(isScality);
     }
     process.stdout.write(`${program} ${av}\n`);
     const allData = [];
+    const allErrData = [];
     const child = proc.spawn(program, av);
     child.stdout.on('data', data => {
         allData.push(data.toString());
         process.stdout.write(data.toString());
     });
+    child.stderr.on('data', data => {
+        allErrData.push(data.toString());
+        process.stdout.write(data.toString());
+    });
     child.on('close', () => {
+        if (stream === 'stderr') {
+            const foundIt = allErrData.join('').split('\n')
+                .filter(item => item.indexOf(lineFinder) > -1)
+                .some(item => item.indexOf(testString) > -1);
+            return cb(foundIt);
+        }
         const foundIt = allData.join('').split('\n')
             .filter(item => item.indexOf(lineFinder) > -1)
             .some(item => item.indexOf(testString) > -1);
         return cb(foundIt);
     });
 }
-
 
 function findEndString(data, start) {
     const delimiter = data[start];
@@ -287,7 +297,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
-        foundIt => {
+        'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -300,7 +310,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
-        `${lowerCaseEmail}: WRITE`, foundIt => {
+        `${lowerCaseEmail}: WRITE`, 'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -319,7 +329,7 @@ describe('s3cmd getBucket', () => {
 
 describe('s3cmd getService', () => {
     it("should get a list of a user's buckets", done => {
-        checkRawOutput(['ls'], 's3://', `${bucket}`, foundIt => {
+        checkRawOutput(['ls'], 's3://', `${bucket}`, 'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -457,7 +467,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        '*anon*: READ', foundIt => {
+        '*anon*: READ', 'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -470,7 +480,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `${lowerCaseEmail}: READ`, foundIt => {
+        `${lowerCaseEmail}: READ`, 'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -673,7 +683,7 @@ describe('s3cmd put, get and delete object with spaces ' +
 
     it('should list bucket showing file with spaces', done => {
         checkRawOutput(['ls', `s3://${bucket}`], `s3://${bucket}`,
-        keyWithSpacesAndPluses, foundIt => {
+        keyWithSpacesAndPluses, 'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -693,17 +703,28 @@ describe('s3cmd put, get and delete object with spaces ' +
 });
 
 describe('s3cmd info', () => {
+    const bucket = 's3cmdinfobucket';
+
+    beforeEach(done => {
+        exec(['mb', `s3://${bucket}`], done);
+    });
+
+    afterEach(done => {
+        exec(['rb', `s3://${bucket}`], done);
+    });
+
     // test that POLICY and CORS are returned as 'none'
     it('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
-        foundIt => {
+        'stdout', foundIt => {
             assert(foundIt);
             done();
         });
     });
 
     it('should find that cors has a value of none', done => {
-        checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none', foundIt => {
+        checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none',
+        'stdout', foundIt => {
             assert(foundIt);
             done();
         });
@@ -729,7 +750,7 @@ describe('s3cmd info', () => {
 
         it('should find that cors has a value', done => {
             checkRawOutput(['info', `s3://${bucket}`], 'cors', corsConfig,
-            foundIt => {
+            'stdout', foundIt => {
                 assert(foundIt, 'Did not find value for cors');
                 done();
             });
@@ -788,7 +809,7 @@ describeSkipIfOldConfig('If no location is sent with the request', () => {
     // WARNING: change "file" to another locationConstraint depending
     // on the restEndpoints (./config.json)
     it('endpoint should be used to determine the locationConstraint', done => {
-        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'file',
+        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'file', 'stdout',
         foundIt => {
             assert(foundIt);
             done();

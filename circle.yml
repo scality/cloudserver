@@ -22,10 +22,7 @@ machine:
 dependencies:
   post:
     - sudo pip install flake8 yamllint
-    # s3cmd dependencies
-    - sudo apt-get install -y -q python-dateutil python-magic
-    - wget http://launchpadlibrarian.net/222422124/s3cmd_1.6.0-2_all.deb
-    - sudo dpkg -i s3cmd*.deb
+    - sudo pip install s3cmd==1.6.1
     # fog and ruby testing dependencies
     - gem install fog
     - gem install mime-types
@@ -66,6 +63,11 @@ test:
             > $CIRCLE_ARTIFACTS/server_mem_s3curl.txt
         & bash wait_for_local_port.bash 8000 40
         && npm run ft_s3curl
+    - S3BACKEND=mem npm start
+            > $CIRCLE_ARTIFACTS/server_mem_rawnode.txt
+        & bash wait_for_local_port.bash 8000 40
+        && npm run ft_node
+
 
     # Run S3 with mem Backend + KMS Encryption ; run ft_tests
     - S3BACKEND=mem MPU_TESTING=yes npm start
@@ -80,6 +82,10 @@ test:
             > $CIRCLE_ARTIFACTS/server_mem_kms_s3curl.txt
         & bash wait_for_local_port.bash 8000 40
         && ENABLE_KMS_ENCRYPTION=true npm run ft_s3curl
+    - S3BACKEND=mem npm start
+            > $CIRCLE_ARTIFACTS/server_mem_kms_rawnode.txt
+        & bash wait_for_local_port.bash 8000 40
+        && ENABLE_KMS_ENCRYPTION=true npm run ft_node
 
     # Run S3 with file Backend ; run ft_tests
     - S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start
@@ -94,6 +100,10 @@ test:
             > $CIRCLE_ARTIFACTS/server_file_s3curl.txt
         & bash wait_for_local_port.bash 8000 40
         && npm run ft_s3curl
+    - S3BACKEND=file S3VAULT=mem npm start
+            > $CIRCLE_ARTIFACTS/server_file_rawnode.txt
+        & bash wait_for_local_port.bash 8000 40
+        && npm run ft_node
 
     # Run S3 with file Backend + KMS Encryption ; run ft_tests
     - S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start
@@ -108,3 +118,7 @@ test:
             > $CIRCLE_ARTIFACTS/server_file_kms_s3curl.txt
         & bash wait_for_local_port.bash 8000 40
         && ENABLE_KMS_ENCRYPTION=true npm run ft_s3curl
+    - S3BACKEND=file S3VAULT=mem npm start
+            > $CIRCLE_ARTIFACTS/server_file_kms_rawnode.txt
+        & bash wait_for_local_port.bash 8000 40
+        && ENABLE_KMS_ENCRYPTION=true npm run ft_node
