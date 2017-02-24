@@ -14,7 +14,6 @@ const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
 const bucketName = 'bucketname';
-const locationConstraint = 'us-east-1';
 const testRequest = {
     bucketName,
     namespace,
@@ -30,8 +29,8 @@ describe('bucketPut API', () => {
 
     it('should return an error if bucket already exists', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
-            bucketPut(otherAuthInfo, testRequest, locationConstraint,
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketPut(otherAuthInfo, testRequest,
                 log, err => {
                     assert.deepStrictEqual(err, errors.BucketAlreadyExists);
                     done();
@@ -40,7 +39,7 @@ describe('bucketPut API', () => {
     });
 
     it('should create a bucket', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             if (err) {
                 return done(new Error(err));
             }
@@ -72,7 +71,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -93,7 +92,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -115,7 +114,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.UnresolvableGrantByEmailAddress);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -137,7 +136,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -173,7 +172,7 @@ describe('bucketPut API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().READ[0], constants.logId);
@@ -193,7 +192,7 @@ describe('bucketPut API', () => {
 
     it('should prevent anonymous user from accessing putBucket API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        bucketPut(publicAuthInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(publicAuthInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);
         });
         done();

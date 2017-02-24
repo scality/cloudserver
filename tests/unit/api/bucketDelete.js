@@ -23,7 +23,6 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const usersBucket = constants.usersBucket;
-const locationConstraint = 'us-east-1';
 
 describe('bucketDelete API', () => {
     beforeEach(() => {
@@ -55,7 +54,7 @@ describe('bucketDelete API', () => {
             objectKey: objectName,
         }, postBody);
 
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
@@ -77,7 +76,7 @@ describe('bucketDelete API', () => {
     });
 
     it('should return an error if the bucket has an initiated mpu', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                 assert.strictEqual(err, null);
@@ -94,8 +93,7 @@ describe('bucketDelete API', () => {
         const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
         const postBody = Buffer.from('I am a body', 'utf8');
         async.waterfall([
-            next => bucketPut(authInfo, testRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => {
@@ -139,7 +137,7 @@ describe('bucketDelete API', () => {
     });
 
     it('should delete a bucket', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
+        bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);

@@ -11,7 +11,6 @@ from '../helpers';
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketGetWebsiteTestBucket';
-const locationConstraint = 'us-east-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -58,8 +57,7 @@ function _comparePutGetXml(sampleXml, done) {
 describe('getBucketWebsite API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done);
+        bucketPut(authInfo, testBucketPutRequest, log, done);
     });
     afterEach(() => cleanup());
 

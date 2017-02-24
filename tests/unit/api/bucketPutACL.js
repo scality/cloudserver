@@ -13,7 +13,6 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-east-1';
 const testBucketPutRequest = {
     bucketName,
     namespace,
@@ -27,8 +26,7 @@ const canonicalIDforSample2 =
 
 describe('putBucketACL API', () => {
     before(() => cleanup());
-    beforeEach(done => bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done));
+    beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
     it('should parse a grantheader', () => {

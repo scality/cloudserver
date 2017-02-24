@@ -24,7 +24,6 @@ const bucketPutRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    post: '',
 };
 const objectKey = 'testObject';
 const initiateRequest = {
@@ -41,9 +40,14 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {
     config.locationConstraints['us-east-1'].legacyAwsBehavior =
         usEastSetting;
+    const post = '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<LocationConstraint>${locationConstraint}</LocationConstraint>` +
+        '</CreateBucketConfiguration>';
+    const testBucketPutRequest = Object.assign({ post }, bucketPutRequest);
     async.waterfall([
-        next => bucketPut(authInfo, bucketPutRequest, locationConstraint, log,
-            next),
+        next => bucketPut(authInfo, testBucketPutRequest, log, next),
         (corsHeaders, next) =>
             initiateMultipartUpload(authInfo, initiateRequest, log, next),
         (result, corsHeaders, next) => parseString(result, next),

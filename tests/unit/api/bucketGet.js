@@ -19,7 +19,6 @@ const log = new DummyRequestLogger();
 const namespace = 'default';
 const postBody = Buffer.from('I am a body', 'utf8');
 const prefix = 'sub';
-const locationConstraint = 'us-east-1';
 
 let testPutBucketRequest;
 let testPutObjectRequest1;
@@ -30,6 +29,11 @@ describe('bucketGet API', () => {
     const objectName1 = `${prefix}${delimiter}objectName1`;
     const objectName2 = `${prefix}${delimiter}objectName2`;
     const objectName3 = 'notURIvalid$$';
+    const post = '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<LocationConstraint>us-east-1</LocationConstraint>' +
+        '</CreateBucketConfiguration>';
 
     beforeEach(() => {
         cleanup();
@@ -38,7 +42,7 @@ describe('bucketGet API', () => {
             headers: {},
             url: `/${bucketName}`,
             namespace,
-        }, Buffer.alloc(0));
+        }, post);
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
             headers: {},
@@ -75,21 +79,18 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             next =>
-                bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
-            (corsHeaders, next) => {
-                objectPut(authInfo, testPutObjectRequest1, undefined,
-                log, next);
-            },
+                bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) =>
+                objectPut(authInfo, testPutObjectRequest1, undefined, log,
+                    next),
             (result, corsHeaders, next) => {
-                objectPut(authInfo,
-                testPutObjectRequest2, undefined, log, next);
+                objectPut(authInfo, testPutObjectRequest2, undefined, log,
+                    next);
             },
             (result, corsHeaders, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
-            (result, corsHeaders, next) => {
-                parseString(result, next);
-            },
+            (result, corsHeaders, next) =>
+                parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult
@@ -110,8 +111,7 @@ describe('bucketGet API', () => {
 
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
             (result, corsHeaders, next) => objectPut(authInfo,
@@ -139,8 +139,7 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
             (result, corsHeaders, next) => objectPut(authInfo,
@@ -181,8 +180,7 @@ describe('bucketGet API', () => {
             query: { 'max-keys': '99999' },
         };
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
             (result, corsHeaders, next) => objectPut(authInfo,
@@ -208,8 +206,7 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
             (result, corsHeaders, next) => objectPut(authInfo,
@@ -240,8 +237,7 @@ describe('bucketGet API', () => {
 
         testPutObjectRequest1.objectKey += '&><"\'';
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
             (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
@@ -265,8 +261,7 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),

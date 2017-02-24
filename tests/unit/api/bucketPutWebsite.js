@@ -15,7 +15,6 @@ import metadata from '../../../lib/metadata/wrapper';
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-east-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -37,8 +36,7 @@ function _getPutWebsiteRequest(xml) {
 
 describe('putBucketWebsite API', () => {
     before(() => cleanup());
-    beforeEach(done => bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done));
+    beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
     it('should update a bucket\'s metadata with website config obj', done => {

@@ -125,8 +125,10 @@ public class StreamV4AuthTest {
         FileInputStream fis = new FileInputStream(sample);
         String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
         fis.close();
-        getS3Client().putObject(new PutObjectRequest(bucketName, objName,
-            sample));
+        PutObjectRequest putObjectReq = new PutObjectRequest(bucketName,
+            objName, sample);
+        putObjectReq.putCustomRequestHeader("Expect", "100-continue");
+        getS3Client().putObject(putObjectReq);
         S3Object object = getS3Client()
             .getObject(new GetObjectRequest(bucketName, objName));
         Assert.assertEquals(object.getObjectMetadata().getETag(), md5);

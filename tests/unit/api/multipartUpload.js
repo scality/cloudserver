@@ -30,9 +30,12 @@ const bucketPutRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    post: '',
+    post: '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<LocationConstraint>scality-us-west-1</LocationConstraint>' +
+        '</CreateBucketConfiguration>',
 };
-const locationConstraint = 'scality-us-west-1';
 const objectKey = 'testObject';
 const initiateRequest = {
     bucketName,
@@ -50,7 +53,7 @@ describe('Multipart Upload API', () => {
 
 
     it('should initiate a multipart upload', done => {
-        bucketPut(authInfo, bucketPutRequest, locationConstraint, log, () => {
+        bucketPut(authInfo, bucketPutRequest, log, () => {
             initiateMultipartUpload(authInfo, initiateRequest,
                 log, (err, result) => {
                     assert.strictEqual(err, null);
@@ -72,8 +75,7 @@ describe('Multipart Upload API', () => {
 
     it('should upload a part', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => {
@@ -138,8 +140,7 @@ describe('Multipart Upload API', () => {
     it('should upload a part even if the client sent a base 64 ETag ' +
     '(and the stored ETag in metadata should be hex)', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -187,8 +188,7 @@ describe('Multipart Upload API', () => {
 
     it('should return an error if too many parts', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -224,8 +224,7 @@ describe('Multipart Upload API', () => {
 
     it('should return an error if part number is not an integer', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -264,8 +263,7 @@ describe('Multipart Upload API', () => {
         // by setting a large content-length.  It is not actually putting a
         // large file.  Functional tests will test actual large data.
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -305,8 +303,7 @@ describe('Multipart Upload API', () => {
 
     it('should upload two parts', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -388,8 +385,7 @@ describe('Multipart Upload API', () => {
         initiateRequest.headers['x-amz-meta-stuff'] =
             'I am some user metadata';
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -475,8 +471,7 @@ describe('Multipart Upload API', () => {
             'I am some user metadata';
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, bucketPutRequest,
-                    locationConstraint, log, next);
+                bucketPut(authInfo, bucketPutRequest, log, next);
             },
             function waterfall2(corsHeaders, next) {
                 initiateMultipartUpload(
@@ -556,8 +551,7 @@ describe('Multipart Upload API', () => {
     it('should return an error if a complete multipart upload' +
     ' request contains malformed xml', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -609,8 +603,7 @@ describe('Multipart Upload API', () => {
     'multipart upload request contains xml that ' +
     'does not conform to the AWS spec', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -662,8 +655,7 @@ describe('Multipart Upload API', () => {
     'multipart upload request contains xml with ' +
     'a part list that is not in numerical order', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -739,8 +731,7 @@ describe('Multipart Upload API', () => {
     it('should return InvalidPart error if the complete ' +
     'multipart upload request contains xml with a missing part', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -797,8 +788,7 @@ describe('Multipart Upload API', () => {
     + 'contains xml with a part ETag that does not match the md5 for '
     + 'the part that was actually sent', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -871,8 +861,7 @@ describe('Multipart Upload API', () => {
     'other than the last part that is less than 5MB ' +
     'in size', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -953,8 +942,7 @@ describe('Multipart Upload API', () => {
 
     it('should aggregate the sizes of the parts', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1056,8 +1044,7 @@ describe('Multipart Upload API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1159,8 +1146,7 @@ describe('Multipart Upload API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1246,8 +1232,7 @@ describe('Multipart Upload API', () => {
 
     it('should abort/delete a multipart upload', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1292,8 +1277,7 @@ describe('Multipart Upload API', () => {
     it('should return no error if attempt to abort/delete ' +
         'a multipart upload that does not exist', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => {
@@ -1344,8 +1328,7 @@ describe('Multipart Upload API', () => {
         const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
         const partBody = Buffer.from('I am a part\n', 'utf8');
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
-                log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1483,8 +1466,7 @@ describe('Multipart Upload API', () => {
         let uploadId;
 
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest, locationConstraint,
-                log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
@@ -1558,7 +1540,7 @@ describe('Multipart Upload API', () => {
             },
         }, postBody);
 
-        bucketPut(authInfo, bucketPutRequest, locationConstraint, log, () =>
+        bucketPut(authInfo, bucketPutRequest, log, () =>
           objectPutPart(authInfo, partRequest, undefined, log, err => {
               assert.strictEqual(err, errors.NoSuchUpload);
               done();
@@ -1569,8 +1551,7 @@ describe('Multipart Upload API', () => {
     it('should complete an MPU with fewer parts than were originally ' +
         'put and delete data from left out parts', done => {
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
