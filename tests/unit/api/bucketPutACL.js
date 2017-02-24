@@ -7,13 +7,15 @@ import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 const testBucketPutRequest = {
     bucketName,
     namespace,

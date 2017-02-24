@@ -10,6 +10,7 @@ import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import objectPut from '../../../lib/api/objectPut';
 import objectGetACL from '../../../lib/api/objectGetACL';
 import DummyRequest from '../DummyRequest';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -21,7 +22,8 @@ const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 describe('objectGetACL API', () => {
     beforeEach(() => {

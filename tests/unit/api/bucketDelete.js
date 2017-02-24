@@ -8,6 +8,7 @@ import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -16,7 +17,8 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const usersBucket = constants.usersBucket;
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 describe('bucketDelete API', () => {
     beforeEach(() => {

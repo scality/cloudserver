@@ -28,6 +28,8 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
+const describeSkipIfOldConfig = conf.locationConstraints ? describe :
+describe.skip;
 
 function safeJSONParse(s) {
     let res;
@@ -252,12 +254,12 @@ describe('s3cmd putBucket', () => {
         exec(['mb', `s3://${invalidName}`], done, 11);
     });
 
-    it('should put a valid bucket with region (regardless of region)', done => {
-        exec(['mb', 's3://regioned', '--region=wherever'], done);
+    it('should put a valid bucket with region', done => {
+        exec(['mb', 's3://regioned', '--region=us-east-1'], done);
     });
 
     it('should delete bucket put with region', done => {
-        exec(['rb', 's3://regioned', '--region=wherever'], done);
+        exec(['rb', 's3://regioned', '--region=us-east-1'], done);
     });
 
     if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
@@ -773,5 +775,23 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
 
     after('delete the downloaded file', done => {
         deleteFile(upload16MB, done);
+    });
+});
+
+describeSkipIfOldConfig('If no location is sent with the request', () => {
+    beforeEach(done => {
+        exec(['mb', `s3://${bucket}`], done);
+    });
+    afterEach(done => {
+        exec(['rb', `s3://${bucket}`], done);
+    });
+    // WARNING: change "file" to another locationConstraint depending
+    // on the restEndpoints (./config.json)
+    it('endpoint should be used to determine the locationConstraint', done => {
+        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'file',
+        foundIt => {
+            assert(foundIt);
+            done();
+        });
     });
 });

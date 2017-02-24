@@ -4,6 +4,17 @@ import { S3 } from 'aws-sdk';
 import BucketUtility from '../../lib/utility/bucket-util';
 import getConfig from '../support/config';
 import withV4 from '../support/withV4';
+import configOfficial from '../../../../../lib/Config';
+
+const bucketName = 'bucketlocation';
+
+const describeSkipAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
+
+const describeSkipIfOldConfig = configOfficial.locationConstraints ? describe :
+describe.skip;
+// test for old and new config
+const locationConstraints = configOfficial.locationConstraints ||
+{ foo: 'foo', toto: 'toto' };
 
 describe('PUT Bucket - AWS.S3.createBucket', () => {
     describe('When user is unauthorized', () => {
@@ -34,6 +45,45 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
+        });
+
+        // Why describeSkipIfOldConfig?
+        // AWS returns 404 - NoSuchUpload in us-east-1. This behavior
+        // can be toggled to be compatible with AWS by enabling
+        // usEastBehavior in the config.
+        describeSkipIfOldConfig('create bucket twice', () => {
+            beforeEach(done => bucketUtil.s3.createBucket({ Bucket:
+              bucketName }, done));
+            afterEach(done => bucketUtil.s3.deleteBucket({ Bucket: bucketName },
+              done));
+            // AWS JS SDK sends a request with locationConstraint us-east-1 if
+            // no locationConstraint provided.
+            it('should return a 200 if no locationConstraints provided.',
+            done => {
+                bucketUtil.s3.createBucket({ Bucket: bucketName }, done);
+            });
+            it('should return a 200 if us-east behavior', done => {
+                bucketUtil.s3.createBucket({
+                    Bucket: bucketName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: 'us-east-1',
+                    },
+                }, done);
+            });
+            it('should return a 409 if us-west behavior', done => {
+                bucketUtil.s3.createBucket({
+                    Bucket: bucketName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: 'scality-us-west-1',
+                    },
+                }, error => {
+                    assert.notEqual(error, null,
+                      'Expected failure but got success');
+                    assert.strictEqual(error.code, 'BucketAlreadyOwnedByYou');
+                    assert.strictEqual(error.statusCode, 409);
+                    done();
+                });
+            });
         });
 
         describe('bucket naming restriction', () => {
@@ -135,6 +185,39 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
             it('should create bucket if name is an IP address with some suffix',
                 done => _test('192.168.5.4-suffix', done));
+        });
+        Object.keys(locationConstraints).forEach(
+        location => {
+            describeSkipAWS(`bucket creation with location: ${location}`,
+            () => {
+                after(() => bucketUtil.deleteOne(bucketName));
+                it(`should create bucket with location: ${location}`, done => {
+                    bucketUtil.s3.createBucketAsync(
+                        {
+                            Bucket: bucketName,
+                            CreateBucketConfiguration: {
+                                LocationConstraint: location,
+                            },
+                        }, done);
+                });
+            });
+        });
+
+        describeSkipIfOldConfig('bucket creation with invalid location', () => {
+            it('should return errors InvalidLocationConstraint', done => {
+                bucketUtil.s3.createBucketAsync(
+                    {
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'coco',
+                        },
+                    }, err => {
+                    assert.strictEqual(err.code,
+                    'InvalidLocationConstraint');
+                    assert.strictEqual(err.statusCode, 400);
+                    done();
+                });
+            });
         });
     });
 });

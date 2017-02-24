@@ -63,7 +63,8 @@ const userBucketOwner = 'admin';
 const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+    'us-east-1';
 
 
 describe('transient bucket handling', () => {
@@ -74,7 +75,7 @@ describe('transient bucket handling', () => {
         bucketMD.addTransientFlag();
         bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
             'WRITE_ACP');
-        bucketMD.setLocationConstraint('us-east-1');
+        bucketMD.setLocationConstraint(locationConstraint);
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
                 done();
@@ -392,7 +393,12 @@ describe('transient bucket handling', () => {
 
         it('should return NoSuchUpload error if usEastBehavior is enabled',
         done => {
-            config.usEastBehavior = true;
+            if (config.locationConstraints) {
+                config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = true;
+            } else {
+                config.usEastBehavior = true;
+            }
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();
@@ -400,7 +406,12 @@ describe('transient bucket handling', () => {
         });
 
         it('should return no error if usEastBehavior is not enabled', done => {
-            config.usEastBehavior = false;
+            if (config.locationConstraints) {
+                config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = false;
+            } else {
+                config.usEastBehavior = false;
+            }
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.strictEqual(err, null);
                 return done();

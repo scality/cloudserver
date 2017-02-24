@@ -6,6 +6,7 @@ import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import objectPut from '../../../lib/api/objectPut';
 import objectHead from '../../../lib/api/objectHead';
 import DummyRequest from '../DummyRequest';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -27,7 +28,8 @@ const testPutBucketRequest = {
 };
 const userMetadataKey = 'x-amz-meta-test';
 const userMetadataValue = 'some metadata';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 let testPutObjectRequest;
 

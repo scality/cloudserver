@@ -7,6 +7,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import listMultipartUploads from '../../../lib/api/listMultipartUploads';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 
@@ -14,7 +15,8 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
+const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
+'us-east-1';
 
 describe('listMultipartUploads API', () => {
     beforeEach(() => {
