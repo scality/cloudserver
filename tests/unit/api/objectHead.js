@@ -58,7 +58,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
                             assert.deepStrictEqual(err, errors.NotModified);
@@ -81,7 +81,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
                             assert.deepStrictEqual(err,
@@ -106,7 +106,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
                             assert.deepStrictEqual(err,
@@ -131,7 +131,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log, err => {
                             assert.deepStrictEqual(err, errors.NotModified);
@@ -153,7 +153,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest,
             locationConstraint, log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         objectHead(authInfo, testGetRequest, log,
                             (err, success) => {

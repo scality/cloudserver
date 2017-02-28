@@ -33,7 +33,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authUser, testPutObjectRequest, undefined,
-                log, (err, res) => {
+                log, (err, corsHeaders, res) => {
                     assert.strictEqual(err, null);
                     assert.strictEqual(res, correctMD5);
                     cb();
@@ -111,7 +111,7 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
                             {}, log, (err, md) => {
@@ -146,7 +146,7 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
@@ -184,7 +184,7 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, locationConstraint,
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
+                    (err, corsHeaders, result) => {
                         assert.strictEqual(result, correctMD5);
                         assert.deepStrictEqual(ds, []);
                         metadata.getObjectMD(bucketName, objectName, {}, log,
