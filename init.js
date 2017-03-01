@@ -6,6 +6,8 @@ const fs = require('fs');
 const os = require('os');
 
 const async = require('async');
+const uuid = require('node-uuid');
+
 const constants = require('./constants').default;
 const config = require('./lib/Config.js').default;
 const logger = require('./lib/utilities/logger.js').logger;
@@ -38,6 +40,26 @@ function _setDirSyncFlag(path) {
         currentFlags | FS_DIRSYNC_FL, 'FS_DIRSYNC_FL not set');
     logger.info('FS_DIRSYNC_FL set');
     fs.closeSync(pathFD2);
+}
+
+function printUUID(metadataPath) {
+    const uuidFile = `${metadataPath}/uuid`;
+
+    try {
+        fs.accessSync(uuidFile, fs.F_OK | fs.R_OK);
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            const v = uuid.v4();
+            const fd = fs.openSync(uuidFile, 'w');
+            fs.writeSync(fd, v.toString());
+            fs.closeSync(fd);
+        } else {
+            throw e;
+        }
+    }
+
+    const uuidValue = fs.readFileSync(uuidFile);
+    logger.info(`This deployment's identifier is ${uuidValue}`);
 }
 
 if (config.backends.data !== 'file' && config.backends.metadata !== 'file') {
@@ -80,4 +102,5 @@ async.eachSeries(subDirs, (subDirName, next) => {
  err => {
      assert.strictEqual(err, null, `Error creating data files ${err}`);
      logger.info('Init complete.  Go forth and store data.');
+     printUUID(metadataPath);
  });
