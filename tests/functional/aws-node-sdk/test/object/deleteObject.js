@@ -11,7 +11,7 @@ describe('DELETE object', () => {
         let uploadId;
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        const testfile = new Buffer(1024 * 1024 * 54);
+        const testfile = Buffer.alloc(1024 * 1024 * 54, 0);
 
         before(() => {
             process.stdout.write('creating bucket\n');
