@@ -1,9 +1,4 @@
-import http from 'http';
-import https from 'https';
-import assert from 'assert';
-
 import { S3 } from 'aws-sdk';
-import Browser from 'zombie';
 
 import conf from '../../../../../lib/Config';
 import getConfig from '../support/config';
@@ -12,50 +7,21 @@ import { WebsiteConfigTester } from '../../lib/utility/website-util';
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
 
+// Note: To run these tests locally, you may need to edit the machine's
+// /etc/hosts file to include the following line:
+// `127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com`
+
+const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
     'bucketwebsitetester';
 const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
+const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` :
+    `${transport}://${hostname}:8000`;
 
 const aclEquivalent = {
     public: ['public-read-write', 'public-read'],
     private: ['private', 'authenticated-read'],
 };
-
-function makeHeadRequest(expectedStatusCode, expectedHeaders, cb) {
-    const options = {
-        hostname,
-        port: process.env.AWS_ON_AIR ? 80 : 8000,
-        method: 'HEAD',
-        rejectUnauthorized: false,
-    };
-    const module = conf.https ? https : http;
-    const req = module.request(options, res => {
-        const body = [];
-        res.on('data', chunk => {
-            body.push(chunk);
-        });
-        res.on('error', err => {
-            process.stdout.write('err on post response');
-            return cb(err);
-        });
-        res.on('end', () => {
-            // body should be empty
-            assert.deepStrictEqual(body, []);
-            assert.strictEqual(res.statusCode, expectedStatusCode);
-            const headers = Object.keys(expectedHeaders);
-            for (let i = 0; i < headers.length; i++) {
-                assert.strictEqual(res.headers[headers[i]],
-                    expectedHeaders[headers[i]]);
-            }
-            return cb();
-        });
-    });
-    req.on('error', err => {
-        process.stdout.write('err from post request');
-        return cb(err);
-    });
-    req.end();
-}
 
 const headersACL = {
     accessDenied: {
@@ -171,11 +137,6 @@ const aclTests = [
 ];
 
 describe('Head request on bucket website endpoint with ACL', () => {
-    const browser = new Browser({ strictSSL: false });
-    browser.on('error', err => {
-        process.stdout.write('zombie encountered err loading resource or ' +
-            'evaluating javascript:', err);
-    });
     aclTests.forEach(test => {
         aclEquivalent[test.bucketACL].forEach(bucketACL => {
             describe(`with existing bucket with ${bucketACL} acl`, () => {
@@ -188,10 +149,25 @@ describe('Head request on bucket website endpoint with ACL', () => {
                       test.objects, done);
                 });
 
-                it(`${test.it}`, done => {
+                it(`${test.it} with no auth credentials sent`, done => {
                     const result = test.result;
-                    makeHeadRequest(headersACL[result].status,
-                      headersACL[result].expectedHeaders, done);
+                    WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
+                        headersACL[result].status,
+                        headersACL[result].expectedHeaders, done);
+                });
+
+                it(`${test.it} even with invalid auth credentials`, done => {
+                    const result = test.result;
+                    WebsiteConfigTester.makeHeadRequest('invalid credentials',
+                        endpoint, headersACL[result].status,
+                        headersACL[result].expectedHeaders, done);
+                });
+
+                it(`${test.it} even with valid auth credentials`, done => {
+                    const result = test.result;
+                    WebsiteConfigTester.makeHeadRequest('valid credentials',
+                        endpoint, headersACL[result].status,
+                        headersACL[result].expectedHeaders, done);
                 });
             });
         });
