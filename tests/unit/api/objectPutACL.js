@@ -12,7 +12,6 @@ import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
 import DummyRequest from '../DummyRequest';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -35,8 +34,7 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 let testPutObjectRequest;
 
 describe('putObjectACL API', () => {

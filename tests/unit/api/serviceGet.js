@@ -7,7 +7,6 @@ import bucketPut from '../../../lib/api/bucketPut';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import serviceGet from '../../../lib/api/serviceGet';
-import config from '../../../lib/Config';
 
 const authInfo = makeAuthInfo('accessKey1');
 const log = new DummyRequestLogger();
@@ -15,8 +14,7 @@ const namespace = 'default';
 const bucketName1 = 'bucketname1';
 const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 
 
 describe('serviceGet API', () => {

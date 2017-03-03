@@ -1,63 +1,6 @@
 {
     "port": 8000,
     "listenOn": [],
-    "locationConstraints": {
-        "aws-us-east-1": {
-            "type": "aws_s3",
-            "legacyAwsBehavior": true,
-            "details": {
-                "awsEndpoint": "s3.amazonaws.com",
-                "bucketName": "premadebucket",
-                "credentialsProfile": "default"
-            }
-        },
-        "scality-us-east-1": {
-            "type": "scality",
-            "legacyAwsBehavior": true,
-            "details": {
-                "connector": {
-                    "sproxyd": {
-                        "bootstrap": ["localhost:8181"]
-                    }
-                }
-            }
-        },
-        "scality-us-west-1": {
-            "type": "scality",
-            "legacyAwsBehavior": false,
-            "details": {
-                "connector": {
-                    "sproxyd": {
-                        "bootstrap": ["localhost:8182"]
-                    }
-                }
-            }
-        },
-        "us-east-1": {
-            "type": "file",
-            "legacyAwsBehavior": true,
-            "details": {
-            }
-        },
-        "virtual-user-metadata": {
-            "type": "scality_user_metadata",
-            "legacyAwsBehavior": false,
-            "details": {
-            }
-        },
-        "file": {
-            "type": "file",
-            "legacyAwsBehavior": false,
-            "details": {
-            }
-        },
-        "mem": {
-            "type": "mem",
-            "legacyAwsBehavior": false,
-            "details": {
-            }
-        }
-    },
     "restEndpoints": {
         "localhost": "file",
         "127.0.0.1": "file",

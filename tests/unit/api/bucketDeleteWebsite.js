@@ -9,13 +9,11 @@ import { cleanup,
     WebsiteConfig }
 from '../helpers';
 import metadata from '../../../lib/metadata/wrapper';
-import configOfficial from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = configOfficial.locationConstraints ?
-  'aws-us-east-1' : 'us-east-1';
+const locationConstraint = 'us-east-1';
 const config = new WebsiteConfig('index.html', 'error.html');
 config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
 { KeyPrefixEquals: 'docs/' });
