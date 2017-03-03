@@ -165,6 +165,10 @@ const s3 = new aws.S3({
 - https://www.youtube.com/watch?v=-n2MCt4ukUg
 - https://www.youtube.com/watch?v=IyXHcu4uqgU
 
+#### [CloudBerry Lab FREE](http://www.cloudberrylab.com/)
+
+- https://www.youtube.com/watch?v=IjIx8g_o0gY
+
 #### [Cloud Explorer](https://www.linux-toys.com/?p=945)
 
 - https://www.youtube.com/watch?v=2hhtBtmBSxE
