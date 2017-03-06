@@ -116,7 +116,7 @@ describe('objectPut API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
-                            log, (err, md) => {
+                            {}, log, (err, md) => {
                                 assert(md);
                                 assert
                                 .strictEqual(md['content-md5'], correctMD5);
@@ -150,7 +150,7 @@ describe('objectPut API', () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getObjectMD(bucketName, objectName, log,
+                        metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
                                 assert(md);
                                 assert.strictEqual(md['x-amz-meta-test'],
@@ -189,7 +189,7 @@ describe('objectPut API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         assert.deepStrictEqual(ds, []);
-                        metadata.getObjectMD(bucketName, objectName, log,
+                        metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
                                 assert(md);
                                 assert.strictEqual(md.location, null);

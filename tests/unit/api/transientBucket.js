@@ -168,7 +168,7 @@ describe('transient bucket handling', () => {
     describe('objectPut on a transient bucket', () => {
         const objName = 'objectName';
         after(done => {
-            metadata.deleteObjectMD(bucketName, objName, log, () => {
+            metadata.deleteObjectMD(bucketName, objName, {}, log, () => {
                 done();
             });
         });
@@ -187,7 +187,7 @@ describe('transient bucket handling', () => {
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    metadata.getObjectMD(bucketName, objName, log,
+                    metadata.getObjectMD(bucketName, objName, {}, log,
                         (err, obj) => {
                             assert.ifError(err);
                             assert.strictEqual(obj['content-md5'], etag);
@@ -202,7 +202,7 @@ describe('transient bucket handling', () => {
         const objName = 'objectName';
         after(done => {
             metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` +
-                `${bucketName}`, objName, log, () => {
+                `${bucketName}`, objName, {}, log, () => {
                     metadata.deleteBucket(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`, log, () => {
                             done();

@@ -26,8 +26,9 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should be able to add an object to a bucket ' +
        'and get the object by key', done => {
-        metadata.putObjectMD(bucketName, 'sampleKey', objMD, log, () => {
-            metadata.getObjectMD(bucketName, 'sampleKey', log, (err, value) => {
+        metadata.putObjectMD(bucketName, 'sampleKey', objMD, {}, log, () => {
+            metadata.getObjectMD(bucketName, 'sampleKey', {}, log,
+            (err, value) => {
                 assert.deepStrictEqual(value, objMD);
                 done();
             });
@@ -36,7 +37,7 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should return an error in response ' +
        'to getObjectMD when no such key', done => {
-        metadata.getObjectMD(bucketName, 'notThere', log, (err, value) => {
+        metadata.getObjectMD(bucketName, 'notThere', {}, log, (err, value) => {
             assert.deepStrictEqual(err, errors.NoSuchKey);
             assert.strictEqual(value, undefined);
             done();
@@ -44,9 +45,11 @@ describe('bucket API for getting, putting and deleting ' +
     });
 
     it('should be able to delete an object from a bucket', done => {
-        metadata.putObjectMD(bucketName, 'objectToDelete', '{}', log, () => {
-            metadata.deleteObjectMD(bucketName, 'objectToDelete', log, () => {
-                metadata.getObjectMD(bucketName, 'objectToDelete', log,
+        metadata.putObjectMD(bucketName, 'objectToDelete', '{}', {}, log,
+        () => {
+            metadata.deleteObjectMD(bucketName, 'objectToDelete', {}, log,
+            () => {
+                metadata.getObjectMD(bucketName, 'objectToDelete', {}, log,
                     (err, value) => {
                         assert.deepStrictEqual(err, errors.NoSuchKey);
                         assert.strictEqual(value, undefined);
@@ -111,12 +114,13 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
        'the delimiter even if key contains prefix', done => {
         async.waterfall([
             next =>
-                metadata.putObjectMD(bucketName, 'key1', '{}', log, next),
-            next =>
-                metadata.putObjectMD(bucketName, 'noMatchKey', '{}', log, next),
-            next =>
-                metadata.putObjectMD(bucketName, 'key1/', '{}', log, next),
-            next =>
+                metadata.putObjectMD(bucketName, 'key1', '{}', {}, log, next),
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'noMatchKey', '{}', {}, log,
+                next),
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'key1/', '{}', {}, log, next),
+            (data, next) =>
                 metadata.listObject(bucketName, { prefix: 'key', delimiter,
                     maxKeys: defaultLimit }, log, next),
         ], (err, response) => {
@@ -135,12 +139,15 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
        'given prefix and contain given delimiter', done => {
         async.waterfall([
             next =>
-                metadata.putObjectMD(bucketName, 'key/one', '{}', log, next),
-            next =>
-                metadata.putObjectMD(bucketName, 'key/two', '{}', log, next),
-            next =>
-                metadata.putObjectMD(bucketName, 'key/three', '{}', log, next),
-            next =>
+                metadata.putObjectMD(bucketName, 'key/one', '{}', {}, log,
+                next),
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'key/two', '{}', {}, log,
+                next),
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'key/three', '{}', {}, log,
+                next),
+            (data, next) =>
                 metadata.listObject(bucketName, { prefix: 'ke', delimiter,
                     maxKeys: defaultLimit }, log, next),
         ], (err, response) => {
@@ -152,8 +159,9 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 
     it('should return grouped keys if no prefix ' +
        'given and keys match before delimiter', done => {
-        metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', log, () => {
-            metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', log, () => {
+        metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', {}, log, () => {
+            metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', {}, log,
+            () => {
                 metadata.listObject(bucketName, { delimiter,
                     maxKeys: defaultLimit }, log, (err, response) => {
                         assert(response.CommonPrefixes.indexOf('noPrefix/')
@@ -178,8 +186,8 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
 
     it('should only return keys occurring alphabetically ' +
        'AFTER marker when no delimiter specified', done => {
-        metadata.putObjectMD(bucketName, 'a', '{}', log, () => {
-            metadata.putObjectMD(bucketName, 'b', '{}', log, () => {
+        metadata.putObjectMD(bucketName, 'a', '{}', {}, log, () => {
+            metadata.putObjectMD(bucketName, 'b', '{}', {}, log, () => {
                 metadata.listObject(bucketName,
                     { marker: 'a', maxKeys: defaultLimit },
                     log, (err, response) => {
@@ -217,13 +225,13 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
     it('should return a NextMarker if maxKeys reached', done => {
         async.waterfall([
             next =>
-                metadata.putObjectMD(bucketName, 'next/', '{}', log, next),
-            next =>
-                metadata.putObjectMD(bucketName, 'next/rollUp', '{}', log,
+                metadata.putObjectMD(bucketName, 'next/', '{}', {}, log, next),
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'next/rollUp', '{}', {}, log,
                     next),
-            next =>
-                metadata.putObjectMD(bucketName, 'next1/', '{}', log, next),
-            next =>
+            (data, next) =>
+                metadata.putObjectMD(bucketName, 'next1/', '{}', {}, log, next),
+            (data, next) =>
                 metadata.listObject(bucketName,
                     { prefix: 'next', delimiter, maxKeys: smallLimit },
                     log, next),
@@ -301,7 +309,7 @@ describe('stress test for bucket API', function describe() {
         const startTime = process.hrtime();
 
         async.each(keys, (item, next) => {
-            metadata.putObjectMD(bucketName, item, '{}', log, next);
+            metadata.putObjectMD(bucketName, item, '{}', {}, log, next);
         }, err => {
             if (err) {
                 assert.strictEqual(err, undefined);
