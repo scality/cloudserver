@@ -34,19 +34,13 @@ const initiateRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
 };
-const originalUsEastBehavior = config.usEastBehavior;
 const eastLocation = 'us-east-1';
-const westLocation = config.locationConstraints ? 'scality-us-west-1'
-: 'us-west-1';
+const westLocation = 'scality-us-west-1';
 
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {
-    if (config.locationConstraints) {
-        config.locationConstraints['us-east-1'].legacyAwsBehavior =
+    config.locationConstraints['us-east-1'].legacyAwsBehavior =
         usEastSetting;
-    } else {
-        config.usEastBehavior = usEastSetting;
-    }
     async.waterfall([
         next => bucketPut(authInfo, bucketPutRequest, locationConstraint, log,
             next),
@@ -100,12 +94,8 @@ describe('Multipart Delete API', () => {
     });
     afterEach(() => {
         // set back to original
-        if (config.locationConstraints) {
-            config.locationConstraints['us-east-1'].legacyAwsBehavior =
+        config.locationConstraints['us-east-1'].legacyAwsBehavior =
             true;
-        } else {
-            config.usEastBehavior = originalUsEastBehavior;
-        }
         cleanup();
     });
 
@@ -126,7 +116,7 @@ describe('Multipart Delete API', () => {
     });
 
     it('bucket created in us-east-1: should return 404 if uploadId does not ' +
-    'exist and usEastBehavior set to true',
+    'exist and legacyAwsBehavior set to true',
     done => {
         _createAndAbortMpu(true, true, eastLocation, err => {
             assert.strictEqual(err, errors.NoSuchUpload,
@@ -136,7 +126,7 @@ describe('Multipart Delete API', () => {
     });
 
     it('bucket created in us-east-1: should return no error ' +
-    'if uploadId does not exist and usEastBehavior set to false', done => {
+    'if uploadId does not exist and legacyAwsBehavior set to false', done => {
         _createAndAbortMpu(false, true, eastLocation, err => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done();

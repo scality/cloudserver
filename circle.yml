@@ -42,6 +42,7 @@ test:
 
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
+    - npm run multiple_backend_test
     # Run S3 with mem Backend ; run ft_tests
     - S3BACKEND=mem npm start
             > $CIRCLE_ARTIFACTS/server_mem_java.txt
@@ -53,6 +54,10 @@ test:
         && cd tests/functional/fog && rspec tests.rb
     - S3BACKEND=mem MPU_TESTING=yes npm start
             > $CIRCLE_ARTIFACTS/server_mem_awssdk.txt
+        & bash wait_for_local_port.bash 8000 40
+        && npm run ft_awssdk
+    - S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start
+            > $CIRCLE_ARTIFACTS/server_mem_multiple_awsskd.txt
         & bash wait_for_local_port.bash 8000 40
         && npm run ft_awssdk
     - S3BACKEND=mem npm start

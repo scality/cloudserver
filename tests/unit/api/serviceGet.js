@@ -16,7 +16,6 @@ const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
 const locationConstraint = 'us-east-1';
 
-
 describe('serviceGet API', () => {
     beforeEach(() => {
         cleanup();

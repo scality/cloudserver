@@ -28,7 +28,7 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
-const describeSkipIfOldConfig = conf.regions ? describe.skip : describe;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function safeJSONParse(s) {
     let res;
@@ -798,7 +798,7 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
     });
 });
 
-describeSkipIfOldConfig('If no location is sent with the request', () => {
+describeSkipIfE2E('If no location is sent with the request', () => {
     beforeEach(done => {
         exec(['mb', `s3://${bucket}`], done);
     });

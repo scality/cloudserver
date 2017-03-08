@@ -5,8 +5,8 @@
         "localhost": "file",
         "127.0.0.1": "file",
         "s3.docker.test": "scality-us-west-1",
-        "127.0.0.2": "aws-us-east-1",
-        "s3.amazonaws.com": "aws-us-east-1"
+        "127.0.0.2": "scality-us-west-1",
+        "s3.amazonaws.com": "scality-us-west-1"
     },
     "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
                         "s3-website.us-east-2.amazonaws.com",

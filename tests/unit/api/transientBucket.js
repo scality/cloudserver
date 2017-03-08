@@ -65,7 +65,6 @@ const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
 const locationConstraint = 'us-east-1';
 
-
 describe('transient bucket handling', () => {
     beforeEach(done => {
         cleanup();
@@ -378,39 +377,34 @@ describe('transient bucket handling', () => {
     });
 
     describe('multipartDelete request on a transient bucket', () => {
-        const originalUsEastBehavior = config.usEastBehavior;
         const deleteRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         deleteRequest.objectKey = 'objectName';
         deleteRequest.query = { uploadId };
+        const originalLegacyAWSBehavior =
+            config.locationConstraints[locationConstraint].legacyAwsBehavior;
 
-        afterEach(done => {
-            config.usEastBehavior = originalUsEastBehavior;
+        after(done => {
+            config.locationConstraints[locationConstraint].legacyAwsBehavior =
+                originalLegacyAWSBehavior;
             done();
         });
 
-        it('should return NoSuchUpload error if usEastBehavior is enabled',
+        it('should return NoSuchUpload error if legacyAwsBehavior is enabled',
         done => {
-            if (config.locationConstraints) {
-                config.locationConstraints[locationConstraint].
+            config.locationConstraints[locationConstraint].
                 legacyAwsBehavior = true;
-            } else {
-                config.usEastBehavior = true;
-            }
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();
             });
         });
 
-        it('should return no error if usEastBehavior is not enabled', done => {
-            if (config.locationConstraints) {
-                config.locationConstraints[locationConstraint].
+        it('should return no error if legacyAwsBehavior is not enabled',
+        done => {
+            config.locationConstraints[locationConstraint].
                 legacyAwsBehavior = false;
-            } else {
-                config.usEastBehavior = false;
-            }
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.strictEqual(err, null);
                 return done();

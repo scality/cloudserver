@@ -27,9 +27,7 @@ const testGetLocationRequest = {
     query: { location: '' },
 };
 
-// test for old and new config
-const locationConstraints = config.locationConstraints ||
-{ foo: 'foo', toto: 'toto' };
+const locationConstraints = config.locationConstraints;
 
 describe('getBucketLocation API', () => {
     Object.keys(locationConstraints).forEach(location => {

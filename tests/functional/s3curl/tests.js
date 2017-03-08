@@ -188,8 +188,8 @@ describe('s3curl put delete buckets', () => {
                 });
         });
 
-        // note that if the config is changed to usEastBehavior, this call
-        // will return a 200 in conformance with AWS behavior
+        // note that if the locationContraint[location].legacyAWSBehvior is set
+        // to true, this call will return a 200 in conformance with AWS behavior
         it('should not be able to put a bucket with a name ' +
             'already being used', done => {
             provideRawOutput(
