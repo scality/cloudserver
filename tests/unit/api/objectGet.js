@@ -11,7 +11,6 @@ import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import objectPut from '../../../lib/api/objectPut';
 import objectGet from '../../../lib/api/objectGet';
 import objectPutPart from '../../../lib/api/objectPutPart';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -20,8 +19,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 
 describe('objectGet API', () => {
     let testPutObjectRequest;

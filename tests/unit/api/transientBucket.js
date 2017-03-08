@@ -63,8 +63,7 @@ const userBucketOwner = 'admin';
 const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-    'us-east-1';
+const locationConstraint = 'us-east-1';
 
 
 describe('transient bucket handling', () => {

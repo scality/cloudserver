@@ -8,13 +8,11 @@ import { cleanup,
     makeAuthInfo,
     CorsConfigTester } from '../helpers';
 import metadata from '../../../lib/metadata/wrapper';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 
 const corsUtil = new CorsConfigTester();
 

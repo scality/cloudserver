@@ -9,7 +9,6 @@ import objectPut from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
 import DummyRequest from '../DummyRequest';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -18,8 +17,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const objectKey = 'objectName';
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {

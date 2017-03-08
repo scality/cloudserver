@@ -35,15 +35,14 @@ const initiateRequest = {
     url: `/${objectKey}?uploads`,
 };
 const originalUsEastBehavior = config.usEastBehavior;
-const eastLocation = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const eastLocation = 'us-east-1';
 const westLocation = config.locationConstraints ? 'scality-us-west-1'
 : 'us-west-1';
 
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {
     if (config.locationConstraints) {
-        config.locationConstraints['aws-us-east-1'].legacyAwsBehavior =
+        config.locationConstraints['us-east-1'].legacyAwsBehavior =
         usEastSetting;
     } else {
         config.usEastBehavior = usEastSetting;
@@ -102,7 +101,7 @@ describe('Multipart Delete API', () => {
     afterEach(() => {
         // set back to original
         if (config.locationConstraints) {
-            config.locationConstraints['aws-us-east-1'].legacyAwsBehavior =
+            config.locationConstraints['us-east-1'].legacyAwsBehavior =
             true;
         } else {
             config.usEastBehavior = originalUsEastBehavior;

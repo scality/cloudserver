@@ -10,8 +10,8 @@ const bucketName = 'bucketlocation';
 
 const describeSkipAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
-const describeSkipIfOldConfig = configOfficial.locationConstraints ? describe :
-describe.skip;
+const describeSkipIfOldConfig = configOfficial.regions ? describe.skip :
+describe;
 // test for old and new config
 const locationConstraints = configOfficial.locationConstraints ||
 { foo: 'foo', toto: 'toto' };
