@@ -29,6 +29,17 @@
         "host": "localhost",
         "port": 8500
     },
+    "utapi": {
+        "workers": 2,
+        "redis": {
+            "host": "localhost",
+            "port": 6379
+        },
+        "log": {
+            "logLevel": "trace",
+            "dumpLevel": "error"
+        }
+    },
     "clusters": 10,
     "log": {
         "logLevel": "info",
