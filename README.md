@@ -186,6 +186,10 @@ const s3 = new aws.S3({
 
 - https://www.youtube.com/watch?v=2hhtBtmBSxE
 
+#### [CloudBerry Lab FREE](http://www.cloudberrylab.com/)
+
+- https://youtu.be/IjIx8g_o0gY
+
 ### Command Line Tools
 
 #### [s3curl](https://github.com/rtdp/s3curl)
