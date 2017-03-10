@@ -3,12 +3,6 @@
 # set -e stops the execution of a script if a command or pipeline has an error
 set -e
 
-if [[ "$ACCESS_KEY" && "$SECRET_KEY" ]]; then
-    sed -i "s/accessKeyDocker/$ACCESS_KEY/" ./conf/authdata.json
-    sed -i "s/verySecretKeyDocker/$SECRET_KEY/" ./conf/authdata.json
-    echo "Access key and secret key have been modified successfully"
-fi
-
 if [[ "$HOST_NAME" ]]; then
     sed -i "s/s3.docker.test/$HOST_NAME/" ./config.json
     echo "Host name has been modified to $HOST_NAME"

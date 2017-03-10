@@ -8,7 +8,6 @@ import { ds } from '../../../lib/data/in_memory/backend';
 import DummyRequest from '../DummyRequest';
 import bucketPut from '../../../lib/api/bucketPut';
 import objectPut from '../../../lib/api/objectPut';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -19,8 +18,7 @@ const postBody = Buffer.from('I am a body', 'utf8');
 const contentLength = 2 * postBody.length;
 const objectKey1 = 'objectName1';
 const objectKey2 = 'objectName2';
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 const testBucketPutRequest = new DummyRequest({
     bucketName,
     namespace,

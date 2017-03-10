@@ -28,8 +28,7 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
-const describeSkipIfOldConfig = conf.locationConstraints ? describe :
-describe.skip;
+const describeSkipIfOldConfig = conf.regions ? describe.skip : describe;
 
 function safeJSONParse(s) {
     let res;

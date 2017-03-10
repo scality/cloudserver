@@ -8,7 +8,6 @@ import { ds } from '../../../lib/data/in_memory/backend';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
 import DummyRequest from '../DummyRequest';
-import config from '../../../lib/Config';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -23,8 +22,7 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
-const locationConstraint = config.locationConstraints ? 'aws-us-east-1' :
-'us-east-1';
+const locationConstraint = 'us-east-1';
 
 const objectName = 'objectName';
 
@@ -116,7 +114,7 @@ describe('objectPut API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
-                            log, (err, md) => {
+                            {}, log, (err, md) => {
                                 assert(md);
                                 assert
                                 .strictEqual(md['content-md5'], correctMD5);
@@ -150,7 +148,7 @@ describe('objectPut API', () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
-                        metadata.getObjectMD(bucketName, objectName, log,
+                        metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
                                 assert(md);
                                 assert.strictEqual(md['x-amz-meta-test'],
@@ -189,7 +187,7 @@ describe('objectPut API', () => {
                     (err, result) => {
                         assert.strictEqual(result, correctMD5);
                         assert.deepStrictEqual(ds, []);
-                        metadata.getObjectMD(bucketName, objectName, log,
+                        metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
                                 assert(md);
                                 assert.strictEqual(md.location, null);

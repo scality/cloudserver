@@ -71,6 +71,23 @@ This starts an S3 server on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 
+## Setting your own access key and secret key pairs
+
+You can set credentials for many accounts by editing `conf/authdata.json` but if
+you want to specify one set of your own credentials, you can use
+`SCALITY_ACCESS_KEY_ID` and `SCALITY_SECRET_ACCESS_KEY` environment variables.
+
+### SCALITY_ACCESS_KEY_ID and SCALITY_SECRET_ACCESS_KEY
+
+These variables specify authentication credentials for an account
+named "CustomAccount".
+
+Note: Anything in the `authdata.json` file will be ignored.
+
+```shell
+SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey npm start
+```
+
 ## Run it for continuous integration testing or in production with Docker
 
 [DOCKER.md](DOCKER.md)

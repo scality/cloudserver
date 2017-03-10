@@ -11,9 +11,9 @@ const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
 const westLocation = config.locationConstraints ? 'scality-us-west-1'
 : 'us-west-1';
-const eastLocation = config.locationConstraints ? 'aws-us-east-1' : 'us-east-1';
-const describeSkipIfOldConfig = config.locationConstraints ? describe :
-describe.skip;
+const eastLocation = 'us-east-1';
+const describeSkipIfOldConfig = config.regions ? describe.skip :
+describe;
 
 // Why are we skipping error 404 if old config?
 // AWS returns 404 - NoSuchUpload in us-east-1. This behavior

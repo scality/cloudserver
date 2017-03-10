@@ -25,10 +25,10 @@ you and your users can direct s3 server requests to example.com.
 docker run -d --name s3server -p 8000:8000 -e HOST_NAME=new.host.com scality/s3server
 ```
 
-#### ACCESS_KEY and SECRET_KEY
+#### SCALITY_ACCESS_KEY_ID and SCALITY_SECRET_ACCESS_KEY
 
 These variables specify authentication credentials for an account
-named "Docker".
+named "CustomAccount".
 
 You can set credentials for many accounts by editing `conf/authdata.json`
 (see below for further info),
@@ -36,9 +36,13 @@ but if you just want to specify one set of your own,
 you can use these environment variables.
 
 ```shell
-docker run -d --name s3server -p 8000:8000 -e ACCESS_KEY=newAccessKey -e
-SECRET_KEY=newSecretKey scality/s3server
+docker run -d --name s3server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=newAccessKey
+-e SCALITY_SECRET_ACCESS_KEY=newSecretKey scality/s3server
 ```
+
+Note: Anything in the `authdata.json` file will be ignored.
+Note: The old `ACCESS_KEY` and `SECRET_KEY` environment variables are now
+deprecated
 
 #### LOG_LEVEL
 
