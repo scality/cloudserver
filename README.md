@@ -1,4 +1,4 @@
-# S3 Server
+# Scality S3 Server
 
 ![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
 
@@ -17,7 +17,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Dependencies
 
-Building and running the S3 Server requires node.js 6.9.5 and npm v3
+Building and running the Scality S3 Server requires node.js 6.9.5 and npm v3
 . Up-to-date versions can be found at
 [Nodesource](https://github.com/nodesource/distributions).
 
