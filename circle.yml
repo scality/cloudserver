@@ -24,7 +24,7 @@ dependencies:
     - sudo pip install flake8 yamllint
     - sudo pip install s3cmd==1.6.1
     # fog and ruby testing dependencies
-    - gem install fog
+    - gem install fog-aws
     - gem install mime-types
     - gem install rspec
     - gem install json
