@@ -11,7 +11,7 @@ import constants from '../../../constants';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import metadata from '../metadataswitch';
 import * as metadataMem from '../../../lib/metadata/in_memory/metadata';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';

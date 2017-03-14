@@ -7,7 +7,7 @@ import { metadata } from '../../../lib/metadata/in_memory/metadata';
 import { ds } from '../../../lib/data/in_memory/backend';
 import DummyRequest from '../DummyRequest';
 import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

@@ -5,7 +5,7 @@ import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import constants from '../../../constants';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
 import DummyRequest from '../DummyRequest';
