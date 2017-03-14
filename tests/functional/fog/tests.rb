@@ -1,4 +1,4 @@
-require "fog"
+require "fog/aws"
 require "digest/md5"
 require "json"
 require "securerandom"
