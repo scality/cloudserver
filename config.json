@@ -36,5 +36,9 @@
     },
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
+    },
+    "metadataDaemon": {
+        "host": "localhost",
+        "port": 9990
     }
 }
