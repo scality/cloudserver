@@ -41,7 +41,10 @@ npm install
 npm start
 ```
 
-This starts an S3 server on port 8000.
+This starts an S3 server on port 8000. Two additional ports 9990 and
+9991 are also open locally for internal transfer of metadata and data,
+respectively.
+
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 

@@ -1,7 +1,7 @@
 import assert from 'assert';
 import parseLC from '../../../lib/data/locationConstraintParser';
 import inMemory from '../../../lib/data/in_memory/backend';
-import file from '../../../lib/data/file/backend';
+import DataFileInterface from '../../../lib/data/file/backend';
 
 
 const clients = parseLC();
@@ -14,7 +14,6 @@ describe('locationConstraintParser', () => {
     });
     it('should return object containing file object', () => {
         assert.notEqual(Object.keys(clients).indexOf('file'), -1);
-        assert.strictEqual(typeof clients.file, 'object');
-        assert.deepEqual(clients.file, file);
+        assert(clients.file instanceof DataFileInterface);
     });
 });
