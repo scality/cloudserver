@@ -31,7 +31,7 @@ import objectDelete from '../../../lib/api/objectDelete';
 import objectGet from '../../../lib/api/objectGet';
 import objectGetACL from '../../../lib/api/objectGetACL';
 import objectHead from '../../../lib/api/objectHead';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
 import objectPutPart from '../../../lib/api/objectPutPart';
 import { DummyRequestLogger, makeAuthInfo } from '../helpers';
