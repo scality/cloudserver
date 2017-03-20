@@ -29,11 +29,6 @@ describe('bucketGet API', () => {
     const objectName1 = `${prefix}${delimiter}objectName1`;
     const objectName2 = `${prefix}${delimiter}objectName2`;
     const objectName3 = 'notURIvalid$$';
-    const post = '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        '<LocationConstraint>us-east-1</LocationConstraint>' +
-        '</CreateBucketConfiguration>';
 
     beforeEach(() => {
         cleanup();
@@ -42,7 +37,7 @@ describe('bucketGet API', () => {
             headers: {},
             url: `/${bucketName}`,
             namespace,
-        }, post);
+        }, Buffer.alloc(0));
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
             headers: {},
