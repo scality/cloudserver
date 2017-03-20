@@ -80,9 +80,9 @@ describe('bucketGet API', () => {
             (corsHeaders, next) =>
                 objectPut(authInfo, testPutObjectRequest1, undefined,
                 log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) =>
+            (corsHeaders, md5, versionId, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -109,10 +109,10 @@ describe('bucketGet API', () => {
                 locationConstraint, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
+            (corsHeaders, md5, versionId, next) =>
+                bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -138,10 +138,10 @@ describe('bucketGet API', () => {
                 locationConstraint, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
+            (corsHeaders, md5, versionId, next) =>
+                bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -180,10 +180,10 @@ describe('bucketGet API', () => {
                 locationConstraint, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
+            (corsHeaders, md5, versionId, next) =>
+                bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -207,12 +207,12 @@ describe('bucketGet API', () => {
                 locationConstraint, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (corsHeaders, md5, versionId, next) => objectPut(authInfo,
                 testPutObjectRequest3, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
+            (corsHeaders, md5, versionId, next) =>
+                bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
@@ -239,8 +239,8 @@ describe('bucketGet API', () => {
                 locationConstraint, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
-                log, next),
+            (corsHeaders, md5, versionId, next) =>
+                bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
