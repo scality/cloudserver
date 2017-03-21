@@ -16,12 +16,17 @@ const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
 
 function put(bucketLoc, objLoc, bucketHost, cb) {
-    const locationConstraint = bucketLoc;
+    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
+        '</CreateBucketConfiguration>' : '';
     const bucketPutReq = new DummyRequest({
         bucketName,
         namespace,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        post,
     });
     if (bucketHost) {
         bucketPutReq.parsedHost = bucketHost;
@@ -40,7 +45,7 @@ function put(bucketLoc, objLoc, bucketHost, cb) {
         };
     }
     const testPutObjReq = new DummyRequest(objPutParams, body);
-    bucketPut(authInfo, bucketPutReq, locationConstraint, log, () => {
+    bucketPut(authInfo, bucketPutReq, log, () => {
         objectPut(authInfo, testPutObjReq, undefined, log, (err, result) => {
             assert.strictEqual(err, null, `Error putting object: ${err}`);
             assert.strictEqual(result, correctMD5);
@@ -89,4 +94,3 @@ describe('objectPutAPI with multiple backends', () => {
         });
     });
 });
-

@@ -17,11 +17,10 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const objectKey = 'objectName';
-const locationConstraint = 'us-east-1';
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
-    bucketPut(bucketOwner, bucketPutReq, locationConstraint, log, () => {
+    bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(bucketOwner, objPutReq, undefined, log, err => {
@@ -75,21 +74,20 @@ describe('objectDelete API', () => {
     });
 
     it('should delete an object', done => {
-        bucketPut(authInfo, testBucketPutRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest,
-                    undefined, log, () => {
-                        objectDelete(authInfo, testDeleteRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            objectGet(authInfo, testGetObjectRequest,
-                                log, err => {
-                                    assert.deepStrictEqual(err,
-                                        errors.NoSuchKey);
-                                    done();
-                                });
-                        });
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest,
+                undefined, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        objectGet(authInfo, testGetObjectRequest,
+                            log, err => {
+                                assert.deepStrictEqual(err,
+                                    errors.NoSuchKey);
+                                done();
+                            });
                     });
-            });
+                });
+        });
     });
 
     it('should delete a 0 bytes object', done => {
@@ -100,23 +98,22 @@ describe('objectDelete API', () => {
             headers: {},
             url: `/${bucketName}/${objectKey}`,
         }, '');
-        bucketPut(authInfo, testBucketPutRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest,
-                    undefined, log, () => {
-                        objectDelete(authInfo, testDeleteRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            objectGet(authInfo, testGetObjectRequest,
-                                log, err => {
-                                    const expected =
-                                    Object.assign({}, errors.NoSuchKey);
-                                    const received = Object.assign({}, err);
-                                    assert.deepStrictEqual(received, expected);
-                                    done();
-                                });
-                        });
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest,
+                undefined, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        objectGet(authInfo, testGetObjectRequest,
+                            log, err => {
+                                const expected =
+                                Object.assign({}, errors.NoSuchKey);
+                                const received = Object.assign({}, err);
+                                assert.deepStrictEqual(received, expected);
+                                done();
+                            });
                     });
-            });
+                });
+        });
     });
 
     it('should prevent anonymous user deleteObject API access', done => {

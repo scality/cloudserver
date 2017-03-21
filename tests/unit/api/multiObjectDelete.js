@@ -18,7 +18,6 @@ const postBody = Buffer.from('I am a body', 'utf8');
 const contentLength = 2 * postBody.length;
 const objectKey1 = 'objectName1';
 const objectKey2 = 'objectName2';
-const locationConstraint = 'us-east-1';
 const testBucketPutRequest = new DummyRequest({
     bucketName,
     namespace,
@@ -46,22 +45,21 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             headers: {},
             url: `/${bucketName}/${objectKey2}`,
         }, postBody);
-        bucketPut(authInfo, testBucketPutRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest1,
-                    undefined, log, () => {
-                        objectPut(authInfo, testPutObjectRequest2,
-                            undefined, log, () => {
-                                assert.strictEqual(metadata.keyMaps
-                                    .get(bucketName)
-                                    .has(objectKey1), true);
-                                assert.strictEqual(metadata.keyMaps
-                                    .get(bucketName)
-                                    .has(objectKey2), true);
-                                done();
-                            });
-                    });
-            });
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest1,
+                undefined, log, () => {
+                    objectPut(authInfo, testPutObjectRequest2,
+                        undefined, log, () => {
+                            assert.strictEqual(metadata.keyMaps
+                                .get(bucketName)
+                                .has(objectKey1), true);
+                            assert.strictEqual(metadata.keyMaps
+                                .get(bucketName)
+                                .has(objectKey2), true);
+                            done();
+                        });
+                });
+        });
     });
 
     it('should successfully get object metadata and then ' +

@@ -12,7 +12,6 @@ import metadata from '../../../lib/metadata/wrapper';
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-east-1';
 
 const corsUtil = new CorsConfigTester();
 
@@ -29,8 +28,7 @@ const testBucketDeleteCorsRequest =
 describe('deleteBucketCors API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest, locationConstraint, log,
-        () => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
             bucketPutCors(authInfo, testBucketPutCorsRequest, log, done);
         });
     });

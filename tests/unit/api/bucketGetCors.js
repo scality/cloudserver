@@ -12,7 +12,6 @@ from '../helpers';
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketGetCorsTestBucket';
-const locationConstraint = 'us-east-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -60,8 +59,7 @@ function _comparePutGetXml(sampleXml, done) {
 describe('getBucketCors API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done);
+        bucketPut(authInfo, testBucketPutRequest, log, done);
     });
     afterEach(() => cleanup());
 

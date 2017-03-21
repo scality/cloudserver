@@ -13,7 +13,6 @@ import metadata from '../../../lib/metadata/wrapper';
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-east-1';
 const config = new WebsiteConfig('index.html', 'error.html');
 config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
 { KeyPrefixEquals: 'docs/' });
@@ -36,8 +35,7 @@ const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() },
 describe('deleteBucketWebsite API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, () => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
             bucketPutWebsite(authInfo, testBucketPutWebsiteRequest, log, done);
         });
     });

@@ -27,7 +27,6 @@ const testPutBucketRequest = {
 };
 const userMetadataKey = 'x-amz-meta-test';
 const userMetadataValue = 'some metadata';
-const locationConstraint = 'us-east-1';
 
 let testPutObjectRequest;
 
@@ -55,17 +54,16 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo, testGetRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.NotModified);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, result) => {
+                    assert.strictEqual(result, correctMD5);
+                    objectHead(authInfo, testGetRequest, log, err => {
+                        assert.deepStrictEqual(err, errors.NotModified);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return PreconditionFailed if request header ' +
@@ -78,18 +76,17 @@ describe('objectHead API', () => {
             headers: { 'if-unmodified-since': earlierDate },
             url: `/${bucketName}/${objectName}`,
         };
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo, testGetRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                errors.PreconditionFailed);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, result) => {
+                    assert.strictEqual(result, correctMD5);
+                    objectHead(authInfo, testGetRequest, log, err => {
+                        assert.deepStrictEqual(err,
+                            errors.PreconditionFailed);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return PreconditionFailed if request header ' +
@@ -103,18 +100,17 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo, testGetRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                errors.PreconditionFailed);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, result) => {
+                    assert.strictEqual(result, correctMD5);
+                    objectHead(authInfo, testGetRequest, log, err => {
+                        assert.deepStrictEqual(err,
+                            errors.PreconditionFailed);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return NotModified if request header ' +
@@ -128,17 +124,16 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo, testGetRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.NotModified);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, result) => {
+                    assert.strictEqual(result, correctMD5);
+                    objectHead(authInfo, testGetRequest, log, err => {
+                        assert.deepStrictEqual(err, errors.NotModified);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should get the object metadata', done => {
@@ -150,20 +145,19 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
         };
 
-        bucketPut(authInfo, testPutBucketRequest,
-            locationConstraint, log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectHead(authInfo, testGetRequest, log,
-                            (err, success) => {
-                                assert.strictEqual(success[userMetadataKey],
-                        userMetadataValue);
-                                assert
-                                .strictEqual(success.ETag, `"${correctMD5}"`);
-                                done();
-                            });
-                    });
-            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, result) => {
+                    assert.strictEqual(result, correctMD5);
+                    objectHead(authInfo, testGetRequest, log,
+                        (err, success) => {
+                            assert.strictEqual(success[userMetadataKey],
+                    userMetadataValue);
+                            assert
+                            .strictEqual(success.ETag, `"${correctMD5}"`);
+                            done();
+                        });
+                });
+        });
     });
 });

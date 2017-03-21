@@ -21,7 +21,6 @@ const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
-const locationConstraint = 'us-east-1';
 
 describe('objectGetACL API', () => {
     beforeEach(() => {
@@ -58,8 +57,7 @@ describe('objectGetACL API', () => {
             post: postBody,
         }, postBody);
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {
@@ -81,13 +79,12 @@ describe('objectGetACL API', () => {
 
     it('should return an error if try to get an ACL ' +
         'for a nonexistent object', done => {
-        bucketPut(authInfo, testBucketPutRequest,
-            locationConstraint, log, () => {
-                objectGetACL(authInfo, testGetACLRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.NoSuchKey);
-                    done();
-                });
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectGetACL(authInfo, testGetACLRequest, log, err => {
+                assert.deepStrictEqual(err, errors.NoSuchKey);
+                done();
             });
+        });
     });
 
     it('should get a canned public-read ACL', done => {
@@ -99,8 +96,7 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {
@@ -136,8 +132,7 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {
@@ -180,8 +175,7 @@ describe('objectGetACL API', () => {
             url: `/${bucketName}/${objectName}`,
         }, postBody);
         async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {
@@ -222,7 +216,7 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
-                    locationConstraint, log, next),
+                    log, next),
             (corsHeaders, next) => objectPut(
                 authInfo, testPutObjectRequest, undefined, log, next),
             (result, corsHeaders, next) => {
@@ -262,7 +256,7 @@ describe('objectGetACL API', () => {
         async.waterfall([
             next =>
                 bucketPut(otherAccountAuthInfo, testBucketPutRequest,
-                    locationConstraint, log, next),
+                    log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {
@@ -312,7 +306,7 @@ describe('objectGetACL API', () => {
         }, postBody);
         async.waterfall([
             next => bucketPut(authInfo, testBucketPutRequest,
-                locationConstraint, log, next),
+                log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
             (result, corsHeaders, next) => {

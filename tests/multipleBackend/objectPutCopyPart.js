@@ -23,15 +23,19 @@ const sourceObjName = 'supersourceobject';
 const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
-const bucketPutReq = new DummyRequest({
-    bucketName,
-    namespace,
-    headers: { host: `${bucketName}.s3.amazonaws.com` },
-    url: '/',
-});
-
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
-    const locationConstraint = bucketLoc;
+    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
+        '</CreateBucketConfiguration>' : '';
+    const bucketPutReq = new DummyRequest({
+        bucketName,
+        namespace,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/',
+        post,
+    });
     const initiateReq = {
         bucketName,
         namespace,
@@ -61,7 +65,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
 
     async.waterfall([
         next => {
-            bucketPut(authInfo, bucketPutReq, locationConstraint, log, err => {
+            bucketPut(authInfo, bucketPutReq, log, err => {
                 assert.ifError(err, 'Error putting bucket');
                 next(err);
             });

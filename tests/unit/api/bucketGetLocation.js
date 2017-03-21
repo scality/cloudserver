@@ -29,6 +29,15 @@ const testGetLocationRequest = {
 
 const locationConstraints = config.locationConstraints;
 
+function getBucketRequestObject(location) {
+    const post = location ? '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<LocationConstraint>${location}</LocationConstraint>` +
+        '</CreateBucketConfiguration>' : undefined;
+    return Object.assign({ post }, testBucketPutRequest);
+}
+
 describe('getBucketLocation API', () => {
     Object.keys(locationConstraints).forEach(location => {
         if (location === 'us-east-1') {
@@ -36,11 +45,11 @@ describe('getBucketLocation API', () => {
             // see next test.
             return;
         }
+        const bucketPutRequest = getBucketRequestObject(location);
         describe(`with ${location} LocationConstraint`, () => {
             beforeEach(done => {
                 cleanup();
-                bucketPut(authInfo, testBucketPutRequest,
-                location, log, done);
+                bucketPut(authInfo, bucketPutRequest, log, done);
             });
             afterEach(() => cleanup());
             it(`should return ${location} LocationConstraint xml`, done => {
@@ -58,10 +67,11 @@ describe('getBucketLocation API', () => {
         });
     });
     [undefined, 'us-east-1'].forEach(location => {
+        const bucketPutRequest = getBucketRequestObject(location);
         describe(`with ${location} LocationConstraint`, () => {
             beforeEach(done => {
                 cleanup();
-                bucketPut(authInfo, testBucketPutRequest, location, log, done);
+                bucketPut(authInfo, bucketPutRequest, log, done);
             });
             afterEach(() => cleanup());
             it('should return empty string LocationConstraint xml', done => {
