@@ -122,7 +122,7 @@ scality/s3server
 
 To specify a host name (e.g. s3.domain.name),
 you can provide your own
-[config.json](https://github.com/scality/S3/blob/master/config.json)
+[config.json](https://github.com/scality/S3/blob/master/conf/config.json)
 using [Docker Volume](https://docs.docker.com/engine/tutorials/dockervolumes/).
 
 First add a new key-value pair in the restEndpoints section of your config.json.
@@ -131,7 +131,7 @@ and the value is the "default" location_constraint for this endpoint.
 
 For example, `s3.example.com` is mapping to `scality-us-west-1` which is one of
 the `location_constraints` listed in your locationConfig.json file
-[here](https://github.com/scality/S3/blob/master/locationConfig.json).
+[here](https://github.com/scality/S3/blob/master/conf/locationConfig.json).
 
 More information about location configuration
 [here](https://github.com/scality/S3/blob/master/README.md#location-configuration)
@@ -149,7 +149,7 @@ Then, run your Scality S3 Server using
 [Docker Volume](https://docs.docker.com/engine/tutorials/dockervolumes/):
 
 ```shell
-docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d scality/s3server
+docker run -v $(pwd)/config.json:/usr/src/app/conf/config.json -p 8000:8000 -d scality/s3server
 ```
 
 Your local `config.json` file will override the default one through a docker

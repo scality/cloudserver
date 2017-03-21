@@ -148,7 +148,7 @@ in the environment the tests are running in.
 
 * Install [s3cmd](http://s3tools.org/download)
 * Install [redis](https://redis.io/download) and start Redis.
-* Add localCache section to your `config.json`:
+* Add localCache section to your `conf/config.json`:
 
 ```
 "localCache": {
@@ -180,11 +180,11 @@ There are three configuration files for your Scality S3 Server:
 
 1. `conf/authdata.json`, described above for authentication
 
-2. `locationConfig.json`, to set up configuration options for
+2. `conf/locationConfig.json`, to set up configuration options for
 
     where data will be saved
 
-3. `config.json`, for general configuration options
+3. `conf/config.json`, for general configuration options
 
 ### Location Configuration
 
