@@ -114,7 +114,7 @@ errorDescription) {
         };
         const copyPartReq = new DummyRequest(copyPartParams);
         return objectPutCopyPart(authInfo, copyPartReq,
-            bucketName, sourceObjName, log, err => {
+            bucketName, sourceObjName, undefined, log, err => {
                 assert.strictEqual(err, null);
                 cb();
             });

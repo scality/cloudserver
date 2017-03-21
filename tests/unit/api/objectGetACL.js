@@ -60,8 +60,8 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -99,8 +99,8 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -135,8 +135,8 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -178,8 +178,8 @@ describe('objectGetACL API', () => {
             next => bucketPut(authInfo, testBucketPutRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -219,8 +219,8 @@ describe('objectGetACL API', () => {
                     log, next),
             (corsHeaders, next) => objectPut(
                 authInfo, testPutObjectRequest, undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -259,8 +259,8 @@ describe('objectGetACL API', () => {
                     log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
@@ -309,8 +309,8 @@ describe('objectGetACL API', () => {
                 log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest,
                 undefined, log, next),
-            (result, corsHeaders, next) => {
-                assert.strictEqual(result, correctMD5);
+            (resHeaders, next) => {
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
