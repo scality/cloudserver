@@ -45,7 +45,7 @@
     "ioctl": "2.0.0"
   },
   "devDependencies": {
-    "aws-sdk": "^2.2.11",
+    "aws-sdk": "2.28.0",
     "babel-cli": "^6.2.0",
     "babel-eslint": "^6.0.0",
     "bluebird": "^3.3.1",
