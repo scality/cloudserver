@@ -1,7 +1,6 @@
 import assert from 'assert';
 
 import utils from '../../lib/utils';
-import config from '../../lib/Config';
 
 describe('utils.getBucketNameFromHost', () => {
     it('should extract valid buckets for one endpoint', () => {
@@ -72,26 +71,14 @@ describe('utils.getBucketNameFromHost', () => {
     });
 });
 
-const itSkipIfLegacyConfig = config.regions ? it.skip : it;
-const itSkipIfNewConfig = config.locationConstraints ? it.skip : it;
 describe('utils.getAllEndpoints', () => {
-    itSkipIfLegacyConfig('should return endpoints from config', () => {
+    it('should return endpoints from config', () => {
         const allEndpoints = utils.getAllEndpoints();
 
         assert(allEndpoints.indexOf('127.0.0.1') >= 0);
         assert(allEndpoints.indexOf('s3.docker.test') >= 0);
         assert(allEndpoints.indexOf('127.0.0.2') >= 0);
         assert(allEndpoints.indexOf('s3.amazonaws.com') >= 0);
-    });
-
-    itSkipIfNewConfig('should return endpoints from legacy config', () => {
-        const allEndpoints = utils.getAllEndpoints();
-
-        assert(allEndpoints.indexOf('s3-us-west-2.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('s3.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('s3-external-1.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('s3.us-east-1.amazonaws.com') >= 0);
-        assert(allEndpoints.indexOf('localhost') >= 0);
     });
 });
 

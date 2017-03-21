@@ -61,6 +61,35 @@ export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
 npm start
 ```
 
+## Run it with multiple data backends
+
+```shell
+export S3DATA='multiple'
+npm start
+```
+
+This starts an S3 server on port 8000.
+The default access key is accessKey1 with
+a secret key of verySecretKey1.
+
+With multiple backends, you have the ability to
+choose where each object will be saved by setting
+the following header with a locationConstraint on
+a PUT request:
+
+```shell
+'x-amz-meta-scal-location-constraint':'myLocationConstraint'
+```
+
+If no header is sent with a PUT object request, the
+location constraint of the bucket will determine
+where the data is saved. If the bucket has no location
+constraint, the endpoint of the PUT request will be
+used to determine location.
+
+See the Configuration section below to learn how to set
+location constraints.
+
 ## Run it with an in-memory backend
 
 ```shell
@@ -98,6 +127,12 @@ You can run the unit tests with the following command:
 
 ```shell
 npm test
+```
+
+You can run the multiple backend unit tests with:
+
+```shell
+npm run multiple_backend_test
 ```
 
 You can run the linter with:
@@ -141,16 +176,58 @@ npm run ft_test
 
 ## Configuration
 
-If you want to specify an endpoint (other than localhost),
-you need to add it to your config.json:
+There are three configuration files for your Scality S3 Server:
+
+1. `conf/authdata.json`, described above for authentication
+
+2. `locationConfig.json`, to set up configuration options for
+
+    where data will be saved
+
+3. `config.json`, for general configuration options
+
+### Location Configuration
+
+You must specify at least one locationConstraint in your
+locationConfig.json (or leave as pre-configured).
+
+For instance, the following locationConstraint will save data
+sent to `myLocationConstraint` to the file backend:
 
 ```json
-"regions": {
-
-     "localregion": ["localhost"],
-     "specifiedregion": ["myhostname.com"]
+"myLocationConstraint": {
+    "type": "file",
+    "legacyAwsBehavior": false,
+    "details": {}
 },
 ```
+
+Each locationConstraint must include the `type`, `legacyAwsBehavior`,
+and `details` keys. `type` indicates which backend will be used
+for that region. Currently, mem, file, and scality are the
+supported backends. `legacyAwsBehavior` indicates whether the
+region will have the same behavior as the AWS S3 'us-east-1'
+region. If the locationConstraint type is scality, `details` should
+contain connector information for sproxyd. If the
+locationConstraint type is mem or file, `details` should be empty.
+
+Once you have your locationConstraints in your locationConfig.json,
+you can specify a default locationConstraint for each of your
+endpoints.
+
+For instance, the following sets the `localhost` endpoint to the
+`myLocationConstraint` data backend defined above:
+
+```json
+"restEndpoints": {
+     "localhost": "myLocationConstraint"
+},
+```
+
+If you would like to use an endpoint other than localhost for your
+Scality S3 Server, that endpoint MUST be listed in your `restEndpoints`.
+
+## Endpoints
 
 Note that our S3server supports both:
 

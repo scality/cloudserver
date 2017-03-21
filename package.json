@@ -75,7 +75,8 @@
     "start": "node init.js && node index.js",
     "start_utapi": "node utapiServer.js",
     "utapi_replay": "node utapiReplay.js",
-    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit && S3_CONFIG_FILE='./tests/unit/testConfigs/legacyTestConfig.json' S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
+    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
+    "multiple_backend_test": "node init.js && S3BACKEND=mem S3DATA=multiple mocha --compilers js:babel-core/register --recursive tests/multipleBackend",
     "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --reporter mocha-junit-reporter --recursive tests/unit"
   }
 }

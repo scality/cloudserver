@@ -456,31 +456,17 @@ describe('deleted flag bucket handling', () => {
     });
 
     describe('multipartDelete request on a bucket with deleted flag', () => {
-        const originalUsEastBehavior = config.usEastBehavior;
-
-        afterEach(done => {
-            config.usEastBehavior = originalUsEastBehavior;
-            done();
-        });
-
-        it('should return NoSuchUpload error if usEastBehavior is enabled',
+        it('should return NoSuchUpload error if legacyAWSBehavior is enabled',
         done => {
-            if (config.locationConstraints) {
-                config.locationConstraints[locationConstraint].
+            config.locationConstraints[locationConstraint].
                 legacyAwsBehavior = true;
-            } else {
-                config.usEastBehavior = true;
-            }
             checkForNoSuchUploadError(multipartDelete, null, done);
         });
 
-        it('should return no error if usEastBehavior is not enabled', done => {
-            if (config.locationConstraints) {
-                config.locationConstraints[locationConstraint].
+        it('should return no error if legacyAWSBehavior is not enabled',
+        done => {
+            config.locationConstraints[locationConstraint].
                 legacyAwsBehavior = false;
-            } else {
-                config.usEastBehavior = false;
-            }
             const mpuRequest = createAlteredRequest({}, 'headers',
                 baseTestRequest, baseTestRequest.headers);
             const uploadId = '5555';

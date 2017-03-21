@@ -9,12 +9,9 @@ import configOfficial from '../../../../../lib/Config';
 const bucketName = 'bucketlocation';
 
 const describeSkipAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
+const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
 
-const describeSkipIfOldConfig = configOfficial.regions ? describe.skip :
-describe;
-// test for old and new config
-const locationConstraints = configOfficial.locationConstraints ||
-{ foo: 'foo', toto: 'toto' };
+const locationConstraints = configOfficial.locationConstraints;
 
 describe('PUT Bucket - AWS.S3.createBucket', () => {
     describe('When user is unauthorized', () => {
@@ -47,19 +44,21 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
         });
 
-        // Why describeSkipIfOldConfig?
-        // AWS returns 404 - NoSuchUpload in us-east-1. This behavior
-        // can be toggled to be compatible with AWS by enabling
-        // usEastBehavior in the config.
-        describeSkipIfOldConfig('create bucket twice', () => {
+        describe('create bucket twice', () => {
             beforeEach(done => bucketUtil.s3.createBucket({ Bucket:
-              bucketName }, done));
+                bucketName,
+                CreateBucketConfiguration: {
+                    LocationConstraint: 'us-east-1',
+                },
+            }, done));
             afterEach(done => bucketUtil.s3.deleteBucket({ Bucket: bucketName },
               done));
             // AWS JS SDK sends a request with locationConstraint us-east-1 if
             // no locationConstraint provided.
-            it('should return a 200 if no locationConstraints provided.',
-            done => {
+            // Skip this test on E2E because it is making the asumption that the
+            // default region is us-east-1 which is not the case for the E2E
+            itSkipIfE2E('should return a 200 if no locationConstraints ' +
+            'provided.', done => {
                 bucketUtil.s3.createBucket({ Bucket: bucketName }, done);
             });
             it('should return a 200 if us-east behavior', done => {
@@ -203,7 +202,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             });
         });
 
-        describeSkipIfOldConfig('bucket creation with invalid location', () => {
+        describe('bucket creation with invalid location', () => {
             it('should return errors InvalidLocationConstraint', done => {
                 bucketUtil.s3.createBucketAsync(
                     {

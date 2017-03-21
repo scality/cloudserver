@@ -77,14 +77,19 @@ describe('bucketGet API', () => {
             next =>
                 bucketPut(authInfo, testPutBucketRequest,
                 locationConstraint, log, next),
-            (corsHeaders, next) =>
+            (corsHeaders, next) => {
                 objectPut(authInfo, testPutObjectRequest1, undefined,
-                log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
-                testPutObjectRequest2, undefined, log, next),
+                log, next);
+            },
+            (result, corsHeaders, next) => {
+                objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next);
+            },
             (result, corsHeaders, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
-            (result, corsHeaders, next) => parseString(result, next),
+            (result, corsHeaders, next) => {
+                parseString(result, next);
+            },
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult

@@ -62,7 +62,10 @@ function printUUID(metadataPath) {
     logger.info(`This deployment's identifier is ${uuidValue}`);
 }
 
-if (config.backends.data !== 'file' && config.backends.metadata !== 'file') {
+// If neither data nor metadata is using the file backend,
+// there is no need to init
+if (config.backends.data !== 'file' && config.backends.data !== 'multiple' &&
+    config.backends.metadata !== 'file') {
     logger.info('No init required. Go forth and store data.');
     process.exit(0);
 }

@@ -85,4 +85,6 @@ export default {
         'torrent',
         'versions',
     ],
+    // user metadata header to set object locationConstraint
+    objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
 };
