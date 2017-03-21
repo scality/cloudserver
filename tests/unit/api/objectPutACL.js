@@ -9,7 +9,7 @@ import { cleanup,
     AccessControlPolicy,
 } from '../helpers';
 import metadata from '../metadataswitch';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import objectPutACL from '../../../lib/api/objectPutACL';
 import DummyRequest from '../DummyRequest';
 
@@ -63,7 +63,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert
                                 .deepStrictEqual(err, errors.InvalidArgument);
@@ -87,7 +87,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, {},
@@ -125,7 +125,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest1, log, err => {
                             assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, {},
@@ -169,7 +169,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, {},
@@ -212,7 +212,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err,
                                 errors.UnresolvableGrantByEmailAddress);
@@ -244,7 +244,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined,
                     log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, {},
@@ -310,7 +310,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err, null);
                             metadata.getObjectMD(bucketName, objectName, {},
@@ -350,7 +350,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.strictEqual(err,
                                 errors.UnresolvableGrantByEmailAddress);
@@ -381,7 +381,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.deepStrictEqual(err,
                                 errors.MalformedACLError);
@@ -411,7 +411,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.deepStrictEqual(err, errors.MalformedXML);
                             done();
@@ -440,7 +440,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.deepStrictEqual(err, errors.InvalidArgument);
                             done();
@@ -469,7 +469,7 @@ describe('putObjectACL API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         objectPutACL(authInfo, testObjACLRequest, log, err => {
                             assert.deepStrictEqual(err, errors.InvalidArgument);
                             done();

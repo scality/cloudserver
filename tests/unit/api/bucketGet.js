@@ -6,7 +6,7 @@ import { parseString } from 'xml2js';
 
 import bucketGet from '../../../lib/api/bucketGet';
 import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import DummyRequest from '../DummyRequest';
 

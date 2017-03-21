@@ -6,7 +6,7 @@ import bucketPutACL from '../../../lib/api/bucketPutACL';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
 import { ds } from '../../../lib/data/in_memory/backend';
 import metadata from '../metadataswitch';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 import DummyRequest from '../DummyRequest';
 
 const log = new DummyRequestLogger();
@@ -35,7 +35,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
             objectPut(authUser, testPutObjectRequest, undefined,
                 log, (err, res) => {
                     assert.strictEqual(err, null);
-                    assert.strictEqual(res, correctMD5);
+                    assert.strictEqual(res.contentMD5, correctMD5);
                     cb();
                 });
         });
@@ -112,7 +112,7 @@ describe('objectPut API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         metadata.getObjectMD(bucketName, objectName,
                             {}, log, (err, md) => {
                                 assert(md);
@@ -147,7 +147,7 @@ describe('objectPut API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
                                 assert(md);
@@ -185,7 +185,7 @@ describe('objectPut API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest, undefined, log,
                     (err, result) => {
-                        assert.strictEqual(result, correctMD5);
+                        assert.strictEqual(result.contentMD5, correctMD5);
                         assert.deepStrictEqual(ds, []);
                         metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {

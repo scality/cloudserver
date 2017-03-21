@@ -7,7 +7,7 @@ import { metadata } from '../../../lib/metadata/in_memory/metadata';
 import { ds } from '../../../lib/data/in_memory/backend';
 import DummyRequest from '../DummyRequest';
 import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+import { objectPut } from '../../../lib/api/objectPut';
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -29,6 +29,11 @@ const testBucketPutRequest = new DummyRequest({
 describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
     let testPutObjectRequest1;
     let testPutObjectRequest2;
+    const request = new DummyRequest({
+        headers: {},
+        parsedContentLength: contentLength,
+    }, postBody);
+    const bucket = { getVersioningConfiguration: () => null };
 
     beforeEach(done => {
         cleanup();
@@ -66,8 +71,8 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
 
     it('should successfully get object metadata and then ' +
         'delete metadata and data', done => {
-        getObjMetadataAndDelete(bucketName, true,
-            [], [objectKey1, objectKey2], log,
+        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
+            true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
@@ -90,8 +95,8 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
     });
 
     it('should return success results if no such key', done => {
-        getObjMetadataAndDelete(bucketName, true,
-            [], ['madeup1', 'madeup2'], log,
+        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
+            true, [], [{ key: 'madeup1' }, { key: 'madeup2' }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
@@ -114,19 +119,19 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         // even though the getObjMetadataAndDelete function would
         // never be called if there was no bucket (would error out earlier
         // in API)
-        getObjMetadataAndDelete('madeupbucket', true,
-            [], [objectKey1, objectKey2], log,
+        getObjMetadataAndDelete(authInfo, 'foo', request, 'madeupbucket',
+            bucket, true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
                 assert.strictEqual(quietSetting, true);
                 assert.deepStrictEqual(errorResults, [
                     {
-                        key: objectKey1,
+                        entry: { key: objectKey1 },
                         error: errors.NoSuchBucket,
                     },
                     {
-                        key: objectKey2,
+                        entry: { key: objectKey2 },
                         error: errors.NoSuchBucket,
                     },
                 ]);
@@ -142,8 +147,8 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
 
     it('should return no error or success results if no objects in play',
         done => {
-            getObjMetadataAndDelete(bucketName, true,
-                [], [], log,
+            getObjMetadataAndDelete(authInfo, 'foo', request, bucketName,
+                bucket, true, [], [], log,
                 (err, quietSetting, errorResults, numOfObjects,
                     successfullyDeleted, totalContentLengthDeleted) => {
                     assert.ifError(err);
@@ -167,8 +172,9 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 error: errors.AccessDenied,
             },
         ];
-        getObjMetadataAndDelete(bucketName, true,
-            errorResultsSample, [objectKey1, objectKey2], log,
+        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
+            true, errorResultsSample,
+            [{ key: objectKey1 }, { key: objectKey2 }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
