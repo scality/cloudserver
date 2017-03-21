@@ -8,7 +8,11 @@ import getConfig from '../support/config';
 const bucket = `bigmpu-test-bucket-${Date.now()}`;
 const key = 'mpuKey';
 const body = 'abc';
-const eTag = '900150983cd24fb0d6963f7d28e17f72';
+const partCount = 10000;
+const eTag = require('crypto').createHash('md5').update(body).digest('hex');
+const finalETag = require('crypto').createHash('md5')
+    .update(Buffer.from(eTag.repeat(partCount), 'hex').toString('binary'),
+            'binary').digest('hex');
 
 function uploadPart(n, uploadId, s3, next) {
     const params = {
@@ -63,7 +67,7 @@ describe('large mpu', function tester() {
     // will fail on AWS because parts too small
 
     itSkipIfAWS('should intiate, put parts and complete mpu ' +
-        'with 10,000 parts', done => {
+        `with ${partCount} parts`, done => {
         process.stdout.write('***Running large MPU test***\n');
         let uploadId;
         return waterfall([
@@ -78,14 +82,14 @@ describe('large mpu', function tester() {
                 }),
             next => {
                 process.stdout.write('putting parts');
-                return timesLimit(10000, 20, (n, cb) =>
+                return timesLimit(partCount, 20, (n, cb) =>
                     uploadPart(n, uploadId, s3, cb), err =>
                         next(err)
                     );
             },
             next => {
                 const parts = [];
-                for (let i = 1; i <= 10000; i++) {
+                for (let i = 1; i <= partCount; i++) {
                     parts.push({
                         ETag: eTag,
                         PartNumber: i,
@@ -114,8 +118,8 @@ describe('large mpu', function tester() {
                         if (err) {
                             return next(err);
                         }
-                        assert.strictEqual(data.ETag, '"e0c3d6b4446bf8f97' +
-                            '9c50df6d79e9e0a-10000"');
+                        assert.strictEqual(data.ETag,
+                                `"${finalETag}-${partCount}"`);
                         return next();
                     });
             },
