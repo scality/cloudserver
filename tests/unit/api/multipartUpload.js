@@ -70,6 +70,14 @@ describe('Multipart Upload API', () => {
         });
     });
 
+    it('should return an error on an initiate multipart upload call if ' +
+        'no destination bucket', done => {
+        initiateMultipartUpload(authInfo, initiateRequest,
+            log, err => {
+                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                done();
+            });
+    });
 
     it('should upload a part', done => {
         async.waterfall([
