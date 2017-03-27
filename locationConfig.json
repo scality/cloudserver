@@ -16,7 +16,8 @@
         "details": {
             "connector": {
                 "sproxyd": {
-                    "bootstrap": ["localhost:8182"]
+                    "bootstrap": ["localhost:8182"],
+                    "path": "/proxy/arc/"
                 }
             }
         }
