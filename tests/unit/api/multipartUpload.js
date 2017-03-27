@@ -70,6 +70,7 @@ describe('Multipart Upload API', () => {
         });
     });
 
+
     it('should upload a part', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest,
