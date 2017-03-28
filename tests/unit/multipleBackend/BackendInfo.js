@@ -7,26 +7,36 @@ const log = new DummyRequestLogger();
 const dummyBackendInfo = new BackendInfo('mem', 'file', '127.0.0.1');
 
 describe('BackendInfo class', () => {
-    describe('isValidControllingBackendParam', () => {
-        it('should return false if objectLocationConstraint is invalid', () => {
-            const res = BackendInfo.isValidControllingBackendParam(
+    describe('controllingBackendParam', () => {
+        it('should return object with applicable error if ' +
+        'objectLocationConstraint is invalid', () => {
+            const res = BackendInfo.controllingBackendParam(
                 'notValid', 'file', '127.0.0.1', log);
-            assert.equal(res, false);
+            assert.equal(res.isValid, false);
+            assert((res.description).indexOf('Object Location Error')
+            > -1);
         });
-        it('should return false if bucketLocationConstraint is invalid', () => {
-            const res = BackendInfo.isValidControllingBackendParam(
+        it('should return object with applicable error if ' +
+        'bucketLocationConstraint is invalid', () => {
+            const res = BackendInfo.controllingBackendParam(
                 'mem', 'notValid', '127.0.0.1', log);
-            assert.equal(res, false);
+            assert.equal(res.isValid, false);
+            assert((res.description).indexOf('Bucket ' +
+            'Location Error') > -1);
         });
-        it('should return false if requestEndpoint is invalid', () => {
-            const res = BackendInfo.isValidControllingBackendParam(
+        it('should return object with applicable error if requestEndpoint ' +
+        'is invalid', () => {
+            const res = BackendInfo.controllingBackendParam(
                 'mem', 'file', 'notValid', log);
-            assert.equal(res, false);
+            assert.equal(res.isValid, false);
+            assert((res.description).indexOf('Endpoint ' +
+            'Location Error') > -1);
         });
-        it('should return true if all backend parameters are valid', () => {
-            const res = BackendInfo.isValidControllingBackendParam(
+        it('should return object with applicable error if all backend ' +
+        'parameters are valid', () => {
+            const res = BackendInfo.controllingBackendParam(
                 'mem', 'file', '127.0.0.1', log);
-            assert.equal(res, true);
+            assert.equal(res.isValid, true);
         });
     });
     describe('getControllingLocationConstraint', () => {

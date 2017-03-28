@@ -1,4 +1,3 @@
-import { errors } from 'arsenal';
 import assert from 'assert';
 import { BackendInfo } from '../../../lib/api/apiUtils/object/BackendInfo';
 import BucketInfo from '../../../lib/metadata/BucketInfo';
@@ -37,8 +36,10 @@ describe('Location Constraint Check', () => {
     'not valid', done => {
         const backendInfoObj = locationConstraintCheck(
             createTestRequest('fail-region'), null, testBucket, log);
-        assert.strictEqual(backendInfoObj.err, errors.InvalidArgument,
-            ' Expected error but got success');
+        assert.strictEqual(backendInfoObj.err.code, 400,
+            'Expected "Invalid Argument" code error');
+        assert(backendInfoObj.err.InvalidArgument, 'Expected "Invalid ' +
+        'Argument" error');
         done();
     });
 
