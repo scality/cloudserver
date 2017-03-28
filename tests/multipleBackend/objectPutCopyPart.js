@@ -23,7 +23,8 @@ const sourceObjName = 'supersourceobject';
 const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
-function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
+function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
+errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -47,8 +48,8 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
         initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-meta-scal-location-constraint': `${mpuLoc}` };
     }
-    if (mpuHost) {
-        initiateReq.parsedHost = mpuHost;
+    if (requestHost) {
+        initiateReq.parsedHost = requestHost;
     }
     const sourceObjPutParams = {
         bucketName,
@@ -62,6 +63,9 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
             'x-amz-meta-scal-location-constraint': `${srcObjLoc}` };
     }
     const sourceObjPutReq = new DummyRequest(sourceObjPutParams, body);
+    if (requestHost) {
+        sourceObjPutReq.parsedHost = requestHost;
+    }
 
     async.waterfall([
         next => {
@@ -71,10 +75,8 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
             });
         },
         next => {
-            objectPut(authInfo, sourceObjPutReq, undefined, log, err => {
-                assert.ifError(err, 'Error putting source object');
-                next(err);
-            });
+            objectPut(authInfo, sourceObjPutReq, undefined, log, err =>
+                next(err));
         },
         next => {
             initiateMultipartUpload(authInfo, initiateReq, log, next);
@@ -88,8 +90,15 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
         },
     ],
     (err, json) => {
+        if (errorDescription) {
+            assert.strictEqual(err.code, 400);
+            assert(err.InvalidArgument);
+            assert(err.description.indexOf(errorDescription) > -1);
+            return cb();
+        }
         // Need to build request in here since do not have
         // uploadId until here
+        assert.ifError(err, 'Error putting source object or initiate MPU');
         const testUploadId = json.InitiateMultipartUploadResult.
             UploadId[0];
         const copyPartParams = {
@@ -104,7 +113,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, mpuHost, cb) {
             },
         };
         const copyPartReq = new DummyRequest(copyPartParams);
-        objectPutCopyPart(authInfo, copyPartReq,
+        return objectPutCopyPart(authInfo, copyPartReq,
             bucketName, sourceObjName, log, err => {
                 assert.strictEqual(err, null);
                 cb();
@@ -117,8 +126,14 @@ describe('ObjectCopyPutPart API with multiple backends', () => {
         cleanup();
     });
 
+    it('should return err InvalidArgument if no host and data backend ' +
+    'set to "multiple"', done => {
+        copyPutPart('file', 'mem', null, null, () => done(), 'Endpoint ' +
+        'Location Error');
+    });
+
     it('should copy part to mem based on mpu location', done => {
-        copyPutPart('file', 'mem', null, null, () => {
+        copyPutPart('file', 'mem', null, 'localhost', () => {
             // object info is stored in ds beginning at index one,
             // so an array length of two means only one object
             // was stored in mem
@@ -129,14 +144,14 @@ describe('ObjectCopyPutPart API with multiple backends', () => {
     });
 
     it('should copy part to file based on mpu location', done => {
-        copyPutPart('mem', 'file', null, null, () => {
+        copyPutPart('mem', 'file', null, 'localhost', () => {
             assert.strictEqual(ds.length, 2);
             done();
         });
     });
 
     it('should copy part to mem based on bucket location', done => {
-        copyPutPart('mem', null, null, null, () => {
+        copyPutPart('mem', null, null, 'localhost', () => {
             // ds length should be three because both source
             // and copied objects should be in mem
             assert.strictEqual(ds.length, 3);
@@ -146,7 +161,7 @@ describe('ObjectCopyPutPart API with multiple backends', () => {
     });
 
     it('should copy part to file based on bucket location', done => {
-        copyPutPart('file', null, null, null, () => {
+        copyPutPart('file', null, null, 'localhost', () => {
             // ds should be empty because both source and
             // coped objects should be in file
             assert.deepStrictEqual(ds, []);

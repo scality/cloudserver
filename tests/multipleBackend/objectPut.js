@@ -15,7 +15,7 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
 
-function put(bucketLoc, objLoc, bucketHost, cb) {
+function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -28,8 +28,8 @@ function put(bucketLoc, objLoc, bucketHost, cb) {
         url: '/',
         post,
     });
-    if (bucketHost) {
-        bucketPutReq.parsedHost = bucketHost;
+    if (requestHost) {
+        bucketPutReq.parsedHost = requestHost;
     }
     const objPutParams = {
         bucketName,
@@ -45,10 +45,19 @@ function put(bucketLoc, objLoc, bucketHost, cb) {
         };
     }
     const testPutObjReq = new DummyRequest(objPutParams, body);
+    if (requestHost) {
+        testPutObjReq.parsedHost = requestHost;
+    }
     bucketPut(authInfo, bucketPutReq, log, () => {
         objectPut(authInfo, testPutObjReq, undefined, log, (err, result) => {
-            assert.strictEqual(err, null, `Error putting object: ${err}`);
-            assert.strictEqual(result, correctMD5);
+            if (errorDescription) {
+                assert.strictEqual(err.code, 400);
+                assert(err.InvalidArgument);
+                assert(err.description.indexOf(errorDescription) > -1);
+            } else {
+                assert.strictEqual(err, null, `Error putting object: ${err}`);
+                assert.strictEqual(result, correctMD5);
+            }
             cb();
         });
     });
@@ -59,29 +68,34 @@ describe('objectPutAPI with multiple backends', () => {
         cleanup();
     });
 
+    it('should return error Invalid argument if no host and data backend ' +
+    'set to "multiple"', done => {
+        put('file', 'mem', null, () => done(), 'Endpoint Location Error');
+    });
+
     it('should put an object to mem', done => {
-        put('file', 'mem', null, () => {
+        put('file', 'mem', 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
     it('should put an object to file', done => {
-        put('mem', 'file', null, () => {
+        put('mem', 'file', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put an object to mem based on bucket location', done => {
-        put('mem', null, null, () => {
+        put('mem', null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
     it('should put an object to file based on bucket location', done => {
-        put('file', null, null, () => {
+        put('file', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });

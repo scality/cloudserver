@@ -22,7 +22,8 @@ const objectName = 'objectName';
 const body = Buffer.from('I am a body', 'utf8');
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
-function putPart(bucketLoc, mpuLoc, partLoc, host, cb) {
+function putPart(bucketLoc, mpuLoc, partLoc, requestHost, cb,
+errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -46,8 +47,8 @@ function putPart(bucketLoc, mpuLoc, partLoc, host, cb) {
         initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
             'x-amz-meta-scal-location-constraint': `${mpuLoc}` };
     }
-    if (host) {
-        initiateReq.parsedHost = host;
+    if (requestHost) {
+        initiateReq.parsedHost = requestHost;
     }
     async.waterfall([
         next => {
@@ -68,6 +69,12 @@ function putPart(bucketLoc, mpuLoc, partLoc, host, cb) {
         },
     ],
     (err, json) => {
+        if (errorDescription) {
+            assert.strictEqual(err.code, 400);
+            assert(err.InvalidArgument);
+            assert(err.description.indexOf(errorDescription) > -1);
+            return cb();
+        }
         // Need to build request in here since do not have uploadId
         // until here
         const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
@@ -92,7 +99,7 @@ function putPart(bucketLoc, mpuLoc, partLoc, host, cb) {
             };
         }
         const partReq = new DummyRequest(partReqParams, body);
-        objectPutPart(authInfo, partReq, undefined, log, err => {
+        return objectPutPart(authInfo, partReq, undefined, log, err => {
             assert.strictEqual(err, null);
             const keysInMPUkeyMap = [];
             metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
@@ -119,8 +126,14 @@ describe('objectPutPart API with multiple backends', () => {
         cleanup();
     });
 
+    it('should return error InvalidArgument if no host and data backend ' +
+    'set to "multiple"', done => {
+        putPart('mem', 'file', null, null, () => done(),
+        'Endpoint Location Error');
+    });
+
     it('should upload a part to file based on mpu location', done => {
-        putPart('mem', 'file', null, null, () => {
+        putPart('mem', 'file', null, 'localhost', () => {
             // if ds is empty, the object is not in mem, which means it
             // must be in file because those are the only possibilities
             // for unit tests
@@ -130,7 +143,7 @@ describe('objectPutPart API with multiple backends', () => {
     });
 
     it('should put a part to mem based on mpu location', done => {
-        putPart('file', 'mem', null, null, () => {
+        putPart('file', 'mem', null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
@@ -138,21 +151,21 @@ describe('objectPutPart API with multiple backends', () => {
 
     it('should upload part based on mpu location even if part ' +
         'location constraint is specified ', done => {
-        putPart('file', 'mem', 'file', null, () => {
+        putPart('file', 'mem', 'file', 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
     it('should put a part to file based on bucket location', done => {
-        putPart('file', null, null, null, () => {
+        putPart('file', null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put a part to mem based on bucket location', done => {
-        putPart('mem', null, null, null, () => {
+        putPart('mem', null, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
