@@ -226,6 +226,11 @@ For instance, the following sets the `localhost` endpoint to the
 
 If you would like to use an endpoint other than localhost for your
 Scality S3 Server, that endpoint MUST be listed in your `restEndpoints`.
+Otherwise if your server is running with a:
+
+- __file backend__: your default location constraint will be `file`
+
+- __memory backend__: your default location constraint will be `mem`
 
 ## Endpoints
 
