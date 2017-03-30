@@ -5,6 +5,29 @@ import constants from '../../constants';
 import { metadata } from '../../lib/metadata/in_memory/metadata';
 import { resetCount, ds } from '../../lib/data/in_memory/backend';
 
+
+export const testsRangeOnEmptyFile = [
+    { range: 'bytes=0-9', valid: true },
+    { range: 'bytes=1-9', valid: true },
+    { range: 'bytes=1-999', valid: true },
+    { range: 'bytes=0-', valid: true },
+    { range: 'bytes=1-', valid: true },
+    { range: 'bytes=0-0', valid: true },
+    { range: 'bytes=00-0000', valid: true },
+    { range: 'bytes=1-1', valid: true },
+    { range: 'bytes=-0', valid: true },
+    { range: 'bytes=-000', valid: true },
+    { range: '0-1', valid: false },
+    { range: 'b=0-1', valid: false },
+    { range: 'byte=0-1', valid: false },
+    { range: 'bytes=-1', valid: false },
+    { range: 'bytes=0--1', valid: false },
+    { range: 'bytes=-1-0', valid: false },
+    { range: 'bytes=a-9', valid: false },
+    { range: 'bytes=10-9', valid: false },
+    { range: 'bytes=a-a', valid: false },
+];
+
 export function makeid(size) {
     let text = '';
     const possible =

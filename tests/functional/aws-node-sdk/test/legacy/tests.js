@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { S3 } from 'aws-sdk';
 
 import getConfig from '../support/config';
+import { testsRangeOnEmptyFile } from '../../../../unit/helpers';
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `ftest-mybucket-${random}`;
@@ -417,30 +418,28 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 });
             });
         });
-        it('should return InvalidRange error if get range on empty object',
-        done => {
-            const params = {
-                Bucket: bucketEmptyObj,
-                Key: 'emptyobj',
-                Range: 'bytes=1-2',
-            };
-            s3.getObject(params, err => {
-                assert.notEqual(err, null, 'Expected failure but got success');
-                assert.strictEqual(err.code, 'InvalidRange');
-                return done();
-            });
-        });
-        it('should return InvalidRange error if get range bytes=0-0 on empty ' +
-        'object', done => {
-            const params = {
-                Bucket: bucketEmptyObj,
-                Key: 'emptyobj',
-                Range: 'bytes=0-0',
-            };
-            s3.getObject(params, err => {
-                assert.notEqual(err, null, 'Expected failure but got success');
-                assert.strictEqual(err.code, 'InvalidRange');
-                return done();
+        testsRangeOnEmptyFile.forEach(test => {
+            const validText = test.valid ? 'empty file' : 'InvalidRange error';
+            it(`should return ${validText} if get range ${test.range} on ` +
+            'empty object',
+            done => {
+                const params = {
+                    Bucket: bucketEmptyObj,
+                    Key: 'emptyobj',
+                    Range: test.range,
+                };
+                s3.getObject(params, (err, data) => {
+                    if (test.valid) {
+                        assert.notEqual(err, null, 'Expected failure but ' +
+                        'got success');
+                        assert.strictEqual(err.code, 'InvalidRange');
+                    } else {
+                        assert.equal(err, null, 'Expected success but ' +
+                        `got failure: ${err}`);
+                        assert.strictEqual(data.Body.toString(), '');
+                    }
+                    return done();
+                });
             });
         });
     });

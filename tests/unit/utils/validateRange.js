@@ -3,12 +3,28 @@ import assert from 'assert';
 import { parseRange } from
     '../../../lib/api/apiUtils/object/parseRange';
 
+import { validRangeOnEmptyFile } from
+        '../../../lib/api/apiUtils/object/validRangeOnEmptyFile';
+
+import { testsRangeOnEmptyFile } from '../helpers';
+
 function checkRange(rangeHeader, totalLength, expectedRange) {
     const { range, error } =
         parseRange(rangeHeader, totalLength);
     assert.ifError(error);
     assert.deepStrictEqual(range, expectedRange);
 }
+
+describe('validRangeOnEmptyFile function', () => {
+    testsRangeOnEmptyFile.forEach(test => {
+        const validText = test.valid ? 'be valid' : 'not be valid';
+        it(`this range should ${validText}: ${test.range}`, () => {
+            assert.strictEqual(validRangeOnEmptyFile(test.range),
+            test.valid, test.range);
+        });
+    });
+});
+
 
 describe('parseRange function', () => {
     it('should return an array with the start and end if range is '
