@@ -56,8 +56,8 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err, errors.NotModified);
                         done();
@@ -76,10 +76,11 @@ describe('objectHead API', () => {
             headers: { 'if-unmodified-since': earlierDate },
             url: `/${bucketName}/${objectName}`,
         };
+
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
                             errors.PreconditionFailed);
@@ -102,8 +103,8 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
                             errors.PreconditionFailed);
@@ -126,8 +127,8 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err, errors.NotModified);
                         done();
@@ -147,16 +148,15 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
-                    objectHead(authInfo, testGetRequest, log,
-                        (err, success) => {
-                            assert.strictEqual(success[userMetadataKey],
-                    userMetadataValue);
-                            assert
-                            .strictEqual(success.ETag, `"${correctMD5}"`);
-                            done();
-                        });
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        assert.strictEqual(res[userMetadataKey],
+                            userMetadataValue);
+                        assert
+                        .strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
                 });
         });
     });

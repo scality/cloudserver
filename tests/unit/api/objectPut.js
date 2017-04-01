@@ -32,9 +32,9 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
             assert.strictEqual(err, undefined);
             objectPut(authUser, testPutObjectRequest, undefined,
-                log, (err, res) => {
+                log, (err, resHeaders) => {
                     assert.strictEqual(err, null);
-                    assert.strictEqual(res, correctMD5);
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     cb();
                 });
         });
@@ -109,8 +109,8 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     metadata.getObjectMD(bucketName, objectName,
                         {}, log, (err, md) => {
                             assert(md);
@@ -143,17 +143,17 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     metadata.getObjectMD(bucketName, objectName, {}, log,
                         (err, md) => {
                             assert(md);
                             assert.strictEqual(md['x-amz-meta-test'],
-                            'some metadata');
+                                        'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
+                                        'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
+                                        'even more metadata');
                             done();
                         });
                 });
@@ -180,15 +180,15 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, result) => {
-                    assert.strictEqual(result, correctMD5);
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     assert.deepStrictEqual(ds, []);
                     metadata.getObjectMD(bucketName, objectName, {}, log,
                         (err, md) => {
                             assert(md);
                             assert.strictEqual(md.location, null);
                             assert.strictEqual(md['x-amz-meta-test'],
-                            'some metadata');
+                                        'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
                                        'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],

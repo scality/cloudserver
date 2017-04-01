@@ -49,14 +49,15 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
         testPutObjReq.parsedHost = requestHost;
     }
     bucketPut(authInfo, bucketPutReq, log, () => {
-        objectPut(authInfo, testPutObjReq, undefined, log, (err, result) => {
+        objectPut(authInfo, testPutObjReq, undefined, log, (err,
+            resHeaders) => {
             if (errorDescription) {
                 assert.strictEqual(err.code, 400);
                 assert(err.InvalidArgument);
                 assert(err.description.indexOf(errorDescription) > -1);
             } else {
                 assert.strictEqual(err, null, `Error putting object: ${err}`);
-                assert.strictEqual(result, correctMD5);
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
             }
             cb();
         });

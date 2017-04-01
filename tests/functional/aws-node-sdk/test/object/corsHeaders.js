@@ -6,6 +6,7 @@ import getConfig from '../support/config';
 import methodRequest from '../../lib/utility/cors-util';
 import { generateCorsParams } from '../../lib/utility/cors-util';
 import { WebsiteConfigTester } from '../../lib/utility/website-util';
+import { removeAllVersions } from '../../lib/utility/versioning-util';
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
@@ -450,7 +451,7 @@ describe('Cross Origin Resource Sharing requests', () => {
         beforeEach(done => s3.putBucketCors(corsParams, done));
 
         afterEach(done => {
-            s3.deleteObject({ Bucket: bucket, Key: objectKey }, err => {
+            removeAllVersions({ Bucket: bucket }, err => {
                 if (err && err.code !== 'NoSuchKey' &&
                 err.code !== 'NoSuchBucket') {
                     process.stdout.write(`Unexpected err in afterEach: ${err}`);
