@@ -6,6 +6,7 @@
   * [Using Docker Volume in production](#using-docker-volume-in-production)
   * [Adding modifying or deleting accounts or users credentials](#adding-modifying-or-deleting-accounts-or-users-credentials)
   * [Specifying your own host name](#specifying-your-own-host-name)
+  * [Running as an unprivileged user](#running-as-an-unprivileged-user)
 
 ## For continuous integration with Docker
 
@@ -154,3 +155,26 @@ docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d scalit
 
 Your local `config.json` file will override the default one through a docker
 file mapping.
+
+### Running as an unprivileged user
+
+S3 Server runs as root by default.
+
+You can change that by modifing the dockerfile and specifying a user before the entrypoint.
+
+The user needs to exist within the container,
+and own the folder **/usr/src/app** for Scality S3 Server to run properly.
+
+For instance, you can modify these lines in the dockerfile:
+
+```shell
+...
+&& groupadd -r -g 1001 scality \
+&& useradd -u 1001 -g 1001 -d /usr/src/app -r scality \
+&& chown -R scality:scality /usr/src/app
+
+...
+
+USER scality
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+```
