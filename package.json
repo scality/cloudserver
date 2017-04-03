@@ -34,7 +34,7 @@
     "node-uuid": "^1.4.3",
     "ready-set-stream": "1.0.7",
     "sproxydclient": "scality/sproxydclient",
-    "utapi": "scality/utapi",
+    "utapi": "scality/utapi#S3C-150/ft-separate-utapi-from-s3",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
