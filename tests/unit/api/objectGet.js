@@ -85,7 +85,7 @@ describe('objectGet API', () => {
                             key: 1,
                             start: 0,
                             size: 12,
-                            dataStoreName: 'dataMem',
+                            dataStoreName: 'mem',
                         }]);
                             done();
                         });
@@ -188,13 +188,13 @@ describe('objectGet API', () => {
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
-                            dataStoreName: 'dataMem',
+                            dataStoreName: 'mem',
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
-                            dataStoreName: 'dataMem',
+                            dataStoreName: 'mem',
                             size: 12,
                             start: 5242880,
                         }]);
