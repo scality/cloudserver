@@ -11,7 +11,7 @@ const log = new DummyRequestLogger();
 const headers = {};
 const authInfo = makeAuthInfo('accessKey1');
 
-const normalBehaviorLocationConstraint = 'scality-us-west-1';
+const normalBehaviorLocationConstraint = 'file';
 const specialBehaviorLocationConstraint = 'us-east-1';
 
 describe('bucket creation', () => {
