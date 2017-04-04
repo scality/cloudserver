@@ -2,8 +2,9 @@ import assert from 'assert';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 import {
-    constants,
     removeAllVersions,
+    versioningEnabled,
+    versioningSuspended,
 } from '../../lib/utility/versioning-util.js';
 
 const date = Date.now();
@@ -106,7 +107,7 @@ describe('Complete MPU', () => {
             let eTag;
 
             beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
-                    VersioningConfiguration: constants.versioningEnabled })
+                    VersioningConfiguration: versioningEnabled })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;
@@ -125,7 +126,7 @@ describe('Complete MPU', () => {
             let eTag;
 
             beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
-                    VersioningConfiguration: constants.versioningSuspended })
+                    VersioningConfiguration: versioningSuspended })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;
