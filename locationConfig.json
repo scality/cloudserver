@@ -25,19 +25,21 @@
     "us-east-1": {
         "type": "file",
         "legacyAwsBehavior": true,
-        "details": {
-        }
+        "details": {}
     },
     "file": {
         "type": "file",
         "legacyAwsBehavior": false,
-        "details": {
-        }
+        "details": {}
+    },
+    "dataFile": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
     },
     "mem": {
         "type": "mem",
         "legacyAwsBehavior": false,
-        "details": {
-        }
+        "details": {}
     }
 }
