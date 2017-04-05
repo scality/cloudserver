@@ -93,11 +93,43 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should retrieve an empty versioning configuration', done => {
+    it('should not accept versioning with MFA Delete enabled', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                MFADelete: 'Enabled',
+                Status: 'Enabled',
+            },
+        };
+        s3.putBucketVersioning(params, error => {
+            assert.notEqual(error, null, 'Expected failure but got success');
+            assert.strictEqual(error.statusCode, 501);
+            assert.strictEqual(error.code, 'NotImplemented');
+            done();
+        });
+    });
+
+    it('should accept versioning with MFA Delete disabled', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                MFADelete: 'Disabled',
+                Status: 'Enabled',
+            },
+        };
+        s3.putBucketVersioning(params, error => {
+            assert.equal(error, null, 'Expected success but got failure');
+            done();
+        });
+    });
+
+    it('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
+        // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
             assert.strictEqual(error, null);
-            assert.deepStrictEqual(data, {});
+            assert.deepStrictEqual(data, { MFADelete: 'Disabled',
+            Status: 'Enabled' });
             done();
         });
     });
