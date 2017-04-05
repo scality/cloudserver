@@ -93,7 +93,7 @@ testing('Object Version Copy', () => {
                 etag = res.ETag;
                 versionId = res.VersionId;
                 copySource = `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${encodeURIComponent(versionId)}`;
+                    `?versionId=${versionId}`;
                 etagTrim = etag.substring(1, etag.length - 1);
                 return s3.headObjectAsync({
                     Bucket: sourceBucketName,
@@ -330,7 +330,7 @@ testing('Object Version Copy', () => {
                 Body: '', Metadata: originalMetadata }, (err, res) => {
                 checkNoError(err);
                 copySource = `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${encodeURIComponent(res.VersionId)}`;
+                    `?versionId=${res.VersionId}`;
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: copySource,
                 },
@@ -354,7 +354,7 @@ testing('Object Version Copy', () => {
                 Body: '' }, (err, res) => {
                 checkNoError(err);
                 copySource = `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${encodeURIComponent(res.VersionId)}`;
+                    `?versionId=${res.VersionId}`;
                 s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
                     CopySource: copySource,
                     StorageClass: 'REDUCED_REDUNDANCY',
@@ -617,7 +617,7 @@ testing('Object Version Copy', () => {
                     Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${encodeURIComponent(deleteMarkerId)}`,
+                    `?versionId=${deleteMarkerId}`,
                 },
                 err => {
                     checkError(err, 'InvalidRequest');

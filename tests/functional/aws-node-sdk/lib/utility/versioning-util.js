@@ -5,10 +5,8 @@ import getConfig from '../../test/support/config';
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
 
-export const constants = {
-    versioningEnabled: { Status: 'Enabled' },
-    versioningSuspended: { Status: 'Suspended' },
-};
+export const versioningEnabled = { Status: 'Enabled' };
+export const versioningSuspended = { Status: 'Suspended' };
 
 function _deleteVersionList(versionList, bucket, callback) {
     if (versionList === undefined || versionList.length === 0) {
