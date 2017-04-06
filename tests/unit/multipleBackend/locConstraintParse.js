@@ -17,4 +17,8 @@ describe('locationConstraintParser', () => {
         assert.strictEqual(typeof clients.file, 'object');
         assert.deepEqual(clients.file, file);
     });
+    it('should return object containing AWS object', () => {
+        assert.notEqual(Object.keys(clients).indexOf('aws-test'), -1);
+        assert.strictEqual(typeof clients.file, 'object');
+    });
 });

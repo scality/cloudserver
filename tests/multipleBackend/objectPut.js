@@ -65,7 +65,7 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
 }
 
 describe('objectPutAPI with multiple backends', () => {
-    beforeEach(() => {
+    afterEach(() => {
         cleanup();
     });
 
@@ -88,6 +88,13 @@ describe('objectPutAPI with multiple backends', () => {
         });
     });
 
+    it('should put an object to AWS', done => {
+        put('mem', 'aws-test', 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should put an object to mem based on bucket location', done => {
         put('mem', null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
@@ -97,6 +104,13 @@ describe('objectPutAPI with multiple backends', () => {
 
     it('should put an object to file based on bucket location', done => {
         put('file', null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
+    it('should put an object to AWS based on bucket location', done => {
+        put('aws-test', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });

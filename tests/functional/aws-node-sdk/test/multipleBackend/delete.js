@@ -5,6 +5,7 @@ import BucketUtility from '../../lib/utility/bucket-util';
 const bucket = 'buckettestmultiplebackenddelete';
 const memObject = 'memObject';
 const fileObject = 'fileObject';
+const awsObject = 'awsObject';
 const body = Buffer.from('I am a body', 'utf8');
 
 describe('Multiple backend delete', () => {
@@ -31,6 +32,12 @@ describe('Multiple backend delete', () => {
                 process.stdout.write('Putting object to file\n');
                 const params = { Bucket: bucket, Key: fileObject, Body: body,
                     Metadata: { 'scal-location-constraint': 'file' } };
+                return s3.putObject(params);
+            })
+            .then(() => {
+                process.stdout.write('Putting object to AWS\n');
+                const params = { Bucket: bucket, Key: awsObject, Body: body,
+                    Metadata: { 'scal-location-constraint': 'aws-test' } };
                 return s3.putObject(params);
             })
             .catch(err => {
@@ -64,7 +71,18 @@ describe('Multiple backend delete', () => {
                     `Expected success, got error ${JSON.stringify(err)}`);
                 s3.getObject({ Bucket: bucket, Key: fileObject }, err => {
                     assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got sucess');
+                        'error but got success');
+                    done();
+                });
+            });
+        });
+        it('should delete object from AWS', done => {
+            s3.deleteObject({ Bucket: bucket, Key: awsObject }, err => {
+                assert.strictEqual(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                s3.getObject({ Bucket: bucket, Key: awsObject }, err => {
+                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
+                        'error but got success');
                     done();
                 });
             });

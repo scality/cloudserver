@@ -204,12 +204,14 @@ sent to `myLocationConstraint` to the file backend:
 
 Each locationConstraint must include the `type`, `legacyAwsBehavior`,
 and `details` keys. `type` indicates which backend will be used
-for that region. Currently, mem, file, and scality are the
+for that region. Currently, mem, file, scality, and AWS S3 are the
 supported backends. `legacyAwsBehavior` indicates whether the
 region will have the same behavior as the AWS S3 'us-east-1'
-region. If the locationConstraint type is scality, `details` should
+region.If the locationConstraint type is scality, `details` should
 contain connector information for sproxyd. If the
 locationConstraint type is mem or file, `details` should be empty.
+If the locationConstraint type is aws_s3, see below for more
+configuration information.
 
 Once you have your locationConstraints in your locationConfig.json,
 you can specify a default locationConstraint for each of your
@@ -231,6 +233,33 @@ Otherwise if your server is running with a:
 - __file backend__: your default location constraint will be `file`
 
 - __memory backend__: your default location constraint will be `mem`
+
+#### AWS S3 Backend
+
+If you would like to use AWS S3 as a backend for your Scality S3 Server,
+there are several configuration steps that must be completed beforehand.
+
+1. You must have an AWS S3 account with an access key and secret key.
+
+2. You must create a bucket on your AWS S3 server.
+
+3. Your `locationConfig.json` file must contain these keys under `details`:
+
+    - `awsEndpoint` - This is your AWS S3 endpoint. The default is 's3.amazonaws.com'
+    - `bucketName`  - This is the name of the bucket you created on AWS S3
+    - `bucketMatch` - This is a boolean which indicates whether you will have
+                      multiple buckets on your Scality S3 server corresponding to
+                      your one AWS S3 bucket (false) or only one bucket on your
+                      Scality S3 server whose name matches your AWS S3 bucket (true)
+    - `credentialsProfile` OR `credentials` - These are your AWS S3 credentials.
+                      If you have them stored in your `~/.aws/credentials` file
+                      and would like to keep them there, use `credentialsProfile`
+                      with the name of the profile you'd like to use. If you'd
+                      like to have your access key and secret key stored directly
+                      in `locationConfig.json`, use a `credentials` object with
+                      `accessKey` and `secretKey` keys.
+                      Please note that keeping your credentials in
+                      `locationConfig.json` is not secure
 
 ## Endpoints
 
