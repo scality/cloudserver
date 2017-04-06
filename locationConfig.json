@@ -23,5 +23,15 @@
         "type": "mem",
         "legacyAwsBehavior": false,
         "details": {}
+    },
+    "aws-test": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default"
+        }
     }
 }

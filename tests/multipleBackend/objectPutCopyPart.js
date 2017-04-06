@@ -25,6 +25,9 @@ const sourceObjName = 'supersourceobject';
 const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
+
+const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
 errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -126,7 +129,7 @@ errorDescription) {
     });
 }
 
-describe('ObjectCopyPutPart API with multiple backends', () => {
+describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', () => {
     beforeEach(() => {
         cleanup();
     });

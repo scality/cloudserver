@@ -1,15 +1,28 @@
 const assert = require('assert');
+const AWS = require('aws-sdk');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { getRealAwsConfig } = require('../support/awsConfig');
+const { config } = require('../../../../../lib/Config');
 
 const bucket = 'buckettestmultiplebackendget';
+const awsBucket = 'multitester555';
 const memObject = 'memobject';
 const fileObject = 'fileobject';
+const awsObject = 'awsobject';
 const emptyObject = 'emptyObject';
+const emptyAwsObject = 'emptyObject';
+const bigObject = 'bigObject';
 const body = Buffer.from('I am a body', 'utf8');
+const bigBody = new Buffer(10485760);
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+const bigMD5 = 'f1c9645dbc14efddc7d8a322685f26eb';
 
-const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+let awsS3;
+
+const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
+    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 describe('Multiple backend get object', () => {
     withV4(sigCfg => {
@@ -59,23 +72,44 @@ describe('Multiple backend get object', () => {
                 });
             });
 
-        describeSkipIfE2E('with objects in all available backends ' +
-            '(mem/file)', () => {
+        describeSkipIfNotMultiple('with objects in all available backends ' +
+            '(mem/file/AWS)', () => {
             before(() => {
-                process.stdout.write('Putting object to mem');
+                const awsConfig = getRealAwsConfig('default');
+                awsS3 = new AWS.S3(awsConfig);
+
+                process.stdout.write('Putting object to mem\n');
                 return s3.putObjectAsync({ Bucket: bucket, Key: memObject,
                     Body: body,
                     Metadata: { 'scal-location-constraint': 'mem' } })
                 .then(() => {
-                    process.stdout.write('Putting object to file');
+                    process.stdout.write('Putting object to file\n');
                     return s3.putObjectAsync({ Bucket: bucket, Key: fileObject,
                         Body: body,
                         Metadata: { 'scal-location-constraint': 'file' } });
                 })
                 .then(() => {
-                    process.stdout.write('Putting 0-byte object to mem');
+                    process.stdout.write('Putting object to AWS\n');
+                    return s3.putObjectAsync({ Bucket: bucket, Key: awsObject,
+                        Body: body,
+                        Metadata: { 'scal-location-constraint': 'aws-test' } });
+                })
+                .then(() => {
+                    process.stdout.write('Putting 0-byte object to mem\n');
                     return s3.putObjectAsync({ Bucket: bucket, Key: emptyObject,
                         Metadata: { 'scal-location-constraint': 'mem' } });
+                })
+                .then(() => {
+                    process.stdout.write('Putting 0-byte object to AWS\n');
+                    return s3.putObjectAsync({ Bucket: bucket,
+                        Key: emptyAwsObject,
+                        Metadata: { 'scal-location-constraint': 'aws-test' } });
+                })
+                .then(() => {
+                    process.stdout.write('Putting large object to AWS\n');
+                    return s3.putObjectAsync({ Bucket: bucket,
+                        Key: bigObject, Body: bigBody,
+                        Metadata: { 'scal-location-constraint': 'aws-test' } });
                 })
                 .catch(err => {
                     process.stdout.write(`Error putting objects: ${err}\n`);
@@ -91,9 +125,20 @@ describe('Multiple backend get object', () => {
                 });
             });
             it('should get a 0-byte object from mem', done => {
-                s3.getObject({ Bucket: bucket, Key: emptyObject }, err => {
+                s3.getObject({ Bucket: bucket, Key: emptyObject },
+                (err, res) => {
                     assert.equal(err, null, 'Expected success but got ' +
                         `error ${err}`);
+                    assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                    done();
+                });
+            });
+            it('should get a 0-byte object from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: emptyAwsObject },
+                (err, res) => {
+                    assert.equal(err, null, 'Expected success but got error ' +
+                        `error ${err}`);
+                    assert.strictEqual(res.ETag, `"${emptyMD5}"`);
                     done();
                 });
             });
@@ -105,6 +150,36 @@ describe('Multiple backend get object', () => {
                         assert.strictEqual(res.ETag, `"${correctMD5}"`);
                         done();
                     });
+            });
+            it('should get an object from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: awsObject },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
+                            `error ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
+            });
+            it('should get a large object from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: bigObject },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
+                            `error ${err}`);
+                        assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                        done();
+                    });
+            });
+            it('should return an error on get done to object deleted from AWS',
+            done => {
+                awsS3.deleteObject({ Bucket: awsBucket, Key: awsObject },
+                err => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                        `error ${err}`);
+                    s3.getObject({ Bucket: bucket, Key: awsObject }, err => {
+                        assert.strictEqual(err.code, 'NetworkingError');
+                        done();
+                    });
+                });
             });
         });
     });
