@@ -10,20 +10,18 @@ const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
 
 describe('Healthcheck response', () => {
-    it('should return object containing dataBackends key', done => {
-        clientCheck(log, (err, results) => {
-            assert.strictEqual(err, null, `Unexpected error ${err}`);
-            assert.notEqual(
-                Object.keys(results).indexOf('dataBackends'), -1);
+    it('should return no error', done => {
+        clientCheck(log, err => {
+            assert.strictEqual(err, null,
+                `Expected success but got error ${err}`);
             done();
         });
     });
     it('should return result for every location constraint in ' +
     'locationConfig', done => {
         clientCheck(log, (err, results) => {
-            assert.strictEqual(err, null, `Unexpected error ${err}`);
             locConstraints.forEach(constraint => {
-                assert.notEqual(Object.keys(results.dataBackends).
+                assert.notEqual(Object.keys(results).
                     indexOf(constraint), -1);
             });
             done();

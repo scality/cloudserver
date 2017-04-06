@@ -1,27 +1,4 @@
 {
-    "scality-us-east-1": {
-        "type": "scality",
-        "legacyAwsBehavior": true,
-        "details": {
-            "connector": {
-                "sproxyd": {
-                    "bootstrap": ["localhost:8181"]
-                }
-            }
-        }
-    },
-    "scality-us-west-1": {
-        "type": "scality",
-        "legacyAwsBehavior": false,
-        "details": {
-            "connector": {
-                "sproxyd": {
-                    "bootstrap": ["localhost:8182"],
-                    "path": "/proxy/arc/"
-                }
-            }
-        }
-    },
     "us-east-1": {
         "type": "file",
         "legacyAwsBehavior": true,
@@ -38,6 +15,11 @@
         "details": {}
     },
     "mem": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-us-west-1": {
         "type": "mem",
         "legacyAwsBehavior": false,
         "details": {}
