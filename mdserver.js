@@ -2,7 +2,8 @@
 require('babel-core/register');
 
 const config = require('./lib/Config.js').default;
-const MetadataServer = require('arsenal').storage.metadata.server;
+const MetadataServer =
+          require('arsenal').storage.metadata.MetadataFileServer;
 
 if (config.backends.metadata === 'file') {
     const mdServer = new MetadataServer(
