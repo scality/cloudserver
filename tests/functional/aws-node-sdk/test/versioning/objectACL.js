@@ -23,9 +23,8 @@ function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('put and get object acl with versioning', () => {
+describe('put and get object acl with versioning', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

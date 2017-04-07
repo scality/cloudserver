@@ -18,9 +18,8 @@ function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('put and get object with versioning', function testSuite() {
+describe('put and get object with versioning', function testSuite() {
     this.timeout(600000);
 
     withV4(sigCfg => {

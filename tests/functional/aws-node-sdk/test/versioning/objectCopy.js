@@ -54,9 +54,8 @@ function dateConvert(d) {
     return (new Date(d)).toISOString();
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('Object Version Copy', () => {
+describe('Object Version Copy', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

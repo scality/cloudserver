@@ -20,9 +20,8 @@ function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('Object Part Copy with Versioning', () => {
+describe('Object Part Copy with Versioning', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

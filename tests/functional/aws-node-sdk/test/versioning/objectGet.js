@@ -21,9 +21,8 @@ function _assertError(err, statusCode, code) {
     assert.strictEqual(err.statusCode, statusCode);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('get behavior after delete with versioning', () => {
+describe('get behavior after delete with versioning', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

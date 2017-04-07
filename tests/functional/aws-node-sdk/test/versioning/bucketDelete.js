@@ -9,7 +9,6 @@ import { removeAllVersions } from '../../lib/utility/versioning-util.js';
 const bucketName = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
 function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
@@ -20,7 +19,7 @@ function checkNoError(err) {
     assert.ifError(err, `Expected success, got error ${JSON.stringify(err)}`);
 }
 
-testing('aws-node-sdk test delete bucket', () => {
+describe('aws-node-sdk test delete bucket', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
