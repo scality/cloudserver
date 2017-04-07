@@ -28,10 +28,8 @@
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "ioredis": "2.4.0",
-    "level": "^1.4.0",
-    "level-sublevel": "^6.5.4",
-    "multilevel": "^7.3.0",
     "node-uuid": "^1.4.3",
+    "npm-run-all": "~4.0.2",
     "ready-set-stream": "1.0.7",
     "sproxydclient": "scality/sproxydclient",
     "utapi": "scality/utapi",
@@ -39,9 +37,6 @@
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
     "xml2js": "~0.4.16"
-  },
-  "optionalDependencies": {
-    "ioctl": "2.0.0"
   },
   "devDependencies": {
     "aws-sdk": "2.28.0",
@@ -72,7 +67,9 @@
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
     "perf": "mocha --compilers js:babel-core/register tests/performance/s3standard.js",
-    "start": "node init.js && node index.js",
+    "start": "node init.js && npm-run-all --parallel start_mdserver start_s3server",
+    "start_mdserver": "node mdserver.js",
+    "start_s3server": "node index.js",
     "start_utapi": "node utapiServer.js",
     "utapi_replay": "node utapiReplay.js",
     "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",

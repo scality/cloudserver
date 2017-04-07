@@ -21,23 +21,25 @@ class Reader extends EventEmitter {
         super();
         this.done = false;
         this.index = 0;
-        process.nextTick(() => this.start());
     }
 
     start() {
-        if (this.done) {
-            return null;
-        }
-        const i = this.index++;
-        // extensions should take into account maxKeys
-        // and should not filter more than that intended value
-        assert(i <= MAX_KEYS, `listed more than maxKeys ${MAX_KEYS}`);
-        if (i === KEY_COUNT) {
-            return this.emit('end');
-        }
-        this.emit('data', { key: `${zpad(i)}`,
-            value: `{"foo":"${i}","initiator":"${i}"}` });
-        return process.nextTick(() => this.start());
+        return process.nextTick(() => {
+            if (this.done) {
+                return null;
+            }
+            const i = this.index++;
+            // extensions should take into account maxKeys
+            // and should not filter more than the intended value
+            assert(i <= MAX_KEYS,
+                   `listed more than maxKeys ${MAX_KEYS} (${i})`);
+            if (i === KEY_COUNT) {
+                return this.emit('end');
+            }
+            this.emit('data', { key: `${zpad(i)}`,
+                                value: `{"foo":"${i}","initiator":"${i}"}` });
+            return this.start();
+        });
     }
 
     destroy() {
@@ -50,13 +52,22 @@ describe('BucketFileInterface::internalListObject', alldone => {
 
     // stub db to inspect the extensions
     const db = {
-        createReadStream: () => new Reader(),
+        createReadStream: (params, callback) => {
+            const reader = new Reader(params);
+            if (callback) {
+                return process.nextTick(() => {
+                    reader.start();
+                    return callback(null, reader);
+                });
+            }
+            reader.start();
+            return reader;
+        },
     };
 
     // stub functions and components
     const logger = { info: () => {}, debug: () => {}, error: () => {} };
     bucketfile.loadDBIfExists = (bucket, log, callback) => callback(null, db);
-    bucketfile.unRef = () => {};
 
     Object.keys(extensions).forEach(listingType => {
         it(`listing max ${MAX_KEYS} keys using ${listingType}`, done => {
