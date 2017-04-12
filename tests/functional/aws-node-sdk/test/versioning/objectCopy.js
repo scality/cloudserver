@@ -65,6 +65,7 @@ testing('Object Version Copy', () => {
         let lastModified;
         let versionId = undefined;
         let copySource = undefined;
+        let copySourceVersionId;
 
         function emptyAndDeleteBucket(bucketName, callback) {
             return removeAllVersions({ Bucket: bucketName }, err => {
@@ -96,6 +97,7 @@ testing('Object Version Copy', () => {
                 copySource = `${sourceBucketName}/${sourceObjName}` +
                     `?versionId=${versionId}`;
                 etagTrim = etag.substring(1, etag.length - 1);
+                copySourceVersionId = res.VersionId;
                 return s3.headObjectAsync({
                     Bucket: sourceBucketName,
                     Key: sourceObjName,
@@ -123,12 +125,18 @@ testing('Object Version Copy', () => {
         function successCopyCheck(error, response, copyVersionMetadata,
             destBucketName, destObjName, done) {
             checkNoError(error);
+            assert.strictEqual(response.CopySourceVersionId,
+              copySourceVersionId);
+            assert.notStrictEqual(response.CopySourceVersionId,
+              response.VersionId);
+            const destinationVersionId = response.VersionId;
             assert.strictEqual(response.ETag, etag);
             const copyLastModified = new Date(response.LastModified)
                 .toUTCString();
             s3.getObject({ Bucket: destBucketName,
                 Key: destObjName }, (err, res) => {
                 checkNoError(err);
+                assert.strictEqual(res.VersionId, destinationVersionId);
                 assert.strictEqual(res.Body.toString(), content);
                 assert.deepStrictEqual(res.Metadata, copyVersionMetadata);
                 assert.strictEqual(res.LastModified, copyLastModified);
