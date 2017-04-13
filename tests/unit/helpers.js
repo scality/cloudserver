@@ -1,10 +1,11 @@
 import crypto from 'crypto';
+import assert from 'assert';
 
 import AuthInfo from '../../lib/auth/AuthInfo';
 import constants from '../../constants';
 import { metadata } from '../../lib/metadata/in_memory/metadata';
 import { resetCount, ds } from '../../lib/data/in_memory/backend';
-
+import DummyRequest from './DummyRequest';
 
 export const testsRangeOnEmptyFile = [
     { range: 'bytes=0-9', valid: true },
@@ -327,6 +328,45 @@ export class CorsConfigTester {
         return request;
     }
 }
+
+export const versioningTestUtils = {
+    createPutObjectRequest: (bucketName, keyName, body) => {
+        const params = {
+            bucketName,
+            namespace: 'default',
+            objectKey: keyName,
+            headers: {},
+            url: `/${bucketName}/${keyName}`,
+        };
+        return new DummyRequest(params, body);
+    },
+    createBucketPutVersioningReq: (bucketName, status) => {
+        const request = {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?versioning',
+            query: { versioning: '' },
+        };
+        const xml = '<VersioningConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<Status>${status}</Status>` +
+        '</VersioningConfiguration>';
+        request.post = xml;
+        return request;
+    },
+    assertDataStoreValues: (ds, expectedValues) => {
+        assert.strictEqual(ds.length, expectedValues.length + 1);
+        for (let i = 0, j = 1; i < expectedValues.length; i++, j++) {
+            if (expectedValues[i] === undefined) {
+                assert.strictEqual(ds[j], expectedValues[i]);
+            } else {
+                assert.deepStrictEqual(ds[j].value, expectedValues[i]);
+            }
+        }
+    },
+};
 
 export class AccessControlPolicy {
     constructor(params) {
