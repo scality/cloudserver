@@ -4,6 +4,7 @@ import async from 'async';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 import { removeAllVersions } from '../../lib/utility/versioning-util';
+import customS3Request from '../../lib/utility/customS3Request';
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
@@ -142,6 +143,32 @@ describe('Object Version Copy', () => {
                 done();
             });
         }
+
+        it('should return InvalidArgument for a request with versionId query',
+        done => {
+            const params = { Bucket: destBucketName, Key: destObjName,
+                CopySource: copySource };
+            const query = { versionId: 'testVersionId' };
+            customS3Request(s3.copyObject, params, { query }, err => {
+                assert(err, 'Expected error but did not find one');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            });
+        });
+
+        it('should return InvalidArgument for a request with empty string ' +
+        'versionId query', done => {
+            const params = { Bucket: destBucketName, Key: destObjName,
+            CopySource: copySource };
+            const query = { versionId: '' };
+            customS3Request(s3.copyObject, params, { query }, err => {
+                assert(err, 'Expected error but did not find one');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            });
+        });
 
         it('should copy a version from a source bucket to a different ' +
             'destination bucket and copy the metadata if no metadata directve' +
