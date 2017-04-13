@@ -14,14 +14,18 @@ const counter = 100;
 let bucket;
 const key = '/';
 const invalidId = 'invalidId';
-const nonExistingId = '3939393939393939393936493939393939393939756e6437';
+// formats differ for AWS and S3, use respective sample ids to obtain
+// correct error response in tests
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
 
 function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
 
-describe('put and get object acl with versioning', () => {
+describe('versioned put and get object acl ::', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
@@ -53,8 +57,7 @@ describe('put and get object acl with versioning', () => {
             _wrapDataObject('putObjectAcl', params, callback);
         }
 
-        function _putAndGetAcl(cannedAcl, versionId, putResVerId,
-            getResVerId, cb) {
+        function _putAndGetAcl(cannedAcl, versionId, expected, cb) {
             const params = {
                 Bucket: bucket,
                 Key: key,
@@ -64,42 +67,141 @@ describe('put and get object acl with versioning', () => {
                 params.VersionId = versionId;
             }
             _putObjectAcl(params, (err, data) => {
-                _assertNoError(err, 'putting object acl with version id:' +
-                    `${versionId}`);
-                assert.strictEqual(data.VersionId, putResVerId,
-                    `expected version id '${putResVerId}' in ` +
-                    `putacl res headers, got '${data.VersionId}' instead`);
+                if (expected.error) {
+                    assert.strictEqual(expected.error.code, err.code);
+                    assert.strictEqual(expected.error.statusCode,
+                        err.statusCode);
+                } else {
+                    _assertNoError(err, 'putting object acl with version id:' +
+                        `${versionId}`);
+                    assert.strictEqual(data.VersionId, expected.versionId,
+                        `expected version id '${expected.versionId}' in ` +
+                        `putacl res headers, got '${data.VersionId}' instead`);
+                }
                 delete params.ACL;
                 _getObjectAcl(params, (err, data) => {
-                    _assertNoError(err,
-                        `getting object acl with version id: ${versionId}`);
-                    assert.strictEqual(data.VersionId, getResVerId,
-                        `expected version id '${getResVerId}' in ` +
-                        `getacl res headers, got '${data.VersionId}' instead`);
-                    assert.strictEqual(data.Grants.length, 2);
+                    if (expected.error) {
+                        assert.strictEqual(expected.error.code, err.code);
+                        assert.strictEqual(expected.error.statusCode,
+                            err.statusCode);
+                    } else {
+                        _assertNoError(err,
+                            `getting object acl with version id: ${versionId}`);
+                        assert.strictEqual(data.VersionId, expected.versionId,
+                            `expected version id '${expected.versionId}' in ` +
+                            `getacl res headers, got '${data.VersionId}'`);
+                        assert.strictEqual(data.Grants.length, 2);
+                    }
                     cb();
                 });
             });
         }
 
         function _testBehaviorVersioningEnabledOrSuspended(versionIds) {
+            it('should return 405 MethodNotAllowed putting acl without ' +
+            'version id if latest version is a delete marker', done => {
+                const aclParams = {
+                    Bucket: bucket,
+                    Key: key,
+                    ACL: 'public-read-write',
+                };
+                s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
+                    assert.strictEqual(err, null,
+                        `Unexpected err deleting object: ${err}`);
+                    assert.strictEqual(data.DeleteMarker, 'true');
+                    assert(data.VersionId);
+                    _putObjectAcl(aclParams, err => {
+                        assert(err);
+                        assert.strictEqual(err.code, 'MethodNotAllowed');
+                        assert.strictEqual(err.statusCode, 405);
+                        done();
+                    });
+                });
+            });
+
+            it('should return 405 MethodNotAllowed putting acl with ' +
+            'version id if version specified is a delete marker', done => {
+                const aclParams = {
+                    Bucket: bucket,
+                    Key: key,
+                    ACL: 'public-read-write',
+                };
+                s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
+                    assert.strictEqual(err, null,
+                        `Unexpected err deleting object: ${err}`);
+                    assert.strictEqual(data.DeleteMarker, 'true');
+                    assert(data.VersionId);
+                    aclParams.VersionId = data.VersionId;
+                    _putObjectAcl(aclParams, err => {
+                        assert(err);
+                        assert.strictEqual(err.code, 'MethodNotAllowed');
+                        assert.strictEqual(err.statusCode, 405);
+                        done();
+                    });
+                });
+            });
+
+            it('should return 404 NoSuchKey getting acl without ' +
+            'version id if latest version is a delete marker', done => {
+                const aclParams = {
+                    Bucket: bucket,
+                    Key: key,
+                };
+                s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
+                    assert.strictEqual(err, null,
+                        `Unexpected err deleting object: ${err}`);
+                    assert.strictEqual(data.DeleteMarker, 'true');
+                    assert(data.VersionId);
+                    _getObjectAcl(aclParams, err => {
+                        assert(err);
+                        assert.strictEqual(err.code, 'NoSuchKey');
+                        assert.strictEqual(err.statusCode, 404);
+                        done();
+                    });
+                });
+            });
+
+            it('should return 405 MethodNotAllowed getting acl with ' +
+            'version id if version specified is a delete marker', done => {
+                const latestVersion = versionIds[versionIds.length - 1];
+                const aclParams = {
+                    Bucket: bucket,
+                    Key: key,
+                    VersionId: latestVersion,
+                };
+                s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
+                    assert.strictEqual(err, null,
+                        `Unexpected err deleting object: ${err}`);
+                    assert.strictEqual(data.DeleteMarker, 'true');
+                    assert(data.VersionId);
+                    aclParams.VersionId = data.VersionId;
+                    _getObjectAcl(aclParams, err => {
+                        assert(err);
+                        assert.strictEqual(err.code, 'MethodNotAllowed');
+                        assert.strictEqual(err.statusCode, 405);
+                        done();
+                    });
+                });
+            });
+
             it('non-version specific put and get ACL should target latest ' +
             'version AND return version ID in response headers', done => {
                 const latestVersion = versionIds[versionIds.length - 1];
-                _putAndGetAcl('public-read', undefined, latestVersion,
-                    latestVersion, done);
+                const expectedRes = { versionId: latestVersion };
+                _putAndGetAcl('public-read', undefined, expectedRes, done);
             });
 
             it('version specific put and get ACL should return version ID ' +
             'in response headers', done => {
                 const firstVersion = versionIds[0];
-                _putAndGetAcl('public-read', firstVersion, firstVersion,
-                    firstVersion, done);
+                const expectedRes = { versionId: firstVersion };
+                _putAndGetAcl('public-read', firstVersion, expectedRes, done);
             });
 
             it('version specific put and get ACL (version id = "null") ' +
             'should return version ID ("null") in response headers', done => {
-                _putAndGetAcl('public-read', 'null', 'null', 'null', done);
+                const expectedRes = { versionId: 'null' };
+                _putAndGetAcl('public-read', 'null', expectedRes, done);
             });
         }
 
@@ -117,80 +219,37 @@ describe('put and get object acl with versioning', () => {
             });
         });
 
-        describe('in a bucket without versioning configuration', () => {
+        describe('in bucket w/o versioning cfg :: ', () => {
             beforeEach(done => {
                 s3.putObject({ Bucket: bucket, Key: key }, done);
             });
 
             it('should not return version id for non-version specific ' +
             'put and get ACL', done => {
-                _putAndGetAcl('public-read', undefined, undefined,
-                undefined, done);
+                const expectedRes = { versionId: undefined };
+                _putAndGetAcl('public-read', undefined, expectedRes, done);
             });
 
             it('should not return version id for version specific ' +
             'put and get ACL (version id = "null")', done => {
-                _putAndGetAcl('public-read', 'null', undefined,
-                undefined, done);
+                const expectedRes = { versionId: undefined };
+                _putAndGetAcl('public-read', 'null', expectedRes, done);
             });
 
-            it('should return NoSuchVersion if attempting to put acl for ' +
-            'non-existing version', done => {
-                const params = {
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: nonExistingId,
-                    ACL: 'private',
-                };
-                s3.putObjectAcl(params, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'NoSuchVersion');
-                    assert.strictEqual(err.statusCode, 404);
-                    done();
-                });
+            it('should return NoSuchVersion if attempting to put or get acl ' +
+            'for non-existing version', done => {
+                const error = { code: 'NoSuchVersion', statusCode: 404 };
+                _putAndGetAcl('private', nonExistingId, { error }, done);
             });
 
-            it('should return InvalidArgument if attempting to put acl for ' +
-            'invalid hex string', done => {
-                const params = { Bucket: bucket, Key: key, VersionId: invalidId,
-                    ACL: 'private' };
-                s3.putObjectAcl(params, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'InvalidArgument');
-                    assert.strictEqual(err.statusCode, 400);
-                    done();
-                });
-            });
-
-            it('should return NoSuchVersion if attempting to get acl for ' +
-            'non-existing version', done => {
-                const params = { Bucket: bucket, Key: key,
-                    VersionId: nonExistingId };
-                s3.getObjectAcl(params, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'NoSuchVersion');
-                    assert.strictEqual(err.statusCode, 404);
-                    done();
-                });
-            });
-
-            it('should return InvalidArgument if attempting to get acl for ' +
-            'invalid id', done => {
-                const params = {
-                    Bucket: bucket,
-                    Key: key,
-                    VersionId: invalidId,
-                };
-                s3.getObjectAcl(params, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'InvalidArgument');
-                    assert.strictEqual(err.statusCode, 400);
-                    done();
-                });
+            it('should return InvalidArgument if attempting to put/get acl ' +
+            'for invalid hex string', done => {
+                const error = { code: 'InvalidArgument', statusCode: 400 };
+                _putAndGetAcl('private', invalidId, { error }, done);
             });
         });
 
-        describe('on a version-enabled bucket with non-versioned object',
+        describe('on a version-enabled bucket with non-versioned object :: ',
         () => {
             const versionIds = [];
 
@@ -211,15 +270,15 @@ describe('put and get object acl with versioning', () => {
                 done();
             });
 
-            describe('before putting new versions', () => {
+            describe('before putting new versions :: ', () => {
                 it('non-version specific put and get ACL should now ' +
                 'return version ID ("null") in response headers', done => {
-                    _putAndGetAcl('public-read', undefined, 'null',
-                    'null', done);
+                    const expectedRes = { versionId: 'null' };
+                    _putAndGetAcl('public-read', undefined, expectedRes, done);
                 });
             });
 
-            describe('after putting new versions', () => {
+            describe('after putting new versions :: ', () => {
                 beforeEach(done => {
                     const params = { Bucket: bucket, Key: key };
                     async.timesSeries(counter, (i, next) =>
@@ -234,7 +293,7 @@ describe('put and get object acl with versioning', () => {
             });
         });
 
-        describe('on version-suspended bucket with non-versioned object',
+        describe('on version-suspended bucket with non-versioned object :: ',
         () => {
             const versionIds = [];
 
@@ -255,15 +314,15 @@ describe('put and get object acl with versioning', () => {
                 done();
             });
 
-            describe('before putting new versions', () => {
+            describe('before putting new versions :: ', () => {
                 it('non-version specific put and get ACL should still ' +
                 'return version ID ("null") in response headers', done => {
-                    _putAndGetAcl('public-read', undefined, 'null',
-                    'null', done);
+                    const expectedRes = { versionId: 'null' };
+                    _putAndGetAcl('public-read', undefined, expectedRes, done);
                 });
             });
 
-            describe('after putting new versions', () => {
+            describe('after putting new versions :: ', () => {
                 beforeEach(done => {
                     const params = { Bucket: bucket, Key: key };
                     async.waterfall([
