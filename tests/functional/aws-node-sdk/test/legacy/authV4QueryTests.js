@@ -78,7 +78,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         const params = { Bucket: bucket, Key: 'key' };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'package.json'], httpCode => {
+            '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -96,7 +96,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
             ContentType: 'text/plain' };
             const url = s3.getSignedUrl('putObject', params);
             provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'package.json'], httpCode => {
+                '--upload-file', 'uploadFile'], httpCode => {
                 assert.strictEqual(httpCode, '200 OK');
                 done();
             });
@@ -108,7 +108,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
         const params = { Bucket: bucket, Key };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'package.json'], httpCode => {
+            '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -142,7 +142,7 @@ describe('aws-node-sdk v4auth query tests', function testSuite() {
     });
 
     it('downloaded file should equal file that was put', done => {
-        diff('package.json', 'download', () => {
+        diff('uploadFile', 'download', () => {
             deleteFile('download', done);
         });
     });

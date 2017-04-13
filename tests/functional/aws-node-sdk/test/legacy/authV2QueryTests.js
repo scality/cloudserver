@@ -77,7 +77,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         almostOutsideTime };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'package.json'], httpCode => {
+            '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -94,7 +94,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
              ACL: 'public-read', StorageClass: 'STANDARD' };
              const url = s3.getSignedUrl('putObject', params);
              provideRawOutput(['-verbose', '-X', 'PUT', url,
-                 '--upload-file', 'package.json'], httpCode => {
+                 '--upload-file', 'uploadFile'], httpCode => {
                  assert.strictEqual(httpCode, '200 OK');
                  done();
              });
@@ -112,7 +112,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     });
 
     it('downloaded file should equal file that was put', done => {
-        diff('package.json', 'download', () => {
+        diff('uploadFile', 'download', () => {
             deleteFile('download', done);
         });
     });
