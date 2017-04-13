@@ -36,6 +36,9 @@ errorDescription) {
         url: '/',
         post,
     };
+    if (requestHost) {
+        bucketPutReq.parsedHost = requestHost;
+    }
     const initiateReq = {
         bucketName,
         namespace,
