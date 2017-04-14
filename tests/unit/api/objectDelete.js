@@ -69,10 +69,6 @@ describe('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
-    it.skip('should set delete markers when versioning enabled', () => {
-        // TODO
-    });
-
     it('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest,
