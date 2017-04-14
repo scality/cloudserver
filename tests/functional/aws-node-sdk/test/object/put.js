@@ -40,7 +40,7 @@ describe('PUT object', () => {
                 ACL: 'public-read', StorageClass: 'STANDARD' };
                 const url = s3.getSignedUrl('putObject', params);
                 provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'package.json'], httpCode => {
+                '--upload-file', 'uploadFile'], httpCode => {
                     assert.strictEqual(httpCode, '200 OK');
                     s3.getObjectAcl({ Bucket: bucket, Key: 'key' },
                     (err, result) => {

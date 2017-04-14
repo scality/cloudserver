@@ -56,7 +56,11 @@
     "tv4": "^1.2.7"
   },
   "scripts": {
-    "ft_awssdk": "cd tests/functional/aws-node-sdk && npm test",
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
+    "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
+    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha test/bucket",
+    "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha test/legacy test/object test/service test/support test/multipleBackend",
+    "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha test/versioning/",
     "ft_node": "cd tests/functional/raw-node && npm test",
     "ft_s3cmd": "cd tests/functional/s3cmd && npm test",
     "ft_s3curl": "cd tests/functional/s3curl && npm test",
