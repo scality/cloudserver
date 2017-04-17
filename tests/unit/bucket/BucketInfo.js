@@ -71,6 +71,19 @@ const testCorsConfiguration = [
         allowedHeaders: ['*'],
         maxAgeSeconds: 3000 },
 ];
+
+const testReplicationConfiguration = {
+    role: 'STRING_VALUE',
+    destination: 'STRING_VALUE',
+    rules: [
+        {
+            storageClass: 'STANDARD',
+            prefix: 'STRING_VALUE',
+            enabled: true,
+            id: 'STRING_VALUE',
+        },
+    ],
+};
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
@@ -86,7 +99,8 @@ Object.keys(acl).forEach(
             }, testVersioningConfiguration,
             testLocationConstraint,
             testWebsiteConfiguration,
-            testCorsConfiguration);
+            testCorsConfiguration,
+            testReplicationConfiguration);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             const serialized = dummyBucket.serialize();
@@ -108,6 +122,8 @@ Object.keys(acl).forEach(
                     websiteConfiguration: dummyBucket._websiteConfiguration
                         .getConfig(),
                     cors: dummyBucket._cors,
+                    replicationConfiguration:
+                        dummyBucket._replicationConfiguration,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
@@ -285,6 +301,22 @@ Object.keys(acl).forEach(
                 dummyBucket.setCors(newCorsConfiguration);
                 assert.deepStrictEqual(dummyBucket.getCors(),
                     newCorsConfiguration);
+            });
+            it('setReplicationConfiguration should set replication ' +
+                'configuration', () => {
+                const newReplicationConfig = {
+                    Role: 'arn:partition:service::account-id:resourcetype/res',
+                    Rules: [
+                        {
+                            Destination: {
+                                Bucket: 'arn:aws:s3:::destination-bucket',
+                            },
+                            Prefix: 'test-prefix',
+                            Status: 'Enabled',
+                        },
+                    ],
+                };
+                dummyBucket.setReplicationConfiguration(newReplicationConfig);
             });
         });
     })
