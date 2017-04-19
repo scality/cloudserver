@@ -1,7 +1,9 @@
 import { errors } from 'arsenal';
 import assert from 'assert';
 
+import { checkLocationConstraint } from '../../../lib/api/bucketPut';
 import bucketPut from '../../../lib/api/bucketPut';
+import config from '../../../lib/Config';
 import constants from '../../../constants';
 import metadata from '../metadataswitch';
 import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
@@ -21,6 +23,76 @@ const testRequest = {
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
+
+const testChecks = [
+    {
+        data: 'file',
+        locationSent: 'file',
+        parsedHost: '127.1.2.3',
+        locationReturn: 'file',
+        isError: false,
+    },
+    {
+        data: 'file',
+        locationSent: 'wronglocation',
+        parsedHost: '127.1.0.0',
+        locationReturn: undefined,
+        isError: true,
+    },
+    {
+        data: 'file',
+        locationSent: '',
+        parsedHost: '127.0.0.1',
+        locationReturn: config.restEndpoints['127.0.0.1'],
+        isError: false,
+    },
+    {
+        data: 'file',
+        locationSent: '',
+        parsedHost: '127.3.2.1',
+        locationReturn: '',
+        isError: false,
+    },
+    {
+        data: 'multiple',
+        locationSent: '',
+        parsedHost: '127.3.2.1',
+        locationReturn: undefined,
+        isError: true,
+    },
+];
+
+describe('checkLocationConstraint function', () => {
+    const request = {};
+    const initialConfigData = config.backends.data;
+    afterEach(() => {
+        config.backends.data = initialConfigData;
+    });
+    testChecks.forEach(testCheck => {
+        const returnText = testCheck.isError ? 'InvalidLocationConstraint error'
+        : 'the appropriate location constraint';
+        it(`with data backend: "${testCheck.data}", ` +
+        `location: "${testCheck.locationSent}",` +
+        ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
+        done => {
+            config.backends.data = testCheck.data;
+            request.parsedHost = testCheck.parsedHost;
+            const checkLocation = checkLocationConstraint(request,
+              testCheck.locationSent, log);
+            if (testCheck.isError) {
+                assert.notEqual(checkLocation.error, null,
+                  'Expected failure but got success');
+                assert.strictEqual(checkLocation.error.
+                  InvalidLocationConstraint, true);
+            } else {
+                assert.ifError(checkLocation.error);
+                assert.strictEqual(checkLocation.locationConstraint,
+                  testCheck.locationReturn);
+            }
+            done();
+        });
+    });
+});
 
 describe('bucketPut API', () => {
     beforeEach(() => {
