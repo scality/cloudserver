@@ -39,9 +39,19 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
     withV4(sigCfg => {
         let bucketUtil;
+        let userBucketUtil;
 
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
+            userBucketUtil = new BucketUtility('userBart', sigCfg);
+        });
+
+        describe('user creates a bucket', () => {
+            afterEach(done => bucketUtil.s3.deleteBucket({ Bucket: bucketName },
+              done));
+            it('user should be able to create a bucket', done => {
+                userBucketUtil.s3.createBucket({ Bucket: bucketName }, done);
+            });
         });
 
         describe('create bucket twice', () => {
