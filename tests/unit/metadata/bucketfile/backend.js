@@ -63,6 +63,7 @@ describe('BucketFileInterface::internalListObject', alldone => {
             reader.start();
             return reader;
         },
+        withRequestLogger: () => db,
     };
 
     // stub functions and components
