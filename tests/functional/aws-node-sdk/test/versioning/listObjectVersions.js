@@ -8,10 +8,8 @@ import { removeAllVersions } from '../../lib/utility/versioning-util';
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
-const testing = process.env.VERSIONING === 'no' ?
-    describe.skip : describe;
 
-testing('listObject - Delimiter version', function testSuite() {
+describe('listObject - Delimiter version', function testSuite() {
     this.timeout(600000);
 
     withV4(sigCfg => {

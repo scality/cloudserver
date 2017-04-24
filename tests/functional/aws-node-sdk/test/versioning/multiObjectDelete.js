@@ -25,9 +25,8 @@ function sortList(list) {
     });
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('Multi-Object Versioning Delete Success', function success() {
+describe('Multi-Object Versioning Delete Success', function success() {
     this.timeout(360000);
 
     withV4(sigCfg => {
@@ -140,7 +139,7 @@ testing('Multi-Object Versioning Delete Success', function success() {
     });
 });
 
-testing('Multi-Object Versioning Delete - deleting delete marker',
+describe('Multi-Object Versioning Delete - deleting delete marker',
 () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);

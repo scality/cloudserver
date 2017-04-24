@@ -22,9 +22,8 @@ function comp(v1, v2) {
     return 0;
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('aws-node-sdk test bucket versioning listing', function testSuite() {
+describe('aws-node-sdk test bucket versioning listing', function testSuite() {
     this.timeout(600000);
     let s3 = undefined;
     const masterVersions = [];

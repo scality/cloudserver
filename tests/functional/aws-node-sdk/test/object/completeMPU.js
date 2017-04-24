@@ -16,7 +16,6 @@ function checkNoError(err) {
         `Expected success, got error ${JSON.stringify(err)}`);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
 describe('Complete MPU', () => {
     withV4(sigCfg => {
@@ -102,7 +101,7 @@ describe('Complete MPU', () => {
             });
         });
 
-        testing('on bucket with enabled versioning', () => {
+        describe('on bucket with enabled versioning', () => {
             let uploadId;
             let eTag;
 
@@ -121,7 +120,7 @@ describe('Complete MPU', () => {
             });
         });
 
-        testing('on bucket with suspended versioning', () => {
+        describe('on bucket with suspended versioning', () => {
             let uploadId;
             let eTag;
 

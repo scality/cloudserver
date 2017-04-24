@@ -9,9 +9,8 @@ import { removeAllVersions } from '../../lib/utility/versioning-util.js';
 const bucket = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
-testing('aws-node-sdk test delete object', () => {
+describe('aws-node-sdk test delete object', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

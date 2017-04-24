@@ -19,10 +19,9 @@ function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
 }
 
-const testing = process.env.VERSIONING === 'no' ? describe.skip : describe;
 
 // Same tests as objectPut versioning tests, but head object instead of get
-testing('put and head object with versioning', function testSuite() {
+describe('put and head object with versioning', function testSuite() {
     this.timeout(600000);
 
     withV4(sigCfg => {
