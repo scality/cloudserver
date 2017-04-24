@@ -9,6 +9,8 @@ if (config.backends.metadata === 'file') {
         { bindAddress: config.metadataDaemon.bindAddress,
           port: config.metadataDaemon.port,
           path: config.metadataDaemon.metadataPath,
+          restEnabled: config.metadataDaemon.restEnabled,
+          restPort: config.metadataDaemon.restPort,
           log: config.log,
           versioning: { replicationGroupId: config.replicationGroupId } });
     mdServer.startServer();
