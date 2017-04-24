@@ -9,7 +9,8 @@ if (config.backends.metadata === 'file') {
         { bindAddress: config.metadataDaemon.bindAddress,
           port: config.metadataDaemon.port,
           path: config.metadataDaemon.metadataPath,
-          log: config.log,
-          versioning: { replicationGroupId: config.replicationGroupId } });
+          versioning: { replicationGroupId: config.replicationGroupId },
+          recordLog: config.recordLog,
+          log: config.log });
     mdServer.startServer();
 }
