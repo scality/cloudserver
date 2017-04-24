@@ -53,5 +53,9 @@
     "dataDaemon": {
         "bindAddress": "localhost",
         "port": 9991
+    },
+    "recordLog": {
+        "enabled": false,
+        "recordLogName": "s3-recordlog"
     }
 }
