@@ -9,7 +9,10 @@ const conf = require('../../../../lib/Config').config;
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 
-function _parseError(responseBody) {
+function _parseError(responseBody, statusCode, jsonResponse) {
+    if (jsonResponse && statusCode !== 200) {
+        return JSON.parse(responseBody);
+    }
     if (responseBody.indexOf('<Error>') > -1) {
         const error = {};
         const codeStartIndex = responseBody.indexOf('<Code>') + 6;
@@ -33,13 +36,16 @@ function _parseError(responseBody) {
  * @param {string} [params.path] - request path
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - access key
+ * @param {object} params.authCredentials.secretKey - secret key
+ * @param {string} [params.requestBody] - request body contents
+ * @param {boolean} [params.jsonResponse] - if true, response is
+ *   expected to be received in JSON format (including errors)
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
 function makeRequest(params, callback) {
-    const { hostname, port, method, queryObj, headers, path, authCredentials }
-        = params;
+    const { hostname, port, method, queryObj, headers, path,
+            authCredentials, requestBody, jsonResponse } = params;
     const options = {
         hostname,
         port,
@@ -69,7 +75,7 @@ function makeRequest(params, callback) {
                 statusCode: res.statusCode,
                 body: total,
             };
-            const err = _parseError(total);
+            const err = _parseError(total, res.statusCode, jsonResponse);
             if (err) {
                 err.statusCode = res.statusCode;
             }
@@ -91,6 +97,9 @@ function makeRequest(params, callback) {
                 authCredentials.secretKey, 's3');
         }
     }
+    if (requestBody) {
+        req.write(requestBody);
+    }
     req.end();
 }
 
@@ -103,7 +112,7 @@ function makeRequest(params, callback) {
  * @param {string} [params.objectKey] - object key name
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - access key
+ * @param {object} params.authCredentials.secretKey - secret key
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
