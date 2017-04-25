@@ -8,7 +8,9 @@ import {
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
-} from '../../lib/utility/versioning-util.js';
+} from '../../lib/utility/versioning-util';
+
+import customS3Request from '../../lib/utility/customS3Request';
 
 const data = ['foo1', 'foo2'];
 const counter = 100;
@@ -38,6 +40,30 @@ describe('put and get object with versioning', function testSuite() {
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucket }, done);
+            });
+        });
+
+        it('should return InvalidArgument for a request with versionId query',
+        done => {
+            const params = { Bucket: bucket, Key: key };
+            const query = { versionId: 'testVersionId' };
+            customS3Request(s3.putObject, params, { query }, err => {
+                assert(err, 'Expected error but did not find one');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            });
+        });
+
+        it('should return InvalidArgument for a request with empty string ' +
+        'versionId query', done => {
+            const params = { Bucket: bucket, Key: key };
+            const query = { versionId: '' };
+            customS3Request(s3.putObject, params, { query }, err => {
+                assert(err, 'Expected error but did not find one');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.statusCode, 400);
+                done();
             });
         });
 
