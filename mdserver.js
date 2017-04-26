@@ -8,7 +8,9 @@ if (config.backends.metadata === 'file') {
     const mdServer = new MetadataServer(
         { metadataPath: config.filePaths.metadataPath,
           metadataPort: config.metadataDaemon.port,
-          log: config.log });
+          log: config.log,
+          versioning: { replicationGroupId: config.replicationGroupId },
+        });
     mdServer.startServer();
 }
 
