@@ -81,7 +81,6 @@ export default {
         'replication': true,
         'requestPayment': true,
         'restore': true,
-        'tagging': true,
         'torrent': true,
     },
     // user metadata header to set object locationConstraint
