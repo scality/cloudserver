@@ -10,7 +10,7 @@ machine:
   node:
     version: 4.5.0
   ruby:
-    version: "2.1"
+    version: "2.4.1"
   services:
     - redis
   environment:
@@ -27,9 +27,9 @@ dependencies:
     - wget http://launchpadlibrarian.net/222422124/s3cmd_1.6.0-2_all.deb
     - sudo dpkg -i s3cmd*.deb
     # fog and ruby testing dependencies
-    - gem install fog-aws
-    - gem install mime-types
-    - gem install rspec
+    - gem install fog-aws -v 1.3.0
+    - gem install mime-types -v 3.1
+    - gem install rspec -v 3.5
     - gem install json
     - gem install digest
     # java sdk dependencies
