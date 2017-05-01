@@ -6,9 +6,12 @@ import async from 'async';
 import { parseString } from 'xml2js';
 
 import bucketPut from '../../../lib/api/bucketPut';
+import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
+import objectPut from '../../../lib/api/objectPut';
 import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
 import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
+    from '../helpers';
 import { ds } from '../../../lib/data/in_memory/backend';
 import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
 import { metadata } from '../../../lib/metadata/in_memory/metadata';
@@ -40,6 +43,45 @@ const initiateRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
 };
+
+function _createPutPartRequest(uploadId, partNumber, partBody) {
+    const md5Hash = crypto.createHash('md5').update(partBody);
+    const calculatedHash = md5Hash.digest('hex');
+    return new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
+        query: {
+            partNumber,
+            uploadId,
+        },
+        calculatedHash,
+    }, partBody);
+}
+
+function _createCompleteMpuRequest(uploadId, parts) {
+    const completeBody = [];
+    completeBody.push('<CompleteMultipartUpload>');
+    parts.forEach(part => {
+        completeBody.push('<Part>' +
+            `<PartNumber>${part.partNumber}</PartNumber>` +
+            `<ETag>"${part.eTag}"</ETag>` +
+            '</Part>');
+    });
+    completeBody.push('</CompleteMultipartUpload>');
+    return {
+        bucketName,
+        namespace,
+        objectKey,
+        parsedHost: 's3.amazonaws.com',
+        url: `/${objectKey}?uploadId=${uploadId}`,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        query: { uploadId },
+        post: completeBody,
+    };
+}
 
 
 describe('Multipart Upload API', () => {
@@ -1622,6 +1664,79 @@ describe('Multipart Upload API', () => {
                             });
                         });
                 });
+            });
+        });
+    });
+});
+
+describe('complete mpu with versioning', () => {
+    const objData = ['foo0', 'foo1', 'foo2'].map(str =>
+        Buffer.from(str, 'utf8'));
+
+    const enableVersioningRequest =
+        versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+    const suspendVersioningRequest = versioningTestUtils
+        .createBucketPutVersioningReq(bucketName, 'Suspended');
+    const testPutObjectRequests = objData.slice(0, 2).map(data =>
+        versioningTestUtils.createPutObjectRequest(bucketName, objectKey,
+            data));
+
+    before(done => {
+        cleanup();
+        async.series([
+            callback => bucketPut(authInfo, bucketPutRequest, log,
+                callback),
+            // putting null version: put obj before versioning configured
+            callback => objectPut(authInfo, testPutObjectRequests[0],
+                undefined, log, callback),
+            callback => bucketPutVersioning(authInfo,
+                enableVersioningRequest, log, callback),
+            // put another version:
+            callback => objectPut(authInfo, testPutObjectRequests[1],
+                undefined, log, callback),
+            callback => bucketPutVersioning(authInfo,
+                suspendVersioningRequest, log, callback),
+        ], err => {
+            if (err) {
+                return done(err);
+            }
+            versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 2));
+            return done();
+        });
+    });
+
+    after(done => {
+        cleanup();
+        done();
+    });
+
+    it('should delete null version when creating new null version, ' +
+    'even when null version is not the latest version', done => {
+        async.waterfall([
+            next =>
+                initiateMultipartUpload(authInfo, initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const partBody = objData[2];
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = _createPutPartRequest(testUploadId, 1,
+                    partBody);
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, eTag) => next(err, eTag, testUploadId));
+            },
+            (eTag, testUploadId, next) => {
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(testUploadId,
+                    parts);
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ], err => {
+            assert.ifError(err, `Unexpected err: ${err}`);
+            process.nextTick(() => {
+                versioningTestUtils.assertDataStoreValues(ds, [undefined,
+                    objData[1], objData[2]]);
+                done(err);
             });
         });
     });

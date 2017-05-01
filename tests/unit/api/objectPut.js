@@ -1,9 +1,13 @@
+import async from 'async';
+
 import { errors } from 'arsenal';
 import assert from 'assert';
 
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
+import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
+    from '../helpers';
 import { ds } from '../../../lib/data/in_memory/backend';
 import metadata from '../metadataswitch';
 import objectPut from '../../../lib/api/objectPut';
@@ -26,6 +30,10 @@ const testPutBucketRequest = new DummyRequest({
 const objectName = 'objectName';
 
 let testPutObjectRequest;
+const enableVersioningRequest =
+    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+const suspendVersioningRequest =
+    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
 
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
@@ -225,6 +233,100 @@ describe('objectPut API', () => {
                                 Buffer.from('I am another body', 'utf8'));
                             done();
                         });
+                    });
+                });
+        });
+    });
+});
+
+describe('objectPut API with versioning', () => {
+    beforeEach(() => {
+        cleanup();
+    });
+
+    const objData = ['foo0', 'foo1', 'foo2'].map(str =>
+        Buffer.from(str, 'utf8'));
+    const testPutObjectRequests = objData.map(data => versioningTestUtils
+        .createPutObjectRequest(bucketName, objectName, data));
+
+    it('should delete latest version when creating new null version ' +
+    'if latest version is null version', done => {
+        async.series([
+            callback => bucketPut(authInfo, testPutBucketRequest, log,
+                callback),
+            // putting null version by putting obj before versioning configured
+            callback => objectPut(authInfo, testPutObjectRequests[0], undefined,
+                log, err => {
+                    versioningTestUtils.assertDataStoreValues(ds, [objData[0]]);
+                    callback(err);
+                }),
+            callback => bucketPutVersioning(authInfo, suspendVersioningRequest,
+                log, callback),
+            // creating new null version by putting obj after ver suspended
+            callback => objectPut(authInfo, testPutObjectRequests[1],
+                undefined, log, err => {
+                    // wait until next tick since mem backend executes
+                    // deletes in the next tick
+                    process.nextTick(() => {
+                        // old null version should be deleted
+                        versioningTestUtils.assertDataStoreValues(ds,
+                            [undefined, objData[1]]);
+                        callback(err);
+                    });
+                }),
+            // create another null version
+            callback => objectPut(authInfo, testPutObjectRequests[2],
+                undefined, log, err => {
+                    process.nextTick(() => {
+                        // old null version should be deleted
+                        versioningTestUtils.assertDataStoreValues(ds,
+                            [undefined, undefined, objData[2]]);
+                        callback(err);
+                    });
+                }),
+        ], done);
+    });
+
+    describe('when null version is not the latest version', () => {
+        const objData = ['foo0', 'foo1', 'foo2'].map(str =>
+            Buffer.from(str, 'utf8'));
+        const testPutObjectRequests = objData.map(data => versioningTestUtils
+            .createPutObjectRequest(bucketName, objectName, data));
+        beforeEach(done => {
+            async.series([
+                callback => bucketPut(authInfo, testPutBucketRequest, log,
+                    callback),
+                // putting null version: put obj before versioning configured
+                callback => objectPut(authInfo, testPutObjectRequests[0],
+                    undefined, log, callback),
+                callback => bucketPutVersioning(authInfo,
+                    enableVersioningRequest, log, callback),
+                // put another version:
+                callback => objectPut(authInfo, testPutObjectRequests[1],
+                    undefined, log, callback),
+                callback => bucketPutVersioning(authInfo,
+                    suspendVersioningRequest, log, callback),
+            ], err => {
+                if (err) {
+                    return done(err);
+                }
+                versioningTestUtils.assertDataStoreValues(ds,
+                    objData.slice(0, 2));
+                return done();
+            });
+        });
+
+        it('should still delete null version when creating new null version',
+        done => {
+            objectPut(authInfo, testPutObjectRequests[2], undefined,
+                log, err => {
+                    assert.ifError(err, `Unexpected err: ${err}`);
+                    process.nextTick(() => {
+                        // old null version should be deleted after putting
+                        // new null version
+                        versioningTestUtils.assertDataStoreValues(ds,
+                            [undefined, objData[1], objData[2]]);
+                        done(err);
                     });
                 });
         });
