@@ -56,6 +56,8 @@ Right now, the following operations are implemented:
 - Put Bucket Website
 - Get Bucket Website
 - Delete Bucket Website
+- Put Bucket Versioning
+- Get Bucket Versioning
 - v2 Authentication
 - v4 Authentication (Transferring Payload in a Single Chunk)
 - v4 Authentication (Transferring Payload in Multiple Chunks)
