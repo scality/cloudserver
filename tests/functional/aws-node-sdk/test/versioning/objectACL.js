@@ -1,6 +1,5 @@
 import assert from 'assert';
 import async from 'async';
-import { versioning } from 'arsenal';
 
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
@@ -15,9 +14,7 @@ const counter = 100;
 let bucket;
 const key = '/';
 const invalidId = 'invalidId';
-const VID_INF = versioning.VersionID.VID_INF;
-const nonExistingId = versioning.VersionID
-    .encode(`${VID_INF.slice(VID_INF.length - 1)}7`);
+const nonExistingId = '3939393939393939393936493939393939393939756e6437';
 
 function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
