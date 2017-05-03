@@ -113,6 +113,22 @@ describe('MultipleBackend put object', () => {
                     });
                 });
             });
+
+            it('should put an object to AWS', done => {
+                const params = { Bucket: bucket, Key: key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                        assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
+                });
+            });
         });
     });
 });
@@ -166,6 +182,28 @@ describeSkipIfE2E('MultipleBackend put object based on bucket location', () => {
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: 'file',
+                },
+            }, err => {
+                assert.equal(err, null, `Error creating bucket: ${err}`);
+                process.stdout.write('Putting object\n');
+                return s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                        `got error ${JSON.stringify(err)}`);
+                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                        assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error ${JSON.stringify(err)}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('should put an object to AWS with no location header', done => {
+            process.stdout.write('Creating bucket\n');
+            return s3.createBucket({ Bucket: bucket,
+                CreateBucketConfiguration: {
+                    LocationConstraint: 'aws-test',
                 },
             }, err => {
                 assert.equal(err, null, `Error creating bucket: ${err}`);

@@ -125,7 +125,7 @@ errorDescription) {
 }
 
 describe('objectPutPart API with multiple backends', () => {
-    beforeEach(() => {
+    afterEach(() => {
         cleanup();
     });
 
@@ -152,6 +152,13 @@ describe('objectPutPart API with multiple backends', () => {
         });
     });
 
+    it('should put a part to AWS based on mpu location', done => {
+        putPart('file', 'aws-test', null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should upload part based on mpu location even if part ' +
         'location constraint is specified ', done => {
         putPart('file', 'mem', 'file', 'localhost', () => {
@@ -170,6 +177,13 @@ describe('objectPutPart API with multiple backends', () => {
     it('should put a part to mem based on bucket location', done => {
         putPart('mem', null, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
+            done();
+        });
+    });
+
+    it('should put a part to AWS based on bucket location', done => {
+        putPart('aws-test', null, null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
             done();
         });
     });

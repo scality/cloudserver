@@ -153,6 +153,13 @@ describe('ObjectCopyPutPart API with multiple backends', () => {
         });
     });
 
+    it('should copy part to AWS based on mpu location', done => {
+        copyPutPart('mem', 'aws-test', null, 'localhost', () => {
+            assert.strictEqual(ds.length, 2);
+            done();
+        });
+    });
+
     it('should copy part to mem based on bucket location', done => {
         copyPutPart('mem', null, null, 'localhost', () => {
             // ds length should be three because both source
@@ -167,6 +174,13 @@ describe('ObjectCopyPutPart API with multiple backends', () => {
         copyPutPart('file', null, null, 'localhost', () => {
             // ds should be empty because both source and
             // coped objects should be in file
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
+    it('should copy part to AWS based on bucket location', done => {
+        copyPutPart('aws-test', null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });

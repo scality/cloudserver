@@ -5,6 +5,7 @@ import BucketUtility from '../../lib/utility/bucket-util';
 const bucket = 'buckettestmultiplebackendget';
 const memObject = 'memobject';
 const fileObject = 'fileobject';
+const awsObject = 'awsobject';
 const emptyObject = 'emptyObject';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -60,7 +61,7 @@ describe('Multiple backend get object', () => {
             });
 
         describeSkipIfE2E('with objects in all available backends ' +
-            '(mem/file)', () => {
+            '(mem/file/AWS)', () => {
             before(() => {
                 process.stdout.write('Putting object to mem');
                 return s3.putObjectAsync({ Bucket: bucket, Key: memObject,
@@ -71,6 +72,12 @@ describe('Multiple backend get object', () => {
                     return s3.putObjectAsync({ Bucket: bucket, Key: fileObject,
                         Body: body,
                         Metadata: { 'scal-location-constraint': 'file' } });
+                })
+                .then(() => {
+                    process.stdout.write('Putting object to AWS');
+                    return s3.putObjectAsync({ Bucket: bucket, Key: awsObject,
+                        Body: body,
+                        Metadata: { 'scal-location-constraint': 'aws-test' } });
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to mem');
@@ -99,6 +106,15 @@ describe('Multiple backend get object', () => {
             });
             it('should get an object from file', done => {
                 s3.getObject({ Bucket: bucket, Key: fileObject },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
+                            `error ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
+            });
+            it('should get an object from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: awsObject },
                     (err, res) => {
                         assert.equal(err, null, 'Expected success but got ' +
                             `error ${err}`);
