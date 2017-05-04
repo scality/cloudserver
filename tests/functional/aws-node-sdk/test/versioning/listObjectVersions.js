@@ -8,6 +8,31 @@ import { removeAllVersions } from '../../lib/utility/versioning-util';
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
+const resultElements = [
+    'VersionId',
+    'IsLatest',
+    'LastModified',
+    'Owner',
+];
+const versionResultElements = [
+    'ETag',
+    'Size',
+    'StorageClass',
+];
+
+function _assertResultElements(entry, type) {
+    const elements = type === 'DeleteMarker' ? resultElements :
+        resultElements.concat(versionResultElements);
+    elements.forEach(elem => {
+        assert.notStrictEqual(entry[elem], undefined,
+            `Expected ${elem} in result but did not find it`);
+        if (elem === 'Owner') {
+            assert(entry.Owner.ID, 'Expected Owner ID but did not find it');
+            assert(entry.Owner.DisplayName,
+                'Expected Owner DisplayName but did not find it');
+        }
+    });
+}
 
 describe('listObject - Delimiter version', function testSuite() {
     this.timeout(600000);
@@ -341,6 +366,7 @@ describe('listObject - Delimiter version', function testSuite() {
                                     `unexpected key ${result.Key} ` +
                                     `with version ${result.VersionId}`);
                             }
+                            _assertResultElements(result, 'Version');
                         });
                         res.DeleteMarkers.forEach(result => {
                             const item = expectedResult.find(obj => {
@@ -356,6 +382,7 @@ describe('listObject - Delimiter version', function testSuite() {
                                     `unexpected key ${result.Key} ` +
                                     `with version ${result.VersionId}`);
                             }
+                            _assertResultElements(result, 'DeleteMarker');
                         });
                         res.CommonPrefixes.forEach(cp => {
                             if (!test.commonPrefix.find(
