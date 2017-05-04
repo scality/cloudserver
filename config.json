@@ -38,8 +38,20 @@
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
     },
-    "metadataDaemon": {
+    "metadataClient": {
         "host": "localhost",
         "port": 9990
+    },
+    "dataClient": {
+        "host": "localhost",
+        "port": 9991
+    },
+    "metadataDaemon": {
+        "bindAddress": "localhost",
+        "port": 9990
+    },
+    "dataDaemon": {
+        "bindAddress": "localhost",
+        "port": 9991
     }
 }

@@ -419,7 +419,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             });
         });
         testsRangeOnEmptyFile.forEach(test => {
-            const validText = test.valid ? 'empty file' : 'InvalidRange error';
+            const validText = test.valid ? 'InvalidRange error' : 'empty file';
             it(`should return ${validText} if get range ${test.range} on ` +
             'empty object',
             done => {
