@@ -1,0 +1,68 @@
+[
+    {
+        bucket: true,
+        method: 'GET',
+        controller: 'BucketController',
+        action: 'getService',
+    },
+    {
+        bucket: true,
+        method: 'GET',
+        controller: 'BucketController',
+        action: 'getBucket'
+    },
+    {
+        bucket: true,
+        method: 'PUT',
+        controller: 'BucketController',
+        action: 'putBucket'
+    },
+    {
+        bucket: true,
+        method: 'PUT',
+        controller: 'BucketController',
+        action: 'putBucketAcl',
+        query: ['acl']
+    },
+    {
+        bucket: true,
+        method: 'PUT',
+        controller: 'BucketController',
+        action: 'putBucketVersioning',
+        query: ['versioning']
+    },
+    {
+        bucket: true,
+        method: 'PUT',
+        controller: 'BucketController',
+        action: 'putBucketWebsite',
+        query: ['website']
+    },
+    {
+        bucket: true,
+        method: 'PUT',
+        controller: 'BucketController',
+        action: 'putBucketCors',
+        query: ['cors']
+    },
+    {
+        bucket: true,
+        object: true,
+        method: 'GET',
+        controller: 'ObjectController',
+        action: 'getObject',
+    },
+    {
+        bucket: true,
+        object: true,
+        method: 'PUT',
+        controller: 'ObjectController',
+        action: 'putObject',
+    },
+    {
+        bucket: true,
+        object: true,
+        method: 'GET',
+        controller: 'HealthcheckController'
+    },
+];
