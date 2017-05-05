@@ -1,11 +1,19 @@
 import assert from 'assert';
+import async from 'async';
 
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
+const objectNameAcl = 'testtaggingobjectacl';
 import { taggingTests } from '../../lib/utility/tagging';
+
+const taggingConfig = { TagSet: [
+    {
+        Key: 'key1',
+        Value: 'value1',
+    }] };
 
 function generateMultipleTagConfig(number) {
     const tags = [];
@@ -37,6 +45,8 @@ describe('PUT object taggings', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
+        const otherAccountBucketUtility = new BucketUtility('lisa', {});
+        const otherAccountS3 = otherAccountBucketUtility.s3;
 
         beforeEach(done => s3.createBucket({ Bucket: bucketName }, err => {
             if (err) {
@@ -116,15 +126,68 @@ describe('PUT object taggings', () => {
             s3.putObjectTagging({
                 Bucket: bucketName,
                 Key: 'nonexisting',
-                Tagging: { TagSet: [
-                    {
-                        Key: 'key1',
-                        Value: 'value1',
-                    }] },
+                Tagging: taggingConfig,
             }, err => {
                 _checkError(err, 'NoSuchKey', 404);
                 done();
             });
+        });
+
+        it('should return 403 AccessDenied putting tag with another account',
+        done => {
+            otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
+              objectName, Tagging: taggingConfig,
+          }, err => {
+                _checkError(err, 'AccessDenied', 403);
+                done();
+            });
+        });
+
+        it('should return 403 AccessDenied putting tag with a different ' +
+        'account to an object with ACL "public-read-write"',
+        done => {
+            s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
+            ACL: 'public-read-write' }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return otherAccountS3.putObjectTagging({ Bucket: bucketName,
+                  Key: objectName, Tagging: taggingConfig,
+                }, err => {
+                    _checkError(err, 'AccessDenied', 403);
+                    done();
+                });
+            });
+        });
+
+        it('should return 403 AccessDenied putting tag to an object ' +
+        'in a bucket created with a different account',
+        done => {
+            async.waterfall([
+                next => s3.putBucketAcl({ Bucket: bucketName, ACL:
+                  'public-read-write' }, err => next(err)),
+                next => otherAccountS3.putObject({ Bucket: bucketName, Key:
+                    objectNameAcl }, err => next(err)),
+                next => otherAccountS3.putObjectTagging({ Bucket: bucketName,
+                      Key: objectNameAcl, Tagging: taggingConfig,
+                    }, err => next(err)),
+            ], err => {
+                _checkError(err, 'AccessDenied', 403);
+                done();
+            });
+        });
+
+        it('should put tag to an object in a bucket created with same ' +
+        'account', done => {
+            async.waterfall([
+                next => s3.putBucketAcl({ Bucket: bucketName, ACL:
+                  'public-read-write' }, err => next(err)),
+                next => otherAccountS3.putObject({ Bucket: bucketName, Key:
+                    objectNameAcl }, err => next(err)),
+                next => s3.putObjectTagging({ Bucket: bucketName,
+                      Key: objectNameAcl, Tagging: taggingConfig,
+                    }, err => next(err)),
+            ], done);
         });
     });
 });
