@@ -368,6 +368,45 @@ export const versioningTestUtils = {
     },
 };
 
+export class TaggingConfigTester {
+    constructor() {
+        this._tags = { k1: 'v1', k2: 'v2' };
+    }
+
+    getTags() {
+        return this._tags;
+    }
+
+    constructXml() {
+        const xml = [];
+        xml.push('<Tagging> <TagSet> ');
+        Object.keys(this._tags).forEach(key => {
+            const value = this._tags[key];
+            xml.push(`<Tag> <Key>${key}</Key> <Value>${value}</Value> </Tag>`);
+        });
+        xml.push('</TagSet> </Tagging> ');
+        return xml.join('');
+    }
+
+    createObjectTaggingRequest(method, bucketName, objectName, body) {
+        const request = {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            objectKey: objectName,
+            url: '/?tagging',
+            query: { tagging: '' },
+        };
+        if (method === 'PUT') {
+            request.post = body || this.constructXml();
+            request.headers['content-md5'] = crypto.createHash('md5')
+                .update(request.post, 'utf8').digest('base64');
+        }
+        return request;
+    }
+}
+
 export class AccessControlPolicy {
     constructor(params) {
         this.Owner = {};
