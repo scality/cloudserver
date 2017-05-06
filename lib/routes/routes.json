@@ -4,65 +4,85 @@
         method: 'GET',
         controller: 'BucketController',
         action: 'getService',
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'GET',
         controller: 'BucketController',
-        action: 'getBucket'
+        action: 'getBucket',
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'PUT',
         controller: 'BucketController',
-        action: 'putBucket'
+        action: 'putBucket',
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'PUT',
         controller: 'BucketController',
         action: 'putBucketAcl',
-        query: ['acl']
+        query: ['acl'],
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'PUT',
         controller: 'BucketController',
         action: 'putBucketVersioning',
-        query: ['versioning']
+        query: ['versioning'],
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'PUT',
         controller: 'BucketController',
         action: 'putBucketWebsite',
-        query: ['website']
+        query: ['website'],
+        auth: ['bucket']
     },
     {
         bucket: true,
         method: 'PUT',
         controller: 'BucketController',
         action: 'putBucketCors',
-        query: ['cors']
+        query: ['cors'],
+        auth: ['bucket']
     },
     {
         bucket: true,
         object: true,
         method: 'GET',
         controller: 'ObjectController',
-        action: 'getObject',
+        action: 'getObject',,
+        auth: ['bucket', 'object']
     },
     {
         bucket: true,
         object: true,
         method: 'PUT',
         controller: 'ObjectController',
-        action: 'putObject',
+        action: 'putObject',,
+        auth: ['bucket', 'object']
     },
     {
-        bucket: true,
-        object: true,
+        bucket: false,
+        object: false,
         method: 'GET',
-        controller: 'HealthcheckController'
+        controller: 'HealthcheckController',
+        action: 'basic',
+        admin: true,
     },
+    {
+        bucket: false,
+        object: false,
+        method: 'GET',
+        controller: 'HealthcheckController',
+        query: ['deep'],
+        action: 'deep',
+        admin: true,
+    }
 ];

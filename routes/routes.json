@@ -1,0 +1,90 @@
+[
+    {
+        "bucket": true,
+        "method": "GET",
+        "controller": "BucketController",
+        "action": "getService",
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "method": "GET",
+        "controller": "BucketController",
+        "action": "getBucket",
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "method": "PUT",
+        "controller": "BucketController",
+        "action": "putBucket",
+        "auth": false
+    },
+    {
+        "bucket": true,
+        "method": "PUT",
+        "controller": "BucketController",
+        "action": "putBucketAcl",
+        "query": ["acl"],
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "method": "PUT",
+        "controller": "BucketController",
+        "action": "putBucketVersioning",
+        "query": ["versioning"],
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "method": "PUT",
+        "controller": "BucketController",
+        "action": "putBucketWebsite",
+        "query": ["website"],
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "method": "PUT",
+        "controller": "BucketController",
+        "action": "putBucketCors",
+        "query": ["cors"],
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "object": true,
+        "method": "GET",
+        "controller": "ObjectController",
+        "action": "getObject",
+        "auth": true
+    },
+    {
+        "bucket": true,
+        "object": true,
+        "method": "PUT",
+        "controller": "ObjectController",
+        "action": "putObject",
+        "auth": true
+    },
+    {
+        "bucket": false,
+        "object": false,
+        "method": "GET",
+        "controller": "HealthcheckController",
+        "action": "basic",
+        "admin": true,
+        "auth": false
+    },
+    {
+        "bucket": false,
+        "object": false,
+        "method": "GET",
+        "controller": "HealthcheckController",
+        "query": ["deep"],
+        "action": "deep",
+        "admin": true,
+        "auth": false
+    }
+];
