@@ -4,11 +4,119 @@ import async from 'async';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
-import { removeAllVersions } from '../../lib/utility/versioning-util.js';
+import {
+    versioningSuspended,
+    versioningEnabled,
+    removeAllVersions,
+} from '../../lib/utility/versioning-util.js';
 
 const bucket = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';
 
+function _assertNoError(err, desc) {
+    assert.strictEqual(err, null, `Unexpected err ${desc || ''}: ${err}`);
+}
+
+describe('delete marker creation in bucket with null version', () => {
+    withV4(sigCfg => {
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
+        const nullVersionBody = 'nullversionbody';
+
+        beforeEach(done => {
+            s3.createBucket({ Bucket: bucket }, err => {
+                if (err) {
+                    return done(err);
+                } // put null object
+                return s3.putObject({
+                    Bucket: bucket,
+                    Key: key,
+                    Body: nullVersionBody,
+                }, done);
+            });
+        });
+
+        afterEach(done => {
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err) {
+                    return done(err);
+                }
+                return s3.deleteBucket({ Bucket: bucket }, err => {
+                    assert.strictEqual(err, null,
+                        `Error deleting bucket: ${err}`);
+                    return done();
+                });
+            });
+        });
+
+        it('should keep the null version if versioning enabled', done => {
+            async.waterfall([
+                callback => s3.putBucketVersioning({
+                    Bucket: bucket,
+                    VersioningConfiguration: versioningEnabled,
+                }, err => callback(err)),
+                callback =>
+                    s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+                        _assertNoError(err, 'listing object versions');
+                        assert.strictEqual(data.Versions.length, 1);
+                        assert.strictEqual(data.Versions[0].VersionId,
+                            'null');
+                        return callback();
+                    }),
+                callback => s3.deleteObject({ Bucket: bucket, Key: key },
+                    (err, data) => {
+                        _assertNoError(err, 'creating delete marker');
+                        assert.strictEqual(data.DeleteMarker, 'true');
+                        assert(data.VersionId);
+                        return callback(null, data.VersionId);
+                    }),
+                (deleteMarkerVerId, callback) =>
+                    s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+                        _assertNoError(err, 'listing object versions');
+                        assert.strictEqual(data.Versions.length, 1);
+                        assert.strictEqual(data.Versions[0].VersionId,
+                            'null');
+                        assert.strictEqual(data.DeleteMarkers[0].VersionId,
+                            deleteMarkerVerId);
+                        return callback();
+                    }),
+            ], done);
+        });
+
+        it('delete marker overwrites null version if versioning suspended',
+        done => {
+            async.waterfall([
+                callback => s3.putBucketVersioning({
+                    Bucket: bucket,
+                    VersioningConfiguration: versioningSuspended,
+                }, err => callback(err)),
+                callback =>
+                    s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+                        _assertNoError(err, 'listing object versions');
+                        assert.strictEqual(data.Versions.length, 1);
+                        assert.strictEqual(data.Versions[0].VersionId,
+                            'null');
+                        return callback();
+                    }),
+                callback => s3.deleteObject({ Bucket: bucket, Key: key },
+                    (err, data) => {
+                        _assertNoError(err, 'creating delete marker');
+                        assert.strictEqual(data.DeleteMarker, 'true');
+                        assert.strictEqual(data.VersionId, 'null');
+                        return callback(null, data.VersionId);
+                    }),
+                (deleteMarkerVerId, callback) =>
+                    s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
+                        _assertNoError(err, 'listing object versions');
+                        assert.strictEqual(data.Versions.length, 0);
+                        assert.strictEqual(data.DeleteMarkers[0].VersionId,
+                            deleteMarkerVerId);
+                        return callback();
+                    }),
+            ], done);
+        });
+    });
+});
 
 describe('aws-node-sdk test delete object', () => {
     withV4(sigCfg => {
@@ -24,20 +132,18 @@ describe('aws-node-sdk test delete object', () => {
 
         // delete bucket after testing
         after(done => {
-            // TODO: remove conditional after listing is implemented
-            if (process.env.AWS_ON_AIR === 'true') {
-                return removeAllVersions(bucket, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    return s3.deleteBucket({ Bucket: bucket }, err => {
-                        assert.strictEqual(err, null,
-                            `Error deleting bucket: ${err}`);
-                        return done();
-                    });
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err.code === 'NoSuchBucket') {
+                    return done();
+                } else if (err) {
+                    return done(err);
+                }
+                return s3.deleteBucket({ Bucket: bucket }, err => {
+                    assert.strictEqual(err, null,
+                        `Error deleting bucket: ${err}`);
+                    return done();
                 });
-            }
-            return done();
+            });
         });
 
         it('delete non existent object should not create a delete marker',
