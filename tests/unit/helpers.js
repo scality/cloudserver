@@ -379,12 +379,13 @@ export class TaggingConfigTester {
 
     constructXml() {
         const xml = [];
-        xml.push('<Tagging> <TagSet> ');
+        xml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Tagging> <TagSet>');
         Object.keys(this._tags).forEach(key => {
             const value = this._tags[key];
-            xml.push(`<Tag> <Key>${key}</Key> <Value>${value}</Value> </Tag>`);
+            xml.push(`<Tag><Key>${key}</Key><Value>${value}</Value></Tag>`);
         });
-        xml.push('</TagSet> </Tagging> ');
+        xml.push('</TagSet> </Tagging>');
         return xml.join('');
     }
 
