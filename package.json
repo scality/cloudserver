@@ -21,10 +21,6 @@
   "dependencies": {
     "arsenal": "scality/Arsenal",
     "async": "~1.4.2",
-    "babel-core": "^6.5.2",
-    "babel-plugin-transform-es2015-destructuring": "^6.5.2",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.5.2",
-    "babel-plugin-transform-es2015-parameters": "^6.5.2",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "ioredis": "2.4.0",
@@ -75,8 +71,8 @@
     "start_dataserver": "node dataserver.js",
     "start_s3server": "node index.js",
     "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
-    "start_utapi": "node utapiServer.js",
-    "utapi_replay": "node utapiReplay.js",
+    "start_utapi": "node lib/utapi/utapi.js",
+    "utapi_replay": "node lib/utapi/utapiReplay.js",
     "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
     "multiple_backend_test": "S3BACKEND=mem S3DATA=multiple mocha --compilers js:babel-core/register --recursive tests/multipleBackend",
     "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --reporter mocha-junit-reporter --recursive tests/unit"

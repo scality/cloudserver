@@ -1,10 +1,9 @@
 'use strict'; // eslint-disable-line strict
 const assert = require('assert');
-require('babel-core/register');
 const DummyRequestLogger = require('../unit/helpers').DummyRequestLogger;
-const clientCheck =
-    require('../../lib/utilities/healthcheckHandler').clientCheck;
-const config = require('../../lib/Config').default;
+const clientCheck
+    = require('../../lib/utilities/healthcheckHandler').clientCheck;
+const { config } = require('../../lib/Config');
 
 const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
@@ -28,4 +27,3 @@ describe('Healthcheck response', () => {
         });
     });
 });
-

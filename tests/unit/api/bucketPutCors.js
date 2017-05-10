@@ -1,15 +1,16 @@
-import assert from 'assert';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import { _validator,
-    parseCorsXml } from '../../../lib/api/apiUtils/bucket/bucketCors';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const { _validator, parseCorsXml }
+    = require('../../../lib/api/apiUtils/bucket/bucketCors');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    CorsConfigTester } from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+    CorsConfigTester }
+    = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

@@ -6,7 +6,7 @@ function _generateWordWithLength(nbr) {
     return key;
 }
 
-export const taggingTests = [
+const taggingTests = [
     { tag: { key: '+- =._:/', value: '+- =._:/' },
       it: 'should return tags if tags are valid' },
     { tag: { key: 'key1', value: '' },
@@ -27,3 +27,7 @@ export const taggingTests = [
       it: 'should return InvalidTag if invalid value',
     },
 ];
+
+module.exports = {
+    taggingTests,
+};

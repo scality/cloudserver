@@ -1,13 +1,13 @@
-import crypto from 'crypto';
-import assert from 'assert';
+const crypto = require('crypto');
+const assert = require('assert');
 
-import AuthInfo from '../../lib/auth/AuthInfo';
-import constants from '../../constants';
-import { metadata } from '../../lib/metadata/in_memory/metadata';
-import { resetCount, ds } from '../../lib/data/in_memory/backend';
-import DummyRequest from './DummyRequest';
+const AuthInfo = require('../../lib/auth/AuthInfo');
+const constants = require('../../constants');
+const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const { resetCount, ds } = require('../../lib/data/in_memory/backend');
+const DummyRequest = require('./DummyRequest');
 
-export const testsRangeOnEmptyFile = [
+const testsRangeOnEmptyFile = [
     { range: 'bytes=0-9', valid: true },
     { range: 'bytes=1-9', valid: true },
     { range: 'bytes=1-999', valid: true },
@@ -29,7 +29,7 @@ export const testsRangeOnEmptyFile = [
     { range: 'bytes=a-a', valid: false },
 ];
 
-export function makeid(size) {
+function makeid(size) {
     let text = '';
     const possible =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -40,7 +40,7 @@ export function makeid(size) {
     return text;
 }
 
-export function shuffle(array) {
+function shuffle(array) {
     let randomIndex;
     let temporaryValue;
     const length = array.length;
@@ -55,7 +55,7 @@ export function shuffle(array) {
     return array;
 }
 
-export function timeDiff(startTime) {
+function timeDiff(startTime) {
     const timeArray = process.hrtime(startTime);
     // timeArray[0] is whole seconds
     // timeArray[1] is remaining nanoseconds
@@ -63,7 +63,7 @@ export function timeDiff(startTime) {
     return milliseconds;
 }
 
-export function makeAuthInfo(accessKey) {
+function makeAuthInfo(accessKey) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -81,7 +81,7 @@ export function makeAuthInfo(accessKey) {
     });
 }
 
-export class WebsiteConfig {
+class WebsiteConfig {
     constructor(indexDocument, errorDocument, redirectAllReqTo) {
         if (indexDocument) {
             this.IndexDocument = {};
@@ -176,7 +176,7 @@ export class WebsiteConfig {
     }
 }
 
-export function createAlteredRequest(alteredItems, objToAlter,
+function createAlteredRequest(alteredItems, objToAlter,
     baseOuterObj, baseInnerObj) {
     const alteredRequest = Object.assign({}, baseOuterObj);
     const alteredNestedObj = Object.assign({}, baseInnerObj);
@@ -187,7 +187,7 @@ export function createAlteredRequest(alteredItems, objToAlter,
     return alteredRequest;
 }
 
-export function cleanup() {
+function cleanup() {
     metadata.buckets = new Map;
     metadata.keyMaps = new Map;
     // Set data store array back to empty array
@@ -196,7 +196,7 @@ export function cleanup() {
     resetCount();
 }
 
-export class DummyRequestLogger {
+class DummyRequestLogger {
 
     constructor() {
         this.ops = [];
@@ -254,7 +254,7 @@ export class DummyRequestLogger {
     }
 }
 
-export class CorsConfigTester {
+class CorsConfigTester {
     constructor(params) {
         this._cors = [
           { allowedMethods: ['PUT', 'POST', 'DELETE'],
@@ -329,7 +329,7 @@ export class CorsConfigTester {
     }
 }
 
-export const versioningTestUtils = {
+const versioningTestUtils = {
     createPutObjectRequest: (bucketName, keyName, body) => {
         const params = {
             bucketName,
@@ -368,7 +368,7 @@ export const versioningTestUtils = {
     },
 };
 
-export class TaggingConfigTester {
+class TaggingConfigTester {
     constructor() {
         this._tags = { k1: 'v1', k2: 'v2' };
     }
@@ -408,7 +408,7 @@ export class TaggingConfigTester {
     }
 }
 
-export class AccessControlPolicy {
+class AccessControlPolicy {
     constructor(params) {
         this.Owner = {};
         this.Owner.ID = params.ownerID;
@@ -460,3 +460,19 @@ export class AccessControlPolicy {
         return xml.join('');
     }
 }
+
+module.exports = {
+    testsRangeOnEmptyFile,
+    makeid,
+    shuffle,
+    timeDiff,
+    createAlteredRequest,
+    cleanup,
+    DummyRequestLogger,
+    makeAuthInfo,
+    WebsiteConfig,
+    CorsConfigTester,
+    versioningTestUtils,
+    TaggingConfigTester,
+    AccessControlPolicy,
+};

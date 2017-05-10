@@ -1,10 +1,10 @@
-import assert from 'assert';
-import async from 'async';
-import fs from 'fs';
-import path from 'path';
-import url from 'url';
+const assert = require('assert');
+const async = require('async');
+const fs = require('fs');
+const path = require('path');
+const url = require('url');
 
-import makeRequest from '../../../raw-node/utils/makeRequest';
+const { makeRequest } = require('../../../raw-node/utils/makeRequest');
 
 const bucketName = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
     'bucketwebsitetester';
@@ -222,7 +222,7 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method) {
     }
 }
 
-export class WebsiteConfigTester {
+class WebsiteConfigTester {
     constructor(indexDocument, errorDocument, redirectAllReqTo) {
         if (indexDocument) {
             this.IndexDocument = {};
@@ -364,3 +364,7 @@ export class WebsiteConfigTester {
         });
     }
 }
+
+module.exports = {
+    WebsiteConfigTester,
+};

@@ -1,12 +1,12 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import { checkLocationConstraint } from '../../../lib/api/bucketPut';
-import bucketPut from '../../../lib/api/bucketPut';
-import config from '../../../lib/Config';
-import constants from '../../../constants';
-import metadata from '../metadataswitch';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const { checkLocationConstraint } = require('../../../lib/api/bucketPut');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { config } = require('../../../lib/Config');
+const constants = require('../../../constants');
+const metadata = require('../metadataswitch');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';

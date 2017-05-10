@@ -1,12 +1,12 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import serviceGet from '../../../lib/api/serviceGet';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const constants = require('../../../constants');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const serviceGet = require('../../../lib/api/serviceGet');
 
 const authInfo = makeAuthInfo('accessKey1');
 const log = new DummyRequestLogger();

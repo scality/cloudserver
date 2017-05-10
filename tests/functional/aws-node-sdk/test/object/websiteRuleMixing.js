@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-import BucketUtility from '../../lib/utility/bucket-util';
-import conf from '../../../../../lib/Config';
-import getConfig from '../support/config';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
+const BucketUtility = require('../../lib/utility/bucket-util');
+const conf = require('../../../../../lib/Config').config;
+const getConfig = require('../support/config');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const bucketUtil = new BucketUtility('default', config);

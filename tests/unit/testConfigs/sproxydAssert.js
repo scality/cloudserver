@@ -1,5 +1,5 @@
-import assert from 'assert';
-import { sproxydAssert } from '../../../lib/Config';
+const assert = require('assert');
+const { sproxydAssert } = require('../../../lib/Config');
 
 function makeSproxydConf(bootstrap, chordCos, sproxydPath) {
     const conf = {

@@ -1,14 +1,14 @@
-import async from 'async';
-import assert from 'assert';
+const assert = require('assert');
+const async = require('async');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
-import objectPut from '../../../lib/api/objectPut';
-import objectCopy from '../../../lib/api/objectCopy';
-import { ds } from '../../../lib/data/in_memory/backend';
-import DummyRequest from '../DummyRequest';
-import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    from '../helpers';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const objectPut = require('../../../lib/api/objectPut');
+const objectCopy = require('../../../lib/api/objectCopy');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const DummyRequest = require('../DummyRequest');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
+    = require('../helpers');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

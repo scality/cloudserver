@@ -1,8 +1,7 @@
-import assert from 'assert';
-import parseLC from '../../../lib/data/locationConstraintParser';
-import inMemory from '../../../lib/data/in_memory/backend';
-import DataFileInterface from '../../../lib/data/file/backend';
-
+const assert = require('assert');
+const parseLC = require('../../../lib/data/locationConstraintParser');
+const inMemory = require('../../../lib/data/in_memory/backend').backend;
+const DataFileInterface = require('../../../lib/data/file/backend');
 
 const clients = parseLC();
 

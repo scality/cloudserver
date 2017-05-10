@@ -1,14 +1,14 @@
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
-import {
+const {
     versioningSuspended,
     versioningEnabled,
     removeAllVersions,
-} from '../../lib/utility/versioning-util.js';
+} = require('../../lib/utility/versioning-util.js');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';

@@ -1,9 +1,9 @@
-import assert from 'assert';
-import crypto from 'crypto';
-import { S3 } from 'aws-sdk';
+const assert = require('assert');
+const crypto = require('crypto');
+const { S3 } = require('aws-sdk');
 
-import getConfig from '../support/config';
-import { testsRangeOnEmptyFile } from '../../../../unit/helpers';
+const getConfig = require('../support/config');
+const { testsRangeOnEmptyFile } = require('../../../../unit/helpers');
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `ftest-mybucket-${random}`;

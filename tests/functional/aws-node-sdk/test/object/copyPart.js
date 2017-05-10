@@ -1,12 +1,12 @@
-import assert from 'assert';
-import crypto from 'crypto';
-import childProcess from 'child_process';
+const assert = require('assert');
+const crypto = require('crypto');
+const childProcess = require('child_process');
 
-import Promise from 'bluebird';
+const Promise = require('bluebird');
 
-import getConfig from '../support/config';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const getConfig = require('../support/config');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 
 const sourceBucketName = 'supersourcebucket81033016532';

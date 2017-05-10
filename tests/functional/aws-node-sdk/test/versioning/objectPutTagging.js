@@ -1,17 +1,17 @@
-import assert from 'assert';
+const assert = require('assert');
 const async = require('async');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import { checkOneVersion } from '../../lib/utility/versioning-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { checkOneVersion } = require('../../lib/utility/versioning-util');
+
+const {
+    removeAllVersions,
+    versioningEnabled,
+} = require('../../lib/utility/versioning-util');
 
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
-
-import {
-    removeAllVersions,
-    versioningEnabled,
-} from '../../lib/utility/versioning-util';
 
 function _checkError(err, code, statusCode) {
     assert(err, 'Expected error but found none');

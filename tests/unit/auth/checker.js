@@ -1,7 +1,7 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import checker from '../../../lib/auth/in_memory/checker';
-import ref from '../../../conf/authdata.json';
+const checker = require('../../../lib/auth/in_memory/checker');
+const ref = require('../../../conf/authdata.json');
 
 function getParentField(obj, field) {
     const fields = field.split('.');
@@ -34,7 +34,7 @@ function shouldSuccess(obj, done) {
     done();
 }
 
-export const should = {
+const should = {
     _exec: undefined,
     missingField: (obj, field, done) => {
         delete getParentField(obj, field)[getFieldName(field)];
@@ -132,3 +132,7 @@ describe('auth/in_memory/checker.js', () => {
         shouldFail(obj, done);
     });
 });
+
+module.exports = {
+    should,
+};

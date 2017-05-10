@@ -1,7 +1,7 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import AuthInfo from '../../../lib/auth/AuthInfo';
-import constants from '../../../constants';
+const AuthInfo = require('../../../lib/auth/AuthInfo');
+const constants = require('../../../constants');
 
 const arn = 'arn:aws:iam::123456789012:user/Fred';
 const canonicalID = '123456789012123456789012123456789012';

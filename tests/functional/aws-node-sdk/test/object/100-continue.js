@@ -1,11 +1,11 @@
-import assert from 'assert';
-import http from 'http';
-import https from 'https';
-import url from 'url';
+const assert = require('assert');
+const http = require('http');
+const https = require('https');
+const url = require('url');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import conf from '../../../../../lib/Config';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';

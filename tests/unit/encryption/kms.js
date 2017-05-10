@@ -1,7 +1,7 @@
-import assert from 'assert';
-import KMS from '../../../lib/kms/wrapper';
-import Common from '../../../lib/kms/common';
-import { cleanup, DummyRequestLogger } from '../helpers';
+const assert = require('assert');
+const KMS = require('../../../lib/kms/wrapper');
+const Common = require('../../../lib/kms/common');
+const { cleanup, DummyRequestLogger } = require('../helpers');
 
 const log = new DummyRequestLogger();
 

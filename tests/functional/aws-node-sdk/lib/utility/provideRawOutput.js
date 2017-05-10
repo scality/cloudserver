@@ -1,6 +1,6 @@
-import cp from 'child_process';
+const cp = require('child_process');
 
-import conf from '../../../../../lib/Config';
+const conf = require('../../../../../lib/Config').config;
 
 const ssl = conf.https;
 let transportArgs = ['-s'];
@@ -9,7 +9,7 @@ if (ssl && ssl.ca) {
 }
 
 // Get stdout and stderr stringified
-export default function provideRawOutput(args, cb) {
+function provideRawOutput(args, cb) {
     process.stdout.write(`curl ${args}\n`);
     const child = cp.spawn('curl', transportArgs.concat(args));
     const procData = {
@@ -43,3 +43,5 @@ export default function provideRawOutput(args, cb) {
         procData.stderr += data.toString();
     });
 }
+
+module.exports = provideRawOutput;

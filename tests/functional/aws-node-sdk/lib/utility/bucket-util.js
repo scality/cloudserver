@@ -1,9 +1,9 @@
-import Promise from 'bluebird';
-import { S3 } from 'aws-sdk';
-import projectFixture from '../fixtures/project';
-import getConfig from '../../test/support/config';
+const Promise = require('bluebird');
+const { S3 } = require('aws-sdk');
+const projectFixture = require('../fixtures/project');
+const getConfig = require('../../test/support/config');
 
-export default class BucketUtility {
+class BucketUtility {
     constructor(profile = 'default', config = {}) {
         const s3Config = getConfig(profile, config);
 
@@ -97,3 +97,5 @@ export default class BucketUtility {
             .then(data => data.Owner);
     }
 }
+
+module.exports = BucketUtility;

@@ -1,10 +1,10 @@
-import fs from 'fs';
-import https from 'https';
-import path from 'path';
-import AWS from 'aws-sdk';
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
+const AWS = require('aws-sdk');
 
-import memCredentials from '../../lib/json/mem_credentials.json';
-import conf from '../../../../../lib/Config';
+const memCredentials = require('../../lib/json/mem_credentials.json');
+const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? 'https' : 'http';
 
@@ -80,9 +80,11 @@ function _getAwsConfig(profile, config) {
     return awsConfig;
 }
 
-export default function getConfig(profile = 'default', config = {}) {
+function getConfig(profile = 'default', config = {}) {
     const fn = process.env.AWS_ON_AIR && process.env.AWS_ON_AIR === 'true'
         ? _getAwsConfig : _getMemConfig;
 
     return fn.apply(this, [profile, config]);
 }
+
+module.exports = getConfig;

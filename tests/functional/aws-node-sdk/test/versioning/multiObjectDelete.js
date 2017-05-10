@@ -1,9 +1,9 @@
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import { removeAllVersions } from '../../lib/utility/versioning-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
 const bucketName = `multi-object-delete-${Date.now()}`;
 const key = 'key';

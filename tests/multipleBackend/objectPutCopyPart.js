@@ -1,16 +1,18 @@
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../unit/helpers';
-import { ds } from '../../lib/data/in_memory/backend';
-import bucketPut from '../../lib/api/bucketPut';
-import initiateMultipartUpload from '../../lib/api/initiateMultipartUpload';
-import objectPut from '../../lib/api/objectPut';
-import objectPutCopyPart from '../../lib/api/objectPutCopyPart';
-import DummyRequest from '../unit/DummyRequest';
-import { metadata } from '../../lib/metadata/in_memory/metadata';
-import constants from '../../constants';
+const { cleanup, DummyRequestLogger, makeAuthInfo }
+    = require('../unit/helpers');
+const { ds } = require('../../lib/data/in_memory/backend');
+const { bucketPut } = require('../../lib/api/bucketPut');
+const initiateMultipartUpload
+    = require('../../lib/api/initiateMultipartUpload');
+const objectPut = require('../../lib/api/objectPut');
+const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
+const DummyRequest = require('../unit/DummyRequest');
+const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const constants = require('../../constants');
 
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();

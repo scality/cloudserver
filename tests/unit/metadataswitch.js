@@ -1,6 +1,6 @@
-import wrapper from '../../lib/metadata/wrapper';
-import backend from '../../lib/metadata/in_memory/backend';
+const wrapper = require('../../lib/metadata/wrapper');
+const backend = require('../../lib/metadata/in_memory/backend');
 
 wrapper.switch(backend);
 
-export default wrapper;
+module.exports = wrapper;

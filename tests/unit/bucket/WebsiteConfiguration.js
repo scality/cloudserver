@@ -1,8 +1,8 @@
-import assert from 'assert';
-import {
+const assert = require('assert');
+const {
     WebsiteConfiguration,
     RoutingRule,
-} from '../../../lib/metadata/WebsiteConfiguration';
+} = require('../../../lib/metadata/WebsiteConfiguration');
 
 const testRoutingRuleParams = {
     redirect: {

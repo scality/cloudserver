@@ -1,9 +1,9 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import { S3 } from 'aws-sdk';
-import { timesLimit, waterfall } from 'async';
+const { S3 } = require('aws-sdk');
+const { timesLimit, waterfall } = require('async');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 const bucket = `bigmpu-test-bucket-${Date.now()}`;
 const key = 'mpuKey';

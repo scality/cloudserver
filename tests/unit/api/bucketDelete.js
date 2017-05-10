@@ -1,20 +1,20 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import crypto from 'crypto';
+const crypto = require('crypto');
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
+const { errors } = require('arsenal');
 
-import async from 'async';
-import { parseString } from 'xml2js';
-
-import bucketDelete from '../../../lib/api/bucketDelete';
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import metadata from '../metadataswitch';
-import * as metadataMem from '../../../lib/metadata/in_memory/metadata';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import DummyRequest from '../DummyRequest';
+const bucketDelete = require('../../../lib/api/bucketDelete');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const constants = require('../../../constants');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const metadata = require('../metadataswitch');
+const metadataMem = require('../../../lib/metadata/in_memory/metadata');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

@@ -1,12 +1,12 @@
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketGetACL from '../../../lib/api/bucketGetACL';
-import bucketPutACL from '../../../lib/api/bucketPutACL';
-import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketGetACL = require('../../../lib/api/bucketGetACL');
+const bucketPutACL = require('../../../lib/api/bucketPutACL');
+const constants = require('../../../constants');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';

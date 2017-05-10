@@ -1,12 +1,12 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const bucketGetWebsite = require('../../../lib/api/bucketGetWebsite');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo }
-from '../helpers';
+= require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

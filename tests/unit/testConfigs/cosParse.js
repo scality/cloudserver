@@ -1,5 +1,5 @@
-import assert from 'assert';
-import { cosParse } from '../../../lib/Config';
+const assert = require('assert');
+const { cosParse } = require('../../../lib/Config');
 
 const dummyChordCos = '20';
 

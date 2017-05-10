@@ -1,18 +1,19 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutTagging from '../../../lib/api/objectPutTagging';
-import { _validator,
-    parseTagXml } from '../../../lib/api/apiUtils/object/tagging';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutTagging = require('../../../lib/api/objectPutTagging');
+const { _validator, parseTagXml }
+    = require('../../../lib/api/apiUtils/object/tagging');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    TaggingConfigTester } from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
-import { taggingTests } from
-  '../../functional/aws-node-sdk/lib/utility/tagging.js';
-import DummyRequest from '../DummyRequest';
+    TaggingConfigTester }
+    = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
+const { taggingTests }
+    = require('../../functional/aws-node-sdk/lib/utility/tagging.js');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

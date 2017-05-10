@@ -1,12 +1,12 @@
-import { S3 } from 'aws-sdk';
-import assert from 'assert';
-import async from 'async';
+const { S3 } = require('aws-sdk');
+const assert = require('assert');
+const async = require('async');
 
-import getConfig from '../support/config';
-import methodRequest from '../../lib/utility/cors-util';
-import { generateCorsParams } from '../../lib/utility/cors-util';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
-import { removeAllVersions } from '../../lib/utility/versioning-util';
+const getConfig = require('../support/config');
+const { methodRequest } = require('../../lib/utility/cors-util');
+const { generateCorsParams } = require('../../lib/utility/cors-util');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
+const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);

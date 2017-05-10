@@ -1,16 +1,16 @@
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
-import {
+const {
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
-} from '../../lib/utility/versioning-util';
+} = require('../../lib/utility/versioning-util');
 
-import customS3Request from '../../lib/utility/customS3Request';
+const customS3Request = require('../../lib/utility/customS3Request');
 
 const data = ['foo1', 'foo2'];
 const counter = 100;

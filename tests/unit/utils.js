@@ -1,6 +1,6 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import utils from '../../lib/utils';
+const utils = require('../../lib/utils');
 
 describe('utils.getBucketNameFromHost', () => {
     it('should extract valid buckets for one endpoint', () => {

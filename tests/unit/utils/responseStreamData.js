@@ -1,12 +1,12 @@
-import assert from 'assert';
-import httpMocks from 'node-mocks-http';
-import { EventEmitter } from 'events';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const httpMocks = require('node-mocks-http');
+const { EventEmitter } = require('events');
+const { errors } = require('arsenal');
 
-import { cleanup, DummyRequestLogger } from '../helpers';
-import { ds } from '../../../lib/data/in_memory/backend';
-import routesUtils from '../../../lib/routes/routesUtils';
-import data from '../../../lib/data/wrapper';
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const routesUtils = require('../../../lib/routes/routesUtils');
+const data = require('../../../lib/data/wrapper');
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();

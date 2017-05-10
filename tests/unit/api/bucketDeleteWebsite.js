@@ -1,14 +1,14 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const bucketDeleteWebsite = require('../../../lib/api/bucketDeleteWebsite');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
     WebsiteConfig }
-from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+= require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

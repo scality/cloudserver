@@ -1,8 +1,8 @@
-import assert from 'assert';
-import { S3 } from 'aws-sdk';
-import async from 'async';
+const assert = require('assert');
+const { S3 } = require('aws-sdk');
+const async = require('async');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 

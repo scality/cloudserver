@@ -20,4 +20,4 @@ function withV4(testFn) {
     });
 }
 
-export default withV4;
+module.exports = withV4;

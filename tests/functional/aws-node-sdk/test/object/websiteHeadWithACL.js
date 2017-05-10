@@ -1,8 +1,8 @@
-import { S3 } from 'aws-sdk';
+const { S3 } = require('aws-sdk');
 
-import conf from '../../../../../lib/Config';
-import getConfig from '../support/config';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
+const conf = require('../../../../../lib/Config').config;
+const getConfig = require('../support/config');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);

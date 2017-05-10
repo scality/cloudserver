@@ -1,7 +1,7 @@
-import assert from 'assert';
-import { S3 } from 'aws-sdk';
+const assert = require('assert');
+const { S3 } = require('aws-sdk');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 const bucket = `bucketcompletempu-bucket-${Date.now()}`;
 

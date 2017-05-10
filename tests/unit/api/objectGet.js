@@ -1,16 +1,18 @@
-import assert from 'assert';
-import async from 'async';
-import crypto from 'crypto';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const crypto = require('crypto');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
-import DummyRequest from '../DummyRequest';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import objectPut from '../../../lib/api/objectPut';
-import objectGet from '../../../lib/api/objectGet';
-import objectPutPart from '../../../lib/api/objectPutPart';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const completeMultipartUpload
+    = require('../../../lib/api/completeMultipartUpload');
+const DummyRequest = require('../DummyRequest');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const objectPut = require('../../../lib/api/objectPut');
+const objectGet = require('../../../lib/api/objectGet');
+const objectPutPart = require('../../../lib/api/objectPutPart');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
