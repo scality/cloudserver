@@ -63,6 +63,11 @@ export default {
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
 
+    // Max size on put part or copy part is 5GB. For functional
+    // testing use 100 MB as max
+    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 104857600 :
+        5368709120,
+
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
