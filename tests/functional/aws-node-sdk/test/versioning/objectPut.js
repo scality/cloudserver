@@ -117,6 +117,27 @@ describe('put and get object with versioning', function testSuite() {
                     });
                 });
             });
+
+            it('should create a new version with tag set for an object',
+            done => {
+                const tagKey = 'key1';
+                const tagValue = 'value1';
+                const putParams = { Bucket: bucket, Key: key,
+                  Tagging: `${tagKey}=${tagValue}` };
+                s3.putObject(putParams, (err, data) => {
+                    _assertNoError(err, 'putting object');
+                    const getTagParams = { Bucket: bucket, Key:
+                      key, VersionId: data.VersionId };
+                    s3.getObjectTagging(getTagParams, (err, data) => {
+                        _assertNoError(err, 'getting object tagging');
+                        assert.strictEqual(getTagParams.VersionId,
+                          data.VersionId, 'version ids are not equal');
+                        assert.strictEqual(data.TagSet[0].Key, tagKey);
+                        assert.strictEqual(data.TagSet[0].Value, tagValue);
+                        done();
+                    });
+                });
+            });
         });
 
         describe('on a version-enabled bucket with non-versioned object',

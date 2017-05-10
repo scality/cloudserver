@@ -3,11 +3,11 @@ import async from 'async';
 
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
+import { taggingTests } from '../../lib/utility/tagging';
 
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
 const objectNameAcl = 'testtaggingobjectacl';
-import { taggingTests } from '../../lib/utility/tagging';
 
 const taggingConfig = { TagSet: [
     {

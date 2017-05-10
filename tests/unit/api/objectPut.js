@@ -6,6 +6,7 @@ import assert from 'assert';
 import bucketPut from '../../../lib/api/bucketPut';
 import bucketPutACL from '../../../lib/api/bucketPutACL';
 import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
+import { parseTagFromQuery } from '../../../lib/api/apiUtils/object/tagging';
 import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     from '../helpers';
 import { ds } from '../../../lib/data/in_memory/backend';
@@ -35,6 +36,14 @@ const enableVersioningRequest =
 const suspendVersioningRequest =
     versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
 
+function generateString(number) {
+    let word = '';
+    for (let i = 0; i < number; i++) {
+        word = `${word}w`;
+    }
+    return word;
+}
+
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
@@ -48,6 +57,39 @@ function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
         });
     });
 }
+
+describe('parseTagFromQuery', () => {
+    const invalidArgument = { status: 'InvalidArgument', statusCode: 400 };
+    const invalidTag = { status: 'InvalidTag', statusCode: 400 };
+    const allowedChar = '+- =._:/';
+    const tests = [
+        { tagging: 'key1=value1', result: { key1: 'value1' } },
+        { tagging: `key1=${encodeURIComponent(allowedChar)}`,
+        result: { key1: allowedChar } },
+        { tagging: 'key1=value1=value2', error: invalidArgument },
+        { tagging: '=value1', error: invalidArgument },
+        { tagging: 'key1%=value1', error: invalidArgument },
+        { tagging: `${generateString(129)}=value1`, error: invalidTag },
+        { tagging: `key1=${generateString(257)}`, error: invalidTag },
+        { tagging: `${generateString(129)}=value1`, error: invalidTag },
+        { tagging: `key1=${generateString(257)}`, error: invalidTag },
+        { tagging: 'key1#=value1', error: invalidTag },
+    ];
+    tests.forEach(test => {
+        const behavior = test.error ? 'fail' : 'pass';
+        it(`should ${behavior} if tag set: "${test.tagging}"`, done => {
+            const result = parseTagFromQuery(test.tagging);
+            if (test.error) {
+                assert(result[test.error.status]);
+                assert.strictEqual(result.code, test.error.statusCode);
+            } else {
+                assert.deepStrictEqual(result, test.result);
+            }
+            done();
+        });
+    });
+});
+
 describe('objectPut API', () => {
     beforeEach(() => {
         cleanup();
