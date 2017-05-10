@@ -112,6 +112,20 @@ describe('PUT object taggings', () => {
             });
         });
 
+        it('should return InvalidTag if key is an empty string', done => {
+            s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
+              Tagging: { TagSet: [
+                  {
+                      Key: '',
+                      Value: 'value1',
+                  },
+              ] },
+          }, err => {
+                _checkError(err, 'InvalidTag', 400);
+                done();
+            });
+        });
+
         it('should be able to put an empty Tag set', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
               Tagging: { TagSet: [] },
