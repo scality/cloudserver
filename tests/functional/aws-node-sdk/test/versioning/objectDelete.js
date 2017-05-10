@@ -12,6 +12,11 @@ import {
 
 const bucket = `versioning-bucket-${Date.now()}`;
 const key = 'anObject';
+// formats differ for AWS and S3, use respective sample ids to obtain
+// correct error response in tests
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
 
 function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc || ''}: ${err}`);
@@ -255,6 +260,27 @@ describe('aws-node-sdk test delete object', () => {
                             VersionId: res2.VersionId,
                         }, err => done(err));
                     });
+                });
+            });
+        });
+
+        it('delete non existent version should not create delete marker',
+        done => {
+            s3.deleteObject({
+                Bucket: bucket,
+                Key: key,
+                VersionId: nonExistingId,
+            }, (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                assert.strictEqual(res.VersionId, nonExistingId);
+                return s3.listObjectVersions({ Bucket: bucket }, (err, res) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(res.DeleteMarkers.length, 0);
+                    return done();
                 });
             });
         });
