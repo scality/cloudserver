@@ -4,7 +4,7 @@ import async from 'async';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
-const bucketName = 'testtaggingbucket';
+const bucketName = 'testdeletetaggingbucket';
 const objectName = 'testtaggingobject';
 const objectNameAcl = 'testtaggingobjectacl';
 
@@ -25,21 +25,19 @@ function _checkError(err, code, statusCode) {
     assert.strictEqual(err.statusCode, statusCode);
 }
 
-describe('GET object taggings', () => {
+describe('DELETE object taggings', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
         const otherAccountBucketUtility = new BucketUtility('lisa', {});
         const otherAccountS3 = otherAccountBucketUtility.s3;
 
-        beforeEach(done => {
-            async.waterfall([
-                next => s3.createBucket({ Bucket: bucketName }, err =>
-                  next(err)),
-                next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
-            ], done);
-        });
+        beforeEach(done => s3.createBucket({ Bucket: bucketName }, err => {
+            if (err) {
+                return done(err);
+            }
+            return s3.putObject({ Bucket: bucketName, Key: objectName }, done);
+        }));
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
@@ -54,52 +52,34 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return appropriate tags after putting tags', done => {
+        it('should delete tag set', done => {
             s3.putObjectTagging({
                 Bucket: bucketName,
                 Key: objectName,
                 Tagging: taggingConfig,
             }, err => {
                 assert.ifError(err, `putObjectTagging error: ${err}`);
-                s3.getObjectTagging({ Bucket: bucketName, Key: objectName },
+                s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
                 (err, data) => {
-                    assert.ifError(err, `getObjectTagging error: ${err}`);
-                    assert.deepStrictEqual(data, taggingConfig);
+                    assert.ifError(err, `Found unexpected err ${err}`);
+                    assert.strictEqual(Object.keys(data).length, 0);
                     done();
                 });
             });
         });
 
-        it('should return no tag after putting and deleting tags', done => {
-            async.waterfall([
-                next => s3.putObjectTagging({
-                    Bucket: bucketName,
-                    Key: objectName,
-                    Tagging: taggingConfig,
-                }, err => next(err)),
-                next => s3.deleteObjectTagging({ Bucket: bucketName,
-                  Key: objectName }, err => next(err)),
-                next => s3.getObjectTagging({ Bucket: bucketName,
-                    Key: objectName }, (err, data) => next(err, data)),
-            ], (err, data) => {
-                assert.ifError(err, `error: ${err}`);
-                assert.deepStrictEqual(data.TagSet, []);
-                return done();
-            });
-        });
-
-        it('should return empty array after putting no tag', done => {
-            s3.getObjectTagging({ Bucket: bucketName, Key: objectName },
+        it('should delete a non-existing tag set', done => {
+            s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
             (err, data) => {
-                assert.ifError(err, `getObjectTagging error: ${err}`);
-                assert.deepStrictEqual(data.TagSet, []);
+                assert.ifError(err, `Found unexpected err ${err}`);
+                assert.strictEqual(Object.keys(data).length, 0);
                 done();
             });
         });
 
-        it('should return NoSuchKey getting tag to a non-existing object',
+        it('should return NoSuchKey deleting tag set to a non-existing object',
         done => {
-            s3.getObjectTagging({
+            s3.deleteObjectTagging({
                 Bucket: bucketName,
                 Key: 'nonexisting',
             }, err => {
@@ -107,17 +87,16 @@ describe('GET object taggings', () => {
                 done();
             });
         });
-
-        it('should return 403 AccessDenied getting tag with another account',
-        done => {
-            otherAccountS3.getObjectTagging({ Bucket: bucketName, Key:
+        it('should return 403 AccessDenied deleting tag set with another ' +
+        'account', done => {
+            otherAccountS3.deleteObjectTagging({ Bucket: bucketName, Key:
               objectName }, err => {
                 _checkError(err, 'AccessDenied', 403);
                 done();
             });
         });
 
-        it('should return 403 AccessDenied getting tag with a different ' +
+        it('should return 403 AccessDenied deleting tag set with a different ' +
         'account to an object with ACL "public-read-write"',
         done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
@@ -125,7 +104,7 @@ describe('GET object taggings', () => {
                 if (err) {
                     return done(err);
                 }
-                return otherAccountS3.getObjectTagging({ Bucket: bucketName,
+                return otherAccountS3.deleteObjectTagging({ Bucket: bucketName,
                   Key: objectName }, err => {
                     _checkError(err, 'AccessDenied', 403);
                     done();
@@ -133,15 +112,15 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied getting tag to an object ' +
-        'in a bucket created with a different account',
+        it('should return 403 AccessDenied deleting tag set to an object' +
+        ' in a bucket created with a different account',
         done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:
                   'public-read-write' }, err => next(err)),
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
-                next => otherAccountS3.getObjectTagging({ Bucket: bucketName,
+                next => otherAccountS3.deleteObjectTagging({ Bucket: bucketName,
                       Key: objectNameAcl }, err => next(err)),
             ], err => {
                 _checkError(err, 'AccessDenied', 403);
@@ -149,14 +128,14 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should get tag to an object in a bucket created with same ' +
-        'account', done => {
+        it('should delete tag set to an object in a bucket created with same ' +
+        'account even though object put by other account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:
                   'public-read-write' }, err => next(err)),
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
-                next => s3.getObjectTagging({ Bucket: bucketName,
+                next => s3.deleteObjectTagging({ Bucket: bucketName,
                       Key: objectNameAcl }, err => next(err)),
             ], done);
         });
