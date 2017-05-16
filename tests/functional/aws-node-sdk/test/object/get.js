@@ -111,5 +111,56 @@ describe('GET object', () => {
                   });
             });
         });
+
+        describe('x-amz-tagging-count', () => {
+            const params = {
+                Bucket: bucketName,
+                Key: objectName,
+            };
+            const paramsTagging = {
+                Bucket: bucketName,
+                Key: objectName,
+                Tagging: {
+                    TagSet: [
+                        {
+                            Key: 'key1',
+                            Value: 'value',
+                        },
+                    ],
+                },
+            };
+            beforeEach(done => {
+                s3.putObject(params, done);
+            });
+
+            it('should not return "x-amz-tagging-count" if no tag ' +
+            'associated with the object',
+            done => {
+                s3.getObject(params, (err, data) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(data.TagCount, undefined);
+                    return done();
+                });
+            });
+
+            describe('tag associated with the object', () => {
+                beforeEach(done => {
+                    s3.putObjectTagging(paramsTagging, done);
+                });
+                it('should return "x-amz-tagging-count" header that provides ' +
+                'the count of number of tags associated with the object',
+                done => {
+                    s3.getObject(params, (err, data) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.equal(data.TagCount, 1);
+                        return done();
+                    });
+                });
+            });
+        });
     });
 });

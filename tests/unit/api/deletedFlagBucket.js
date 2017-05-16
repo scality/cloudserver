@@ -499,7 +499,7 @@ describe('deleted flag bucket handling', () => {
     it('objectGet request on bucket with deleted flag should' +
         'return NoSuchBucket error and finish deletion',
         done => {
-            objectGet(authInfo, baseTestRequest,
+            objectGet(authInfo, baseTestRequest, false,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 confirmDeleted(done);

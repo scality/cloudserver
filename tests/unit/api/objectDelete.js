@@ -75,7 +75,7 @@ describe('objectDelete API', () => {
                 undefined, log, () => {
                     objectDelete(authInfo, testDeleteRequest, log, err => {
                         assert.strictEqual(err, null);
-                        objectGet(authInfo, testGetObjectRequest,
+                        objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
                                 assert.deepStrictEqual(err,
                                     errors.NoSuchKey);
@@ -99,7 +99,7 @@ describe('objectDelete API', () => {
                 undefined, log, () => {
                     objectDelete(authInfo, testDeleteRequest, log, err => {
                         assert.strictEqual(err, null);
-                        objectGet(authInfo, testGetObjectRequest,
+                        objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
                                 const expected =
                                 Object.assign({}, errors.NoSuchKey);
