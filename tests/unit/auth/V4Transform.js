@@ -28,7 +28,7 @@ class AuthMe extends Readable {
 
 }
 
-describe.only('V4Transform class', () => {
+describe('V4Transform class', () => {
     it('should authenticate successfully', done => {
         const v4Transform = new V4Transform(streamingV4Params, log, err => {
             assert.strictEqual(err, null);
@@ -54,7 +54,7 @@ describe.only('V4Transform class', () => {
         '51d2511f7c6887907dff20474d8db67d557e5f515a6fa6a8466bb12f8833bcca\r\n' +
         'contents\r\n'), new Buffer('0;chunk-signature=' +
         'c0eac24b7ce72141ec077df9753db4cc8b7991491806689da0395c8bd0231e48\r\n'),
-        new Buffer('\n'), null];
+        new Buffer('hello'), null];
         const authMe = new AuthMe(chunks);
         authMe.pipe(v4Transform);
         v4Transform.on('finish', () => {
