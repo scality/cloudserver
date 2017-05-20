@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.io.RandomAccessFile;
+import java.security.SecureRandom;
 
 import com.amazonaws.SDKGlobalConfiguration;
 import org.junit.Assert;
@@ -131,7 +132,6 @@ public class StreamV4AuthTest {
         Assert.assertEquals(object.getObjectMetadata().getETag(), md5);
     }
 
-
     /**
     * Creates a temporary file
     * @param {Integer} fileSize - file size in bytes
@@ -139,7 +139,17 @@ public class StreamV4AuthTest {
     * @throws Exception
     */
     private static File createSampleFile(Integer fileSize) throws Exception {
+        String alph = "\r\nABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        SecureRandom random = new SecureRandom();
+        Integer randomLimit = Math.min(Math.round(fileSize/10), 10000);
+        StringBuilder myStringBuilder = new StringBuilder(randomLimit);
+        for(int i = 0; i < randomLimit; i++)
+              myStringBuilder.append(alph.charAt(random.nextInt(alph.length())));
+        String myString = myStringBuilder.toString();
         RandomAccessFile file = new RandomAccessFile(fileName, "rw");
+        file.writeUTF("\r\nlet's add some \r\n data with \r\n\rn\rn\rn\r\n\r\n\n");
+        file.writeUTF(myString);
+        file.writeUTF("\r\nadd\r\nmore\r\nlines\r\n");
         file.setLength(fileSize);
         file.close();
         File myFile = new File(fileName);
