@@ -3,6 +3,7 @@ import async from 'async';
 
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
+import { checkOneVersion } from '../../lib/utility/versioning-util';
 
 import {
     removeAllVersions,
@@ -290,6 +291,39 @@ describe('versioned put and get object acl ::', () => {
                 });
 
                 _testBehaviorVersioningEnabledOrSuspended(versionIds);
+            });
+        });
+
+        describe('on a version-enabled bucket - version non-specified :: ',
+        () => {
+            let versionId;
+            beforeEach(done => {
+                const params = { Bucket: bucket, Key: key };
+                async.waterfall([
+                    callback => s3.putBucketVersioning({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningEnabled,
+                    }, err => callback(err)),
+                    callback => s3.putObject(params, (err, data) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        versionId = data.VersionId;
+                        return callback();
+                    }),
+                ], done);
+            });
+
+            it('should not create version putting ACL on a' +
+            'version-enabled bucket where no version id is specified',
+            done => {
+                const params = { Bucket: bucket, Key: key, ACL: 'public-read' };
+                _putObjectAcl(params, () => s3.listObjectVersions({ Bucket:
+                  bucket }, (err, data) => {
+                    assert.ifError(err, `listObjects err ${err}`);
+                    checkOneVersion(data, versionId);
+                    done();
+                }));
             });
         });
 
