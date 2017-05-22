@@ -3,6 +3,7 @@ const async = require('async');
 
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
+import { checkOneVersion } from '../../lib/utility/versioning-util';
 
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
@@ -58,6 +59,38 @@ describe('Delete object tagging with versioning', () => {
             ], (err, data, versionId) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
                 assert.strictEqual(data.VersionId, versionId);
+                done();
+            });
+        });
+
+        it('should not create version deleting object tags on a ' +
+        ' version-enabled bucket where no version id is specified ', done => {
+            async.waterfall([
+                next => s3.putBucketVersioning({ Bucket: bucketName,
+                  VersioningConfiguration: versioningEnabled },
+                  err => next(err)),
+                next => s3.putObject({ Bucket: bucketName, Key: objectName },
+                  (err, data) => next(err, data.VersionId)),
+                (versionId, next) => s3.putObjectTagging({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    VersionId: versionId,
+                    Tagging: { TagSet: [
+                        {
+                            Key: 'key1',
+                            Value: 'value1',
+                        }] },
+                }, err => next(err, versionId)),
+                (versionId, next) => s3.deleteObjectTagging({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }, err => next(err, versionId)),
+                (versionId, next) => s3.listObjectVersions({
+                    Bucket: bucketName,
+                }, (err, data) => next(err, data, versionId)),
+            ], (err, data, versionId) => {
+                assert.ifError(err, `Found unexpected err ${err}`);
+                checkOneVersion(data, versionId);
                 done();
             });
         });

@@ -1,4 +1,5 @@
 import async from 'async';
+import assert from 'assert';
 import { S3 } from 'aws-sdk';
 
 import getConfig from '../../test/support/config';
@@ -19,6 +20,12 @@ function _deleteVersionList(versionList, bucket, callback) {
     });
 
     return s3.deleteObjects(params, callback);
+}
+
+export function checkOneVersion(data, versionId) {
+    assert.strictEqual(data.Versions.length, 1);
+    assert.strictEqual(data.Versions[0].VersionId, versionId);
+    assert.strictEqual(data.DeleteMarkers.length, 0);
 }
 
 export function removeAllVersions(params, callback) {
