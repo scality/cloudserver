@@ -130,5 +130,65 @@ describe('get behavior after delete with versioning', () => {
                 });
             });
         });
+
+        describe('x-amz-tagging-count with versioning', () => {
+            let params;
+            let paramsTagging;
+            beforeEach(function beforeEach(done) {
+                params = {
+                    Bucket: bucket,
+                    Key: key,
+                };
+                paramsTagging = {
+                    Bucket: bucket,
+                    Key: key,
+                    Tagging: {
+                        TagSet: [
+                            {
+                                Key: 'key1',
+                                Value: 'value',
+                            },
+                        ],
+                    },
+                };
+                s3.putObject(params, (err, data) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    this.currentTest.versionId = data.VersionId;
+                    return done();
+                });
+            });
+
+            it('should not return "x-amz-tagging-count" if no tag ' +
+            'associated with the object',
+            function itF(done) {
+                params.VersionId = this.test.VersionId;
+                s3.getObject(params, (err, data) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(data.TagCount, undefined);
+                    return done();
+                });
+            });
+
+            describe('tag associated with the object ', () => {
+                beforeEach(done => s3.putObjectTagging(paramsTagging, done));
+
+                it('should return "x-amz-tagging-count" header that provides ' +
+                'the count of number of tags associated with the object',
+                function itF(done) {
+                    params.VersionId = this.test.VersionId;
+                    s3.getObject(params, (err, data) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.equal(data.TagCount, 1);
+                        return done();
+                    });
+                });
+            });
+        });
     });
 });

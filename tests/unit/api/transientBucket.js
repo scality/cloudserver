@@ -442,7 +442,7 @@ describe('transient bucket handling', () => {
     it('objectGet request on transient bucket should' +
         'return NoSuchBucket error',
         done => {
-            objectGet(authInfo, baseTestRequest,
+            objectGet(authInfo, baseTestRequest, false,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();

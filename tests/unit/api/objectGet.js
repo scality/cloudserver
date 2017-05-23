@@ -60,7 +60,7 @@ describe('objectGet API', () => {
             objectPut(authInfo, testPutObjectRequest, undefined,
                 log, (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest,
+                    objectGet(authInfo, testGetRequest, false,
                         log, (err, result, responseMetaHeaders) => {
                             assert.strictEqual(responseMetaHeaders
                                 [userMetadataKey],
@@ -78,7 +78,7 @@ describe('objectGet API', () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest, log,
+                    objectGet(authInfo, testGetRequest, false, log,
                         (err, dataGetInfo) => {
                             assert.deepStrictEqual(dataGetInfo,
                         [{
@@ -184,7 +184,8 @@ describe('objectGet API', () => {
                 },
             ],
             () => {
-                objectGet(authInfo, testGetRequest, log, (err, dataGetInfo) => {
+                objectGet(authInfo, testGetRequest, false, log,
+                (err, dataGetInfo) => {
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
@@ -222,7 +223,7 @@ describe('objectGet API', () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest,
+                    objectGet(authInfo, testGetRequest, false,
                     log, (err, result, responseMetaHeaders) => {
                         assert.strictEqual(result, null);
                         assert.strictEqual(responseMetaHeaders
