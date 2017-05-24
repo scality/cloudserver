@@ -3,6 +3,8 @@ import assert from 'assert';
 import withV4 from '../support/withV4';
 import BucketUtility from '../../lib/utility/bucket-util';
 
+import { taggingTests } from '../../lib/utility/tagging';
+
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
 const destBucketName = 'destinationbucket8102016';
@@ -17,6 +19,10 @@ const originalContentDisposition = 'attachment; filename="1337.txt";';
 const originalContentEncoding = 'base64,aws-chunked';
 const originalExpires = new Date(12345678);
 
+const originalTagKey = 'key1';
+const originalTagValue = 'value1';
+const originalTagging = `${originalTagKey}=${originalTagValue}`;
+
 const newMetadata = {
     newmetadata: 'new kid in town',
     overwriteme: 'wiped',
@@ -25,6 +31,10 @@ const newCacheControl = 'max-age=86400';
 const newContentDisposition = 'attachment; filename="fname.ext";';
 const newContentEncoding = 'gzip,aws-chunked';
 const newExpires = new Date();
+
+const newTagKey = 'key2';
+const newTagValue = 'value2';
+const newTagging = `${newTagKey}=${newTagValue}`;
 
 const content = 'I am the best content ever';
 
@@ -94,6 +104,7 @@ describe('Object Copy', () => {
             ContentDisposition: originalContentDisposition,
             ContentEncoding: originalContentEncoding,
             Expires: originalExpires,
+            Tagging: originalTagging,
         }).then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
@@ -138,6 +149,25 @@ describe('Object Copy', () => {
             });
         }
 
+        function checkSuccessTagging(key, value, cb) {
+            s3.getObjectTagging({ Bucket: destBucketName, Key: destObjName },
+            (err, data) => {
+                checkNoError(err);
+                assert.strictEqual(data.TagSet[0].Key, key);
+                assert.strictEqual(data.TagSet[0].Value, value);
+                cb();
+            });
+        }
+
+        function checkNoTagging(cb) {
+            s3.getObjectTagging({ Bucket: destBucketName, Key: destObjName },
+            (err, data) => {
+                checkNoError(err);
+                assert.strictEqual(data.TagSet.length, 0);
+                cb();
+            });
+        }
+
         it('should copy an object from a source bucket to a different ' +
             'destination bucket and copy the metadata if no metadata directve' +
             'header provided', done => {
@@ -147,6 +177,133 @@ describe('Object Copy', () => {
                     successCopyCheck(err, res, originalMetadata,
                         destBucketName, destObjName, done)
                 );
+        });
+
+        it('should copy an object from a source bucket to a different ' +
+            'destination bucket and copy the tag set if no tagging directive' +
+            'header provided', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}` },
+                err => {
+                    checkNoError(err);
+                    checkSuccessTagging(originalTagKey, originalTagValue, done);
+                });
+        });
+
+        it('should return 400 InvalidArgument if invalid tagging ' +
+        'directive', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'COCO' },
+                err => {
+                    checkError(err, 'InvalidArgument');
+                    done();
+                });
+        });
+
+        it('should copy an object from a source bucket to a different ' +
+            'destination bucket and copy the tag set if COPY tagging ' +
+            'directive header provided', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'COPY' },
+                err => {
+                    checkNoError(err);
+                    checkSuccessTagging(originalTagKey, originalTagValue, done);
+                });
+        });
+
+        it('should copy an object and tag set if COPY ' +
+            'included as tag directive header (and ignore any new ' +
+            'tag set sent with copy request)', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'COPY',
+                Tagging: newTagging,
+            },
+                err => {
+                    checkNoError(err);
+                    s3.getObject({ Bucket: destBucketName,
+                        Key: destObjName }, (err, res) => {
+                        assert.deepStrictEqual(res.Metadata, originalMetadata);
+                        done();
+                    });
+                });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'updating tag if REPLACE tagging directive header provided',
+        done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'REPLACE', Tagging: newTagging },
+                err => {
+                    checkNoError(err);
+                    checkSuccessTagging(newTagKey, newTagValue, done);
+                });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'return no tag if REPLACE tagging directive header provided but ' +
+        '"x-amz-tagging" header is not specified', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'REPLACE' },
+                err => {
+                    checkNoError(err);
+                    checkNoTagging(done);
+                });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'return no tag if COPY tagging directive header but provided from ' +
+        'an empty object', done => {
+            s3.putObject({ Bucket: sourceBucketName, Key: 'emptyobject' },
+            err => {
+                checkNoError(err);
+                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                    CopySource: `${sourceBucketName}/emptyobject`,
+                    TaggingDirective: 'COPY' },
+                    err => {
+                        checkNoError(err);
+                        checkNoTagging(done);
+                    });
+            });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'updating tag if REPLACE tagging directive header provided',
+        done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'REPLACE', Tagging: newTagging },
+                err => {
+                    checkNoError(err);
+                    checkSuccessTagging(newTagKey, newTagValue, done);
+                });
+        });
+
+        describe('Copy object updating tag set', () => {
+            taggingTests.forEach(taggingTest => {
+                it(taggingTest.it, done => {
+                    const key = encodeURIComponent(taggingTest.tag.key);
+                    const value = encodeURIComponent(taggingTest.tag.value);
+                    const tagging = `${key}=${value}`;
+                    const params = { Bucket: destBucketName, Key: destObjName,
+                      CopySource: `${sourceBucketName}/${sourceObjName}`,
+                      TaggingDirective: 'REPLACE', Tagging: tagging };
+                    s3.copyObject(params, err => {
+                        if (taggingTest.error) {
+                            checkError(err, taggingTest.error);
+                            return done();
+                        }
+                        assert.equal(err, null, 'Expected success, ' +
+                        `got error ${JSON.stringify(err)}`);
+                        return checkSuccessTagging(taggingTest.tag.key,
+                          taggingTest.tag.value, done);
+                    });
+                });
+            });
         });
 
         it('should also copy additional headers (CacheControl, ' +
