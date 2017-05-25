@@ -1,7 +1,7 @@
-import assert from 'assert';
-import { BackendInfo } from '../../../lib/api/apiUtils/object/BackendInfo';
-import { DummyRequestLogger } from '../helpers';
-import config from '../../../lib/Config';
+const assert = require('assert');
+const { BackendInfo } = require('../../../lib/api/apiUtils/object/BackendInfo');
+const { DummyRequestLogger } = require('../helpers');
+const { config } = require('../../../lib/Config');
 
 const log = new DummyRequestLogger();
 const data = config.backends.data;

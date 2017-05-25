@@ -1,18 +1,18 @@
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import { errors } from 'arsenal';
+const { errors } = require('arsenal');
 
-import { cleanup, DummyRequestLogger } from '../helpers';
-import config from '../../../lib/Config';
-import DummyRequest from '../DummyRequest';
-import bucketPut from '../../../lib/api/bucketPut';
-import initiateMultipartUpload
-    from '../../../lib/api/initiateMultipartUpload';
-import multipartDelete from '../../../lib/api/multipartDelete';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import { makeAuthInfo } from '../helpers';
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { config } = require('../../../lib/Config');
+const DummyRequest = require('../DummyRequest');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const multipartDelete = require('../../../lib/api/multipartDelete');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const { makeAuthInfo } = require('../helpers');
 
 const bucketName = 'multipartdeletebucket';
 const log = new DummyRequestLogger();

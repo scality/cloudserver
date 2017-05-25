@@ -1,7 +1,7 @@
-import { S3 } from 'aws-sdk';
+const { S3 } = require('aws-sdk');
 
-import getConfig from '../support/config';
-import methodRequest from '../../lib/utility/cors-util';
+const getConfig = require('../support/config');
+const { methodRequest } = require('../../lib/utility/cors-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);

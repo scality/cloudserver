@@ -1,18 +1,18 @@
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
+const { errors } = require('arsenal');
 
-import { errors } from 'arsenal';
-import assert from 'assert';
-
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutACL from '../../../lib/api/bucketPutACL';
-import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
-import { parseTagFromQuery } from '../../../lib/api/apiUtils/object/tagging';
-import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    from '../helpers';
-import { ds } from '../../../lib/data/in_memory/backend';
-import metadata from '../metadataswitch';
-import objectPut from '../../../lib/api/objectPut';
-import DummyRequest from '../DummyRequest';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutACL = require('../../../lib/api/bucketPutACL');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const { parseTagFromQuery }
+    = require('../../../lib/api/apiUtils/object/tagging');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
+    = require('../helpers');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const metadata = require('../metadataswitch');
+const objectPut = require('../../../lib/api/objectPut');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

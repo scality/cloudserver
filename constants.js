@@ -1,6 +1,6 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
-export default {
+const constants = {
     /*
      * Splitter is used to build the object name for the overview of a
      * multipart upload and to build the object names for each part of a
@@ -91,3 +91,5 @@ export default {
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
 };
+
+module.exports = constants;

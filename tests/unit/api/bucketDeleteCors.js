@@ -1,13 +1,13 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import bucketDeleteCors from '../../../lib/api/bucketDeleteCors';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const bucketDeleteCors = require('../../../lib/api/bucketDeleteCors');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    CorsConfigTester } from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+    CorsConfigTester } = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

@@ -1,6 +1,6 @@
-import assert from 'assert';
-import constants from '../../../../../constants';
-import { makeS3Request } from '../../utils/makeRequest';
+const assert = require('assert');
+const constants = require('../../../../../constants');
+const { makeS3Request } = require('../../utils/makeRequest');
 
 const bucket = 'testunsupportedqueriesbucket';
 const objectKey = 'key';

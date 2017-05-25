@@ -1,23 +1,26 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import crypto from 'crypto';
+const { errors } = require('arsenal');
 
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const crypto = require('crypto');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
-import objectPut from '../../../lib/api/objectPut';
-import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
-import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    from '../helpers';
-import { ds } from '../../../lib/data/in_memory/backend';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import { metadata } from '../../../lib/metadata/in_memory/metadata';
-import multipartDelete from '../../../lib/api/multipartDelete';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import DummyRequest from '../DummyRequest';
+const async = require('async');
+const { parseString } = require('xml2js');
+
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const objectPut = require('../../../lib/api/objectPut');
+const completeMultipartUpload
+    = require('../../../lib/api/completeMultipartUpload');
+const constants = require('../../../constants');
+const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
+    = require('../helpers');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const multipartDelete = require('../../../lib/api/multipartDelete');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 

@@ -5,8 +5,7 @@ const process = require('process');
 const assert = require('assert');
 const fs = require('fs');
 const async = require('async');
-require('babel-core/register');
-const conf = require('../../../lib/Config').default;
+const conf = require('../../../lib/Config').config;
 
 const configCfg = conf.https ? 's3cfg_ssl' : 's3cfg';
 const program = 's3cmd';

@@ -4,7 +4,7 @@ const assert = require('assert');
 const extensions = require('arsenal').algorithms.list;
 
 const BucketFileInterface =
-    require('../../../../lib/metadata/bucketfile/backend').default;
+    require('../../../../lib/metadata/bucketfile/backend');
 
 const KEY_LENGTH = 15;
 const KEY_COUNT = 1000;

@@ -1,10 +1,10 @@
-import assert from 'assert';
-import { BackendInfo } from '../../../lib/api/apiUtils/object/BackendInfo';
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import DummyRequest from '../DummyRequest';
-import { DummyRequestLogger } from '../helpers';
-import locationConstraintCheck from
-    '../../../lib/api/apiUtils/object/locationConstraintCheck';
+const assert = require('assert');
+const { BackendInfo } = require('../../../lib/api/apiUtils/object/BackendInfo');
+const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const DummyRequest = require('../DummyRequest');
+const { DummyRequestLogger } = require('../helpers');
+const locationConstraintCheck
+    = require('../../../lib/api/apiUtils/object/locationConstraintCheck');
 
 const bucketName = 'nameOfBucket';
 const owner = 'canonicalID';

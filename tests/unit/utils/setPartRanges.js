@@ -1,6 +1,6 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import routesUtils from '../../../lib/routes/routesUtils';
+const routesUtils = require('../../../lib/routes/routesUtils');
 
 const setPartRanges = routesUtils.setPartRanges;
 

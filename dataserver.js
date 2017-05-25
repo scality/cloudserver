@@ -1,9 +1,8 @@
 'use strict'; // eslint-disable-line strict
-require('babel-core/register');
 
 const arsenal = require('arsenal');
-const config = require('./lib/Config.js').default;
-const logger = require('./lib/utilities/logger').logger;
+const { config } = require('./lib/Config.js');
+const logger = require('./lib/utilities/logger');
 
 if (config.backends.data === 'file' ||
     (config.backends.data === 'multiple' &&

@@ -1,10 +1,10 @@
-import assert from 'assert';
-import { S3 } from 'aws-sdk';
+const assert = require('assert');
+const { S3 } = require('aws-sdk');
 
-import BucketUtility from '../../lib/utility/bucket-util';
-import getConfig from '../support/config';
-import withV4 from '../support/withV4';
-import configOfficial from '../../../../../lib/Config';
+const BucketUtility = require('../../lib/utility/bucket-util');
+const getConfig = require('../support/config');
+const withV4 = require('../support/withV4');
+const configOfficial = require('../../../../../lib/Config').config;
 
 const bucketName = 'bucketlocation';
 

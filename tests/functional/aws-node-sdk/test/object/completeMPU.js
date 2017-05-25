@@ -1,11 +1,11 @@
-import assert from 'assert';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import {
+const assert = require('assert');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const {
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
-} from '../../lib/utility/versioning-util.js';
+} = require('../../lib/utility/versioning-util.js');
 
 const date = Date.now();
 const bucket = `completempu${date}`;

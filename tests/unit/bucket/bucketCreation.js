@@ -1,10 +1,11 @@
-import assert from 'assert';
+const { errors } = require('arsenal');
 
-import { errors } from 'arsenal';
+const assert = require('assert');
 
-import { cleanup, DummyRequestLogger } from '../helpers';
-import { createBucket } from '../../../lib/api/apiUtils/bucket/bucketCreation';
-import { makeAuthInfo } from '../helpers';
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { createBucket } =
+    require('../../../lib/api/apiUtils/bucket/bucketCreation');
+const { makeAuthInfo } = require('../helpers');
 
 const bucketName = 'creationbucket';
 const log = new DummyRequestLogger();

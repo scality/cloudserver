@@ -1,13 +1,13 @@
-import assert from 'assert';
-import tv4 from 'tv4';
-import Promise from 'bluebird';
-import async from 'async';
-import { S3 } from 'aws-sdk';
+const assert = require('assert');
+const tv4 = require('tv4');
+const Promise = require('bluebird');
+const async = require('async');
+const { S3 } = require('aws-sdk');
 
-import BucketUtility from '../../lib/utility/bucket-util';
-import getConfig from '../support/config';
-import withV4 from '../support/withV4';
-import svcSchema from '../../schema/service';
+const BucketUtility = require('../../lib/utility/bucket-util');
+const getConfig = require('../support/config');
+const withV4 = require('../support/withV4');
+const svcSchema = require('../../schema/service');
 
 const describeFn = process.env.AWS_ON_AIR
     ? describe.skip

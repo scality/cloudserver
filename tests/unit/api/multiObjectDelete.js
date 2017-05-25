@@ -1,13 +1,14 @@
-import assert from 'assert';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import { getObjMetadataAndDelete } from '../../../lib/api/multiObjectDelete';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import { metadata } from '../../../lib/metadata/in_memory/metadata';
-import { ds } from '../../../lib/data/in_memory/backend';
-import DummyRequest from '../DummyRequest';
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
+const { getObjMetadataAndDelete }
+    = require('../../../lib/api/multiObjectDelete');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const DummyRequest = require('../DummyRequest');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const objectPut = require('../../../lib/api/objectPut');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

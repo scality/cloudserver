@@ -1,5 +1,5 @@
-import assert from 'assert';
-import { locationConstraintAssert } from '../../../lib/Config';
+const assert = require('assert');
+const { locationConstraintAssert } = require('../../../lib/Config');
 
 class LocationConstraint {
     constructor(type, legacyAwsBehavior, details) {

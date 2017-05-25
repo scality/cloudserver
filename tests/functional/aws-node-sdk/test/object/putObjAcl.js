@@ -1,9 +1,9 @@
-import assert from 'assert';
-import Promise from 'bluebird';
+const assert = require('assert');
+const Promise = require('bluebird');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import constants from '../../../../../constants';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const constants = require('../../../../../constants');
 
 const notOwnerCanonicalID = '79a59df900b949e55d96a1e698fba' +
     'cedfd6e09d98eacf8f8d5218e7cd47ef2bf';

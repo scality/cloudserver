@@ -1,9 +1,9 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketHead from '../../../lib/api/bucketHead';
-import bucketPut from '../../../lib/api/bucketPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const bucketHead = require('../../../lib/api/bucketHead');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

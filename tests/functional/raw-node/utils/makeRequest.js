@@ -1,10 +1,10 @@
-import { auth } from 'arsenal';
+const { auth } = require('arsenal');
 
-import http from 'http';
-import https from 'https';
-import querystring from 'querystring';
+const http = require('http');
+const https = require('https');
+const querystring = require('querystring');
 
-import conf from '../../../../lib/Config';
+const conf = require('../../../../lib/Config').config;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -37,7 +37,7 @@ function _parseError(responseBody) {
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
-export default function makeRequest(params, callback) {
+function makeRequest(params, callback) {
     const { hostname, port, method, queryObj, headers, path, authCredentials }
         = params;
     const options = {
@@ -107,7 +107,7 @@ export default function makeRequest(params, callback) {
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
-export function makeS3Request(params, callback) {
+function makeS3Request(params, callback) {
     const { method, queryObj, headers, bucket, objectKey, authCredentials }
         = params;
     const options = {
@@ -124,3 +124,8 @@ export function makeS3Request(params, callback) {
     }
     makeRequest(options, callback);
 }
+
+module.exports = {
+    makeRequest,
+    makeS3Request,
+};

@@ -1,17 +1,17 @@
-import async from 'async';
-import assert from 'assert';
-import crypto from 'crypto';
+const async = require('async');
+const assert = require('assert');
+const crypto = require('crypto');
 
-import { versioning } from 'arsenal';
-import { parseString } from 'xml2js';
+const { versioning } = require('arsenal');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutVersioning from '../../../lib/api/bucketPutVersioning';
-import objectDelete from '../../../lib/api/objectDelete';
-import multiObjectDelete from '../../../lib/api/multiObjectDelete';
-import metadata from '../metadataswitch';
-import DummyRequest from '../DummyRequest';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const objectDelete = require('../../../lib/api/objectDelete');
+const { multiObjectDelete } = require('../../../lib/api/multiObjectDelete');
+const metadata = require('../metadataswitch');
+const DummyRequest = require('../DummyRequest');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const versionIdUtils = versioning.VersionID;
 

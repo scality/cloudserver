@@ -1,7 +1,7 @@
-import assert from 'assert';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import config from '../../../../../lib/Config';
+const assert = require('assert');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { config } = require('../../../../../lib/Config');
 
 const bucket = 'buckettestmultiplebackendput';
 const key = 'somekey';

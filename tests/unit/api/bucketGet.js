@@ -1,16 +1,17 @@
-import assert from 'assert';
-import querystring from 'querystring';
+const assert = require('assert');
+const querystring = require('querystring');
 
-import async from 'async';
-import { parseString } from 'xml2js';
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import bucketGet from '../../../lib/api/bucketGet';
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import DummyRequest from '../DummyRequest';
+const bucketGet = require('../../../lib/api/bucketGet');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const objectPut = require('../../../lib/api/objectPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
-import { errors } from 'arsenal';
+const { errors } = require('arsenal');
+
 
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';

@@ -1,13 +1,14 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import { cleanup, DummyRequestLogger } from '../helpers';
-import { isKeyInContents } from
-    '../../../lib/metadata/in_memory/bucket_utilities';
-import metadata from '../metadataswitch';
-import { makeid, shuffle, timeDiff } from '../helpers';
+const { errors } = require('arsenal');
+
+const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { isKeyInContents }
+    = require('../../../lib/metadata/in_memory/bucket_utilities');
+const metadata = require('../metadataswitch');
+const { makeid, shuffle, timeDiff } = require('../helpers');
 
 const bucketName = 'Zaphod';
 const objMD = { test: '8' };

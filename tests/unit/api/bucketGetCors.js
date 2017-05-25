@@ -1,13 +1,13 @@
-import assert from 'assert';
-import crypto from 'crypto';
+const assert = require('assert');
+const crypto = require('crypto');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import bucketGetCors from '../../../lib/api/bucketGetCors';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const bucketGetCors = require('../../../lib/api/bucketGetCors');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo }
-from '../helpers';
+= require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

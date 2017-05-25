@@ -1,10 +1,11 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../unit/helpers';
-import { ds } from '../../lib/data/in_memory/backend';
-import bucketPut from '../../lib/api/bucketPut';
-import objectPut from '../../lib/api/objectPut';
-import DummyRequest from '../unit/DummyRequest';
+const { cleanup, DummyRequestLogger, makeAuthInfo }
+    = require('../unit/helpers');
+const { ds } = require('../../lib/data/in_memory/backend');
+const { bucketPut } = require('../../lib/api/bucketPut');
+const objectPut = require('../../lib/api/objectPut');
+const DummyRequest = require('../unit/DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

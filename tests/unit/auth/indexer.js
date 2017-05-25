@@ -1,8 +1,8 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import Indexer from '../../../lib/auth/in_memory/indexer';
-import ref from '../../../conf/authdata.json';
-import { should } from './checker';
+const Indexer = require('../../../lib/auth/in_memory/indexer');
+const ref = require('../../../conf/authdata.json');
+const { should } = require('./checker');
 
 describe('lib/auth/in_memory/index.js', () => {
     let obj = {};

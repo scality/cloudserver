@@ -1,16 +1,16 @@
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutTagging from '../../../lib/api/objectPutTagging';
-import objectDeleteTagging from '../../../lib/api/objectDeleteTagging';
-import metadata from '../../../lib/metadata/wrapper';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutTagging = require('../../../lib/api/objectPutTagging');
+const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
+const metadata = require('../../../lib/metadata/wrapper');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    TaggingConfigTester } from '../helpers';
-import DummyRequest from '../DummyRequest';
+    TaggingConfigTester } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');

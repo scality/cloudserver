@@ -1,11 +1,11 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import objectPut from '../../../lib/api/objectPut';
-import objectHead from '../../../lib/api/objectHead';
-import DummyRequest from '../DummyRequest';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const objectPut = require('../../../lib/api/objectPut');
+const objectHead = require('../../../lib/api/objectHead');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

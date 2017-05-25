@@ -1,7 +1,7 @@
-import assert from 'assert';
-import DummyRequest from './DummyRequest';
-import MD5Sum from '../../lib/utilities/MD5Sum';
-import constants from '../../constants';
+const assert = require('assert');
+const DummyRequest = require('./DummyRequest');
+const MD5Sum = require('../../lib/utilities/MD5Sum');
+const constants = require('../../constants');
 
 function consume(stream) {
     stream.on('data', () => { });

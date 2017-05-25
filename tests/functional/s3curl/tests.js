@@ -5,8 +5,7 @@ const proc = require('child_process');
 const process = require('process');
 const parseString = require('xml2js').parseString;
 
-require('babel-core/register');
-const conf = require('../../../lib/Config').default;
+const conf = require('../../../lib/Config').config;
 
 const transport = conf.https ? 'https' : 'http';
 let sslArguments = ['-s'];

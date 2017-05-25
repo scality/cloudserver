@@ -1,7 +1,7 @@
-import assert from 'assert';
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import { WebsiteConfiguration } from
-    '../../../lib/metadata/WebsiteConfiguration';
+const assert = require('assert');
+const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const { WebsiteConfiguration }
+    = require('../../../lib/metadata/WebsiteConfiguration');
 // create variables to populate dummyBucket
 const bucketName = 'nameOfBucket';
 const owner = 'canonicalID';

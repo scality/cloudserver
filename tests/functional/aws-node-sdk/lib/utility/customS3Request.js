@@ -1,12 +1,12 @@
-import { S3 } from 'aws-sdk';
-import querystring from 'querystring';
+const { S3 } = require('aws-sdk');
+const querystring = require('querystring');
 
-import getConfig from '../../test/support/config';
+const getConfig = require('../../test/support/config');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
 
-export default function customS3Request(action, params, buildParams, callback) {
+function customS3Request(action, params, buildParams, callback) {
     const method = action.bind(s3);
     const request = method(params);
     const { headers, query } = buildParams;
@@ -39,3 +39,5 @@ export default function customS3Request(action, params, buildParams, callback) {
     });
     request.send();
 }
+
+module.exports = customS3Request;

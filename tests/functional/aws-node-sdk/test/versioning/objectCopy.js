@@ -1,12 +1,12 @@
-import assert from 'assert';
-import async from 'async';
+const assert = require('assert');
+const async = require('async');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import { removeAllVersions } from '../../lib/utility/versioning-util';
-import customS3Request from '../../lib/utility/customS3Request';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { removeAllVersions } = require('../../lib/utility/versioning-util');
+const customS3Request = require('../../lib/utility/customS3Request');
 
-import { taggingTests } from '../../lib/utility/tagging';
+const { taggingTests } = require('../../lib/utility/tagging');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
