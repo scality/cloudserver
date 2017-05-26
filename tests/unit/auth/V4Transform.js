@@ -1,8 +1,8 @@
-import assert from 'assert';
-import { Readable } from 'stream';
+const assert = require('assert');
+const { Readable } = require('stream');
 
-import V4Transform from '../../../lib/auth/streamingV4/V4Transform';
-import { DummyRequestLogger } from '../helpers';
+const V4Transform = require('../../../lib/auth/streamingV4/V4Transform');
+const { DummyRequestLogger } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const streamingV4Params = { accessKey: 'accessKey1',
