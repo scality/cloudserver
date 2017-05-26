@@ -36,8 +36,6 @@
   },
   "devDependencies": {
     "aws-sdk": "2.28.0",
-    "babel-cli": "^6.2.0",
-    "babel-eslint": "^6.0.0",
     "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
@@ -65,7 +63,7 @@
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
-    "perf": "mocha --compilers js:babel-core/register tests/performance/s3standard.js",
+    "perf": "mocha tests/performance/s3standard.js",
     "start": "npm-run-all --parallel start_dmd start_s3server",
     "start_mdserver": "node mdserver.js",
     "start_dataserver": "node dataserver.js",
@@ -73,8 +71,8 @@
     "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
     "start_utapi": "node lib/utapi/utapi.js",
     "utapi_replay": "node lib/utapi/utapiReplay.js",
-    "test": "S3BACKEND=mem mocha --compilers js:babel-core/register --recursive tests/unit",
-    "multiple_backend_test": "S3BACKEND=mem S3DATA=multiple mocha --compilers js:babel-core/register --recursive tests/multipleBackend",
-    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --compilers js:babel-core/register --reporter mocha-junit-reporter --recursive tests/unit"
+    "test": "S3BACKEND=mem mocha --recursive tests/unit",
+    "multiple_backend_test": "S3BACKEND=mem S3DATA=multiple mocha --recursive tests/multipleBackend",
+    "unit_coverage": "mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --reporter mocha-junit-reporter --recursive tests/unit"
   }
 }
