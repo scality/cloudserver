@@ -77,6 +77,8 @@
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
     "antidote_backend": "S3BACKEND=antidote node index.js",
+    "antidote_deploy": "S3BACKEND=antidote ./deploy_instances.sh 3",
+    "antidote_stop": "S3BACKEND=antidote ./stop_instances.sh",
     "perf": "mocha --compilers js:babel-core/register tests/performance/s3standard.js",
     "start": "node init.js && node index.js",
     "start_utapi": "node utapiServer.js",
