@@ -16,6 +16,15 @@ environment variables on the docker run command line.
 
 ### Environment Variables
 
+#### S3DATA=multiple
+
+This runs Scality S3 server with multiple data backends.
+[More info](https://github.com/scality/S3#run-it-with-multiple-data-backends)
+
+```shell
+docker run -d --name s3server -p 8000:8000 -e S3DATA=multiple scality/s3server
+```
+
 #### HOST_NAME
 
 This variable specifies a host name.
