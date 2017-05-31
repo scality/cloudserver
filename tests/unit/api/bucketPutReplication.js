@@ -5,10 +5,10 @@ const getReplicationConfiguration =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 const replicationUtils =
     require('../../functional/aws-node-sdk/lib/utility/replication');
+const log = new DummyRequestLogger();
 
 // Check for the expected error response code and status code.
 function checkError(xml, expectedErr, cb) {
-    const log = new DummyRequestLogger();
     getReplicationConfiguration(xml, log, err => {
         if (expectedErr === null) {
             assert.strictEqual(err, null, `expected no error but got '${err}'`);
@@ -20,11 +20,27 @@ function checkError(xml, expectedErr, cb) {
     });
 }
 
+// Check that the ID has been created properly.
+function checkGeneratedID(xml, cb) {
+    getReplicationConfiguration(xml, log, (err, res) => {
+        if (err) {
+            return cb(err);
+        }
+        const id = res.rules[0].id;
+        assert.strictEqual(typeof(id), 'string', 'expected rule ID to be ' +
+            `string but got ${typeof(id)}`);
+        assert.strictEqual(id.length, 48, 'expected rule ID to be a length ' +
+            `of 48 but got ${id.length}`);
+        return cb();
+    });
+}
+
 // Create replication configuration XML with an tag optionally omitted.
-function createReplicationXML(missingTag) {
+function createReplicationXML(missingTag, tagValue) {
     const Role = missingTag === 'Role' ? '' :
         '<Role>arn:partition:service::account-id:resourcetype/resource</Role>';
-    const ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
+    let ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
+    ID = tagValue && tagValue.ID === '' ? '<ID/>' : ID;
     const Prefix = missingTag === 'Prefix' ? '' : '<Prefix>foo</Prefix>';
     const Status = missingTag === 'Status' ? '' : '<Status>Enabled</Status>';
     const Bucket = missingTag === 'Bucket' ? '' :
@@ -60,5 +76,16 @@ describe('\'getReplicationConfiguration\' function', () => {
     replicationUtils.optionalConfigProperties.forEach(prop => {
         it(`should accept replication configuration without \'${prop}\'`,
             done => checkError(createReplicationXML(prop), null, done));
+    });
+
+    it("should create a rule 'ID' if omitted from the replication " +
+    'configuration', done => {
+        const xml = createReplicationXML('ID');
+        return checkGeneratedID(xml, done);
+    });
+
+    it('should create an \'ID\' if rule ID is \'\'', done => {
+        const xml = createReplicationXML(undefined, { ID: '' });
+        return checkGeneratedID(xml, done);
     });
 });
