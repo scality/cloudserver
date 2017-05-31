@@ -43,4 +43,8 @@ if [[ "$SSL" ]]; then
     fi
 fi
 
+if [[ "$S3DATA" == "multiple" ]]; then
+    export S3DATA="$S3DATA"
+fi
+
 exec "$@"
