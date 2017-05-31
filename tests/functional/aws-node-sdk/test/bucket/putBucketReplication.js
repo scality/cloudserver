@@ -100,7 +100,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
         afterEach(done => s3.deleteBucket({ Bucket: sourceBucket }, done));
 
         it('should return AccessDenied if user is not bucket owner', done =>
-            otherAccountS3.deleteBucketWebsite({ Bucket: sourceBucket },
+            otherAccountS3.putBucketReplication(replicationParams,
             err => {
                 assert(err);
                 assert.strictEqual(err.code, 'AccessDenied');
