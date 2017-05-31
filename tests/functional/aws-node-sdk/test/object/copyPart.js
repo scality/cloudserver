@@ -18,6 +18,9 @@ const content = 'I am the best content ever';
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
 
+// in constants, we set 100 MB as the max part size for testing purposes
+const oneHundredMBPlus1 = 104857601;
+
 function safeJSONParse(s) {
     let res;
     try {
@@ -196,6 +199,74 @@ describe('Object Part Copy', () => {
                         done();
                     });
                 });
+        });
+
+        it('should return EntityTooLarge error if attempt to copy ' +
+            'object larger than max and do not specify smaller ' +
+            'range in request', done => {
+            s3.putObject({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+            }, err => {
+                checkNoError(err);
+                s3.uploadPartCopy({ Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                },
+                    err => {
+                        checkError(err, 'EntityTooLarge');
+                        done();
+                    });
+            });
+        });
+
+        it('should return EntityTooLarge error if attempt to copy ' +
+            'object larger than max and specify too large ' +
+            'range in request', done => {
+            s3.putObject({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+            }, err => {
+                checkNoError(err);
+                s3.uploadPartCopy({ Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    CopySourceRange: `bytes=0-${oneHundredMBPlus1}`,
+                },
+                    err => {
+                        checkError(err, 'EntityTooLarge');
+                        done();
+                    });
+            });
+        });
+
+        it('should succeed if attempt to copy ' +
+            'object larger than max but specify acceptable ' +
+            'range in request', done => {
+            s3.putObject({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+            }, err => {
+                checkNoError(err);
+                s3.uploadPartCopy({ Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    CopySourceRange: 'bytes=0-100',
+                },
+                    err => {
+                        checkNoError(err);
+                        done();
+                    });
+            });
         });
 
         it('should copy a 0 byte object part from a source bucket to a ' +
