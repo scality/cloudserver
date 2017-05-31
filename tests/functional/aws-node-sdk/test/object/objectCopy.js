@@ -544,6 +544,18 @@ describe('Object Copy', () => {
                 });
             });
 
+        it('should return an error if use invalid redirect location',
+            done => {
+                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    WebsiteRedirectLocation: 'google.com',
+            },
+                err => {
+                    checkError(err, 'InvalidRedirectLocation');
+                    done();
+                });
+            });
+
 
         it('should return an error if attempt to copy to nonexistent bucket',
             done => {

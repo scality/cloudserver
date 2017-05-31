@@ -74,5 +74,17 @@ describe('PUT object', () => {
                 done();
             });
         });
+
+        it('should return InvalidRedirectLocation if putting object ' +
+        'with x-amz-website-redirect-location header that does not start ' +
+        'with \'http://\', \'https://\' or \'/\'', done => {
+            const params = { Bucket: bucket, Key: 'key',
+                WebsiteRedirectLocation: 'google.com' };
+            s3.putObject(params, err => {
+                assert.strictEqual(err.code, 'InvalidRedirectLocation');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            });
+        });
     });
 });

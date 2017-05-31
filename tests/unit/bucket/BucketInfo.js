@@ -56,6 +56,21 @@ const testWebsiteConfiguration = new WebsiteConfiguration({
         },
     ],
 });
+
+const testLocationConstraint = 'us-west-1';
+
+const testCorsConfiguration = [
+    { id: 'test',
+        allowedMethods: ['PUT', 'POST', 'DELETE'],
+        allowedOrigins: ['http://www.example.com'],
+        allowedHeaders: ['*'],
+        maxAgeSeconds: 3000,
+        exposeHeaders: ['x-amz-server-side-encryption'] },
+    { allowedMethods: ['GET'],
+        allowedOrigins: ['*'],
+        allowedHeaders: ['*'],
+        maxAgeSeconds: 3000 },
+];
 // create a dummy bucket to test getters and setters
 
 Object.keys(acl).forEach(
@@ -69,7 +84,9 @@ Object.keys(acl).forEach(
                 masterKeyId: 'somekey',
                 mandatory: true,
             }, testVersioningConfiguration,
-            testWebsiteConfiguration);
+            testLocationConstraint,
+            testWebsiteConfiguration,
+            testCorsConfiguration);
 
         describe('serialize/deSerialize on BucketInfo class', () => {
             const serialized = dummyBucket.serialize();
@@ -87,8 +104,10 @@ Object.keys(acl).forEach(
                     serverSideEncryption: dummyBucket._serverSideEncryption,
                     versioningConfiguration:
                         dummyBucket._versioningConfiguration,
+                    locationConstraint: dummyBucket._locationConstraint,
                     websiteConfiguration: dummyBucket._websiteConfiguration
                         .getConfig(),
+                    cors: dummyBucket._cors,
                 };
                 assert.strictEqual(serialized, JSON.stringify(bucketInfos));
                 done();
@@ -137,6 +156,17 @@ Object.keys(acl).forEach(
                     'string');
                 assert(Array.isArray(websiteConfig._routingRules));
             });
+            it('this should have the right cors config types', () => {
+                const cors = dummyBucket.getCors();
+                assert(Array.isArray(cors));
+                assert(Array.isArray(cors[0].allowedMethods));
+                assert(Array.isArray(cors[0].allowedOrigins));
+                assert(Array.isArray(cors[0].allowedHeaders));
+                assert(Array.isArray(cors[0].allowedMethods));
+                assert(Array.isArray(cors[0].exposeHeaders));
+                assert.strictEqual(typeof cors[0].maxAgeSeconds, 'number');
+                assert.strictEqual(typeof cors[0].id, 'string');
+            });
         });
 
         describe('getters on BucketInfo class', () => {
@@ -164,6 +194,14 @@ Object.keys(acl).forEach(
             it('getWebsiteConfiguration should return configuration', () => {
                 assert.deepStrictEqual(dummyBucket.getWebsiteConfiguration(),
                         testWebsiteConfiguration);
+            });
+            it('getLocationConstraint should return locationConstraint', () => {
+                assert.deepStrictEqual(dummyBucket.getLocationConstraint(),
+                testLocationConstraint);
+            });
+            it('getCors should return CORS configuration', () => {
+                assert.deepStrictEqual(dummyBucket.getCors(),
+                        testCorsConfiguration);
             });
         });
 
@@ -219,7 +257,7 @@ Object.keys(acl).forEach(
                    const newLocation = 'newLocation';
                    dummyBucket.setLocationConstraint(newLocation);
                    assert.deepStrictEqual(
-                       dummyBucket.locationConstraint, newLocation);
+                       dummyBucket.getLocationConstraint(), newLocation);
                });
             it('setVersioningConfiguration should set configuration', () => {
                 const newVersioningConfiguration =
@@ -240,6 +278,13 @@ Object.keys(acl).forEach(
                     .setWebsiteConfiguration(newWebsiteConfiguration);
                 assert.deepStrictEqual(dummyBucket.getWebsiteConfiguration(),
                     newWebsiteConfiguration);
+            });
+            it('setCors should set CORS configuration', () => {
+                const newCorsConfiguration =
+                    [{ allowedMethods: ['PUT'], allowedOrigins: ['*'] }];
+                dummyBucket.setCors(newCorsConfiguration);
+                assert.deepStrictEqual(dummyBucket.getCors(),
+                    newCorsConfiguration);
             });
         });
     })
