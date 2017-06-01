@@ -1,9 +1,8 @@
-const fs = require('fs');
 const https = require('https');
-const path = require('path');
 const AWS = require('aws-sdk');
 
 const memCredentials = require('../../lib/json/mem_credentials.json');
+const { getAwsCredentials } = require('./awsConfig');
 const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? 'https' : 'http';
@@ -43,19 +42,6 @@ function _getMemCredentials(profile) {
     return new AWS.Credentials(accessKeyId, secretAccessKey);
 }
 
-function _getAwsCredentials(profile) {
-    const filename = path.join(process.env.HOME, '/.aws/scality');
-
-    try {
-        fs.statSync(filename);
-    } catch (e) {
-        const msg = `AWS credential file is not existing: ${filename}`;
-        throw new Error(msg);
-    }
-
-    return new AWS.SharedIniFileCredentials({ profile, filename });
-}
-
 function _getMemConfig(profile, config) {
     const credentials = _getMemCredentials(profile);
 
@@ -71,7 +57,7 @@ function _getMemConfig(profile, config) {
 }
 
 function _getAwsConfig(profile, config) {
-    const credentials = _getAwsCredentials(profile);
+    const credentials = getAwsCredentials(profile, '/.aws/scality');
 
     const awsConfig = Object.assign({}
         , DEFAULT_GLOBAL_OPTIONS, DEFAULT_AWS_OPTIONS

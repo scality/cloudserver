@@ -24,6 +24,8 @@ const objectName = 'objectName';
 const body = Buffer.from('I am a body', 'utf8');
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
+const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+
 function putPart(bucketLoc, mpuLoc, partLoc, requestHost, cb,
 errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -126,8 +128,8 @@ errorDescription) {
     });
 }
 
-describe('objectPutPart API with multiple backends', () => {
-    beforeEach(() => {
+describeSkipIfE2E('objectPutPart API with multiple backends', () => {
+    afterEach(() => {
         cleanup();
     });
 

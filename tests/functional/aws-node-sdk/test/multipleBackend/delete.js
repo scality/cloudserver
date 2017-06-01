@@ -1,13 +1,21 @@
 const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { config } = require('../../../../../lib/Config');
 
 const bucket = 'buckettestmultiplebackenddelete';
 const memObject = 'memObject';
 const fileObject = 'fileObject';
+const awsObject = 'awsObject';
+const emptyObject = 'emptyObject';
+const bigObject = 'bigObject';
 const body = Buffer.from('I am a body', 'utf8');
+const bigBody = new Buffer(10485760);
 
-describe('Multiple backend delete', () => {
+const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
+    || process.env.S3_END_TO_END) ? describe.skip : describe;
+
+describeSkipIfNotMultiple('Multiple backend delete', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -31,6 +39,25 @@ describe('Multiple backend delete', () => {
                 process.stdout.write('Putting object to file\n');
                 const params = { Bucket: bucket, Key: fileObject, Body: body,
                     Metadata: { 'scal-location-constraint': 'file' } };
+                return s3.putObject(params);
+            })
+            .then(() => {
+                process.stdout.write('Putting object to AWS\n');
+                const params = { Bucket: bucket, Key: awsObject, Body: body,
+                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                return s3.putObject(params);
+            })
+            .then(() => {
+                process.stdout.write('Putting 0-byte object to AWS\n');
+                const params = { Bucket: bucket, Key: emptyObject,
+                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                return s3.putObject(params);
+            })
+            .then(() => {
+                process.stdout.write('Putting large object to AWS\n');
+                const params = { Bucket: bucket, Key: bigObject,
+                    Body: bigBody,
+                    Metadata: { 'scal-location-constraint': 'aws-test' } };
                 return s3.putObject(params);
             })
             .catch(err => {
@@ -64,7 +91,40 @@ describe('Multiple backend delete', () => {
                     `Expected success, got error ${JSON.stringify(err)}`);
                 s3.getObject({ Bucket: bucket, Key: fileObject }, err => {
                     assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got sucess');
+                        'error but got success');
+                    done();
+                });
+            });
+        });
+        it('should delete object from AWS', done => {
+            s3.deleteObject({ Bucket: bucket, Key: awsObject }, err => {
+                assert.strictEqual(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                s3.getObject({ Bucket: bucket, Key: awsObject }, err => {
+                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
+                        'error but got success');
+                    done();
+                });
+            });
+        });
+        it('should delete 0-byte object from AWS', done => {
+            s3.deleteObject({ Bucket: bucket, Key: emptyObject }, err => {
+                assert.strictEqual(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                s3.getObject({ Bucket: bucket, Key: emptyObject }, err => {
+                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
+                        'error but got success');
+                    done();
+                });
+            });
+        });
+        it('should delete large object from AWS', done => {
+            s3.deleteObject({ Bucket: bucket, Key: bigObject }, err => {
+                assert.strictEqual(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                s3.getObject({ Bucket: bucket, Key: bigObject }, err => {
+                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
+                        'error but got success');
                     done();
                 });
             });
