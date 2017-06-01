@@ -5,7 +5,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 
-const awsBucket = 'multitester555';
+const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendget';
 const memObject = `memobject-${Date.now()}`;
 const fileObject = `fileobject-${Date.now()}`;
@@ -93,7 +93,8 @@ describe('Multiple backend get object', function testSuite() {
                     process.stdout.write('Putting object to AWS\n');
                     return s3.putObjectAsync({ Bucket: bucket, Key: awsObject,
                         Body: body,
-                        Metadata: { 'scal-location-constraint': 'aws-test' } });
+                        Metadata: {
+                            'scal-location-constraint': awsLocation } });
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to mem\n');
@@ -104,13 +105,15 @@ describe('Multiple backend get object', function testSuite() {
                     process.stdout.write('Putting 0-byte object to AWS\n');
                     return s3.putObjectAsync({ Bucket: bucket,
                         Key: emptyAwsObject,
-                        Metadata: { 'scal-location-constraint': 'aws-test' } });
+                        Metadata: {
+                            'scal-location-constraint': awsLocation } });
                 })
                 .then(() => {
                     process.stdout.write('Putting large object to AWS\n');
                     return s3.putObjectAsync({ Bucket: bucket,
                         Key: bigObject, Body: bigBody,
-                        Metadata: { 'scal-location-constraint': 'aws-test' } });
+                        Metadata: {
+                            'scal-location-constraint': awsLocation } });
                 })
                 .catch(err => {
                     process.stdout.write(`Error putting objects: ${err}\n`);
@@ -172,6 +175,8 @@ describe('Multiple backend get object', function testSuite() {
             });
             it('should return an error on get done to object deleted from AWS',
             done => {
+                const awsBucket = config.locationConstraints[awsLocation].
+                    details.bucketName;
                 awsS3.deleteObject({ Bucket: awsBucket, Key: awsObject },
                 err => {
                     assert.equal(err, null, 'Expected success but got ' +

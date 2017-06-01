@@ -4,8 +4,10 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { config } = require('../../../../../lib/Config');
 const { getRealAwsConfig } = require('../support/awsConfig');
+const { createEncryptedBucketPromise } =
+    require('../../lib/utility/createEncryptedBucket');
 
-const awsBucket = 'multitester555';
+const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendput';
 const key = `somekey-${Date.now()}`;
 const emptyKey = `emptykey-${Date.now()}`;
@@ -28,6 +30,8 @@ const awsTimeout = 20000;
 const retryTimeout = 10000;
 
 function awsGetCheck(objectKey, s3MD5, awsMD5, cb) {
+    const awsBucket = config.locationConstraints[awsLocation].
+        details.bucketName;
     s3.getObject({ Bucket: bucket, Key: objectKey },
     function s3GetCallback(err, res) {
         if (err && err.code === 'NetworkingError') {
@@ -39,15 +43,21 @@ function awsGetCheck(objectKey, s3MD5, awsMD5, cb) {
         `on call to AWS through S3: ${err}`);
         assert.strictEqual(res.ETag, `"${s3MD5}"`);
         assert.strictEqual(res.Metadata['scal-location-constraint'],
-            'aws-test');
+            awsLocation);
         return awsS3.getObject({ Bucket: awsBucket, Key: objectKey },
         (err, res) => {
             assert.strictEqual(err, null, 'Expected success, got error ' +
             `on direct AWS call: ${err}`);
-            assert.strictEqual(res.ETag, `"${awsMD5}"`);
+            if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+                // doesn't check ETag because it's different
+                // with every PUT with encryption
+                assert.strictEqual(res.ServerSideEncryption, 'aws:kms');
+            } else {
+                assert.strictEqual(res.ETag, `"${awsMD5}"`);
+            }
             assert.strictEqual(res.Metadata
                 ['x-amz-meta-scal-location-constraint'],
-                'aws-test');
+                awsLocation);
             return cb(res);
         });
     });
@@ -60,6 +70,9 @@ describe('MultipleBackend put object', function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
+            if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+                s3.createBucketAsync = createEncryptedBucketPromise;
+            }
             return s3.createBucketAsync({ Bucket: bucket })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -147,7 +160,7 @@ describe('MultipleBackend put object', function testSuite() {
 
             it('should put a 0-byte object to AWS', done => {
                 const params = { Bucket: bucket, Key: emptyKey,
-                    Metadata: { 'scal-location-constraint': 'aws-test' },
+                    Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
@@ -178,7 +191,7 @@ describe('MultipleBackend put object', function testSuite() {
             it('should put an object to AWS', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
@@ -191,7 +204,7 @@ describe('MultipleBackend put object', function testSuite() {
             it('should put a large object to AWS', done => {
                 const params = { Bucket: bucket, Key: bigKey,
                     Body: bigBody,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected sucess, ' +
                         `got error ${err}`);
@@ -203,9 +216,11 @@ describe('MultipleBackend put object', function testSuite() {
 
             it('should put objects with same key to AWS ' +
             'then file, and object should only be present in file', done => {
+                const awsBucket = config.locationConstraints[awsLocation].
+                    details.bucketName;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
@@ -241,7 +256,7 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     params.Metadata = {
-                        'scal-location-constraint': 'aws-test' };
+                        'scal-location-constraint': awsLocation };
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
@@ -257,12 +272,12 @@ describe('MultipleBackend put object', function testSuite() {
             'key, and newest object should be returned', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'aws-test',
+                    Metadata: { 'scal-location-constraint': awsLocation,
                                 'unique-header': 'first object' } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    params.Metadata = { 'scal-location-constraint': 'aws-test',
+                    params.Metadata = { 'scal-location-constraint': awsLocation,
                         'unique-header': 'second object' };
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
@@ -353,11 +368,13 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             process.stdout.write('Creating bucket\n');
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
-                    LocationConstraint: 'aws-test',
+                    LocationConstraint: awsLocation,
                 },
             }, err => {
                 assert.equal(err, null, `Error creating bucket: ${err}`);
                 process.stdout.write('Putting object\n');
+                const awsBucket = config.locationConstraints[awsLocation].
+                    details.bucketName;
                 return s3.putObject(params, err => {
                     assert.equal(err, null,
                         `Expected success, got error ${err}`);
