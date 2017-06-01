@@ -4,6 +4,8 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const { taggingTests } = require('../../lib/utility/tagging');
+const genMaxSizeMetaHeaders
+    = require('../../lib/utility/genMaxSizeMetaHeaders');
 
 const sourceBucketName = 'supersourcebucket8102016';
 const sourceObjName = 'supersourceobject';
@@ -344,6 +346,52 @@ describe('Object Copy', () => {
                         successCopyCheck(err, res, originalMetadata,
                             sourceBucketName, destObjName, done)
                     );
+            });
+
+        it('should not return error if copying object w/ > ' +
+        '2KB user-defined md and COPY directive',
+            done => {
+                const metadata = genMaxSizeMetaHeaders();
+                const params = {
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    MetadataDirective: 'COPY',
+                    Metadata: metadata,
+                };
+                s3.copyObject(params, err => {
+                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                    // add one more byte to be over the limit
+                    metadata.header0 = `${metadata.header0}${'0'}`;
+                    s3.copyObject(params, err => {
+                        assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                        done();
+                    });
+                });
+            });
+
+        it('should return error if copying object w/ > 2KB ' +
+        'user-defined md and REPLACE directive',
+            done => {
+                const metadata = genMaxSizeMetaHeaders();
+                const params = {
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: metadata,
+                };
+                s3.copyObject(params, err => {
+                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                    // add one more byte to be over the limit
+                    metadata.header0 = `${metadata.header0}${'0'}`;
+                    s3.copyObject(params, err => {
+                        assert(err, 'Expected err but did not find one');
+                        assert.strictEqual(err.code, 'MetadataTooLarge');
+                        assert.strictEqual(err.statusCode, 400);
+                        done();
+                    });
+                });
             });
 
         it('should copy an object from a source to the same destination ' +
