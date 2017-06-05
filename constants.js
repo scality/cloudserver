@@ -68,6 +68,11 @@ const constants = {
     maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 104857600 :
         5368709120,
 
+    // AWS states max size for user-defined metadata (x-amz-meta- headers) is
+    // 2 KB: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
+    // In testing, AWS seems to allow up to 88 more bytes, so we do the same.
+    maximumMetaHeadersSize: 2136,
+
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
