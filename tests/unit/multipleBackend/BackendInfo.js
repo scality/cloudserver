@@ -22,46 +22,66 @@ describe('BackendInfo class', () => {
             > -1);
         });
         it('should return object with applicable error if ' +
-        'bucketLocationConstraint is invalid', () => {
+        'bucketLocationConstraint is invalid and no ' +
+        'objectLocationConstraint was provided', () => {
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'notValid', '127.0.0.1', log);
+                undefined, 'notValid', '127.0.0.1', log);
             assert.equal(res.isValid, false);
             assert((res.description).indexOf('Bucket ' +
             'Location Error') > -1);
         });
         it('should return object with applicable error if requestEndpoint ' +
-        'is invalid and data backend is set to "scality"', () => {
+        'is invalid, no objectLocationConstraint or bucketLocationConstraint' +
+        'was provided and data backend is set to "scality"', () => {
             config.backends.data = 'scality';
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'file', 'notValid', log);
+                undefined, undefined, 'notValid', log);
             assert.equal(res.isValid, false);
             assert((res.description).indexOf('Endpoint ' +
             'Location Error') > -1);
         });
         it('should return object with applicable error if requestEndpoint ' +
-        'is invalid and data backend is set to "multiple"', () => {
+        'is invalid, no objectLocationConstraint or ' +
+        'bucketLocationConstraint was provided and ' +
+        'data backend is set to "multiple"', () => {
             config.backends.data = 'multiple';
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'file', 'notValid', log);
+                undefined, undefined, 'notValid', log);
             assert.equal(res.isValid, false);
             assert((res.description).indexOf('Endpoint ' +
             'Location Error') > -1);
         });
-        it('should return object if requestEndpoint ' +
+        it('should return isValid if requestEndpoint ' +
         'is invalid and data backend is set to "file"', () => {
             config.backends.data = 'file';
             const res = BackendInfo.controllingBackendParam(
                 'mem', 'file', 'notValid', log);
             assert.equal(res.isValid, true);
         });
-        it('should return object if requestEndpoint ' +
+        it('should return isValid if requestEndpoint ' +
         'is invalid and data backend is set to "mem"', () => {
             config.backends.data = 'mem';
             const res = BackendInfo.controllingBackendParam(
                 'mem', 'file', 'notValid', log);
             assert.equal(res.isValid, true);
         });
-        it('should return object if all backend ' +
+        it('should return isValid if requestEndpoint ' +
+        'is invalid but valid objectLocationConstraint' +
+        'was provided', () => {
+            config.backends.data = 'multiple';
+            const res = BackendInfo.controllingBackendParam(
+                'mem', undefined, 'notValid', log);
+            assert.equal(res.isValid, true);
+        });
+        it('should return isValid if requestEndpoint ' +
+        'is invalid but valid bucketLocationConstraint' +
+        'was provided', () => {
+            config.backends.data = 'multiple';
+            const res = BackendInfo.controllingBackendParam(
+                undefined, 'mem', 'notValid', log);
+            assert.equal(res.isValid, true);
+        });
+        it('should return isValid if all backend ' +
         'parameters are valid', () => {
             const res = BackendInfo.controllingBackendParam(
                 'mem', 'file', '127.0.0.1', log);
