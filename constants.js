@@ -32,12 +32,7 @@ const constants = {
     oldSplitter: 'splitterfornow',
     usersBucket: 'users..bucket',
     oldUsersBucket: 'namespaceusersbucket',
-    // MPU Bucket Prefix is used to create the name of the shadow
-    // bucket used for multipart uploads.  There is one shadow mpu
-    // bucket per bucket and its name is the mpuBucketPrefix followed
-    // by the name of the final destination bucket for the object
-    // once the multipart upload is complete.
-    mpuBucketPrefix: 'mpuShadowBucket',
+    blacklistedPrefixes: { bucket: [], object: [] },
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
