@@ -50,15 +50,15 @@ const testChecks = [
         data: 'file',
         locationSent: '',
         parsedHost: '127.3.2.1',
-        locationReturn: '',
+        locationReturn: 'us-east-1',
         isError: false,
     },
     {
         data: 'multiple',
         locationSent: '',
         parsedHost: '127.3.2.1',
-        locationReturn: undefined,
-        isError: true,
+        locationReturn: 'us-east-1',
+        isError: false,
     },
 ];
 
