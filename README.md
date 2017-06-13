@@ -194,6 +194,12 @@ There are three configuration files for your Scality S3 Server:
 You must specify at least one locationConstraint in your
 locationConfig.json (or leave as pre-configured).
 
+You must also specify 'us-east-1' as a locationConstraint so
+if you only define one locationConstraint, that would be it.
+If you put a bucket to an unknown endpoint and do not specify
+a locationConstraint in the put bucket call, us-east-1 will
+be used.
+
 For instance, the following locationConstraint will save data
 sent to `myLocationConstraint` to the file backend:
 

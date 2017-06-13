@@ -36,7 +36,10 @@ const bucketPutRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    post: '',
+    post: '<CreateBucketConfiguration ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<LocationConstraint>mem</LocationConstraint>' +
+    '</CreateBucketConfiguration >',
 };
 const objectKey = 'testObject';
 const initiateRequest = {
@@ -1325,7 +1328,8 @@ describe('Multipart Upload API', () => {
     });
 
     it('should return no error if attempt to abort/delete ' +
-        'a multipart upload that does not exist', done => {
+        'a multipart upload that does not exist and not using' +
+        'legacyAWSBehavior', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,

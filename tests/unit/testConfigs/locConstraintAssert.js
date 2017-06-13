@@ -95,4 +95,12 @@ describe('locationConstraintAssert', () => {
         },
         /bad config: credentialsProfile must be a string/);
     });
+    it('should throw error if us-east-1 not specified', () => {
+        const locationConstraint = new LocationConstraint();
+        assert.throws(() => {
+            locationConstraintAssert({ 'not-us-east-1': locationConstraint });
+        },
+        '/bad locationConfig: must ' +
+        'include us-east-1 as a locationConstraint/');
+    });
 });
