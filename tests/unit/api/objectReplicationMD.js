@@ -97,7 +97,7 @@ function createBucket() {
 function createBucketWithReplication(hasStorageClass) {
     createBucket();
     const config = {
-        role: 'arn:partition:service::account-id:resourcetype/resource',
+        role: 'arn:aws:iam::account-id:role/resource',
         destination: 'arn:aws:s3:::source-bucket',
         rules: [{
             prefix: keyA,

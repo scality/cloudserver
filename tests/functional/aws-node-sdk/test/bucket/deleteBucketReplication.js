@@ -8,7 +8,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'source-bucket';
 const replicationConfig = {
-    Role: 'arn:partition:service::account-id:resourcetype/resource',
+    Role: 'arn:aws:iam::account-id:role/resource',
     Rules: [
         {
             Destination: { Bucket: 'arn:aws:s3:::destination-bucket' },
