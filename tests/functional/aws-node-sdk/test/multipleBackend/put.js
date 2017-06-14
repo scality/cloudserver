@@ -8,11 +8,15 @@ const { getRealAwsConfig } = require('../support/awsConfig');
 const bucket = 'buckettestmultiplebackendput';
 const awsBucket = 'multitester555';
 const key = 'somekey';
+const emptyKey = 'emptykey';
+const bigKey = 'bigkey';
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = new Buffer(10485760);
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
-const bigMD5 = 'f1c9645dbc14efddc7d8a322685f26eb';
+// AWS handles objects larger than 5MB as MPUs, so returned ETag differs
+const bigS3MD5 = 'f1c9645dbc14efddc7d8a322685f26eb';
+const bigAWSMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 
 let bucketUtil;
 let s3;
@@ -20,7 +24,8 @@ let awsS3;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-describe('MultipleBackend put object', () => {
+describe('MultipleBackend put object', function testSuite() {
+    this.timeout(30000);
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -95,13 +100,14 @@ describe('MultipleBackend put object', () => {
             });
 
             it('should put a 0-byte object to mem', done => {
-                const params = { Bucket: bucket, Key: key,
+                const params = { Bucket: bucket, Key: emptyKey,
                     Metadata: { 'scal-location-constraint': 'mem' },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                    s3.getObject({ Bucket: bucket, Key: emptyKey },
+                    (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error ${err}`);
                         assert.strictEqual(res.ETag, `"${emptyMD5}"`);
@@ -111,13 +117,14 @@ describe('MultipleBackend put object', () => {
             });
 
             it('should put a 0-byte object to AWS', done => {
-                const params = { Bucket: bucket, Key: key,
+                const params = { Bucket: bucket, Key: emptyKey,
                     Metadata: { 'scal-location-constraint': 'aws-test' },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                    s3.getObject({ Bucket: bucket, Key: emptyKey },
+                    (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error ${err}`);
                         assert.strictEqual(res.ETag, `"${emptyMD5}"`);
@@ -166,21 +173,22 @@ describe('MultipleBackend put object', () => {
             });
 
             it('should put a large object to AWS', done => {
-                const params = { Bucket: bucket, Key: key,
+                const params = { Bucket: bucket, Key: bigKey,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': 'aws-test' } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected sucess, ' +
                         `got error ${err}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                    s3.getObject({ Bucket: bucket, Key: bigKey },
+                    (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${bigMD5}"`);
-                        awsS3.getObject({ Bucket: awsBucket, Key: key },
+                        assert.strictEqual(res.ETag, `"${bigS3MD5}"`);
+                        awsS3.getObject({ Bucket: awsBucket, Key: bigKey },
                         (err, res) => {
                             assert.strictEqual(err, null, 'Expected success, ' +
                                 `got error ${err}`);
-                            assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                            assert.strictEqual(res.ETag, `"${bigAWSMD5}"`);
                             done();
                         });
                     });
