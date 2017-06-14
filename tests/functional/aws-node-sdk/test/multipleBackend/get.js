@@ -24,7 +24,8 @@ let awsS3;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-describe('Multiple backend get object', () => {
+describe('Multiple backend get object', function testSuite() {
+    this.timeout(30000);
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
