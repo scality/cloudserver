@@ -327,12 +327,9 @@ describe('versioned put and get object acl ::', () => {
             'version-enabled bucket where no version id is specified',
             done => {
                 const params = { Bucket: bucket, Key: key, ACL: 'public-read' };
-                utils.putObjectAcl(params, () => s3.listObjectVersions({ Bucket:
-                  bucket }, (err, data) => {
-                    assert.ifError(err, `listObjects err ${err}`);
-                    checkOneVersion(data, versionId);
-                    done();
-                }));
+                utils.putObjectAcl(params, () => {
+                    checkOneVersion(s3, bucket, versionId, done);
+                });
             });
         });
 

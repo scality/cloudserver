@@ -24,6 +24,7 @@ describe('Put object tagging with versioning', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
+
         beforeEach(done => s3.createBucket({ Bucket: bucketName }, done));
         afterEach(done => {
             removeAllVersions({ Bucket: bucketName }, err => {
@@ -75,14 +76,9 @@ describe('Put object tagging with versioning', () => {
                             Value: 'value1',
                         }] },
                 }, err => next(err, versionId)),
-                (versionId, next) => s3.listObjectVersions({
-                    Bucket: bucketName,
-                }, (err, data) => next(err, data, versionId)),
-            ], (err, data, versionId) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                checkOneVersion(data, versionId);
-                done();
-            });
+                (versionId, next) =>
+                    checkOneVersion(s3, bucketName, versionId, next),
+            ], done);
         });
 
         it('should be able to put tag with a version of id "null"', done => {

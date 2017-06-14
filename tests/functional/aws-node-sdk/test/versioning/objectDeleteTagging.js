@@ -85,14 +85,9 @@ describe('Delete object tagging with versioning', () => {
                     Bucket: bucketName,
                     Key: objectName,
                 }, err => next(err, versionId)),
-                (versionId, next) => s3.listObjectVersions({
-                    Bucket: bucketName,
-                }, (err, data) => next(err, data, versionId)),
-            ], (err, data, versionId) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                checkOneVersion(data, versionId);
-                done();
-            });
+                (versionId, next) =>
+                    checkOneVersion(s3, bucketName, versionId, next),
+            ], done);
         });
 
         it('should be able to delete tag set with a version of id "null"',
