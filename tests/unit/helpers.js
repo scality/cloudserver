@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const assert = require('assert');
 
-const AuthInfo = require('../../lib/auth/AuthInfo');
+const AuthInfo = require('arsenal').auth.AuthInfo;
 const constants = require('../../constants');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const { resetCount, ds } = require('../../lib/data/in_memory/backend');
