@@ -5,9 +5,11 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
 const {
+    createDualNullVersion,
     removeAllVersions,
     versioningEnabled,
     versioningSuspended,
+    checkOneVersion,
 } = require('../../lib/utility/versioning-util');
 
 const customS3Request = require('../../lib/utility/customS3Request');
@@ -290,6 +292,60 @@ describe('put and get object with versioning', function testSuite() {
                             'wrong object data');
                         callback();
                     }),
+                ], done);
+            });
+
+            // Jira issue: S3C-444
+            it('put object after put object acl on null version which is ' +
+            'latest version should not result in two null version with ' +
+            'different version ids', done => {
+                async.waterfall([
+                    // create new null version (master version in metadata)
+                    callback => s3.putObject({ Bucket: bucket, Key: key },
+                        err => callback(err)),
+                    callback => checkOneVersion(s3, bucket, 'null', callback),
+                    // note after put object acl in metadata will have null
+                    // version (with same version ID) stored in both master and
+                    // separate version due to using versionId=<null ver id>
+                    // option in metadata PUT call
+                    callback => s3.putObjectAcl({
+                        Bucket: bucket,
+                        Key: key,
+                        ACL: 'public-read-write',
+                        VersionId: 'null',
+                    }, err => callback(err)),
+                    // before overwriting master version, put object should
+                    // clean up latest null version (both master version and
+                    // separate version in metadata)
+                    callback => s3.putObject({ Bucket: bucket, Key: key },
+                        err => callback(err)),
+                    // if clean-up did not occur, would see two null versions
+                    // with different version IDs in version listing
+                    callback => checkOneVersion(s3, bucket, 'null', callback),
+                ], done);
+            });
+
+            // Jira issue: S3C-444
+            it('put object after creating dual null version another way ' +
+            'should not result in two null version with different version ids',
+            done => {
+                async.waterfall([
+                    // create dual null version state another way
+                    callback =>
+                        createDualNullVersion(s3, bucket, key, callback),
+                    // versioning is left enabled after above step
+                    callback => s3.putBucketVersioning({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningSuspended,
+                    }, err => callback(err)),
+                    // before overwriting master version, put object should
+                    // clean up latest null version (both master version and
+                    // separate version in metadata)
+                    callback => s3.putObject({ Bucket: bucket, Key: key },
+                        err => callback(err)),
+                    // if clean-up did not occur, would see two null versions
+                    // with different version IDs in version listing
+                    callback => checkOneVersion(s3, bucket, 'null', callback),
                 ], done);
             });
         });
