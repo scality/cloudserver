@@ -134,7 +134,7 @@ describe('Multiple backend get object', function testSuite() {
                     done();
                 });
             });
-            it('should get a 0-byte object from AWS', done => {
+            it.skip('should get a 0-byte object from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: emptyAwsObject },
                 (err, res) => {
                     assert.equal(err, null, 'Expected success but got error ' +
@@ -152,7 +152,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     });
             });
-            it('should get an object from AWS', done => {
+            it.skip('should get an object from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: awsObject },
                     (err, res) => {
                         assert.equal(err, null, 'Expected success but got ' +
@@ -161,7 +161,7 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     });
             });
-            it('should get a large object from AWS', done => {
+            it.skip('should get a large object from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: bigObject },
                     (err, res) => {
                         assert.equal(err, null, 'Expected success but got ' +
@@ -170,7 +170,8 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     });
             });
-            it('should return an error on get done to object deleted from AWS',
+            it.skip('should return an error on get done to object deleted ' +
+            'from AWS',
             done => {
                 awsS3.deleteObject({ Bucket: awsBucket, Key: awsObject },
                 err => {
