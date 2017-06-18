@@ -47,4 +47,32 @@ if [[ "$S3DATA" == "multiple" ]]; then
     export S3DATA="$S3DATA"
 fi
 
+JQ_FILTERS="."
+
+if [[ "$LISTEN_ADDR" ]]; then
+    JQ_FILTERS="$JQ_FILTERS | .metadataDaemon.bindAddress=\"$LISTEN_ADDR\""
+    JQ_FILTERS="$JQ_FILTERS | .dataDaemon.bindAddress=\"$LISTEN_ADDR\""
+    JQ_FILTERS="$JQ_FILTERS | .listenOn=[\"$LISTEN_ADDR:8000\"]"
+fi
+
+if [[ "$DATA_HOST" ]]; then
+    JQ_FILTERS="$JQ_FILTERS | .dataClient.host=\"$DATA_HOST\""
+fi
+
+if [[ "$METADATA_HOST" ]]; then
+    JQ_FILTERS="$JQ_FILTERS | .metadataClient.host=\"$METADATA_HOST\""
+fi
+
+if [[ "$REDIS_HOST" ]]; then
+    JQ_FILTERS="$JQ_FILTERS | .localCache.host=\"$REDIS_HOST\""
+    JQ_FILTERS="$JQ_FILTERS | .localCache.port=6379"
+fi
+
+if [[ "$REDIS_PORT" ]]; then
+    JQ_FILTERS="$JQ_FILTERS | .localCache.port=$REDIS_PORT"
+fi
+
+jq "$JQ_FILTERS" config.json > config.json.tmp
+mv config.json.tmp config.json
+
 exec "$@"
