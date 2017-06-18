@@ -37,17 +37,17 @@ describe('sproxydAssert', () => {
         },
         /bad config: sproxyd.chordCos must be a string/);
     });
-    it('should throw an error if chordCos is more than 2 digits', () => {
+    it('should throw an error if chordCos is more than 1 digit', () => {
         assert.throws(() => {
             sproxydAssert(makeSproxydConf(null, '200'));
         },
-        /bad config: sproxyd.chordCos must be a 2hex-chars string/);
+        /bad config: sproxyd.chordCos must be a digit smaller than 7/);
     });
-    it('should throw an error if chordCos includes non-hex digit', () => {
+    it('should throw an error if chordCos bigger than 7', () => {
         assert.throws(() => {
-            sproxydAssert(makeSproxydConf(null, '2z'));
+            sproxydAssert(makeSproxydConf(null, '7'));
         },
-        /bad config: sproxyd.chordCos must be a 2hex-chars string/);
+        /bad config: sproxyd.chordCos must be a digit smaller than 7/);
     });
     it('should throw an error if path is not a string', () => {
         assert.throws(() => {
@@ -62,7 +62,7 @@ describe('sproxydAssert', () => {
     });
     it('should return array containing "chordCos" if config contains chordCos',
         () => {
-            const sproxydArray = sproxydAssert(makeSproxydConf(null, '20'));
+            const sproxydArray = sproxydAssert(makeSproxydConf(null, '2'));
             assert.strictEqual(sproxydArray.indexOf('chordCos'), 0);
         });
     it('should return array containing "path" if config contains path', () => {
@@ -73,7 +73,7 @@ describe('sproxydAssert', () => {
     it('should return array of "bootstrap", "chordCos", and "path" if config ' +
         'contains all fields', () => {
         const sproxydArray = sproxydAssert(
-            makeSproxydConf(['localhost:8181'], '20', '/proxy/arc'));
+            makeSproxydConf(['localhost:8181'], '2', '/proxy/arc'));
         assert.strictEqual(sproxydArray.length, 3);
         assert.strictEqual(sproxydArray.indexOf('bootstrap') > -1, true);
         assert.strictEqual(sproxydArray.indexOf('chordCos') > -1, true);

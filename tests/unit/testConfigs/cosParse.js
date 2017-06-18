@@ -1,10 +1,10 @@
 const assert = require('assert');
 const { cosParse } = require('../../../lib/Config');
 
-const dummyChordCos = '20';
+const dummyChordCos = '2';
 
 describe('cosParse', () => {
-    it('should return the first digit of a string number as an integer', () => {
+    it('should return the single digit of the string as an integer', () => {
         const parsed = cosParse(dummyChordCos);
         assert.strictEqual(parsed, 2);
     });
