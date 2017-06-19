@@ -105,6 +105,53 @@ certificates in a mounted volume
 More information about how to use S3 server with SSL
 `here <https://s3.scality.com/v1.0/page/scality-with-ssl>`__
 
+LISTEN\_ADDR
+^^^^^^^^^^^^
+
+This variable instructs the S3 server, and its data and metadata components
+to listen on the specified address. This allows starting the data or metadata
+servers as standalone services, for example.
+
+.. code:: shell
+
+    docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
+    scality/s3server npm run start_dataserver
+
+
+DATA\_HOST and METADATA\_HOST
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These variables configure the data and metadata servers to use,
+usually when they are running on another host and only starting the stateless
+S3 REST server.
+
+.. code:: shell
+
+    docker run -d --name s3server -e DATA_HOST=s3server-data
+    -e METADATA_HOST=s3server-metadata scality/s3server npm run start_s3server
+
+REDIS\_HOST
+^^^^^^^^^^^
+
+Use this variable to connect to the redis cache server on another host than
+localhost.
+
+.. code:: shell
+
+    docker run -d --name s3server -p 8000:8000
+    -e REDIS_HOST=my-redis-server.example.com scality/s3server
+
+REDIS\_PORT
+^^^^^^^^^^^
+
+Use this variable to connect to the redis cache server on another port than
+the default 6379.
+
+.. code:: shell
+
+    docker run -d --name s3server -p 8000:8000
+    -e REDIS_PORT=6379 scality/s3server
+
 In production with Docker
 -------------------------
 
