@@ -26,7 +26,7 @@ const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
 
-const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
 errorDescription) {
@@ -132,12 +132,6 @@ errorDescription) {
 describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', () => {
     beforeEach(() => {
         cleanup();
-    });
-
-    it('should return err InvalidArgument if no host and data backend ' +
-    'set to "multiple"', done => {
-        copyPutPart('file', 'mem', null, null, () => done(), 'Endpoint ' +
-        'Location Error');
     });
 
     it('should copy part to mem based on mpu location', done => {

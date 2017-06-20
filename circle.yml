@@ -42,7 +42,9 @@ test:
 
     - mkdir -p $CIRCLE_TEST_REPORTS/unit
     - npm run unit_coverage
-    - npm run multiple_backend_test
+    - npm run start_dmd & bash wait_for_local_port.bash 9990 40
+        && npm run multiple_backend_test
+
     # Run S3 with multiple data backends ; run ft_awssdk
     - S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start
             > $CIRCLE_ARTIFACTS/server_multiple_awssdk.txt
