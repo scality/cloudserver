@@ -4,11 +4,11 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const { config } = require('../../../../../lib/Config');
 
 const bucket = 'buckettestmultiplebackenddelete';
-const memObject = 'memObject';
-const fileObject = 'fileObject';
-const awsObject = 'awsObject';
-const emptyObject = 'emptyObject';
-const bigObject = 'bigObject';
+const memObject = `memObject-${Date.now()}`;
+const fileObject = `fileObject-${Date.now()}`;
+const awsObject = `awsObject-${Date.now()}`;
+const emptyObject = `emptyObject-${Date.now()}`;
+const bigObject = `bigObject-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = new Buffer(10485760);
 
