@@ -96,7 +96,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 });
             });
         });
-        it('should delete object from AWS', done => {
+        it.skip('should delete object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: awsObject }, err => {
                 assert.strictEqual(err, null,
                     `Expected success, got error ${JSON.stringify(err)}`);
@@ -107,7 +107,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 });
             });
         });
-        it('should delete 0-byte object from AWS', done => {
+        it.skip('should delete 0-byte object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: emptyObject }, err => {
                 assert.strictEqual(err, null,
                     `Expected success, got error ${JSON.stringify(err)}`);
@@ -118,7 +118,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 });
             });
         });
-        it('should delete large object from AWS', done => {
+        it.skip('should delete large object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: bigObject }, err => {
                 assert.strictEqual(err, null,
                     `Expected success, got error ${JSON.stringify(err)}`);

@@ -145,7 +145,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put a 0-byte object to AWS', done => {
+            it.skip('should put a 0-byte object to AWS', done => {
                 const params = { Bucket: bucket, Key: emptyKey,
                     Metadata: { 'scal-location-constraint': 'aws-test' },
                 };
@@ -175,7 +175,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put an object to AWS', done => {
+            it.skip('should put an object to AWS', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': 'aws-test' } };
@@ -188,7 +188,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put a large object to AWS', done => {
+            it.skip('should put a large object to AWS', done => {
                 const params = { Bucket: bucket, Key: bigKey,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': 'aws-test' } };
@@ -201,7 +201,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put objects with same key to AWS ' +
+            it.skip('should put objects with same key to AWS ' +
             'then file, and object should only be present in file', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
@@ -232,7 +232,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put objects with same key to file ' +
+            it.skip('should put objects with same key to file ' +
             'then AWS, and object should only be present on AWS', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
@@ -253,7 +253,7 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should put two objects to AWS with same ' +
+            it.skip('should put two objects to AWS with same ' +
             'key, and newest object should be returned', done => {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
@@ -349,7 +349,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             });
         });
 
-        it('should put an object to AWS with no location header', done => {
+        it.skip('should put an object to AWS with no location header', done => {
             process.stdout.write('Creating bucket\n');
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
