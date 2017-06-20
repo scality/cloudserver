@@ -24,7 +24,7 @@ const objectName = 'objectName';
 const body = Buffer.from('I am a body', 'utf8');
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 
-const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function putPart(bucketLoc, mpuLoc, partLoc, requestHost, cb,
 errorDescription) {
@@ -129,14 +129,8 @@ errorDescription) {
 }
 
 describeSkipIfE2E('objectPutPart API with multiple backends', () => {
-    afterEach(() => {
+    beforeEach(() => {
         cleanup();
-    });
-
-    it('should return error InvalidArgument if no host and data backend ' +
-    'set to "multiple"', done => {
-        putPart('mem', 'file', null, null, () => done(),
-        'Endpoint Location Error');
     });
 
     it('should upload a part to file based on mpu location', done => {

@@ -16,7 +16,7 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
 
-const describeSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -70,11 +70,6 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
 describeSkipIfE2E('objectPutAPI with multiple backends', () => {
     afterEach(() => {
         cleanup();
-    });
-
-    it('should return error Invalid argument if no host and data backend ' +
-    'set to "multiple"', done => {
-        put('file', 'mem', null, () => done(), 'Endpoint Location Error');
     });
 
     it('should put an object to mem', done => {
