@@ -116,8 +116,8 @@ function makeS3Request(params, callback) {
         port: process.env.AWS_ON_AIR ? 80 : 8000,
         method,
         queryObj,
-        headers,
-        path: bucket ? `/${bucket}` : '/',
+        headers: headers || {},
+        path: bucket ? `/${bucket}/` : '/',
     };
     if (objectKey) {
         options.path = `${options.path}${objectKey}`;

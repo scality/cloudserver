@@ -73,20 +73,30 @@ const constants = {
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
-    unsupportedQueries: {
-        'accelerate': true,
-        'analytics': true,
-        'inventory': true,
-        'lifecycle': true,
-        'list-type': true,
-        'logging': true,
-        'metrics': true,
-        'notification': true,
-        'policy': true,
-        'requestPayment': true,
-        'restore': true,
-        'torrent': true,
-    },
+    unsupportedQueries: [
+        'accelerate',
+        'analytics',
+        'inventory',
+        'lifecycle',
+        'list-type',
+        'logging',
+        'metrics',
+        'notification',
+        'policy',
+        'requestPayment',
+        'restore',
+        'torrent',
+    ],
+    // Headers supported by AWS that we do not currently support.
+    unsupportedHeaders: [
+        'x-amz-server-side-encryption',
+        'x-amz-server-side-encryption-customer-algorithm',
+        'x-amz-server-side-encryption-aws-kms-key-id',
+        'x-amz-server-side-encryption-context',
+        'x-amz-server-side-encryption-customer-key',
+        'x-amz-server-side-encryption-customer-key-md5',
+    ],
+
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
 };
