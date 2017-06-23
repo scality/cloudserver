@@ -1,7 +1,7 @@
 const assert = require('assert');
 
 const { DummyRequestLogger } = require('../helpers');
-const getReplicationConfiguration =
+const { getReplicationConfiguration } =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
 const replicationUtils =
     require('../../functional/aws-node-sdk/lib/utility/replication');
