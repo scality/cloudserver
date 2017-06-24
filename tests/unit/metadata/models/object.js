@@ -72,6 +72,19 @@ describe('ObjectMD class setters/getters', () => {
         ['Tags', {
             key: 'value',
         }],
+        ['Tags', null, {}],
+        ['ReplicationInfo', null, {
+            status: '',
+            content: [],
+            destination: '',
+            storageClass: '',
+        }],
+        ['ReplicationInfo', {
+            status: 'PENDING',
+            content: ['DATA', 'METADATA'],
+            destination: 'destination-bucket',
+            storageClass: 'STANDARD',
+        }],
     ].forEach(test => {
         const property = test[0];
         const testValue = test[1];
