@@ -27,11 +27,36 @@ S3DATA=multiple
 ^^^^^^^^^^^^^^^
 
 This runs Scality S3 server with multiple data backends. `More
-info <https://github.com/scality/S3#run-it-with-multiple-data-backends>`__
+info <../GETTING_STARTED/#location-configuration>`__
 
 .. code:: shell
 
     docker run -d --name s3server -p 8000:8000 -e S3DATA=multiple scality/s3server
+
+For running an S3 AWS backend, you will have to add a new section
+(with the ``aws_s3`` location type) to your ``locationConfig.json`` file:
+
+.. code:: json
+
+    "aws-test": {
+        "type": "aws_s3",
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "yourawss3bucket",
+            "bucketMatch": true,
+            "credentialsProfile": "default"
+        }
+    }
+
+You will also have to mount your AWS credentials file:
+``-v ~/.aws/credentials:/root/.aws/credentials`` on Linux, OS X, or Unix or
+``-v C:\Users\USERNAME\.aws\credential:/root/.aws/credentials`` on Windows
+
+.. code:: shell
+
+    docker run --name s3server -p 8000:8000
+    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
+    -v ~/.aws/credentials:/root/.aws/credentials -e S3DATA=multiple scality/s3server
 
 HOST\_NAME
 ^^^^^^^^^^
