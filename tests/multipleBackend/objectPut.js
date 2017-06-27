@@ -67,7 +67,9 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     });
 }
 
-describeSkipIfE2E('objectPutAPI with multiple backends', () => {
+describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
+    this.timeout(5000);
+
     afterEach(() => {
         cleanup();
     });

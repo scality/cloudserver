@@ -2,6 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
+const AWS = require('aws-sdk');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
@@ -14,15 +15,23 @@ const DummyRequest = require('../unit/DummyRequest');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const constants = require('../../constants');
 
+const s3 = new AWS.S3();
+
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
+const awsBucket = 'multitester555';
 const objectName = 'objectName';
-const body = Buffer.from('I am a body', 'utf8');
+const body1 = Buffer.from('I am a body', 'utf8');
+const body2 = Buffer.from('I am a body with a different ETag', 'utf8');
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
+const md5Hash1 = crypto.createHash('md5');
+const md5Hash2 = crypto.createHash('md5');
+const calculatedHash1 = md5Hash1.update(body1).digest('hex');
+const calculatedHash2 = md5Hash2.update(body2).digest('hex');
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
@@ -85,9 +94,6 @@ errorDescription) {
         // Need to build request in here since do not have uploadId
         // until here
         const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-        const md5Hash = crypto.createHash('md5');
-        const bufferBody = Buffer.from(body);
-        const calculatedHash = md5Hash.update(bufferBody).digest('hex');
         const partReqParams = {
             bucketName,
             namespace,
@@ -98,37 +104,58 @@ errorDescription) {
                 partNumber: '1',
                 uploadId: testUploadId,
             },
-            calculatedHash,
         };
         if (partLoc) {
             partReqParams.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
                 'x-amz-meta-scal-location-constraint': `${partLoc}`,
             };
         }
-        const partReq = new DummyRequest(partReqParams, body);
+        const partReq = new DummyRequest(partReqParams, body1);
         return objectPutPart(authInfo, partReq, undefined, log, err => {
             assert.strictEqual(err, null);
-            const keysInMPUkeyMap = [];
-            metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
-                keysInMPUkeyMap.push(key);
-            });
-            const sortedKeyMap = keysInMPUkeyMap.sort(a => {
-                if (a.slice(0, 8) === 'overview') {
-                    return -1;
-                }
-                return 0;
-            });
-            const partKey = sortedKeyMap[1];
-            const partETag = metadata.keyMaps.get(mpuBucket)
-                                                .get(partKey)['content-md5'];
-            assert.strictEqual(keysInMPUkeyMap.length, 2);
-            assert.strictEqual(partETag, calculatedHash);
-            cb();
+            if (bucketLoc !== 'aws-test' && mpuLoc !== 'aws-test') {
+                const keysInMPUkeyMap = [];
+                metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
+                    keysInMPUkeyMap.push(key);
+                });
+                const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                    if (a.slice(0, 8) === 'overview') {
+                        return -1;
+                    }
+                    return 0;
+                });
+                const partKey = sortedKeyMap[1];
+                const partETag = metadata.keyMaps.get(mpuBucket)
+                                .get(partKey)['content-md5'];
+                assert.strictEqual(keysInMPUkeyMap.length, 2);
+                assert.strictEqual(partETag, calculatedHash1);
+            }
+            cb(testUploadId);
         });
     });
 }
 
-describeSkipIfE2E('objectPutPart API with multiple backends', () => {
+function listAndAbort(uploadId, calculatedHash2, done) {
+    const params = { Bucket: awsBucket, Key: objectName,
+    UploadId: uploadId };
+    s3.listParts(params, (err, data) => {
+        assert.equal(err, null, `Error listing parts: ${err}`);
+        assert.strictEqual(data.Parts.length, 1);
+        if (calculatedHash2) {
+            assert.strictEqual(`"${calculatedHash2}"`, data.Parts[0].ETag);
+        }
+        s3.abortMultipartUpload(params, err => {
+            assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+            `You must abort MPU with upload ID ${uploadId} manually.`);
+            done();
+        });
+    });
+}
+
+describeSkipIfE2E('objectPutPart API with multiple backends',
+function testSuite() {
+    this.timeout(5000);
+
     beforeEach(() => {
         cleanup();
     });
@@ -145,15 +172,45 @@ describeSkipIfE2E('objectPutPart API with multiple backends', () => {
 
     it('should put a part to mem based on mpu location', done => {
         putPart('file', 'mem', null, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
+            assert.deepStrictEqual(ds[1].value, body1);
             done();
+        });
+    });
+
+    it('should put a part to AWS based on mpu location', done => {
+        putPart('file', 'aws-test', null, 'localhost', uploadId => {
+            assert.deepStrictEqual(ds, []);
+            listAndAbort(uploadId, null, done);
+        });
+    });
+
+    it('should replace part if two parts uploaded with same part number to AWS',
+    done => {
+        putPart('file', 'aws-test', null, 'localhost', uploadId => {
+            assert.deepStrictEqual(ds, []);
+            const partReqParams = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-meta-scal-location-constraint': 'aws-test' },
+                url: `/${objectName}?partNumber=1&uploadId=${uploadId}`,
+                query: {
+                    partNumber: '1', uploadId,
+                },
+            };
+            const partReq = new DummyRequest(partReqParams, body2);
+            objectPutPart(authInfo, partReq, undefined, log, err => {
+                assert.equal(err, null, `Error putting second part: ${err}`);
+                listAndAbort(uploadId, calculatedHash2, done);
+            });
         });
     });
 
     it('should upload part based on mpu location even if part ' +
         'location constraint is specified ', done => {
         putPart('file', 'mem', 'file', 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
+            assert.deepStrictEqual(ds[1].value, body1);
             done();
         });
     });
@@ -167,8 +224,16 @@ describeSkipIfE2E('objectPutPart API with multiple backends', () => {
 
     it('should put a part to mem based on bucket location', done => {
         putPart('mem', null, null, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
+            assert.deepStrictEqual(ds[1].value, body1);
             done();
+        });
+    });
+
+    it('should put a part to AWS based on bucket location', done => {
+        putPart('aws-test', null, null, 'localhost',
+        uploadId => {
+            assert.deepStrictEqual(ds, []);
+            listAndAbort(uploadId, null, done);
         });
     });
 
