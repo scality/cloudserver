@@ -922,8 +922,8 @@ describe('Object Copy', () => {
                 });
             });
 
-        it('If-None-Match: returns NotModified when ETag match, with double ' +
-            'quotes around ETag',
+        it('If-None-Match: returns PreconditionFailed when ETag match, with' +
+            'double quotes around ETag',
             done => {
                 requestCopy({ CopySourceIfNoneMatch: etag }, err => {
                     checkError(err, 'PreconditionFailed');
@@ -931,8 +931,8 @@ describe('Object Copy', () => {
                 });
             });
 
-        it('If-None-Match: returns NotModified when one of ETags match, with ' +
-            'double quotes around ETag',
+        it('If-None-Match: returns PreconditionFailed when one of ETags ' +
+            'match, with double quotes around ETag',
             done => {
                 requestCopy({
                     CopySourceIfNoneMatch: `non-matching,${etag}`,
@@ -942,8 +942,8 @@ describe('Object Copy', () => {
                 });
             });
 
-        it('If-None-Match: returns NotModified when ETag match, without ' +
-            'double quotes around ETag',
+        it('If-None-Match: returns PreconditionFailed when ETag match, ' +
+            'without double quotes around ETag',
             done => {
                 requestCopy({ CopySourceIfNoneMatch: etagTrim }, err => {
                     checkError(err, 'PreconditionFailed');
@@ -951,8 +951,8 @@ describe('Object Copy', () => {
                 });
             });
 
-        it('If-None-Match: returns NotModified when one of ETags match, ' +
-            'without double quotes around ETag',
+        it('If-None-Match: returns PreconditionFailed when one of ETags ' +
+            'match, without double quotes around ETag',
             done => {
                 requestCopy({
                     CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
@@ -974,8 +974,8 @@ describe('Object Copy', () => {
 
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-Modified-Since: returns NotModified if Last modified ' +
-            'date is lesser',
+        it.skip('If-Modified-Since: returns PreconditionFailed if Last ' +
+            'modified date is lesser',
             done => {
                 requestCopy({ CopySourceIfModifiedSince: dateFromNow(1) },
                     err => {
@@ -984,7 +984,7 @@ describe('Object Copy', () => {
                     });
             });
 
-        it('If-Modified-Since: returns NotModified if Last modified ' +
+        it('If-Modified-Since: returns PreconditionFailed if Last modified ' +
             'date is equal',
             done => {
                 requestCopy({ CopySourceIfModifiedSince:
@@ -1110,8 +1110,8 @@ describe('Object Copy', () => {
             });
         });
 
-        it('If-None-Match & If-Modified-Since: returns NotModified when Etag ' +
-            'does not match and lastModified is greater',
+        it('If-None-Match & If-Modified-Since: returns PreconditionFailed ' +
+            'when Etag does not match and lastModified is greater',
             done => {
                 requestCopy({
                     CopySourceIfNoneMatch: etagTrim,
