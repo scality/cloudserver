@@ -1,12 +1,11 @@
 const assert = require('assert');
 const async = require('async');
-const { errors } = require('arsenal');
+const { errors, s3middleware } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
-const { parseTagFromQuery }
-    = require('../../../lib/api/apiUtils/object/tagging');
+const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const { ds } = require('../../../lib/data/in_memory/backend');
