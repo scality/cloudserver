@@ -3,7 +3,7 @@ const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
-
+const { config } = require('../../lib/Config');
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
 const { ds } = require('../../lib/data/in_memory/backend');
@@ -23,7 +23,8 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const awsBucket = 'multitester555';
+
+const awsLocation = 'aws-test';
 const objectName = 'objectName';
 const body1 = Buffer.from('I am a body', 'utf8');
 const body2 = Buffer.from('I am a body with a different ETag', 'utf8');
@@ -113,7 +114,7 @@ errorDescription) {
         const partReq = new DummyRequest(partReqParams, body1);
         return objectPutPart(authInfo, partReq, undefined, log, err => {
             assert.strictEqual(err, null);
-            if (bucketLoc !== 'aws-test' && mpuLoc !== 'aws-test') {
+            if (bucketLoc !== awsLocation && mpuLoc !== awsLocation) {
                 const keysInMPUkeyMap = [];
                 metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
                     keysInMPUkeyMap.push(key);
@@ -136,6 +137,8 @@ errorDescription) {
 }
 
 function listAndAbort(uploadId, calculatedHash2, done) {
+    const awsBucket = config.locationConstraints[awsLocation].
+        details.bucketName;
     const params = { Bucket: awsBucket, Key: objectName,
     UploadId: uploadId };
     s3.listParts(params, (err, data) => {
@@ -178,7 +181,7 @@ function testSuite() {
     });
 
     it('should put a part to AWS based on mpu location', done => {
-        putPart('file', 'aws-test', null, 'localhost', uploadId => {
+        putPart('file', awsLocation, null, 'localhost', uploadId => {
             assert.deepStrictEqual(ds, []);
             listAndAbort(uploadId, null, done);
         });
@@ -186,14 +189,14 @@ function testSuite() {
 
     it('should replace part if two parts uploaded with same part number to AWS',
     done => {
-        putPart('file', 'aws-test', null, 'localhost', uploadId => {
+        putPart('file', awsLocation, null, 'localhost', uploadId => {
             assert.deepStrictEqual(ds, []);
             const partReqParams = {
                 bucketName,
                 namespace,
                 objectKey: objectName,
                 headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-scal-location-constraint': 'aws-test' },
+                    'x-amz-meta-scal-location-constraint': awsLocation },
                 url: `/${objectName}?partNumber=1&uploadId=${uploadId}`,
                 query: {
                     partNumber: '1', uploadId,
@@ -230,7 +233,7 @@ function testSuite() {
     });
 
     it('should put a part to AWS based on bucket location', done => {
-        putPart('aws-test', null, null, 'localhost',
+        putPart(awsLocation, null, null, 'localhost',
         uploadId => {
             assert.deepStrictEqual(ds, []);
             listAndAbort(uploadId, null, done);
