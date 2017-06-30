@@ -751,7 +751,7 @@ describe('Multipart Upload API', () => {
                     uploadId: testUploadId,
                 },
                 calculatedHash,
-            }, postBody);
+            }, fullSizedPart);
             objectPutPart(authInfo, partRequest1, undefined, log, () => {
                 objectPutPart(authInfo, partRequest2, undefined, log, () => {
                     const completeBody = '<CompleteMultipartUpload>' +
