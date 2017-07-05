@@ -95,6 +95,10 @@ describe('Multipart Upload API', () => {
         cleanup();
     });
 
+    it('mpuBucketPrefix should be a defined constant', () => {
+        assert(constants.mpuBucketPrefix,
+            'Expected mpuBucketPrefix to be defined');
+    });
 
     it('should initiate a multipart upload', done => {
         bucketPut(authInfo, bucketPutRequest, log, () => {
@@ -107,6 +111,8 @@ describe('Multipart Upload API', () => {
                         assert.strictEqual(json.InitiateMultipartUploadResult
                             .Key[0], objectKey);
                         assert(json.InitiateMultipartUploadResult.UploadId[0]);
+                        assert(metadata.buckets.get(mpuBucket)._name,
+                            mpuBucket);
                         const mpuKeys = metadata.keyMaps.get(mpuBucket);
                         assert.strictEqual(mpuKeys.size, 1);
                         assert(mpuKeys.keys().next().value
