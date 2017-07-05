@@ -25,29 +25,46 @@ if [[ "$LOG_LEVEL" ]]; then
     fi
 fi
 
-if [[ "$SSL" ]]; then
-    if [[ -z "$HOST_NAME" ]]; then
-        echo "WARNING! No HOST_NAME has been provided"
-    fi
-    # This condition makes sure that the certificates are not generated twice. (for docker restart)
-    if [ ! -f ./ca.key ] || [ ! -f ./ca.crt ] || [ ! -f ./server.key ] || [ ! -f ./server.crt ] ; then
-        ## Generate SSL key and certificates
-        # Generate a private key for your CSR
-        openssl genrsa -out ca.key 2048
-        # Generate a self signed certificate for your local Certificate Authority
-        openssl req -new -x509 -extensions v3_ca -key ca.key -out ca.crt -days 99999  -subj "/C=US/ST=Country/L=City/O=Organization/CN=$SSL"
-        # Generate a key for S3 Server
-        openssl genrsa -out server.key 2048
-        # Generate a Certificate Signing Request for S3 Server
-        openssl req -new -key server.key -out server.csr -subj "/C=US/ST=Country/L=City/O=Organization/CN=*.$SSL"
-        # Generate a local-CA-signed certificate for S3 Server
-        openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 99999 -sha256
-    fi
-    ## Update S3Server config.json
-    # This condition makes sure that certFilePaths section is not added twice. (for docker restart)
-    if ! grep -q "certFilePaths" ./config.json; then
-        JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .certFilePaths= { \"key\": \".\/server.key\", \"cert\": \".\/server.crt\", \"ca\": \".\/ca.crt\" }"
-    fi
+if [[ "$SSL" && "$HOST_NAME" ]]; then
+# This condition makes sure that the certificates are not generated twice. (for docker restart)
+if [ ! -f ./ca.key ] || [ ! -f ./ca.crt ] || [ ! -f ./server.key ] || [ ! -f ./server.crt ] ; then
+# Compute config for utapi tests
+cat >>req.cfg <<EOF
+[req]
+distinguished_name = req_distinguished_name
+prompt = no
+req_extensions = s3_req
+
+[req_distinguished_name]
+CN = ${HOST_NAME}
+
+[s3_req]
+subjectAltName = @alt_names
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names]
+DNS.1 = *.${HOST_NAME}
+DNS.2 = ${HOST_NAME}
+
+EOF
+
+## Generate SSL key and certificates
+# Generate a private key for your CSR
+openssl genrsa -out ca.key 2048
+# Generate a self signed certificate for your local Certificate Authority
+openssl req -new -x509 -extensions v3_ca -key ca.key -out ca.crt -days 99999  -subj "/C=US/ST=Country/L=City/O=Organization/CN=S3 CA Server"
+# Generate a key for S3 Server
+openssl genrsa -out server.key 2048
+# Generate a Certificate Signing Request for S3 Server
+openssl req -new -key server.key -out server.csr -config req.cfg
+# Generate a local-CA-signed certificate for S3 Server
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 99999 -sha256 -extfile req.cfg -extensions s3_req
+fi
+## Update S3Server config.json
+# This condition makes sure that certFilePaths section is not added twice. (for docker restart)
+if ! grep -q "certFilePaths" ./config.json; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .certFilePaths= { \"key\": \".\/server.key\", \"cert\": \".\/server.crt\", \"ca\": \".\/ca.crt\" }"
+fi
 fi
 
 if [[ "$LISTEN_ADDR" ]]; then

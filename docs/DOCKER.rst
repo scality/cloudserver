@@ -106,13 +106,11 @@ will give you the most detailed.
 SSL
 ^^^
 
-This variable specifies the Common Name ``<DOMAIN_NAME>`` used to create
-the Certificate Signing Request using OpenSSL. This allows you to run S3
-with SSL:
+This variable set to true allows you to run S3 with SSL:
 
-**Note**: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
-permissions, make sure to associate 127.0.0.1 with
-``<SUBDOMAIN>.<DOMAIN_NAME>``
+**Note1**: You also need to specify the ENDPOINT environment variable.
+**Note2**: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
+permissions, make sure to associate 127.0.0.1 with ``<YOUR_ENDPOINT>``
 
 **Warning**: These certs, being self-signed (and the CA being generated
 inside the container) will be untrusted by any clients, and could
@@ -124,7 +122,7 @@ certificates in a mounted volume
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e SSL=<DOMAIN_NAME> -e ENDPOINT=<SUBDOMAIN>.<DOMAIN_NAME>
+    docker run -d --name s3server -p 8000:8000 -e SSL=TRUE -e ENDPOINT=<YOUR_ENDPOINT>
     scality/s3server
 
 More information about how to use S3 server with SSL
