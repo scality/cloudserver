@@ -17,7 +17,8 @@ function getAwsCredentials(profile, credFile) {
 
 function getRealAwsConfig(profile) {
     const credentials = getAwsCredentials(profile, '/.aws/credentials');
-    const realAwsConfig = { credentials, signatureVersion: 'v4' };
+    AWS.config.credentials = credentials;
+    const realAwsConfig = { signatureVersion: 'v4' };
 
     return realAwsConfig;
 }
