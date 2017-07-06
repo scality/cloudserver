@@ -20,6 +20,9 @@ machine:
     bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
 
 dependencies:
+  override:
+    - rm -rf node_modules
+    - npm install
   post:
     - sudo pip install flake8 yamllint
     - sudo pip install s3cmd==1.6.1
