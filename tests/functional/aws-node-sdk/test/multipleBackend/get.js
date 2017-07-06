@@ -76,7 +76,7 @@ describe('Multiple backend get object', function testSuite() {
         describeSkipIfNotMultiple('with objects in all available backends ' +
             '(mem/file/AWS)', () => {
             before(() => {
-                const awsConfig = getRealAwsConfig('default');
+                const awsConfig = getRealAwsConfig(awsLocation);
                 awsS3 = new AWS.S3(awsConfig);
 
                 process.stdout.write('Putting object to mem\n');

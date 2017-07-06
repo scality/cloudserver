@@ -3,6 +3,8 @@ const AWS = require('aws-sdk');
 const { parseString } = require('xml2js');
 const { errors } = require('arsenal');
 
+const { getRealAwsConfig } =
+    require('../functional/aws-node-sdk/test/support/awsConfig');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
     require('../unit/helpers');
 const DummyRequest = require('../unit/DummyRequest');
@@ -23,7 +25,9 @@ const completeMultipartUpload =
     require('../../lib/api/completeMultipartUpload');
 const fakeUploadId = 'fakeuploadid';
 
-const s3 = new AWS.S3();
+const awsLocation = 'aws-test';
+const awsConfig = getRealAwsConfig(awsLocation);
+const s3 = new AWS.S3(awsConfig);
 const log = new DummyRequestLogger();
 
 const splitter = constants.splitter;
@@ -32,7 +36,6 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
-const awsLocation = 'aws-test';
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);

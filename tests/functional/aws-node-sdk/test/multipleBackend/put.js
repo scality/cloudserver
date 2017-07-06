@@ -107,7 +107,7 @@ describe('MultipleBackend put object', function testSuite() {
         describeSkipIfNotMultiple('with set location from "x-amz-meta-scal-' +
             'location-constraint" header', () => {
             before(() => {
-                const awsConfig = getRealAwsConfig('default');
+                const awsConfig = getRealAwsConfig(awsLocation);
                 awsS3 = new AWS.S3(awsConfig);
             });
 
