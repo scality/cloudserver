@@ -43,7 +43,7 @@ function getVersioningParams(status) {
 
 // Get a complete replication configuration, or remove the specified property.
 const replicationConfig = {
-    Role: 'arn:partition:service::account-id:resourcetype/resource',
+    Role: 'arn:aws:iam::account-id:role/resource',
     Rules: [
         {
             Destination: {
@@ -150,7 +150,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         const config = Object.assign({}, replicationConfig, { Role: ARN });
 
         it('should not accept configuration when \'Role\' is not a ' +
-            `valid Amazon Resource Name format: ${ARN}`, done =>
+            `valid Amazon Resource Name format: '${ARN}'`, done =>
             checkError(config, 'InvalidArgument', done));
     });
 

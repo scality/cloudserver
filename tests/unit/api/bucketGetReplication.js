@@ -41,7 +41,7 @@ function getAndCheckXML(bucketReplicationConfig, cb) {
 // Get an example bucket replication configuration.
 function getReplicationConfig() {
     return {
-        role: 'arn:partition:service::account-id:resourcetype/resource',
+        role: 'arn:aws:iam::account-id:role/resource',
         destination: 'destination-bucket',
         rules: [
             {

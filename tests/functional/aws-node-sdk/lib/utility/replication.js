@@ -12,14 +12,24 @@ const replicationUtils = {
         'StorageClass',
     ],
     invalidRoleARNs: [
-        'arn:partition:service::account-id:resourcetype', // Missing resource.
-        'arn:partition:service::account-id:resourcetype/resource/extra-value',
-        'arn:partition:service::account-id:resourcetype:resource:extra-value',
+        '',
+        '*:aws:iam::account-id:role/resource',
+        'arn:*:iam::account-id:role/resource',
+        'arn:aws:*::account-id:role/resource',
+        'arn:aws:iam:*:account-id:role/resource',
+        'arn:aws:iam::account-id:*',
+        'arn:aws:iam::a:role',
     ],
     // Role value should be an Amazon Resource Name IAM user name format.
     validRoleARNs: [
-        'arn:partition:service::account-id:resourcetype/resource',
-        'arn:partition:service::account-id:resourcetype:resource',
+        'arn:aws:iam::account-id:role',
+        'arn:aws:iam::account-id:role/resource',
+        'arn:aws:iam::account-id:role:resource',
+        'arn:aws:iam::account-id:role*',
+        'arn:aws:iam::ac:role',
+        'arn:aws:iam::a c:role',
+        'arn:aws:iam::*:role',
+
     ],
     invalidBucketARNs: [
         '',

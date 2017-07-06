@@ -305,7 +305,7 @@ Object.keys(acl).forEach(
             it('setReplicationConfiguration should set replication ' +
                 'configuration', () => {
                 const newReplicationConfig = {
-                    Role: 'arn:partition:service::account-id:resourcetype/res',
+                    Role: 'arn:aws:iam::account-id:role/resource',
                     Rules: [
                         {
                             Destination: {
