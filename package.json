@@ -32,7 +32,6 @@
     "level": "^1.4.0",
     "level-sublevel": "^6.5.4",
     "multilevel": "^7.3.0",
-    "node-bitmap-ewah": "dimitriosvasilas/node-bitmap-ewah",
     "node-uuid": "^1.4.3",
     "ready-set-stream": "1.0.7",
     "socket.io": "^1.7.2",
