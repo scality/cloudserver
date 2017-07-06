@@ -166,7 +166,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         const config = setConfigRules({ Destination: { Bucket: ARN } });
 
         it('should not accept configuration when \'Bucket\' is not a ' +
-            `valid Amazon Resource Name format: ${ARN}`, done =>
+            `valid Amazon Resource Name format: '${ARN}'`, done =>
             checkError(config, 'InvalidArgument', done));
     });
 

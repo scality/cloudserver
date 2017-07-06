@@ -22,8 +22,15 @@ const replicationUtils = {
         'arn:partition:service::account-id:resourcetype:resource',
     ],
     invalidBucketARNs: [
-        'arn:partition:service::resource', // Missing an omitted account-id.
-        'arn:partition:service::::resource',
+        '',
+        '*:aws:s3:::resource',
+        'arn:*:s3:::resource',
+        'arn:aws:*:::resource',
+        'arn:aws:s3:*::resource',
+        'arn:aws:s3::*:resource',
+        'arn:aws:s3:::',
+        'arn:aws:s3:::*',
+        'arn:aws:s3:::invalidBucketName',
     ],
     validStatuses: [
         'Enabled',
