@@ -72,6 +72,7 @@ const emptyReplicationMD = {
     content: [],
     destination: '',
     storageClass: '',
+    role: '',
 };
 
 // Check that the object key has the expected replication information.
@@ -278,6 +279,7 @@ describe('Replication object MD without bucket replication config', () => {
             content: ['DATA', 'METADATA'],
             destination: bucketARN,
             storageClass: '',
+            role: 'arn:aws:iam::account-id:role/resource',
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
