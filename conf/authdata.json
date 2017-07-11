@@ -17,6 +17,14 @@
                 "access": "USERBARTFUNACCESSKEY",
                 "secret": "verySecretKey1"
             }]
+         }, {
+            "name": "backbeat",
+            "email": "backbeat@scality.com",
+            "arn": "aws::iam:123456789012:user/backbeat",
+            "keys": [{
+                "access": "accessKeyBackbeat",
+                "secret": "verySecretKeyBackbeat"
+            }]
         }]
     }, {
         "name": "Lisa",

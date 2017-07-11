@@ -52,7 +52,7 @@ class BucketUtility {
     }
 
     /**
-     * Recursively delete all objects within the bucket
+     * Recursively delete all versions of all objects within the bucket
      * @param bucketName
      * @returns {Promise.<T>}
      */
@@ -63,30 +63,40 @@ class BucketUtility {
         };
 
         return this.s3
-            .listObjectsAsync(param)
+            .listObjectVersionsAsync(param)
             .then(data =>
                 Promise.all(
-                    data.Contents
+                    data.Versions
                         .filter(object => !object.Key.endsWith('/'))
                         // remove all objects
                         .map(object =>
                             this.s3.deleteObjectAsync({
                                 Bucket: bucketName,
                                 Key: object.Key,
+                                VersionId: object.VersionId,
                             })
                               .then(() => object)
                         )
-                        .concat(data.Contents
+                        .concat(data.Versions
                             .filter(object => object.Key.endsWith('/'))
                             // remove all directories
                             .map(object =>
                                 this.s3.deleteObjectAsync({
                                     Bucket: bucketName,
                                     Key: object.Key,
+                                    VersionId: object.VersionId,
                                 })
                                 .then(() => object)
                             )
                         )
+                        .concat(data.DeleteMarkers
+                            .map(object =>
+                                 this.s3.deleteObjectAsync({
+                                     Bucket: bucketName,
+                                     Key: object.Key,
+                                     VersionId: object.VersionId,
+                                 })
+                                 .then(() => object)))
                 )
             );
     }
