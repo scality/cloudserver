@@ -58,16 +58,16 @@ You will also have to mount your AWS credentials file:
     -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
     -v ~/.aws/credentials:/root/.aws/credentials -e S3DATA=multiple scality/s3server
 
-HOST\_NAME
+ENDPOINT
 ^^^^^^^^^^
 
-This variable specifies a host name. If you have a domain such as
+This variable specifies your endpoint. If you have a domain such as
 new.host.com, by specifying that here, you and your users can direct s3
 server requests to new.host.com.
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e HOST_NAME=new.host.com scality/s3server
+    docker run -d --name s3server -p 8000:8000 -e ENDPOINT=new.host.com scality/s3server
 
 Note: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
 permissions, make sure to associate 127.0.0.1 with ``new.host.com``
@@ -124,7 +124,7 @@ certificates in a mounted volume
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e SSL=<DOMAIN_NAME> -e HOST_NAME=<SUBDOMAIN>.<DOMAIN_NAME>
+    docker run -d --name s3server -p 8000:8000 -e SSL=<DOMAIN_NAME> -e ENDPOINT=<SUBDOMAIN>.<DOMAIN_NAME>
     scality/s3server
 
 More information about how to use S3 server with SSL
