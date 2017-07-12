@@ -6,6 +6,10 @@ set -e
 # modifying config.json
 JQ_FILTERS_CONFIG="."
 
+if [[ "$ENDPOINT" ]]; then
+    HOST_NAME="$ENDPOINT"
+fi
+
 if [[ "$HOST_NAME" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$HOST_NAME\"]=\"us-east-1\""
     echo "Host name has been modified to $HOST_NAME"
@@ -83,5 +87,10 @@ fi
 
 jq "$JQ_FILTERS_LOCATION" locationConfig.json > locationConfig.json.tmp
 mv locationConfig.json.tmp locationConfig.json
+
+# s3 secret credentials for Zenko
+if [ -r /run/secrets/s3-credentials ] ; then
+    . /run/secrets/s3-credentials
+fi
 
 exec "$@"
