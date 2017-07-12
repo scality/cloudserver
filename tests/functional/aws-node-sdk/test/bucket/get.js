@@ -6,11 +6,6 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketSchema = require('../../schema/bucket');
 
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
-}
-
 describe('GET Bucket - AWS.S3.listObjects', () => {
     describe('When user is unauthorized', () => {
         let bucketUtil;
