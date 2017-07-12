@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { isObjAuthorized }
     = require('../../../lib/api/apiUtils/authorization/aclChecks');

@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const { parseString } = require('xml2js');
 
-const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const inMemMetadata

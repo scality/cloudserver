@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 
-const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const BucketInfo = require('arsenal').models.BucketInfo;
 
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
     require('../helpers');
