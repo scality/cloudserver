@@ -14,8 +14,12 @@ const objectPutPart = require('../../lib/api/objectPutPart');
 const DummyRequest = require('../unit/DummyRequest');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const constants = require('../../constants');
+const { getRealAwsConfig } =
+    require('../functional/aws-node-sdk/test/support/awsConfig');
 
-const s3 = new AWS.S3();
+const awsLocation = 'aws-test';
+const awsConfig = getRealAwsConfig(awsLocation);
+const s3 = new AWS.S3(awsConfig);
 
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
@@ -24,7 +28,6 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
 
-const awsLocation = 'aws-test';
 const objectName = 'objectName';
 const body1 = Buffer.from('I am a body', 'utf8');
 const body2 = Buffer.from('I am a body with a different ETag', 'utf8');

@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
+const { config } = require('../../../../../lib/Config');
 
 function getAwsCredentials(profile, credFile) {
     const filename = path.join(process.env.HOME, credFile);
@@ -15,8 +16,11 @@ function getAwsCredentials(profile, credFile) {
     return new AWS.SharedIniFileCredentials({ profile, filename });
 }
 
-function getRealAwsConfig(profile) {
-    const credentials = getAwsCredentials(profile, '/.aws/credentials');
+function getRealAwsConfig(awsLocation) {
+    const cp =
+        config.locationConstraints[awsLocation].details.credentialsProfile
+        || 'default';
+    const credentials = getAwsCredentials(cp, '/.aws/credentials');
     const realAwsConfig = { credentials, signatureVersion: 'v4' };
 
     return realAwsConfig;
