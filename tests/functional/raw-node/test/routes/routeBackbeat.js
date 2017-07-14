@@ -81,45 +81,46 @@ describeSkipIfAWS('backbeat routes:', () => {
     });
 
     describe('backbeat PUT routes:', () => {
+        const testArn = 'aws::iam:123456789012:user/bart';
+        const testKey = 'testkey';
+        const testData = 'testkey data';
+        const testDataMd5 = crypto.createHash('md5')
+                  .update(testData, 'utf-8')
+                  .digest('hex');
+        const testMd = {
+            'md-model-version': 2,
+            'owner-display-name': 'Bart',
+            'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
+                         'fd6e09d98eacf8f8d5218e7cd47ef2be'),
+            'last-modified': '2017-05-15T20:32:40.032Z',
+            'content-length': testData.length,
+            'content-md5': testDataMd5,
+            'x-amz-server-version-id': '',
+            'x-amz-storage-class': 'STANDARD',
+            'x-amz-server-side-encryption': '',
+            'x-amz-server-side-encryption-aws-kms-key-id': '',
+            'x-amz-server-side-encryption-customer-algorithm': '',
+            'location': null,
+            'acl': {
+                Canned: 'private',
+                FULL_CONTROL: [],
+                WRITE_ACP: [],
+                READ: [],
+                READ_ACP: [],
+            },
+            'nullVersionId': '99999999999999999999RG001  ',
+            'isDeleteMarker': false,
+            'versionId': '98505119639965999999RG001  9',
+            'replicationInfo': {
+                status: 'PENDING',
+                content: ['DATA', 'METADATA'],
+                destination: 'arn:aws:s3:::dummy-dest-bucket',
+                storageClass: 'STANDARD',
+            },
+        };
+
         it('PUT data + metadata should create a new complete object',
         done => {
-            const testKey = 'testkey';
-            const testData = 'testkey data';
-            const testDataMd5 = crypto.createHash('md5')
-                      .update(testData, 'utf-8')
-                      .digest('hex');
-            const testMd = {
-                'md-model-version': 2,
-                'owner-display-name': 'Bart',
-                'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
-                             'fd6e09d98eacf8f8d5218e7cd47ef2be'),
-                'last-modified': '2017-05-15T20:32:40.032Z',
-                'content-length': testData.length,
-                'content-md5': testDataMd5,
-                'x-amz-server-version-id': '',
-                'x-amz-storage-class': 'STANDARD',
-                'x-amz-server-side-encryption': '',
-                'x-amz-server-side-encryption-aws-kms-key-id': '',
-                'x-amz-server-side-encryption-customer-algorithm': '',
-                'location': null,
-                'acl': {
-                    Canned: 'private',
-                    FULL_CONTROL: [],
-                    WRITE_ACP: [],
-                    READ: [],
-                    READ_ACP: [],
-                },
-                'nullVersionId': '99999999999999999999RG001  ',
-                'isDeleteMarker': false,
-                'versionId': '98505119639965999999RG001  9',
-                'replicationInfo': {
-                    status: 'PENDING',
-                    content: ['DATA', 'METADATA'],
-                    destination: 'arn:aws:s3:::dummy-dest-bucket',
-                    storageClass: 'STANDARD',
-                },
-            };
-
             async.waterfall([next => {
                 makeBackbeatRequest(
                     { method: 'PUT', bucket: TEST_BUCKET,
@@ -127,6 +128,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                       headers: {
                           'content-length': testData.length,
                           'content-md5': testDataMd5,
+                          'x-scal-canonical-id': testArn,
                       },
                       authCredentials: backbeatAuthCredentials,
                       requestBody: testData }, next);
@@ -147,6 +149,35 @@ describeSkipIfAWS('backbeat routes:', () => {
                 done();
             });
         });
+        it('should refuse PUT data if no x-scal-canonical-id header ' +
+           'is provided',
+        done => makeBackbeatRequest(
+            { method: 'PUT', bucket: TEST_BUCKET,
+              objectKey: testKey, resourceType: 'data',
+              headers: {
+                  'content-length': testData.length,
+                  'content-md5': testDataMd5,
+              },
+              authCredentials: backbeatAuthCredentials,
+              requestBody: testData },
+            err => {
+                assert.strictEqual(err.code, 'BadRequest');
+                done();
+            }));
+        it('should refuse PUT data if no content-md5 header is provided',
+        done => makeBackbeatRequest(
+            { method: 'PUT', bucket: TEST_BUCKET,
+              objectKey: testKey, resourceType: 'data',
+              headers: {
+                  'content-length': testData.length,
+                  'x-scal-canonical-id': testArn,
+              },
+              authCredentials: backbeatAuthCredentials,
+              requestBody: testData },
+            err => {
+                assert.strictEqual(err.code, 'BadRequest');
+                done();
+            }));
     });
     describe('backbeat authorization checks:', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
