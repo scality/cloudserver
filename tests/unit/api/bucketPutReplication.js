@@ -38,7 +38,10 @@ function checkGeneratedID(xml, cb) {
 // Create replication configuration XML with an tag optionally omitted.
 function createReplicationXML(missingTag, tagValue) {
     const Role = missingTag === 'Role' ? '' :
-        '<Role>arn:aws:iam::account-id:role/resource</Role>';
+        '<Role>' +
+            'arn:aws:iam::account-id:role/src-resource,' +
+            'arn:aws:iam::account-id:role/dest-resource' +
+        '</Role>';
     let ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
     ID = tagValue && tagValue.ID === '' ? '<ID/>' : ID;
     const Prefix = missingTag === 'Prefix' ? '' : '<Prefix>foo</Prefix>';

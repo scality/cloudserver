@@ -19,6 +19,10 @@ const replicationUtils = {
         'arn:aws:iam:*:account-id:role/resource',
         'arn:aws:iam::account-id:*',
         'arn:aws:iam::a:role',
+        ',',
+        // Check for comma-separated list > 2 in length.
+        ',,',
+        'arn:aws:iam::account-id:role/src,arn:aws:iam::account-id:role/dest',
     ],
     // Role value should be an Amazon Resource Name IAM user name format.
     validRoleARNs: [

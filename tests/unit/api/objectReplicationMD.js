@@ -104,7 +104,8 @@ function createBucket() {
 function createBucketWithReplication(hasStorageClass) {
     createBucket();
     const config = {
-        role: 'arn:aws:iam::account-id:role/resource',
+        role: 'arn:aws:iam::account-id:role/src-resource,' +
+            'arn:aws:iam::account-id:role/dest-resource',
         destination: 'arn:aws:s3:::source-bucket',
         rules: [{
             prefix: keyA,
@@ -279,7 +280,8 @@ describe('Replication object MD without bucket replication config', () => {
             content: ['DATA', 'METADATA'],
             destination: bucketARN,
             storageClass: '',
-            role: 'arn:aws:iam::account-id:role/resource',
+            role: 'arn:aws:iam::account-id:role/src-resource,' +
+                'arn:aws:iam::account-id:role/dest-resource',
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
