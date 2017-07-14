@@ -4,6 +4,16 @@ const http = require('http');
 const conf = require('../config.json');
 
 const transport = http;
+const reportAttributes = [
+    'utcTime',
+    'uuid',
+    'reportModelVersion',
+    'config',
+    'mdDiskUsage',
+    'dataDiskUsage',
+    'serverVersion',
+    'systemStats',
+];
 
 function options(token = 'report-token-1') {
     return {
@@ -45,12 +55,14 @@ describe('Report route', () => {
         queryReport(done, () => done());
     });
 
-    it('should contain a deployment uuid', done => {
-        queryReport(done, response => {
-            if (!response.uuid) {
-                return done(new Error('response missing UUID'));
-            }
-            return done();
+    reportAttributes.forEach(attr => {
+        it(`should contain expected attribute ${attr}`, done => {
+            queryReport(done, response => {
+                if (!response[attr]) {
+                    return done(new Error(`response missing ${attr}`));
+                }
+                return done();
+            });
         });
     });
 
