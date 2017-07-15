@@ -43,7 +43,8 @@ function getVersioningParams(status) {
 
 // Get a complete replication configuration, or remove the specified property.
 const replicationConfig = {
-    Role: 'arn:aws:iam::account-id:role/resource',
+    Role: 'arn:aws:iam::account-id:role/src-resource,' +
+        'arn:aws:iam::account-id:role/dest-resource',
     Rules: [
         {
             Destination: {
@@ -147,18 +148,21 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     afterEach(done => s3.deleteBucket({ Bucket: sourceBucket }, done));
 
     replicationUtils.invalidRoleARNs.forEach(ARN => {
-        const config = Object.assign({}, replicationConfig, { Role: ARN });
+        const Role = ARN === '' || ARN === ',' ? ARN : `${ARN},${ARN}`;
+        const config = Object.assign({}, replicationConfig, { Role });
 
         it('should not accept configuration when \'Role\' is not a ' +
-            `valid Amazon Resource Name format: '${ARN}'`, done =>
+            'comma-separated list of two valid Amazon Resource Names: ' +
+            `'${Role}'`, done =>
             checkError(config, 'InvalidArgument', done));
     });
 
     replicationUtils.validRoleARNs.forEach(ARN => {
-        const config = Object.assign({}, replicationConfig, { Role: ARN });
+        const Role = `${ARN},${ARN}`;
+        const config = Object.assign({}, replicationConfig, { Role });
 
-        it('should accept configuration when \'Role\' is a valid Amazon ' +
-            `Resource Name format: ${ARN}`, done =>
+        it('should accept configuration when \'Role\' is a comma-separated ' +
+            `list of two valid Amazon Resource Names: '${Role}'`, done =>
             checkError(config, null, done));
     });
 
