@@ -12,11 +12,41 @@ const contentEncoding = 'aws-chunked,gzip';
 // AWS Node SDK requires Date object, ISO-8601 string, or
 // a UNIX timestamp for Expires header
 const expires = new Date();
+const etagTrim = 'd41d8cd98f00b204e9800998ecf8427e';
+const etag = `"${etagTrim}"`;
+
+function checkNoError(err) {
+    assert.equal(err, null,
+        `Expected success, got error ${JSON.stringify(err)}`);
+}
+
+function checkError(err, code) {
+    assert.notEqual(err, null, 'Expected failure but got success');
+    assert.strictEqual(err.code, code);
+}
+
+function dateFromNow(diff) {
+    const d = new Date();
+    d.setHours(d.getHours() + diff);
+    return d.toISOString();
+}
+
+function dateConvert(d) {
+    return (new Date(d)).toISOString();
+}
+
 
 describe('GET object', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
+
+        function requestGet(fields, cb) {
+            s3.getObject(Object.assign({
+                Bucket: bucketName,
+                Key: objectName,
+            }, fields), cb);
+        }
 
         before(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -159,6 +189,377 @@ describe('GET object', () => {
                         assert.equal(data.TagCount, 1);
                         return done();
                     });
+                });
+            });
+        });
+
+        describe('conditional headers', () => {
+            const params = { Bucket: bucketName, Key: objectName };
+            beforeEach(done => {
+                s3.putObject(params, done);
+            });
+            it('If-Match: returns no error when ETag match, with double ' +
+                'quotes around ETag',
+                done => {
+                    requestGet({ IfMatch: etag }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Match: returns no error when one of ETags match, with ' +
+                'double quotes around ETag',
+                done => {
+                    requestGet({ IfMatch:
+                        `non-matching,${etag}` }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Match: returns no error when ETag match, without double ' +
+                'quotes around ETag',
+                done => {
+                    requestGet({ IfMatch: etagTrim }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Match: returns no error when one of ETags match, without ' +
+                'double quotes around ETag',
+                done => {
+                    requestGet({ IfMatch:
+                        `non-matching,${etagTrim}` }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Match: returns no error when ETag match with *', done => {
+                requestGet({ IfMatch: '*' }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-Match: returns PreconditionFailed when ETag does not match',
+                done => {
+                    requestGet({
+                        IfMatch: 'non-matching ETag',
+                    }, err => {
+                        checkError(err, 'PreconditionFailed');
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns no error when ETag does not match',
+            done => {
+                requestGet({ IfNoneMatch: 'non-matching' }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-None-Match: returns no error when all ETags do not match',
+                done => {
+                    requestGet({
+                        IfNoneMatch: 'non-matching,' +
+                        'non-matching-either',
+                    }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns NotModified when ETag match, with ' +
+                'double quotes around ETag',
+                done => {
+                    requestGet({ IfNoneMatch: etag }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns NotModified when one of ETags match, ' +
+                'with double quotes around ETag',
+                done => {
+                    requestGet({
+                        IfNoneMatch: `non-matching,${etag}`,
+                    }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns NotModified when value is "*"',
+                done => {
+                    requestGet({
+                        IfNoneMatch: '*',
+                    }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns NotModified when ETag match, without ' +
+                'double quotes around ETag',
+                done => {
+                    requestGet({ IfNoneMatch: etagTrim }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-None-Match: returns NotModified when one of ETags match, ' +
+                'without double quotes around ETag',
+                done => {
+                    requestGet({
+                        IfNoneMatch: `non-matching,${etagTrim}`,
+                    }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-Modified-Since: returns no error if Last modified date is ' +
+                'greater',
+                done => {
+                    requestGet({ IfModifiedSince: dateFromNow(-1) },
+                        err => {
+                            checkNoError(err);
+                            done();
+                        });
+                });
+
+            // Skipping this test, because real AWS does not provide error as
+            // expected
+            it.skip('If-Modified-Since: returns NotModified if Last modified ' +
+                'date is lesser',
+                done => {
+                    requestGet({ IfModifiedSince: dateFromNow(1) },
+                        err => {
+                            checkError(err, 'NotModified');
+                            done();
+                        });
+                });
+
+            it('If-Modified-Since: returns NotModified if Last modified ' +
+                'date is equal',
+                done => {
+                    s3.headObject({ Bucket: bucketName, Key: objectName },
+                    (err, data) => {
+                        checkNoError(err);
+                        const lastModified = dateConvert(data.LastModified);
+                        requestGet({ IfModifiedSince: lastModified }, err => {
+                            checkError(err, 'NotModified');
+                            done();
+                        });
+                    });
+                });
+
+            it('If-Unmodified-Since: returns no error when lastModified date ' +
+                'is greater',
+                done => {
+                    requestGet({ IfUnmodifiedSince: dateFromNow(1) },
+                    err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Unmodified-Since: returns no error when lastModified ' +
+                'date is equal', done => {
+                s3.headObject({ Bucket: bucketName, Key: objectName },
+                    (err, data) => {
+                        checkNoError(err);
+                        const lastModified = dateConvert(data.LastModified);
+                        requestGet({ IfUnmodifiedSince: lastModified },
+                            err => {
+                                checkNoError(err);
+                                done();
+                            });
+                    });
+            });
+
+            it('If-Unmodified-Since: returns PreconditionFailed when ' +
+                'lastModified date is lesser',
+                done => {
+                    requestGet({ IfUnmodifiedSince: dateFromNow(-1) },
+                    err => {
+                        checkError(err, 'PreconditionFailed');
+                        done();
+                    });
+                });
+
+            it('If-Match & If-Unmodified-Since: returns no error when match ' +
+                'Etag and lastModified is greater',
+                done => {
+                    requestGet({
+                        IfMatch: etagTrim,
+                        IfUnmodifiedSince: dateFromNow(-1),
+                    }, err => {
+                        checkNoError(err);
+                        done();
+                    });
+                });
+
+            it('If-Match match & If-Unmodified-Since match', done => {
+                requestGet({
+                    IfMatch: etagTrim,
+                    IfUnmodifiedSince: dateFromNow(1),
+                }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-Match not match & If-Unmodified-Since not match', done => {
+                requestGet({
+                    IfMatch: 'non-matching',
+                    IfUnmodifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            it('If-Match not match & If-Unmodified-Since match', done => {
+                requestGet({
+                    IfMatch: 'non-matching',
+                    IfUnmodifiedSince: dateFromNow(1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            // Skipping this test, because real AWS does not provide error as
+            // expected
+            it.skip('If-Match match & If-Modified-Since not match', done => {
+                requestGet({
+                    IfMatch: etagTrim,
+                    IfModifiedSince: dateFromNow(1),
+                }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-Match match & If-Modified-Since match', done => {
+                requestGet({
+                    IfMatch: etagTrim,
+                    IfModifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-Match not match & If-Modified-Since not match', done => {
+                requestGet({
+                    IfMatch: 'non-matching',
+                    IfModifiedSince: dateFromNow(1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            it('If-Match not match & If-Modified-Since match', done => {
+                requestGet({
+                    IfMatch: 'non-matching',
+                    IfModifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            it('If-None-Match & If-Modified-Since: returns NotModified when ' +
+                'Etag does not match and lastModified is greater',
+                done => {
+                    requestGet({
+                        IfNoneMatch: etagTrim,
+                        IfModifiedSince: dateFromNow(-1),
+                    }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
+
+            it('If-None-Match not match & If-Modified-Since not match',
+            done => {
+                requestGet({
+                    IfNoneMatch: etagTrim,
+                    IfModifiedSince: dateFromNow(1),
+                }, err => {
+                    checkError(err, 'NotModified');
+                    done();
+                });
+            });
+
+            it('If-None-Match match & If-Modified-Since match', done => {
+                requestGet({
+                    IfNoneMatch: 'non-matching',
+                    IfModifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            // Skipping this test, because real AWS does not provide error as
+            // expected
+            it.skip('If-None-Match match & If-Modified-Since not match',
+            done => {
+                requestGet({
+                    IfNoneMatch: 'non-matching',
+                    IfModifiedSince: dateFromNow(1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            it('If-None-Match match & If-Unmodified-Since match', done => {
+                requestGet({
+                    IfNoneMatch: 'non-matching',
+                    IfUnmodifiedSince: dateFromNow(1),
+                }, err => {
+                    checkNoError(err);
+                    done();
+                });
+            });
+
+            it('If-None-Match match & If-Unmodified-Since not match', done => {
+                requestGet({
+                    IfNoneMatch: 'non-matching',
+                    IfUnmodifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+            });
+
+            it('If-None-Match not match & If-Unmodified-Since match', done => {
+                requestGet({
+                    IfNoneMatch: etagTrim,
+                    IfUnmodifiedSince: dateFromNow(1),
+                }, err => {
+                    checkError(err, 'NotModified');
+                    done();
+                });
+            });
+
+            it('If-None-Match not match & If-Unmodified-Since not match',
+            done => {
+                requestGet({
+                    IfNoneMatch: etagTrim,
+                    IfUnmodifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
                 });
             });
         });
