@@ -9,9 +9,11 @@ const objectName = 'someObject';
 const cacheControl = 'max-age=86400';
 const contentDisposition = 'attachment; filename="fname.ext";';
 const contentEncoding = 'aws-chunked,gzip';
+const contentLanguage = 'en-US';
+const contentType = 'xml';
 // AWS Node SDK requires Date object, ISO-8601 string, or
 // a UNIX timestamp for Expires header
-const expires = new Date();
+const expires = new Date().toISOString();
 const etagTrim = 'd41d8cd98f00b204e9800998ecf8427e';
 const etag = `"${etagTrim}"`;
 
@@ -87,36 +89,76 @@ describe('GET object', () => {
 
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
             'Content-Encoding, Expires]', () => {
-            before(done => {
-                const params = {
-                    Bucket: bucketName,
-                    Key: objectName,
-                    CacheControl: cacheControl,
-                    ContentDisposition: contentDisposition,
-                    ContentEncoding: contentEncoding,
-                    Expires: expires,
-                };
-                s3.putObject(params, err => done(err));
+            describe('if specified in put object request', () => {
+                before(done => {
+                    const params = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                        CacheControl: cacheControl,
+                        ContentDisposition: contentDisposition,
+                        ContentEncoding: contentEncoding,
+                        ContentType: contentType,
+                        Expires: expires,
+                    };
+                    s3.putObject(params, err => done(err));
+                });
+                it('should return additional headers', done => {
+                    s3.getObject({ Bucket: bucketName, Key: objectName },
+                      (err, res) => {
+                          if (err) {
+                              return done(err);
+                          }
+                          assert.strictEqual(res.CacheControl,
+                            cacheControl);
+                          assert.strictEqual(res.ContentDisposition,
+                            contentDisposition);
+                          // Should remove V4 streaming value 'aws-chunked'
+                          // to be compatible with AWS behavior
+                          assert.strictEqual(res.ContentEncoding,
+                            'gzip');
+                          assert.strictEqual(res.ContentType, contentType);
+                          assert.strictEqual(res.Expires,
+                              new Date(expires).toGMTString());
+                          return done();
+                      });
+                });
             });
-            it('should return additional headers if specified in objectPUT ' +
-                'request', done => {
-                s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.CacheControl,
-                        cacheControl);
-                      assert.strictEqual(res.ContentDisposition,
-                        contentDisposition);
-                      // Should remove V4 streaming value 'aws-chunked'
-                      // to be compatible with AWS behavior
-                      assert.strictEqual(res.ContentEncoding,
-                        'gzip');
-                      assert.strictEqual(res.Expires,
-                          expires.toGMTString());
-                      return done();
-                  });
+
+            describe('if response content headers are set in query', () => {
+                before(done => {
+                    s3.putObject({ Bucket: bucketName, Key: objectName },
+                        err => done(err));
+                });
+
+                it('should return additional headers even if not set in ' +
+                'put object request', done => {
+                    const params = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                        ResponseCacheControl: cacheControl,
+                        ResponseContentDisposition: contentDisposition,
+                        ResponseContentEncoding: contentEncoding,
+                        ResponseContentLanguage: contentLanguage,
+                        ResponseContentType: contentType,
+                        ResponseExpires: expires,
+                    };
+                    s3.getObject(params, (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res.CacheControl,
+                          cacheControl);
+                        assert.strictEqual(res.ContentDisposition,
+                          contentDisposition);
+                        assert.strictEqual(res.ContentEncoding,
+                          contentEncoding);
+                        assert.strictEqual(res.ContentLanguage,
+                            contentLanguage);
+                        assert.strictEqual(res.ContentType, contentType);
+                        assert.strictEqual(res.Expires, expires);
+                        return done();
+                    });
+                });
             });
         });
 
