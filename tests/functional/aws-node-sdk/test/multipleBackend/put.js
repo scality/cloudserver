@@ -51,7 +51,7 @@ function awsGetCheck(objectKey, s3MD5, awsMD5, cb) {
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 // doesn't check ETag because it's different
                 // with every PUT with encryption
-                assert.strictEqual(res.ServerSideEncryption, 'aws:kms');
+                assert.strictEqual(res.ServerSideEncryption, 'AES256');
             } else {
                 assert.strictEqual(res.ETag, `"${awsMD5}"`);
             }
