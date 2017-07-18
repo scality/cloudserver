@@ -22,6 +22,7 @@
     "aws-sdk": "2.28.0",
     "arsenal": "scality/Arsenal",
     "async": "~1.4.2",
+    "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "ioredis": "2.4.0",

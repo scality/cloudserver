@@ -33,5 +33,15 @@
             "bucketMatch": true,
             "credentialsProfile": "default"
         }
+    },
+    "azuretest": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+          "azureBlobEndpoint": "",
+          "bucketMatch": true,
+          "azureBlobSAS": "",
+          "azureContainerName": "s3test"
+        }
     }
 }

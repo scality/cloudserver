@@ -116,6 +116,20 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         });
     });
 
+    it('should put an object to Azure based on bucket location', done => {
+        put('azuretest', null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
+    it('should put an object to Azure based on object location', done => {
+        put('mem', 'azuretest', 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should put an object to file based on request endpoint', done => {
         put(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
