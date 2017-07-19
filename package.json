@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "aws-sdk": "2.28.0",
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#ft/extend-retrieve-data",
     "async": "~1.4.2",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",

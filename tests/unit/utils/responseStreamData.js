@@ -15,7 +15,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const errCode = null;
-const overrideHeaders = {};
+const overrideParams = {};
 const resHeaders = {};
 const dataStoreEntry = {
     value: postBody,
@@ -45,7 +45,7 @@ describe('responseStreamData:', () => {
             assert.strictEqual(data, postBody.toString());
             done();
         });
-        return responseStreamData(errCode, overrideHeaders,
+        return responseStreamData(errCode, overrideParams,
             resHeaders, dataLocations, data.get, response, null, log);
     });
 
@@ -73,7 +73,7 @@ describe('responseStreamData:', () => {
             assert.strictEqual(data, doublePostBody);
             done();
         });
-        return responseStreamData(errCode, overrideHeaders,
+        return responseStreamData(errCode, overrideParams,
             resHeaders, dataLocations, data.get, response, null, log);
     });
 
@@ -85,7 +85,7 @@ describe('responseStreamData:', () => {
             size: 11,
         }];
         const prev = data.get;
-        data.get = (objectGetInfo, log, cb) => {
+        data.get = (objectGetInfo, log, params, cb) => {
             setTimeout(() => cb(errors.InternalError), 1000);
         };
         const response = httpMocks.createResponse({
@@ -101,7 +101,7 @@ describe('responseStreamData:', () => {
             data.get = prev;
             done(new Error('end reached instead of destroying connection'));
         });
-        return responseStreamData(errCode, overrideHeaders,
+        return responseStreamData(errCode, overrideParams,
             resHeaders, dataLocations, data.get, response, null, log);
     });
 });
