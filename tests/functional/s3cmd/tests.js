@@ -254,8 +254,13 @@ describe('s3cmd putBucket', () => {
         exec(['mb', `s3://${bucket}`], done);
     });
 
+    // scality-us-west-1 is NOT using legacyAWSBehvior
+    // in test location config and in end to end so this test should
+    // pass by returning error. If legacyAWSBehvior, request
+    // would return a 200
     it('put the same bucket, should fail', done => {
-        exec(['mb', `s3://${bucket}`], done, 13);
+        exec(['mb', `s3://${bucket}`,
+        '--bucket-location=scality-us-west-1'], done, 13);
     });
 
     it('put an invalid bucket, should fail', done => {
@@ -804,10 +809,11 @@ describeSkipIfE2E('If no location is sent with the request', () => {
     afterEach(done => {
         exec(['rb', `s3://${bucket}`], done);
     });
-    // WARNING: change "file" to another locationConstraint depending
+    // WARNING: change "us-east-1" to another locationConstraint depending
     // on the restEndpoints (./config.json)
     it('endpoint should be used to determine the locationConstraint', done => {
-        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'file', 'stdout',
+        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'us-east-1',
+        'stdout',
         foundIt => {
             assert(foundIt);
             done();

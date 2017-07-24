@@ -410,15 +410,15 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should not return error on abort of MPU that does not exist', done => {
-        // this is because the S3 default bucket location is 'file' and
-        // legacyAwsBehavior is false
+    it('should return error on abort of MPU that does not exist', done => {
+        // legacyAwsBehavior is true (otherwise, there would be no error)
         const delParams = Object.assign({
             url: `/fakekey?uploadId=${fakeUploadId}`,
             query: { fakeUploadId } }, deleteParams);
         delParams.objectKey = 'fakekey';
         multipartDelete(authInfo, delParams, log, err => {
-            assert.equal(err, null, `Error aborting MPU: ${err}`);
+            assert.equal(err, errors.NoSuchUpload,
+                `Error aborting MPU: ${err}`);
             done();
         });
     });
