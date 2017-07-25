@@ -5,9 +5,9 @@
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
-[![Docker Pulls][badgetwitter]](https://twitter.com/s3server)
+[![Docker Pulls][badgetwitter]](https://twitter.com/Zenko_io)
 
-## Learn more at [s3.scality.com](http://s3.scality.com)
+## Learn more at [www.zenko.io](http://www.zenko.io/)
 
 ## [May I offer you some lovely documentation?](http://s3-server.readthedocs.io/en/latest/)
 
