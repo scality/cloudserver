@@ -85,7 +85,7 @@ describe('responseStreamData:', () => {
             size: 11,
         }];
         const prev = data.get;
-        data.get = (objectGetInfo, log, cb) => {
+        data.get = (objectGetInfo, response, log, cb) => {
             setTimeout(() => cb(errors.InternalError), 1000);
         };
         const response = httpMocks.createResponse({
