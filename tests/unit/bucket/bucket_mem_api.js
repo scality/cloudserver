@@ -3,7 +3,7 @@ const async = require('async');
 
 const { errors } = require('arsenal');
 
-const BucketInfo = require('../../../lib/metadata/BucketInfo');
+const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { isKeyInContents }
     = require('../../../lib/metadata/in_memory/bucket_utilities');
