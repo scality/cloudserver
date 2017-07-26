@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -16,6 +17,7 @@ const contentType = 'xml';
 const expires = new Date().toISOString();
 const etagTrim = 'd41d8cd98f00b204e9800998ecf8427e';
 const etag = `"${etagTrim}"`;
+const partSize = 1024 * 1024 * 5; // 5MB minumum required part size.
 
 function checkNoError(err) {
     assert.equal(err, null,
@@ -48,6 +50,77 @@ describe('GET object', () => {
                 Bucket: bucketName,
                 Key: objectName,
             }, fields), cb);
+        }
+
+        // Upload parts with the given partNumbers array and complete MPU.
+        function completeMPU(partNumbers, cb) {
+            let ETags = [];
+
+            return async.waterfall([
+                next => {
+                    const createMpuParams = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                    };
+
+                    s3.createMultipartUpload(createMpuParams, (err, data) => {
+                        checkNoError(err);
+                        return next(null, data.UploadId);
+                    });
+                },
+                (uploadId, next) =>
+                    async.eachSeries(partNumbers, (partNumber, callback) => {
+                        const uploadPartParams = {
+                            Bucket: bucketName,
+                            Key: objectName,
+                            PartNumber: partNumber,
+                            UploadId: uploadId,
+                            Body: Buffer.alloc(partSize).fill(partNumber),
+                        };
+
+                        return s3.uploadPart(uploadPartParams, (err, data) => {
+                            checkNoError(err);
+                            ETags = ETags.concat(data.ETag);
+                            return callback();
+                        });
+                    }, err => next(err, uploadId)),
+                (uploadId, next) => {
+                    const params = {
+                        Bucket: bucketName,
+                        Key: objectName,
+                        MultipartUpload: {
+                            Parts: [
+                                {
+                                    ETag: ETags[0],
+                                    PartNumber: partNumbers[0],
+                                },
+                                {
+                                    ETag: ETags[1],
+                                    PartNumber: partNumbers[1],
+                                },
+                                {
+                                    ETag: ETags[2],
+                                    PartNumber: partNumbers[2],
+                                },
+                            ],
+                        },
+                        UploadId: uploadId,
+                    };
+                    return s3.completeMultipartUpload(params, err => {
+                        checkNoError(err);
+                        return next(null, uploadId);
+                    });
+                },
+            ], (err, uploadId) => {
+                if (err) {
+                    return s3.abortMultipartUpload({
+                        Bucket: bucketName,
+                        Key: objectName,
+                        UploadId: uploadId,
+                    }, cb);
+                }
+                return cb();
+            });
         }
 
         before(done => {
@@ -604,6 +677,112 @@ describe('GET object', () => {
                     done();
                 });
             });
+        });
+
+        describe('With PartNumber field', () => {
+            const orderedPartNumbers = [1, 2, 3];
+            const unOrderedPartNumbers = [3, 5, 9];
+            const invalidPartNumbers = [-1, 0, 10001];
+
+            orderedPartNumbers.forEach(num =>
+                it(`should get the body of part ${num} when ordered MPU`,
+                    done => completeMPU(orderedPartNumbers, err => {
+                        checkNoError(err);
+                        return requestGet({ PartNumber: num }, (err, data) => {
+                            checkNoError(err);
+                            const expected = Buffer.alloc(partSize).fill(num);
+                            assert.deepStrictEqual(data.Body, expected);
+                            return done();
+                        });
+                    })));
+
+            // Use the orderedPartNumbers to retrieve parts with GetObject.
+            orderedPartNumbers.forEach(num =>
+                it(`should get the body of part ${num} when unordered MPU`,
+                    done => completeMPU(unOrderedPartNumbers, err => {
+                        checkNoError(err);
+                        return requestGet({ PartNumber: num }, (err, data) => {
+                            checkNoError(err);
+                            const expected = Buffer.alloc(partSize)
+                                .fill(unOrderedPartNumbers[num - 1]);
+                            assert.deepStrictEqual(data.Body, expected);
+                            return done();
+                        });
+                    })));
+
+            invalidPartNumbers.forEach(num =>
+                it(`should not accept a partNumber that is not 1-10000: ${num}`,
+                done => completeMPU(orderedPartNumbers, err => {
+                    checkNoError(err);
+                    return requestGet({ PartNumber: num }, err => {
+                        checkError(err, 'InvalidArgument');
+                        done();
+                    });
+                })));
+
+            it('should not accept a part number greater than the total parts ' +
+            'uploaded for an MPU', done =>
+                completeMPU(orderedPartNumbers, err => {
+                    checkNoError(err);
+                    return requestGet({ PartNumber: 4 }, err => {
+                        checkError(err, 'InvalidPartNumber');
+                        done();
+                    });
+                }));
+
+            it('should accept a part number of 1 for regular put object',
+                done => s3.putObject({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: new Buffer(10).fill(0),
+                }, err => {
+                    checkNoError(err);
+                    return requestGet({ PartNumber: 1 }, (err, data) => {
+                        const expected = new Buffer(10).fill(0);
+                        assert.deepStrictEqual(data.Body, expected);
+                        done();
+                    });
+                }));
+
+            it('should accept a part number that is a string', done =>
+                s3.putObject({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: new Buffer(10).fill(0),
+                }, err => {
+                    checkNoError(err);
+                    return requestGet({ PartNumber: '1' }, (err, data) => {
+                        const expected = new Buffer(10).fill(0);
+                        assert.deepStrictEqual(data.Body, expected);
+                        done();
+                    });
+                }));
+
+            it('should not accept a part number greater than 1 for regular ' +
+            'put object', done =>
+                s3.putObject({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: new Buffer(10).fill(0),
+                }, err => {
+                    checkNoError(err);
+                    return requestGet({ PartNumber: 2 }, err => {
+                        checkError(err, 'InvalidPartNumber');
+                        done();
+                    });
+                }));
+
+            it('should not accept both PartNumber and Range as params', done =>
+                completeMPU(orderedPartNumbers, err => {
+                    checkNoError(err);
+                    return requestGet({
+                        PartNumber: 1,
+                        Range: 'bytes=0-10',
+                    }, err => {
+                        checkError(err, 'InvalidRequest');
+                        done();
+                    });
+                }));
         });
     });
 });
