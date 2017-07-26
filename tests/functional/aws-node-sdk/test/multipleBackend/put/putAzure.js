@@ -12,6 +12,7 @@ let azureBlobSAS;
 let azureContainerName;
 let isTestingAzure = false;
 let azureClient;
+const keyObject = 'putazure';
 
 if (process.env[`${azureLocation}_AZURE_BLOB_ENDPOINT`]) {
     isTestingAzure = true;
@@ -45,7 +46,6 @@ if (isTestingAzure) {
       azureBlobSAS);
 }
 
-const keyName = `somekey-${Date.now()}`;
 const normalBody = Buffer.from('I am a body', 'utf8');
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
@@ -55,19 +55,16 @@ const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
 const keys = [
     {
         describe: 'empty',
-        name: `somekey-${Date.now()}`,
         body: '',
         MD5: 'd41d8cd98f00b204e9800998ecf8427e',
     },
     {
         describe: 'normal',
-        name: keyName,
         body: normalBody,
         MD5: normalMD5,
     },
     {
         describe: 'big',
-        name: `bigkey-${Date.now()}`,
         body: new Buffer(10485760),
         MD5: 'f1c9645dbc14efddc7d8a322685f26eb',
     },
@@ -78,7 +75,7 @@ const azureMetadata = {
 };
 /* eslint-enable camelcase */
 
-const azureTimeout = 10000;
+const azureTimeout = 20000;
 let bucketUtil;
 let s3;
 
@@ -86,6 +83,10 @@ let s3;
 // from base64 to hex
 function convertMD5(contentMD5) {
     return Buffer.from(contentMD5, 'base64').toString('hex');
+}
+
+function uniqName(name) {
+    return `${name}${new Date().getTime()}`;
 }
 
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
@@ -100,9 +101,12 @@ function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
+describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function
+describeF() {
+    this.timeout(250000);
     withV4(sigCfg => {
-        beforeEach(() => {
+        beforeEach(function beforeEachF() {
+            this.currentTest.keyName = uniqName(keyObject);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
         });
@@ -127,16 +131,17 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                   },
             }, done));
             it('should put an object to Azure, with no object location ' +
-            'header, based on bucket location', done => {
+            'header, based on bucket location', function it(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    Key: keyName,
+                    Key: this.test.keyName,
                     Body: normalBody,
                 };
                 async.waterfall([
                     next => s3.putObject(params, err => setTimeout(() =>
                       next(err), azureTimeout)),
-                    next => azureGetCheck(keyName, normalMD5, {}, next),
+                    next => azureGetCheck(this.test.keyName, normalMD5, {},
+                      next),
                 ], done);
             });
         });
@@ -152,10 +157,9 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
             keys.forEach(key => {
                 it(`should put a ${key.describe} object to Azure`,
                 function itF(done) {
-                    this.timeout(250000);
                     const params = {
                         Bucket: azureContainerName,
-                        Key: key.name,
+                        Key: this.test.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
                         Body: key.body,
                     };
@@ -163,15 +167,18 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                         assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                         setTimeout(() =>
-                            azureGetCheck(key.name, key.MD5, azureMetadata,
+                            azureGetCheck(this.test.keyName,
+                              key.MD5, azureMetadata,
                             () => done()), azureTimeout);
                     });
                 });
             });
 
             it('should put two objects to Azure with same ' +
-            'key, and newest object should be returned', done => {
-                const params = { Bucket: azureContainerName, Key: keyName,
+            'key, and newest object should be returned', function itF(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 async.waterfall([
@@ -183,18 +190,19 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                     },
                     next => {
                         setTimeout(() => {
-                            azureGetCheck(keyName, normalMD5, azureMetadata,
-                             next);
+                            azureGetCheck(this.test.keyName, normalMD5,
+                              azureMetadata, next);
                         }, azureTimeout);
                     },
                 ], done);
             });
 
             it('should put objects with same key to Azure ' +
-            'then file, and object should only be present in file', done => {
+            'then file, and object should only be present in file', function
+            itF(done) {
                 const params = {
                     Bucket: azureContainerName,
-                    Key: keyName,
+                    Key: this.test.keyName,
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': azureLocation } };
                 async.waterfall([
@@ -207,7 +215,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                     },
                     next => s3.getObject({
                         Bucket: azureContainerName,
-                        Key: keyName,
+                        Key: this.test.keyName,
                     }, (err, res) => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
@@ -217,7 +225,7 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                         next();
                     }),
                     next => azureClient.getBlobProperties(azureContainerName,
-                    keyName, err => {
+                    this.test.keyName, err => {
                         assert.strictEqual(err.code, 'NotFound');
                         next();
                     }),
@@ -225,8 +233,10 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
             });
 
             it('should put objects with same key to file ' +
-            'then Azure, and object should only be present on Azure', done => {
-                const params = { Bucket: azureContainerName, Key: keyName,
+            'then Azure, and object should only be present on Azure',
+            function itF(done) {
+                const params = { Bucket: azureContainerName, Key:
+                    this.test.keyName,
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': 'file' } };
                 async.waterfall([
@@ -238,8 +248,8 @@ describeSkipIfNotMultiple('MultipleBackend put object to AZURE', () => {
                         s3.putObject(params, err => setTimeout(() =>
                           next(err), azureTimeout));
                     },
-                    next => azureGetCheck(keyName, normalMD5, azureMetadata,
-                      next),
+                    next => azureGetCheck(this.test.keyName, normalMD5,
+                      azureMetadata, next),
                 ], done);
             });
         });
