@@ -88,6 +88,7 @@ describe('objectGet API', () => {
                             start: 0,
                             size: 12,
                             dataStoreName: 'mem',
+                            dataStoreETag: `1:${correctMD5}`,
                         }]);
                             done();
                         });
@@ -182,22 +183,28 @@ describe('objectGet API', () => {
                         post: completeBody,
                     };
                     completeMultipartUpload(authInfo, completeRequest,
-                        log, next);
+                                            log, err => {
+                                                next(err, calculatedHash);
+                                            });
                 },
             ],
-            () => {
+            (err, calculatedHash) => {
+                assert.strictEqual(err, null);
                 objectGet(authInfo, testGetRequest, false, log,
                 (err, dataGetInfo) => {
+                    assert.strictEqual(err, null);
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
                             dataStoreName: 'mem',
+                            dataStoreETag: `1:${calculatedHash}`,
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
                             dataStoreName: 'mem',
+                            dataStoreETag: `2:${calculatedHash}`,
                             size: 12,
                             start: 5242880,
                         }]);
