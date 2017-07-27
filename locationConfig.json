@@ -4,44 +4,79 @@
         "legacyAwsBehavior": true,
         "details": {}
     },
-    "file": {
+    "us-east-2": {
         "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "dataFile": {
+    "us-west-1": {
         "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "mem": {
-        "type": "mem",
+    "us-west-2": {
+        "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "scality-us-west-1": {
-        "type": "mem",
+    "ca-central-1": {
+        "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "aws-test": {
-        "type": "aws_s3",
-        "legacyAwsBehavior": true,
-        "details": {
-            "awsEndpoint": "s3.amazonaws.com",
-            "bucketName": "multitester555",
-            "bucketMatch": true,
-            "credentialsProfile": "default"
-        }
+    "cn-north-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
     },
-    "azuretest": {
-        "type": "azure",
-        "legacyAwsBehavior": true,
-        "details": {
-          "azureBlobEndpoint": "",
-          "bucketMatch": true,
-          "azureBlobSAS": "",
-          "azureContainerName": "s3test"
-        }
+    "ap-south-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "ap-northeast-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "ap-northeast-2": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "ap-southeast-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "ap-southeast-2": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "eu-central-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "eu-west-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "eu-west-2": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "EU": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "sa-east-1": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
     }
 }

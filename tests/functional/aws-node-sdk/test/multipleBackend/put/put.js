@@ -432,7 +432,11 @@ describe('MultipleBackend put based on request endpoint',
                     assert.strictEqual(err, null, 'Expected succes, ' +
                         `got error ${JSON.stringify(err)}`);
                     const host = request.service.endpoint.hostname;
-                    const endpoint = config.restEndpoints[host];
+                    let endpoint = config.restEndpoints[host];
+                    // s3 returns '' for us-east-1
+                    if (endpoint === 'us-east-1') {
+                        endpoint = '';
+                    }
                     s3.getBucketLocation({ Bucket: bucket }, (err, data) => {
                         assert.strictEqual(err, null, 'Expected succes, ' +
                             `got error ${JSON.stringify(err)}`);

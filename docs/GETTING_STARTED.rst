@@ -115,7 +115,7 @@ You can run the unit tests with the following command:
 You can run the multiple backend unit tests with:
 
 .. code:: shell
-
+    CI=true S3DATA=multiple npm start
     npm run multiple_backend_test
 
 You can run the linter with:
@@ -125,6 +125,12 @@ You can run the linter with:
     npm run lint
 
 Running functional tests locally:
+
+For the AWS backend and Azure backend tests to pass locally,
+you must modify tests/locationConfigTests.json so that aws-test
+specifies a bucketname of a bucket you have access to based on
+your credentials profile and modify azureTest with details
+for your Azure account.
 
 The test suite requires additional tools, **s3cmd** and **Redis**
 installed in the environment the tests are running in.
@@ -154,8 +160,8 @@ instance port (``6379`` by default)
 
 .. code:: shell
 
-    npm run mem_backend
-    npm run ft_test
+    CI=true npm run mem_backend
+    CI=true npm run ft_test
 
 Configuration
 -------------

@@ -1,0 +1,48 @@
+
+{
+    "us-east-1": {
+        "type": "file",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
+    "file": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "dataFile": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "mem": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-us-west-1": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "aws-test": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default"
+        }
+    },
+    "azuretest": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+          "azureBlobEndpoint": "https://mystique.blob.core.fake.net",
+          "bucketMatch": true,
+          "azureBlobSAS": "sv=2015-04-05&sr=b&si=tutorial-policy-635959936345100803&sig=9aCzs76n0E7y5BpEi2GvsSv433BZa22leDOZXX%2BXXIU%3D",
+          "azureContainerName": "s3test"
+        }
+    }
+}

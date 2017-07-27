@@ -3,8 +3,8 @@
     "listenOn": [],
     "replicationGroupId": "RG001",
     "restEndpoints": {
-        "localhost": "file",
-        "127.0.0.1": "file",
+        "localhost": "us-east-1",
+        "127.0.0.1": "us-east-1",
         "s3.docker.test": "us-east-1",
         "127.0.0.2": "us-east-1",
         "s3.amazonaws.com": "us-east-1"
