@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
+const AWS = require('aws-sdk');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
@@ -14,6 +15,8 @@ const DummyRequest = require('../unit/DummyRequest');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const constants = require('../../constants');
 
+const s3 = new AWS.S3();
+
 const splitter = constants.splitter;
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -25,6 +28,11 @@ const sourceObjName = 'supersourceobject';
 const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
+
+const awsBucket = 'multitester555';
+const awsLocation = 'aws-test';
+const awsParams = { Bucket: awsBucket, Key: destObjName };
+const partETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
@@ -122,14 +130,31 @@ errorDescription) {
         };
         const copyPartReq = new DummyRequest(copyPartParams);
         return objectPutCopyPart(authInfo, copyPartReq,
-            bucketName, sourceObjName, undefined, log, err => {
+            bucketName, sourceObjName, undefined, log, (err, copyResult) => {
                 assert.strictEqual(err, null);
-                cb();
+                parseString(copyResult, (err, json) => {
+                    assert.equal(err, null, `Error parsing copy result ${err}`);
+                    assert.strictEqual(json.CopyPartResult.ETag[0],
+                        `"${partETag}"`);
+                    assert(json.CopyPartResult.LastModified);
+                    cb(testUploadId);
+                });
             });
     });
 }
 
-describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', () => {
+function assertPartList(partList, uploadId) {
+    assert.strictEqual(partList.UploadId, uploadId);
+    assert.strictEqual(partList.Parts.length, 1);
+    assert.strictEqual(partList.Parts[0].ETag, `"${partETag}"`);
+    assert.strictEqual(partList.Parts[0].PartNumber, 1);
+    assert.strictEqual(partList.Parts[0].Size, 11);
+}
+
+describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
+function testSuite() {
+    this.timeout(20000);
+
     beforeEach(() => {
         cleanup();
     });
@@ -152,6 +177,29 @@ describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', () => {
         });
     });
 
+    it('should copy part to AWS based on mpu location', done => {
+        copyPutPart('mem', awsLocation, null, 'localhost', uploadId => {
+            assert.strictEqual(ds.length, 2);
+            const awsReq = Object.assign({ UploadId: uploadId }, awsParams);
+            s3.listParts(awsReq, (err, partList) => {
+                assertPartList(partList, uploadId);
+                s3.abortMultipartUpload(awsReq, err => {
+                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should copy part to mem from AWS based on mpu location', done => {
+        copyPutPart(awsLocation, 'mem', null, 'localhost', () => {
+            assert.strictEqual(ds.length, 2);
+            assert.deepStrictEqual(ds[1].value, body);
+            done();
+        });
+    });
+
     it('should copy part to mem based on bucket location', done => {
         copyPutPart('mem', null, null, 'localhost', () => {
             // ds length should be three because both source
@@ -168,6 +216,21 @@ describeSkipIfE2E('ObjectCopyPutPart API with multiple backends', () => {
             // coped objects should be in file
             assert.deepStrictEqual(ds, []);
             done();
+        });
+    });
+
+    it('should copy part to AWS based on bucket location', done => {
+        copyPutPart(awsLocation, null, null, 'localhost', uploadId => {
+            assert.deepStrictEqual(ds, []);
+            const awsReq = Object.assign({ UploadId: uploadId }, awsParams);
+            s3.listParts(awsReq, (err, partList) => {
+                assertPartList(partList, uploadId);
+                s3.abortMultipartUpload(awsReq, err => {
+                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    done();
+                });
+            });
         });
     });
 
