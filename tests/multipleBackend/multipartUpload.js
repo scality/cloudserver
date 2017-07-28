@@ -387,7 +387,11 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     url: `/${objectKey}?uploadId=${uploadId}`,
                     query: { uploadId } }, listRequest);
                 listParts(authInfo, listParams, log, err => {
-                    assert.deepStrictEqual(err, errors.InternalError);
+                    assert.deepStrictEqual(err, errors.InternalError
+                      .customizeDescription('Error returned from AWS: ' +
+                      'The specified upload does not exist. The upload ID ' +
+                      'may be invalid, or the upload may have been aborted ' +
+                      'or completed.'));
                     done();
                 });
             });
