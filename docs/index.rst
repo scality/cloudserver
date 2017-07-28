@@ -1,4 +1,4 @@
-Scality S3 Server
+Scality Zenko CloudServer
 ==================
 
 .. _user-docs:

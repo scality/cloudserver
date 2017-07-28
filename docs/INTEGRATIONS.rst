@@ -7,7 +7,7 @@ High Availability
 `Docker swarm <https://docs.docker.com/engine/swarm/>`__ is a
 clustering tool developped by Docker and ready to use with its
 containers. It allows to start a service, which we define and use as a
-means to ensure s3server's continuous availability to the end user.
+means to ensure Zenko CloudServer's continuous availability to the end user.
 Indeed, a swarm defines a manager and n workers among n+1 servers. We
 will do a basic setup in this tutorial, with just 3 servers, which
 already provides a strong service resiliency, whilst remaining easy to
@@ -135,8 +135,8 @@ required services:
 On Ubuntu 14.04 and CentOS 7
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Choose where your shared data and metadata from your local `S3
-Server <http://www.scality.com/scality-s3-server/>`__ will be stored.
+Choose where your shared data and metadata from your local `Zenko CloudServer
+<http://www.zenko.io/cloudserver/>`__ will be stored.
 We chose to go with /var/nfs/data and /var/nfs/metadata. You also need
 to set proper sharing permissions for these folders as they'll be shared
 over NFS:
@@ -217,7 +217,7 @@ On Ubuntu 14.04 and CentOS 7
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We will now set up the Docker volumes that will be mounted to the NFS
-Server and serve as data and metadata storage for S3 Server. These two
+Server and serve as data and metadata storage for Zenko CloudServer. These two
 commands have to be replicated on all machines:
 
 .. code:: sh
@@ -290,13 +290,13 @@ On All Machines
 On Ubuntu 14.04 and CentOS 7
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Try to find out where your Scality S3 Server is actually running using
+Try to find out where your Scality Zenko CloudServer is actually running using
 the **docker ps** command. It can be on any node of the swarm cluster,
 manager or worker. When you find it, you can kill it, with **docker stop
 <container id>** and you'll see it respawn on a different node of the
 swarm cluster. Now you see, if one of your servers falls, or if docker
 stops unexpectedly, your end user will still be able to access your
-local S3 Server.
+local Zenko CloudServer.
 
 Troubleshooting
 ---------------
@@ -328,18 +328,18 @@ forward to meeting you!
 
 S3FS
 ====
-Export your buckets as a filesystem with s3fs on top of s3server
+Export your buckets as a filesystem with s3fs on top of Zenko CloudServer
 
 `s3fs <https://github.com/s3fs-fuse/s3fs-fuse>`__ is an open source
 tool that allows you to mount an S3 bucket on a filesystem-like backend.
 It is available both on Debian and RedHat distributions. For this
 tutorial, we used an Ubuntu 14.04 host to deploy and use s3fs over
-Scality's S3 Server.
+Scality's Zenko CloudServer.
 
-Deploying S3 Server with SSL
+Deploying Zenko CloudServer with SSL
 ----------------------------
 
-First, you need to deploy **S3 Server**. This can be done very easily
+First, you need to deploy **Zenko CloudServer**. This can be done very easily
 via `our DockerHub
 page <https://hub.docker.com/r/scality/s3server/>`__ (you want to run it
 with a file backend).
@@ -348,7 +348,7 @@ with a file backend).
     are the `instructions to install it for your
     distribution <https://docs.docker.com/engine/installation/>`__*
 
-You also necessarily have to set up SSL with S3Server to use s3fs. We
+You also necessarily have to set up SSL with Zenko CloudServer to use s3fs. We
 have a nice
 `tutorial <https://s3.scality.com/v1.0/page/scality-with-ssl>`__ to help
 you do it.
@@ -400,7 +400,7 @@ s3fs expects you to provide it with a password file. Our file is
     $> echo 'accessKey1:verySecretKey1' > /etc/passwd-s3fs
     $> chmod 600 /etc/passwd-s3fs
 
-Using S3Server with s3fs
+Using Zenko CloudServer with s3fs
 ------------------------
 
 First, you're going to need a mountpoint; we chose ``/mnt/tests3fs``:
@@ -409,14 +409,14 @@ First, you're going to need a mountpoint; we chose ``/mnt/tests3fs``:
 
     $> mkdir /mnt/tests3fs
 
-Then, you want to create a bucket on your local S3Server; we named it
+Then, you want to create a bucket on your local Zenko CloudServer; we named it
 ``tests3fs``:
 
 .. code:: sh
 
     $> s3cmd mb s3://tests3fs
 
-    *Note:* *- If you've never used s3cmd with our S3Server, our README
+    *Note:* *- If you've never used s3cmd with our Zenko CloudServer, our README
     provides you with a `recommended
     config <https://github.com/scality/S3/blob/master/README.md#s3cmd>`__*
 
@@ -456,13 +456,13 @@ Now, I can use s3cmd to show me what is actually in S3Server:
     2017-02-28 17:28         0   s3://tests3fs/file1
     2017-02-28 17:28         0   s3://tests3fs/file2
 
-Now you can enjoy a filesystem view on your local S3Server!
+Now you can enjoy a filesystem view on your local Zenko CloudServer!
 
 
 Duplicity
 =========
 
-How to backup your files with S3 Server.
+How to backup your files with Zenko CloudServer.
 
 Installing
 -----------
@@ -498,7 +498,7 @@ Using
 Testing your installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, we're just going to quickly check that S3 Server is actually
+First, we're just going to quickly check that Zenko CloudServer is actually
 running. To do so, simply run ``$> docker ps`` . You should see one
 container named ``scality/s3server``. If that is not the case, try
 ``$> docker start s3server``, and check again.
@@ -521,10 +521,10 @@ instructions <http://boto.cloudhackers.com/en/latest/getting_started.html>`__.
     # If using SSL, unmute and provide absolute path to local CA certificate
     # ca_certificates_file = /absolute/path/to/ca.crt
 
-    *Note:* *If you want to set up SSL with S3 Server, check out our
+    *Note:* *If you want to set up SSL with Zenko CloudServer, check out our
     `tutorial <http://link/to/SSL/tutorial>`__*
 
-At this point, we've met all the requirements to start running S3 Server
+At this point, we've met all the requirements to start running Zenko CloudServer
 as a backend to Duplicity. So we should be able to back up a local
 folder/file to local S3. Let's try with the duplicity decompressed
 folder:

@@ -16,8 +16,8 @@ Docker
 For continuous integration with Docker
 --------------------------------------
 
-When you start the Docker Scality S3 server image, you can adjust the
-configuration of the Scality S3 server instance by passing one or more
+When you start the Docker Scality Zenko CloudServer image, you can adjust the
+configuration of the Scality Zenko CloudServer instance by passing one or more
 environment variables on the docker run command line.
 
 Environment Variables
@@ -26,7 +26,7 @@ Environment Variables
 S3DATA=multiple
 ^^^^^^^^^^^^^^^
 
-This runs Scality S3 server with multiple data backends. `More
+This runs Scality Zenko CloudServer with multiple data backends. `More
 info <../GETTING_STARTED/#location-configuration>`__
 
 .. code:: shell
@@ -131,9 +131,9 @@ More information about how to use S3 server with SSL
 LISTEN\_ADDR
 ^^^^^^^^^^^^
 
-This variable instructs the S3 server, and its data and metadata components
-to listen on the specified address. This allows starting the data or metadata
-servers as standalone services, for example.
+This variable instructs the Zenko CloudServer, and its data and metadata
+components to listen on the specified address. This allows starting the data
+or metadata servers as standalone services, for example.
 
 .. code:: shell
 
@@ -146,7 +146,7 @@ DATA\_HOST and METADATA\_HOST
 
 These variables configure the data and metadata servers to use,
 usually when they are running on another host and only starting the stateless
-S3 REST server.
+Zenko CloudServer.
 
 .. code:: shell
 
@@ -181,13 +181,13 @@ In production with Docker
 Using Docker Volume in production
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-S3 server runs with a file backend by default.
+Zenko CloudServer runs with a file backend by default.
 
-So, by default, the data is stored inside your S3 server Docker
+So, by default, the data is stored inside your Zenko CloudServer Docker
 container.
 
 However, if you want your data and metadata to persist, you **MUST** use
-Docker volumes to host your data and metadata outside your s3 server
+Docker volumes to host your data and metadata outside your Zenko CloudServer
 Docker container. Otherwise, the data and metadata will be destroyed
 when you erase the container.
 
@@ -259,13 +259,13 @@ docker file mapping.
 Running as an unprivileged user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-S3 Server runs as root by default.
+Zenko CloudServer runs as root by default.
 
 You can change that by modifing the dockerfile and specifying a user
 before the entrypoint.
 
 The user needs to exist within the container, and own the folder
-**/usr/src/app** for Scality S3 Server to run properly.
+**/usr/src/app** for Scality Zenko CloudServer to run properly.
 
 For instance, you can modify these lines in the dockerfile:
 

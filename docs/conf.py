@@ -45,7 +45,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'scality-s3-server'
+project = u'scality-zenko-cloudserver'
 copyright = u'Apache License Version 2.0, 2004 http://www.apache.org/licenses/'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -110,7 +110,7 @@ html_style = 'css/default.css'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = '../res/Scality-S3-Server-Logo-Large.png'
+html_logo = '../res/scality-cloudserver-logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -158,4 +158,4 @@ html_static_path = ['_static']
 # html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'ScalityS3doc'
+htmlhelp_basename = 'ZenkoCloudServerdoc'
