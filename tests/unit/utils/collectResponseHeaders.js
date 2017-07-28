@@ -16,7 +16,7 @@ describe('Middleware: Collect Response Headers', () => {
         it(`should skip replication header ${item.test}`, () => {
             const headers = collectResponseHeaders(item.md);
             assert.deepStrictEqual(headers['x-amz-replication-status'],
-                undefined);
+                'fail');
         });
     });
 });
