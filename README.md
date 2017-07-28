@@ -9,15 +9,19 @@
 
 ## Overview
 
-CloudServer (formerly S3 Server) is an open-source object storage project
-to enable on-premises S3-based application development and data deployment choice..
-It's part of Zenko, Scality’s Open Source Multi-Cloud Data Controller.
+CloudServer (formerly S3 Server) is an open-source Amazon S3-compatible
+object storage server that is part of [Zenko](https://www.zenko.io), 
+Scality’s Open Source Multi-Cloud Data Controller.
 
-Providing a single AWS S3 API set and 360° access to any cloud.
-Developers want to have an abstraction layer allowing them the freedom to use
-any cloud at any time.
+CloudServer provides a single AWS S3 API interface to access multiple
+backend data storage both on-premise or public in the cloud.
 
-## Learn more at [www.zenko.io/cloudserver](http://www.zenko.io/cloudserver/)
+CloudServer is useful for Developers, either to run as part of a 
+continous integration test environment to emulate the AWS S3 service locally 
+or as an abstraction layer to develop object storage enabled
+application on the go.
+
+## Learn more at [www.zenko.io/cloudserver](https://www.zenko.io/cloudserver/)
 
 ## [May I offer you some lovely documentation?](http://s3-server.readthedocs.io/en/latest/)
 
