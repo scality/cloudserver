@@ -1,9 +1,9 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
-const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
-const { getRealAwsConfig } = require('../support/awsConfig');
-const { config } = require('../../../../../lib/Config');
+const withV4 = require('../../support/withV4');
+const BucketUtility = require('../../../lib/utility/bucket-util');
+const { getRealAwsConfig } = require('../../support/awsConfig');
+const { config } = require('../../../../../../lib/Config');
 
 const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendget';
