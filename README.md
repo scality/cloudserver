@@ -1,19 +1,33 @@
-# Scality S3 Server
+# Zenko CloudServer
 
-![S3 Server logo](res/Scality-S3-Server-Logo-Large.png)
+![Zenko CloudServer logo](res/scality-cloudserver-logo.png)
 
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
 [![Docker Pulls][badgetwitter]](https://twitter.com/Zenko_io)
 
-## Learn more at [www.zenko.io](http://www.zenko.io/)
+## Overview
+
+CloudServer (formerly S3 Server) is an open-source Amazon S3-compatible
+object storage server that is part of [Zenko](https://www.zenko.io),
+Scality’s Open Source Multi-Cloud Data Controller.
+
+CloudServer provides a single AWS S3 API interface to access multiple
+backend data storage both on-premise or public in the cloud.
+
+CloudServer is useful for Developers, either to run as part of a
+continous integration test environment to emulate the AWS S3 service locally
+or as an abstraction layer to develop object storage enabled
+application on the go.
+
+## Learn more at [www.zenko.io/cloudserver](https://www.zenko.io/cloudserver/)
 
 ## [May I offer you some lovely documentation?](http://s3-server.readthedocs.io/en/latest/)
 
 ## Docker
 
-[Run your S3 server with Docker](https://hub.docker.com/r/scality/s3server/)
+[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/scality/s3server/)
 
 ## Contributing
 
@@ -25,7 +39,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Dependencies
 
-Building and running the Scality S3 Server requires node.js 6.9.5 and npm v3
+Building and running the Zenko CloudServer requires node.js 6.9.5 and npm v3
 . Up-to-date versions can be found at
 [Nodesource](https://github.com/nodesource/distributions).
 
@@ -49,7 +63,7 @@ npm install
 npm start
 ```
 
-This starts an S3 server on port 8000. Two additional ports 9990 and
+This starts a Zenko CloudServer on port 8000. Two additional ports 9990 and
 9991 are also open locally for internal transfer of metadata and data,
 respectively.
 
@@ -79,7 +93,7 @@ export S3DATA='multiple'
 npm start
 ```
 
-This starts an S3 server on port 8000.
+This starts a Zenko CloudServer on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 
@@ -107,7 +121,7 @@ location constraints.
 npm run mem_backend
 ```
 
-This starts an S3 server on port 8000.
+This starts a Zenko CloudServer on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 

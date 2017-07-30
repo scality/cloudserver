@@ -1,8 +1,8 @@
 Getting Started
 =================
 
-.. figure:: ../res/Scality-S3-Server-Logo-Large.png
-   :alt: S3 Server logo
+.. figure:: ../res/scality-cloudserver-logo.png
+   :alt: Zenko CloudServer logo
 
 |CircleCI| |Scality CI|
 
@@ -12,7 +12,7 @@ Installation
 Dependencies
 ~~~~~~~~~~~~
 
-Building and running the Scality S3 Server requires node.js 6.9.5 and
+Building and running the Scality Zenko CloudServer requires node.js 6.9.5 and
 npm v3 . Up-to-date versions can be found at
 `Nodesource <https://github.com/nodesource/distributions>`__.
 
@@ -39,7 +39,7 @@ Run it with a file backend
 
     npm start
 
-This starts an S3 server on port 8000. Two additional ports 9990 and
+This starts an Zenko CloudServer on port 8000. Two additional ports 9990 and
 9991 are also open locally for internal transfer of metadata and data,
 respectively.
 
@@ -69,7 +69,7 @@ Run it with multiple data backends
     export S3DATA='multiple'
     npm start
 
-This starts an S3 server on port 8000. The default access key is
+This starts an Zenko CloudServer on port 8000. The default access key is
 accessKey1 with a secret key of verySecretKey1.
 
 With multiple backends, you have the ability to choose where each object
@@ -95,7 +95,7 @@ Run it with an in-memory backend
 
     npm run mem_backend
 
-This starts an S3 server on port 8000. The default access key is
+This starts an Zenko CloudServer on port 8000. The default access key is
 accessKey1 with a secret key of verySecretKey1.
 
 Run it for continuous integration testing or in production with Docker
@@ -156,7 +156,7 @@ instance port (``6379`` by default)
 
     127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com
 
--  Start the S3 server in memory and run the functional tests:
+-  Start the Zenko CloudServer in memory and run the functional tests:
 
 .. code:: shell
 
@@ -166,7 +166,7 @@ instance port (``6379`` by default)
 Configuration
 -------------
 
-There are three configuration files for your Scality S3 Server:
+There are three configuration files for your Scality Zenko CloudServer:
 
 1. ``conf/authdata.json``, described above for authentication
 
@@ -220,7 +220,7 @@ For instance, the following sets the ``localhost`` endpoint to the
     },
 
 If you would like to use an endpoint other than localhost for your
-Scality S3 Server, that endpoint MUST be listed in your
+Scality Zenko CloudServer, that endpoint MUST be listed in your
 ``restEndpoints``. Otherwise if your server is running with a:
 
 -  **file backend**: your default location constraint will be ``file``
@@ -230,7 +230,7 @@ Scality S3 Server, that endpoint MUST be listed in your
 Endpoints
 ~~~~~~~~~
 
-Note that our S3server supports both:
+Note that our Zenko CloudServer supports both:
 
 -  path-style: http://myhostname.com/mybucket
 -  hosted-style: http://mybucket.myhostname.com
@@ -271,13 +271,13 @@ Note: Anything in the ``authdata.json`` file will be ignored.
 Scality with SSL
 ~~~~~~~~~~~~~~~~~~~~~~
 
-If you wish to use https with your local S3 Server, you need to set up
+If you wish to use https with your local Zenko CloudServer, you need to set up
 SSL certificates. Here is a simple guide of how to do it.
 
-Deploying S3 Server
+Deploying Zenko CloudServer
 ^^^^^^^^^^^^^^^^^^^
 
-First, you need to deploy **S3 Server**. This can be done very easily
+First, you need to deploy **Zenko CloudServer**. This can be done very easily
 via `our **DockerHub**
 page <https://hub.docker.com/r/scality/s3server/>`__ (you want to run it
 with a file backend).
@@ -286,11 +286,11 @@ with a file backend).
     are the `instructions to install it for your
     distribution <https://docs.docker.com/engine/installation/>`__*
 
-Updating your S3 Server container's config
+Updating your Zenko CloudServer container's config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You're going to add your certificates to your container. In order to do
-so, you need to exec inside your s3 server container. Run a
+so, you need to exec inside your Zenko CloudServer container. Run a
 ``$> docker ps`` and find your container's id (the corresponding image
 name should be ``scality/s3server``. Copy the corresponding container id
 (here we'll use ``894aee038c5e``, and run:
@@ -314,14 +314,14 @@ files are stored are defined after the ``-out`` option in each command
     # Generate a self signed certificate for your local Certificate Authority
     $> openssl req -new -x509 -extensions v3_ca -key ca.key -out ca.crt -days 99999  -subj "/C=US/ST=Country/L=City/O=Organization/CN=scality.test"
 
-    # Generate a key for S3 Server
+    # Generate a key for Zenko CloudServer
     $> openssl genrsa -out test.key 2048
     # Generate a Certificate Signing Request for S3 Server
     $> openssl req -new -key test.key -out test.csr -subj "/C=US/ST=Country/L=City/O=Organization/CN=*.scality.test"
     # Generate a local-CA-signed certificate for S3 Server
     $> openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 99999 -sha256
 
-Update S3Server ``config.json``
+Update Zenko CloudServer ``config.json``
 **********************************
 
 Add a ``certFilePaths`` section to ``./config.json`` with the

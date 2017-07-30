@@ -8,7 +8,7 @@ Architecture
 Versioning
 ==========
 
-This document describes S3 Server's support for the AWS S3 Bucket
+This document describes Zenko CloudServer's support for the AWS S3 Bucket
 Versioning feature.
 
 AWS S3 Bucket Versioning
@@ -26,7 +26,7 @@ This document assumes familiarity with the details of Bucket Versioning,
 including null versions and delete markers, described in the above
 links.
 
-Implementation of Bucket Versioning in S3
+Implementation of Bucket Versioning in Zenko CloudServer
 -----------------------------------------
 
 Overview of Metadata and API Component Roles
@@ -156,11 +156,11 @@ null separator):
 Metadata Versioning Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-S3 Server sends instructions to the metadata engine about whether to
+Zenko CloudServer sends instructions to the metadata engine about whether to
 create a new version or overwrite, retrieve, or delete a specific
 version by sending values for special options in PUT, GET, or DELETE
 calls to metadata. The metadata engine can also list versions in the
-database, which is used by S3 to list object versions.
+database, which is used by Zenko CloudServer to list object versions.
 
 These only describe the basic CRUD operations that the metadata engine
 can handle. How these options are used by the S3 API to generate and
@@ -189,8 +189,8 @@ PUT
       version will have a ``versionId`` property set in its metadata like
       any other version). The ``versionId`` will never be exposed to an
       external user, but setting this internal-only ``versionID`` enables
-      S3 to find this version later if it is no longer the master. This
-      option of ``versionId`` set to ``''`` is used for creating null
+      Zenko CloudServer to find this version later if it is no longer the master.
+      This option of ``versionId`` set to ``''`` is used for creating null
       versions once versioning has been suspended, which is discussed in
       `"Null Version Management" <#null-version-management>`__.
 
@@ -217,11 +217,11 @@ A deletion targeting the latest version of an object has to:
     -  if no more versions exist, metadata deletes the master version,
        removing the key from metadata
 
-Note: all of this happens before responding to S3, and only when the
-metadata engine is instructed by S3 to delete a specific version or the
-master version. See section `"Delete Markers" <#delete-markers>`__ for a
-description of what happens when a Delete Object request is sent to the
-S3 API.
+Note: all of this happens in metadata before responding to the front-end api,
+and only when the metadata engine is instructed by Zenko CloudServer to delete
+a specific version or the master version.
+See section `"Delete Markers" <#delete-markers>`__ for a description of what
+happens when a Delete Object request is sent to the S3 API.
 
 GET
 ^^^
@@ -306,10 +306,10 @@ When versioning is enabled in a bucket, APIs which normally result in
 the creation of objects, such as Put Object, Complete Multipart Upload
 and Copy Object, will generate new versions of objects.
 
-S3 creates a new version and updates the master version using the
+Zenko CloudServer creates a new version and updates the master version using the
 ``versioning: true`` option in PUT calls to the metadata engine. As an
-example, when two consecutive Put Object requests are sent to the S3
-Server for a versioning-enabled bucket with the same key names, there
+example, when two consecutive Put Object requests are sent to the Zenko
+CloudServer for a versioning-enabled bucket with the same key names, there
 are two corresponding metadata PUT calls with the ``versioning`` option
 set to true.
 
@@ -345,7 +345,8 @@ an object with the same name twice should result in the previous object
 being overwritten. This is managed with null versions.
 
 Only one null version should exist at any given time, and it is
-identified in S3 requests and responses with the version id "null".
+identified in Zenko CloudServer requests and responses with the version
+id "null".
 
 Case 1: Putting Null Versions
 '''''''''''''''''''''''''''''
@@ -353,13 +354,14 @@ Case 1: Putting Null Versions
 With respect to metadata, since the null version is overwritten by
 subsequent null versions, the null version is initially stored in the
 master key alone, as opposed to being stored in the master key and a new
-version. S3 checks if versioning is suspended or has never been
+version. Zenko CloudServer checks if versioning is suspended or has never been
 configured, and sets the ``versionId`` option to ``''`` in PUT calls to
 the metadata engine when creating a new null version.
 
-If the master version is a null version, S3 also sends a DELETE call to metadata
-prior to the PUT, in order to clean up any pre-existing null versions which may,
-in certain edge cases, have been stored as a separate version. [1]_
+If the master version is a null version, Zenko CloudServer also sends a DELETE
+call to metadata prior to the PUT, in order to clean up any pre-existing null
+versions which may, in certain edge cases, have been stored as a separate
+version. [1]_
 
 The tables below summarize the calls to metadata and the resulting keys if
 we put an object 'foo' twice, when versioning has not been enabled or is
@@ -445,11 +447,11 @@ the following:
 | foo.v1 (null)   | B       |
 +-----------------+---------+
 
-To prevent issues with concurrent requests, S3 ensures the null version
-is stored with the same version ID by using ``versionId`` option. S3
-sets the ``versionId`` option to the master version's ``versionId``
-metadata attribute value during the PUT. This creates a new version with
-the same version ID of the existing null master version.
+To prevent issues with concurrent requests, Zenko CloudServer ensures the null
+version is stored with the same version ID by using ``versionId`` option.
+Zenko CloudServer sets the ``versionId`` option to the master version's
+``versionId`` metadata attribute value during the PUT. This creates a new
+version with the same version ID of the existing null master version.
 
 The null version's ``versionId`` attribute may be undefined because it
 was generated before the bucket versioning was configured. In that case,
@@ -461,20 +463,20 @@ used in the PUT call with the ``versionId`` option.
 Case 3: Overwriting a Null Version That is Not Latest Version
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Normally when versioning is suspended, S3 uses the ``versionId: ''``
-option in a PUT to metadata to create a null version. This also
-overwrites an existing null version if it is the master version.
+Normally when versioning is suspended, Zenko CloudServer uses the
+``versionId: ''`` option in a PUT to metadata to create a null version.
+This also overwrites an existing null version if it is the master version.
 
-However, if there is a null version that is not the latest version, S3
-cannot rely on the ``versionId: ''`` option will not overwrite the
-existing null version. Instead, before creating a new null version, the
-S3 API must send a separate DELETE call to metadata specifying the
-version id of the current null version for delete.
+However, if there is a null version that is not the latest version,
+Zenko CloudServer cannot rely on the ``versionId: ''`` option will not
+overwrite the existing null version. Instead, before creating a new null
+version, the Zenko CloudServer API must send a separate DELETE call to metadata
+specifying the version id of the current null version for delete.
 
 To do this, when storing a null version (3A above) before storing a new
-non-null version, S3 records the version's ID in the ``nullVersionId``
-attribute of the non-null version. For steps 3A and 3B above, these are
-the values stored in the ``nullVersionId`` of each version's metadata:
+non-null version, Zenko CloudServer records the version's ID in the
+``nullVersionId`` attribute of the non-null version. For steps 3A and 3B above,
+these are the values stored in the ``nullVersionId`` of each version's metadata:
 
 (3A) PUT foo, versioning: ``true``
 
@@ -532,22 +534,22 @@ Mapping" <#null-version-mapping>`__.
 Specifying Versions in APIs for Putting Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since S3 does not allow an overwrite of existing version data, Put
-Object, Complete Multipart Upload and Copy Object return
+Since Zenko CloudServer does not allow an overwrite of existing version data,
+Put Object, Complete Multipart Upload and Copy Object return
 ``400 InvalidArgument`` if a specific version ID is specified in the
 request query, e.g. for a ``PUT /foo?versionId=v1`` request.
 
 PUT Example
 ~~~~~~~~~~~
 
-When S3 receives a request to PUT an object:
+When Zenko CloudServer receives a request to PUT an object:
 
 -  It checks first if versioning has been configured
--  If it has not been configured, S3 proceeds to puts the new data, puts
-   the metadata by overwriting the master version, and proceeds to
+-  If it has not been configured, Zenko CloudServer proceeds to puts the new
+   data, puts the metadata by overwriting the master version, and proceeds to
    delete any pre-existing data
 
-If versioning has been configured, S3 checks the following:
+If versioning has been configured, Zenko CloudServer checks the following:
 
 Versioning Enabled
 ^^^^^^^^^^^^^^^^^^
@@ -613,14 +615,14 @@ following section, if no version ID is specified.
 No versioning options are necessary to retrieve the latest version from
 metadata, since the master version is stored in a key with the name of
 the object. However, when updating the latest version, such as with the
-Put Object ACL API, S3 sets the ``versionId`` option in the PUT call to
-metadata to the value stored in the object metadata's ``versionId``
+Put Object ACL API, Zenko CloudServer sets the ``versionId`` option in the
+PUT call to metadata to the value stored in the object metadata's ``versionId``
 attribute. This is done in order to update the metadata both in the
 master version and the version itself, if it is not a null version. [2]_
 
 When a version id is specified in the request query for these APIs, e.g.
-``GET /foo?versionId=v1``, S3 will attempt to decode the version ID and
-perform the action on the appropriate version. To do so, the API sets
+``GET /foo?versionId=v1``, Zenko CloudServer will attempt to decode the version
+ID and perform the action on the appropriate version. To do so, the API sets
 the value of the ``versionId`` option to the decoded version ID in the
 metadata call.
 
@@ -630,8 +632,8 @@ Delete Markers
 If versioning has not been configured for a bucket, the Delete Object
 and Multi-Object Delete APIs behave as their standard APIs.
 
-If versioning has been configured, S3 deletes object or version data
-only if a specific version ID is provided in the request query, e.g.
+If versioning has been configured, Zenko CloudServer deletes object or version
+data only if a specific version ID is provided in the request query, e.g.
 ``DELETE /foo?versionId=v1``.
 
 If no version ID is provided, S3 creates a delete marker by creating a
@@ -723,16 +725,16 @@ Data-metadata daemon Architecture and Operational guide
 =======================================================
 
 This document presents the architecture of the data-metadata daemon
-(dmd) used for the community edition of S3 server. It also provides a
+(dmd) used for the community edition of Zenko CloudServer. It also provides a
 guide on how to operate it.
 
-The dmd is responsible for storing and retrieving S3 data and metadata,
-and is accessed by S3 connectors through socket.io (metadata) and REST
-(data) APIs.
+The dmd is responsible for storing and retrieving Zenko CloudServer data and
+metadata, and is accessed by Zenko CloudServer connectors through socket.io
+(metadata) and REST (data) APIs.
 
-It has been designed such that more than one S3 connector can access the
-same buckets by communicating with the dmd. It also means that the dmd
-can be hosted on a separate container or machine.
+It has been designed such that more than one Zenko CloudServer connector can
+access the same buckets by communicating with the dmd. It also means that
+the dmd can be hosted on a separate container or machine.
 
 Operation
 ---------
@@ -741,11 +743,11 @@ Startup
 ~~~~~~~
 
 The simplest deployment is still to launch with npm start, this will
-start one instance of the S3 connector and will listen on the locally
-bound dmd ports 9990 and 9991 (by default, see below).
+start one instance of the Zenko CloudServer connector and will listen on the
+locally bound dmd ports 9990 and 9991 (by default, see below).
 
-The dmd can be started independently from the S3 server by running this
-command in the S3 directory:
+The dmd can be started independently from the Zenko CloudServer by running this
+command in the Zenko CloudServer directory:
 
 ::
 
@@ -759,7 +761,7 @@ This will open two ports:
 -  the other is a REST interface used for data transfers (9991 by
   default)
 
-Then, one or more instances of S3 server without the dmd can be started
+Then, one or more instances of Zenko CloudServer without the dmd can be started
 elsewhere with:
 
 ::
@@ -769,7 +771,7 @@ elsewhere with:
 Configuration
 ~~~~~~~~~~~~~
 
-Most configuration happens in ``config.json`` for S3 server, local
+Most configuration happens in ``config.json`` for Zenko CloudServer, local
 storage paths can be changed where the dmd is started using environment
 variables, like before: ``S3DATAPATH`` and ``S3METADATAPATH``.
 
@@ -811,8 +813,8 @@ Metadata on socket.io
 ~~~~~~~~~~~~~~~~~~~~~
 
 This communication is based on an RPC system based on socket.io events
-sent by S3 connectors, received by the DMD and acknowledged back to the
-S3 connector.
+sent by Zenko CloudServerconnectors, received by the DMD and acknowledged back
+to the Zenko CloudServer connector.
 
 The actual payload sent through socket.io is a JSON-serialized form of
 the RPC call name and parameters, along with some additional information
