@@ -85,4 +85,9 @@ utils.getAzureKeys = () => {
     return keys;
 };
 
+// For contentMD5, Azure requires base64 but AWS requires hex, so convert
+// from base64 to hex
+utils.convertMD5 = contentMD5 =>
+    Buffer.from(contentMD5, 'base64').toString('hex');
+
 module.exports = utils;
