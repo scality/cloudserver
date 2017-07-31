@@ -157,6 +157,7 @@ function putMPU(key, body, cb) {
         partLocations: [{
             key: 1,
             dataStoreName: 'mem',
+            dataStoreETag: `1:${calculatedHash}`,
         }],
         key: partKey,
     };
