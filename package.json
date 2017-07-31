@@ -49,6 +49,9 @@
     "s3blaster": "scality/s3blaster",
     "tv4": "^1.2.7"
   },
+  "optionalDependencies": {
+    "cdmiclient": "scality/cdmiclient"
+  },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
