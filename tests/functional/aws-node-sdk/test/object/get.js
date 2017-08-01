@@ -6,6 +6,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'buckettestgetobject';
 const objectName = 'someObject';
+const copyPartKey = `${objectName}-copypart`;
 // Specify sample headers to check for in GET response
 const cacheControl = 'max-age=86400';
 const contentDisposition = 'attachment; filename="fname.ext";';
@@ -54,6 +55,19 @@ describe('GET object', () => {
                 Bucket: bucketName,
                 Key: objectName,
             }, fields), cb);
+        }
+
+        function checkGetObjectPart(key, partNumber, len, body, cb) {
+            s3.getObject({
+                Bucket: bucketName,
+                Key: key,
+                PartNumber: partNumber,
+            }, (err, data) => {
+                checkNoError(err);
+                checkContentLength(data.ContentLength, len);
+                assert.deepStrictEqual(data.Body, body);
+                return cb();
+            });
         }
 
         // Upload parts with the given partNumbers array and complete MPU.
@@ -124,6 +138,54 @@ describe('GET object', () => {
                     }, cb);
                 }
                 return cb();
+            });
+        }
+
+        function createMPUAndPutTwoParts(partTwoBody, cb) {
+            let uploadId;
+            const ETags = [];
+            return async.waterfall([
+                next => s3.createMultipartUpload({
+                    Bucket: bucketName,
+                    Key: copyPartKey,
+                }, (err, data) => {
+                    checkNoError(err);
+                    uploadId = data.UploadId;
+                    return next();
+                }),
+                // Copy an object with three parts.
+                next => s3.uploadPartCopy({
+                    Bucket: bucketName,
+                    CopySource: `/${bucketName}/${objectName}`,
+                    Key: copyPartKey,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                }, (err, data) => {
+                    checkNoError(err);
+                    ETags[0] = data.ETag;
+                    return next();
+                }),
+                // Put an object with one part.
+                next => s3.uploadPart({
+                    Bucket: bucketName,
+                    Key: copyPartKey,
+                    PartNumber: 2,
+                    UploadId: uploadId,
+                    Body: partTwoBody,
+                }, (err, data) => {
+                    checkNoError(err);
+                    ETags[1] = data.ETag;
+                    return next();
+                }),
+            ], err => {
+                if (err) {
+                    return s3.abortMultipartUpload({
+                        Bucket: bucketName,
+                        Key: copyPartKey,
+                        UploadId: uploadId,
+                    }, cb);
+                }
+                return cb(null, uploadId, ETags);
             });
         }
 
@@ -790,6 +852,128 @@ describe('GET object', () => {
                         done();
                     });
                 }));
+
+            describe('uploadPartCopy', () => {
+                // The original object was composed of three parts
+                const partOneSize = partSize * 3;
+                const partOneBody = Buffer.concat([
+                    new Buffer(partSize).fill(1),
+                    new Buffer(partSize).fill(2),
+                    new Buffer(partSize).fill(3)], partOneSize);
+                const partTwoBody = new Buffer(partSize).fill(4);
+
+                beforeEach(done => async.waterfall([
+                    next => completeMPU(orderedPartNumbers, next),
+                    next => createMPUAndPutTwoParts(partTwoBody, next),
+                    (uploadId, ETags, next) =>
+                        s3.completeMultipartUpload({
+                            Bucket: bucketName,
+                            Key: copyPartKey,
+                            MultipartUpload: {
+                                Parts: [
+                                    {
+                                        ETag: ETags[0],
+                                        PartNumber: 1,
+                                    },
+                                    {
+                                        ETag: ETags[1],
+                                        PartNumber: 2,
+                                    },
+                                ],
+                            },
+                            UploadId: uploadId,
+                        }, next),
+                ], done));
+
+                afterEach(done => s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: copyPartKey,
+                }, done));
+
+                it('should retrieve a part copied from an MPU', done =>
+                    checkGetObjectPart(copyPartKey, 1, partOneSize, partOneBody,
+                        done));
+
+                it('should retrieve a part put after part copied from MPU',
+                    done => checkGetObjectPart(copyPartKey, 2, partSize,
+                        partTwoBody, done));
+            });
+
+            describe('uploadPartCopy overwrite', () => {
+                const partOneBody = new Buffer(partSize).fill(1);
+                // The original object was composed of three parts
+                const partTwoSize = partSize * 3;
+                const partTwoBody = Buffer.concat([
+                    new Buffer(partSize).fill(1),
+                    new Buffer(partSize).fill(2),
+                    new Buffer(partSize).fill(3)], partTwoSize);
+
+                beforeEach(done => async.waterfall([
+                    next => completeMPU(orderedPartNumbers, next),
+                    next => createMPUAndPutTwoParts(partTwoBody, next),
+                    /* eslint-disable no-param-reassign */
+                    // Overwrite part one.
+                    (uploadId, ETags, next) =>
+                        s3.uploadPart({
+                            Bucket: bucketName,
+                            Key: copyPartKey,
+                            PartNumber: 1,
+                            UploadId: uploadId,
+                            Body: partOneBody,
+                        }, (err, data) => {
+                            checkNoError(err);
+                            ETags[0] = data.ETag;
+                            return next(null, uploadId, ETags);
+                        }),
+                    // Overwrite part one with an three-part object.
+                    (uploadId, ETags, next) =>
+                        s3.uploadPartCopy({
+                            Bucket: bucketName,
+                            CopySource: `/${bucketName}/${objectName}`,
+                            Key: copyPartKey,
+                            PartNumber: 2,
+                            UploadId: uploadId,
+                        }, (err, data) => {
+                            checkNoError(err);
+                            ETags[1] = data.ETag;
+                            return next(null, uploadId, ETags);
+                        }),
+                    /* eslint-enable no-param-reassign */
+                    (uploadId, ETags, next) =>
+                        s3.completeMultipartUpload({
+                            Bucket: bucketName,
+                            Key: copyPartKey,
+                            MultipartUpload: {
+                                Parts: [
+                                    {
+                                        ETag: ETags[0],
+                                        PartNumber: 1,
+                                    },
+                                    {
+                                        ETag: ETags[1],
+                                        PartNumber: 2,
+                                    },
+                                ],
+                            },
+                            UploadId: uploadId,
+                        }, next),
+                ], done));
+
+                afterEach(done => s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: copyPartKey,
+                }, done));
+
+                it('should retrieve a part that overwrote another part ' +
+                'originally copied from an MPU', done =>
+                    checkGetObjectPart(copyPartKey, 1, partSize, partOneBody,
+                        done));
+
+                it('should retrieve a part copied from an MPU after the ' +
+                'original part was overwritten',
+                    done => checkGetObjectPart(copyPartKey, 2, partTwoSize,
+                        partTwoBody, done));
+            });
         });
     });
 });
