@@ -29,6 +29,10 @@ function checkError(err, code) {
     assert.strictEqual(err.code, code);
 }
 
+function checkContentLength(contentLengthHeader, expectedSize) {
+    assert.strictEqual(Number.parseInt(contentLengthHeader, 10), expectedSize);
+}
+
 function dateFromNow(diff) {
     const d = new Date();
     d.setHours(d.getHours() + diff);
@@ -690,6 +694,7 @@ describe('GET object', () => {
                         checkNoError(err);
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
+                            checkContentLength(data.ContentLength, partSize);
                             const expected = Buffer.alloc(partSize).fill(num);
                             assert.deepStrictEqual(data.Body, expected);
                             return done();
@@ -703,6 +708,7 @@ describe('GET object', () => {
                         checkNoError(err);
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
+                            checkContentLength(data.ContentLength, partSize);
                             const expected = Buffer.alloc(partSize)
                                 .fill(unOrderedPartNumbers[num - 1]);
                             assert.deepStrictEqual(data.Body, expected);
@@ -752,6 +758,7 @@ describe('GET object', () => {
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: '1' }, (err, data) => {
+                        checkContentLength(data.ContentLength, 10);
                         const expected = new Buffer(10).fill(0);
                         assert.deepStrictEqual(data.Body, expected);
                         done();
