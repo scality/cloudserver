@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  s3-front:
+    image: 127.0.0.1:5000/s3server
+    build: .
+    ports:
+      - "8000:8000"
