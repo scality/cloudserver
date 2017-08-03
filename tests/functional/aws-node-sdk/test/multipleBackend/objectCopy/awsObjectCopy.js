@@ -1,13 +1,13 @@
 const assert = require('assert');
 const async = require('async');
 const AWS = require('aws-sdk');
-const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
-const constants = require('../../../../../constants');
-const { config } = require('../../../../../lib/Config');
-const { getRealAwsConfig } = require('../support/awsConfig');
+const withV4 = require('../../support/withV4');
+const BucketUtility = require('../../../lib/utility/bucket-util');
+const constants = require('../../../../../../constants');
+const { config } = require('../../../../../../lib/Config');
+const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
-    require('../../lib/utility/createEncryptedBucket');
+    require('../../../lib/utility/createEncryptedBucket');
 
 const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendobjectcopy';
@@ -15,9 +15,10 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
-const { versioningEnabled } = require('../../lib/utility/versioning-util');
+const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const awsLocationEncryption = 'aws-test-encryption';
+const awsTimeout = 20000;
 
 let bucketUtil;
 let s3;
@@ -77,9 +78,7 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
             } else {
                 assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
                 assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
-                assert.deepStrictEqual(sourceRes.Body, destRes.Body);
                 assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
-                assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
             }
         }
         if (mdDirective === 'COPY') {
@@ -94,7 +93,7 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
 }
 
 describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
-    this.timeout(250000);
+    this.timeout(60000);
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -133,8 +132,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Key: copyKey,
                     CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
+                    Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
@@ -165,8 +163,11 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        awsLocationEncryption, copyKey, 'REPLACE', false, done);
+                    setTimeout(() => {
+                        assertGetObjects(key, bucket, 'mem', copyKey, bucket,
+                            awsLocationEncryption, copyKey, 'REPLACE', false,
+                            done);
+                    }, awsTimeout);
                 });
             });
         });
@@ -180,8 +181,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Key: copyKey,
                     CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
+                    Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 s3.putBucketVersioning({
                     Bucket: bucket,
@@ -206,8 +206,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Key: copyKey,
                     CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': 'mem' },
+                    Metadata: { 'scal-location-constraint': 'mem' },
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
@@ -230,8 +229,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Key: copyKey,
                     CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'COPY',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
+                    Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
@@ -315,7 +313,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
             putSourceObj(awsLocation, false, key => {
                 const awsBucket =
                     config.locationConstraints[awsLocation].details.bucketName;
-                awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
+                awsS3.deleteObject({ Bucket: awsBucket, Key: key },
+                err => {
                     assert.equal(err, null, 'Error deleting object from AWS: ' +
                         `${err}`);
                     const copyKey = `copyKey-${Date.now()}`;
