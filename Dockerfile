@@ -3,6 +3,7 @@ MAINTAINER Giorgio Regni <gr@scality.com>
 
 WORKDIR /usr/src/app
 
+# Keep the .git directory in order to properly report version
 COPY . /usr/src/app
 
 RUN apt-get update \
