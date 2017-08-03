@@ -3,7 +3,8 @@ const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys }
+const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys,
+    convertMD5 }
   = require('../utils');
 const { config } = require('../../../../../../lib/Config');
 
@@ -28,12 +29,6 @@ const azureMetadata = {
 const azureTimeout = 20000;
 let bucketUtil;
 let s3;
-
-// For contentMD5, Azure requires base64 but AWS requires hex, so convert
-// from base64 to hex
-function convertMD5(contentMD5) {
-    return Buffer.from(contentMD5, 'base64').toString('hex');
-}
 
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
     azureClient.getBlobProperties(azureContainerName, objectKey,

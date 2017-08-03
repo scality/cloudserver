@@ -4,16 +4,20 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { config } = require('../../../../../lib/Config');
 const { getRealAwsConfig } = require('../support/awsConfig');
+const { getAzureClient, getAzureContainerName, convertMD5 } =
+    require('./utils');
 
 const awsLocation = 'aws-test';
 const awsBucket = 'multitester555';
+const azureClient = getAzureClient();
+const azureContainerName = getAzureContainerName();
 const bucket = 'testmultbackendtagging';
 const key = `somekey-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 
-const awsTimeout = 30000;
+const cloudTimeout = 50000;
 
 let bucketUtil;
 let s3;
@@ -25,7 +29,7 @@ const putParams = { Bucket: bucket, Key: key, Body: body };
 const noBodyParams = { Bucket: bucket, Key: key };
 const tagParams = { Bucket: bucket, Key: key };
 const awsDelParams = { Bucket: awsBucket, Key: key };
-const testBackends = ['mem', 'file', 'aws-test'];
+const testBackends = ['mem', 'file', 'aws-test', 'azuretest'];
 const tagString = 'key1=value1&key2=value2';
 const putTags = {
     TagSet: [
@@ -39,6 +43,45 @@ const putTags = {
         },
     ],
 };
+const tagObj = { key1: 'value1', key2: 'value2' };
+
+function awsGet(tagCheck, isEmpty, callback) {
+    awsS3.getObject({ Bucket: awsBucket, Key: key },
+    (err, res) => {
+        assert.equal(err, null);
+        if (isEmpty) {
+            assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+        } else {
+            assert.strictEqual(res.ETag, `"${correctMD5}"`);
+        }
+        if (tagCheck) {
+            assert.strictEqual(res.TagCount, '2');
+        } else {
+            assert.strictEqual(res.TagCount, undefined);
+        }
+        return callback();
+    });
+}
+
+function azureGet(tagCheck, isEmpty, callback) {
+    azureClient.getBlobProperties(azureContainerName, key,
+    (err, res) => {
+        assert.equal(err, null);
+        const resMD5 = convertMD5(res.contentSettings.contentMD5);
+        if (isEmpty) {
+            assert.strictEqual(resMD5, `${emptyMD5}`);
+        } else {
+            assert.strictEqual(resMD5, `${correctMD5}`);
+        }
+        if (tagCheck) {
+            assert.strictEqual(res.metadata.tags,
+                JSON.stringify(tagObj));
+        } else {
+            assert.strictEqual(res.metadata.tags, undefined);
+        }
+        return callback();
+    });
+}
 
 function getObject(backend, tagCheck, isEmpty, callback) {
     function get(cb) {
@@ -61,24 +104,12 @@ function getObject(backend, tagCheck, isEmpty, callback) {
     }
     if (backend === 'aws-test') {
         setTimeout(() => {
-            get(() => {
-                awsS3.getObject({ Bucket: awsBucket, Key: key },
-                (err, res) => {
-                    assert.equal(err, null);
-                    if (isEmpty) {
-                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                    } else {
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                    }
-                    if (tagCheck) {
-                        assert.strictEqual(res.TagCount, '2');
-                    } else {
-                        assert.strictEqual(res.TagCount, undefined);
-                    }
-                    return callback();
-                });
-            });
-        }, awsTimeout);
+            get(() => awsGet(tagCheck, isEmpty, callback));
+        }, cloudTimeout);
+    } else if (backend === 'azuretest') {
+        setTimeout(() => {
+            get(() => azureGet(tagCheck, isEmpty, callback));
+        }, cloudTimeout);
     } else {
         get(callback);
     }
@@ -86,7 +117,7 @@ function getObject(backend, tagCheck, isEmpty, callback) {
 
 describeSkipIfNotMultiple('Object tagging with multiple backends',
 function testSuite() {
-    this.timeout(50000);
+    this.timeout(80000);
     withV4(sigCfg => {
         beforeEach(() => {
             const awsConfig = getRealAwsConfig(awsLocation);
