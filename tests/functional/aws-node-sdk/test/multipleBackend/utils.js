@@ -1,11 +1,19 @@
-
 const azure = require('azure-storage');
+const crypto = require('crypto');
 
 const { config } = require('../../../../../lib/Config');
 
 const azureLocation = 'azuretest';
 
 const utils = {};
+
+utils.expectedETag = (body, getStringified = true) => {
+    const eTagValue = crypto.createHash('md5').update(body).digest('hex');
+    if (!getStringified) {
+        return eTagValue;
+    }
+    return `"${eTagValue}"`;
+};
 
 utils.uniqName = name => `${name}${new Date().getTime()}`;
 
