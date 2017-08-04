@@ -103,24 +103,15 @@ describe('GET object', () => {
                         });
                     }, err => next(err, uploadId)),
                 (uploadId, next) => {
+                    const parts = Array.from(Array(partNumbers.length).keys());
                     const params = {
                         Bucket: bucketName,
                         Key: objectName,
                         MultipartUpload: {
-                            Parts: [
-                                {
-                                    ETag: ETags[0],
-                                    PartNumber: partNumbers[0],
-                                },
-                                {
-                                    ETag: ETags[1],
-                                    PartNumber: partNumbers[1],
-                                },
-                                {
-                                    ETag: ETags[2],
-                                    PartNumber: partNumbers[2],
-                                },
-                            ],
+                            Parts: parts.map(n => ({
+                                ETag: ETags[n],
+                                PartNumber: partNumbers[n],
+                            })),
                         },
                         UploadId: uploadId,
                     };
@@ -746,8 +737,8 @@ describe('GET object', () => {
         });
 
         describe('With PartNumber field', () => {
-            const orderedPartNumbers = [1, 2, 3];
-            const unOrderedPartNumbers = [3, 5, 9];
+            const orderedPartNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            const unOrderedPartNumbers = [3, 5, 9, 10, 12, 13, 20, 21, 22, 30];
             const invalidPartNumbers = [-1, 0, 10001];
 
             orderedPartNumbers.forEach(num =>
@@ -792,7 +783,7 @@ describe('GET object', () => {
             'uploaded for an MPU', done =>
                 completeMPU(orderedPartNumbers, err => {
                     checkNoError(err);
-                    return requestGet({ PartNumber: 4 }, err => {
+                    return requestGet({ PartNumber: 11 }, err => {
                         checkError(err, 'InvalidPartNumber');
                         done();
                     });
@@ -855,11 +846,10 @@ describe('GET object', () => {
 
             describe('uploadPartCopy', () => {
                 // The original object was composed of three parts
-                const partOneSize = partSize * 3;
-                const partOneBody = Buffer.concat([
-                    new Buffer(partSize).fill(1),
-                    new Buffer(partSize).fill(2),
-                    new Buffer(partSize).fill(3)], partOneSize);
+                const partOneSize = partSize * 10;
+                const bufs = orderedPartNumbers.map(n =>
+                    new Buffer(partSize).fill(n));
+                const partOneBody = Buffer.concat(bufs, partOneSize);
                 const partTwoBody = new Buffer(partSize).fill(4);
 
                 beforeEach(done => async.waterfall([
@@ -902,11 +892,10 @@ describe('GET object', () => {
             describe('uploadPartCopy overwrite', () => {
                 const partOneBody = new Buffer(partSize).fill(1);
                 // The original object was composed of three parts
-                const partTwoSize = partSize * 3;
-                const partTwoBody = Buffer.concat([
-                    new Buffer(partSize).fill(1),
-                    new Buffer(partSize).fill(2),
-                    new Buffer(partSize).fill(3)], partTwoSize);
+                const partTwoSize = partSize * 10;
+                const bufs = orderedPartNumbers.map(n =>
+                    new Buffer(partSize).fill(n));
+                const partTwoBody = Buffer.concat(bufs, partTwoSize);
 
                 beforeEach(done => async.waterfall([
                     next => completeMPU(orderedPartNumbers, next),
