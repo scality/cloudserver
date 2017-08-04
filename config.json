@@ -63,5 +63,5 @@
         "enabled": false,
         "recordLogName": "s3-recordlog"
     },
-    "whitelistedIps": ["127.0.0.1/8", "::1"]
+    "whiteListedIps": ["127.0.0.1/8", "::1"]
 }
