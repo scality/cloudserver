@@ -38,7 +38,7 @@ function checkSubPart(key, expectedParts, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function
+describe.only('MultipleBackend put part to AZURE', function
 describeF() {
     this.timeout(250000);
     withV4(sigCfg => {

@@ -110,7 +110,7 @@ const constants = {
     // Azure only allows 100 mb per block.
     maxSubPartSize: 104857600,
     // Default chunk length sent in node streams (64 KB).
-    defaultChunkLength: 65537,
+    defaultChunkLength: 65536,
     zeroByteETag: crypto.createHash('md5').update('').digest('hex'),
 };
 
