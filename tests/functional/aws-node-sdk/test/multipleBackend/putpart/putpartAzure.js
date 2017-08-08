@@ -38,7 +38,7 @@ function checkSubPart(key, expectedParts, cb) {
     });
 }
 
-describe.only('MultipleBackend put part to AZURE', function
+describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function
 describeF() {
     this.timeout(250000);
     withV4(sigCfg => {
@@ -68,21 +68,6 @@ describeF() {
 
             afterEach(function aeF(done) {
                 async.waterfall([
-                    // We do not have abort yet, so doing it manually :(
-                    next => azureClient.listBlocks(azureContainerName,
-                    this.currentTest.key, 'uncommitted', (err, list) => {
-                        if (!list) {
-                            return done();
-                        }
-                        const namesArray = list.UncommittedBlocks.map(block =>
-                          block.Name);
-                        const commitList = { UncommittedBlocks: namesArray };
-                        return next(err, commitList);
-                    }),
-                    (list, next) => azureClient.commitBlocks(azureContainerName,
-                    this.currentTest.key, list, err => next(err)),
-                    next => azureClient.deleteBlob(azureContainerName,
-                    this.currentTest.key, err => next(err)),
                     next => s3.abortMultipartUpload({
                         Bucket: azureContainerName,
                         Key: this.currentTest.key,
