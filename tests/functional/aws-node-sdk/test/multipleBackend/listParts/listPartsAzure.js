@@ -50,8 +50,17 @@ describeF() {
                 ], done);
             });
 
-            afterEach(done => s3.deleteBucket({ Bucket: azureContainerName },
-              done));
+            afterEach(function aeF(done) {
+                async.waterfall([
+                    next => s3.abortMultipartUpload({
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.key,
+                        UploadId: this.currentTest.uploadId,
+                    }, err => next(err)),
+                    next => s3.deleteBucket({ Bucket: azureContainerName },
+                      err => next(err)),
+                ], done);
+            });
 
             describe('with one part bigger that max subpart', () => {
                 beforeEach(function beF(done) {
@@ -71,7 +80,51 @@ describeF() {
                         return done();
                     });
                 });
-                it.only('should list parts', function itF(done) {
+                it('should list parts', function itF(done) {
+                    s3.listParts({
+                        Bucket: azureContainerName,
+                        Key: this.test.key,
+                        UploadId: this.test.uploadId,
+                    }, (err, res) => {
+                        assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error: ${err}`);
+                        console.log('err!!!', err);
+                        console.log('res!!!', res);
+                        return done();
+                    });
+                });
+            });
+            describe('with one part bigger that max subpart and 2 small ones',
+            () => {
+                beforeEach(function beF(done) {
+                    const body1 = Buffer.alloc(maxSubPartSize + 10);
+                    const body2 = Buffer.alloc(10);
+                    const body3 = Buffer.alloc(20);
+                    async.waterfall([
+                        next => s3.uploadPart({
+                            Bucket: azureContainerName,
+                            Key: this.currentTest.key,
+                            UploadId: this.currentTest.uploadId,
+                            PartNumber: 1,
+                            Body: body1,
+                        }, err => next(err)),
+                        next => s3.uploadPart({
+                            Bucket: azureContainerName,
+                            Key: this.currentTest.key,
+                            UploadId: this.currentTest.uploadId,
+                            PartNumber: 100,
+                            Body: body2,
+                        }, err => next(err)),
+                        next => s3.uploadPart({
+                            Bucket: azureContainerName,
+                            Key: this.currentTest.key,
+                            UploadId: this.currentTest.uploadId,
+                            PartNumber: 20,
+                            Body: body3,
+                        }, err => next(err)),
+                    ], done);
+                });
+                it.only('should list parts 3 parts', function itF(done) {
                     s3.listParts({
                         Bucket: azureContainerName,
                         Key: this.test.key,
