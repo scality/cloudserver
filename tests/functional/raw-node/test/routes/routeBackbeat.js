@@ -49,7 +49,7 @@ function makeBackbeatRequest(params, callback) {
         port: 8000,
         method,
         headers,
-        path: `/_/backbeat/${bucket}/${objectKey}/${resourceType}`,
+        path: `/_/backbeat/${resourceType}/${bucket}/${objectKey}`,
         requestBody,
         jsonResponse: true,
     };
