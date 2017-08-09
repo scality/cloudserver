@@ -64,7 +64,8 @@ describeF() {
 
             describe('with one part bigger that max subpart', () => {
                 beforeEach(function beF(done) {
-                    const body = Buffer.alloc(maxSubPartSize + 10);
+                    this.currentTest.bodySize = maxSubPartSize + 10;
+                    const body = Buffer.alloc(this.currentTest.bodySize);
                     const params = {
                         Bucket: azureContainerName,
                         Key: this.currentTest.key,
@@ -75,12 +76,11 @@ describeF() {
                     s3.uploadPart(params, (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error: ${err}`);
-                        const eTagExpected = expectedETag(body);
-                        assert.strictEqual(res.ETag, eTagExpected);
+                        this.currentTest.eTag = res.ETag;
                         return done();
                     });
                 });
-                it('should list parts', function itF(done) {
+                it('should list one part', function itF(done) {
                     s3.listParts({
                         Bucket: azureContainerName,
                         Key: this.test.key,
@@ -88,8 +88,11 @@ describeF() {
                     }, (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error: ${err}`);
-                        console.log('err!!!', err);
-                        console.log('res!!!', res);
+                        assert.strictEqual(res.Parts.length, 1);
+                        assert.strictEqual(res.Parts[0].PartNumber, 1);
+                        assert.strictEqual(res.Parts[0].ETag, this.test.eTag);
+                        assert.strictEqual(res.Parts[0].Size,
+                          this.test.bodySize);
                         return done();
                     });
                 });
@@ -124,7 +127,7 @@ describeF() {
                         }, err => next(err)),
                     ], done);
                 });
-                it.only('should list parts 3 parts', function itF(done) {
+                it('should list parts 3 parts', function itF(done) {
                     s3.listParts({
                         Bucket: azureContainerName,
                         Key: this.test.key,
@@ -132,6 +135,7 @@ describeF() {
                     }, (err, res) => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error: ${err}`);
+                        assert.strictEqual(res.Parts.length, 3);
                         console.log('err!!!', err);
                         console.log('res!!!', res);
                         return done();

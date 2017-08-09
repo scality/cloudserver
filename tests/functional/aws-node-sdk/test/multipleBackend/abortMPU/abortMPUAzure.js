@@ -53,6 +53,39 @@ describeF() {
             afterEach(done => s3.deleteBucket({ Bucket: azureContainerName },
               done));
 
+            describe('with one empty part', () => {
+                beforeEach(function beF(done) {
+                    const params = {
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.key,
+                        UploadId: this.currentTest.uploadId,
+                        PartNumber: 1,
+                    };
+                    s3.uploadPart(params, err => {
+                        assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error: ${err}`);
+                        return done();
+                    });
+                });
+                it('should abort empty part ',
+                function itF(done) {
+                    async.waterfall([
+                        next => s3.abortMultipartUpload({
+                            Bucket: azureContainerName,
+                            Key: this.test.key,
+                            UploadId: this.test.uploadId,
+                        }, err => next(err)),
+                        next => azureClient.getBlobProperties(
+                          azureContainerName,
+                          this.test.key, err => {
+                              assert.strictEqual(err.statusCode, 404);
+                              assert.strictEqual(err.code, 'NotFound');
+                              return next();
+                          }),
+                    ], done);
+                });
+            });
+
             describe('with one part bigger that max subpart', () => {
                 beforeEach(function beF(done) {
                     const body = Buffer.alloc(maxSubPartSize + 10);
@@ -63,11 +96,9 @@ describeF() {
                         PartNumber: 1,
                         Body: body,
                     };
-                    s3.uploadPart(params, (err, res) => {
+                    s3.uploadPart(params, err => {
                         assert.strictEqual(err, null, 'Expected success, ' +
                         `got error: ${err}`);
-                        const eTagExpected = expectedETag(body);
-                        assert.strictEqual(res.ETag, eTagExpected);
                         return done();
                     });
                 });
