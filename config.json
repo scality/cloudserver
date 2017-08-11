@@ -62,7 +62,7 @@
         "port": 9991
     },
     "recordLog": {
-        "enabled": false,
+        "enabled": true,
         "recordLogName": "s3-recordlog"
     },
     "whiteListedIps": ["127.0.0.1/8", "::1"]
