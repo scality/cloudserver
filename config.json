@@ -23,11 +23,6 @@
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
                         "s3-website.scality.test"],
-    "cdmi": {
-        "host": "localhost",
-        "port": 81,
-        "path": "/dewpoint"
-    },
     "bucketd": {
         "bootstrap": ["localhost"]
     },
@@ -53,14 +48,22 @@
     },
     "metadataDaemon": {
         "bindAddress": "localhost",
-        "port": 9990
+        "port": 9990,
+        "restPort": 9998,
+        "restEnabled": true
     },
     "dataDaemon": {
         "bindAddress": "localhost",
         "port": 9991
     },
     "recordLog": {
-        "enabled": false,
+        "enabled": true,
         "recordLogName": "s3-recordlog"
-    }
+    },
+    "replicationEndpoints": [
+        {
+            "site": "sf",
+            "servers": ["127.0.0.1:8000"]
+        }
+    ]
 }
