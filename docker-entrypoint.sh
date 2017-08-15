@@ -97,18 +97,6 @@ fi
 jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
 mv config.json.tmp config.json
 
-# modifying locationConfig.js
-
-JQ_FILTERS_LOCATION="."
-
-if [[ "$S3DATA" == "multiple" ]]; then
-    export S3DATA="$S3DATA"
-    JQ_FILTERS_LOCATION="$JQ_FILTERS_LOCATION | del(.[\"aws-test\"])"
-fi
-
-jq "$JQ_FILTERS_LOCATION" locationConfig.json > locationConfig.json.tmp
-mv locationConfig.json.tmp locationConfig.json
-
 # s3 secret credentials for Zenko
 if [ -r /run/secrets/s3-credentials ] ; then
     . /run/secrets/s3-credentials
