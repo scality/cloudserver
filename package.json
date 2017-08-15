@@ -29,7 +29,7 @@
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
     "sproxydclient": "scality/sproxydclient",
-    "utapi": "scality/utapi",
+    "utapi": "scality/utapi#42-hackathon-utapi",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
