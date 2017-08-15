@@ -94,8 +94,10 @@ if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
 
-jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
-mv config.json.tmp config.json
+if [[ $JQ_FILTERS_CONFIG != "." ]]; then
+    jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
+    mv config.json.tmp config.json
+fi
 
 # s3 secret credentials for Zenko
 if [ -r /run/secrets/s3-credentials ] ; then
