@@ -234,4 +234,33 @@ describe('objectPut API', () => {
                     });
             });
     });
+
+    it('should return BadDigest error and not leave orphans in data when ' +
+    'contentMD5 and completedHash do not match', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            contentMD5: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, Buffer.from('I am another body', 'utf8'));
+
+        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
+        log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+            err => {
+                assert.deepStrictEqual(err, errors.BadDigest);
+                // orphan objects don't get deleted
+                // until the next tick
+                // in memory
+                process.nextTick(() => {
+                    // Data store starts at index 1
+                    assert.strictEqual(ds[0], undefined);
+                    assert.strictEqual(ds[1], undefined);
+                    done();
+                });
+            });
+        });
+    });
 });
