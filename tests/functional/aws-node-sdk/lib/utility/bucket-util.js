@@ -1,9 +1,9 @@
-import Promise from 'bluebird';
-import { S3 } from 'aws-sdk';
-import projectFixture from '../fixtures/project';
-import getConfig from '../../test/support/config';
+const Promise = require('bluebird');
+const { S3 } = require('aws-sdk');
+const projectFixture = require('../fixtures/project');
+const getConfig = require('../../test/support/config');
 
-export default class BucketUtility {
+class BucketUtility {
     constructor(profile = 'default', config = {}) {
         const s3Config = getConfig(profile, config);
 
@@ -52,7 +52,7 @@ export default class BucketUtility {
     }
 
     /**
-     * Recursively delete all objects within the bucket
+     * Recursively delete all versions of all objects within the bucket
      * @param bucketName
      * @returns {Promise.<T>}
      */
@@ -63,30 +63,40 @@ export default class BucketUtility {
         };
 
         return this.s3
-            .listObjectsAsync(param)
+            .listObjectVersionsAsync(param)
             .then(data =>
                 Promise.all(
-                    data.Contents
+                    data.Versions
                         .filter(object => !object.Key.endsWith('/'))
                         // remove all objects
                         .map(object =>
                             this.s3.deleteObjectAsync({
                                 Bucket: bucketName,
                                 Key: object.Key,
+                                VersionId: object.VersionId,
                             })
                               .then(() => object)
                         )
-                        .concat(data.Contents
+                        .concat(data.Versions
                             .filter(object => object.Key.endsWith('/'))
                             // remove all directories
                             .map(object =>
                                 this.s3.deleteObjectAsync({
                                     Bucket: bucketName,
                                     Key: object.Key,
+                                    VersionId: object.VersionId,
                                 })
                                 .then(() => object)
                             )
                         )
+                        .concat(data.DeleteMarkers
+                            .map(object =>
+                                 this.s3.deleteObjectAsync({
+                                     Bucket: bucketName,
+                                     Key: object.Key,
+                                     VersionId: object.VersionId,
+                                 })
+                                 .then(() => object)))
                 )
             );
     }
@@ -97,3 +107,5 @@ export default class BucketUtility {
             .then(data => data.Owner);
     }
 }
+
+module.exports = BucketUtility;

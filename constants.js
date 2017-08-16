@@ -1,6 +1,6 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
-export default {
+const constants = {
     /*
      * Splitter is used to build the object name for the overview of a
      * multipart upload and to build the object names for each part of a
@@ -38,6 +38,7 @@ export default {
     // by the name of the final destination bucket for the object
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
+    blacklistedPrefixes: { bucket: [], object: [] },
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
@@ -68,27 +69,44 @@ export default {
     maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 104857600 :
         5368709120,
 
+    // AWS states max size for user-defined metadata (x-amz-meta- headers) is
+    // 2 KB: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
+    // In testing, AWS seems to allow up to 88 more bytes, so we do the same.
+    maximumMetaHeadersSize: 2136,
+
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
-    unsupportedQueries: {
-        'accelerate': true,
-        'analytics': true,
-        'inventory': true,
-        'lifecycle': true,
-        'list-type': true,
-        'location': true,
-        'logging': true,
-        'metrics': true,
-        'notification': true,
-        'policy': true,
-        'replication': true,
-        'requestPayment': true,
-        'restore': true,
-        'tagging': true,
-        'torrent': true,
-        'versions': true,
-    },
+    unsupportedQueries: [
+        'accelerate',
+        'analytics',
+        'inventory',
+        'lifecycle',
+        'list-type',
+        'logging',
+        'metrics',
+        'notification',
+        'policy',
+        'requestPayment',
+        'restore',
+        'torrent',
+    ],
+    // Headers supported by AWS that we do not currently support.
+    unsupportedHeaders: [
+        'x-amz-server-side-encryption',
+        'x-amz-server-side-encryption-customer-algorithm',
+        'x-amz-server-side-encryption-aws-kms-key-id',
+        'x-amz-server-side-encryption-context',
+        'x-amz-server-side-encryption-customer-key',
+        'x-amz-server-side-encryption-customer-key-md5',
+    ],
+
+    // user metadata header to set object locationConstraint
+    objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
+    // eslint-disable-next-line camelcase
+    externalBackends: { aws_s3: true, azure: true },
 };
+
+module.exports = constants;

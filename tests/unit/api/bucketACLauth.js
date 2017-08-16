@@ -1,8 +1,8 @@
-import assert from 'assert';
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import constants from '../../../constants';
-import { isBucketAuthorized } from
-    '../../../lib/api/apiUtils/authorization/aclChecks';
+const assert = require('assert');
+const BucketInfo = require('arsenal').models.BucketInfo;
+const constants = require('../../../constants');
+const { isBucketAuthorized }
+    = require('../../../lib/api/apiUtils/authorization/aclChecks');
 
 const ownerCanonicalId = 'ownerCanonicalId';
 const creationDate = new Date().toJSON();

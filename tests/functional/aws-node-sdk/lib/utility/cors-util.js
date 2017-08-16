@@ -1,8 +1,8 @@
-import assert from 'assert';
-import http from 'http';
-import https from 'https';
+const assert = require('assert');
+const http = require('http');
+const https = require('https');
 
-import conf from '../../../../../lib/Config';
+const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -15,6 +15,7 @@ const statusCode = {
     200: 200,
     301: 301, // website redirect
     403: 403, // website AccessDenied error
+    404: 404, // website NoSuchBucket error
     AccessForbidden: 403,
     AccessDenied: 403,
     BadRequest: 400,
@@ -23,7 +24,7 @@ const statusCode = {
     NoSuchBucket: 404,
 };
 
-export default function methodRequest(params, callback) {
+function methodRequest(params, callback) {
     const { method, bucket, objectKey, query, headers, code,
         headersResponse, headersOmitted, isWebsite } = params;
     const websiteHostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
@@ -96,7 +97,7 @@ export default function methodRequest(params, callback) {
 
 // for testing needs usually only need one rule, if support for more CORS
 // rules is desired, can refactor
-export function generateCorsParams(bucket, params) {
+function generateCorsParams(bucket, params) {
     const corsParams = {
         Bucket: bucket,
         CORSConfiguration: {
@@ -111,3 +112,8 @@ export function generateCorsParams(bucket, params) {
 
     return corsParams;
 }
+
+module.exports = {
+    methodRequest,
+    generateCorsParams,
+};

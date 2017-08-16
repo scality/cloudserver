@@ -1,11 +1,12 @@
-import { S3 } from 'aws-sdk';
-import assert from 'assert';
-import async from 'async';
+const { S3 } = require('aws-sdk');
+const assert = require('assert');
+const async = require('async');
 
-import getConfig from '../support/config';
-import methodRequest from '../../lib/utility/cors-util';
-import { generateCorsParams } from '../../lib/utility/cors-util';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
+const getConfig = require('../support/config');
+const { methodRequest } = require('../../lib/utility/cors-util');
+const { generateCorsParams } = require('../../lib/utility/cors-util');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
+const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
@@ -54,6 +55,15 @@ const apiMethods = [
     {
         description: 'GET bucket versioning',
         action: s3.getBucketVersioning,
+        params: { Bucket: bucket },
+        onlyRun: {
+            checkForCorsHeaders: false,
+            checkNoCorsHeaders: false,
+        },
+    },
+    {
+        description: 'GET bucket location',
+        action: s3.getBucketLocation,
         params: { Bucket: bucket },
         onlyRun: {
             checkForCorsHeaders: false,
@@ -441,7 +451,7 @@ describe('Cross Origin Resource Sharing requests', () => {
         beforeEach(done => s3.putBucketCors(corsParams, done));
 
         afterEach(done => {
-            s3.deleteObject({ Bucket: bucket, Key: objectKey }, err => {
+            removeAllVersions({ Bucket: bucket }, err => {
                 if (err && err.code !== 'NoSuchKey' &&
                 err.code !== 'NoSuchBucket') {
                     process.stdout.write(`Unexpected err in afterEach: ${err}`);
@@ -579,10 +589,8 @@ describe('Cross Origin Resource Sharing requests', () => {
         'even in case of error',
         done => {
             const headers = { Origin: allowedOrigin };
-            // NOTE: separate PR to address Issue #553 will result in
-            // different error code
             methodRequest({ method: 'GET', bucket, objectKey: 'test',
-            headers, headersResponse, code: 403, isWebsite: true }, done);
+            headers, headersResponse, code: 404, isWebsite: true }, done);
         });
 
         it('should respond with CORS headers at website endpoint (GET) ' +

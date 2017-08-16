@@ -1,9 +1,9 @@
-import assert from 'assert';
-import process from 'process';
-import cp from 'child_process';
-import { S3 } from 'aws-sdk';
-import getConfig from '../support/config';
-import provideRawOutput from '../../lib/utility/provideRawOutput';
+const assert = require('assert');
+const process = require('process');
+const cp = require('child_process');
+const { S3 } = require('aws-sdk');
+const getConfig = require('../support/config');
+const provideRawOutput = require('../../lib/utility/provideRawOutput');
 
 const random = Math.round(Math.random() * 100).toString();
 const bucket = `mybucket-${random}`;
@@ -77,7 +77,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         almostOutsideTime };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
-            '--upload-file', 'package.json'], httpCode => {
+            '--upload-file', 'uploadFile'], httpCode => {
             assert.strictEqual(httpCode, '200 OK');
             done();
         });
@@ -94,7 +94,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
              ACL: 'public-read', StorageClass: 'STANDARD' };
              const url = s3.getSignedUrl('putObject', params);
              provideRawOutput(['-verbose', '-X', 'PUT', url,
-                 '--upload-file', 'package.json'], httpCode => {
+                 '--upload-file', 'uploadFile'], httpCode => {
                  assert.strictEqual(httpCode, '200 OK');
                  done();
              });
@@ -112,7 +112,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     });
 
     it('downloaded file should equal file that was put', done => {
-        diff('package.json', 'download', () => {
+        diff('uploadFile', 'download', () => {
             deleteFile('download', done);
         });
     });

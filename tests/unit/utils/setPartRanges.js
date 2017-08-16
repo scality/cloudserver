@@ -1,8 +1,6 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import routesUtils from '../../../lib/routes/routesUtils';
-
-const setPartRanges = routesUtils.setPartRanges;
+const setPartRanges = require('../../../lib/api/apiUtils/object/setPartRanges');
 
 describe('setPartRanges function', () => {
     it('should set range on a one part object', () => {

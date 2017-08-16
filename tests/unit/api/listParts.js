@@ -1,14 +1,14 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import { parseString } from 'xml2js';
+const { parseString } = require('xml2js');
 
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import { metadata as inMemMetadata } from
-    '../../../lib/metadata/in_memory/metadata';
-import listParts from '../../../lib/api/listParts';
-import metadata from '../metadataswitch';
+const BucketInfo = require('arsenal').models.BucketInfo;
+const constants = require('../../../constants');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const inMemMetadata
+    = require('../../../lib/metadata/in_memory/metadata').metadata;
+const listParts = require('../../../lib/api/listParts');
+const metadata = require('../metadataswitch');
 
 const log = new DummyRequestLogger();
 

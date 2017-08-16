@@ -1,9 +1,9 @@
-import assert from 'assert';
-import Promise from 'bluebird';
+const assert = require('assert');
+const Promise = require('bluebird');
 
-import config from '../../../../../lib/Config';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const { config } = require('../../../../../lib/Config');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;

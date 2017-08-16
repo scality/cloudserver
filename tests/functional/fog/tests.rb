@@ -156,6 +156,52 @@ describe Fog do
         )
     end
 
+    it "should put a streaming object to AWS (streaming v4 auth)", :skip => true do
+        streamObject = $bucket.files.create(
+            :key => "awsStreamObject",
+            :body => File.open(fileToStream),
+            :metadata => { "x-amz-meta-scal-location-constraint":"aws-test" },
+            :content_type => "text/plain",
+            :acl => "private")
+        expect(streamObject.etag).to eq($fileToStreamMd5)
+    end
+
+    it "should get a streamed object from AWS (regular v4 auth)", :skip => true do
+        open(downloadFile, "wb") do |f|
+            $bucket.files.get("awsStreamObject") do
+                |chunk,remainingBytes,totalBytes|
+                f.write chunk
+            end
+        end
+        downloadedFileMd5 = Digest::MD5.file(downloadFile).hexdigest
+        expect(downloadedFileMd5).to eq($fileToStreamMd5)
+    end
+
+    it "should delete a streamed object from AWS (regular v4 auth", :skip => true do
+        connection.delete_object($bucketName, "awsStreamObject")
+    end
+
+    it "should initiate a multipart upload on AWS (regular v4 auth)", :skip => true do
+        response = connection.initiate_multipart_upload(
+            $bucketName, "awsMpuObject",
+            options = { "x-amz-meta-scal-location-constraint": "aws-test" },
+        )
+        $awsUploadId = response.body["UploadId"]
+    end
+
+    it "should upload a streaming part on AWS(streaming v4 auth)", :skip => true do
+        response = connection.upload_part($bucketName,
+            "awsMpuObject", $awsUploadId, 1, File.open(fileToStream)
+        )
+        expect(response.headers["ETag"]).to eq("\"#{$fileToStreamMd5}\"")
+    end
+
+    it "should abort a multipart upload on AWS (regular v4 auth)", :skip => true do
+        connection.abort_multipart_upload(
+            $bucketName, "awsMpuObject", $awsUploadId
+        )
+    end
+
     it "should delete the bucket (regular v4 auth)" do
         $bucket.destroy
     end

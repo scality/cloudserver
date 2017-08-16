@@ -1,12 +1,12 @@
-import assert from 'assert';
-import httpMocks from 'node-mocks-http';
-import { EventEmitter } from 'events';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const httpMocks = require('node-mocks-http');
+const { EventEmitter } = require('events');
+const { errors } = require('arsenal');
+const routesUtils = require('arsenal').s3routes.routesUtils;
 
-import { cleanup, DummyRequestLogger } from '../helpers';
-import { ds } from '../../../lib/data/in_memory/backend';
-import routesUtils from '../../../lib/routes/routesUtils';
-import data from '../../../lib/data/wrapper';
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { ds } = require('../../../lib/data/in_memory/backend');
+const data = require('../../../lib/data/wrapper');
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();
@@ -46,7 +46,7 @@ describe('responseStreamData:', () => {
             done();
         });
         return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, response, null, log);
+            resHeaders, dataLocations, data.get, response, null, log);
     });
 
     it('should stream full requested object data for two part object', done => {
@@ -74,7 +74,7 @@ describe('responseStreamData:', () => {
             done();
         });
         return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, response, null, log);
+            resHeaders, dataLocations, data.get, response, null, log);
     });
 
     it('#334 non-regression test, destroy connection on error', done => {
@@ -85,7 +85,7 @@ describe('responseStreamData:', () => {
             size: 11,
         }];
         const prev = data.get;
-        data.get = (objectGetInfo, log, cb) => {
+        data.get = (objectGetInfo, response, log, cb) => {
             setTimeout(() => cb(errors.InternalError), 1000);
         };
         const response = httpMocks.createResponse({
@@ -102,6 +102,6 @@ describe('responseStreamData:', () => {
             done(new Error('end reached instead of destroying connection'));
         });
         return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, response, null, log);
+            resHeaders, dataLocations, data.get, response, null, log);
     });
 });

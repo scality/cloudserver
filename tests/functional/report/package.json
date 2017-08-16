@@ -1,0 +1,6 @@
+{
+    "name": "report-tests",
+    "scripts": {
+        "test": "mocha -t 40000 *.js"
+    }
+}

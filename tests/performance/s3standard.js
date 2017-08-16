@@ -12,7 +12,7 @@
 
 const numCPUs = require('os').cpus().length;
 
-const config = require('../../lib/Config');
+const { config } = require('../../lib/Config');
 const runS3Blaster = require('s3blaster').RunS3Blaster;
 
 const numWorkers = Math.min(numCPUs, 8);

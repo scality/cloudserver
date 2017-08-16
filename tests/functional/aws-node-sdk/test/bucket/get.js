@@ -1,10 +1,10 @@
-import assert from 'assert';
-import tv4 from 'tv4';
-import Promise from 'bluebird';
+const assert = require('assert');
+const tv4 = require('tv4');
+const Promise = require('bluebird');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import bucketSchema from '../../schema/bucket';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const bucketSchema = require('../../schema/bucket');
 
 function checkNoError(err) {
     assert.equal(err, null,

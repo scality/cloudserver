@@ -5,8 +5,7 @@ const proc = require('child_process');
 const process = require('process');
 const parseString = require('xml2js').parseString;
 
-require('babel-core/register');
-const conf = require('../../../lib/Config').default;
+const conf = require('../../../lib/Config').config;
 
 const transport = conf.https ? 'https' : 'http';
 let sslArguments = ['-s'];
@@ -188,16 +187,14 @@ describe('s3curl put delete buckets', () => {
                 });
         });
 
-        // note that if the config is changed to usEastBehavior, this call
-        // will return a 200 in conformance with AWS behavior
-        it('should not be able to put a bucket with a name ' +
+        it('should return 409 error in new regions and 200 in us-east-1 ' +
+            '(legacyAWSBehvior) when try to put a bucket with a name ' +
             'already being used', done => {
-            provideRawOutput(
-                ['--createBucket', '--', bucketPath, '-v'],
-                (httpCode, rawOutput) => {
-                    assert.strictEqual(httpCode, '409 CONFLICT');
-                    assertError(rawOutput.stdout, 'BucketAlreadyOwnedByYou',
-                        done);
+            provideRawOutput(['--createBucket', '--', bucketPath, '-v'],
+                httpCode => {
+                    assert(httpCode === '200 OK'
+                    || httpCode === '409 CONFLICT');
+                    done();
                 });
         });
 

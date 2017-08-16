@@ -1,10 +1,12 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import metadata from '../metadataswitch';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const { checkLocationConstraint } = require('../../../lib/api/bucketPut');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { config } = require('../../../lib/Config');
+const constants = require('../../../constants');
+const metadata = require('../metadataswitch');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -14,7 +16,6 @@ const namespace = 'default';
 const splitter = constants.splitter;
 const usersBucket = constants.usersBucket;
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 const testRequest = {
     bucketName,
     namespace,
@@ -23,6 +24,76 @@ const testRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
 
+const testChecks = [
+    {
+        data: 'file',
+        locationSent: 'file',
+        parsedHost: '127.1.2.3',
+        locationReturn: 'file',
+        isError: false,
+    },
+    {
+        data: 'file',
+        locationSent: 'wronglocation',
+        parsedHost: '127.1.0.0',
+        locationReturn: undefined,
+        isError: true,
+    },
+    {
+        data: 'file',
+        locationSent: '',
+        parsedHost: '127.0.0.1',
+        locationReturn: config.restEndpoints['127.0.0.1'],
+        isError: false,
+    },
+    {
+        data: 'file',
+        locationSent: '',
+        parsedHost: '127.3.2.1',
+        locationReturn: 'us-east-1',
+        isError: false,
+    },
+    {
+        data: 'multiple',
+        locationSent: '',
+        parsedHost: '127.3.2.1',
+        locationReturn: 'us-east-1',
+        isError: false,
+    },
+];
+
+describe('checkLocationConstraint function', () => {
+    const request = {};
+    const initialConfigData = config.backends.data;
+    afterEach(() => {
+        config.backends.data = initialConfigData;
+    });
+    testChecks.forEach(testCheck => {
+        const returnText = testCheck.isError ? 'InvalidLocationConstraint error'
+        : 'the appropriate location constraint';
+        it(`with data backend: "${testCheck.data}", ` +
+        `location: "${testCheck.locationSent}",` +
+        ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
+        done => {
+            config.backends.data = testCheck.data;
+            request.parsedHost = testCheck.parsedHost;
+            const checkLocation = checkLocationConstraint(request,
+              testCheck.locationSent, log);
+            if (testCheck.isError) {
+                assert.notEqual(checkLocation.error, null,
+                  'Expected failure but got success');
+                assert.strictEqual(checkLocation.error.
+                  InvalidLocationConstraint, true);
+            } else {
+                assert.ifError(checkLocation.error);
+                assert.strictEqual(checkLocation.locationConstraint,
+                  testCheck.locationReturn);
+            }
+            done();
+        });
+    });
+});
+
 describe('bucketPut API', () => {
     beforeEach(() => {
         cleanup();
@@ -30,8 +101,8 @@ describe('bucketPut API', () => {
 
     it('should return an error if bucket already exists', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
-            bucketPut(otherAuthInfo, testRequest, locationConstraint,
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketPut(otherAuthInfo, testRequest,
                 log, err => {
                     assert.deepStrictEqual(err, errors.BucketAlreadyExists);
                     done();
@@ -40,7 +111,7 @@ describe('bucketPut API', () => {
     });
 
     it('should create a bucket', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             if (err) {
                 return done(new Error(err));
             }
@@ -72,7 +143,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -93,7 +164,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.InvalidArgument);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -115,7 +186,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.UnresolvableGrantByEmailAddress);
             metadata.getBucket(bucketName, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -137,7 +208,7 @@ describe('bucketPut API', () => {
             url: '/',
             post: '',
         };
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(err, null);
@@ -173,7 +244,7 @@ describe('bucketPut API', () => {
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null, 'Error creating bucket');
             metadata.getBucket(bucketName, log, (err, md) => {
                 assert.strictEqual(md.getAcl().READ[0], constants.logId);
@@ -193,7 +264,7 @@ describe('bucketPut API', () => {
 
     it('should prevent anonymous user from accessing putBucket API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        bucketPut(publicAuthInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(publicAuthInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);
         });
         done();

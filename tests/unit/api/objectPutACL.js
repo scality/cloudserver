@@ -1,17 +1,17 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const constants = require('../../../constants');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    AccessControlPolicy,
-} from '../helpers';
-import metadata from '../metadataswitch';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutACL from '../../../lib/api/objectPutACL';
-import DummyRequest from '../DummyRequest';
+    AccessControlPolicy }
+    = require('../helpers');
+const metadata = require('../metadataswitch');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutACL = require('../../../lib/api/objectPutACL');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -34,7 +34,6 @@ const testPutBucketRequest = new DummyRequest({
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
 });
-const locationConstraint = 'us-west-1';
 let testPutObjectRequest;
 
 describe('putObjectACL API', () => {
@@ -59,18 +58,17 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert
-                                .deepStrictEqual(err, errors.InvalidArgument);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert
+                            .deepStrictEqual(err, errors.InvalidArgument);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should set a canned public-read-write ACL', done => {
@@ -83,22 +81,21 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            metadata.getObjectMD(bucketName, objectName, log,
-                            (err, md) => {
-                                assert.strictEqual(md.acl.Canned,
-                                'public-read-write');
-                                done();
-                            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                        log, (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                            'public-read-write');
+                            done();
                         });
                     });
-            });
+                });
+        });
     });
 
     it('should set a canned public-read ACL followed by'
@@ -121,32 +118,31 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest1, log, err => {
-                            assert.strictEqual(err, null);
-                            metadata.getObjectMD(bucketName, objectName, log,
-                            (err, md) => {
-                                assert.strictEqual(md.acl.Canned,
-                                'public-read');
-                                objectPutACL(authInfo, testObjACLRequest2, log,
-                                    err => {
-                                        assert.strictEqual(err, null);
-                                        metadata.getObjectMD(bucketName,
-                                            objectName, log, (err, md) => {
-                                                assert.strictEqual(md
-                                                       .acl.Canned,
-                                                       'authenticated-read');
-                                                done();
-                                            });
-                                    });
-                            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest1, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                        log, (err, md) => {
+                            assert.strictEqual(md.acl.Canned,
+                            'public-read');
+                            objectPutACL(authInfo, testObjACLRequest2, log,
+                                err => {
+                                    assert.strictEqual(err, null);
+                                    metadata.getObjectMD(bucketName,
+                                        objectName, {}, log, (err, md) => {
+                                            assert.strictEqual(md
+                                                   .acl.Canned,
+                                                   'authenticated-read');
+                                            done();
+                                        });
+                                });
                         });
                     });
-            });
+                });
+        });
     });
 
     it('should set ACLs provided in request headers', done => {
@@ -165,32 +161,31 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
         };
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            metadata.getObjectMD(bucketName, objectName, log,
-                            (err, md) => {
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                            log, (err, md) => {
                                 assert.strictEqual(err, null);
                                 const acls = md.acl;
                                 assert.strictEqual(acls.READ[0],
                                     constants.logId);
                                 assert(acls.FULL_CONTROL[0]
-                                   .indexOf(ownerID) > -1);
+                                    .indexOf(ownerID) > -1);
                                 assert(acls.FULL_CONTROL[1]
-                                   .indexOf(anotherID) > -1);
+                                    .indexOf(anotherID) > -1);
                                 assert(acls.READ_ACP[0]
                                     .indexOf(ownerID) > -1);
                                 assert(acls.WRITE_ACP[0]
                                     .indexOf(anotherID) > -1);
                                 done();
                             });
-                        });
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if invalid email ' +
@@ -208,18 +203,17 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err,
-                                errors.UnresolvableGrantByEmailAddress);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err,
+                            errors.UnresolvableGrantByEmailAddress);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should set ACLs provided in request body', done => {
@@ -240,28 +234,27 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined,
-                    log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            metadata.getObjectMD(bucketName, objectName, log,
-                            (err, md) => {
-                                assert.strictEqual(md
-                                    .acl.FULL_CONTROL[0], ownerID);
-                                assert.strictEqual(md
-                                    .acl.READ[0], constants.publicId);
-                                assert.strictEqual(md
-                                    .acl.WRITE_ACP[0], ownerID);
-                                assert.strictEqual(md
-                                    .acl.READ_ACP[0], anotherID);
-                                done();
-                            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined,
+                log, (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                        log, (err, md) => {
+                            assert.strictEqual(md
+                                .acl.FULL_CONTROL[0], ownerID);
+                            assert.strictEqual(md
+                                .acl.READ[0], constants.publicId);
+                            assert.strictEqual(md
+                                .acl.WRITE_ACP[0], ownerID);
+                            assert.strictEqual(md
+                                .acl.READ_ACP[0], anotherID);
+                            done();
                         });
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if wrong owner ID ' +
@@ -277,17 +270,16 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    () => {
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                errors.AccessDenied);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                () => {
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.deepStrictEqual(err,
+                            errors.AccessDenied);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should ignore if WRITE ACL permission is ' +
@@ -306,29 +298,28 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err, null);
-                            metadata.getObjectMD(bucketName, objectName, log,
-                            (err, md) => {
-                                assert.strictEqual(md.acl.Canned, '');
-                                assert.strictEqual(md.acl.FULL_CONTROL[0],
-                                    ownerID);
-                                assert.strictEqual(md.acl.WRITE, undefined);
-                                assert.strictEqual(md.acl.READ[0], undefined);
-                                assert.strictEqual(md.acl.WRITE_ACP[0],
-                                    undefined);
-                                assert.strictEqual(md.acl.READ_ACP[0],
-                                    undefined);
-                                done();
-                            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                        log, (err, md) => {
+                            assert.strictEqual(md.acl.Canned, '');
+                            assert.strictEqual(md.acl.FULL_CONTROL[0],
+                                ownerID);
+                            assert.strictEqual(md.acl.WRITE, undefined);
+                            assert.strictEqual(md.acl.READ[0], undefined);
+                            assert.strictEqual(md.acl.WRITE_ACP[0],
+                                undefined);
+                            assert.strictEqual(md.acl.READ_ACP[0],
+                                undefined);
+                            done();
                         });
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if invalid email ' +
@@ -346,18 +337,17 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.strictEqual(err,
-                                errors.UnresolvableGrantByEmailAddress);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err,
+                            errors.UnresolvableGrantByEmailAddress);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if xml provided does not match s3 ' +
@@ -376,19 +366,17 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                errors.MalformedACLError);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.deepStrictEqual(err,
+                            errors.MalformedACLError);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if malformed xml provided', done => {
@@ -407,17 +395,16 @@ describe('putObjectACL API', () => {
         };
 
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.MalformedXML);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.deepStrictEqual(err, errors.MalformedXML);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if invalid group ' +
@@ -435,18 +422,16 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.InvalidArgument);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.deepStrictEqual(err, errors.InvalidArgument);
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('should return an error if invalid group uri ' +
@@ -465,16 +450,15 @@ describe('putObjectACL API', () => {
             query: { acl: '' },
         };
 
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectPutACL(authInfo, testObjACLRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.InvalidArgument);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.deepStrictEqual(err, errors.InvalidArgument);
+                        done();
                     });
-            });
+                });
+        });
     });
 });

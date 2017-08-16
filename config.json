@@ -1,24 +1,13 @@
 {
     "port": 8000,
     "listenOn": [],
-    "regions": {
-        "ap-northeast-1": ["s3.ap-northeast-1.amazonaws.com"],
-        "ap-southeast-1": ["s3.ap-southeast-1.amazonaws.com"],
-        "ap-southeast-2": ["s3.ap-southeast-2.amazonaws.com"],
-        "eu-central-1": ["s3.eu-central-1.amazonaws.com",
-                         "s3.eu.central-1.amazonaws.com"],
-        "eu-west-1": ["s3.eu-west-1.amazonaws.com"],
-        "sa-east-1": ["s3.sa-east-1.amazonaws.com"],
-        "us-east-1": ["s3.amazonaws.com",
-                      "s3-external-1.amazonaws.com",
-                      "s3.us-east-1.amazonaws.com"],
-        "us-west-1": ["s3.us-west-1.amazonaws.com"],
-        "us-west-2": ["s3-us-west-2.amazonaws.com"],
-        "us-gov-west-1": ["s3-us-gov-west-1.amazonaws.com",
-                          "s3-fips-us-gov-west-1.amazonaws.com"],
-        "localregion": ["localhost"],
-        "test-region": ["s3.scality.test"],
-        "docker-region": ["s3.docker.test"]
+    "replicationGroupId": "RG001",
+    "restEndpoints": {
+        "localhost": "us-east-1",
+        "127.0.0.1": "us-east-1",
+        "s3.docker.test": "us-east-1",
+        "127.0.0.2": "us-east-1",
+        "s3.amazonaws.com": "us-east-1"
     },
     "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
                         "s3-website.us-east-2.amazonaws.com",
@@ -34,8 +23,10 @@
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
                         "s3-website.scality.test"],
-    "sproxyd": {
-        "bootstrap": ["localhost:8181"]
+    "cdmi": {
+        "host": "localhost",
+        "port": 81,
+        "path": "/dewpoint"
     },
     "bucketd": {
         "bootstrap": ["localhost"]
@@ -52,5 +43,24 @@
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
     },
-    "usEastBehavior": false
+    "metadataClient": {
+        "host": "localhost",
+        "port": 9990
+    },
+    "dataClient": {
+        "host": "localhost",
+        "port": 9991
+    },
+    "metadataDaemon": {
+        "bindAddress": "localhost",
+        "port": 9990
+    },
+    "dataDaemon": {
+        "bindAddress": "localhost",
+        "port": 9991
+    },
+    "recordLog": {
+        "enabled": false,
+        "recordLogName": "s3-recordlog"
+    }
 }

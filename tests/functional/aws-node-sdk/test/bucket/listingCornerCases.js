@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const async = require('async');
 const assert = require('assert');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 function cutAttributes(data) {
     const newContent = [];

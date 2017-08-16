@@ -1,6 +1,6 @@
-import { S3 } from 'aws-sdk';
-import assert from 'assert';
-import getConfig from './support/config';
+const { S3 } = require('aws-sdk');
+const assert = require('assert');
+const getConfig = require('./support/config');
 
 describe('S3 connect test', () => {
     const config = getConfig();

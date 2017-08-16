@@ -1,20 +1,20 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import crypto from 'crypto';
+const crypto = require('crypto');
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
+const { errors } = require('arsenal');
 
-import async from 'async';
-import { parseString } from 'xml2js';
-
-import bucketDelete from '../../../lib/api/bucketDelete';
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import metadata from '../metadataswitch';
-import * as metadataMem from '../../../lib/metadata/in_memory/metadata';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import DummyRequest from '../DummyRequest';
+const bucketDelete = require('../../../lib/api/bucketDelete');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const constants = require('../../../constants');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const metadata = require('../metadataswitch');
+const metadataMem = require('../../../lib/metadata/in_memory/metadata');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -23,7 +23,6 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const usersBucket = constants.usersBucket;
-const locationConstraint = 'us-west-1';
 
 describe('bucketDelete API', () => {
     beforeEach(() => {
@@ -55,7 +54,7 @@ describe('bucketDelete API', () => {
             objectKey: objectName,
         }, postBody);
 
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
@@ -77,7 +76,7 @@ describe('bucketDelete API', () => {
     });
 
     it('should return an error if the bucket has an initiated mpu', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                 assert.strictEqual(err, null);
@@ -94,8 +93,7 @@ describe('bucketDelete API', () => {
         const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
         const postBody = Buffer.from('I am a body', 'utf8');
         async.waterfall([
-            next => bucketPut(authInfo, testRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 initiateRequest, log, next),
             (result, corsHeaders, next) => {
@@ -139,7 +137,7 @@ describe('bucketDelete API', () => {
     });
 
     it('should delete a bucket', done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
+        bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);

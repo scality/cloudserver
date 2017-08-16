@@ -1,11 +1,11 @@
-import { exec, execFile } from 'child_process';
-import { writeFile, createReadStream } from 'fs';
+const { exec, execFile } = require('child_process');
+const { writeFile, createReadStream } = require('fs');
 
-import assert from 'assert';
-import Promise from 'bluebird';
+const assert = require('assert');
+const Promise = require('bluebird');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'bucket-for-range-test';
 const key = 'key-for-range-test';

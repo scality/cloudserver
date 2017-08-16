@@ -1,8 +1,9 @@
-import assert from 'assert';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'alexbucketnottaken';
 const objectName = 'someObject';

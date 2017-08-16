@@ -1,5 +1,5 @@
-import assert from 'assert';
-import aclUtils from '../../../lib/utilities/aclUtils';
+const assert = require('assert');
+const aclUtils = require('../../../lib/utilities/aclUtils');
 
 
 describe('checkGrantHeaderValidity for acls', () => {

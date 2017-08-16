@@ -1,16 +1,18 @@
-import assert from 'assert';
-import async from 'async';
-import crypto from 'crypto';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const crypto = require('crypto');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import completeMultipartUpload from '../../../lib/api/completeMultipartUpload';
-import DummyRequest from '../DummyRequest';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import objectPut from '../../../lib/api/objectPut';
-import objectGet from '../../../lib/api/objectGet';
-import objectPutPart from '../../../lib/api/objectPutPart';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const completeMultipartUpload
+    = require('../../../lib/api/completeMultipartUpload');
+const DummyRequest = require('../DummyRequest');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const objectPut = require('../../../lib/api/objectPut');
+const objectGet = require('../../../lib/api/objectGet');
+const objectPutPart = require('../../../lib/api/objectPutPart');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -19,7 +21,6 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
-const locationConstraint = 'us-west-1';
 
 describe('objectGet API', () => {
     let testPutObjectRequest;
@@ -57,43 +58,42 @@ describe('objectGet API', () => {
     };
 
     it('should get the object metadata', done => {
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined,
-                    log, (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectGet(authInfo, testGetRequest,
-                            log, (err, result, responseMetaHeaders) => {
-                                assert.strictEqual(responseMetaHeaders
-                                    [userMetadataKey],
-                                    userMetadataValue);
-                                assert.strictEqual(responseMetaHeaders.ETag,
-                                    `"${correctMD5}"`);
-                                done();
-                            });
-                    });
-            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined,
+                log, (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false,
+                        log, (err, result, responseMetaHeaders) => {
+                            assert.strictEqual(responseMetaHeaders
+                                [userMetadataKey],
+                                userMetadataValue);
+                            assert.strictEqual(responseMetaHeaders.ETag,
+                                `"${correctMD5}"`);
+                            done();
+                        });
+                });
+        });
     });
 
     it('should get the object data retrieval info', done => {
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectGet(authInfo, testGetRequest, log,
-                            (err, dataGetInfo) => {
-                                assert.deepStrictEqual(dataGetInfo,
-                            [{
-                                key: 1,
-                                start: 0,
-                                size: 12,
-                                dataStoreName: 'dataMem',
-                            }]);
-                                done();
-                            });
-                    });
-            });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false, log,
+                        (err, dataGetInfo) => {
+                            assert.deepStrictEqual(dataGetInfo,
+                        [{
+                            key: 1,
+                            start: 0,
+                            size: 12,
+                            dataStoreName: 'mem',
+                            dataStoreETag: `1:${correctMD5}`,
+                        }]);
+                            done();
+                        });
+                });
+        });
     });
 
     it('should get the object data retrieval info for an object put by MPU',
@@ -107,8 +107,7 @@ describe('objectGet API', () => {
                 url: `/${objectName}?uploads`,
             };
             async.waterfall([
-                next => bucketPut(authInfo, testPutBucketRequest,
-                    locationConstraint, log, next),
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
                 (corsHeaders, next) => initiateMultipartUpload(authInfo,
                     initiateRequest, log, next),
                 (result, corsHeaders, next) => parseString(result, next),
@@ -184,21 +183,28 @@ describe('objectGet API', () => {
                         post: completeBody,
                     };
                     completeMultipartUpload(authInfo, completeRequest,
-                        log, next);
+                                            log, err => {
+                                                next(err, calculatedHash);
+                                            });
                 },
             ],
-            () => {
-                objectGet(authInfo, testGetRequest, log, (err, dataGetInfo) => {
+            (err, calculatedHash) => {
+                assert.strictEqual(err, null);
+                objectGet(authInfo, testGetRequest, false, log,
+                (err, dataGetInfo) => {
+                    assert.strictEqual(err, null);
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
-                            dataStoreName: 'dataMem',
+                            dataStoreName: 'mem',
+                            dataStoreETag: `1:${calculatedHash}`,
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
-                            dataStoreName: 'dataMem',
+                            dataStoreName: 'mem',
+                            dataStoreETag: `2:${calculatedHash}`,
                             size: 12,
                             start: 5242880,
                         }]);
@@ -222,21 +228,20 @@ describe('objectGet API', () => {
             url: `/${bucketName}/${objectName}`,
             calculatedHash: 'd41d8cd98f00b204e9800998ecf8427e',
         }, postBody);
-        bucketPut(authInfo, testPutBucketRequest, locationConstraint,
-            log, () => {
-                objectPut(authInfo, testPutObjectRequest, undefined, log,
-                    (err, result) => {
-                        assert.strictEqual(result, correctMD5);
-                        objectGet(authInfo, testGetRequest,
-                        log, (err, result, responseMetaHeaders) => {
-                            assert.strictEqual(result, null);
-                            assert.strictEqual(responseMetaHeaders
-                                [userMetadataKey], userMetadataValue);
-                            assert.strictEqual(responseMetaHeaders.ETag,
-                                `"${correctMD5}"`);
-                            done();
-                        });
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false,
+                    log, (err, result, responseMetaHeaders) => {
+                        assert.strictEqual(result, null);
+                        assert.strictEqual(responseMetaHeaders
+                            [userMetadataKey], userMetadataValue);
+                        assert.strictEqual(responseMetaHeaders.ETag,
+                            `"${correctMD5}"`);
+                        done();
                     });
-            });
+                });
+        });
     });
 });

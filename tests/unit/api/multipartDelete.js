@@ -1,18 +1,18 @@
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import { errors } from 'arsenal';
+const { errors } = require('arsenal');
 
-import { cleanup, DummyRequestLogger } from '../helpers';
-import config from '../../../lib/Config';
-import DummyRequest from '../DummyRequest';
-import bucketPut from '../../../lib/api/bucketPut';
-import initiateMultipartUpload
-    from '../../../lib/api/initiateMultipartUpload';
-import multipartDelete from '../../../lib/api/multipartDelete';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import { makeAuthInfo } from '../helpers';
+const { cleanup, DummyRequestLogger } = require('../helpers');
+const { config } = require('../../../lib/Config');
+const DummyRequest = require('../DummyRequest');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const multipartDelete = require('../../../lib/api/multipartDelete');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const { makeAuthInfo } = require('../helpers');
 
 const bucketName = 'multipartdeletebucket';
 const log = new DummyRequestLogger();
@@ -24,7 +24,6 @@ const bucketPutRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    post: '',
 };
 const objectKey = 'testObject';
 const initiateRequest = {
@@ -34,14 +33,21 @@ const initiateRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
 };
-const originalUsEastBehavior = config.usEastBehavior;
+const eastLocation = 'us-east-1';
+const westLocation = 'file';
 
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {
-    config.usEastBehavior = usEastSetting;
+    config.locationConstraints['us-east-1'].legacyAwsBehavior =
+        usEastSetting;
+    const post = '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<CreateBucketConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `<LocationConstraint>${locationConstraint}</LocationConstraint>` +
+        '</CreateBucketConfiguration>';
+    const testBucketPutRequest = Object.assign({ post }, bucketPutRequest);
     async.waterfall([
-        next => bucketPut(authInfo, bucketPutRequest, locationConstraint, log,
-            next),
+        next => bucketPut(authInfo, testBucketPutRequest, log, next),
         (corsHeaders, next) =>
             initiateMultipartUpload(authInfo, initiateRequest, log, next),
         (result, corsHeaders, next) => parseString(result, next),
@@ -91,13 +97,15 @@ describe('Multipart Delete API', () => {
         cleanup();
     });
     afterEach(() => {
-        config.usEastBehavior = originalUsEastBehavior; // set back to original
+        // set back to original
+        config.locationConstraints['us-east-1'].legacyAwsBehavior =
+            true;
         cleanup();
     });
 
     it('should not return error if mpu exists with uploadId and at least ' +
     'one part', done => {
-        _createAndAbortMpu(true, false, 'us-east-1', err => {
+        _createAndAbortMpu(true, false, eastLocation, err => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done(err);
         });
@@ -105,25 +113,25 @@ describe('Multipart Delete API', () => {
 
     it('should still not return error if uploadId does not exist on ' +
     'multipart abort call, in region other than us-east-1', done => {
-        _createAndAbortMpu(true, true, 'us-west-1', err => {
+        _createAndAbortMpu(true, true, westLocation, err => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done(err);
         });
     });
 
     it('bucket created in us-east-1: should return 404 if uploadId does not ' +
-    'exist and usEastBehavior set to true',
+    'exist and legacyAwsBehavior set to true',
     done => {
-        _createAndAbortMpu(true, true, 'us-east-1', err => {
+        _createAndAbortMpu(true, true, eastLocation, err => {
             assert.strictEqual(err, errors.NoSuchUpload,
                 `Expected NoSuchUpload, got ${err}`);
             done();
         });
     });
 
-    it('bucket created in us-east-1: should return no error if uploadId ' +
-    'does not exist and usEastBehavior set to false', done => {
-        _createAndAbortMpu(false, true, 'us-east-1', err => {
+    it('bucket created in us-east-1: should return no error ' +
+    'if uploadId does not exist and legacyAwsBehavior set to false', done => {
+        _createAndAbortMpu(false, true, eastLocation, err => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
             done();
         });

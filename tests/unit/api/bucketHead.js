@@ -1,15 +1,14 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketHead from '../../../lib/api/bucketHead';
-import bucketPut from '../../../lib/api/bucketPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const bucketHead = require('../../../lib/api/bucketHead');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 const testRequest = {
     bucketName,
     namespace,
@@ -30,7 +29,7 @@ describe('bucketHead API', () => {
 
     it('should return an error if user is not authorized', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
-        bucketPut(otherAuthInfo, testRequest, locationConstraint, log, () => {
+        bucketPut(otherAuthInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
                 assert.deepStrictEqual(err, errors.AccessDenied);
                 done();
@@ -40,7 +39,7 @@ describe('bucketHead API', () => {
 
     it('should return no error if bucket exists and user is authorized',
     done => {
-        bucketPut(authInfo, testRequest, locationConstraint, log, () => {
+        bucketPut(authInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
                 assert.strictEqual(err, null);
                 done();
