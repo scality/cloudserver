@@ -5,6 +5,9 @@ const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 
+const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
+    || process.env.S3_END_TO_END) ? describe.skip : describe;
+
 const azureLocation = 'azuretest';
 let azureContainerName;
 
@@ -20,7 +23,7 @@ const keyName = `somekey-${Date.now()}`;
 let s3;
 let bucketUtil;
 
-describe('Initiate MPU to AZURE', () => {
+describeSkipIfNotMultiple('Initiate MPU to AZURE', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
