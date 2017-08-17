@@ -83,6 +83,7 @@ describeSkipIfAWS('backbeat routes:', () => {
     describe('backbeat PUT routes:', () => {
         const testArn = 'aws::iam:123456789012:user/bart';
         const testKey = 'testkey';
+        const testKeyUTF8 = '䆩鈁櫨㟔罳';
         const testData = 'testkey data';
         const testDataMd5 = crypto.createHash('md5')
                   .update(testData, 'utf-8')
@@ -119,36 +120,50 @@ describeSkipIfAWS('backbeat routes:', () => {
             },
         };
 
-        it('PUT data + metadata should create a new complete object',
-        done => {
-            async.waterfall([next => {
-                makeBackbeatRequest(
-                    { method: 'PUT', bucket: TEST_BUCKET,
-                      objectKey: testKey, resourceType: 'data',
-                      headers: {
-                          'content-length': testData.length,
-                          'content-md5': testDataMd5,
-                          'x-scal-canonical-id': testArn,
-                      },
-                      authCredentials: backbeatAuthCredentials,
-                      requestBody: testData }, next);
-            }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
-                const newMd = Object.assign({}, testMd);
-                newMd.location = JSON.parse(response.body);
-                makeBackbeatRequest(
-                    { method: 'PUT', bucket: TEST_BUCKET,
-                      objectKey: testKey, resourceType: 'metadata',
-                      authCredentials: backbeatAuthCredentials,
-                      requestBody: JSON.stringify(newMd) }, next);
-            }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
-                checkObjectData(s3, testKey, testData, next);
-            }], err => {
-                assert.ifError(err);
-                done();
+        describe('PUT data + metadata should create a new complete object',
+        () => {
+            [{ caption: 'with ascii test key',
+               key: testKey, encodedKey: testKey },
+             { caption: 'with UTF8 key',
+               key: testKeyUTF8, encodedKey: encodeURI(testKeyUTF8) },
+             { caption: 'with percents and spaces encoded as \'+\' in key',
+               key: '50% full or 50% empty',
+               encodedKey: '50%25+full+or+50%25+empty' },
+            ].forEach(testCase => {
+                it(testCase.caption, done => {
+                    async.waterfall([next => {
+                        makeBackbeatRequest(
+                            { method: 'PUT', bucket: TEST_BUCKET,
+                              objectKey: testCase.encodedKey,
+                              resourceType: 'data',
+                              headers: {
+                                  'content-length': testData.length,
+                                  'content-md5': testDataMd5,
+                                  'x-scal-canonical-id': testArn,
+                              },
+                              authCredentials: backbeatAuthCredentials,
+                              requestBody: testData }, next);
+                    }, (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        const newMd = Object.assign({}, testMd);
+                        newMd.location = JSON.parse(response.body);
+                        makeBackbeatRequest(
+                            { method: 'PUT', bucket: TEST_BUCKET,
+                              objectKey: testCase.encodedKey,
+                              resourceType: 'metadata',
+                              authCredentials: backbeatAuthCredentials,
+                              requestBody: JSON.stringify(newMd) }, next);
+                    }, (response, next) => {
+                        assert.strictEqual(response.statusCode, 200);
+                        checkObjectData(s3, testCase.key, testData, next);
+                    }], err => {
+                        assert.ifError(err);
+                        done();
+                    });
+                });
             });
         });
+
         it('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided',
         done => makeBackbeatRequest(

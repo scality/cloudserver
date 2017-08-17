@@ -26,6 +26,11 @@ function _parseError(responseBody, statusCode, jsonResponse) {
     return null;
 }
 
+function _decodeURI(uri) {
+    // do the same decoding than in S3 server
+    return decodeURIComponent(uri.replace(/\+/g, ' '));
+}
+
 /** makeRequest - utility function to generate a request
  * @param {object} params - params for making request
  * @param {string} params.hostname - request hostname
@@ -33,7 +38,7 @@ function _parseError(responseBody, statusCode, jsonResponse) {
  * @param {string} params.method - request method
  * @param {object} [params.queryObj] - query fields and their string values
  * @param {object} [params.headers] - headers and their string values
- * @param {string} [params.path] - request path
+ * @param {string} [params.path] - URL-encoded request path
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
@@ -87,6 +92,9 @@ function makeRequest(params, callback) {
         return callback(err);
     });
     // generate v4 headers if authentication credentials are provided
+    const encodedPath = req.path;
+    // decode path because signing code re-encodes it
+    req.path = _decodeURI(encodedPath);
     if (authCredentials) {
         if (queryObj) {
             auth.client.generateV4Headers(req, queryObj,
@@ -97,6 +105,8 @@ function makeRequest(params, callback) {
                 authCredentials.secretKey, 's3');
         }
     }
+    // restore original URL-encoded path
+    req.path = encodedPath;
     if (requestBody) {
         req.write(requestBody);
     }
