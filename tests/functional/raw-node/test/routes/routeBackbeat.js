@@ -129,7 +129,21 @@ describeSkipIfAWS('backbeat routes:', () => {
              { caption: 'with percents and spaces encoded as \'+\' in key',
                key: '50% full or 50% empty',
                encodedKey: '50%25+full+or+50%25+empty' },
-            ].forEach(testCase => {
+            ].concat([
+                `${testKeyUTF8}/${testKeyUTF8}/%42/mykey`,
+                'Pâtisserie=中文-español-English',
+                'notes/spring/1.txt',
+                'notes/spring/2.txt',
+                'notes/spring/march/1.txt',
+                'notes/summer/1.txt',
+                'notes/summer/2.txt',
+                'notes/summer/august/1.txt',
+                'notes/year.txt',
+                'notes/yore.rs',
+                'notes/zaphod/Beeblebrox.txt',
+            ].map(key => ({ key, encodedKey: encodeURI(key),
+                            caption: `with key ${key}` })))
+            .forEach(testCase => {
                 it(testCase.caption, done => {
                     async.waterfall([next => {
                         makeBackbeatRequest(
