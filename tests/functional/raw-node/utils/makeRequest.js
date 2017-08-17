@@ -80,6 +80,7 @@ function makeRequest(params, callback) {
         process.stdout.write('err sending request');
         return callback(err);
     });
+<<<<<<< HEAD
     // generate v4 headers if authentication credentials are provided
     if (authCredentials) {
         if (queryObj) {
@@ -91,12 +92,15 @@ function makeRequest(params, callback) {
                 authCredentials.secretKey, 's3');
         }
     }
+=======
+>>>>>>> origin/rel/6.4
     req.end();
 }
 
 /** makeS3Request - utility function to generate a request against S3
  * @param {object} params - params for making request
  * @param {string} params.method - request method
+<<<<<<< HEAD
  * @param {object} [params.queryObj] - query fields and their string values
  * @param {object} [params.headers] - headers and their string values
  * @param {string} [params.bucket] - bucket name
@@ -112,6 +116,18 @@ function makeS3Request(params, callback) {
         = params;
     const options = {
         authCredentials,
+=======
+ * @param {object} params.queryObj - query fields and their string values
+ * @param {object} params.headers - headers and their string values
+ * @param {string} params.bucket - bucket name
+ * @param {string} params.objectKey - object key name
+ * @param {function} callback - with error and response parameters
+ * @return {undefined} - and call callback
+ */
+export function makeS3Request(params, callback) {
+    const { method, queryObj, headers, bucket, objectKey } = params;
+    const options = {
+>>>>>>> origin/rel/6.4
         hostname: process.env.AWS_ON_AIR ? 's3.amazonaws.com' : ipAddress,
         port: process.env.AWS_ON_AIR ? 80 : 8000,
         method,
@@ -124,8 +140,11 @@ function makeS3Request(params, callback) {
     }
     makeRequest(options, callback);
 }
+<<<<<<< HEAD
 
 module.exports = {
     makeRequest,
     makeS3Request,
 };
+=======
+>>>>>>> origin/rel/6.4

@@ -49,6 +49,7 @@
     "tv4": "^1.2.7"
   },
   "scripts": {
+<<<<<<< HEAD
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
     "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha test/bucket",
@@ -59,6 +60,15 @@
     "ft_s3curl": "cd tests/functional/s3curl && mocha -t 40000 *.js",
     "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node",
     "install_ft_deps": "npm install aws-sdk@2.28.0 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
+=======
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && npm test",
+    "ft_node": "cd tests/functional/raw-node && npm test",
+    "ft_s3cmd": "cd tests/functional/s3cmd && npm test",
+    "ft_s3curl": "cd tests/functional/s3curl && npm test",
+    "ft_test": "mocha tester.js --compilers js:babel-core/register",
+    "init": "node init.js",
+    "install_ft_deps": "npm install aws-sdk@2.2.11 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7 zombie@5.0.5",
+>>>>>>> origin/rel/6.4
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",
     "mem_backend": "S3BACKEND=mem node index.js",
