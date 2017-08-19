@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const AWS = require('aws-sdk');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -16,6 +17,7 @@ const key = `somekey-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+const mpuMD5 = 'e4c2438a8f503658547a77959890dcab-1';
 
 const cloudTimeout = 50000;
 
@@ -45,12 +47,14 @@ const putTags = {
 };
 const tagObj = { key1: 'value1', key2: 'value2' };
 
-function awsGet(tagCheck, isEmpty, callback) {
+function awsGet(tagCheck, isEmpty, isMpu, callback) {
     awsS3.getObject({ Bucket: awsBucket, Key: key },
     (err, res) => {
         assert.equal(err, null);
         if (isEmpty) {
             assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+        } else if (isMpu) {
+            assert.strictEqual(res.ETag, `"${mpuMD5}"`);
         } else {
             assert.strictEqual(res.ETag, `"${correctMD5}"`);
         }
@@ -83,12 +87,14 @@ function azureGet(tagCheck, isEmpty, callback) {
     });
 }
 
-function getObject(backend, tagCheck, isEmpty, callback) {
+function getObject(backend, tagCheck, isEmpty, isMpu, callback) {
     function get(cb) {
         s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
             assert.equal(err, null);
             if (isEmpty) {
                 assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+            } else if (isMpu) {
+                assert.strictEqual(res.ETag, `"${mpuMD5}"`);
             } else {
                 assert.strictEqual(res.ETag, `"${correctMD5}"`);
             }
@@ -104,7 +110,7 @@ function getObject(backend, tagCheck, isEmpty, callback) {
     }
     if (backend === 'aws-test') {
         setTimeout(() => {
-            get(() => awsGet(tagCheck, isEmpty, callback));
+            get(() => awsGet(tagCheck, isEmpty, isMpu, callback));
         }, cloudTimeout);
     } else if (backend === 'azuretest') {
         setTimeout(() => {
@@ -113,6 +119,37 @@ function getObject(backend, tagCheck, isEmpty, callback) {
     } else {
         get(callback);
     }
+}
+
+function mpuWaterfall(params, cb) {
+    async.waterfall([
+        next => s3.createMultipartUpload(params, (err, data) => {
+            assert.equal(err, null);
+            next(null, data.UploadId);
+        }),
+        (uploadId, next) => {
+            const partParams = { Bucket: bucket, Key: params.Key, PartNumber: 1,
+                UploadId: uploadId, Body: body };
+            s3.uploadPart(partParams, (err, result) => {
+                assert.equal(err, null);
+                next(null, uploadId, result.ETag);
+            });
+        },
+        (uploadId, eTag, next) => {
+            const compParams = { Bucket: bucket, Key: params.Key,
+                MultipartUpload: {
+                    Parts: [{ ETag: eTag, PartNumber: 1 }],
+                },
+                UploadId: uploadId };
+            s3.completeMultipartUpload(compParams, err => {
+                assert.equal(err, null);
+                next();
+            });
+        },
+    ], err => {
+        assert.equal(err, null);
+        cb();
+    });
 }
 
 describeSkipIfNotMultiple('Object tagging with multiple backends',
@@ -146,13 +183,14 @@ function testSuite() {
 
         describe('putObject with tags and putObjectTagging', () => {
             testBackends.forEach(backend => {
+                const itSkipIfAzure = backend === 'azuretest' ? it.skip : it;
                 it(`should put an object with tags to ${backend} backend`,
                 done => {
                     const params = Object.assign({ Tagging: tagString, Metadata:
                         { 'scal-location-constraint': backend } }, putParams);
                     s3.putObject(params, err => {
                         assert.equal(err, null);
-                        getObject(backend, true, false, done);
+                        getObject(backend, true, false, false, done);
                     });
                 });
 
@@ -163,7 +201,7 @@ function testSuite() {
                         noBodyParams);
                     s3.putObject(params, err => {
                         assert.equal(err, null);
-                        getObject(backend, true, true, done);
+                        getObject(backend, true, true, false, done);
                     });
                 });
 
@@ -177,7 +215,7 @@ function testSuite() {
                             Tagging: putTags };
                         s3.putObjectTagging(putTagParams, err => {
                             assert.equal(err, null);
-                            getObject(backend, true, false, done);
+                            getObject(backend, true, false, false, done);
                         });
                     });
                 });
@@ -193,7 +231,22 @@ function testSuite() {
                             Tagging: putTags };
                         s3.putObjectTagging(putTagParams, err => {
                             assert.equal(err, null);
-                            getObject(backend, true, true, done);
+                            getObject(backend, true, true, false, done);
+                        });
+                    });
+                });
+
+                itSkipIfAzure('should put tags to completed MPU object in ' +
+                `${backend}`, done => {
+                    const params = Object.assign({ Metadata:
+                        { 'scal-location-constraint': backend } },
+                        noBodyParams);
+                    mpuWaterfall(params, () => {
+                        const putTagParams = { Bucket: bucket, Key: key,
+                            Tagging: putTags };
+                        s3.putObjectTagging(putTagParams, err => {
+                            assert.equal(err, null);
+                            getObject(backend, true, false, true, done);
                         });
                     });
                 });
@@ -269,7 +322,7 @@ function testSuite() {
                         assert.equal(err, null);
                         s3.deleteObjectTagging(tagParams, err => {
                             assert.equal(err, null);
-                            getObject(backend, false, false, done);
+                            getObject(backend, false, false, false, done);
                         });
                     });
                 });
