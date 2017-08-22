@@ -46,7 +46,7 @@
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 10,
+    "clusters": 1,
     "log": {
         "logLevel": "info",
         "dumpLevel": "error"
@@ -71,7 +71,7 @@
         "port": 9991
     },
     "recordLog": {
-        "enabled": false,
+        "enabled": true,
         "recordLogName": "s3-recordlog"
     },
     "mongodb": {
