@@ -1,5 +1,5 @@
 {
-    "port": 8000,
+    "port": 8001,
     "listenOn": [],
     "replicationGroupId": "RG001",
     "restEndpoints": {
@@ -45,29 +45,29 @@
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 10,
+    "clusters": 1,
     "log": {
         "logLevel": "info",
         "dumpLevel": "error"
     },
     "healthChecks": {
-        "allowFrom": ["127.0.0.1/8", "::1"]
+        "allowFrom": ["127.0.0.1/8", "::1", "0.0.0.0/0"]
     },
     "metadataClient": {
         "host": "localhost",
-        "port": 9990
+        "port": 9993
     },
     "dataClient": {
         "host": "localhost",
-        "port": 9991
+        "port": 9992
     },
     "metadataDaemon": {
         "bindAddress": "localhost",
-        "port": 9990
+        "port": 9993
     },
     "dataDaemon": {
         "bindAddress": "localhost",
-        "port": 9991
+        "port": 9992
     },
     "recordLog": {
         "enabled": false,
