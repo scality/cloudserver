@@ -251,8 +251,7 @@ Python
 PHP
 ~~~
 
-Should use v3 over v2 because v2 would create virtual-hosted style URLs
-while v3 generates path-style URLs.
+Should force path-style requests even though v3 advertises it does by default. 
 
 `AWS PHP SDK v3 <https://docs.aws.amazon.com/aws-sdk-php/v3/guide>`__
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -265,6 +264,7 @@ while v3 generates path-style URLs.
         'region'  => 'us-east-1',
         'version'   => 'latest',
         'endpoint' => 'http://localhost:8000',
+        'use_path_style_endpoint' => true,
         'credentials' => [
              'key'    => 'accessKey1',
              'secret' => 'verySecretKey1'
