@@ -19,6 +19,8 @@ const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 const { versioningEnabled } = require('../../lib/utility/versioning-util');
 
+const awsLocationEncryption = 'aws-test-encryption';
+
 let bucketUtil;
 let s3;
 let awsS3;
@@ -76,6 +78,7 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
                 assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
+            } else if (destLoc === awsLocationEncryption) {
                 assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
             } else {
                 assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
@@ -133,7 +136,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                 const copyParams = Object.assign({
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': 'aws-test',
+                        'scal-location-constraint': awsLocation,
                     } }, copyParamBase);
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
@@ -141,7 +144,25 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        'aws-test', copyKey, 'REPLACE', false, done);
+                        awsLocation, copyKey, 'REPLACE', false, done);
+                });
+            });
+        });
+
+        it('should copy an object from mem to AWS with encryption', done => {
+            putSourceObj('mem', false, () => {
+                const copyParams = Object.assign({
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocationEncryption,
+                    } }, copyParamBase);
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, 'mem', copyKey, bucket,
+                        awsLocationEncryption, copyKey, 'REPLACE', false, done);
                 });
             });
         });
@@ -152,7 +173,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                 const copyParams = Object.assign({
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': 'aws-test',
+                        'scal-location-constraint': awsLocation,
                     } }, copyParamBase);
                 s3.putBucketVersioning({
                     Bucket: bucket,
@@ -169,7 +190,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object from AWS to mem', done => {
-            putSourceObj('aws-test', false, () => {
+            putSourceObj(awsLocation, false, () => {
                 const copyParams = Object.assign({
                     MetadataDirective: 'REPLACE',
                     Metadata: {
@@ -180,7 +201,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, 'aws-test', copyKey, bucket,
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         'mem', key, 'REPLACE', false, done);
                 });
             });
@@ -192,7 +213,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                 const copyParams = Object.assign({
                     MetadataDirective: 'COPY',
                     Metadata: {
-                        'scal-location-constraint': 'aws-test',
+                        'scal-location-constraint': awsLocation,
                     } }, copyParamBase);
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
@@ -200,13 +221,13 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        'aws-test', copyKey, 'COPY', false, done);
+                        awsLocation, copyKey, 'COPY', false, done);
                 });
             });
         });
 
         it('should copy an object on AWS', done => {
-            putSourceObj('aws-test', false, () => {
+            putSourceObj(awsLocation, false, () => {
                 const copyParams = Object.assign({ MetadataDirective: 'COPY' },
                     copyParamBase);
                 s3.copyObject(copyParams, (err, result) => {
@@ -214,8 +235,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
-                    assertGetObjects(key, bucket, 'aws-test', copyKey, bucket,
-                        'aws-test', copyKey, 'COPY', false, done);
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                        awsLocation, copyKey, 'COPY', false, done);
                 });
             });
         });
@@ -224,7 +245,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
             putSourceObj('mem', true, () => {
                 const copyParams = Object.assign({ MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': 'aws-test',
+                        'scal-location-constraint': awsLocation,
                     } }, copyParamBase);
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
@@ -232,13 +253,13 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${emptyMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        'aws-test', copyKey, 'REPLACE', true, done);
+                        awsLocation, copyKey, 'REPLACE', true, done);
                 });
             });
         });
 
         it('should copy a 0-byte object on AWS', done => {
-            putSourceObj('aws-test', true, () => {
+            putSourceObj(awsLocation, true, () => {
                 const copyParams = Object.assign({ MetadataDirective: 'COPY' },
                     copyParamBase);
                 s3.copyObject(copyParams, (err, result) => {
@@ -246,15 +267,15 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${emptyMD5}"`);
-                    assertGetObjects(key, bucket, 'aws-test', copyKey, bucket,
-                        'aws-test', copyKey, 'COPY', true, done);
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                        awsLocation, copyKey, 'COPY', true, done);
                 });
             });
         });
 
         it('should return error if AWS source object has ' +
         'been deleted', done => {
-            putSourceObj('aws-test', false, () => {
+            putSourceObj(awsLocation, false, () => {
                 const awsBucket =
                     config.locationConstraints[awsLocation].details.bucketName;
                 awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
