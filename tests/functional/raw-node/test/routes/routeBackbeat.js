@@ -178,6 +178,51 @@ describeSkipIfAWS('backbeat routes:', () => {
             });
         });
 
+        it('PUT metadata with "x-scal-replication-content: METADATA"' +
+        'header should replicate metadata only', done => {
+            async.waterfall([next => {
+                makeBackbeatRequest(
+                    { method: 'PUT', bucket: TEST_BUCKET,
+                      objectKey: 'test-updatemd-key',
+                      resourceType: 'data',
+                      headers: {
+                          'content-length': testData.length,
+                          'content-md5': testDataMd5,
+                          'x-scal-canonical-id': testArn,
+                      },
+                      authCredentials: backbeatAuthCredentials,
+                      requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                makeBackbeatRequest(
+                    { method: 'PUT', bucket: TEST_BUCKET,
+                      objectKey: 'test-updatemd-key',
+                      resourceType: 'metadata',
+                      authCredentials: backbeatAuthCredentials,
+                      requestBody: JSON.stringify(newMd) }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const newMd = Object.assign({}, testMd);
+                makeBackbeatRequest(
+                    { method: 'PUT', bucket: TEST_BUCKET,
+                      objectKey: 'test-updatemd-key',
+                      resourceType: 'metadata',
+                      headers: {
+                          'x-scal-replication-content': 'METADATA',
+                      },
+                      authCredentials: backbeatAuthCredentials,
+                      requestBody: JSON.stringify(newMd) }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                checkObjectData(s3, 'test-updatemd-key', testData, next);
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
         it('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided',
         done => makeBackbeatRequest(
@@ -207,6 +252,25 @@ describeSkipIfAWS('backbeat routes:', () => {
                 assert.strictEqual(err.code, 'BadRequest');
                 done();
             }));
+
+        it('should refuse PUT in metadata-only mode if object does not exist',
+        done => {
+            async.waterfall([next => {
+                const newMd = Object.assign({}, testMd);
+                makeBackbeatRequest(
+                    { method: 'PUT', bucket: TEST_BUCKET,
+                      objectKey: 'does-not-exist',
+                      resourceType: 'metadata',
+                      headers: {
+                          'x-scal-replication-content': 'METADATA',
+                      },
+                      authCredentials: backbeatAuthCredentials,
+                      requestBody: JSON.stringify(newMd) }, next);
+            }], err => {
+                assert.strictEqual(err.statusCode, 404);
+                done();
+            });
+        });
     });
     describe('backbeat authorization checks:', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
