@@ -13,7 +13,6 @@ const { config } = require('../../lib/Config');
 const metadata = require('../../lib/metadata/in_memory/metadata').metadata;
 
 const { bucketPut } = require('../../lib/api/bucketPut');
-const bucketGet = require('../../lib/api/bucketGet');
 const objectPut = require('../../lib/api/objectPut');
 const objectGet = require('../../lib/api/objectGet');
 const bucketPutVersioning = require('../../lib/api/bucketPutVersioning');
@@ -63,13 +62,6 @@ const objectGetRequest = {
     objectKey,
     headers: {},
     url: `/${bucketName}/${objectKey}`,
-};
-const bucketGetRequest = {
-    bucketName,
-    namespace,
-    headers: { host: '/' },
-    url: `/${bucketName}`,
-    query: { versions: '', prefix: objectKey },
 };
 const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const awsETagBigObj = 'f1c9645dbc14efddc7d8a322685f26eb';
@@ -214,19 +206,6 @@ function assertObjOnBackend(expectedBackend, cb) {
             });
         }
         return cb();
-    });
-}
-
-function assertVersioning(done) {
-    bucketGet(authInfo, bucketGetRequest, log,
-    (err, res) => {
-        assert.equal(err, null, `Error getting versioning: ${err}`);
-        parseString(res, (err, json) => {
-            assert.equal(err, null, 'Error parsing get version results ' +
-            `${err}`);
-            assert.strictEqual(json.ListVersionsResult.Version.length, 2);
-            done();
-        });
     });
 }
 
@@ -492,8 +471,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should complete MPU on AWS with Scality S3 versioning enabled',
-    done => {
+    it('should return 501 NotImplemented initiating MPU on AWS with Scality ' +
+    'S3 versioning enabled', done => {
         // putting null version: put obj before versioning configured
         putObject(awsLocation, () => {
             const enableVersioningRequest = versioningTestUtils.
@@ -501,19 +480,20 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
                 assert.equal(err, null, 'Error enabling bucket versioning: ' +
                     `${err}`);
-                mpuSetup(awsLocation, objectKey, uploadId => {
-                    const compParams = Object.assign({
-                        url: `/${objectKey}?uploadId=${uploadId}`,
-                        query: { uploadId } }, completeParams);
-                    completeMultipartUpload(authInfo, compParams, log,
-                    (err, result) => {
-                        assert.equal(err, null, 'Error completing mpu on ' +
-                        `AWS: ${err}`);
-                        assertMpuCompleteResults(result);
-                        assertObjOnBackend(awsLocation, () => {
-                            assertVersioning(done);
-                        });
-                    });
+                const initiateRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { 'host': `${bucketName}.s3.amazonaws.com`,
+                        'x-amz-meta-scal-location-constraint': awsLocation },
+                    url: `/${objectKey}?uploads`,
+                    parsedHost: 'localhost',
+                };
+                initiateMultipartUpload(authInfo, initiateRequest, log,
+                err => {
+                    assert(err.NotImplemented);
+                    assert.strictEqual(err.code, 501);
+                    done();
                 });
             });
         });

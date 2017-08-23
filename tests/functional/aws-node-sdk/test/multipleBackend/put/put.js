@@ -7,6 +7,7 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
+const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendput';
@@ -199,6 +200,24 @@ describe('MultipleBackend put object', function testSuite() {
                     setTimeout(() => {
                         awsGetCheck(key, correctMD5, correctMD5, () => done());
                     }, awsTimeout);
+                });
+            });
+
+            it('should return error NotImplemented putting a ' +
+            'version to AWS', done => {
+                s3.putBucketVersioning({
+                    Bucket: bucket,
+                    VersioningConfiguration: versioningEnabled,
+                }, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                    const params = { Bucket: bucket, Key: key,
+                        Body: body,
+                        Metadata: { 'scal-location-constraint': awsLocation } };
+                    s3.putObject(params, err => {
+                        assert.strictEqual(err.code, 'NotImplemented');
+                        done();
+                    });
                 });
             });
 

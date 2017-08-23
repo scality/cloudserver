@@ -12,6 +12,7 @@ const azureLocation = 'azuretest';
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
+const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const normalBody = Buffer.from('I am a body', 'utf8');
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -111,6 +112,26 @@ describeF() {
                             azureGetCheck(this.test.keyName,
                               key.MD5, azureMetadata,
                             () => done()), azureTimeout);
+                    });
+                });
+            });
+
+            it('should return error NotImplemented putting a ' +
+            'version to Azure', function itF(done) {
+                s3.putBucketVersioning({
+                    Bucket: azureContainerName,
+                    VersioningConfiguration: versioningEnabled,
+                }, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                    const params = { Bucket: azureContainerName,
+                        Key: this.test.keyName,
+                        Body: normalBody,
+                        Metadata: { 'scal-location-constraint':
+                        azureLocation } };
+                    s3.putObject(params, err => {
+                        assert.strictEqual(err.code, 'NotImplemented');
+                        done();
                     });
                 });
             });
