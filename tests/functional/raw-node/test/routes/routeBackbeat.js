@@ -14,6 +14,7 @@ const backbeatAuthCredentials = { accessKey: 'accessKeyBackbeat',
 
 const TEST_BUCKET = 'backbeatbucket';
 const TEST_KEY = 'fookey';
+const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
 
 function checkObjectData(s3, objectKey, dataValue, done) {
     s3.getObject({ Bucket: TEST_BUCKET,
@@ -68,6 +69,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             .then(() => s3.putBucketVersioningAsync(
                 { Bucket: TEST_BUCKET,
                   VersioningConfiguration: { Status: 'Enabled' } }))
+            .then(() => s3.createBucketAsync({ Bucket: NONVERSIONED_BUCKET }))
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -76,8 +78,9 @@ describeSkipIfAWS('backbeat routes:', () => {
     });
     after(done => {
         bucketUtil.empty(TEST_BUCKET)
-            .then(() => s3.deleteBucketAsync({ Bucket: TEST_BUCKET })
-                  .then(() => done()));
+            .then(() => s3.deleteBucketAsync({ Bucket: TEST_BUCKET }))
+            .then(() => s3.deleteBucketAsync({ Bucket: NONVERSIONED_BUCKET }))
+            .then(() => done());
     });
 
     describe('backbeat PUT routes:', () => {
@@ -222,6 +225,33 @@ describeSkipIfAWS('backbeat routes:', () => {
                 done();
             });
         });
+
+        it('should refuse PUT data if bucket is not versioned',
+        done => makeBackbeatRequest(
+            { method: 'PUT', bucket: NONVERSIONED_BUCKET,
+              objectKey: testKey, resourceType: 'data',
+              headers: {
+                  'content-length': testData.length,
+                  'content-md5': testDataMd5,
+                  'x-scal-canonical-id': testArn,
+              },
+              authCredentials: backbeatAuthCredentials,
+              requestBody: testData },
+            err => {
+                assert.strictEqual(err.code, 'InvalidBucketState');
+                done();
+            }));
+
+        it('should refuse PUT metadata if bucket is not versioned',
+        done => makeBackbeatRequest(
+            { method: 'PUT', bucket: NONVERSIONED_BUCKET,
+              objectKey: testKey, resourceType: 'metadata',
+              authCredentials: backbeatAuthCredentials,
+              requestBody: JSON.stringify(testMd) },
+            err => {
+                assert.strictEqual(err.code, 'InvalidBucketState');
+                done();
+            }));
 
         it('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided',
