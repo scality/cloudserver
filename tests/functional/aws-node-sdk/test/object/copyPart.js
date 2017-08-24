@@ -17,8 +17,8 @@ const content = 'I am the best content ever';
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
 
-// in constants, we set 100 MB as the max part size for testing purposes
-const oneHundredMBPlus1 = 104857601;
+// in constants, we set 110 MB as the max part size for testing purposes
+const oneHundredMBPlus11 = 110100481;
 
 function checkNoError(err) {
     assert.equal(err, null,
@@ -150,7 +150,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,
@@ -172,7 +172,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,
@@ -180,7 +180,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                    CopySourceRange: `bytes=0-${oneHundredMBPlus1}`,
+                    CopySourceRange: `bytes=0-${oneHundredMBPlus11}`,
                 },
                     err => {
                         checkError(err, 'EntityTooLarge');
@@ -195,7 +195,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,

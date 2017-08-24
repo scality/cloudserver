@@ -65,8 +65,8 @@ const constants = {
     minimumAllowedPartSize: 5242880,
 
     // Max size on put part or copy part is 5GB. For functional
-    // testing use 100 MB as max
-    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 104857600 :
+    // testing use 110 MB as max
+    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
         5368709120,
 
     // AWS states max size for user-defined metadata (x-amz-meta- headers) is
