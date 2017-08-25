@@ -13,6 +13,7 @@ const reportAttributes = [
     'dataDiskUsage',
     'serverVersion',
     'systemStats',
+    'itemCounts',
 ];
 
 function options(token = 'report-token-1') {
