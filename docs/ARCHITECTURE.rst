@@ -937,3 +937,53 @@ Algorithms
 The algorithms for each listing type can be found in the open-source
 `scality/Arsenal <https://github.com/scality/Arsenal>`__ repository, in
 `lib/algos/list <https://github.com/scality/Arsenal/tree/master/lib/algos/list>`__.
+
+Encryption
+===========
+
+With CloudServer, there are two possible methods of at-rest encryption.
+(1) We offer bucket level encryption where Scality CloudServer itself handles at-rest
+encryption for any object that is in an 'encrypted' bucket, regardless of what
+the location-constraint for the data is and
+(2) If the location-constraint specified for the data is of type AWS,
+you can choose to use AWS server side encryption.
+
+Note: bucket level encryption is not available on the standard AWS
+S3 protocol, so normal AWS S3 clients will not provide the option to send a
+header when creating a bucket. We have created a simple tool to enable you
+to easily create an encrypted bucket.
+
+Example:
+--------
+
+Creating encrypted bucket using our encrypted bucket tool in the bin directory
+
+.. code:: shell
+
+    ./create_encrypted_bucket.js -a accessKey1 -k verySecretKey1 -b bucketname -h localhost -p 8000
+
+
+AWS backend
+------------
+
+With real AWS S3 as a location-constraint, you have to configure the
+location-constraint as follows
+
+.. code:: json
+
+    "aws-test": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "serverSideEncryption": true,
+            ...
+        }
+    },
+
+Then, every time an object is put to that data location, we pass the following
+header to AWS: ``x-amz-server-side-encryption: AES256``
+
+Note: due to these options, it is possible to configure encryption by both
+CloudServer and AWS S3 (if you put an object to a CloudServer bucket which has
+the encryption flag AND the location-constraint for the data is AWS S3 with
+serverSideEncryption set to true).

@@ -17,11 +17,16 @@ describe('Healthcheck response', () => {
         });
     });
     it('should return result for every location constraint in ' +
-    'locationConfig', done => {
+    'locationConfig and at least one of every external locations', done => {
         clientCheck(log, (err, results) => {
             locConstraints.forEach(constraint => {
-                assert.notEqual(Object.keys(results).
-                    indexOf(constraint), -1);
+                if (Object.keys(results).indexOf(constraint) === -1) {
+                    const locationType = config.locationConstraints
+                    [constraint].type;
+                    assert(Object.keys(results).some(result =>
+                      config.locationConstraints[result].type
+                        === locationType));
+                }
             });
             done();
         });
