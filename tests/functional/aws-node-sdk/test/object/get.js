@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -65,7 +66,12 @@ describe('GET object', () => {
             }, (err, data) => {
                 checkNoError(err);
                 checkContentLength(data.ContentLength, len);
-                assert.deepStrictEqual(data.Body, body);
+                const md5Hash = crypto.createHash('md5');
+                const md5HashExpected = crypto.createHash('md5');
+                assert.strictEqual(
+                    md5Hash.update(data.Body).digest('hex'),
+                    md5HashExpected.update(body).digest('hex')
+                );
                 return cb();
             });
         }
@@ -748,8 +754,13 @@ describe('GET object', () => {
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
                             checkContentLength(data.ContentLength, partSize);
+                            const md5Hash = crypto.createHash('md5');
+                            const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize).fill(num);
-                            assert.deepStrictEqual(data.Body, expected);
+                            assert.strictEqual(
+                                md5Hash.update(data.Body).digest('hex'),
+                                md5HashExpected.update(expected).digest('hex')
+                            );
                             return done();
                         });
                     })));
@@ -762,9 +773,14 @@ describe('GET object', () => {
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
                             checkContentLength(data.ContentLength, partSize);
+                            const md5Hash = crypto.createHash('md5');
+                            const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize)
                                 .fill(unOrderedPartNumbers[num - 1]);
-                            assert.deepStrictEqual(data.Body, expected);
+                            assert.strictEqual(
+                                md5Hash.update(data.Body).digest('hex'),
+                                md5HashExpected.update(expected).digest('hex')
+                            );
                             return done();
                         });
                     })));
@@ -797,8 +813,13 @@ describe('GET object', () => {
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: 1 }, (err, data) => {
+                        const md5Hash = crypto.createHash('md5');
+                        const md5HashExpected = crypto.createHash('md5');
                         const expected = new Buffer(10).fill(0);
-                        assert.deepStrictEqual(data.Body, expected);
+                        assert.strictEqual(
+                            md5Hash.update(data.Body).digest('hex'),
+                            md5HashExpected.update(expected).digest('hex')
+                        );
                         done();
                     });
                 }));
@@ -812,8 +833,13 @@ describe('GET object', () => {
                     checkNoError(err);
                     return requestGet({ PartNumber: '1' }, (err, data) => {
                         checkContentLength(data.ContentLength, 10);
+                        const md5Hash = crypto.createHash('md5');
+                        const md5HashExpected = crypto.createHash('md5');
                         const expected = new Buffer(10).fill(0);
-                        assert.deepStrictEqual(data.Body, expected);
+                        assert.strictEqual(
+                            md5Hash.update(data.Body).digest('hex'),
+                            md5HashExpected.update(expected).digest('hex')
+                        );
                         done();
                     });
                 }));
