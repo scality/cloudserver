@@ -1,7 +1,7 @@
 Clients
 =========
 
-List of applications that have been tested with Zenko CloudServer
+List of applications that have been tested with Zenko CloudServer.
 
 GUI
 ~~~
