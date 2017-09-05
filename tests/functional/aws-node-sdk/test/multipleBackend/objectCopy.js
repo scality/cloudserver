@@ -11,8 +11,6 @@ const { createEncryptedBucketPromise } =
 
 const awsLocation = 'aws-test';
 const bucket = 'buckettestmultiplebackendobjectcopy';
-const key = `somekey-${Date.now()}`;
-const copyKey = `copyKey-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -27,13 +25,8 @@ let awsS3;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-const copyParamBase = {
-    Bucket: bucket,
-    Key: copyKey,
-    CopySource: `/${bucket}/${key}`,
-};
-
 function putSourceObj(location, isEmptyObj, cb) {
+    const key = `somekey-${Date.now()}`;
     const sourceParams = { Bucket: bucket, Key: key,
         Metadata: {
             'scal-location-constraint': location,
@@ -43,6 +36,7 @@ function putSourceObj(location, isEmptyObj, cb) {
     if (!isEmptyObj) {
         sourceParams.Body = body;
     }
+    process.stdout.write('Putting source object\n');
     s3.putObject(sourceParams, (err, result) => {
         assert.equal(err, null, `Error putting source object: ${err}`);
         if (isEmptyObj) {
@@ -50,7 +44,7 @@ function putSourceObj(location, isEmptyObj, cb) {
         } else {
             assert.strictEqual(result.ETag, `"${correctMD5}"`);
         }
-        cb();
+        cb(key);
     });
 }
 
@@ -132,12 +126,17 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object from mem to AWS', done => {
-            putSourceObj('mem', false, () => {
-                const copyParams = Object.assign({
+            putSourceObj('mem', false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': awsLocation,
-                    } }, copyParamBase);
+                        'scal-location-constraint': awsLocation },
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -150,12 +149,17 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object from mem to AWS with encryption', done => {
-            putSourceObj('mem', false, () => {
-                const copyParams = Object.assign({
+            putSourceObj('mem', false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': awsLocationEncryption,
-                    } }, copyParamBase);
+                        'scal-location-constraint': awsLocationEncryption },
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -169,18 +173,23 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
 
         it('should return NotImplemented copying an object from mem to a ' +
         'versioning enable AWS bucket', done => {
-            putSourceObj('mem', false, () => {
-                const copyParams = Object.assign({
+            putSourceObj('mem', false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': awsLocation,
-                    } }, copyParamBase);
+                        'scal-location-constraint': awsLocation },
+                };
                 s3.putBucketVersioning({
                     Bucket: bucket,
                     VersioningConfiguration: versioningEnabled,
                 }, err => {
                     assert.equal(err, null, 'putBucketVersioning: ' +
                         `Expected success, got error ${err}`);
+                    process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, err => {
                         assert.strictEqual(err.code, 'NotImplemented');
                         done();
@@ -190,12 +199,17 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object from AWS to mem', done => {
-            putSourceObj(awsLocation, false, () => {
-                const copyParams = Object.assign({
+            putSourceObj(awsLocation, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': 'mem',
-                    } }, copyParamBase);
+                        'scal-location-constraint': 'mem' },
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -209,12 +223,17 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
 
         it('should copy an object from mem to AWS and retain metadata',
         done => {
-            putSourceObj('mem', false, () => {
-                const copyParams = Object.assign({
+            putSourceObj('mem', false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
                     MetadataDirective: 'COPY',
                     Metadata: {
-                        'scal-location-constraint': awsLocation,
-                    } }, copyParamBase);
+                        'scal-location-constraint': awsLocation },
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -227,9 +246,15 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object on AWS', done => {
-            putSourceObj(awsLocation, false, () => {
-                const copyParams = Object.assign({ MetadataDirective: 'COPY' },
-                    copyParamBase);
+            putSourceObj(awsLocation, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'COPY',
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -242,11 +267,17 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy a 0-byte object from mem to AWS', done => {
-            putSourceObj('mem', true, () => {
-                const copyParams = Object.assign({ MetadataDirective: 'REPLACE',
+            putSourceObj('mem', true, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
                     Metadata: {
-                        'scal-location-constraint': awsLocation,
-                    } }, copyParamBase);
+                        'scal-location-constraint': awsLocation },
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -259,9 +290,15 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy a 0-byte object on AWS', done => {
-            putSourceObj(awsLocation, true, () => {
-                const copyParams = Object.assign({ MetadataDirective: 'COPY' },
-                    copyParamBase);
+            putSourceObj(awsLocation, true, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'COPY',
+                };
+                process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error: ${err}`);
@@ -275,16 +312,18 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
 
         it('should return error if AWS source object has ' +
         'been deleted', done => {
-            putSourceObj(awsLocation, false, () => {
+            putSourceObj(awsLocation, false, key => {
                 const awsBucket =
                     config.locationConstraints[awsLocation].details.bucketName;
                 awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
                     assert.equal(err, null, 'Error deleting object from AWS: ' +
                         `${err}`);
+                    const copyKey = `copyKey-${Date.now()}`;
                     const copyParams = { Bucket: bucket, Key: copyKey,
                         CopySource: `/${bucket}/${key}`,
                         MetadataDirective: 'COPY',
                     };
+                    process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, err => {
                         assert.strictEqual(err.code, 'InternalError');
                         done();
