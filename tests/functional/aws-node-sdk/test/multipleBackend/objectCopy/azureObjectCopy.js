@@ -19,9 +19,11 @@ const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = new Buffer(5000000);
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-const bigMD5 = '';
+const bigMD5 = '8649ae5a732bc808f228677b27a1e9b6';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
+
+const azureTimeout = 40000;
 
 let bucketUtil;
 let s3;
@@ -37,16 +39,14 @@ function putSourceObj(key, location, objSize, cb) {
     };
     if (objSize && objSize.big) {
         sourceParams.Body = bigBody;
-    } else {
-        if (!objSize.empty) {
-            sourceParams.Body = body;
-        }
+    } else if (!objSize) {
+        sourceParams.Body = body;
     }
     s3.putObject(sourceParams, (err, result) => {
         assert.equal(err, null, `Error putting source object: ${err}`);
-        if (objSize.empty) {
+        if (objSize && objSize.empty) {
             assert.strictEqual(result.ETag, `"${emptyMD5}"`);
-        } else if (objSize.big) {
+        } else if (objSize && objSize.big) {
             assert.strictEqual(result.ETag, `"${bigMD5}"`);
         } else {
             assert.strictEqual(result.ETag, `"${normalMD5}"`);
@@ -100,7 +100,7 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
 }
 
 describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
-    this.timeout(60000);
+    this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
             this.currentTest.key = `azureputkey-${Date.now()}`;
@@ -305,20 +305,23 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Bucket: bucket,
                     Key: this.test.copyKey,
                     CopySource: `/${bucket}/${this.test.key}`,
-                    MetadataDirective: 'COPY',
+                    MetadataDirective: 'REPLACE',
+                    Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, `Err copying object: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${bigMD5}"`);
-                    assertGetObjects(this.test.key, bucket, 'mem',
-                        this.test.copyKey, bucket, azureLocation,
-                        this.test.copyKey, 'COPY', { big: true }, done);
+                    setTimeout(() => {
+                        assertGetObjects(this.test.key, bucket, 'mem',
+                            this.test.copyKey, bucket, azureLocation,
+                            this.test.copyKey, 'REPLACE', { big: true }, done);
+                    }, azureTimeout);
                 });
             });
         });
 
-        it('should copy a 5MB object on Azure', function itFn(done) {
+        it.only('should copy a 5MB object on Azure', function itFn(done) {
             putSourceObj(this.test.key, azureLocation, { big: true }, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -330,9 +333,11 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.equal(err, null, `Err copying object: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${bigMD5}"`);
-                    assertGetObjects(this.test.key, bucket, azureLocation,
-                        this.test.copyKey, bucket, azureLocation,
-                        this.test.copyKey, 'COPY', { big: true }, done);
+                    setTimeout(() => {
+                        assertGetObjects(this.test.key, bucket, azureLocation,
+                            this.test.copyKey, bucket, azureLocation,
+                            this.test.copyKey, 'COPY', { big: true }, done);
+                    }, azureTimeout);
                 });
             });
         });

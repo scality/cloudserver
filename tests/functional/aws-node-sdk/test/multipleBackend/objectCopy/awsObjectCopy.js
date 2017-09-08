@@ -92,7 +92,7 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
+describeSkipIfNotMultiple.skip('MultipleBackend object copy', function testSuite() {
     this.timeout(60000);
     withV4(sigCfg => {
         beforeEach(() => {
