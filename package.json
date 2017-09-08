@@ -4,7 +4,7 @@
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
-    "node": "6.9.5"
+    "node": ">=6.9.5"
   },
   "repository": "scality/S3",
   "keywords": [
@@ -20,37 +20,37 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "aws-sdk": "2.28.0",
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#rel/7.1",
     "async": "~1.4.2",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient",
+    "bucketclient": "scality/bucketclient#rel/7.1",
     "commander": "^2.9.0",
     "ioredis": "2.4.0",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
-    "sproxydclient": "scality/sproxydclient",
-    "utapi": "scality/utapi",
+    "sproxydclient": "scality/sproxydclient#rel/7.1",
+    "utapi": "scality/utapi#rel/7.1",
     "utf8": "~2.1.1",
-    "vaultclient": "scality/vaultclient",
-    "werelogs": "scality/werelogs",
+    "vaultclient": "scality/vaultclient#rel/7.1",
+    "werelogs": "scality/werelogs#rel/7.1",
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-scality": "scality/Guidelines",
+    "eslint-config-scality": "scality/Guidelines#rel/7.1",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
     "mocha": "^2.3.4",
     "mocha-junit-reporter": "1.11.1",
     "node-mocks-http": "^1.5.2",
-    "s3blaster": "scality/s3blaster",
+    "s3blaster": "scality/s3blaster#rel/7.1",
     "tv4": "^1.2.7"
   },
   "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient"
+    "cdmiclient": "scality/cdmiclient#rel/7.1"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
