@@ -1053,8 +1053,8 @@ describe('s3curl multipart upload', () => {
     it('should copy a part and return lastModified as ISO', done => {
         provideRawOutput(
             ['--', `${bucketPath}/${key}?uploadId=${uploadId}&partNumber=1`,
-            '-X', 'PUT', '-H',
-            `x-amz-copy-source:${bucket}/copyme`, '-v'],
+                '-X', 'PUT', '-H',
+                `x-amz-copy-source:${bucket}/copyme`, '-v'],
             (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '200 OK');
                 parseString(rawOutput.stdout, (err, result) => {
@@ -1091,7 +1091,7 @@ describe('s3curl copy object', () => {
     it('should copy an object and return lastModified as ISO', done => {
         provideRawOutput(
             ['--', `${bucketPath}/iamacopy`, '-X', 'PUT', '-H',
-            `x-amz-copy-source:${bucket}/copyme`, '-v'],
+                `x-amz-copy-source:${bucket}/copyme`, '-v'],
             (httpCode, rawOutput) => {
                 assert.strictEqual(httpCode, '200 OK');
                 parseString(rawOutput.stdout, (err, result) => {

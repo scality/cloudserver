@@ -45,7 +45,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should not accept versioning configuration w/o \"Status\"', done => {
+    it('should not accept versioning configuration w/o "Status"', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -129,7 +129,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         s3.getBucketVersioning(params, (error, data) => {
             assert.strictEqual(error, null);
             assert.deepStrictEqual(data, { MFADelete: 'Disabled',
-            Status: 'Enabled' });
+                Status: 'Enabled' });
             done();
         });
     });

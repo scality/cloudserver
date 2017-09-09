@@ -9,7 +9,7 @@ const bucketName = 'putbucketaclfttest';
 const grants = [];
 
 // results in body of 589824 bytes
-for (let i = 0; i < 100000; i ++) {
+for (let i = 0; i < 100000; i++) {
     grants.push({
         Grantee: {
             Type: 'CanonicalUser',

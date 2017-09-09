@@ -33,7 +33,7 @@ class _Utils {
     // need a wrapper because sdk apparently does not include version id in
     // exposed data object for put/get acl methods
     _wrapDataObject(method, params, callback) {
-        let request = undefined;
+        let request;
         async.waterfall([
             next => {
                 request = this.s3[method](params, next);

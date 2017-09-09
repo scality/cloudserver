@@ -80,7 +80,7 @@ describe('PUT bucket website', () => {
         'ReplaceKeyPrefixWith are present in same rule', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ ReplaceKeyPrefixWith: 'test',
-            ReplaceKeyWith: 'test' });
+                ReplaceKeyWith: 'test' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
@@ -88,7 +88,7 @@ describe('PUT bucket website', () => {
         'ReplaceKeyPrefixWith are present in same rule', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ ReplaceKeyPrefixWith: 'test',
-            ReplaceKeyWith: 'test' });
+                ReplaceKeyWith: 'test' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 

@@ -48,7 +48,7 @@ describeSkipIfNotMultiple('Initiate MPU to AZURE', () => {
                   CreateBucketConfiguration: {
                       LocationConstraint: azureLocation,
                   },
-            }, done));
+              }, done));
             afterEach(function afterEachF(done) {
                 const params = {
                     Bucket: azureContainerName,

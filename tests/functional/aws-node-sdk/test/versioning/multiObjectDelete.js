@@ -51,7 +51,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
                 }, err => next(err)),
                 next => {
                     const objects = [];
-                    for (let i = 1; i < 1001; i ++) {
+                    for (let i = 1; i < 1001; i++) {
                         objects.push(`${key}${i}`);
                     }
                     async.mapLimit(objects, 20, (key, next) => {
@@ -210,20 +210,20 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                 next => s3.putObject({ Bucket: bucketName, Key: key },
                   err => next(err)),
                 next => s3.deleteObject({ Bucket: bucketName,
-                Key: key }, (err, data) => {
+                    Key: key }, (err, data) => {
                     const deleteVersionId = data.VersionId;
                     next(err, deleteVersionId);
                 }),
                 (deleteVersionId, next) => s3.deleteObjects({ Bucket:
                   bucketName,
-                  Delete: {
-                      Objects: [
-                          {
-                              Key: key,
-                              VersionId: deleteVersionId,
-                          },
-                      ],
-                  } }, (err, data) => {
+                    Delete: {
+                        Objects: [
+                            {
+                                Key: key,
+                                VersionId: deleteVersionId,
+                            },
+                        ],
+                    } }, (err, data) => {
                     assert.strictEqual(data.Deleted[0].DeleteMarker, true);
                     assert.strictEqual(data.Deleted[0].VersionId,
                       deleteVersionId);
@@ -238,13 +238,13 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
       'stored for the object if trying to delete an object that does not exist',
         done => {
             s3.deleteObjects({ Bucket: bucketName,
-              Delete: {
-                  Objects: [
-                      {
-                          Key: key,
-                      },
-                  ],
-              } }, (err, data) => {
+                Delete: {
+                    Objects: [
+                        {
+                            Key: key,
+                        },
+                    ],
+                } }, (err, data) => {
                 if (err) {
                     return done(err);
                 }
@@ -276,13 +276,13 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                   }),
                 (versionId, next) => s3.deleteObjects({ Bucket:
                   bucketName,
-                  Delete: {
-                      Objects: [
-                          {
-                              Key: key,
-                          },
-                      ],
-                  } }, (err, data) => {
+                    Delete: {
+                        Objects: [
+                            {
+                                Key: key,
+                            },
+                        ],
+                    } }, (err, data) => {
                     if (err) {
                         return next(err);
                     }

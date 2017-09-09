@@ -91,7 +91,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
              // are being added to the canonical headers list in our string
              // to sign.
              const params = { Bucket: bucket, Key: 'key',
-             ACL: 'public-read', StorageClass: 'STANDARD' };
+                 ACL: 'public-read', StorageClass: 'STANDARD' };
              const url = s3.getSignedUrl('putObject', params);
              provideRawOutput(['-verbose', '-X', 'PUT', url,
                  '--upload-file', 'uploadFile'], httpCode => {

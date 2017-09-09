@@ -412,32 +412,32 @@ describe('Object Part Copy', () => {
                         CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                         PartNumber: 2,
                         UploadId: uploadId,
-                }).then(res => {
-                    assert.strictEqual(res.ETag, totalMpuObjectHash);
-                    assert(res.LastModified);
-                }).then(() => {
-                    process.stdout.write('Completing MPU');
-                    return s3.completeMultipartUploadAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                            Parts: [
+                    }).then(res => {
+                        assert.strictEqual(res.ETag, totalMpuObjectHash);
+                        assert(res.LastModified);
+                    }).then(() => {
+                        process.stdout.write('Completing MPU');
+                        return s3.completeMultipartUploadAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
                                 { ETag: totalMpuObjectHash, PartNumber: 1 },
                                 { ETag: totalMpuObjectHash, PartNumber: 2 },
-                            ],
-                        },
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.Bucket, destBucketName);
-                    assert.strictEqual(res.Key, destObjName);
+                                ],
+                            },
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.Bucket, destBucketName);
+                        assert.strictEqual(res.Key, destObjName);
                     // combined ETag returned by AWS (combination of part ETags
                     // with number of parts at the end)
-                    assert.strictEqual(res.ETag,
+                        assert.strictEqual(res.ETag,
                         '"5bba96810ff449d94aa8f5c5a859b0cb-2"');
-                }).catch(err => {
-                    checkNoError(err);
-                });
+                    }).catch(err => {
+                        checkNoError(err);
+                    });
                 });
             });
 
@@ -468,36 +468,36 @@ describe('Object Part Copy', () => {
                         PartNumber: 2,
                         UploadId: uploadId,
                         CopySourceRange: 'bytes=15242891-30242991',
-                }).then(res => {
-                    assert.strictEqual(res.ETag, part2ETag);
-                    assert(res.LastModified);
-                }).then(() => {
-                    process.stdout.write('Completing MPU');
-                    return s3.completeMultipartUploadAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                            Parts: [
+                    }).then(res => {
+                        assert.strictEqual(res.ETag, part2ETag);
+                        assert(res.LastModified);
+                    }).then(() => {
+                        process.stdout.write('Completing MPU');
+                        return s3.completeMultipartUploadAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
                                 { ETag: part1ETag, PartNumber: 1 },
                                 { ETag: part2ETag, PartNumber: 2 },
-                            ],
-                        },
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.Bucket, destBucketName);
-                    assert.strictEqual(res.Key, destObjName);
-                    assert.strictEqual(res.ETag, finalCombinedETag);
-                }).then(() => {
-                    process.stdout.write('Getting new object');
-                    return s3.getObjectAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.ContentLength, '25000092');
-                    assert.strictEqual(res.ETag, finalCombinedETag);
-                })
+                                ],
+                            },
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.Bucket, destBucketName);
+                        assert.strictEqual(res.Key, destObjName);
+                        assert.strictEqual(res.ETag, finalCombinedETag);
+                    }).then(() => {
+                        process.stdout.write('Getting new object');
+                        return s3.getObjectAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.ContentLength, '25000092');
+                        assert.strictEqual(res.ETag, finalCombinedETag);
+                    })
                 .catch(err => {
                     checkNoError(err);
                 });
@@ -563,7 +563,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: 'madeupuploadid444233232',
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchUpload');
                     done();
@@ -576,7 +576,7 @@ describe('Object Part Copy', () => {
                     CopySource: `nobucket453234/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -589,7 +589,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -602,7 +602,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchKey');
                     done();
@@ -615,7 +615,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 10001,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'InvalidArgument');
                     done();

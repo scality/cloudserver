@@ -40,7 +40,7 @@ describe('More MPU tests', () => {
             async.waterfall([
                 next => s3.createBucket({ Bucket: bucket }, err => next(err)),
                 next => s3.createMultipartUpload({ Bucket: bucket,
-                Key: object }, (err, data) => {
+                    Key: object }, (err, data) => {
                     checkNoError(err);
                     this.currentTest.UploadId = data.UploadId;
                     return next();

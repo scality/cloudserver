@@ -240,12 +240,12 @@ function _checkHeaders(action, params, origin, expectedHeaders, callback) {
             // if no headersResponse provided, should not have these headers
             // in the request
             ['access-control-allow-origin',
-            'access-control-allow-methods',
-            'access-control-allow-credentials',
-            'vary'].forEach(key => {
-                assert.strictEqual(resHeaders[key], undefined,
+                'access-control-allow-methods',
+                'access-control-allow-credentials',
+                'vary'].forEach(key => {
+                    assert.strictEqual(resHeaders[key], undefined,
                     `Error: ${key} should not have value`);
-            });
+                });
         }
         cb();
     }
@@ -262,7 +262,7 @@ function _checkHeaders(action, params, origin, expectedHeaders, callback) {
             if (response.data.UploadId) {
                 // abort multipart upload before deleting bucket in afterEach
                 return s3.abortMultipartUpload({ Bucket: bucket, Key: objectKey,
-                UploadId: response.data.UploadId }, callback);
+                    UploadId: response.data.UploadId }, callback);
             }
             return callback();
         });
@@ -436,7 +436,7 @@ describe('Cross Origin Resource Sharing requests', () => {
                 }, next),
                 next => s3.putBucketCors(corsParams, next),
                 next => s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }, next),
+                    WebsiteConfiguration: webConfig }, next),
                 next => s3.putObject({
                     Bucket: bucket,
                     Key: 'index.html',
@@ -467,7 +467,7 @@ describe('Cross Origin Resource Sharing requests', () => {
         done => {
             const headers = { Origin: allowedOrigin };
             methodRequest({ method: 'GET', bucket, headers, headersResponse,
-            code: 200, isWebsite: true }, done);
+                code: 200, isWebsite: true }, done);
         });
 
         it('should respond with CORS headers at website endpoint (GET) ' +
@@ -475,7 +475,7 @@ describe('Cross Origin Resource Sharing requests', () => {
         done => {
             const headers = { Origin: allowedOrigin };
             methodRequest({ method: 'GET', bucket, objectKey: 'test',
-            headers, headersResponse, code: 404, isWebsite: true }, done);
+                headers, headersResponse, code: 404, isWebsite: true }, done);
         });
 
         it('should respond with CORS headers at website endpoint (GET) ' +
@@ -483,14 +483,14 @@ describe('Cross Origin Resource Sharing requests', () => {
         done => {
             const headers = { Origin: allowedOrigin };
             methodRequest({ method: 'GET', bucket, objectKey: 'redirect',
-            headers, headersResponse, code: 301, isWebsite: true }, done);
+                headers, headersResponse, code: 301, isWebsite: true }, done);
         });
 
         it('should respond with CORS headers at website endpoint (HEAD)',
         done => {
             const headers = { Origin: allowedOrigin };
             methodRequest({ method: 'HEAD', bucket, headers, headersResponse,
-            code: 200, isWebsite: true }, done);
+                code: 200, isWebsite: true }, done);
         });
     });
 
@@ -525,7 +525,7 @@ describe('Cross Origin Resource Sharing requests', () => {
                 };
                 const headersOmitted = ['access-control-allow-headers'];
                 methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                headersOmitted, code: 200 }, done);
+                    headersOmitted, code: 200 }, done);
             });
 
             it('Request with matching Origin/method but additional headers ' +
@@ -538,7 +538,7 @@ describe('Cross Origin Resource Sharing requests', () => {
                     Expires: 86400,
                 };
                 methodRequest({ method: 'GET', bucket, headers, headersResponse,
-                code: 200 }, done);
+                    code: 200 }, done);
             });
         });
 
@@ -576,7 +576,7 @@ describe('Cross Origin Resource Sharing requests', () => {
                         Array.isArray(elem.testValue) ? elem.testValue[0] :
                         elem.testValue;
                     methodRequest({ method: 'GET', bucket, headers,
-                    headersResponse, code: 200 }, done);
+                        headersResponse, code: 200 }, done);
                 });
             });
         });

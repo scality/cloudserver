@@ -14,16 +14,16 @@ describe('GET bucket cors', () => {
 
         describe('on bucket with existing cors configuration', () => {
             const sampleCors = { CORSRules: [
-              { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                AllowedOrigins: ['http://www.example.com'],
-                AllowedHeaders: ['*'],
-                MaxAgeSeconds: 3000,
-                ExposeHeaders: ['x-amz-server-side-encryption'] },
-              { AllowedMethods: ['GET'],
-                AllowedOrigins: ['*'],
-                ExposeHeaders: [],
-                AllowedHeaders: ['*'],
-                MaxAgeSeconds: 3000 },
+                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
+                    AllowedOrigins: ['http://www.example.com'],
+                    AllowedHeaders: ['*'],
+                    MaxAgeSeconds: 3000,
+                    ExposeHeaders: ['x-amz-server-side-encryption'] },
+                { AllowedMethods: ['GET'],
+                    AllowedOrigins: ['*'],
+                    ExposeHeaders: [],
+                    AllowedHeaders: ['*'],
+                    MaxAgeSeconds: 3000 },
             ] };
             before(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
@@ -46,9 +46,9 @@ describe('GET bucket cors', () => {
         describe('mixed case for AllowedHeader', () => {
             const testValue = 'tEsTvAlUe';
             const sampleCors = { CORSRules: [
-              { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                AllowedOrigins: ['http://www.example.com'],
-                AllowedHeaders: [testValue] },
+                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
+                    AllowedOrigins: ['http://www.example.com'],
+                    AllowedHeaders: [testValue] },
             ] };
             before(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
@@ -71,8 +71,8 @@ describe('GET bucket cors', () => {
 
         describe('uppercase for AllowedMethod', () => {
             const sampleCors = { CORSRules: [
-              { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-                AllowedOrigins: ['http://www.example.com'] },
+                { AllowedMethods: ['PUT', 'POST', 'DELETE'],
+                    AllowedOrigins: ['http://www.example.com'] },
             ] };
             before(() =>
                 s3.createBucketAsync({ Bucket: bucketName })

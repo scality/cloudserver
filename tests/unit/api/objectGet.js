@@ -64,8 +64,8 @@ describe('objectGet API', () => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectGet(authInfo, testGetRequest, false,
                         log, (err, result, responseMetaHeaders) => {
-                            assert.strictEqual(responseMetaHeaders
-                                [userMetadataKey],
+                            assert.strictEqual(
+                                responseMetaHeaders[userMetadataKey],
                                 userMetadataValue);
                             assert.strictEqual(responseMetaHeaders.ETag,
                                 `"${correctMD5}"`);
@@ -83,13 +83,13 @@ describe('objectGet API', () => {
                     objectGet(authInfo, testGetRequest, false, log,
                         (err, dataGetInfo) => {
                             assert.deepStrictEqual(dataGetInfo,
-                        [{
-                            key: 1,
-                            start: 0,
-                            size: 12,
-                            dataStoreName: 'mem',
-                            dataStoreETag: `1:${correctMD5}`,
-                        }]);
+                                [{
+                                    key: 1,
+                                    start: 0,
+                                    size: 12,
+                                    dataStoreName: 'mem',
+                                    dataStoreETag: `1:${correctMD5}`,
+                                }]);
                             done();
                         });
                 });
@@ -235,8 +235,9 @@ describe('objectGet API', () => {
                     objectGet(authInfo, testGetRequest, false,
                     log, (err, result, responseMetaHeaders) => {
                         assert.strictEqual(result, null);
-                        assert.strictEqual(responseMetaHeaders
-                            [userMetadataKey], userMetadataValue);
+                        assert.strictEqual(
+                            responseMetaHeaders[userMetadataKey],
+                            userMetadataValue);
                         assert.strictEqual(responseMetaHeaders.ETag,
                             `"${correctMD5}"`);
                         done();

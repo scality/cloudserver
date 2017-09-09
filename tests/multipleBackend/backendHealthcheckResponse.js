@@ -21,8 +21,8 @@ describe('Healthcheck response', () => {
         clientCheck(log, (err, results) => {
             locConstraints.forEach(constraint => {
                 if (Object.keys(results).indexOf(constraint) === -1) {
-                    const locationType = config.locationConstraints
-                    [constraint].type;
+                    const locationType = config
+                        .locationConstraints[constraint].type;
                     assert(Object.keys(results).some(result =>
                       config.locationConstraints[result].type
                         === locationType));

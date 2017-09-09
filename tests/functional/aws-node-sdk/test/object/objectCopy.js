@@ -292,8 +292,8 @@ describe('Object Copy', () => {
                     const value = encodeURIComponent(taggingTest.tag.value);
                     const tagging = `${key}=${value}`;
                     const params = { Bucket: destBucketName, Key: destObjName,
-                      CopySource: `${sourceBucketName}/${sourceObjName}`,
-                      TaggingDirective: 'REPLACE', Tagging: tagging };
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        TaggingDirective: 'REPLACE', Tagging: tagging };
                     s3.copyObject(params, err => {
                         if (taggingTest.error) {
                             checkError(err, taggingTest.error);
@@ -428,7 +428,7 @@ describe('Object Copy', () => {
                 ContentType: 'image',
             }, () => {
                 s3.getObject({ Bucket: destBucketName,
-                Key: destObjName }, (err, res) => {
+                    Key: destObjName }, (err, res) => {
                     if (err) {
                         return done(err);
                     }
@@ -442,9 +442,9 @@ describe('Object Copy', () => {
             'included as a metadata directive header, but no new ContentType ' +
             'is provided', done => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-            CopySource: `${sourceBucketName}/${sourceObjName}`,
-            MetadataDirective: 'REPLACE',
-        }, () => {
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'REPLACE',
+            }, () => {
                 s3.getObject({ Bucket: destBucketName,
                     Key: destObjName }, (err, res) => {
                     if (err) {
@@ -470,7 +470,7 @@ describe('Object Copy', () => {
             }, err => {
                 checkNoError(err);
                 s3.getObject({ Bucket: destBucketName,
-                  Key: destObjName }, (err, res) => {
+                    Key: destObjName }, (err, res) => {
                     if (err) {
                         done(err);
                     }
@@ -742,7 +742,7 @@ describe('Object Copy', () => {
             done => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `nobucket453234/${sourceObjName}`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -754,7 +754,7 @@ describe('Object Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     WebsiteRedirectLocation: 'google.com',
-            },
+                },
                 err => {
                     checkError(err, 'InvalidRedirectLocation');
                     done();
@@ -766,7 +766,7 @@ describe('Object Copy', () => {
             done => {
                 s3.copyObject({ Bucket: 'nobucket453234', Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -777,7 +777,7 @@ describe('Object Copy', () => {
             done => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/nokey`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchKey');
                     done();
@@ -789,7 +789,7 @@ describe('Object Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     MetadataDirective: 'copyHalf',
-            },
+                },
                 err => {
                     checkError(err, 'InvalidArgument');
                     done();

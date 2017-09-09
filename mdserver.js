@@ -7,12 +7,12 @@ const MetadataFileServer =
 if (config.backends.metadata === 'file') {
     const mdServer = new MetadataFileServer(
         { bindAddress: config.metadataDaemon.bindAddress,
-          port: config.metadataDaemon.port,
-          path: config.metadataDaemon.metadataPath,
-          restEnabled: config.metadataDaemon.restEnabled,
-          restPort: config.metadataDaemon.restPort,
-          recordLog: config.recordLog,
-          versioning: { replicationGroupId: config.replicationGroupId },
-          log: config.log });
+            port: config.metadataDaemon.port,
+            path: config.metadataDaemon.metadataPath,
+            restEnabled: config.metadataDaemon.restEnabled,
+            restPort: config.metadataDaemon.restPort,
+            recordLog: config.recordLog,
+            versioning: { replicationGroupId: config.replicationGroupId },
+            log: config.log });
     mdServer.startServer();
 }

@@ -9,7 +9,7 @@ const bucket = `versioning-bucket-${Date.now()}`;
 
 describe('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(600000);
-    let s3 = undefined;
+    let s3;
     const versionIds = [];
     const counter = 100;
 
@@ -49,7 +49,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should not accept versioning configuration w/o \"Status\"', done => {
+    it('should not accept versioning configuration w/o "Status"', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -157,7 +157,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
     it('should create new versions but still keep nullVersionId', done => {
         const params = { Bucket: bucket, Key: '/' };
         const paramsNull = { Bucket: bucket, Key: '/', VersionId: 'null' };
-        let nullVersionId = undefined;
+        let nullVersionId;
         // create new versions
         async.timesSeries(counter, (i, next) => s3.putObject(params,
             (err, data) => {
@@ -236,7 +236,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         };
         const params = { Bucket: bucket, Key: '/' };
         const paramsNull = { Bucket: bucket, Key: '/', VersionId: 'null' };
-        let nullVersionId = undefined;
+        let nullVersionId;
         async.waterfall([
             callback => s3.getObject(paramsNull, (err, data) => {
                 assert.strictEqual(err, null);

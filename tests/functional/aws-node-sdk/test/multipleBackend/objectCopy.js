@@ -68,19 +68,17 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
             assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
             assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
             assert.strictEqual(awsRes.ETag, `"${emptyMD5}"`);
+        } else if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+            assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
+            assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
+        } else if (destLoc === awsLocationEncryption) {
+            assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
         } else {
-            if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
-                assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
-            } else if (destLoc === awsLocationEncryption) {
-                assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
-            } else {
-                assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
-                assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
-                assert.deepStrictEqual(sourceRes.Body, destRes.Body);
-                assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
-                assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
-            }
+            assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
+            assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
+            assert.deepStrictEqual(sourceRes.Body, destRes.Body);
+            assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
+            assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
         }
         if (mdDirective === 'COPY') {
             assert.deepStrictEqual(sourceRes.Metadata['test-header'],

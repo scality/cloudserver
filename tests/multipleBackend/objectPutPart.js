@@ -142,8 +142,11 @@ errorDescription) {
 function listAndAbort(uploadId, calculatedHash2, done) {
     const awsBucket = config.locationConstraints[awsLocation].
         details.bucketName;
-    const params = { Bucket: awsBucket, Key: objectName,
-    UploadId: uploadId };
+    const params = {
+        Bucket: awsBucket,
+        Key: objectName,
+        UploadId: uploadId,
+    };
     s3.listParts(params, (err, data) => {
         assert.equal(err, null, `Error listing parts: ${err}`);
         assert.strictEqual(data.Parts.length, 1);

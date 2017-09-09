@@ -5,15 +5,15 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'testdeletecorsbucket';
 const sampleCors = { CORSRules: [
-  { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-    AllowedOrigins: ['http://www.example.com'],
-    AllowedHeaders: ['*'],
-    MaxAgeSeconds: 3000,
-    ExposeHeaders: ['x-amz-server-side-encryption'] },
-  { AllowedMethods: ['GET'],
-    AllowedOrigins: ['*'],
-    AllowedHeaders: ['*'],
-    MaxAgeSeconds: 3000 },
+    { AllowedMethods: ['PUT', 'POST', 'DELETE'],
+        AllowedOrigins: ['http://www.example.com'],
+        AllowedHeaders: ['*'],
+        MaxAgeSeconds: 3000,
+        ExposeHeaders: ['x-amz-server-side-encryption'] },
+    { AllowedMethods: ['GET'],
+        AllowedOrigins: ['*'],
+        AllowedHeaders: ['*'],
+        MaxAgeSeconds: 3000 },
 ] };
 
 const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
@@ -57,7 +57,7 @@ describe('DELETE bucket cors', () => {
             describe('with existing cors configuration', () => {
                 beforeEach(done => {
                     s3.putBucketCors({ Bucket: bucketName,
-                    CORSConfiguration: sampleCors }, done);
+                        CORSConfiguration: sampleCors }, done);
                 });
 
                 it('should delete bucket configuration successfully', done => {

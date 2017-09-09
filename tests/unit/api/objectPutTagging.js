@@ -101,11 +101,11 @@ describe('PUT object tagging :: helper validation functions ', () => {
                 { tagTest: { Value: ['bar'] }, isValid: false },
                 { tagTest: { Keys: ['foo'], Value: ['bar'] }, isValid: false },
                 { tagTest: { Key: ['foo', 'boo'], Value: ['bar'] },
-                  isValid: false },
+                    isValid: false },
                 { tagTest: { Key: ['foo'], Value: ['bar', 'boo'] },
-                  isValid: false },
+                    isValid: false },
                 { tagTest: { Key: ['foo', 'boo'], Value: ['bar', 'boo'] },
-                  isValid: false },
+                    isValid: false },
                 { tagTest: { Key: ['foo'], Values: ['bar'] }, isValid: false },
                 { tagTest: { Keys: ['foo'], Values: ['bar'] }, isValid: false },
             ];
@@ -134,7 +134,7 @@ describe('PUT object tagging :: helper validation functions ', () => {
                     { tagging: { Tagging: { Tagset: [{ Tag: [] }] } }, isValid:
                     false },
                     { tagging: { Tagging: { Tagset: [{ Tag: [] }] },
-                    ExtraTagging: 'extratagging' }, isValid: false },
+                        ExtraTagging: 'extratagging' }, isValid: false },
                     { tagging: { Tagging: { Tagset: [{ Tag: [] }], ExtraTagset:
                     'extratagset' } }, isValid: false },
                     { tagging: { Tagging: { Tagset: [{ Tag: [] }], ExtraTagset:

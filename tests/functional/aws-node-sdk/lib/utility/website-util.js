@@ -334,7 +334,7 @@ class WebsiteConfigTester {
             const webConfig = new WebsiteConfigTester('index.html',
               'error.html');
             return s3.putBucketWebsite({ Bucket: bucket,
-            WebsiteConfiguration: webConfig }, err => {
+                WebsiteConfiguration: webConfig }, err => {
                 if (err) {
                     return done(err);
                 }
@@ -345,7 +345,7 @@ class WebsiteConfigTester {
                         ACL: acl,
                         Body: fs.readFileSync(path.join(__dirname,
                             `/../../test/object/websiteFiles/${object}.html`)),
-                        },
+                    },
                         next);
                 }, done);
             });

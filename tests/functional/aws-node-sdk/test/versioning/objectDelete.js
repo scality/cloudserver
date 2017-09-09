@@ -127,7 +127,7 @@ describe('aws-node-sdk test delete object', () => {
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;
-        let versionIds = undefined;
+        let versionIds;
 
         // setup test
         before(done => {

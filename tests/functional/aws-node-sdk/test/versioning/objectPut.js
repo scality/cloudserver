@@ -125,7 +125,7 @@ describe('put and get object with versioning', function testSuite() {
                 const tagKey = 'key1';
                 const tagValue = 'value1';
                 const putParams = { Bucket: bucket, Key: key,
-                  Tagging: `${tagKey}=${tagValue}` };
+                    Tagging: `${tagKey}=${tagValue}` };
                 s3.putObject(putParams, (err, data) => {
                     _assertNoError(err, 'putting object');
                     const getTagParams = { Bucket: bucket, Key:
@@ -192,7 +192,7 @@ describe('put and get object with versioning', function testSuite() {
                             'version ids are not equal');
                         assert.strictEqual(data.ETag, eTags[1]);
                         s3.getObject({ Bucket: bucket, Key: key,
-                        VersionId: 'null' }, (err, data) => {
+                            VersionId: 'null' }, (err, data) => {
                             _assertNoError(err, 'getting null version');
                             assert.strictEqual(data.VersionId, 'null');
                             assert.strictEqual(data.ETag, eTags[0]);

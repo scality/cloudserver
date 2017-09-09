@@ -190,7 +190,7 @@ function testSuite() {
                 done => {
                     const key = `somekey-${Date.now()}`;
                     const params = Object.assign({ Key: key, Tagging: tagString,
-                         Metadata: { 'scal-location-constraint': backend } },
+                        Metadata: { 'scal-location-constraint': backend } },
                          putParams);
                     process.stdout.write('Putting object\n');
                     s3.putObject(params, err => {

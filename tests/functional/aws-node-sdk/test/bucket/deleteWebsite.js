@@ -47,7 +47,7 @@ describe('DELETE bucket website', () => {
                 beforeEach(done => {
                     const config = new WebsiteConfigTester('index.html');
                     s3.putBucketWebsite({ Bucket: bucketName,
-                    WebsiteConfiguration: config }, done);
+                        WebsiteConfiguration: config }, done);
                 });
 
                 it('should delete bucket configuration successfully', done => {

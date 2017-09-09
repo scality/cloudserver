@@ -59,17 +59,17 @@ describe('PUT object', () => {
         it('should put an object and set the acl via query param',
             done => {
                 const params = { Bucket: bucket, Key: 'key',
-                ACL: 'public-read', StorageClass: 'STANDARD' };
+                    ACL: 'public-read', StorageClass: 'STANDARD' };
                 const url = s3.getSignedUrl('putObject', params);
                 provideRawOutput(['-verbose', '-X', 'PUT', url,
-                '--upload-file', 'uploadFile'], httpCode => {
+                    '--upload-file', 'uploadFile'], httpCode => {
                     assert.strictEqual(httpCode, '200 OK');
                     s3.getObjectAcl({ Bucket: bucket, Key: 'key' },
                     (err, result) => {
                         assert.equal(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
                         assert.deepStrictEqual(result.Grants[1], { Grantee:
-                            { Type: 'Group', URI:
+                        { Type: 'Group', URI:
                             'http://acs.amazonaws.com/groups/global/AllUsers',
                         }, Permission: 'READ' });
                         done();
@@ -151,7 +151,7 @@ describe('PUT object', () => {
                         assert.equal(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
                         return s3.getObjectTagging({ Bucket: bucket,
-                          Key: object }, (err, data) => {
+                            Key: object }, (err, data) => {
                             assert.equal(err, null, 'Expected success, ' +
                             `got error ${JSON.stringify(err)}`);
                             assert.deepStrictEqual(data.TagSet[0], {
@@ -166,7 +166,7 @@ describe('PUT object', () => {
             done => {
                 const taggingConfig = generateMultipleTagQuery(10);
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: taggingConfig }, err => {
+                    Tagging: taggingConfig }, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${JSON.stringify(err)}`);
                     done();
@@ -175,7 +175,7 @@ describe('PUT object', () => {
 
             it('should be able to put an empty Tag set', done => {
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: '',
+                    Tagging: '',
                 }, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${JSON.stringify(err)}`);
@@ -186,7 +186,7 @@ describe('PUT object', () => {
             it('should be able to put object with empty tags',
             done => {
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: '&&&&&&&&&&&&&&&&&key1=value1' }, err => {
+                    Tagging: '&&&&&&&&&&&&&&&&&key1=value1' }, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${JSON.stringify(err)}`);
                     done();
@@ -197,7 +197,7 @@ describe('PUT object', () => {
             done => {
                 const taggingConfig = generateMultipleTagQuery(11);
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: taggingConfig }, err => {
+                    Tagging: taggingConfig }, err => {
                     _checkError(err, 'BadRequest', 400);
                     done();
                 });
@@ -206,7 +206,7 @@ describe('PUT object', () => {
             it('should return InvalidArgument if using the same key twice',
             done => {
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: 'key1=value1&key1=value2' }, err => {
+                    Tagging: 'key1=value1&key1=value2' }, err => {
                     _checkError(err, 'InvalidArgument', 400);
                     done();
                 });
@@ -215,7 +215,7 @@ describe('PUT object', () => {
             it('should return InvalidArgument if using the same key twice ' +
             'and empty tags', done => {
                 s3.putObject({ Bucket: bucket, Key: object,
-                Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2' },
+                    Tagging: '&&&&&&&&&&&&&&&&&key1=value1&key1=value2' },
                 err => {
                     _checkError(err, 'InvalidArgument', 400);
                     done();
@@ -224,8 +224,8 @@ describe('PUT object', () => {
 
             it('should return InvalidArgument if tag with no key', done => {
                 s3.putObject({ Bucket: bucket, Key: object,
-                  Tagging: '=value1',
-              }, err => {
+                    Tagging: '=value1',
+                }, err => {
                     _checkError(err, 'InvalidArgument', 400);
                     done();
                 });

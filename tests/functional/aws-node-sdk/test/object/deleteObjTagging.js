@@ -100,12 +100,12 @@ describe('DELETE object taggings', () => {
         'account to an object with ACL "public-read-write"',
         done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
-            ACL: 'public-read-write' }, err => {
+                ACL: 'public-read-write' }, err => {
                 if (err) {
                     return done(err);
                 }
                 return otherAccountS3.deleteObjectTagging({ Bucket: bucketName,
-                  Key: objectName }, err => {
+                    Key: objectName }, err => {
                     _checkError(err, 'AccessDenied', 403);
                     done();
                 });
@@ -121,7 +121,7 @@ describe('DELETE object taggings', () => {
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
                 next => otherAccountS3.deleteObjectTagging({ Bucket: bucketName,
-                      Key: objectNameAcl }, err => next(err)),
+                    Key: objectNameAcl }, err => next(err)),
             ], err => {
                 _checkError(err, 'AccessDenied', 403);
                 done();
@@ -136,7 +136,7 @@ describe('DELETE object taggings', () => {
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
                 next => s3.deleteObjectTagging({ Bucket: bucketName,
-                      Key: objectNameAcl }, err => next(err)),
+                    Key: objectNameAcl }, err => next(err)),
             ], done);
         });
     });

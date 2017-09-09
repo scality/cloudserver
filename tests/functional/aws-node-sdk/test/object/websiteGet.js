@@ -33,11 +33,11 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
             done(err);
         }
         return s3.putObject({ Bucket: bucket,
-        Key: key,
-        ACL: 'public-read',
-        Body: fs.readFileSync(path.join(__dirname,
+            Key: key,
+            ACL: 'public-read',
+            Body: fs.readFileSync(path.join(__dirname,
             '/websiteFiles/redirect.html')),
-        ContentType: 'text/html' }, done);
+            ContentType: 'text/html' }, done);
     });
 }
 

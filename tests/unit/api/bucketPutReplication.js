@@ -27,8 +27,8 @@ function checkGeneratedID(xml, cb) {
             return cb(err);
         }
         const id = res.rules[0].id;
-        assert.strictEqual(typeof(id), 'string', 'expected rule ID to be ' +
-            `string but got ${typeof(id)}`);
+        assert.strictEqual(typeof id, 'string', 'expected rule ID to be ' +
+            `string but got ${typeof id}`);
         assert.strictEqual(id.length, 48, 'expected rule ID to be a length ' +
             `of 48 but got ${id.length}`);
         return cb();
@@ -72,12 +72,12 @@ describe('\'getReplicationConfiguration\' function', () => {
         const xmlTag = prop === 'Rules' ? 'Rule' : prop;
         const xml = createReplicationXML(xmlTag);
 
-        it(`should not accept replication configuration without \'${prop}\'`,
+        it(`should not accept replication configuration without '${prop}'`,
             done => checkError(xml, 'MalformedXML', done));
     });
 
     replicationUtils.optionalConfigProperties.forEach(prop => {
-        it(`should accept replication configuration without \'${prop}\'`,
+        it(`should accept replication configuration without '${prop}'`,
             done => checkError(createReplicationXML(prop), null, done));
     });
 

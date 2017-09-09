@@ -11,7 +11,7 @@ const awsObject = `awsObject-${Date.now()}`;
 const emptyObject = `emptyObject-${Date.now()}`;
 const bigObject = `bigObject-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
-const bigBody = new Buffer(10485760);
+const bigBody = Buffer.alloc(10485760);
 
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
