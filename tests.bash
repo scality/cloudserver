@@ -2,6 +2,15 @@
 set -x #echo on
 set -e #exit at the first error
 
+cat >>~/.aws/credentials <<EOF
+[default]
+aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
+aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT
+[default_2]
+aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT_2
+aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT_2
+EOF
+
 MYPWD=$(pwd)
 
 killandsleep () {
@@ -114,7 +123,7 @@ if [ $CIRCLE_NODE_INDEX -eq 3 ]
 then
 
   # Run S3 with file Backend ; run ft_tests
-  
+
   S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_file_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_awssdk
 
   killandsleep 8000

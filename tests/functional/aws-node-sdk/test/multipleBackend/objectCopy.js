@@ -10,6 +10,7 @@ const { createEncryptedBucketPromise } =
     require('../../lib/utility/createEncryptedBucket');
 
 const awsLocation = 'aws-test';
+const awsLocation2 = 'aws-test-2';
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -49,7 +50,8 @@ function putSourceObj(location, isEmptyObj, cb) {
 }
 
 function assertGetObjects(sourceKey, sourceBucket, sourceLoc, destKey,
-destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
+destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation,
+callback) {
     const awsBucket =
         config.locationConstraints[awsLocation].details.bucketName;
     const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey };
@@ -62,7 +64,6 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
         cb => awsS3.getObject(awsParams, cb),
     ], (err, results) => {
         assert.equal(err, null, `Error in assertGetObjects: ${err}`);
-
         const [sourceRes, destRes, awsRes] = results;
         if (isEmptyObj) {
             assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
@@ -83,6 +84,19 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
         if (mdDirective === 'COPY') {
             assert.deepStrictEqual(sourceRes.Metadata['test-header'],
                 destRes.Metadata['test-header']);
+        } else if (mdDirective === 'REPLACE') {
+            assert.strictEqual(destRes.Metadata['test-header'],
+              undefined);
+        }
+        if (destLoc === awsLocation) {
+            assert.strictEqual(awsRes.Metadata[locMetaHeader], destLoc);
+            if (mdDirective === 'COPY') {
+                assert.deepStrictEqual(sourceRes.Metadata['test-header'],
+                    awsRes.Metadata['test-header']);
+            } else if (mdDirective === 'REPLACE') {
+                assert.strictEqual(awsRes.Metadata['test-header'],
+                  undefined);
+            }
         }
         assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
         assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
@@ -91,7 +105,8 @@ destBucket, destLoc, awsKey, mdDirective, isEmptyObj, callback) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
+describeSkipIfNotMultiple('MultipleBackend object copy',
+function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -141,7 +156,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', false, done);
+                        awsLocation, copyKey, 'REPLACE', false, awsS3,
+                        awsLocation, done);
                 });
             });
         });
@@ -164,7 +180,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        awsLocationEncryption, copyKey, 'REPLACE', false, done);
+                        awsLocationEncryption, copyKey, 'REPLACE', false,
+                        awsS3, awsLocation, done);
                 });
             });
         });
@@ -214,7 +231,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        'mem', key, 'REPLACE', false, done);
+                        'mem', key, 'REPLACE', false, awsS3, awsLocation, done);
                 });
             });
         });
@@ -238,7 +255,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        awsLocation, copyKey, 'COPY', false, done);
+                        awsLocation, copyKey, 'COPY', false, awsS3,
+                        awsLocation, done);
                 });
             });
         });
@@ -259,7 +277,97 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'COPY', false, done);
+                        awsLocation, copyKey, 'COPY', false, awsS3,
+                        awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object on AWS to a different AWS location ' +
+        'with source object READ access',
+        done => {
+            const awsConfig2 = getRealAwsConfig(awsLocation2);
+            const awsS3Two = new AWS.S3(awsConfig2);
+            const copyKey = `copyKey-${Date.now()}`;
+            const awsBucket =
+                config.locationConstraints[awsLocation].details.bucketName;
+            async.waterfall([
+                next => awsS3.putBucketAcl({
+                    Bucket: awsBucket,
+                    ACL: 'public-read',
+                }, err => next(err)),
+                // giving access to the object on the AWS side
+                next => putSourceObj(awsLocation, false, key =>
+                  next(null, key)),
+                (key, next) => awsS3.putObjectAcl(
+                  { Bucket: awsBucket, Key: key,
+                  ACL: 'public-read' }, err => next(err, key)),
+                (key, next) => {
+                    const copyParams = {
+                        Bucket: bucket,
+                        Key: copyKey,
+                        CopySource: `/${bucket}/${key}`,
+                        MetadataDirective: 'REPLACE',
+                        Metadata: {
+                            'scal-location-constraint': awsLocation2 },
+                    };
+                    process.stdout.write('Copying object\n');
+                    s3.copyObject(copyParams, (err, result) => {
+                        assert.equal(err, null, 'Expected success ' +
+                        `but got error: ${err}`);
+                        assert.strictEqual(result.CopyObjectResult.ETag,
+                            `"${correctMD5}"`);
+                        next(err, key);
+                    });
+                },
+                (key, next) =>
+                assertGetObjects(key, bucket, awsLocation, copyKey,
+                  bucket, awsLocation2, copyKey, 'REPLACE', false,
+                  awsS3Two, awsLocation2, next),
+            ], done);
+        });
+
+        it('should return error AccessDenied copying an object on AWS to a ' +
+        'different AWS account without source object READ access',
+        done => {
+            putSourceObj(awsLocation, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocation2 },
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, err => {
+                    assert.strictEqual(err.code, 'AccessDenied');
+                    done();
+                });
+            });
+        });
+
+        it('should copy an object on AWS with REPLACE', done => {
+            putSourceObj(awsLocation, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocation },
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                        awsLocation, copyKey, 'REPLACE', false, awsS3,
+                        awsLocation, done);
                 });
             });
         });
@@ -282,7 +390,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${emptyMD5}"`);
                     assertGetObjects(key, bucket, 'mem', copyKey, bucket,
-                        awsLocation, copyKey, 'REPLACE', true, done);
+                        awsLocation, copyKey, 'REPLACE', true, awsS3,
+                        awsLocation, done);
                 });
             });
         });
@@ -303,7 +412,8 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${emptyMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
-                        awsLocation, copyKey, 'COPY', true, done);
+                        awsLocation, copyKey, 'COPY', true, awsS3,
+                        awsLocation, done);
                 });
             });
         });
