@@ -58,7 +58,7 @@ describe('serviceGet API', () => {
             function waterfall4(corsHeaders, next) {
                 serviceGet(authInfo, serviceGetRequest, log, next);
             },
-            function waterfall4(result, next) {
+            function waterfall4(result, corsHeaders, next) {
                 parseString(result, next);
             },
         ], (err, result) => {
