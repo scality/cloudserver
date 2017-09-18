@@ -79,7 +79,6 @@ export default {
         'inventory': true,
         'lifecycle': true,
         'list-type': true,
-        'location': true,
         'logging': true,
         'metrics': true,
         'notification': true,
