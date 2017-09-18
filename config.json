@@ -5,6 +5,7 @@
     "restEndpoints": {
         "localhost": "us-east-1",
         "127.0.0.1": "us-east-1",
+        "cloudserver-front": "us-east-1",
         "s3.docker.test": "us-east-1",
         "127.0.0.2": "us-east-1",
         "s3.amazonaws.com": "us-east-1"
