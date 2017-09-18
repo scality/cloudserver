@@ -39,7 +39,7 @@
     "bluebird": "^3.3.1",
     "eslint": "4.6.0",
     "eslint-config-airbnb-base": "12.0.0",
-    "eslint-config-scality": "scality/Guidelines#chore/upgradeEslint",
+    "eslint-config-scality": "scality/Guidelines",
     "eslint-plugin-import": "2.7.0",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
