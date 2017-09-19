@@ -57,7 +57,7 @@ function methodRequest(params, callback) {
         res.on('end', () => {
             const total = body.join('');
             if (code) {
-                const message = isNaN(parseInt(code, 10)) ?
+                const message = Number.isNaN(parseInt(code, 10)) ?
                     `<Code>${code}</Code>` : '';
                 assert(total.indexOf(message) > -1, `Expected ${message}`);
                 assert.deepEqual(res.statusCode, statusCode[code],
@@ -72,12 +72,12 @@ function methodRequest(params, callback) {
             // if no headersResponse provided, should not have these headers
             // in the request
                 ['access-control-allow-origin',
-                'access-control-allow-methods',
-                'access-control-allow-credentials',
-                'vary'].forEach(key => {
-                    assert.strictEqual(res.headers[key], undefined,
+                    'access-control-allow-methods',
+                    'access-control-allow-credentials',
+                    'vary'].forEach(key => {
+                        assert.strictEqual(res.headers[key], undefined,
                         `Error: ${key} should not have value`);
-                });
+                    });
             }
             if (headersOmitted) {
                 headersOmitted.forEach(key => {

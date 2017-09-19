@@ -29,7 +29,7 @@ describe('Abort MPU', () => {
             .then(res => {
                 uploadId = res.UploadId;
                 return s3.uploadPartAsync({ Bucket: bucket, Key: key,
-                  PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
+                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
             })
             .catch(err => {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);

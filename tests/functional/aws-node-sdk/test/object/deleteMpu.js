@@ -55,9 +55,9 @@ describe('DELETE multipart', () => {
             () => {
                 beforeEach(() =>
                     s3.createBucketAsync({ Bucket: bucket,
-                      CreateBucketConfiguration: {
-                          LocationConstraint: confLocation.location,
-                      } })
+                        CreateBucketConfiguration: {
+                            LocationConstraint: confLocation.location,
+                        } })
                     .catch(err => {
                         process.stdout.write(`Error in beforeEach: ${err}\n`);
                         throw err;

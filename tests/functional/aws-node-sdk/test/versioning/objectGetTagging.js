@@ -41,7 +41,7 @@ describe('Get object tagging with versioning', () => {
                 }] };
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   (err, data) => next(err, data.VersionId)),
@@ -69,7 +69,7 @@ describe('Get object tagging with versioning', () => {
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                 err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.getObjectTagging({
                     Bucket: bucketName,
@@ -89,7 +89,7 @@ describe('Get object tagging with versioning', () => {
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                 err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.getObjectTagging({
                     Bucket: bucketName,
@@ -106,7 +106,7 @@ describe('Get object tagging with versioning', () => {
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   err => next(err)),
@@ -126,7 +126,7 @@ describe('Get object tagging with versioning', () => {
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   err => next(err)),

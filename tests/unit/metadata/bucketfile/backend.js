@@ -37,7 +37,7 @@ class Reader extends EventEmitter {
                 return this.emit('end');
             }
             this.emit('data', { key: `${zpad(i)}`,
-                                value: `{"foo":"${i}","initiator":"${i}"}` });
+                value: `{"foo":"${i}","initiator":"${i}"}` });
             return this.start();
         });
     }

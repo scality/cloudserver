@@ -71,7 +71,7 @@ describeF() {
                   CreateBucketConfiguration: {
                       LocationConstraint: azureLocation,
                   },
-            }, done));
+              }, done));
             it('should put an object to Azure, with no object location ' +
             'header, based on bucket location', function it(done) {
                 const params = {

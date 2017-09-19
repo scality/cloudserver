@@ -73,8 +73,8 @@ describe('Object Version Copy', () => {
         let etag;
         let etagTrim;
         let lastModified;
-        let versionId = undefined;
-        let copySource = undefined;
+        let versionId;
+        let copySource;
         let copySourceVersionId;
 
         function emptyAndDeleteBucket(bucketName, callback) {
@@ -207,8 +207,8 @@ describe('Object Version Copy', () => {
                     const value = encodeURIComponent(taggingTest.tag.value);
                     const tagging = `${key}=${value}`;
                     const params = { Bucket: destBucketName, Key: destObjName,
-                      CopySource: copySource,
-                      TaggingDirective: 'REPLACE', Tagging: tagging };
+                        CopySource: copySource,
+                        TaggingDirective: 'REPLACE', Tagging: tagging };
                     s3.copyObject(params, err => {
                         if (taggingTest.error) {
                             checkError(err, taggingTest.error);
@@ -239,7 +239,7 @@ describe('Object Version Copy', () => {
         it('should return InvalidArgument for a request with empty string ' +
         'versionId query', done => {
             const params = { Bucket: destBucketName, Key: destObjName,
-            CopySource: copySource };
+                CopySource: copySource };
             const query = { versionId: '' };
             customS3Request(s3.copyObject, params, { query }, err => {
                 assert(err, 'Expected error but did not find one');
@@ -334,7 +334,7 @@ describe('Object Version Copy', () => {
                 ContentType: 'image',
             }, () => {
                 s3.getObject({ Bucket: destBucketName,
-                Key: destObjName }, (err, res) => {
+                    Key: destObjName }, (err, res) => {
                     if (err) {
                         return done(err);
                     }
@@ -375,7 +375,7 @@ describe('Object Version Copy', () => {
             }, err => {
                 checkNoError(err);
                 s3.getObject({ Bucket: destBucketName,
-                  Key: destObjName }, (err, res) => {
+                    Key: destObjName }, (err, res) => {
                     if (err) {
                         done(err);
                     }
@@ -654,7 +654,7 @@ describe('Object Version Copy', () => {
             done => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `nobucket453234/${sourceObjName}`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -666,7 +666,7 @@ describe('Object Version Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: copySource,
                     WebsiteRedirectLocation: 'google.com',
-            },
+                },
                 err => {
                     checkError(err, 'InvalidRedirectLocation');
                     done();
@@ -678,7 +678,7 @@ describe('Object Version Copy', () => {
             done => {
                 s3.copyObject({ Bucket: 'nobucket453234', Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -689,7 +689,7 @@ describe('Object Version Copy', () => {
             done => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/nokey`,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchKey');
                     done();
@@ -747,7 +747,7 @@ describe('Object Version Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: copySource,
                     MetadataDirective: 'copyHalf',
-            },
+                },
                 err => {
                     checkError(err, 'InvalidArgument');
                     done();

@@ -34,7 +34,7 @@ describe('Preflight CORS request on non-existing bucket', () => {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'GET', bucket, headers, code: 'NoSuchBucket',
-        headersResponse: null }, done);
+            headersResponse: null }, done);
     });
     it('should respond AccessForbidden to OPTIONS request if not get service ' +
         'call and undefined bucket', done => {
@@ -57,12 +57,12 @@ describe('Preflight CORS request on non-existing bucket', () => {
             vary,
         };
         methodRequest({ method: 'OPTIONS', bucket: '', headers, code: 200,
-        headersResponse }, done);
+            headersResponse }, done);
     });
     it('should return BadRequest for OPTIONS request without origin', done => {
         const headers = {};
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'BadRequest',
-        headersResponse: null }, done);
+            headersResponse: null }, done);
     });
     it('should return BadRequest for OPTIONS request without ' +
     'Access-Control-Request-Method', done => {
@@ -70,7 +70,7 @@ describe('Preflight CORS request on non-existing bucket', () => {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'BadRequest',
-        headersResponse: null }, done);
+            headersResponse: null }, done);
     });
 });
 
@@ -92,7 +92,7 @@ describe('Preflight CORS request with existing bucket', () => {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'GET', bucket, headers, code: 200,
-        headersResponse: null }, done);
+            headersResponse: null }, done);
     });
     it('should allow HEAD on bucket without cors configuration even if ' +
     'Origin header sent', done => {
@@ -100,7 +100,7 @@ describe('Preflight CORS request with existing bucket', () => {
             Origin: allowedOrigin,
         };
         methodRequest({ method: 'HEAD', bucket, headers, code: 200,
-        headersResponse: null }, done);
+            headersResponse: null }, done);
     });
     it('should respond AccessForbidden for OPTIONS request on bucket without ' +
     'CORSConfiguration', done => {
@@ -109,7 +109,7 @@ describe('Preflight CORS request with existing bucket', () => {
             'Access-Control-Request-Method': 'GET',
         };
         methodRequest({ method: 'OPTIONS', bucket, headers,
-        code: 'AccessForbidden', headersResponse: null }, done);
+            code: 'AccessForbidden', headersResponse: null }, done);
     });
 
     describe('allow PUT, POST, DELETE, GET methods and allow only ' +
@@ -152,7 +152,7 @@ describe('Preflight CORS request with existing bucket', () => {
                     vary,
                 };
                 methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
+                    headersResponse }, done);
             });
         });
         it('should respond AccessForbidden to OPTIONS request from ' +
@@ -164,7 +164,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 'Content-Type',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers,
-            code: 'AccessForbidden', headersResponse: null }, done);
+                code: 'AccessForbidden', headersResponse: null }, done);
         });
         it('should respond AccessForbidden to OPTIONS request with ' +
         'not allowed Access-Control-Request-Headers', done => {
@@ -173,7 +173,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 'Access-Control-Request-Method': 'GET',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers,
-            code: 'AccessForbidden', headersResponse: null }, done);
+                code: 'AccessForbidden', headersResponse: null }, done);
         });
     });
 
@@ -214,7 +214,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should respond AccessForbidden to OPTIONS request with allowed ' +
         'method but not from allowed origin', done => {
@@ -223,7 +223,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 'Access-Control-Request-Method': 'GET',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers,
-            code: 'AccessForbidden', headersResponse: null }, done);
+                code: 'AccessForbidden', headersResponse: null }, done);
         });
         it('should respond AccessForbidden to OPTIONS request from allowed ' +
         'origin and method but with not allowed Access-Control-Request-Headers',
@@ -235,7 +235,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 'Content-Type',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers,
-            code: 'AccessForbidden', headersResponse: null }, done);
+                code: 'AccessForbidden', headersResponse: null }, done);
         });
         ['PUT', 'POST', 'DELETE'].forEach(method => {
             it('should respond AccessForbidden to OPTIONS request from ' +
@@ -245,7 +245,7 @@ describe('Preflight CORS request with existing bucket', () => {
                     'Access-Control-Request-Method': method,
                 };
                 methodRequest({ method: 'OPTIONS', bucket, headers,
-                code: 'AccessForbidden', headersResponse: null }, done);
+                    code: 'AccessForbidden', headersResponse: null }, done);
             });
         });
     });
@@ -285,7 +285,7 @@ describe('Preflight CORS request with existing bucket', () => {
                     vary,
                 };
                 methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
+                    headersResponse }, done);
             });
             it('should respond AccessForbidden to OPTIONS request from ' +
             'allowed origin and method but with not allowed Access-Control-' +
@@ -297,7 +297,7 @@ describe('Preflight CORS request with existing bucket', () => {
                     'Content-Type',
                 };
                 methodRequest({ method: 'OPTIONS', bucket, headers,
-                code: 'AccessForbidden', headersResponse: null }, done);
+                    code: 'AccessForbidden', headersResponse: null }, done);
             });
             methods.filter(method => method !== allowedMethod)
             .forEach(method => {
@@ -308,7 +308,7 @@ describe('Preflight CORS request with existing bucket', () => {
                         'Access-Control-Request-Method': method,
                     };
                     methodRequest({ method: 'OPTIONS', bucket, headers,
-                    code: 'AccessForbidden', headersResponse: null }, done);
+                        code: 'AccessForbidden', headersResponse: null }, done);
                 });
             });
         });
@@ -354,7 +354,7 @@ describe('Preflight CORS request with existing bucket', () => {
                         vary,
                     };
                     methodRequest({ method: 'OPTIONS', bucket, headers,
-                    code: 200, headersResponse }, done);
+                        code: 200, headersResponse }, done);
                 });
             });
             if (!origin.endsWith('*')) {
@@ -366,7 +366,7 @@ describe('Preflight CORS request with existing bucket', () => {
                         'Access-Control-Request-Method': 'GET',
                     };
                     methodRequest({ method: 'OPTIONS', bucket, headers,
-                    code: 'AccessForbidden', headersResponse: null }, done);
+                        code: 'AccessForbidden', headersResponse: null }, done);
                 });
             }
             if (!origin.startsWith('*')) {
@@ -378,7 +378,7 @@ describe('Preflight CORS request with existing bucket', () => {
                         'Access-Control-Request-Method': 'GET',
                     };
                     methodRequest({ method: 'OPTIONS', bucket, headers,
-                    code: 'AccessForbidden', headersResponse: null }, done);
+                        code: 'AccessForbidden', headersResponse: null }, done);
                 });
             }
         });
@@ -434,7 +434,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('if OPTIONS request matches rule with origin containing wildcard, ' +
         'response access-control-request-origin header value should be ' +
@@ -451,7 +451,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('if OPTIONS request matches rule that allows all origins, ' +
         'e.g. "*", response access-control-request-origin header should ' +
@@ -466,7 +466,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
     });
 
@@ -511,7 +511,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should respond with 200 and access control headers to OPTIONS ' +
         'request from allowed origin and method with Access-Control-' +
@@ -528,7 +528,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should respond AccessForbidden to OPTIONS request from allowed ' +
         'origin and method but not allowed Access-Control-Request-Headers ' +
@@ -541,7 +541,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 'content-type',
             };
             methodRequest({ method: 'OPTIONS', bucket, headers,
-            code: 'AccessForbidden', headersResponse: null }, done);
+                code: 'AccessForbidden', headersResponse: null }, done);
         });
     });
 
@@ -601,7 +601,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should return lowercase version of request Access-Control-' +
         'Request-Method header value if it contains any upper-case values',
@@ -620,7 +620,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should remove empty comma-separated values derived from request ' +
         'Access-Control-Request-Method header and separate values with ' +
@@ -640,7 +640,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
         it('should return request Access-Control-Request-Headers value ' +
         'even if rule allows all headers (e.g. "*"), unlike access-control-' +
@@ -658,7 +658,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
     });
 
@@ -713,7 +713,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', objectKey, bucket, headers,
-            code: 200, headersResponse }, done);
+                code: 200, headersResponse }, done);
         });
         it('should respond with 200 and access control headers to OPTIONS ' +
         'request from allowed origin, allowed method, even with non-existing ' +
@@ -766,7 +766,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
 
         it('with cookies: should send identical response as to request ' +
@@ -782,7 +782,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
     });
 
@@ -830,7 +830,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
     });
 
@@ -872,7 +872,7 @@ describe('Preflight CORS request with existing bucket', () => {
                 vary,
             };
             methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-            headersResponse }, done);
+                headersResponse }, done);
         });
     });
 });

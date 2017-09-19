@@ -8,7 +8,7 @@ const bucket = `bucketcompletempu-bucket-${Date.now()}`;
 const parts = [];
 
 // results in body of 1049793 bytes (1 MB = 1048576)
-for (let i = 0; i < 15600; i ++) {
+for (let i = 0; i < 15600; i++) {
     // an mpu of this many parts would not be allowed.
     // testing here to make sure we are not sent excess xml
     parts.push({

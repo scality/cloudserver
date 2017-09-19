@@ -294,14 +294,11 @@ describe('stress test for bucket API', function describe() {
         }
 
         // Populate keys array with all keys including prefixes
-        let key;
-        for (key in data) {
-            if (data.hasOwnProperty(key)) {
-                for (let k = 0; k < data[key].length; k++) {
-                    keys.push(key + delimiter + data[key][k]);
-                }
-            }
-        }
+        Object.keys(data).forEach(dkey => {
+            data[dkey].forEach(key => {
+                keys.push(dkey + delimiter + key);
+            });
+        });
 
         // Shuffle the keys array so the keys appear in random order
         shuffle(keys);

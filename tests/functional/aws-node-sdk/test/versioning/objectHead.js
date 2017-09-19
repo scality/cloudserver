@@ -142,7 +142,7 @@ describe('put and head object with versioning', function testSuite() {
                             'version ids are not equal');
                         assert.strictEqual(data.ETag, eTags[1]);
                         s3.headObject({ Bucket: bucket, Key: key,
-                        VersionId: 'null' }, (err, data) => {
+                            VersionId: 'null' }, (err, data) => {
                             _assertNoError(err, 'heading null version');
                             assert.strictEqual(data.VersionId, 'null');
                             assert.strictEqual(data.ETag, eTags[0]);
@@ -160,7 +160,8 @@ describe('put and head object with versioning', function testSuite() {
                     Bucket: bucket,
                     Key: '/', VersionId:
                     'null',
-                };                // create new versions
+                };
+                // create new versions
                 async.timesSeries(counter, (i, next) => s3.putObject(params,
                     (err, data) => {
                         versionIds.push(data.VersionId);

@@ -38,7 +38,7 @@ function sortList(list) {
 
 function createObjectsList(size) {
     const objects = [];
-    for (let i = 1; i < (size + 1); i ++) {
+    for (let i = 1; i < (size + 1); i++) {
         objects.push({
             Key: `${key}${i}`,
         });
@@ -63,7 +63,7 @@ describe('Multi-Object Delete Success', function success() {
         })
         .then(() => {
             const objects = [];
-            for (let i = 1; i < 1001; i ++) {
+            for (let i = 1; i < 1001; i++) {
                 objects.push(`${key}${i}`);
             }
             const queued = [];
@@ -201,7 +201,7 @@ describe('Multi-Object Delete Access', function access() {
             throw err;
         })
         .then(() => {
-            for (let i = 1; i < 501; i ++) {
+            for (let i = 1; i < 501; i++) {
                 createObjects.push(s3.putObjectAsync({
                     Bucket: bucketName,
                     Key: `${key}${i}`,

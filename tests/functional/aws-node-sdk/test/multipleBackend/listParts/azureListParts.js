@@ -40,8 +40,8 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
             }).then(res => {
                 this.currentTest.firstEtag = res.ETag;
             }).then(() => s3.uploadPartAsync({ Bucket: azureContainerName,
-                    Key: this.currentTest.key, PartNumber: 2,
-                    UploadId: this.currentTest.uploadId, Body: bodySecondPart })
+                Key: this.currentTest.key, PartNumber: 2,
+                UploadId: this.currentTest.uploadId, Body: bodySecondPart })
             ).then(res => {
                 this.currentTest.secondEtag = res.ETag;
             })

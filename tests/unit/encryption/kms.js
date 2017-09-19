@@ -133,7 +133,7 @@ describe('KMS unit tests', () => {
             });
     });
 
-    /* cb(err, cipherBundle, decipherBundle)*/
+    /* cb(err, cipherBundle, decipherBundle) */
     function _utestCreateBundlePair(log, cb) {
         const algorithm = 'AES256';
         const headers = {

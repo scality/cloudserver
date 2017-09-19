@@ -59,7 +59,7 @@ describe('Complete MPU', () => {
             .then(data => {
                 result.uploadId = data.UploadId;
                 return s3.uploadPartAsync({ Bucket: bucket, Key: key,
-                  PartNumber: 1, UploadId: data.UploadId, Body: 'foo' });
+                    PartNumber: 1, UploadId: data.UploadId, Body: 'foo' });
             })
             .then(data => {
                 result.eTag = data.ETag;
@@ -106,7 +106,7 @@ describe('Complete MPU', () => {
             let eTag;
 
             beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled })
+                VersioningConfiguration: versioningEnabled })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;
@@ -125,7 +125,7 @@ describe('Complete MPU', () => {
             let eTag;
 
             beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
-                    VersioningConfiguration: versioningSuspended })
+                VersioningConfiguration: versioningSuspended })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;

@@ -25,7 +25,7 @@ function comp(v1, v2) {
 
 describe('aws-node-sdk test bucket versioning listing', function testSuite() {
     this.timeout(600000);
-    let s3 = undefined;
+    let s3;
     const masterVersions = [];
     const allVersions = [];
 

@@ -103,8 +103,8 @@ describe('Listing corner cases tests', () => {
     it('should list with valid marker', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Marker: 'notes/summer/1.txt',
+                Delimiter: '/',
+                Marker: 'notes/summer/1.txt',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -125,8 +125,8 @@ describe('Listing corner cases tests', () => {
     it('should list with unexpected marker', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Marker: 'zzzz',
+                Delimiter: '/',
+                Marker: 'zzzz',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -146,9 +146,9 @@ describe('Listing corner cases tests', () => {
     it('should list with unexpected marker and prefix', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Marker: 'notes/summer0',
-              Prefix: 'notes/summer/',
+                Delimiter: '/',
+                Marker: 'notes/summer0',
+                Prefix: 'notes/summer/',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -168,7 +168,7 @@ describe('Listing corner cases tests', () => {
     it('should list with MaxKeys', done => {
         s3.listObjects(
             { Bucket,
-              MaxKeys: 3,
+                MaxKeys: 3,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -177,9 +177,9 @@ describe('Listing corner cases tests', () => {
                     Marker: '',
                     IsTruncated: true,
                     Contents: [objects[0].Key,
-                               objects[1].Key,
-                               objects[2].Key,
-                              ],
+                        objects[1].Key,
+                        objects[2].Key,
+                    ],
                     Name: Bucket,
                     Prefix: '',
                     MaxKeys: 3,
@@ -191,7 +191,7 @@ describe('Listing corner cases tests', () => {
     it('should list with big MaxKeys', done => {
         s3.listObjects(
             { Bucket,
-              MaxKeys: 15000,
+                MaxKeys: 15000,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -200,16 +200,16 @@ describe('Listing corner cases tests', () => {
                     Marker: '',
                     IsTruncated: false,
                     Contents: [objects[0].Key,
-                               objects[1].Key,
-                               objects[2].Key,
-                               objects[3].Key,
-                               objects[4].Key,
-                               objects[5].Key,
-                               objects[6].Key,
-                               objects[7].Key,
-                               objects[8].Key,
-                               objects[9].Key,
-                              ],
+                        objects[1].Key,
+                        objects[2].Key,
+                        objects[3].Key,
+                        objects[4].Key,
+                        objects[5].Key,
+                        objects[6].Key,
+                        objects[7].Key,
+                        objects[8].Key,
+                        objects[9].Key,
+                    ],
                     Name: Bucket,
                     Prefix: '',
                     MaxKeys: 15000,
@@ -221,7 +221,7 @@ describe('Listing corner cases tests', () => {
     it('should list with delimiter', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
+                Delimiter: '/',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -242,7 +242,7 @@ describe('Listing corner cases tests', () => {
     it('should list with long delimiter', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: 'notes/summer',
+                Delimiter: 'notes/summer',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -251,13 +251,13 @@ describe('Listing corner cases tests', () => {
                     Marker: '',
                     IsTruncated: false,
                     Contents: [objects[0].Key,
-                               objects[1].Key,
-                               objects[2].Key,
-                               objects[3].Key,
-                               objects[7].Key,
-                               objects[8].Key,
-                               objects[9].Key,
-                              ],
+                        objects[1].Key,
+                        objects[2].Key,
+                        objects[3].Key,
+                        objects[7].Key,
+                        objects[8].Key,
+                        objects[9].Key,
+                    ],
                     Name: Bucket,
                     Prefix: '',
                     Delimiter: 'notes/summer',
@@ -270,8 +270,8 @@ describe('Listing corner cases tests', () => {
     it('should list with delimiter and prefix related to #147', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
+                Delimiter: '/',
+                Prefix: 'notes/',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -299,9 +299,9 @@ describe('Listing corner cases tests', () => {
     it('should list with prefix and marker related to #147', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/year.txt',
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/year.txt',
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -322,10 +322,10 @@ describe('Listing corner cases tests', () => {
     it('should list with all parameters 1 of 5', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/',
-              MaxKeys: 1,
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/',
+                MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -347,10 +347,10 @@ describe('Listing corner cases tests', () => {
     it('should list with all parameters 2 of 5', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/spring/',
-              MaxKeys: 1,
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/spring/',
+                MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -372,10 +372,10 @@ describe('Listing corner cases tests', () => {
     it('should list with all parameters 3 of 5', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/summer/',
-              MaxKeys: 1,
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/summer/',
+                MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -397,10 +397,10 @@ describe('Listing corner cases tests', () => {
     it('should list with all parameters 4 of 5', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/year.txt',
-              MaxKeys: 1,
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/year.txt',
+                MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -422,10 +422,10 @@ describe('Listing corner cases tests', () => {
     it('should list with all parameters 5 of 5', done => {
         s3.listObjects(
             { Bucket,
-              Delimiter: '/',
-              Prefix: 'notes/',
-              Marker: 'notes/yore.rs',
-              MaxKeys: 1,
+                Delimiter: '/',
+                Prefix: 'notes/',
+                Marker: 'notes/yore.rs',
+                MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
@@ -452,10 +452,10 @@ describe('Listing corner cases tests', () => {
             if (!err) {
                 s3.listObjects(
                     { Bucket,
-                      Delimiter: '/',
-                      Prefix: 'notes/',
-                      Marker: 'notes/yore.rs',
-                      MaxKeys: 1,
+                        Delimiter: '/',
+                        Prefix: 'notes/',
+                        Marker: 'notes/yore.rs',
+                        MaxKeys: 1,
                     },
                     (err, data) => {
                         assert.strictEqual(err, null);

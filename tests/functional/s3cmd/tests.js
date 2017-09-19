@@ -259,8 +259,10 @@ describe('s3cmd putBucket', () => {
     // pass by returning error. If legacyAWSBehvior, request
     // would return a 200
     it('put the same bucket, should fail', done => {
-        exec(['mb', `s3://${bucket}`,
-        '--bucket-location=scality-us-west-1'], done, 13);
+        exec([
+            'mb', `s3://${bucket}`,
+            '--bucket-location=scality-us-west-1',
+        ], done, 13);
     });
 
     it('put an invalid bucket, should fail', done => {
@@ -307,8 +309,10 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
     });
 
     it('should set a specific ACL', done => {
-        exec(['setacl', `s3://${bucket}`,
-        `--acl-grant=write:${emailAccount}`], done);
+        exec([
+            'setacl', `s3://${bucket}`,
+            `--acl-grant=write:${emailAccount}`,
+        ], done);
     });
 
     it('should get specific ACL that was set', done => {
@@ -407,8 +411,10 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     });
 
     it('should copy an object to the same bucket', done => {
-        exec(['cp', `s3://${bucket}/${upload}`,
-        `s3://${bucket}/${upload}copy`], done);
+        exec([
+            'cp', `s3://${bucket}/${upload}`,
+            `s3://${bucket}/${upload}copy`,
+        ], done);
     });
 
     it('should get an object that was copied', done => {
@@ -442,8 +448,10 @@ describe('s3cmd copyObject without MPU to different bucket ' +
         });
 
         it('should copy an object to the new bucket', done => {
-            exec(['cp', `s3://${bucket}/${upload}`,
-            `s3://${copyBucket}/${upload}`], done);
+            exec([
+                'cp', `s3://${bucket}/${upload}`,
+                `s3://${copyBucket}/${upload}`,
+            ], done);
         });
 
         it('should get an object that was copied', done => {
@@ -590,8 +598,10 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should copy an object that was put via multipart upload', done => {
-        exec(['cp', `s3://${bucket}/${MPUpload}`,
-        `s3://${bucket}/${MPUpload}copy`], done);
+        exec([
+            'cp', `s3://${bucket}/${MPUpload}`,
+            `s3://${bucket}/${MPUpload}copy`,
+        ], done);
     });
 
     it('should get an object that was copied', done => {
@@ -786,8 +796,10 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
         exec(['mb', `s3://${bucket}`], () => {
             createFile(upload16MB, 16777216, () => {
                 async.timesLimit(50, 1, (n, next) => {
-                    exec(['put', upload16MB, `s3://${bucket}/key${n}`,
-                    '--multipart-chunk-size-mb=5'], next);
+                    exec([
+                        'put', upload16MB, `s3://${bucket}/key${n}`,
+                        '--multipart-chunk-size-mb=5',
+                    ], next);
                 }, done);
             });
         });

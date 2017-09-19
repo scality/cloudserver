@@ -79,7 +79,7 @@ utils.getAzureKeys = () => {
         {
             describe: 'big',
             name: `bigkey-${Date.now()}`,
-            body: new Buffer(10485760),
+            body: Buffer.alloc(10485760),
             MD5: 'f1c9645dbc14efddc7d8a322685f26eb',
         },
     ];

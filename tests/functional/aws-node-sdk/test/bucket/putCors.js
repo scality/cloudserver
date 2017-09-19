@@ -6,15 +6,15 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketName = 'testcorsbucket';
 
 const sampleCors = { CORSRules: [
-  { AllowedMethods: ['PUT', 'POST', 'DELETE'],
-    AllowedOrigins: ['http://www.example.com'],
-    AllowedHeaders: ['*'],
-    MaxAgeSeconds: 3000,
-    ExposeHeaders: ['x-amz-server-side-encryption'] },
-  { AllowedMethods: ['GET'],
-    AllowedOrigins: ['*'],
-    AllowedHeaders: ['*'],
-    MaxAgeSeconds: 3000 },
+    { AllowedMethods: ['PUT', 'POST', 'DELETE'],
+        AllowedOrigins: ['http://www.example.com'],
+        AllowedHeaders: ['*'],
+        MaxAgeSeconds: 3000,
+        ExposeHeaders: ['x-amz-server-side-encryption'] },
+    { AllowedMethods: ['GET'],
+        AllowedOrigins: ['*'],
+        AllowedHeaders: ['*'],
+        MaxAgeSeconds: 3000 },
 ] };
 
 function _corsTemplate(params) {
@@ -26,11 +26,11 @@ function _corsTemplate(params) {
         ExposeHeaders: ['x-amz-server-side-encryption'],
     };
     ['AllowedMethods', 'AllowedOrigins', 'AllowedHeaders', 'MaxAgeSeconds',
-    'ExposeHeaders'].forEach(prop => {
-        if (params[prop]) {
-            sampleRule[prop] = params[prop];
-        }
-    });
+        'ExposeHeaders'].forEach(prop => {
+            if (params[prop]) {
+                sampleRule[prop] = params[prop];
+            }
+        });
     return { CORSRules: [sampleRule] };
 }
 

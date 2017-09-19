@@ -209,7 +209,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     replicationUtils.validStatuses.forEach(status => {
         const config = setConfigRules({ Status: status });
 
-        it(`should accept configuration when \'Role\' is ${status}`, done =>
+        it(`should accept configuration when 'Role' is ${status}`, done =>
             checkError(config, null, done));
     });
 

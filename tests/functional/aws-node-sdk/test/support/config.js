@@ -8,7 +8,7 @@ const conf = require('../../../../../lib/Config').config;
 const transport = conf.https ? 'https' : 'http';
 
 const ssl = conf.https;
-let httpOptions = undefined;
+let httpOptions;
 if (ssl && ssl.ca) {
     httpOptions = {
         agent: new https.Agent({

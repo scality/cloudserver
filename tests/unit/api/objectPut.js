@@ -64,7 +64,7 @@ describe('parseTagFromQuery', () => {
     const tests = [
         { tagging: 'key1=value1', result: { key1: 'value1' } },
         { tagging: `key1=${encodeURIComponent(allowedChar)}`,
-        result: { key1: allowedChar } },
+            result: { key1: allowedChar } },
         { tagging: 'key1=value1=value2', error: invalidArgument },
         { tagging: '=value1', error: invalidArgument },
         { tagging: 'key1%=value1', error: invalidArgument },

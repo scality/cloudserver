@@ -13,12 +13,13 @@ const accountToVet = 'accountToVetId';
 const objectOwnerCanonicalId = 'objectOwnerCanonicalId';
 const object = {
     'owner-id': objectOwnerCanonicalId,
-    'acl':
-       { Canned: 'private',
-         FULL_CONTROL: [],
-         WRITE_ACP: [],
-         READ: [],
-         READ_ACP: [] },
+    'acl': {
+        Canned: 'private',
+        FULL_CONTROL: [],
+        WRITE_ACP: [],
+        READ: [],
+        READ_ACP: [],
+    },
 };
 
 describe('object acl authorization for objectGet and objectHead', () => {

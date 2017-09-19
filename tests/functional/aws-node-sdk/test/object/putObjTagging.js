@@ -73,7 +73,7 @@ describe('PUT object taggings', () => {
                 const taggingConfig = generateTaggingConfig(taggingTest.tag.key,
                   taggingTest.tag.value);
                 s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
-                  Tagging: taggingConfig }, (err, data) => {
+                    Tagging: taggingConfig }, (err, data) => {
                     if (taggingTest.error) {
                         _checkError(err, taggingTest.error, 400);
                     } else {
@@ -88,7 +88,7 @@ describe('PUT object taggings', () => {
         it('should return BadRequest if putting more that 10 tags', done => {
             const taggingConfig = generateMultipleTagConfig(11);
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
-              Tagging: taggingConfig }, err => {
+                Tagging: taggingConfig }, err => {
                 _checkError(err, 'BadRequest', 400);
                 done();
             });
@@ -96,17 +96,17 @@ describe('PUT object taggings', () => {
 
         it('should return InvalidTag if using the same key twice', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
-              Tagging: { TagSet: [
-                  {
-                      Key: 'key1',
-                      Value: 'value1',
-                  },
-                  {
-                      Key: 'key1',
-                      Value: 'value2',
-                  },
-              ] },
-          }, err => {
+                Tagging: { TagSet: [
+                    {
+                        Key: 'key1',
+                        Value: 'value1',
+                    },
+                    {
+                        Key: 'key1',
+                        Value: 'value2',
+                    },
+                ] },
+            }, err => {
                 _checkError(err, 'InvalidTag', 400);
                 done();
             });
@@ -114,13 +114,13 @@ describe('PUT object taggings', () => {
 
         it('should return InvalidTag if key is an empty string', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
-              Tagging: { TagSet: [
-                  {
-                      Key: '',
-                      Value: 'value1',
-                  },
-              ] },
-          }, err => {
+                Tagging: { TagSet: [
+                    {
+                        Key: '',
+                        Value: 'value1',
+                    },
+                ] },
+            }, err => {
                 _checkError(err, 'InvalidTag', 400);
                 done();
             });
@@ -128,8 +128,8 @@ describe('PUT object taggings', () => {
 
         it('should be able to put an empty Tag set', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
-              Tagging: { TagSet: [] },
-          }, (err, data) => {
+                Tagging: { TagSet: [] },
+            }, (err, data) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
                 assert.strictEqual(Object.keys(data).length, 0);
                 done();
@@ -151,7 +151,7 @@ describe('PUT object taggings', () => {
         done => {
             otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
               objectName, Tagging: taggingConfig,
-          }, err => {
+            }, err => {
                 _checkError(err, 'AccessDenied', 403);
                 done();
             });
@@ -161,12 +161,12 @@ describe('PUT object taggings', () => {
         'account to an object with ACL "public-read-write"',
         done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
-            ACL: 'public-read-write' }, err => {
+                ACL: 'public-read-write' }, err => {
                 if (err) {
                     return done(err);
                 }
                 return otherAccountS3.putObjectTagging({ Bucket: bucketName,
-                  Key: objectName, Tagging: taggingConfig,
+                    Key: objectName, Tagging: taggingConfig,
                 }, err => {
                     _checkError(err, 'AccessDenied', 403);
                     done();
@@ -183,8 +183,8 @@ describe('PUT object taggings', () => {
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
                 next => otherAccountS3.putObjectTagging({ Bucket: bucketName,
-                      Key: objectNameAcl, Tagging: taggingConfig,
-                    }, err => next(err)),
+                    Key: objectNameAcl, Tagging: taggingConfig,
+                }, err => next(err)),
             ], err => {
                 _checkError(err, 'AccessDenied', 403);
                 done();
@@ -199,8 +199,8 @@ describe('PUT object taggings', () => {
                 next => otherAccountS3.putObject({ Bucket: bucketName, Key:
                     objectNameAcl }, err => next(err)),
                 next => s3.putObjectTagging({ Bucket: bucketName,
-                      Key: objectNameAcl, Tagging: taggingConfig,
-                    }, err => next(err)),
+                    Key: objectNameAcl, Tagging: taggingConfig,
+                }, err => next(err)),
             ], done);
         });
     });

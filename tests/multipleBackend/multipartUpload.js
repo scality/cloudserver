@@ -384,8 +384,11 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 query: { uploadId } }, deleteParams);
             multipartDelete(authInfo, delParams, log, err => {
                 assert.equal(err, null, `Error aborting MPU: ${err}`);
-                s3.listParts({ Bucket: awsBucket, Key: objectKey,
-                UploadId: uploadId }, err => {
+                s3.listParts({
+                    Bucket: awsBucket,
+                    Key: objectKey,
+                    UploadId: uploadId,
+                }, err => {
                     assert.strictEqual(err.code, 'NoSuchUpload');
                     done();
                 });

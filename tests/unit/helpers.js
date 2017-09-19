@@ -197,7 +197,6 @@ function cleanup() {
 }
 
 class DummyRequestLogger {
-
     constructor() {
         this.ops = [];
         this.counts = {
@@ -241,7 +240,7 @@ class DummyRequestLogger {
         this.counts.fatal += 1;
     }
 
-    getSerializedUids() {
+    getSerializedUids() { // eslint-disable-line class-methods-use-this
         return 'dummy:Serialized:Uids';
     }
 
@@ -256,18 +255,19 @@ class DummyRequestLogger {
 
 class CorsConfigTester {
     constructor(params) {
-        this._cors = [
-          { allowedMethods: ['PUT', 'POST', 'DELETE'],
+        this._cors = [{
+            allowedMethods: ['PUT', 'POST', 'DELETE'],
             allowedOrigins: ['http://www.example.com'],
             allowedHeaders: ['*'],
             maxAgeSeconds: 3000,
-            exposeHeaders: ['x-amz-server-side-encryption'] },
-          { id: 'testid',
+            exposeHeaders: ['x-amz-server-side-encryption'],
+        }, {
+            id: 'testid',
             allowedMethods: ['GET'],
             allowedOrigins: ['*'],
             allowedHeaders: ['*'],
-            maxAgeSeconds: 3000 },
-        ];
+            maxAgeSeconds: 3000,
+        }];
 
         if (params) {
             Object.keys(params).forEach(key => {
@@ -286,7 +286,7 @@ class CorsConfigTester {
         this._cors.forEach(rule => {
             xml.push('<CORSRule>');
             ['allowedMethods', 'allowedOrigins', 'allowedHeaders',
-            'exposeHeaders', 'maxAgeSeconds']
+                'exposeHeaders', 'maxAgeSeconds']
             .forEach(key => {
                 if (rule[key] && Array.isArray(rule[key])) {
                     const element = key === 'maxAgeSeconds' ?

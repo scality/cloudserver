@@ -13,7 +13,7 @@ const awsLocation = 'aws-test';
 const awsLocationEncryption = 'aws-test-encryption';
 const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
-const bigBody = new Buffer(10485760);
+const bigBody = Buffer.alloc(10485760);
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 // AWS handles objects larger than 5MB as MPUs, so returned ETag differs
@@ -58,9 +58,8 @@ function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
             if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
                 assert.strictEqual(res.ETag, `"${awsMD5}"`);
             }
-            assert.strictEqual(res.Metadata
-                ['x-amz-meta-scal-location-constraint'],
-                location);
+            assert.strictEqual(res.
+                Metadata['x-amz-meta-scal-location-constraint'], location);
             return cb(res);
         });
     });
@@ -314,7 +313,7 @@ describe('MultipleBackend put object', function testSuite() {
                                     res.Metadata['scal-location-constraint'],
                                     'file');
                                 awsS3.getObject({ Bucket: awsBucket,
-                                Key: key }, err => {
+                                    Key: key }, err => {
                                     assert.strictEqual(err.code, 'NoSuchKey');
                                     done();
                                 });
@@ -352,7 +351,7 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation,
-                                'unique-header': 'first object' } };
+                        'unique-header': 'first object' } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
@@ -364,8 +363,8 @@ describe('MultipleBackend put object', function testSuite() {
                         setTimeout(() => {
                             awsGetCheck(key, correctMD5, correctMD5,
                             awsLocation, result => {
-                                assert.strictEqual(result.Metadata
-                                    ['x-amz-meta-unique-header'],
+                                assert.strictEqual(result.
+                                    Metadata['x-amz-meta-unique-header'],
                                     'second object');
                                 done();
                             });

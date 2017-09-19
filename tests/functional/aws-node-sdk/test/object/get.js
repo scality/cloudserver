@@ -809,13 +809,13 @@ describe('GET object', () => {
                 done => s3.putObject({
                     Bucket: bucketName,
                     Key: objectName,
-                    Body: new Buffer(10).fill(0),
+                    Body: Buffer.alloc(10),
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: 1 }, (err, data) => {
                         const md5Hash = crypto.createHash('md5');
                         const md5HashExpected = crypto.createHash('md5');
-                        const expected = new Buffer(10).fill(0);
+                        const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),
                             md5HashExpected.update(expected).digest('hex')
@@ -828,14 +828,14 @@ describe('GET object', () => {
                 s3.putObject({
                     Bucket: bucketName,
                     Key: objectName,
-                    Body: new Buffer(10).fill(0),
+                    Body: Buffer.alloc(10),
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: '1' }, (err, data) => {
                         checkContentLength(data.ContentLength, 10);
                         const md5Hash = crypto.createHash('md5');
                         const md5HashExpected = crypto.createHash('md5');
-                        const expected = new Buffer(10).fill(0);
+                        const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),
                             md5HashExpected.update(expected).digest('hex')
@@ -849,7 +849,7 @@ describe('GET object', () => {
                 s3.putObject({
                     Bucket: bucketName,
                     Key: objectName,
-                    Body: new Buffer(10).fill(0),
+                    Body: Buffer.alloc(10),
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: 2 }, err => {
@@ -874,9 +874,9 @@ describe('GET object', () => {
                 // The original object was composed of three parts
                 const partOneSize = partSize * 10;
                 const bufs = orderedPartNumbers.map(n =>
-                    new Buffer(partSize).fill(n));
+                    Buffer.alloc(partSize, n));
                 const partOneBody = Buffer.concat(bufs, partOneSize);
-                const partTwoBody = new Buffer(partSize).fill(4);
+                const partTwoBody = Buffer.alloc(partSize, 4);
 
                 beforeEach(done => async.waterfall([
                     next => completeMPU(orderedPartNumbers, next),
@@ -916,11 +916,11 @@ describe('GET object', () => {
             });
 
             describe('uploadPartCopy overwrite', () => {
-                const partOneBody = new Buffer(partSize).fill(1);
+                const partOneBody = Buffer.alloc(partSize, 1);
                 // The original object was composed of three parts
                 const partTwoSize = partSize * 10;
                 const bufs = orderedPartNumbers.map(n =>
-                    new Buffer(partSize).fill(n));
+                    Buffer.alloc(partSize, n));
                 const partTwoBody = Buffer.concat(bufs, partTwoSize);
 
                 beforeEach(done => async.waterfall([

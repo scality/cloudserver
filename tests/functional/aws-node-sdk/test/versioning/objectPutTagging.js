@@ -38,7 +38,7 @@ describe('Put object tagging with versioning', () => {
         it('should be able to put tag with versioning', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   (err, data) => next(err, data.VersionId)),
@@ -63,7 +63,7 @@ describe('Put object tagging with versioning', () => {
         ' version-enabled bucket where no version id is specified ', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   (err, data) => next(err, data.VersionId)),
@@ -86,7 +86,7 @@ describe('Put object tagging with versioning', () => {
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                 err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
@@ -111,7 +111,7 @@ describe('Put object tagging with versioning', () => {
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                 err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
@@ -133,7 +133,7 @@ describe('Put object tagging with versioning', () => {
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   err => next(err)),
@@ -158,7 +158,7 @@ describe('Put object tagging with versioning', () => {
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
-                  VersioningConfiguration: versioningEnabled },
+                    VersioningConfiguration: versioningEnabled },
                   err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                   err => next(err)),

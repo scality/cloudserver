@@ -29,7 +29,7 @@ describe('List parts', () => {
             .then(res => {
                 uploadId = res.UploadId;
                 return s3.uploadPartAsync({ Bucket: bucket, Key: key,
-                  PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
+                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
             }).then(() => s3.uploadPartAsync({ Bucket: bucket, Key: key,
                 PartNumber: 2, UploadId: uploadId, Body: bodySecondPart })
             ).then(res => {
@@ -86,7 +86,7 @@ function createPart(sigCfg, bucketUtil, s3, key) {
     .then(res => {
         uploadId = res.UploadId;
         return s3.uploadPartAsync({ Bucket: bucket, Key: key,
-          PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
+            PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
     })
     .then(() => Promise.resolve(uploadId));
 }

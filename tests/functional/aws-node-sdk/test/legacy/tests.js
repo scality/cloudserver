@@ -136,7 +136,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 s3.uploadPart(params, (err, data) => {
                     if (err) {
                         return done(
-                            new Error('error uploading a part: ${err}'));
+                            new Error(`error uploading a part: ${err}`));
                     }
                     assert.strictEqual(data.ETag,
                         `"${calculatedFirstPartHash}"`);
