@@ -1,5 +1,6 @@
 const async = require('async');
 const assert = require('assert');
+const AWS = require('aws-sdk');
 
 const { s3middleware } = require('arsenal');
 const { config } = require('../../../../../../lib/Config');
@@ -7,6 +8,8 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { getAzureClient, getAzureContainerName } =
     require('../utils');
+const { getRealAwsConfig } =
+    require('../../support/awsConfig');
 
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
@@ -100,7 +103,7 @@ function mpuSetup(key, location, cb) {
 
 describeSkipIfNotMultiple('Complete MPU API for Azure data backend',
 function testSuite() {
-    this.timeout(100000);
+    this.timeout(150000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
             this.currentTest.key = `somekey-${Date.now()}`;

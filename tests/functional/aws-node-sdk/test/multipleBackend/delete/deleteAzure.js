@@ -199,5 +199,53 @@ function testSuite() {
                 ], done);
             });
         });
+
+        describe('with ongoing MPU: ', () => {
+            beforeEach(function beF(done) {
+                this.currentTest.key = uniqName(keyObject);
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.currentTest.key,
+                    Body: normalBody,
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Err putting object to Azure: ' +
+                        `${err}`);
+                    const params = {
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.key,
+                        Metadata: { 'scal-location-constraint': azureLocation },
+                    };
+                    s3.createMultipartUpload(params, (err, res) => {
+                        assert.equal(err, null, 'Err initiating MPU on ' +
+                            `Azure: ${err}`);
+                        this.currentTest.uploadId = res.UploadId;
+                        setTimeout(() => done(), azureTimeout);
+                    });
+                });
+            });
+
+            afterEach(function afF(done) {
+                s3.abortMultipartUpload({
+                    Bucket: azureContainerName,
+                    Key: this.currentTest.key,
+                    UploadId: this.currentTest.uploadId,
+                }, err => {
+                    assert.equal(err, null, `Err aborting MPU: ${err}`);
+                    setTimeout(() => done(), azureTimeout);
+                });
+            });
+
+            it('should return InternalError', function itFn(done) {
+                s3.deleteObject({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                }, err => {
+                    assert.strictEqual(err.code, 'MPUinProgress');
+                    done();
+                });
+            });
+        });
     });
 });
