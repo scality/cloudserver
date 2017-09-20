@@ -11,6 +11,7 @@ const { createEncryptedBucketPromise } =
 
 const awsLocation = 'aws-test';
 const awsLocation2 = 'aws-test-2';
+const awsLocationMismatch = 'aws-test-mismatch';
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -278,6 +279,32 @@ function testSuite() {
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocation, copyKey, 'COPY', false, awsS3,
+                        awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object on AWS location with bucketMatch equals ' +
+        'false to a different AWS location with bucketMatch equals true',
+        done => {
+            putSourceObj(awsLocationMismatch, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocation },
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, awsLocationMismatch, copyKey,
+                        bucket, awsLocation, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
                 });
             });
