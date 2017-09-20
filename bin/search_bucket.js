@@ -16,12 +16,13 @@ function _performSearch(host,
                         accessKey,
                         secretKey,
                         verbose, ssl) {
-    const escapedsearch = encodeURIComponent(query);
+    const escapedSearch = encodeURIComponent(query);
+    console.log("escapedsearch!!", escapedSearch);
     const options = {
         host,
         port,
         method: 'GET',
-        path: `/${bucketName}/?search=${escapedsearch}`,
+        path: `/${bucketName}/?search=${escapedSearch}`,
         headers: {
             'Content-Length': 0,
         },
