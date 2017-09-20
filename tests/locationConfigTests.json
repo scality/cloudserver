@@ -46,6 +46,16 @@
             "credentialsProfile": "default"
         }
     },
+    "aws-test-2": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester222",
+            "bucketMatch": true,
+            "credentialsProfile": "default_2"
+        }
+    },
     "azuretest": {
         "type": "azure",
         "legacyAwsBehavior": true,

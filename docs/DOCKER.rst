@@ -58,6 +58,12 @@ You will also have to mount your AWS credentials file:
     -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
     -v ~/.aws/credentials:/root/.aws/credentials -e S3DATA=multiple scality/s3server
 
+NOTE: One account can't copy to another account with a source and
+destination on real AWS unless the account associated with the
+access Key/secret Key pairs used for the destination bucket has rights
+to get in the source bucket. ACL's would have to be updated
+on AWS directly to enable this.
+
 ENDPOINT
 ^^^^^^^^^^
 

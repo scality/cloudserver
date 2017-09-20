@@ -58,8 +58,8 @@ function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
             if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
                 assert.strictEqual(res.ETag, `"${awsMD5}"`);
             }
-            assert.strictEqual(res.
-                Metadata['x-amz-meta-scal-location-constraint'], location);
+            assert.strictEqual(res.Metadata['scal-location-constraint'],
+                location);
             return cb(res);
         });
     });
@@ -363,9 +363,8 @@ describe('MultipleBackend put object', function testSuite() {
                         setTimeout(() => {
                             awsGetCheck(key, correctMD5, correctMD5,
                             awsLocation, result => {
-                                assert.strictEqual(result.
-                                    Metadata['x-amz-meta-unique-header'],
-                                    'second object');
+                                assert.strictEqual(result.Metadata
+                                    ['unique-header'], 'second object');
                                 done();
                             });
                         }, awsTimeout);
