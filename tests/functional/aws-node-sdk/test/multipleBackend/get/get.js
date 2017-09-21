@@ -1,11 +1,13 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
+const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { config } = require('../../../../../../lib/Config');
 
 const awsLocation = 'aws-test';
+const awsLocationMismatch = 'aws-test-mismatch';
 const bucket = 'buckettestmultiplebackendget';
 const memObject = `memobject-${Date.now()}`;
 const fileObject = `fileobject-${Date.now()}`;
@@ -72,6 +74,109 @@ describe('Multiple backend get object', function testSuite() {
                     done();
                 });
             });
+
+        describeSkipIfNotMultiple('Complete MPU then get object on AWS ' +
+        'location with bucketMatch: true ', () => {
+            beforeEach(function beforeEachFn(done) {
+                this.currentTest.key = `somekey-${Date.now()}`;
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
+
+                async.waterfall([
+                    next => s3.createMultipartUpload({
+                        Bucket: bucket, Key: this.currentTest.key,
+                        Metadata: { 'scal-location-constraint': awsLocation,
+                    } }, (err, res) => next(err, res.UploadId)),
+                    (uploadId, next) => s3.uploadPart({
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: 'helloworld' }, (err, res) => next(err, uploadId,
+                        res.ETag)),
+                    (uploadId, eTag, next) => s3.completeMultipartUpload({
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        MultipartUpload: {
+                            Parts: [
+                                {
+                                    ETag: eTag,
+                                    PartNumber: 1,
+                                },
+                            ],
+                        },
+                        UploadId: uploadId,
+                    }, err => next(err)),
+                ], done);
+            });
+            it('should get object from MPU on AWS ' +
+            'location with bucketMatch: true ', function it(done) {
+                s3.getObject({
+                    Bucket: bucket,
+                    Key: this.test.key,
+                }, (err, res) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                      `error ${err}`);
+                    assert.strictEqual(res.ContentLength, '10');
+                    assert.strictEqual(res.Body.toString(), 'helloworld');
+                    assert.deepStrictEqual(res.Metadata,
+                      { 'scal-location-constraint': awsLocation });
+                    return done(err);
+                });
+            });
+        });
+
+        describeSkipIfNotMultiple('Complete MPU then get object on AWS ' +
+        'location with bucketMatch: false ', () => {
+            beforeEach(function beforeEachFn(done) {
+                this.currentTest.key = `somekey-${Date.now()}`;
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
+
+                async.waterfall([
+                    next => s3.createMultipartUpload({
+                        Bucket: bucket, Key: this.currentTest.key,
+                        Metadata: { 'scal-location-constraint':
+                        awsLocationMismatch,
+                    } }, (err, res) => next(err, res.UploadId)),
+                    (uploadId, next) => s3.uploadPart({
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: 'helloworld' }, (err, res) => next(err, uploadId,
+                        res.ETag)),
+                    (uploadId, eTag, next) => s3.completeMultipartUpload({
+                        Bucket: bucket,
+                        Key: this.currentTest.key,
+                        MultipartUpload: {
+                            Parts: [
+                                {
+                                    ETag: eTag,
+                                    PartNumber: 1,
+                                },
+                            ],
+                        },
+                        UploadId: uploadId,
+                    }, err => next(err)),
+                ], done);
+            });
+            it('should get object from MPU on AWS ' +
+            'location with bucketMatch: false ', function it(done) {
+                s3.getObject({
+                    Bucket: bucket,
+                    Key: this.test.key,
+                }, (err, res) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                      `error ${err}`);
+                    assert.strictEqual(res.ContentLength, '10');
+                    assert.strictEqual(res.Body.toString(), 'helloworld');
+                    assert.deepStrictEqual(res.Metadata,
+                      { 'scal-location-constraint': awsLocationMismatch });
+                    return done(err);
+                });
+            });
+        });
 
         describeSkipIfNotMultiple('with objects in all available backends ' +
             '(mem/file/AWS)', () => {
