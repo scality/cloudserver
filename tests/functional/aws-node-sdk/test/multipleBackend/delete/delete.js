@@ -10,8 +10,11 @@ const fileObject = `fileObject-${Date.now()}`;
 const awsObject = `awsObject-${Date.now()}`;
 const emptyObject = `emptyObject-${Date.now()}`;
 const bigObject = `bigObject-${Date.now()}`;
+const mismatchObject = `mismatchOjbect-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
+const awsLocation = 'aws-test';
+const awsLocationMismatch = 'aws-test-mismatch';
 
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
@@ -45,20 +48,27 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             .then(() => {
                 process.stdout.write('Putting object to AWS\n');
                 const params = { Bucket: bucket, Key: awsObject, Body: body,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
                 return s3.putObject(params);
             })
             .then(() => {
                 process.stdout.write('Putting 0-byte object to AWS\n');
                 const params = { Bucket: bucket, Key: emptyObject,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
                 return s3.putObject(params);
             })
             .then(() => {
                 process.stdout.write('Putting large object to AWS\n');
                 const params = { Bucket: bucket, Key: bigObject,
                     Body: bigBody,
-                    Metadata: { 'scal-location-constraint': 'aws-test' } };
+                    Metadata: { 'scal-location-constraint': awsLocation } };
+                return s3.putObject(params);
+            })
+            .then(() => {
+                process.stdout.write('Putting object to AWS\n');
+                const params = { Bucket: bucket, Key: mismatchObject,
+                    Body: body, Metadata:
+                    { 'scal-location-constraint': awsLocationMismatch } };
                 return s3.putObject(params);
             })
             .catch(err => {
@@ -126,6 +136,18 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 s3.getObject({ Bucket: bucket, Key: bigObject }, err => {
                     assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
                         'error but got success');
+                    done();
+                });
+            });
+        });
+        it('should delete object from AWS location with bucketMatch set to ' +
+        'false', done => {
+            s3.deleteObject({ Bucket: bucket, Key: mismatchObject }, err => {
+                assert.equal(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                s3.getObject({ Bucket: bucket, Key: mismatchObject }, err => {
+                    assert.strictEqual(err.code, 'NoSuchKey',
+                        'Expected error but got success');
                     done();
                 });
             });
