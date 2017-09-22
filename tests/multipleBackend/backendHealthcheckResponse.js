@@ -8,7 +8,7 @@ const { config } = require('../../lib/Config');
 const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
 
-describe('Healthcheck response', () => {
+describe.only('Healthcheck response', () => {
     it('should return no error', done => {
         clientCheck(log, err => {
             assert.strictEqual(err, null,
