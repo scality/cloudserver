@@ -1,5 +1,6 @@
 const assert = require('assert');
 const AWS = require('aws-sdk');
+const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -257,23 +258,36 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-            it('should return error NotImplemented putting a ' +
-            'version to AWS', done => {
+            it('should return a version id putting object to ' +
+            'to AWS with versioning enabled', done => {
                 const key = `somekey-${Date.now()}`;
-                s3.putBucketVersioning({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled,
-                }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    const params = { Bucket: bucket, Key: key,
-                        Body: body,
-                        Metadata: { 'scal-location-constraint': awsLocation } };
-                    s3.putObject(params, err => {
-                        assert.strictEqual(err.code, 'NotImplemented');
-                        done();
-                    });
-                });
+                const params = { Bucket: bucket, Key: key, Body: body,
+                    Metadata: { 'scal-location-constraint': awsLocation } };
+                async.waterfall([
+                    next => s3.putBucketVersioning({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningEnabled,
+                    }, err => next(err)),
+                    next => s3.putObject(params, (err, res) => {
+                        assert.strictEqual(err, null, 'Expected success ' +
+                            `putting object, got error ${err}`);
+                        assert(res.VersionId);
+                        next(null, res.ETag);
+                    }),
+                    (eTag, next) => setTimeout(() => {
+                        awsS3.getObject({ Bucket: awsBucket, Key: key },
+                        (err, res) => {
+                            if (process.env.ENABLE_KMS_ENCRYPTION) {
+                                assert.notEqual(res.Body, body);
+                            } else {
+                                assert.deepStrictEqual(res.Body, body);
+                                assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                            }
+                            assert(res.VersionId);
+                            next();
+                        });
+                    }, awsTimeout),
+                ], done);
             });
 
             it('should put a large object to AWS', done => {
