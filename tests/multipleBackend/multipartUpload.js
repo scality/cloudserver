@@ -26,6 +26,7 @@ const listParts = require('../../lib/api/listParts');
 const listMultipartUploads = require('../../lib/api/listMultipartUploads');
 
 const awsLocation = 'aws-test';
+const awsLocationMismatch = 'aws-test-mismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
 const s3 = new AWS.S3(awsConfig);
 const log = new DummyRequestLogger();
@@ -103,6 +104,8 @@ const listRequest = {
 };
 
 const awsParams = { Bucket: awsBucket, Key: objectKey };
+const awsParamsBucketNotMatch = { Bucket: awsBucket, Key:
+  `${bucketName}/${objectKey}` };
 
 function assertMpuInitResults(initResult, key, cb) {
     parseString(initResult, (err, json) => {
@@ -191,7 +194,7 @@ function assertListResults(listResult, testAttribute, uploadId) {
     });
 }
 
-function assertObjOnBackend(expectedBackend, cb) {
+function assertObjOnBackend(expectedBackend, objectKey, cb) {
     return objectGet(authInfo, objectGetRequest, false, log,
     (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
@@ -261,7 +264,7 @@ function putObject(putBackend, cb) {
     });
 }
 
-function abortMPU(uploadId, cb) {
+function abortMPU(uploadId, awsParams, cb) {
     const abortParams = Object.assign({ UploadId: uploadId }, awsParams);
     s3.abortMultipartUpload(abortParams, err => {
         assert.equal(err, null, `Error aborting MPU: ${err}`);
@@ -314,7 +317,29 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         (err, result) => {
             assert.strictEqual(err, null, 'Error initiating MPU');
             assertMpuInitResults(result, objectKey, uploadId => {
-                abortMPU(uploadId, done);
+                abortMPU(uploadId, awsParams, done);
+            });
+        });
+    });
+
+    it('should initiate a multipart upload on AWS location with ' +
+    'bucketMatch equals false', done => {
+        const initiateRequest = {
+            bucketName,
+            namespace,
+            objectKey,
+            headers: { 'host': `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-scal-location-constraint':
+                `${awsLocationMismatch}` },
+            url: `/${objectKey}?uploads`,
+            parsedHost: 'localhost',
+        };
+
+        initiateMultipartUpload(authInfo, initiateRequest, log,
+        (err, result) => {
+            assert.strictEqual(err, null, 'Error initiating MPU');
+            assertMpuInitResults(result, objectKey, uploadId => {
+                abortMPU(uploadId, awsParamsBucketNotMatch, done);
             });
         });
     });
@@ -327,7 +352,21 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             listParts(authInfo, listParams, log, (err, result) => {
                 assert.equal(err, null, `Error listing parts on AWS: ${err}`);
                 assertListResults(result, null, uploadId);
-                abortMPU(uploadId, done);
+                abortMPU(uploadId, awsParams, done);
+            });
+        });
+    });
+
+    it('should list the parts of a multipart upload on real AWS location ' +
+    'with bucketMatch set to false', done => {
+        mpuSetup(awsLocationMismatch, objectKey, uploadId => {
+            const listParams = Object.assign({
+                url: `/${objectKey}?uploadId=${uploadId}`,
+                query: { uploadId } }, listRequest);
+            listParts(authInfo, listParams, log, (err, result) => {
+                assert.equal(err, null, `Error listing parts on AWS: ${err}`);
+                assertListResults(result, null, uploadId);
+                abortMPU(uploadId, awsParamsBucketNotMatch, done);
             });
         });
     });
@@ -341,7 +380,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             listParts(authInfo, listParams, log, (err, result) => {
                 assert.equal(err, null);
                 assertListResults(result, 'maxParts', uploadId);
-                abortMPU(uploadId, done);
+                abortMPU(uploadId, awsParams, done);
             });
         });
     });
@@ -354,14 +393,14 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             listParts(authInfo, listParams, log, (err, result) => {
                 assert.equal(err, null);
                 assertListResults(result, 'partNumMarker', uploadId);
-                abortMPU(uploadId, done);
+                abortMPU(uploadId, awsParams, done);
             });
         });
     });
 
     it('should return an error on listParts of deleted MPU', done => {
         mpuSetup(awsLocation, objectKey, uploadId => {
-            abortMPU(uploadId, () => {
+            abortMPU(uploadId, awsParams, () => {
                 const listParams = Object.assign({
                     url: `/${objectKey}?uploadId=${uploadId}`,
                     query: { uploadId } }, listRequest);
@@ -396,6 +435,26 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
+    it('should abort a multipart upload on real AWS location with' +
+    'bucketMatch set to false', done => {
+        mpuSetup(awsLocationMismatch, objectKey, uploadId => {
+            const delParams = Object.assign({
+                url: `/${objectKey}?uploadId=${uploadId}`,
+                query: { uploadId } }, deleteParams);
+            multipartDelete(authInfo, delParams, log, err => {
+                assert.equal(err, null, `Error aborting MPU: ${err}`);
+                s3.listParts({
+                    Bucket: awsBucket,
+                    Key: `${bucketName}/${objectKey}`,
+                    UploadId: uploadId,
+                }, err => {
+                    assert.strictEqual(err.code, 'NoSuchUpload');
+                    done();
+                });
+            });
+        });
+    });
+
     it('should return error on abort of MPU that does not exist', done => {
         // legacyAwsBehavior is true (otherwise, there would be no error)
         const delParams = Object.assign({
@@ -412,7 +471,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     it('should return InternalError if MPU deleted directly from AWS ' +
     'and try to complete from S3', done => {
         mpuSetup(awsLocation, objectKey, uploadId => {
-            abortMPU(uploadId, () => {
+            abortMPU(uploadId, awsParams, () => {
                 const compParams = Object.assign({
                     url: `/${objectKey}?uploadId=${uploadId}`,
                     query: { uploadId } }, completeParams);
@@ -433,7 +492,23 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             (err, result) => {
                 assert.equal(err, null, `Error completing mpu on AWS: ${err}`);
                 assertMpuCompleteResults(result);
-                assertObjOnBackend(awsLocation, done);
+                assertObjOnBackend(awsLocation, objectKey, done);
+            });
+        });
+    });
+
+    it('should complete a multipart upload on real AWS location with ' +
+    'bucketMatch set to false', done => {
+        mpuSetup(awsLocationMismatch, objectKey, uploadId => {
+            const compParams = Object.assign({
+                url: `/${objectKey}?uploadId=${uploadId}`,
+                query: { uploadId } }, completeParams);
+            completeMultipartUpload(authInfo, compParams, log,
+            (err, result) => {
+                assert.equal(err, null, `Error completing mpu on AWS: ${err}`);
+                assertMpuCompleteResults(result);
+                assertObjOnBackend(awsLocationMismatch,
+                `${bucketName}/${objectKey}`, done);
             });
         });
     });
@@ -450,7 +525,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     assert.equal(err, null, 'Error completing mpu on AWS ' +
                     `${err}`);
                     assertMpuCompleteResults(result);
-                    assertObjOnBackend(awsLocation, done);
+                    assertObjOnBackend(awsLocation, objectKey, done);
                 });
             });
         });
@@ -468,7 +543,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     assert.equal(err, null, 'Error completing mpu on file ' +
                     `${err}`);
                     assertMpuCompleteResults(result);
-                    assertObjOnBackend('file', done);
+                    assertObjOnBackend('file', objectKey, done);
                 });
             });
         });
