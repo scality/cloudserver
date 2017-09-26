@@ -31,13 +31,17 @@ const body = Buffer.from('I am a body', 'utf8');
 
 const awsBucket = 'multitester555';
 const awsLocation = 'aws-test';
+const awsLocation2 = 'aws-test-2';
+const awsLocationMismatch = 'aws-test-mismatch';
 const awsParams = { Bucket: awsBucket, Key: destObjName };
+const awsParamsBucketMismatch = { Bucket: awsBucket, Key:
+  `${bucketName}/${destObjName}` };
 const partETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
-errorDescription) {
+errorPutCopyPart) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -106,12 +110,6 @@ errorDescription) {
         },
     ],
     (err, json) => {
-        if (errorDescription) {
-            assert.strictEqual(err.code, 400);
-            assert(err.InvalidArgument);
-            assert(err.description.indexOf(errorDescription) > -1);
-            return cb();
-        }
         // Need to build request in here since do not have
         // uploadId until here
         assert.ifError(err, 'Error putting source object or initiate MPU');
@@ -131,13 +129,18 @@ errorDescription) {
         const copyPartReq = new DummyRequest(copyPartParams);
         return objectPutCopyPart(authInfo, copyPartReq,
             bucketName, sourceObjName, undefined, log, (err, copyResult) => {
+                if (errorPutCopyPart) {
+                    assert.strictEqual(err.code, errorPutCopyPart.statusCode);
+                    assert(err[errorPutCopyPart.code]);
+                    return cb();
+                }
                 assert.strictEqual(err, null);
-                parseString(copyResult, (err, json) => {
+                return parseString(copyResult, (err, json) => {
                     assert.equal(err, null, `Error parsing copy result ${err}`);
                     assert.strictEqual(json.CopyPartResult.ETag[0],
                         `"${partETag}"`);
                     assert(json.CopyPartResult.LastModified);
-                    cb(testUploadId);
+                    return cb(testUploadId);
                 });
             });
     });
@@ -233,6 +236,50 @@ function testSuite() {
             });
         });
     });
+
+    it('should copy part an object on AWS location that has bucketMatch ' +
+    'equals false to a mpu with a different AWS location', done => {
+        copyPutPart(null, awsLocation, awsLocationMismatch, 'localhost',
+        uploadId => {
+            assert.deepStrictEqual(ds, []);
+            const awsReq = Object.assign({ UploadId: uploadId }, awsParams);
+            s3.listParts(awsReq, (err, partList) => {
+                assertPartList(partList, uploadId);
+                s3.abortMultipartUpload(awsReq, err => {
+                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should copy part an object on AWS to a mpu with a different ' +
+    'AWS location that has bucketMatch equals false', done => {
+        copyPutPart(null, awsLocationMismatch, awsLocation, 'localhost',
+        uploadId => {
+            assert.deepStrictEqual(ds, []);
+            const awsReq = Object.assign({ UploadId: uploadId },
+              awsParamsBucketMismatch);
+            s3.listParts(awsReq, (err, partList) => {
+                assertPartList(partList, uploadId);
+                s3.abortMultipartUpload(awsReq, err => {
+                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
+                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should return error 403 AccessDenied copying part to a ' +
+    'different AWS location without object READ access',
+    done => {
+        const errorPutCopyPart = { code: 'AccessDenied', statusCode: 403 };
+        copyPutPart(null, awsLocation, awsLocation2, 'localhost', done,
+        errorPutCopyPart);
+    });
+
 
     it('should copy part to file based on request endpoint', done => {
         copyPutPart(null, null, 'mem', 'localhost', () => {
