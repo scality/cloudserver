@@ -3,10 +3,17 @@ const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys,
-    convertMD5, fileLocation, azureLocation, azureLocationMismatch }
-    = require('../utils');
-const { config } = require('../../../../../../lib/Config');
+const {
+    describeSkipIfNotMultiple,
+    uniqName,
+    getAzureClient,
+    getAzureContainerName,
+    getAzureKeys,
+    convertMD5,
+    fileLocation,
+    azureLocation,
+    azureLocationMismatch,
+} = require('../utils');
 
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
@@ -15,9 +22,6 @@ const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const normalBody = Buffer.from('I am a body', 'utf8');
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const keys = getAzureKeys();
 /* eslint-disable camelcase */

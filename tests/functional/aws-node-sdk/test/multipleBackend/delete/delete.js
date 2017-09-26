@@ -2,9 +2,13 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { config } = require('../../../../../../lib/Config');
-const { memLocation, fileLocation, awsLocation, awsLocationMismatch }
-    = require('../utils');
+const {
+    describeSkipIfNotMultiple,
+    memLocation,
+    fileLocation,
+    awsLocation,
+    awsLocationMismatch,
+} = require('../utils');
 
 const bucket = 'buckettestmultiplebackenddelete';
 const memObject = `memObject-${Date.now()}`;
@@ -15,9 +19,6 @@ const bigObject = `bigObject-${Date.now()}`;
 const mismatchObject = `mismatchOjbect-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 describeSkipIfNotMultiple('Multiple backend delete', () => {
     withV4(sigCfg => {

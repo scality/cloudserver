@@ -1,17 +1,15 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
 const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { config } = require('../../../../../../lib/Config');
-const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const { awsLocation, memLocation, fileLocation } = require('../utils');
-const awsLocationEncryption = 'aws-test-encryption';
+const { describeSkipIfNotMultiple, awsS3, awsBucket, awsLocation,
+    awsLocationEncryption, memLocation, fileLocation } = require('../utils');
 const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
@@ -23,13 +21,9 @@ const bigAWSMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 
 let bucketUtil;
 let s3;
-let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const awsTimeout = 30000;
 const retryTimeout = 10000;
-let awsBucket;
 
 function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
     process.stdout.write('Getting object\n');
@@ -113,12 +107,6 @@ describe('MultipleBackend put object', function testSuite() {
             if (!process.env.S3_END_TO_END) {
                 this.retries(2);
             }
-            before(() => {
-                awsBucket = config.locationConstraints[awsLocation].
-                  details.bucketName;
-                const awsConfig = getRealAwsConfig(awsLocation);
-                awsS3 = new AWS.S3(awsConfig);
-            });
 
             it('should return an error to put request without a valid ' +
                 'location constraint', done => {

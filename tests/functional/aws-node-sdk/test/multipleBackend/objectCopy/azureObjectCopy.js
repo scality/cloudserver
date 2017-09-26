@@ -4,10 +4,17 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
-const { config } = require('../../../../../../lib/Config');
-const { getAzureClient, getAzureContainerName, convertMD5, memLocation,
-    awsLocation, azureLocation, azureLocation2, azureLocationMismatch } =
-    require('../utils');
+const {
+    describeSkipIfNotMultiple,
+    getAzureClient,
+    getAzureContainerName,
+    convertMD5,
+    memLocation,
+    awsLocation,
+    azureLocation,
+    azureLocation2,
+    azureLocationMismatch,
+} = require('../utils');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 
@@ -26,8 +33,6 @@ const azureTimeout = 40000;
 
 let bucketUtil;
 let s3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 function putSourceObj(key, location, objSize, cb) {
     const sourceParams = { Bucket: bucket, Key: key,

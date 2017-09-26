@@ -4,9 +4,9 @@ const async = require('async');
 const { s3middleware } = require('arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { expectedETag, uniqName, getAzureClient, getAzureContainerName,
-    convertMD5, azureLocation } = require('../utils');
-const { config } = require('../../../../../../lib/Config');
+const { describeSkipIfNotMultiple, expectedETag, uniqName, getAzureClient,
+    getAzureContainerName, convertMD5, azureLocation, azureLocationMismatch }
+    = require('../utils');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const maxSubPartSize = azureMpuUtils.maxSubPartSize;
 const getBlockId = azureMpuUtils.getBlockId;
@@ -15,10 +15,6 @@ const keyObject = 'putazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
 const expectedMD5 = 'a63c90cc3684ad8b0a2176a6a8fe9005';
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
-const azureLocationMismatch = 'azuretestmismatch';
 
 let bucketUtil;
 let s3;

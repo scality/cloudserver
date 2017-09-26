@@ -8,8 +8,9 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
-const { memLocation, awsLocation, awsLocation2, awsLocationMismatch } =
-    require('../utils');
+const { describeSkipIfNotMultiple, awsS3, awsBucket, memLocation, awsLocation,
+    awsLocation2, awsLocationMismatch, awsLocationEncryption }
+    = require('../utils');
 
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
@@ -18,13 +19,8 @@ const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const awsLocationEncryption = 'aws-test-encryption';
-
 let bucketUtil;
 let s3;
-let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 function putSourceObj(location, isEmptyObj, cb) {
     const key = `somekey-${Date.now()}`;
@@ -52,8 +48,6 @@ function putSourceObj(location, isEmptyObj, cb) {
 function assertGetObjects(sourceKey, sourceBucket, sourceLoc, destKey,
 destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation,
 callback) {
-    const awsBucket =
-        config.locationConstraints[awsLocation].details.bucketName;
     const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey };
     const destGetParams = { Bucket: destBucket, Key: destKey };
     const awsParams = { Bucket: awsBucket, Key: awsKey };
@@ -112,8 +106,6 @@ function testSuite() {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            const awsConfig = getRealAwsConfig(awsLocation);
-            awsS3 = new AWS.S3(awsConfig);
             process.stdout.write('Creating bucket\n');
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketAsync = createEncryptedBucketPromise;

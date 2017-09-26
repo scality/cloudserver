@@ -1,12 +1,9 @@
 const assert = require('assert');
 const async = require('async');
-const AWS = require('aws-sdk');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const { config } = require('../../../../../lib/Config');
-const { getRealAwsConfig } = require('../support/awsConfig');
-const { getAzureClient, getAzureContainerName, convertMD5,
-    memLocation, fileLocation, awsLocation, azureLocation } =
+const { describeSkipIfNotMultiple, awsS3, getAzureClient, getAzureContainerName,
+    convertMD5, memLocation, fileLocation, awsLocation, azureLocation } =
     require('./utils');
 
 const awsBucket = 'multitester555';
@@ -22,9 +19,6 @@ const cloudTimeout = 10000;
 
 let bucketUtil;
 let s3;
-let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const putParams = { Bucket: bucket, Body: body };
 const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
@@ -159,8 +153,6 @@ function testSuite() {
     this.timeout(80000);
     withV4(sigCfg => {
         beforeEach(() => {
-            const awsConfig = getRealAwsConfig(awsLocation);
-            awsS3 = new AWS.S3(awsConfig);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucketAsync({ Bucket: bucket })
@@ -274,7 +266,8 @@ function testSuite() {
                 });
             });
 
-            it('should return error on putting tags to object deleted from AWS',
+            it('should not return error on putting tags to object ' +
+            'that has had a delete marker put directly on from AWS',
             done => {
                 const key = `somekey-${Date.now()}`;
                 const params = Object.assign({ Key: key, Metadata:
@@ -289,7 +282,7 @@ function testSuite() {
                             Tagging: putTags };
                         process.stdout.write('Putting object tags\n');
                         s3.putObjectTagging(putTagParams, err => {
-                            assert.strictEqual(err.code, 'InternalError');
+                            assert.strictEqual(err, null);
                             done();
                         });
                     });
@@ -325,8 +318,8 @@ function testSuite() {
                 });
             });
 
-            it('should not return error on getting tags from object deleted ' +
-            'from AWS', done => {
+            it('should not return error on getting tags from object that has ' +
+            'had a delete marker put directly on AWS', done => {
                 const key = `somekey-${Date.now()}`;
                 const params = Object.assign({ Key: key, Tagging: tagString,
                     Metadata: { 'scal-location-constraint': awsLocation } },
@@ -367,8 +360,8 @@ function testSuite() {
                 });
             });
 
-            it('should return error on deleting tags from object deleted ' +
-            'from AWS', done => {
+            it('should not return error on deleting tags from object that ' +
+            'has had delete markers put directly on AWS', done => {
                 const key = `somekey-${Date.now()}`;
                 const params = Object.assign({ Key: key, Tagging: tagString,
                     Metadata: { 'scal-location-constraint': awsLocation } },
@@ -381,7 +374,7 @@ function testSuite() {
                         assert.equal(err, null);
                         const tagParams = { Bucket: bucket, Key: key };
                         s3.deleteObjectTagging(tagParams, err => {
-                            assert.strictEqual(err.code, 'InternalError');
+                            assert.strictEqual(err, null);
                             done();
                         });
                     });

@@ -59,7 +59,7 @@ describe('Put object tagging with versioning', () => {
             });
         });
 
-        it('should not create version puting object tags on a ' +
+        it('should not create version putting object tags on a ' +
         ' version-enabled bucket where no version id is specified ', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
