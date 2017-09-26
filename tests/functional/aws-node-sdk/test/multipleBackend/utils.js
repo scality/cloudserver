@@ -17,7 +17,14 @@ const azureLocationMismatch = 'azuretestmismatch';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 
+let awsBucket;
+
+if (config.backends.data === 'multiple' && !process.env.S3_END_TO_END) {
+    awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+}
+
 const utils = {
+    awsBucket,
     fileLocation,
     memLocation,
     awsLocation,
@@ -119,6 +126,12 @@ utils.expectedETag = (body, getStringified = true) => {
     return `"${eTagValue}"`;
 };
 
+utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
+    s3.putObject({ Bucket: bucket, Key: key, Body: body,
+    Metadata: { 'scal-location-constraint': awsLocation } },
+        (err, result) => cb(err, result.VersionId));
+};
+
 utils.enableVersioning = (s3, bucket, cb) => {
     s3.putBucketVersioning({ Bucket: bucket,
         VersioningConfiguration: versioningEnabled }, err => {
@@ -139,13 +152,11 @@ utils.suspendVersioning = (s3, bucket, cb) => {
 
 utils.mapToAwsPuts = (s3, bucket, key, dataArray, cb) => {
     async.mapSeries(dataArray, (data, next) => {
-        s3.putObject({ Bucket: bucket, Key: key, Body: data,
-        Metadata: { 'scal-location-constraint': awsLocation } },
-            next);
+        utils.putToAwsBackend(s3, bucket, key, data, next);
     }, (err, results) => {
         assert.strictEqual(err, null, 'Expected success ' +
             `putting object, got error ${err}`);
-        cb(null, results.map(result => result.VersionId));
+        cb(null, results);
     });
 };
 
@@ -159,6 +170,27 @@ utils.putNullVersionsToAws = (s3, bucket, key, versions, cb) => {
     utils.suspendVersioning(s3, bucket, () => {
         utils.mapToAwsPuts(s3, bucket, key, versions, cb);
     });
+};
+
+utils.getAndAssertResult = (s3, params, cb) => {
+    const { bucket, key, body, versionId, expectedVersionId } = params;
+    s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
+        (err, data) => {
+            assert.strictEqual(err, null, 'Expected success ' +
+                `getting object, got error ${err}`);
+            if (body) {
+                assert(data.Body, 'expected object body in response');
+                const expectedMD5 = utils.expectedETag(body, false);
+                const resultMD5 = utils.expectedETag(data.Body, false);
+                assert.strictEqual(resultMD5, expectedMD5);
+            }
+            if (!expectedVersionId) {
+                assert.strictEqual(data.VersionId, undefined);
+            } else {
+                assert.strictEqual(data.VersionId, expectedVersionId);
+            }
+            cb();
+        });
 };
 
 module.exports = utils;

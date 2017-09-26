@@ -7,39 +7,19 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const {
     awsLocation,
+    awsBucket,
     enableVersioning,
     suspendVersioning,
     mapToAwsPuts,
     putNullVersionsToAws,
     putVersionsToAws,
-    expectedETag,
+    getAndAssertResult,
 } = require('../utils');
 
 const someBody = 'testbody';
 const bucket = 'buckettestmultiplebackendgetawsversioning';
 
 let awsS3;
-
-function getAndAssertResult(s3, params, cb) {
-    const { bucket, key, body, versionId, expectedVersionId } = params;
-    s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
-        (err, data) => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `getting object, got error ${err}`);
-            if (body) {
-                assert(data.Body, 'expected object body in response');
-                const expectedMD5 = expectedETag(body, false);
-                const resultMD5 = expectedETag(data.Body, false);
-                assert.strictEqual(resultMD5, expectedMD5);
-            }
-            if (!expectedVersionId) {
-                assert.strictEqual(data.VersionId, undefined);
-            } else {
-                assert.strictEqual(data.VersionId, expectedVersionId);
-            }
-            cb();
-        });
-}
 
 function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
     cb) {
@@ -67,7 +47,7 @@ if (describeSkipIfNotMultiple !== describe.skip) {
     awsS3 = new AWS.S3(awsConfig);
 }
 
-describeSkipIfNotMultiple('Multiple backend get object with versioning',
+describeSkipIfNotMultiple('AWS backend get object with versioning',
 function testSuite() {
     this.timeout(30000);
     withV4(sigCfg => {
@@ -308,8 +288,6 @@ function testSuite() {
         it('should return the correct data getting versioned object ' +
         'even if object was deleted from AWS (creating a delete marker)',
         done => {
-            const awsBucket = config.locationConstraints[awsLocation].
-                details.bucketName;
             const key = `somekey-${Date.now()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -327,15 +305,13 @@ function testSuite() {
         it('should return the correct data getting versioned object ' +
         'even if object is put directly to AWS (creating new version)',
         done => {
-            const awsBucket = config.locationConstraints[awsLocation].
-                details.bucketName;
             const key = `somekey-${Date.now()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
                     Metadata: { 'scal-location-constraint': awsLocation } },
                     (err, res) => next(err, res.VersionId)),
-                // create a delete marker in AWS
+                // put an object in AWS
                 (versionId, next) => awsS3.putObject({ Bucket: awsBucket,
                     Key: key }, err => next(err, versionId)),
                 (versionId, next) => getAndAssertResult(s3, { bucket, key,
@@ -346,8 +322,6 @@ function testSuite() {
         it('should return a InternalError if trying to get an object ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
-            const awsBucket = config.locationConstraints[awsLocation].
-                details.bucketName;
             const key = `somekey-${Date.now()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -372,8 +346,6 @@ function testSuite() {
         it('should return a InternalError if trying to get a version ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
-            const awsBucket = config.locationConstraints[awsLocation].
-                details.bucketName;
             const key = `somekey-${Date.now()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
