@@ -8,6 +8,7 @@ const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys } =
   require('../utils');
 
 const keyObject = 'deleteazure';
+const azureLocationMismatch = 'azuretestmismatch';
 const azureLocation = 'azuretest';
 const azureContainerName = getAzureContainerName();
 const keys = getAzureKeys();
@@ -88,6 +89,40 @@ function testSuite() {
                 });
             });
         });
+
+        describe('delete from Azure location with bucketMatch set to false',
+        () => {
+            beforeEach(function beforeF(done) {
+                this.currentTest.azureObject = uniqName(keyObject);
+                s3.putObject({
+                    Bucket: azureContainerName,
+                    Key: this.currentTest.azureObject,
+                    Body: normalBody,
+                    Metadata: {
+                        'scal-location-constraint': azureLocationMismatch,
+                    },
+                }, done);
+            });
+
+            it('should delete object', function itF(done) {
+                s3.deleteObject({
+                    Bucket: azureContainerName,
+                    Key: this.test.azureObject,
+                }, err => {
+                    assert.equal(err, null, 'Expected success ' +
+                        `but got error ${err}`);
+                    setTimeout(() =>
+                    azureClient.getBlobProperties(azureContainerName,
+                    `${azureContainerName}/${this.test.azureObject}`,
+                    err => {
+                        assert.strictEqual(err.statusCode, 404);
+                        assert.strictEqual(err.code, 'NotFound');
+                        return done();
+                    }), azureTimeout);
+                });
+            });
+        });
+
         describe('returning no error', () => {
             beforeEach(function beF(done) {
                 this.currentTest.azureObject = uniqName(keyObject);

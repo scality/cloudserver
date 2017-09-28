@@ -9,6 +9,7 @@ const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys,
 const { config } = require('../../../../../../lib/Config');
 
 const azureLocation = 'azuretest';
+const azureLocationMismatch = 'azuretestmismatch';
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
@@ -113,6 +114,31 @@ describeF() {
                               key.MD5, azureMetadata,
                             () => done()), azureTimeout);
                     });
+                });
+            });
+
+            it('should put a object to Azure location with bucketMatch=false',
+            function itF(done) {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: this.test.keyName,
+                    Metadata: { 'scal-location-constraint':
+                    azureLocationMismatch },
+                    Body: normalBody,
+                };
+                const azureMetadataMismatch = {
+                    /* eslint-disable camelcase */
+                    x_amz_meta_scal_location_constraint: azureLocationMismatch,
+                    /* eslint-enable camelcase */
+                };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                    `got error ${err}`);
+                    setTimeout(() =>
+                        azureGetCheck(
+                          `${azureContainerName}/${this.test.keyName}`,
+                          normalMD5, azureMetadataMismatch,
+                        () => done()), azureTimeout);
                 });
             });
 
