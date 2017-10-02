@@ -22,6 +22,7 @@ function options(token = 'report-token-1') {
         path: '/_/report',
         port: 8000,
         headers: { 'x-scal-report-token': token },
+        agent: false,
     };
 }
 
