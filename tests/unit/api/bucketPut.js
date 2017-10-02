@@ -269,4 +269,29 @@ describe('bucketPut API', () => {
         });
         done();
     });
+
+    it('should pick up updated rest endpoint config', done => {
+        const bucketName = 'new-loc-bucket-name';
+        const newRestEndpoint = 'newly.defined.rest.endpoint';
+        const newLocation = 'scality-us-west-1';
+
+        const req = Object.assign({}, testRequest, {
+            parsedHost: newRestEndpoint,
+            bucketName,
+        });
+
+        const newRestEndpoints = Object.assign({}, config.restEndpoints);
+        newRestEndpoints[newRestEndpoint] = newLocation;
+        config.setRestEndpoints(newRestEndpoints);
+
+        bucketPut(authInfo, req, log, err => {
+            assert.deepStrictEqual(err, null);
+            metadata.getBucket(bucketName, log, (err, bucketInfo) => {
+                assert.deepStrictEqual(err, null);
+                assert.deepStrictEqual(newLocation,
+                    bucketInfo.getLocationConstraint());
+                done();
+            });
+        });
+    });
 });
