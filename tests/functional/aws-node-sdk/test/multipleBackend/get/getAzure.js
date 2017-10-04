@@ -154,7 +154,7 @@ function testSuite() {
                     Bucket: azureContainerName,
                     Key: azureObject,
                 }, err => {
-                    assert.strictEqual(err.code, 'NetworkingError');
+                    assert.strictEqual(err.code, 'InternalError');
                     done();
                 });
             });

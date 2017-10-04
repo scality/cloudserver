@@ -1,10 +1,15 @@
-
-const azure = require('azure-storage');
+const assert = require('assert');
 const crypto = require('crypto');
+
+const async = require('async');
+const azure = require('azure-storage');
 
 const { config } = require('../../../../../lib/Config');
 
 const azureLocation = 'azuretest';
+const awsLocation = 'aws-test';
+const versioningEnabled = { Status: 'Enabled' };
+const versioningSuspended = { Status: 'Suspended' };
 
 const utils = {};
 
@@ -97,6 +102,48 @@ utils.expectedETag = (body, getStringified = true) => {
         return eTagValue;
     }
     return `"${eTagValue}"`;
+};
+
+utils.enableVersioning = (s3, bucket, cb) => {
+    s3.putBucketVersioning({ Bucket: bucket,
+        VersioningConfiguration: versioningEnabled }, err => {
+        assert.strictEqual(err, null, 'Expected success ' +
+            `enabling versioning, got error ${err}`);
+        cb();
+    });
+};
+
+utils.suspendVersioning = (s3, bucket, cb) => {
+    s3.putBucketVersioning({ Bucket: bucket,
+        VersioningConfiguration: versioningSuspended }, err => {
+        assert.strictEqual(err, null, 'Expected success ' +
+            `enabling versioning, got error ${err}`);
+        cb();
+    });
+};
+
+utils.mapToAwsPuts = (s3, bucket, key, dataArray, cb) => {
+    async.mapSeries(dataArray, (data, next) => {
+        s3.putObject({ Bucket: bucket, Key: key, Body: data,
+        Metadata: { 'scal-location-constraint': awsLocation } },
+            next);
+    }, (err, results) => {
+        assert.strictEqual(err, null, 'Expected success ' +
+            `putting object, got error ${err}`);
+        cb(null, results.map(result => result.VersionId));
+    });
+};
+
+utils.putVersionsToAws = (s3, bucket, key, versions, cb) => {
+    utils.enableVersioning(s3, bucket, () => {
+        utils.mapToAwsPuts(s3, bucket, key, versions, cb);
+    });
+};
+
+utils.putNullVersionsToAws = (s3, bucket, key, versions, cb) => {
+    utils.suspendVersioning(s3, bucket, () => {
+        utils.mapToAwsPuts(s3, bucket, key, versions, cb);
+    });
 };
 
 module.exports = utils;

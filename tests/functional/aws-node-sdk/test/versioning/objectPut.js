@@ -166,15 +166,31 @@ describe('put and get object with versioning', function testSuite() {
                 done();
             });
 
-            it('should get null version in versioning enabled bucket',
+            it('should get null (latest) version in versioning enabled ' +
+            'bucket when version id is not specified',
+            done => {
+                const paramsNull = {
+                    Bucket: bucket,
+                    Key: key,
+                };
+                s3.getObject(paramsNull, (err, data) => {
+                    _assertNoError(err, 'getting null version');
+                    assert.strictEqual(data.VersionId, 'null');
+                    done();
+                });
+            });
+
+            it('should get null version in versioning enabled bucket ' +
+            'when version id is specified',
             done => {
                 const paramsNull = {
                     Bucket: bucket,
                     Key: key,
                     VersionId: 'null',
                 };
-                s3.getObject(paramsNull, err => {
+                s3.getObject(paramsNull, (err, data) => {
                     _assertNoError(err, 'getting null version');
+                    assert.strictEqual(data.VersionId, 'null');
                     done();
                 });
             });
@@ -374,14 +390,30 @@ describe('put and get object with versioning', function testSuite() {
                 done();
             });
 
-            it('should get null version in versioning suspended bucket',
+            it('should get null version (latest) in versioning ' +
+            'suspended bucket without specifying version id',
+            done => {
+                const paramsNull = {
+                    Bucket: bucket,
+                    Key: key,
+                };
+                s3.getObject(paramsNull, (err, data) => {
+                    assert.strictEqual(data.VersionId, 'null');
+                    _assertNoError(err, 'getting null version');
+                    done();
+                });
+            });
+
+            it('should get null version in versioning suspended bucket ' +
+            'specifying version id',
             done => {
                 const paramsNull = {
                     Bucket: bucket,
                     Key: key,
                     VersionId: 'null',
                 };
-                s3.getObject(paramsNull, err => {
+                s3.getObject(paramsNull, (err, data) => {
+                    assert.strictEqual(data.VersionId, 'null');
                     _assertNoError(err, 'getting null version');
                     done();
                 });

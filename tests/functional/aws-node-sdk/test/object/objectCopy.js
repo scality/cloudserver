@@ -547,6 +547,7 @@ describe('Object Copy', () => {
                         assert.strictEqual(res.ETag, emptyFileETag);
                         s3.getObject({ Bucket: destBucketName,
                             Key: destObjName }, (err, res) => {
+                            checkNoError(err);
                             assert.deepStrictEqual(res.Metadata,
                                 originalMetadata);
                             assert.strictEqual(res.ETag, emptyFileETag);
