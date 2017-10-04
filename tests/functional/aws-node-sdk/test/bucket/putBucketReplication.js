@@ -157,6 +157,64 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             checkError(config, 'InvalidArgument', done));
     });
 
+    it('should not accept configuration when \'Role\' is a comma-separated ' +
+        'list of more than two valid Amazon Resource Names',
+        done => {
+            const Role = 'arn:aws:iam::account-id:role/resource-1,' +
+                'arn:aws:iam::account-id:role/resource-2,' +
+                'arn:aws:iam::account-id:role/resource-3';
+            const config = Object.assign({}, replicationConfig, { Role });
+            checkError(config, 'InvalidArgument', done);
+        });
+
+    replicationUtils.validRoleARNs.forEach(ARN => {
+        const config = setConfigRules({
+            Destination: {
+                Bucket: `arn:aws:s3:::${destinationBucket}`,
+                StorageClass: 'us-east-1',
+            },
+        });
+        config.Role = ARN;
+
+        it('should accept configuration if \'Role\' is a single valid ' +
+            `Amazon Resource Name: '${ARN}', and a rule storageClass defines ` +
+            'an external location', done =>
+            checkError(config, null, done));
+    });
+
+    it('should not allow a combination of storageClasses when one ' +
+        'defines an external location', done => {
+        const config = setConfigRules([replicationConfig.Rules[0], {
+            Destination: {
+                Bucket: `arn:aws:s3:::${destinationBucket}`,
+                StorageClass: 'us-east-1',
+            },
+            Prefix: 'bar',
+            Status: 'Enabled',
+        }]);
+        config.Role = 'arn:aws:iam::account-id:role/resource';
+        checkError(config, 'InvalidRequest', done);
+    });
+
+    it('should not allow a comma separated list of roles when a rule ' +
+        'storageClass defines an external location', done => {
+        const config = {
+            Role: 'arn:aws:iam::account-id:role/src-resource,' +
+                'arn:aws:iam::account-id:role/dest-resource',
+            Rules: [
+                {
+                    Destination: {
+                        Bucket: `arn:aws:s3:::${destinationBucket}`,
+                        StorageClass: 'us-east-1',
+                    },
+                    Prefix: 'test-prefix',
+                    Status: 'Enabled',
+                },
+            ],
+        };
+        checkError(config, 'InvalidArgument', done);
+    });
+
     replicationUtils.validRoleARNs.forEach(ARN => {
         const Role = `${ARN},${ARN}`;
         const config = Object.assign({}, replicationConfig, { Role });

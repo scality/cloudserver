@@ -73,6 +73,7 @@ const emptyReplicationMD = {
     destination: '',
     storageClass: '',
     role: '',
+    storageType: '',
 };
 
 // Check that the object key has the expected replication information.
@@ -283,6 +284,7 @@ describe('Replication object MD without bucket replication config', () => {
             storageClass: '',
             role: 'arn:aws:iam::account-id:role/src-resource,' +
                 'arn:aws:iam::account-id:role/dest-resource',
+            storageType: '',
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
@@ -460,6 +462,133 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     });
                 });
+        });
+
+        describe('Object metadata replicationInfo storageType value', () => {
+            const expectedReplicationInfo = {
+                status: 'PENDING',
+                content: ['DATA', 'METADATA'],
+                destination: 'arn:aws:s3:::destination-bucket',
+                storageClass: 'aws-test',
+                role: 'arn:aws:iam::account-id:role/resource',
+                storageType: 'aws_s3',
+            };
+
+            // Expected for a metadata-only replication operation (for example,
+            // putting an object ACL).
+            const expectedReplicationInfoMD = Object.assign({},
+                expectedReplicationInfo, { content: ['METADATA'] });
+
+            beforeEach(() =>
+                // We have already created the bucket, so update the replication
+                // configuration to include a location constraint for the
+                // `storageClass`. This results in a `storageType` of 'aws_s3'.
+                Object.assign(metadata.buckets.get(bucketName), {
+                    _replicationConfiguration: {
+                        role: 'arn:aws:iam::account-id:role/resource',
+                        destination: 'arn:aws:s3:::destination-bucket',
+                        rules: [{
+                            prefix: keyA,
+                            enabled: true,
+                            id: 'test-id',
+                            storageClass: 'aws-test',
+                        }],
+                    },
+                }));
+
+            it('should update on a put object request', done =>
+                putObjectAndCheckMD(keyA, expectedReplicationInfo, done));
+
+            it('should update on a complete MPU object request', done =>
+                putMPU(keyA, 'content', err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfo);
+                    return done();
+                }));
+
+            it('should update on a copy object request', done =>
+                copyObject(keyB, keyA, true, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfo);
+                    return done();
+                }));
+
+            it('should update on a put object ACL request', done =>
+                async.series([
+                    next => putObjectAndCheckMD(keyA, expectedReplicationInfo,
+                        next),
+                    next => objectPutACL(authInfo, objectACLReq, log, next),
+                ], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    return done();
+                }));
+
+            it('should update on a put object tagging request', done =>
+                async.series([
+                    next => putObjectAndCheckMD(keyA, expectedReplicationInfo,
+                        next),
+                    next => objectPutTagging(authInfo, taggingPutReq, log,
+                        next),
+                ], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    return done();
+                }));
+
+            it('should update on a delete tagging request', done =>
+                async.series([
+                    next => putObjectAndCheckMD(keyA, expectedReplicationInfo,
+                        next),
+                    next => objectDeleteTagging(authInfo, taggingDeleteReq, log,
+                        next),
+                ], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    return done();
+                }));
+
+            it('should update when putting a delete marker', done =>
+                async.series([
+                    next => putObjectAndCheckMD(keyA, expectedReplicationInfo,
+                        err => {
+                            if (err) {
+                                return next(err);
+                            }
+                            // Update metadata to a status indicating that
+                            // replication has occurred for the object.
+                            metadata
+                                .keyMaps
+                                .get(bucketName)
+                                .get(keyA)
+                                .replicationInfo
+                                .status = 'COMPLETED';
+                            return next();
+                        }),
+                    next => objectDelete(authInfo, deleteReq, log, next),
+                ], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    // Is it, in fact, a delete marker?
+                    assert(metadata
+                        .keyMaps
+                        .get(bucketName)
+                        .get(keyA)
+                        .isDeleteMarker);
+                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    return done();
+                }));
         });
     });
 });
