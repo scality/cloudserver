@@ -1,13 +1,13 @@
 const assert = require('assert');
 const async = require('async');
 const AWS = require('aws-sdk');
-const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
-const constants = require('../../../../../constants');
-const { config } = require('../../../../../lib/Config');
-const { getRealAwsConfig } = require('../support/awsConfig');
+const withV4 = require('../../support/withV4');
+const BucketUtility = require('../../../lib/utility/bucket-util');
+const constants = require('../../../../../../constants');
+const { config } = require('../../../../../../lib/Config');
+const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
-    require('../../lib/utility/createEncryptedBucket');
+    require('../../../lib/utility/createEncryptedBucket');
 
 const awsLocation = 'aws-test';
 const awsLocation2 = 'aws-test-2';
@@ -17,7 +17,7 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
-const { versioningEnabled } = require('../../lib/utility/versioning-util');
+const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const awsLocationEncryption = 'aws-test-encryption';
 
@@ -319,10 +319,6 @@ function testSuite() {
             const awsBucket =
                 config.locationConstraints[awsLocation].details.bucketName;
             async.waterfall([
-                next => awsS3.putBucketAcl({
-                    Bucket: awsBucket,
-                    ACL: 'public-read',
-                }, err => next(err)),
                 // giving access to the object on the AWS side
                 next => putSourceObj(awsLocation, false, key =>
                   next(null, key)),
