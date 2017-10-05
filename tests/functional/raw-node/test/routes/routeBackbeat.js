@@ -9,8 +9,8 @@ const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
 const backbeatAuthCredentials = {
-    accessKey: 'accessKeyBackbeat',
-    secretKey: 'verySecretKeyBackbeat',
+    accessKey: 'accessKey1',
+    secretKey: 'verySecretKey1',
 };
 
 const TEST_BUCKET = 'backbeatbucket';
