@@ -19,5 +19,15 @@
             "access": "accessKey2",
             "secret": "verySecretKey2"
         }]
+    }, {
+        "name": "CRRService",
+        "email": "crr@zenko.io",
+        "arn": "arn:aws:iam::000000001000:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/crr",
+        "shortid": "000000001000",
+        "keys": [{
+            "access": "accessKeyCRR",
+            "secret": "verySecretKeyCRR"
+        }]
     }]
 }

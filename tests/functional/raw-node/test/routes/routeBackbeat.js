@@ -8,7 +8,11 @@ const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
-const backbeatAuthCredentials = {
+const crrAuthCredentials = {
+    accessKey: 'accessKeyCRR',
+    secretKey: 'verySecretKeyCRR',
+};
+const otherValidAuthCredentials = {
     accessKey: 'accessKey1',
     secretKey: 'verySecretKey1',
 };
@@ -169,7 +173,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                                 'content-md5': testDataMd5,
                                 'x-scal-canonical-id': testArn,
                             },
-                            authCredentials: backbeatAuthCredentials,
+                            authCredentials: crrAuthCredentials,
                             requestBody: testData }, next);
                     }, (response, next) => {
                         assert.strictEqual(response.statusCode, 200);
@@ -179,7 +183,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                             method: 'PUT', bucket: TEST_BUCKET,
                             objectKey: testCase.encodedKey,
                             resourceType: 'metadata',
-                            authCredentials: backbeatAuthCredentials,
+                            authCredentials: crrAuthCredentials,
                             requestBody: JSON.stringify(newMd),
                         }, next);
                     }, (response, next) => {
@@ -205,7 +209,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                         'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
-                    authCredentials: backbeatAuthCredentials,
+                    authCredentials: crrAuthCredentials,
                     requestBody: testData,
                 }, next);
             }, (response, next) => {
@@ -216,7 +220,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
-                    authCredentials: backbeatAuthCredentials,
+                    authCredentials: crrAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
             }, (response, next) => {
@@ -227,7 +231,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
                     headers: { 'x-scal-replication-content': 'METADATA' },
-                    authCredentials: backbeatAuthCredentials,
+                    authCredentials: crrAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
             }, (response, next) => {
@@ -248,7 +252,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                 'content-md5': testDataMd5,
                 'x-scal-canonical-id': testArn,
             },
-            authCredentials: backbeatAuthCredentials,
+            authCredentials: crrAuthCredentials,
             requestBody: testData,
         },
         err => {
@@ -260,7 +264,7 @@ describeSkipIfAWS('backbeat routes:', () => {
         done => makeBackbeatRequest({
             method: 'PUT', bucket: NONVERSIONED_BUCKET,
             objectKey: testKey, resourceType: 'metadata',
-            authCredentials: backbeatAuthCredentials,
+            authCredentials: crrAuthCredentials,
             requestBody: JSON.stringify(testMd),
         },
         err => {
@@ -276,7 +280,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                    'content-length': testData.length,
                    'content-md5': testDataMd5,
                },
-               authCredentials: backbeatAuthCredentials,
+               authCredentials: crrAuthCredentials,
                requestBody: testData,
            },
            err => {
@@ -292,7 +296,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                 'content-length': testData.length,
                 'x-scal-canonical-id': testArn,
             },
-            authCredentials: backbeatAuthCredentials,
+            authCredentials: crrAuthCredentials,
             requestBody: testData,
         },
         err => {
@@ -309,7 +313,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                     objectKey: 'does-not-exist',
                     resourceType: 'metadata',
                     headers: { 'x-scal-replication-content': 'METADATA' },
-                    authCredentials: backbeatAuthCredentials,
+                    authCredentials: crrAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
             }], err => {
@@ -355,15 +359,12 @@ describeSkipIfAWS('backbeat routes:', () => {
                 });
              it(`${test.method} ${test.resourceType} should respond with ` +
                 '403 Forbidden if the account does not match the ' +
-                'backbeat user',
+                'CRR service account',
                 done => {
                     makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
-                        authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
-                        },
+                        authCredentials: otherValidAuthCredentials,
                     },
                     err => {
                         assert(err);
@@ -379,7 +380,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
                         authCredentials: {
-                            accessKey: backbeatAuthCredentials.accessKey,
+                            accessKey: crrAuthCredentials.accessKey,
                             secretKey: 'hastalavista',
                         },
                     },
@@ -399,7 +400,7 @@ describeSkipIfAWS('backbeat routes:', () => {
                makeBackbeatRequest({
                    method: 'GET', bucket: TEST_BUCKET,
                    objectKey: TEST_KEY, resourceType: 'metadata',
-                   authCredentials: backbeatAuthCredentials,
+                   authCredentials: crrAuthCredentials,
                },
                err => {
                    assert(err);
