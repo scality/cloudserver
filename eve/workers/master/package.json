@@ -1,0 +1,86 @@
+{
+  "name": "s3",
+  "version": "7.0.0",
+  "description": "S3 connector",
+  "main": "index.js",
+  "engines": {
+    "node": ">=6.9.5"
+  },
+  "repository": "scality/S3",
+  "keywords": [
+    "s3",
+    "cloud",
+    "server"
+  ],
+  "author": "Giorgio Regni",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/scality/S3/issues"
+  },
+  "homepage": "https://github.com/scality/S3#readme",
+  "dependencies": {
+    "aws-sdk": "2.28.0",
+    "arsenal": "scality/Arsenal",
+    "async": "~2.5.0",
+    "azure-storage": "^2.1.0",
+    "bucketclient": "scality/bucketclient",
+    "commander": "^2.9.0",
+    "node-uuid": "^1.4.3",
+    "npm-run-all": "~4.0.2",
+    "sproxydclient": "scality/sproxydclient",
+    "utapi": "scality/utapi",
+    "utf8": "~2.1.1",
+    "vaultclient": "scality/vaultclient",
+    "werelogs": "scality/werelogs",
+    "xml2js": "~0.4.16"
+  },
+  "devDependencies": {
+    "bluebird": "^3.3.1",
+    "eslint": "^2.4.0",
+    "eslint-config-airbnb": "^6.0.0",
+    "eslint-config-scality": "scality/Guidelines",
+    "ioredis": "2.4.0",
+    "istanbul": "1.0.0-alpha.2",
+    "istanbul-api": "1.0.0-alpha.13",
+    "lolex": "^1.4.0",
+    "mocha": "^2.3.4",
+    "mocha-junit-reporter": "1.11.1",
+    "node-mocks-http": "^1.5.2",
+    "s3blaster": "scality/s3blaster",
+    "tv4": "^1.2.7"
+  },
+  "optionalDependencies": {
+    "cdmiclient": "scality/cdmiclient"
+  },
+  "scripts": {
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
+    "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
+    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha test/bucket",
+    "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha test/legacy test/object test/service test/support",
+    "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha test/versioning/",
+    "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha test/multipleBackend",
+    "ft_management": "cd tests/functional/report && npm test",
+    "ft_node": "cd tests/functional/raw-node && npm test",
+    "ft_healthchecks": "cd tests/functional/healthchecks && npm test",
+    "ft_s3cmd": "cd tests/functional/s3cmd && mocha -t 40000 *.js",
+    "ft_s3curl": "cd tests/functional/s3curl && mocha -t 40000 *.js",
+    "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management",
+    "install_ft_deps": "npm install aws-sdk@2.28.0 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
+    "lint": "eslint $(git ls-files '*.js')",
+    "lint_md": "mdlint $(git ls-files '*.md')",
+    "mem_backend": "S3BACKEND=mem node index.js",
+    "perf": "mocha tests/performance/s3standard.js",
+    "start": "npm-run-all --parallel start_dmd start_s3server",
+    "start_mdserver": "node mdserver.js",
+    "start_dataserver": "node dataserver.js",
+    "start_s3server": "node index.js",
+    "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
+    "start_utapi": "node lib/utapi/utapi.js",
+    "utapi_replay": "node lib/utapi/utapiReplay.js",
+    "test": "CI=true S3BACKEND=mem mocha --recursive tests/unit",
+    "test_legacy_location": "CI=true S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --recursive tests/unit",
+    "multiple_backend_test": "CI=true S3BACKEND=mem S3DATA=multiple mocha -t 20000 --recursive tests/multipleBackend",
+    "unit_coverage": "CI=true mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --reporter mocha-junit-reporter --recursive tests/unit",
+    "unit_coverage_legacy_location": "CI=true mkdir -p coverage/unitlegacylocation/ && S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unitlegacylocation.xml istanbul cover --dir coverage/unitlegacylocation _mocha -- --reporter mocha-junit-reporter --recursive tests/unit"
+  }
+}

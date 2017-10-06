@@ -1,0 +1,7 @@
+default-jdk
+lsof
+maven
+netcat
+redis-server
+ruby2.4
+ruby2.4-dev

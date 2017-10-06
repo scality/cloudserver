@@ -1,0 +1,112 @@
+---
+version: 0.2
+
+branches:
+  default:
+    stage: pre-merge
+
+models:
+  - Git: &clone
+      name: fetch source
+      repourl: '%(prop:git_reference)s'
+      shallow: True
+      retryFetch: True
+      haltOnFailure: True
+  - env: &circle_ci_env
+      CIRCLE_ARTIFACTS: '/tmp'
+      CIRCLE_NODE_TOTAL: '4'
+      CIRCLE_TEST_REPORTS: '/tmp'
+  - env: &s3_ci_env
+      CI: 'true'
+      CI_REPORTS: '/tmp'
+      ENABLE_LOCAL_CACHE: '1'
+  - ShellCommand: &node_modules
+      name: make node_modules available
+      command: ln -s /usr/lib/node_modules .
+  - ShellCommandWithSecrets: &aws_credentials
+      name: add AWS credentials
+      command: |-
+          mkdir -p ~/.aws;
+          cat >>~/.aws/credentials <<EOF
+          [default]
+          aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
+          aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT
+          [default_2]
+          aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT_2
+          aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT_2
+          EOF
+
+stages:
+  pre-merge:
+    worker: &master-worker
+      type: docker
+      path: eve/workers/master
+      volumes:
+        - '/home/eve/workspace'
+    steps:
+      - TriggerStages:
+          name: trigger all tests in parallel
+          stage_names:
+            - node0
+            - node1
+            - node2
+            - node3
+          waitForFinish: True
+          haltOnFailure: True
+
+  # TODO: deduplicate using a setvar for node number
+  node0:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommand:
+          name: run tests
+          command: sudo -E bash tests.bash
+          env:
+            <<:
+              - *circle_ci_env
+              - *s3_ci_env
+            CIRCLE_NODE_INDEX: '0'
+
+  node1:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommand:
+          name: run tests
+          command: sudo -E bash tests.bash
+          env:
+            <<:
+              - *circle_ci_env
+              - *s3_ci_env
+            CIRCLE_NODE_INDEX: '1'
+
+  node2:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommand:
+          name: run tests
+          command: sudo -E bash tests.bash
+          env:
+            <<:
+              - *circle_ci_env
+              - *s3_ci_env
+            CIRCLE_NODE_INDEX: '2'
+
+  node3:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommand:
+          name: run tests
+          command: sudo -E bash tests.bash
+          env:
+            <<:
+              - *circle_ci_env
+              - *s3_ci_env
+            CIRCLE_NODE_INDEX: '3'

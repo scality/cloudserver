@@ -2,6 +2,7 @@
 set -x #echo on
 set -e #exit at the first error
 
+mkdir -p ~/.aws
 cat >>~/.aws/credentials <<EOF
 [default]
 aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
@@ -46,7 +47,7 @@ then
 
   mkdir -p $CIRCLE_TEST_REPORTS/unit
 
-  npm run unit_coverage
+  #npm run unit_coverage
 
   npm run unit_coverage_legacy_location
 
@@ -54,7 +55,7 @@ then
   bash wait_for_local_port.bash 9990 40 &&
   npm run multiple_backend_test
 
-  killandsleep 9990
+  #killandsleep 9990
 
   # Run S3 with multiple data backends ; run ft_tests
 
