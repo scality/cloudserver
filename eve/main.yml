@@ -1,0 +1,39 @@
+---
+version: 0.2
+
+branches:
+  default:
+    stage: pre-merge
+
+stages:
+  pre-merge:
+    worker:
+      type: docker
+      path: eve/workers/unit_and_feature_tests
+      volumes:
+        - '/home/eve/workspace'
+    steps:
+      - Git:
+          name: fetch source
+          repourl: '%(prop:git_reference)s'
+          shallow: True
+          retryFetch: True
+          haltOnFailure: True
+      - ShellCommand:
+          name: get api node modules from cache
+          command: mv /home/eve/node_reqs/node_modules .
+      - ShellCommand:
+          name: create aws creds dir (required for tests.bash to run)
+          command: mkdir ~/.aws
+#      - ShellCommand:
+#          command: npm install
+      - ShellCommand:
+          name: run tests
+          command: sudo -E bash tests.bash
+          timeout: 30000
+          env:
+            CIRCLE_NODE_INDEX: '0'
+            CIRCLE_TEST_REPORTS: /tmp
+            ENABLE_LOCAL_CACHE: '1'
+            REPORT_TOKEN: report-token-1
+            CIRCLE_ARTIFACTS: '/tmp'

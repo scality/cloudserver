@@ -1,0 +1,9 @@
+ca-certificates
+git
+libffi-dev
+libssl-dev
+python2.7
+python2.7-dev
+python-pip
+software-properties-common
+sudo

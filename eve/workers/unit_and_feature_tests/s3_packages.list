@@ -1,0 +1,6 @@
+build-essential
+g++-4.9
+redis-server
+ruby2.4
+ruby2.4-dev
+default-jdk
