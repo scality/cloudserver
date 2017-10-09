@@ -240,6 +240,42 @@ describeF() {
                       azureMetadata, next),
                 ], done);
             });
+
+            describe('with ongoing MPU with same key name', () => {
+                beforeEach(function beFn(done) {
+                    s3.createMultipartUpload({
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.keyName,
+                        Metadata: { 'scal-location-constraint': azureLocation },
+                    }, (err, res) => {
+                        assert.equal(err, null, `Err creating MPU: ${err}`);
+                        this.currentTest.uploadId = res.UploadId;
+                        done();
+                    });
+                });
+
+                afterEach(function afFn(done) {
+                    s3.abortMultipartUpload({
+                        Bucket: azureContainerName,
+                        Key: this.currentTest.keyName,
+                        UploadId: this.currentTest.uploadId,
+                    }, err => {
+                        assert.equal(err, null, `Err aborting MPU: ${err}`);
+                        done();
+                    });
+                });
+
+                it('should return InternalError', function itFn(done) {
+                    s3.putObject({
+                        Bucket: azureContainerName,
+                        Key: this.test.keyName,
+                        Metadata: { 'scal-location-constraint': azureLocation },
+                    }, err => {
+                        assert.strictEqual(err.code, 'InternalError');
+                        done();
+                    });
+                });
+            });
         });
     });
 });
