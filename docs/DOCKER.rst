@@ -32,6 +32,7 @@ To run CloudServer with an S3 AWS backend, you will have to add a new section
 to your ``locationConfig.json`` file with the ``aws_s3`` location type:
 
 .. code:: json
+
 (...)
     "aws-test": {
         "type": "aws_s3",
@@ -50,6 +51,7 @@ backends you're using. You can use several profiles when using multiple
 profiles.
 
 .. code:: json
+
 [default]
 aws_access_key_id=accessKey1
 aws_secret_access_key=verySecretKey1
@@ -229,7 +231,7 @@ Adding modifying or deleting accounts or users credentials
 1. Create locally a customized ``authdata.json`` based on our ``/conf/authdata.json``.
 
 2. Use `Docker
-   Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__ 
+   Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__
    to override the default ``authdata.json`` through a docker file mapping.
 For example:
 
@@ -330,7 +332,7 @@ Sample ways to run it for CI are:
 
     docker run --name CloudServer -p 8000:8000
     -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
-    -v ~/.aws/credentials:/root/.aws/credentials 
+    -v ~/.aws/credentials:/root/.aws/credentials
     -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata
     -e SCALITY_ACCESS_KEY_ID=accessKey1
     -e SCALITY_SECRET_ACCESS_KEY=verySecretKey1
@@ -343,6 +345,7 @@ In production, we expect that data will be persistent, that you will use the
 multiple backends capabilities of Zenko CloudServer, and that you will have a
 custom endpoint for your local storage, and custom credentials for your local
 storage:
+
 .. code:: shell
 
     docker run -d --name CloudServer
