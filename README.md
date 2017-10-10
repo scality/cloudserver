@@ -57,6 +57,15 @@ Go to the ./S3 folder,
 npm install
 ```
 
+If you get an error regarding installation of the diskUsage module,
+please install g++.
+
+If you get an error regarding level-down bindings, try clearing your npm cache:
+
+```shell
+npm cache clear
+```
+
 ## Run it with a file backend
 
 ```shell
