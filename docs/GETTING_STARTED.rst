@@ -101,7 +101,7 @@ accessKey1 with a secret key of verySecretKey1.
 Run it for continuous integration testing or in production with Docker
 ----------------------------------------------------------------------
 
-`DOCKER.rst <DOCKER.rst>`__
+`DOCKER <../DOCKER/>`__
 
 Testing
 -------
