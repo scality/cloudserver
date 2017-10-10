@@ -3,9 +3,9 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { config } = require('../../../../../../lib/Config');
+const { memLocation, fileLocation, awsLocation, awsLocationMismatch }
+    = require('../utils');
 
-const awsLocation = 'aws-test';
-const awsLocationMismatch = 'aws-test-mismatch';
 const bucket = 'buckettestmultiplebackendget';
 const memObject = `memobject-${Date.now()}`;
 const fileObject = `fileobject-${Date.now()}`;
@@ -181,12 +181,14 @@ describe('Multiple backend get object', function testSuite() {
                 process.stdout.write('Putting object to mem\n');
                 return s3.putObjectAsync({ Bucket: bucket, Key: memObject,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'mem' } })
+                    Metadata: { 'scal-location-constraint': memLocation } })
                 .then(() => {
                     process.stdout.write('Putting object to file\n');
                     return s3.putObjectAsync({ Bucket: bucket, Key: fileObject,
                         Body: body,
-                        Metadata: { 'scal-location-constraint': 'file' } });
+                        Metadata:
+                        { 'scal-location-constraint': fileLocation },
+                    });
                 })
                 .then(() => {
                     process.stdout.write('Putting object to AWS\n');
@@ -198,7 +200,9 @@ describe('Multiple backend get object', function testSuite() {
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to mem\n');
                     return s3.putObjectAsync({ Bucket: bucket, Key: emptyObject,
-                        Metadata: { 'scal-location-constraint': 'mem' } });
+                        Metadata:
+                        { 'scal-location-constraint': memLocation },
+                    });
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to AWS\n');

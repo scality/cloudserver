@@ -6,6 +6,7 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const {
+    awsLocation,
     enableVersioning,
     suspendVersioning,
     mapToAwsPuts,
@@ -14,7 +15,6 @@ const {
     expectedETag,
 } = require('../utils');
 
-const awsLocation = 'aws-test';
 const someBody = 'testbody';
 const bucket = 'buckettestmultiplebackendgetawsversioning';
 

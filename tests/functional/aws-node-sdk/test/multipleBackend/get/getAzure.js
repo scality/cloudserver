@@ -4,9 +4,8 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
 
 const { uniqName, getAzureClient, getAzureContainerName,
-  getAzureKeys } = require('../utils');
+  getAzureKeys, azureLocation } = require('../utils');
 
-const azureLocation = 'azuretest';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
 const keys = getAzureKeys();

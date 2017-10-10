@@ -4,12 +4,11 @@ const async = require('async');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
 const { config } = require('../../../../../../lib/Config');
-const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys } =
+const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys,
+    azureLocation, azureLocationMismatch } =
   require('../utils');
 
 const keyObject = 'deleteazure';
-const azureLocationMismatch = 'azuretestmismatch';
-const azureLocation = 'azuretest';
 const azureContainerName = getAzureContainerName();
 const keys = getAzureKeys();
 const azureClient = getAzureClient();

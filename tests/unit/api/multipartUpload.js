@@ -38,7 +38,7 @@ const bucketPutRequest = {
     url: '/',
     post: '<CreateBucketConfiguration ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<LocationConstraint>mem</LocationConstraint>' +
+    '<LocationConstraint>mem-test</LocationConstraint>' +
     '</CreateBucketConfiguration >',
 };
 const objectKey = 'testObject';
@@ -101,7 +101,8 @@ describe('Multipart Upload API', () => {
     });
 
     it('should initiate a multipart upload', done => {
-        bucketPut(authInfo, bucketPutRequest, log, () => {
+        bucketPut(authInfo, bucketPutRequest, log, err => {
+            assert.strictEqual(err, null, `err putting bucket: ${err}`);
             initiateMultipartUpload(authInfo, initiateRequest,
                 log, (err, result) => {
                     assert.strictEqual(err, null);

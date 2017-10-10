@@ -3,11 +3,11 @@ const assert = require('assert');
 const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
+const { azureLocation } = require('../utils');
 
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-const azureLocation = 'azuretest';
 let azureContainerName;
 const bodyFirstPart = Buffer.alloc(10);
 const bodySecondPart = Buffer.alloc(104857610);

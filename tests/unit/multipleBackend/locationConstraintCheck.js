@@ -6,11 +6,13 @@ const { DummyRequestLogger } = require('../helpers');
 const locationConstraintCheck
     = require('../../../lib/api/apiUtils/object/locationConstraintCheck');
 
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
 const bucketName = 'nameOfBucket';
 const owner = 'canonicalID';
 const ownerDisplayName = 'bucketOwner';
 const testDate = new Date().toJSON();
-const locationConstraint = 'file';
+const locationConstraint = fileLocation;
 const namespace = 'default';
 const objectKey = 'someobject';
 const postBody = Buffer.from('I am a body', 'utf8');
@@ -46,16 +48,16 @@ describe('Location Constraint Check', () => {
     it('should return instance of BackendInfo with correct ' +
     'locationConstraints', done => {
         const backendInfoObj = locationConstraintCheck(
-            createTestRequest('mem'), null, testBucket, log);
+            createTestRequest(memLocation), null, testBucket, log);
         assert.strictEqual(backendInfoObj.err, null, 'Expected success ' +
             `but got error ${backendInfoObj.err}`);
         assert.strictEqual(typeof backendInfoObj.controllingLC, 'string');
         assert.equal(backendInfoObj.backendInfo instanceof BackendInfo,
             true);
         assert.strictEqual(backendInfoObj.
-            backendInfo.getObjectLocationConstraint(), 'mem');
+            backendInfo.getObjectLocationConstraint(), memLocation);
         assert.strictEqual(backendInfoObj.
-            backendInfo.getBucketLocationConstraint(), 'file');
+            backendInfo.getBucketLocationConstraint(), fileLocation);
         assert.strictEqual(backendInfoObj.backendInfo.getRequestEndpoint(),
             'localhost');
         done();

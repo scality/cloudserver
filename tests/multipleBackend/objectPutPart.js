@@ -17,6 +17,8 @@ const constants = require('../../constants');
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');
 
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
 const awsLocation = 'aws-test';
 const awsLocationMismatch = 'aws-test-mismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
@@ -168,7 +170,7 @@ function testSuite() {
     });
 
     it('should upload a part to file based on mpu location', done => {
-        putPart('mem', 'file', 'localhost', () => {
+        putPart(memLocation, fileLocation, 'localhost', () => {
             // if ds is empty, the object is not in mem, which means it
             // must be in file because those are the only possibilities
             // for unit tests
@@ -178,14 +180,14 @@ function testSuite() {
     });
 
     it('should put a part to mem based on mpu location', done => {
-        putPart('file', 'mem', 'localhost', () => {
+        putPart(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
         });
     });
 
     it('should put a part to AWS based on mpu location', done => {
-        putPart('file', awsLocation, 'localhost', uploadId => {
+        putPart(fileLocation, awsLocation, 'localhost', uploadId => {
             assert.deepStrictEqual(ds, []);
             listAndAbort(uploadId, null, objectName, done);
         });
@@ -193,7 +195,7 @@ function testSuite() {
 
     it('should replace part if two parts uploaded with same part number to AWS',
     done => {
-        putPart('file', awsLocation, 'localhost', uploadId => {
+        putPart(fileLocation, awsLocation, 'localhost', uploadId => {
             assert.deepStrictEqual(ds, []);
             const partReqParams = {
                 bucketName,
@@ -216,21 +218,21 @@ function testSuite() {
 
     it('should upload part based on mpu location even if part ' +
         'location constraint is specified ', done => {
-        putPart('file', 'mem', 'localhost', () => {
+        putPart(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
         });
     });
 
     it('should put a part to file based on bucket location', done => {
-        putPart('file', null, 'localhost', () => {
+        putPart(fileLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put a part to mem based on bucket location', done => {
-        putPart('mem', null, 'localhost', () => {
+        putPart(memLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
         });

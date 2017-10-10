@@ -5,7 +5,7 @@
         "legacyAwsBehavior": true,
         "details": {}
     },
-    "file": {
+    "file-test": {
         "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
@@ -15,7 +15,7 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "mem": {
+    "mem-test": {
         "type": "mem",
         "legacyAwsBehavior": false,
         "details": {}

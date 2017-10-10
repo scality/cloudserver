@@ -5,10 +5,10 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { config } = require('../../../../../lib/Config');
 const { getRealAwsConfig } = require('../support/awsConfig');
-const { getAzureClient, getAzureContainerName, convertMD5 } =
+const { getAzureClient, getAzureContainerName, convertMD5,
+    memLocation, fileLocation, awsLocation, azureLocation } =
     require('./utils');
 
-const awsLocation = 'aws-test';
 const awsBucket = 'multitester555';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
@@ -27,7 +27,7 @@ const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const putParams = { Bucket: bucket, Body: body };
-const testBackends = ['mem', 'file', 'aws-test', 'azuretest'];
+const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
 const tagString = 'key1=value1&key2=value2';
 const putTags = {
     TagSet: [

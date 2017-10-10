@@ -6,8 +6,8 @@ const { s3middleware } = require('arsenal');
 const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { getAzureClient, getAzureContainerName } =
-    require('../utils');
+const { fileLocation, awsLocation, azureLocation, azureLocationMismatch,
+    getAzureClient, getAzureContainerName } = require('../utils');
 const { getRealAwsConfig } =
     require('../../support/awsConfig');
 
@@ -15,10 +15,7 @@ const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-const awsLocation = 'aws-test';
 const awsBucket = 'multitester555';
-const azureLocation = 'azuretest';
-const azureLocationMismatch = 'azuretestmismatch';
 const azureContainerName = getAzureContainerName();
 const azureClient = getAzureClient();
 const azureTimeout = 20000;
@@ -172,7 +169,7 @@ function testSuite() {
                 Bucket: azureContainerName,
                 Key: this.test.key,
                 Body: body,
-                Metadata: { 'scal-location-constraint': 'file' } },
+                Metadata: { 'scal-location-constraint': fileLocation } },
             err => {
                 assert.equal(err, null, `Err putting object to file: ${err}`);
                 mpuSetup(this.test.key, azureLocation,

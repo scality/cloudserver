@@ -10,7 +10,7 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const awsLocation = 'aws-test';
+const { awsLocation, memLocation, fileLocation } = require('../utils');
 const awsLocationEncryption = 'aws-test-encryption';
 const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
@@ -138,7 +138,7 @@ describe('MultipleBackend put object', function testSuite() {
                 const key = `somekey-${Date.now()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'mem' },
+                    Metadata: { 'scal-location-constraint': memLocation },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
@@ -155,7 +155,7 @@ describe('MultipleBackend put object', function testSuite() {
             it('should put a 0-byte object to mem', done => {
                 const key = `somekey-${Date.now()}`;
                 const params = { Bucket: bucket, Key: key,
-                    Metadata: { 'scal-location-constraint': 'mem' },
+                    Metadata: { 'scal-location-constraint': memLocation },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
@@ -189,7 +189,7 @@ describe('MultipleBackend put object', function testSuite() {
                 const key = `somekey-${Date.now()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'file' },
+                    Metadata: { 'scal-location-constraint': fileLocation },
                 };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
@@ -314,7 +314,8 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    params.Metadata = { 'scal-location-constraint': 'file' };
+                    params.Metadata =
+                        { 'scal-location-constraint': fileLocation };
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
@@ -325,7 +326,7 @@ describe('MultipleBackend put object', function testSuite() {
                                     `got error ${err}`);
                                 assert.strictEqual(
                                     res.Metadata['scal-location-constraint'],
-                                    'file');
+                                    fileLocation);
                                 awsS3.getObject({ Bucket: awsBucket,
                                     Key: key }, err => {
                                     assert.strictEqual(err.code, 'NoSuchKey');
@@ -342,7 +343,7 @@ describe('MultipleBackend put object', function testSuite() {
                 const key = `somekey-${Date.now()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': 'file' } };
+                    Metadata: { 'scal-location-constraint': fileLocation } };
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
@@ -415,7 +416,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             process.stdout.write('Creating bucket\n');
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
-                    LocationConstraint: 'mem',
+                    LocationConstraint: memLocation,
                 },
             }, err => {
                 assert.equal(err, null, `Error creating bucket: ${err}`);
@@ -439,7 +440,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             process.stdout.write('Creating bucket\n');
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
-                    LocationConstraint: 'file',
+                    LocationConstraint: fileLocation,
                 },
             }, err => {
                 assert.equal(err, null, `Error creating bucket: ${err}`);

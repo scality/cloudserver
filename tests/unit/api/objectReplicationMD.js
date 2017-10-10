@@ -157,7 +157,7 @@ function putMPU(key, body, cb) {
     const obj = {
         partLocations: [{
             key: 1,
-            dataStoreName: 'mem',
+            dataStoreName: 'mem-test',
             dataStoreETag: `1:${calculatedHash}`,
         }],
         key: partKey,
