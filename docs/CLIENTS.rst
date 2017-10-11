@@ -236,9 +236,11 @@ Python
 `boto3 <http://boto3.readthedocs.io/en/latest/index.html>`__
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: python
+Client integration
 
+.. code:: python
     import boto3
+
     client = boto3.client(
         's3',
         aws_access_key_id='accessKey1',
@@ -248,10 +250,27 @@ Python
 
     lists = client.list_buckets()
 
+Full integration (with object mapping)
+
+.. code:: python
+    import os
+
+    from botocore.utils import fix_s3_host
+    import boto3
+
+    os.environ['AWS_ACCESS_KEY_ID'] = "accessKey1"
+    os.environ['AWS_SECRET_ACCESS_KEY'] = "verySecretKey1"
+
+    s3 = boto3.resource(service_name='s3', endpoint_url='http://localhost:8000')
+    s3.meta.client.meta.events.unregister('before-sign.s3', fix_s3_host)
+
+    for bucket in s3.buckets.all():
+        print(bucket.name)
+
 PHP
 ~~~
 
-Should force path-style requests even though v3 advertises it does by default. 
+Should force path-style requests even though v3 advertises it does by default.
 
 `AWS PHP SDK v3 <https://docs.aws.amazon.com/aws-sdk-php/v3/guide>`__
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
