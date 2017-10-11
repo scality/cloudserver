@@ -17,7 +17,6 @@ function _performSearch(host,
                         secretKey,
                         verbose, ssl) {
     const escapedSearch = encodeURIComponent(query);
-    console.log("escapedsearch!!", escapedSearch);
     const options = {
         host,
         port,
