@@ -24,7 +24,7 @@ const bigAWSMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 let bucketUtil;
 let s3;
 let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
+const describeSkipIfNotMultiple = (config.backends.data === 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const awsTimeout = 30000;
