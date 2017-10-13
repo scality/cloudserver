@@ -66,7 +66,7 @@ function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
     });
 }
 
-describe('MultipleBackend put object', function testSuite() {
+describe.only('MultipleBackend put object', function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(() => {
