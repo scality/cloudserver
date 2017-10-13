@@ -202,6 +202,16 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest', done);
     });
 
+    it('should accept configuration when \'ID\' is not provided for multiple ' +
+        'rules', done => {
+        const replicationConfigWithoutID = Object.assign({}, replicationConfig);
+        const rule1 = replicationConfigWithoutID.Rules[0];
+        delete rule1.ID;
+        const rule2 = Object.assign({}, rule1, { Prefix: 'bar' });
+        replicationConfigWithoutID.Rules[1] = rule2;
+        return checkError(replicationConfigWithoutID, null, done);
+    });
+
     replicationUtils.validStatuses.forEach(status => {
         const config = setConfigRules({ Status: status });
 
