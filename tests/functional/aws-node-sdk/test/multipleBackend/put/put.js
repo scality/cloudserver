@@ -10,9 +10,9 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const awsLocation = 'awsbackend';
+const awsLocation = 'aws-test';
 const awsLocationEncryption = 'aws-test-encryption';
-const bucket = 'federationtest';
+const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
