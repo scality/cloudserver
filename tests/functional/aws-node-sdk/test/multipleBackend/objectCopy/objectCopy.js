@@ -12,14 +12,13 @@ const { createEncryptedBucketPromise } =
 const awsLocation = 'aws-test';
 const awsLocation2 = 'aws-test-2';
 const awsLocationMismatch = 'aws-test-mismatch';
+const awsLocationEncryption = 'aws-test-encryption';
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
-
-const awsLocationEncryption = 'aws-test-encryption';
 
 let bucketUtil;
 let s3;
@@ -73,14 +72,17 @@ callback) {
         } else if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
             assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
             assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
-        } else if (destLoc === awsLocationEncryption) {
-            assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
         } else {
             assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
             assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, destRes.Body);
             assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
+        }
+        if (destLoc === awsLocationEncryption) {
+            assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
+        } else {
+            assert.strictEqual(awsRes.ServerSideEncryption, undefined);
         }
         if (mdDirective === 'COPY') {
             assert.deepStrictEqual(sourceRes.Metadata['test-header'],
@@ -279,6 +281,30 @@ function testSuite() {
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocation, copyKey, 'COPY', false, awsS3,
+                        awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object on AWS with encryption', done => {
+            putSourceObj(awsLocation, false, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocationEncryption },
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                        awsLocationEncryption, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
                 });
             });
