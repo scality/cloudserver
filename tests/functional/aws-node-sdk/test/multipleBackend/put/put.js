@@ -99,7 +99,8 @@ describe('MultipleBackend put object', function testSuite() {
         it('should return an error to put request without a valid bucket name',
             done => {
                 const key = `somekey-${Date.now()}`;
-                s3.putObject({ Bucket: '', Key: key }, err => {
+                s3.putObject({ Bucket: '', Key: key }, (err, res) => {
+                    console.log(res);
                     assert.notEqual(err, null,
                         'Expected failure but got success');
                     assert.strictEqual(err.code, 'MethodNotAllowed');
