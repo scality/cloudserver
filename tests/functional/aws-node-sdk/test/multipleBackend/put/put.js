@@ -82,21 +82,21 @@ describe.only('MultipleBackend put object', function testSuite() {
                 throw err;
             });
         });
+        //
+        // afterEach(() => {
+        //     process.stdout.write('Emptying bucket\n');
+        //     return bucketUtil.empty(bucket)
+        //     .then(() => {
+        //         process.stdout.write('Deleting bucket\n');
+        //         return bucketUtil.deleteOne(bucket);
+        //     })
+        //     .catch(err => {
+        //         process.stdout.write(`Error in afterEach: ${err}\n`);
+        //         throw err;
+        //     });
+        // });
 
-        afterEach(() => {
-            process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
-        });
-
-        it('should return an error to put request without a valid bucket name',
+        it.only('should return an error to put request without a valid bucket name',
             done => {
                 const key = `somekey-${Date.now()}`;
                 s3.putObject({ Bucket: '', Key: key }, (err, res) => {
