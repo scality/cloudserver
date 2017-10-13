@@ -3,20 +3,21 @@ const assert = require('assert');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
 
-const { uniqName, getAzureClient, getAzureContainerName,
-  getAzureKeys, azureLocation } = require('../utils');
+const {
+    describeSkipIfNotMultiple,
+    uniqName,
+    getAzureClient,
+    getAzureContainerName,
+    getAzureKeys,
+    azureLocation,
+} = require('../utils');
 
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
 const keys = getAzureKeys();
 const keyObject = 'getazure';
 
-const { config } = require('../../../../../../lib/Config');
-
 const normalBody = Buffer.from('I am a body', 'utf8');
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const azureTimeout = 10000;
 

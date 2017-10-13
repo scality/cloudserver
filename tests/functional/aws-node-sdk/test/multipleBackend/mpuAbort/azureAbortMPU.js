@@ -4,9 +4,8 @@ const async = require('async');
 const { s3middleware } = require('arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { uniqName, getAzureClient, getAzureContainerName, convertMD5,
-    azureLocation } = require('../utils');
-const { config } = require('../../../../../../lib/Config');
+const { describeSkipIfNotMultiple, uniqName, getAzureClient,
+    getAzureContainerName, convertMD5, azureLocation } = require('../utils');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const maxSubPartSize = azureMpuUtils.maxSubPartSize;
 
@@ -14,9 +13,6 @@ const keyObject = 'abortazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
 const expectedMD5 = 'a63c90cc3684ad8b0a2176a6a8fe9005';
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 let bucketUtil;
 let s3;

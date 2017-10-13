@@ -1,15 +1,11 @@
 const assert = require('assert');
 const async = require('async');
-const AWS = require('aws-sdk');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { config } = require('../../../../../../lib/Config');
-const { getRealAwsConfig } = require('../../support/awsConfig');
-const { getAzureClient, getAzureContainerName, convertMD5,
-    memLocation, fileLocation, awsLocation, azureLocation } =
-    require('../utils');
+const { describeSkipIfNotMultiple, awsS3, awsBucket, getAzureClient,
+    getAzureContainerName, convertMD5, memLocation, fileLocation, awsLocation,
+    azureLocation } = require('../utils');
 
-const awsBucket = 'multitester555';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
 const bucket = 'testmultbackendtagging';
@@ -22,9 +18,6 @@ const cloudTimeout = 10000;
 
 let bucketUtil;
 let s3;
-let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 const putParams = { Bucket: bucket, Body: body };
 const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
@@ -175,8 +168,6 @@ function testSuite() {
     this.timeout(80000);
     withV4(sigCfg => {
         beforeEach(() => {
-            const awsConfig = getRealAwsConfig(awsLocation);
-            awsS3 = new AWS.S3(awsConfig);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucketAsync({ Bucket: bucket })

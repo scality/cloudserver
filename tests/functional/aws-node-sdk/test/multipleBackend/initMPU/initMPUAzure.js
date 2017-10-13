@@ -1,25 +1,14 @@
 const async = require('async');
 const assert = require('assert');
 
-const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { azureLocation } = require('../utils');
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
-
-let azureContainerName;
-
-if (config.locationConstraints[azureLocation] &&
-config.locationConstraints[azureLocation].details &&
-config.locationConstraints[azureLocation].details.azureContainerName) {
-    azureContainerName =
-      config.locationConstraints[azureLocation].details.azureContainerName;
-}
+const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName }
+    = require('../utils');
 
 const keyName = `somekey-${Date.now()}`;
 
+const azureContainerName = getAzureContainerName();
 let s3;
 let bucketUtil;
 

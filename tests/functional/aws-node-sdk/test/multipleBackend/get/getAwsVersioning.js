@@ -1,11 +1,9 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
 const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { config } = require('../../../../../../lib/Config');
-const { getRealAwsConfig } = require('../../support/awsConfig');
 const {
+    awsS3,
     awsLocation,
     awsBucket,
     enableVersioning,
@@ -14,12 +12,11 @@ const {
     putNullVersionsToAws,
     putVersionsToAws,
     getAndAssertResult,
+    describeSkipIfNotMultiple,
 } = require('../utils');
 
 const someBody = 'testbody';
 const bucket = 'buckettestmultiplebackendgetawsversioning';
-
-let awsS3;
 
 function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
     cb) {
@@ -36,15 +33,6 @@ function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
         assert.deepStrictEqual(resultData, expectedData);
         cb();
     });
-}
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
-
-if (describeSkipIfNotMultiple !== describe.skip) {
-    // can only get real aws config if not running end-to-end
-    const awsConfig = getRealAwsConfig(awsLocation);
-    awsS3 = new AWS.S3(awsConfig);
 }
 
 describeSkipIfNotMultiple('AWS backend get object with versioning',
