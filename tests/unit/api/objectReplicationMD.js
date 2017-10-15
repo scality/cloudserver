@@ -504,7 +504,9 @@ describe('Replication object MD without bucket replication config', () => {
                     if (err) {
                         return done(err);
                     }
-                    checkObjectReplicationInfo(keyA, expectedReplicationInfo);
+                    const expected = Object.assign({}, expectedReplicationInfo,
+                        { content: ['DATA', 'METADATA', 'MPU'] });
+                    checkObjectReplicationInfo(keyA, expected);
                     return done();
                 }));
 
