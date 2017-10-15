@@ -74,6 +74,7 @@ const emptyReplicationMD = {
     storageClass: '',
     role: '',
     storageType: '',
+    dataStoreVersionId: '',
 };
 
 // Check that the object key has the expected replication information.
@@ -285,6 +286,7 @@ describe('Replication object MD without bucket replication config', () => {
             role: 'arn:aws:iam::account-id:role/src-resource,' +
                 'arn:aws:iam::account-id:role/dest-resource',
             storageType: '',
+            dataStoreVersionId: '',
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
@@ -472,6 +474,7 @@ describe('Replication object MD without bucket replication config', () => {
                 storageClass: 'aws-test',
                 role: 'arn:aws:iam::account-id:role/resource',
                 storageType: 'aws_s3',
+                dataStoreVersionId: '',
             };
 
             // Expected for a metadata-only replication operation (for example,
@@ -542,7 +545,10 @@ describe('Replication object MD without bucket replication config', () => {
                     if (err) {
                         return done(err);
                     }
-                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    const expected = Object.assign({},
+                        expectedReplicationInfo,
+                        { content: ['METADATA', 'PUT_TAGGING'] });
+                    checkObjectReplicationInfo(keyA, expected);
                     return done();
                 }));
 
@@ -556,7 +562,10 @@ describe('Replication object MD without bucket replication config', () => {
                     if (err) {
                         return done(err);
                     }
-                    checkObjectReplicationInfo(keyA, expectedReplicationInfoMD);
+                    const expected = Object.assign({},
+                        expectedReplicationInfo,
+                        { content: ['METADATA', 'DELETE_TAGGING'] });
+                    checkObjectReplicationInfo(keyA, expected);
                     return done();
                 }));
 
