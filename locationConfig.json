@@ -74,6 +74,16 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
+    "awsbackend": {
+    "type": "aws_s3",
+    "legacyAwsBehavior": true,
+    "details": {
+        "awsEndpoint": "s3.amazonaws.com",
+        "bucketName": "multitester555",
+        "bucketMatch": true,
+        "credentialsProfile": "default"
+        }
+    },
     "sa-east-1": {
         "type": "file",
         "legacyAwsBehavior": false,
