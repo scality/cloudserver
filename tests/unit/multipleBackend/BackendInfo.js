@@ -6,7 +6,10 @@ const { config } = require('../../../lib/Config');
 const log = new DummyRequestLogger();
 const data = config.backends.data;
 
-const dummyBackendInfo = new BackendInfo('mem', 'file', '127.0.0.1');
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
+const dummyBackendInfo = new BackendInfo(memLocation, fileLocation,
+    '127.0.0.1');
 
 describe('BackendInfo class', () => {
     describe('controllingBackendParam', () => {
@@ -16,7 +19,7 @@ describe('BackendInfo class', () => {
         it('should return object with applicable error if ' +
         'objectLocationConstraint is invalid', () => {
             const res = BackendInfo.controllingBackendParam(
-                'notValid', 'file', '127.0.0.1', log);
+                'notValid', fileLocation, '127.0.0.1', log);
             assert.equal(res.isValid, false);
             assert((res.description).indexOf('Object Location Error')
             > -1);
@@ -55,14 +58,14 @@ describe('BackendInfo class', () => {
         'is invalid and data backend is set to "file"', () => {
             config.backends.data = 'file';
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'file', 'notValid', log);
+                memLocation, fileLocation, 'notValid', log);
             assert.equal(res.isValid, true);
         });
         it('should return isValid if requestEndpoint ' +
         'is invalid and data backend is set to "mem"', () => {
             config.backends.data = 'mem';
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'file', 'notValid', log);
+                memLocation, fileLocation, 'notValid', log);
             assert.equal(res.isValid, true);
         });
         it('should return isValid if requestEndpoint ' +
@@ -70,7 +73,7 @@ describe('BackendInfo class', () => {
         'was provided', () => {
             config.backends.data = 'multiple';
             const res = BackendInfo.controllingBackendParam(
-                'mem', undefined, 'notValid', log);
+                memLocation, undefined, 'notValid', log);
             assert.equal(res.isValid, true);
         });
         it('should return isValid if requestEndpoint ' +
@@ -78,13 +81,13 @@ describe('BackendInfo class', () => {
         'was provided', () => {
             config.backends.data = 'multiple';
             const res = BackendInfo.controllingBackendParam(
-                undefined, 'mem', 'notValid', log);
+                undefined, memLocation, 'notValid', log);
             assert.equal(res.isValid, true);
         });
         it('should return isValid if all backend ' +
         'parameters are valid', () => {
             const res = BackendInfo.controllingBackendParam(
-                'mem', 'file', '127.0.0.1', log);
+                memLocation, fileLocation, '127.0.0.1', log);
             assert.equal(res.isValid, true);
         });
     });
@@ -92,19 +95,19 @@ describe('BackendInfo class', () => {
         it('should return object location constraint', () => {
             const controllingLC =
                 dummyBackendInfo.getControllingLocationConstraint();
-            assert.strictEqual(controllingLC, 'mem');
+            assert.strictEqual(controllingLC, memLocation);
         });
     });
     describe('getters', () => {
         it('should return object location constraint', () => {
             const objectLC =
                 dummyBackendInfo.getObjectLocationConstraint();
-            assert.strictEqual(objectLC, 'mem');
+            assert.strictEqual(objectLC, memLocation);
         });
         it('should return bucket location constraint', () => {
             const bucketLC =
                 dummyBackendInfo.getBucketLocationConstraint();
-            assert.strictEqual(bucketLC, 'file');
+            assert.strictEqual(bucketLC, fileLocation);
         });
         it('should return request endpoint', () => {
             const reqEndpoint =

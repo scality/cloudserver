@@ -26,28 +26,28 @@ const testRequest = {
 
 const testChecks = [
     {
-        data: 'file',
-        locationSent: 'file',
+        data: 'file-test',
+        locationSent: 'file-test',
         parsedHost: '127.1.2.3',
-        locationReturn: 'file',
+        locationReturn: 'file-test',
         isError: false,
     },
     {
-        data: 'file',
+        data: 'file-test',
         locationSent: 'wronglocation',
         parsedHost: '127.1.0.0',
         locationReturn: undefined,
         isError: true,
     },
     {
-        data: 'file',
+        data: 'file-test',
         locationSent: '',
         parsedHost: '127.0.0.1',
         locationReturn: config.restEndpoints['127.0.0.1'],
         isError: false,
     },
     {
-        data: 'file',
+        data: 'file-test',
         locationSent: '',
         parsedHost: '127.3.2.1',
         locationReturn: 'us-east-1',

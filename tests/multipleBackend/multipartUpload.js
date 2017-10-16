@@ -25,6 +25,8 @@ const completeMultipartUpload =
 const listParts = require('../../lib/api/listParts');
 const listMultipartUploads = require('../../lib/api/listMultipartUploads');
 
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
 const awsLocation = 'aws-test';
 const awsLocationMismatch = 'aws-test-mismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
@@ -515,7 +517,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
 
     it('should complete MPU on AWS with same key as object put to file',
     done => {
-        putObject('file', () => {
+        putObject(fileLocation, () => {
             mpuSetup(awsLocation, objectKey, uploadId => {
                 const compParams = Object.assign({
                     url: `/${objectKey}?uploadId=${uploadId}`,
@@ -534,7 +536,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     it('should complete MPU on file with same key as object put to AWS',
     done => {
         putObject(awsLocation, () => {
-            mpuSetup('file', objectKey, uploadId => {
+            mpuSetup(fileLocation, objectKey, uploadId => {
                 const compParams = Object.assign({
                     url: `/${fileKey}?uploadId=${uploadId}`,
                     query: { uploadId } }, completeParams);
@@ -543,7 +545,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     assert.equal(err, null, 'Error completing mpu on file ' +
                     `${err}`);
                     assertMpuCompleteResults(result);
-                    assertObjOnBackend('file', objectKey, done);
+                    assertObjOnBackend(fileLocation, objectKey, done);
                 });
             });
         });
@@ -654,9 +656,9 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
 
     it('should list all multipart uploads on all backends', done => {
         async.series([
-            cb => mpuSetup('file', fileKey,
+            cb => mpuSetup(fileLocation, fileKey,
                 fileUploadId => cb(null, fileUploadId)),
-            cb => mpuSetup('mem', memKey, memUploadId =>
+            cb => mpuSetup(memLocation, memKey, memUploadId =>
                 cb(null, memUploadId)),
             cb => mpuSetup(awsLocation, objectKey, awsUploadId =>
                 cb(null, awsUploadId)),
@@ -681,9 +683,10 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     assert.strictEqual(objectKey, mpuListing[2].Key[0]);
                     assert.strictEqual(uploadIds[2], mpuListing[2].UploadId[0]);
                     const backendsInfo = [
-                        { backend: 'file', key: fileKey,
+                        { backend: fileLocation, key: fileKey,
                             uploadId: uploadIds[0] },
-                        { backend: 'mem', key: memKey, uploadId: uploadIds[1] },
+                        { backend: memLocation, key: memKey,
+                            uploadId: uploadIds[1] },
                         { backend: 'aws', key: objectKey,
                             uploadId: uploadIds[2] },
                     ];

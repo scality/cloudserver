@@ -3,20 +3,23 @@ const parseLC = require('../../../lib/data/locationConstraintParser');
 const inMemory = require('../../../lib/data/in_memory/backend').backend;
 const DataFileInterface = require('../../../lib/data/file/backend');
 
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
+const awsLocation = 'aws-test';
 const clients = parseLC();
 
 describe('locationConstraintParser', () => {
     it('should return object containing mem object', () => {
-        assert.notEqual(Object.keys(clients).indexOf('mem'), -1);
-        assert.strictEqual(typeof clients.mem, 'object');
-        assert.deepEqual(clients.mem, inMemory);
+        assert.notEqual(Object.keys(clients).indexOf(memLocation), -1);
+        assert.strictEqual(typeof clients[memLocation], 'object');
+        assert.deepEqual(clients[memLocation], inMemory);
     });
     it('should return object containing file object', () => {
-        assert.notEqual(Object.keys(clients).indexOf('file'), -1);
-        assert(clients.file instanceof DataFileInterface);
+        assert.notEqual(Object.keys(clients).indexOf(fileLocation), -1);
+        assert(clients[fileLocation] instanceof DataFileInterface);
     });
     it('should return object containing AWS object', () => {
-        assert.notEqual(Object.keys(clients).indexOf('aws-test'), -1);
-        assert.strictEqual(typeof clients.file, 'object');
+        assert.notEqual(Object.keys(clients).indexOf(awsLocation), -1);
+        assert.strictEqual(typeof clients[awsLocation], 'object');
     });
 });

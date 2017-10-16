@@ -29,6 +29,8 @@ const destObjName = 'copycatobject';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
 
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
 const awsBucket = 'multitester555';
 const awsLocation = 'aws-test';
 const awsLocation2 = 'aws-test-2';
@@ -163,7 +165,7 @@ function testSuite() {
     });
 
     it('should copy part to mem based on mpu location', done => {
-        copyPutPart('file', 'mem', null, 'localhost', () => {
+        copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
             // object info is stored in ds beginning at index one,
             // so an array length of two means only one object
             // was stored in mem
@@ -174,14 +176,14 @@ function testSuite() {
     });
 
     it('should copy part to file based on mpu location', done => {
-        copyPutPart('mem', 'file', null, 'localhost', () => {
+        copyPutPart(memLocation, fileLocation, null, 'localhost', () => {
             assert.strictEqual(ds.length, 2);
             done();
         });
     });
 
     it('should copy part to AWS based on mpu location', done => {
-        copyPutPart('mem', awsLocation, null, 'localhost', uploadId => {
+        copyPutPart(memLocation, awsLocation, null, 'localhost', uploadId => {
             assert.strictEqual(ds.length, 2);
             const awsReq = Object.assign({ UploadId: uploadId }, awsParams);
             s3.listParts(awsReq, (err, partList) => {
@@ -196,7 +198,7 @@ function testSuite() {
     });
 
     it('should copy part to mem from AWS based on mpu location', done => {
-        copyPutPart(awsLocation, 'mem', null, 'localhost', () => {
+        copyPutPart(awsLocation, memLocation, null, 'localhost', () => {
             assert.strictEqual(ds.length, 2);
             assert.deepStrictEqual(ds[1].value, body);
             done();
@@ -204,7 +206,7 @@ function testSuite() {
     });
 
     it('should copy part to mem based on bucket location', done => {
-        copyPutPart('mem', null, null, 'localhost', () => {
+        copyPutPart(memLocation, null, null, 'localhost', () => {
             // ds length should be three because both source
             // and copied objects should be in mem
             assert.strictEqual(ds.length, 3);
@@ -214,7 +216,7 @@ function testSuite() {
     });
 
     it('should copy part to file based on bucket location', done => {
-        copyPutPart('file', null, null, 'localhost', () => {
+        copyPutPart(fileLocation, null, null, 'localhost', () => {
             // ds should be empty because both source and
             // coped objects should be in file
             assert.deepStrictEqual(ds, []);
@@ -282,7 +284,7 @@ function testSuite() {
 
 
     it('should copy part to file based on request endpoint', done => {
-        copyPutPart(null, null, 'mem', 'localhost', () => {
+        copyPutPart(null, null, memLocation, 'localhost', () => {
             assert.strictEqual(ds.length, 2);
             done();
         });

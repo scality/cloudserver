@@ -6,12 +6,27 @@ const azure = require('azure-storage');
 
 const { config } = require('../../../../../lib/Config');
 
-const azureLocation = 'azuretest';
+const memLocation = 'mem-test';
+const fileLocation = 'file-test';
 const awsLocation = 'aws-test';
+const awsLocation2 = 'aws-test-2';
+const awsLocationMismatch = 'aws-test-mismatch';
+const azureLocation = 'azuretest';
+const azureLocation2 = 'azuretest2';
+const azureLocationMismatch = 'azuretestmismatch';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 
-const utils = {};
+const utils = {
+    fileLocation,
+    memLocation,
+    awsLocation,
+    awsLocation2,
+    awsLocationMismatch,
+    azureLocation,
+    azureLocation2,
+    azureLocationMismatch,
+};
 
 utils.uniqName = name => `${name}${new Date().getTime()}`;
 

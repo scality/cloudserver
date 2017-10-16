@@ -15,6 +15,8 @@ const bucketName = 'bucketname';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
+const fileLocation = 'file-test';
+const memLocation = 'mem-test';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
@@ -75,35 +77,35 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     });
 
     it('should put an object to mem', done => {
-        put('file', 'mem', 'localhost', () => {
+        put(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
     it('should put an object to file', done => {
-        put('mem', 'file', 'localhost', () => {
+        put(memLocation, fileLocation, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put an object to AWS', done => {
-        put('mem', 'aws-test', 'localhost', () => {
+        put(memLocation, 'aws-test', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put an object to mem based on bucket location', done => {
-        put('mem', null, 'localhost', () => {
+        put(memLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
     it('should put an object to file based on bucket location', done => {
-        put('file', null, 'localhost', () => {
+        put(fileLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
@@ -124,7 +126,7 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     });
 
     it('should put an object to Azure based on object location', done => {
-        put('mem', 'azuretest', 'localhost', () => {
+        put(memLocation, 'azuretest', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });

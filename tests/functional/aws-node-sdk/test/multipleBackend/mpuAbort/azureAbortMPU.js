@@ -4,13 +4,12 @@ const async = require('async');
 const { s3middleware } = require('arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { uniqName, getAzureClient, getAzureContainerName, convertMD5 }
-    = require('../utils');
+const { uniqName, getAzureClient, getAzureContainerName, convertMD5,
+    azureLocation } = require('../utils');
 const { config } = require('../../../../../../lib/Config');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const maxSubPartSize = azureMpuUtils.maxSubPartSize;
 
-const azureLocation = 'azuretest';
 const keyObject = 'abortazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();

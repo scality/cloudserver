@@ -4,12 +4,10 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, getAzureContainerName, getAzureKeys,
-    convertMD5 }
-  = require('../utils');
+    convertMD5, fileLocation, azureLocation, azureLocationMismatch }
+    = require('../utils');
 const { config } = require('../../../../../../lib/Config');
 
-const azureLocation = 'azuretest';
-const azureLocationMismatch = 'azuretestmismatch';
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
@@ -197,7 +195,7 @@ describeF() {
                     next => s3.putObject(params, err => next(err)),
                     next => {
                         params.Metadata = { 'scal-location-constraint':
-                        'file' };
+                        fileLocation };
                         s3.putObject(params, err => setTimeout(() =>
                           next(err), azureTimeout));
                     },
@@ -209,7 +207,7 @@ describeF() {
                             `got error ${err}`);
                         assert.strictEqual(
                             res.Metadata['scal-location-constraint'],
-                            'file');
+                            fileLocation);
                         next();
                     }),
                     next => azureClient.getBlobProperties(azureContainerName,
@@ -226,7 +224,7 @@ describeF() {
                 const params = { Bucket: azureContainerName, Key:
                     this.test.keyName,
                     Body: normalBody,
-                    Metadata: { 'scal-location-constraint': 'file' } };
+                    Metadata: { 'scal-location-constraint': fileLocation } };
                 async.waterfall([
                     next => s3.putObject(params, err => next(err)),
                     next => {

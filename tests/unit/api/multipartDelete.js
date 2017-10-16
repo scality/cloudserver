@@ -34,7 +34,7 @@ const initiateRequest = {
     url: `/${objectKey}?uploads`,
 };
 const eastLocation = 'us-east-1';
-const westLocation = 'file';
+const westLocation = 'file-test';
 
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {

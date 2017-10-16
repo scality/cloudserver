@@ -5,17 +5,14 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
 const { config } = require('../../../../../../lib/Config');
-const { getAzureClient, getAzureContainerName, convertMD5 } =
+const { getAzureClient, getAzureContainerName, convertMD5, memLocation,
+    awsLocation, azureLocation, azureLocation2, azureLocationMismatch } =
     require('../utils');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 
-const azureLocation = 'azuretest';
-const azureLocation2 = 'azuretest2';
-const azureLocationMismatch = 'azuretestmismatch';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName();
-const awsLocation = 'aws-test';
 
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
@@ -138,7 +135,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy an object from mem to Azure', function itFn(done) {
-            putSourceObj(this.test.key, 'mem', null, () => {
+            putSourceObj(this.test.key, memLocation, null, () => {
                 const copyParams = {
                     Bucket: bucket,
                     Key: this.test.copyKey,
@@ -151,7 +148,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${normalMD5}"`);
-                    assertGetObjects(this.test.key, bucket, 'mem',
+                    assertGetObjects(this.test.key, bucket, memLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', null, done);
                 });
@@ -165,7 +162,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     Key: this.test.copyKey,
                     CopySource: `/${bucket}/${this.test.key}`,
                     MetadataDirective: 'REPLACE',
-                    Metadata: { 'scal-location-constraint': 'mem' },
+                    Metadata: { 'scal-location-constraint': memLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
                     assert.equal(err, null, 'Expected success but got ' +
@@ -173,7 +170,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
-                        this.test.copyKey, bucket, 'mem', this.test.key,
+                        this.test.copyKey, bucket, memLocation, this.test.key,
                         'REPLACE', null, done);
                 });
             });
@@ -223,7 +220,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
 
         it('should copy an object from mem to Azure and retain metadata',
         function itFn(done) {
-            putSourceObj(this.test.key, 'mem', null, () => {
+            putSourceObj(this.test.key, memLocation, null, () => {
                 const copyParams = {
                     Bucket: bucket,
                     Key: this.test.copyKey,
@@ -236,7 +233,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${normalMD5}"`);
-                    assertGetObjects(this.test.key, bucket, 'mem',
+                    assertGetObjects(this.test.key, bucket, memLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'COPY', null, done);
                 });
@@ -384,7 +381,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
 
         it('should copy a 0-byte object from mem to Azure',
         function itFn(done) {
-            putSourceObj(this.test.key, 'mem', { empty: true }, () => {
+            putSourceObj(this.test.key, memLocation, { empty: true }, () => {
                 const copyParams = {
                     Bucket: bucket,
                     Key: this.test.copyKey,
@@ -397,7 +394,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     `error: ${err}`);
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${emptyMD5}"`);
-                    assertGetObjects(this.test.key, bucket, 'mem',
+                    assertGetObjects(this.test.key, bucket, memLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', { empty: true }, done);
                 });
@@ -425,7 +422,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
         });
 
         it('should copy a 5MB object from mem to Azure', function itFn(done) {
-            putSourceObj(this.test.key, 'mem', { big: true }, () => {
+            putSourceObj(this.test.key, memLocation, { big: true }, () => {
                 const copyParams = {
                     Bucket: bucket,
                     Key: this.test.copyKey,
@@ -438,7 +435,7 @@ describeSkipIfNotMultiple('MultipleBackend object copy', function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${bigMD5}"`);
                     setTimeout(() => {
-                        assertGetObjects(this.test.key, bucket, 'mem',
+                        assertGetObjects(this.test.key, bucket, memLocation,
                             this.test.copyKey, bucket, azureLocation,
                             this.test.copyKey, 'REPLACE', { big: true }, done);
                     }, azureTimeout);
