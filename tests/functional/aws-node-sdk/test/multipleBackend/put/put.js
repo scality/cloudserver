@@ -10,7 +10,7 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const awsLocation = 'aws-test';
+const awsLocation = 'awsbackend';
 const awsLocationEncryption = 'aws-test-encryption';
 const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
