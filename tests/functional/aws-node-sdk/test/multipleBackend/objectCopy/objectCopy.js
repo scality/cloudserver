@@ -14,6 +14,7 @@ const awsLocation2 = 'aws-test-2';
 const awsLocationMismatch = 'aws-test-mismatch';
 const awsLocationEncryption = 'aws-test-encryption';
 const bucket = 'buckettestmultiplebackendobjectcopy';
+const bucketEncrypted = 'bucketenryptedtestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -26,7 +27,7 @@ let awsS3;
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-function putSourceObj(location, isEmptyObj, cb) {
+function putSourceObj(location, isEmptyObj, bucket, cb) {
     const key = `somekey-${Date.now()}`;
     const sourceParams = { Bucket: bucket, Key: key,
         Metadata: {
@@ -38,6 +39,7 @@ function putSourceObj(location, isEmptyObj, cb) {
         sourceParams.Body = body;
     }
     process.stdout.write('Putting source object\n');
+    console.log('sourceParams!!!', sourceParams);
     s3.putObject(sourceParams, (err, result) => {
         assert.equal(err, null, `Error putting source object: ${err}`);
         if (isEmptyObj) {
@@ -57,7 +59,6 @@ callback) {
     const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey };
     const destGetParams = { Bucket: destBucket, Key: destKey };
     const awsParams = { Bucket: awsBucket, Key: awsKey };
-
     async.series([
         cb => s3.getObject(sourceGetParams, cb),
         cb => s3.getObject(destGetParams, cb),
@@ -122,6 +123,11 @@ function testSuite() {
                 s3.createBucketAsync = createEncryptedBucketPromise;
             }
             return s3.createBucketAsync({ Bucket: bucket })
+            .then(() => s3.createBucketAsync({ Bucket: bucketEncrypted,
+              CreateBucketConfiguration: {
+                  LocationConstraint: awsLocationEncryption,
+              },
+            }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -131,9 +137,14 @@ function testSuite() {
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
+            .then(() => bucketUtil.empty(bucketEncrypted))
             .then(() => {
-                process.stdout.write('Deleting bucket\n');
+                process.stdout.write(`Deleting bucket ${bucket}\n`);
                 return bucketUtil.deleteOne(bucket);
+            })
+            .then(() => {
+                process.stdout.write(`Deleting bucket ${bucketEncrypted}\n`);
+                return bucketUtil.deleteOne(bucketEncrypted);
             })
             .catch(err => {
                 process.stdout.write(`Error in afterEach: ${err}\n`);
@@ -142,7 +153,7 @@ function testSuite() {
         });
 
         it('should copy an object from mem to AWS', done => {
-            putSourceObj('mem', false, key => {
+            putSourceObj('mem', false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -166,7 +177,7 @@ function testSuite() {
         });
 
         it('should copy an object from mem to AWS with encryption', done => {
-            putSourceObj('mem', false, key => {
+            putSourceObj('mem', false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -191,7 +202,7 @@ function testSuite() {
 
         it('should return NotImplemented copying an object from mem to a ' +
         'versioning enable AWS bucket', done => {
-            putSourceObj('mem', false, key => {
+            putSourceObj('mem', false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -217,7 +228,7 @@ function testSuite() {
         });
 
         it('should copy an object from AWS to mem', done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -241,7 +252,7 @@ function testSuite() {
 
         it('should copy an object from mem to AWS and retain metadata',
         done => {
-            putSourceObj('mem', false, key => {
+            putSourceObj('mem', false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -265,7 +276,7 @@ function testSuite() {
         });
 
         it('should copy an object on AWS', done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -287,7 +298,7 @@ function testSuite() {
         });
 
         it('should copy an object on AWS with encryption', done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -310,10 +321,32 @@ function testSuite() {
             });
         });
 
+        it.only('should copy an object on AWS with bucket encryption', done => {
+            putSourceObj(awsLocation, false, bucketEncrypted, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucketEncrypted,
+                    Key: copyKey,
+                    CopySource: `/${bucketEncrypted}/${key}`,
+                    MetadataDirective: 'COPY',
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucketEncrypted, awsLocation, copyKey,
+                        bucketEncrypted, awsLocationEncryption, copyKey, 'COPY',
+                        false, awsS3, awsLocation, done);
+                });
+            });
+        });
+
         it('should copy an object on AWS location with bucketMatch equals ' +
         'false to a different AWS location with bucketMatch equals true',
         done => {
-            putSourceObj(awsLocationMismatch, false, key => {
+            putSourceObj(awsLocationMismatch, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -346,7 +379,7 @@ function testSuite() {
                 config.locationConstraints[awsLocation].details.bucketName;
             async.waterfall([
                 // giving access to the object on the AWS side
-                next => putSourceObj(awsLocation, false, key =>
+                next => putSourceObj(awsLocation, false, bucket, key =>
                   next(null, key)),
                 (key, next) => awsS3.putObjectAcl(
                   { Bucket: awsBucket, Key: key,
@@ -379,7 +412,7 @@ function testSuite() {
         it('should return error AccessDenied copying an object on AWS to a ' +
         'different AWS account without source object READ access',
         done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -398,7 +431,7 @@ function testSuite() {
         });
 
         it('should copy an object on AWS with REPLACE', done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -422,7 +455,7 @@ function testSuite() {
         });
 
         it('should copy a 0-byte object from mem to AWS', done => {
-            putSourceObj('mem', true, key => {
+            putSourceObj('mem', true, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -446,7 +479,7 @@ function testSuite() {
         });
 
         it('should copy a 0-byte object on AWS', done => {
-            putSourceObj(awsLocation, true, key => {
+            putSourceObj(awsLocation, true, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
                     Bucket: bucket,
@@ -469,7 +502,7 @@ function testSuite() {
 
         it('should return error if AWS source object has ' +
         'been deleted', done => {
-            putSourceObj(awsLocation, false, key => {
+            putSourceObj(awsLocation, false, bucket, key => {
                 const awsBucket =
                     config.locationConstraints[awsLocation].details.bucketName;
                 awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
