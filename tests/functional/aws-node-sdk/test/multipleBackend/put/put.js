@@ -84,7 +84,7 @@ describe.only('MultipleBackend put object', function testSuite() {
                 throw err;
             });
         });
-        
+
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
