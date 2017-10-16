@@ -21,6 +21,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
+const dataStoreName = 'us-east-1';
 
 describe('objectGet API', () => {
     let testPutObjectRequest;
@@ -87,7 +88,7 @@ describe('objectGet API', () => {
                                     key: 1,
                                     start: 0,
                                     size: 12,
-                                    dataStoreName: 'mem',
+                                    dataStoreName,
                                     dataStoreETag: `1:${correctMD5}`,
                                 }]);
                             done();
@@ -196,14 +197,14 @@ describe('objectGet API', () => {
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
-                            dataStoreName: 'mem',
+                            dataStoreName,
                             dataStoreETag: `1:${calculatedHash}`,
                             size: 5242880,
                             start: 0,
                         },
                         {
                             key: 2,
-                            dataStoreName: 'mem',
+                            dataStoreName,
                             dataStoreETag: `2:${calculatedHash}`,
                             size: 12,
                             start: 5242880,
