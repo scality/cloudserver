@@ -1,10 +1,10 @@
 const assert = require('assert');
 const async = require('async');
-const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const withV4 = require('../../support/withV4');
+const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, awsS3, getAzureClient, getAzureContainerName,
     convertMD5, memLocation, fileLocation, awsLocation, azureLocation } =
-    require('./utils');
+    require('../utils');
 
 const awsBucket = 'multitester555';
 const azureClient = getAzureClient();
