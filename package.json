@@ -37,9 +37,10 @@
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
-    "eslint": "^2.4.0",
-    "eslint-config-airbnb": "^6.0.0",
+    "eslint": "4.6.0",
+    "eslint-config-airbnb-base": "12.0.0",
     "eslint-config-scality": "scality/Guidelines",
+    "eslint-plugin-import": "2.7.0",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
