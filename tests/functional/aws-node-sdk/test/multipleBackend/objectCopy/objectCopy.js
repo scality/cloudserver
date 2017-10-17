@@ -17,7 +17,6 @@ const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
-const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 let bucketUtil;
 let s3;
@@ -312,33 +311,6 @@ function testSuite() {
                     assertGetObjects(key, bucket, undefined, copyKey,
                         bucketAws, undefined, copyKey, 'REPLACE', false,
                         awsS3, awsLocation, done);
-                });
-            });
-        });
-
-        it('should return NotImplemented copying an object from mem to a ' +
-        'versioning enable AWS bucket', done => {
-            putSourceObj(memLocation, false, bucket, key => {
-                const copyKey = `copyKey-${Date.now()}`;
-                const copyParams = {
-                    Bucket: bucket,
-                    Key: copyKey,
-                    CopySource: `/${bucket}/${key}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: {
-                        'scal-location-constraint': awsLocation },
-                };
-                s3.putBucketVersioning({
-                    Bucket: bucket,
-                    VersioningConfiguration: versioningEnabled,
-                }, err => {
-                    assert.equal(err, null, 'putBucketVersioning: ' +
-                        `Expected success, got error ${err}`);
-                    process.stdout.write('Copying object\n');
-                    s3.copyObject(copyParams, err => {
-                        assert.strictEqual(err.code, 'NotImplemented');
-                        done();
-                    });
                 });
             });
         });
