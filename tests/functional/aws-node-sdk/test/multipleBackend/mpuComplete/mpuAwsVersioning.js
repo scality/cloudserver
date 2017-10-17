@@ -74,26 +74,30 @@ function mpuSetup(s3, key, location, cb) {
         },
     ], (err, uploadId) => {
         process.stdout.write('Created MPU and put two parts\n');
-        cb(uploadId, partArray);
+        cb(err, uploadId, partArray);
     });
 }
 
-/* function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
-    cb) {
-    async.mapSeries(versionIds, (versionId, next) => {
-        s3.getObject({ Bucket: bucket, Key: key,
-            VersionId: versionId }, next);
-    }, (err, results) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object, got error ${err}`);
-        const resultIds = results.map(result => result.VersionId);
-        const resultData = results.map(result =>
-            result.Body.toString());
-        assert.deepStrictEqual(resultIds, versionIds);
-        assert.deepStrictEqual(resultData, expectedData);
-        cb();
+function completeAndAssertMpu(s3, params, cb) {
+    const { bucket, key, uploadId, partArray, expectVersionId } = params;
+    s3.completeMultipartUpload({
+        Bucket: bucket,
+        Key: key,
+        UploadId: uploadId,
+        MultipartUpload: { Parts: partArray },
+    }, (err, data) => {
+        console.log('========================')
+        console.log('data completing mpu', data)
+        assert.strictEqual(err, null, `Err completing MPU: ${err}`);
+        if (expectVersionId) {
+            assert.notEqual(data.VersionId, undefined);
+        } else {
+            assert.strictEqual(data.VersionId, undefined);
+        }
+        getAndAssertResult(s3, { bucket, key, body: concattedData,
+            expectedVersionId: data.VersionId }, cb);
     });
-} */
+}
 
 describeSkipIfNotMultiple('AWS backend complete mpu with versioning',
 function testSuite() {
@@ -119,47 +123,33 @@ function testSuite() {
         it('should not return version ids when versioning has not been ' +
         'configured via CloudServer', done => {
             const key = `somekey-${Date.now()}`;
-            mpuSetup(s3, key, awsLocation, (uploadId, partArray) => {
-                const params = {
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                    MultipartUpload: { Parts: partArray },
-                };
-                s3.completeMultipartUpload(params, (err, data) => {
-                    assert.equal(err, null, `Err completing MPU: ${err}`);
-                    assert.strictEqual(data.VersionId, undefined);
-                    getAndAssertResult(s3, { bucket, key, body: concattedData,
-                        expectedVersionId: false }, done);
-                });
+            mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
+                completeAndAssertMpu(s3, { bucket, key, uploadId, partArray,
+                    expectVersionId: false }, done);
             });
-
-            /* s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-            Metadata: { 'scal-location-constraint': awsLocation } },
-            (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
-                assert.strictEqual(data.VersionId, undefined);
-                getAndAssertResult(s3, { bucket, key, body: someBody,
-                    expectedVersionId: false }, done);
-            }); */
         });
 
-        /* it('should not return version ids when versioning has not been ' +
-        'configured via CloudServer, even when version id specified', done => {
+        it.only('versioning enabled: should return version id completing mpu',
+        done => {
             const key = `somekey-${Date.now()}`;
-            s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
-            Metadata: { 'scal-location-constraint': awsLocation } },
-            (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
-                assert.strictEqual(data.VersionId, undefined);
-                getAndAssertResult(s3, { bucket, key, body: someBody,
-                    versionId: 'null', expectedVersionId: false }, done);
-            });
+            // enable versioning
+            // mpu set-up
+            // complete mpu -- assert versionId
+            // get and assert versionId
+            async.waterfall([
+                next => enableVersioning(s3, bucket, next),
+                next => mpuSetup(s3, key, awsLocation, next),
+                (uploadId, partArray, next) => completeAndAssertMpu(s3, {
+                    bucket,
+                    key,
+                    uploadId,
+                    partArray,
+                    expectVersionId: true,
+                }, next),
+            ], done);
         });
 
-        it('should return version id for null version when versioning ' +
+/*         it('should return version id for null version when versioning ' +
         'has been configured via CloudServer', done => {
             const key = `somekey-${Date.now()}`;
             async.waterfall([
@@ -176,7 +166,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should overwrite the null version if putting object twice ' +
+        /* it('should overwrite the null version if putting object twice ' +
         'before versioning is configured', done => {
             const key = `somekey-${Date.now()}`;
             const data = ['data1', 'data2'];
