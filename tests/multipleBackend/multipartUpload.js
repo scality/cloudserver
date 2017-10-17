@@ -558,7 +558,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should return 501 NotImplemented initiating MPU on AWS with Scality ' +
+    it('should be successful initiating MPU on AWS with Scality ' +
     'S3 versioning enabled', done => {
         const objectKey = `key-${Date.now()}`;
         // putting null version: put obj before versioning configured
@@ -579,8 +579,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 };
                 initiateMultipartUpload(authInfo, initiateRequest, log,
                 err => {
-                    assert(err.NotImplemented);
-                    assert.strictEqual(err.code, 501);
+                    assert.strictEqual(err, null);
                     done();
                 });
             });
