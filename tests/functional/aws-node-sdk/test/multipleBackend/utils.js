@@ -14,10 +14,10 @@ const fileLocation = 'file-test';
 const awsLocation = 'aws-test';
 const awsLocation2 = 'aws-test-2';
 const awsLocationMismatch = 'aws-test-mismatch';
+const awsLocationEncryption = 'aws-test-encryption';
 const azureLocation = 'azuretest';
 const azureLocation2 = 'azuretest2';
 const azureLocationMismatch = 'azuretestmismatch';
-const awsLocationEncryption = 'aws-test-encryption';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsTimeout = 10000;
@@ -42,10 +42,10 @@ const utils = {
     awsLocation,
     awsLocation2,
     awsLocationMismatch,
+    awsLocationEncryption,
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
-    awsLocationEncryption,
 };
 
 utils.uniqName = name => `${name}${new Date().getTime()}`;
