@@ -108,7 +108,6 @@ const constants = {
     /* eslint-disable camelcase */
     externalBackends: { aws_s3: true, azure: true },
     versioningNotImplBackends: { azure: true },
-    mpuMDStoredExternallyBackend: { aws_s3: true },
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
 };
