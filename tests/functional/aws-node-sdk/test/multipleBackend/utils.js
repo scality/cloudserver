@@ -32,6 +32,16 @@ if (config.backends.data === 'multiple' && !process.env.S3_END_TO_END) {
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 }
 
+function _assertErrorResult(err, expectedError, desc) {
+    if (!expectedError) {
+        assert.strictEqual(err, null, `got error for ${desc}: ${err}`);
+        return;
+    }
+    assert(err, `expected ${expectedError} but found no error`);
+    assert.strictEqual(err.code, expectedError);
+    assert.strictEqual(err.statusCode, errors[expectedError].code);
+}
+
 const utils = {
     describeSkipIfNotMultiple,
     awsS3,
@@ -185,10 +195,18 @@ utils.putNullVersionsToAws = (s3, bucket, key, versions, cb) => {
 };
 
 utils.getAndAssertResult = (s3, params, cb) => {
-    const { bucket, key, body, versionId, expectedVersionId, expectedTagCount }
-        = params;
+    console.log('params', params);
+    const { bucket, key, body, versionId, expectedVersionId, expectedTagCount,
+    expectedError } = params;
     s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
         (err, data) => {
+            _assertErrorResult(err, expectedError, 'putting tags');
+            console.log('expected error...', expectedError)
+            if (expectedError) {
+                console.log('do we get here?', expectedError)
+                return cb();
+            }
+            console.log('we get to callback from get request to s3...')
             assert.strictEqual(err, null, 'Expected success ' +
                 `getting object, got error ${err}`);
             if (body) {
@@ -207,7 +225,7 @@ utils.getAndAssertResult = (s3, params, cb) => {
             } else if (expectedTagCount) {
                 assert.strictEqual(data.TagCount, expectedTagCount);
             }
-            cb();
+            return cb();
         });
 };
 
@@ -234,16 +252,6 @@ function _getTaggingConfig(tags) {
             };
         }),
     };
-}
-
-function _assertErrorResult(err, expectedError, desc) {
-    if (!expectedError) {
-        assert.strictEqual(err, null, `got error for ${desc}: ${err}`);
-        return;
-    }
-    assert(err, `expected ${expectedError} but found no error`);
-    assert.strictEqual(err.code, expectedError);
-    assert.strictEqual(err.statusCode, errors[expectedError].code);
 }
 
 utils.tagging.putTaggingAndAssert = (s3, params, cb) => {
