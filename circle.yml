@@ -11,8 +11,6 @@ machine:
     version: 6.9.5
   ruby:
     version: "2.4.1"
-  services:
-    - redis
   environment:
     CXX: g++-4.9
     ENABLE_LOCAL_CACHE: true
