@@ -5,7 +5,7 @@
         "legacyAwsBehavior": true,
         "details": {}
     },
-    "file-test": {
+    "scality-internal-file": {
         "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
@@ -15,12 +15,7 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "mem": {
-        "type": "mem",
-        "legacyAwsBehavior": false,
-        "details": {}
-    },
-    "mem-test": {
+    "scality-internal-mem": {
         "type": "mem",
         "legacyAwsBehavior": false,
         "details": {}
@@ -30,7 +25,7 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "aws-test-encryption": {
+    "awsbackendencryption": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
         "details": {
@@ -41,7 +36,7 @@
             "serverSideEncryption": true
         }
     },
-    "aws-test": {
+    "awsbackend": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
         "details": {
@@ -51,7 +46,7 @@
             "credentialsProfile": "default"
         }
     },
-    "aws-test-mismatch": {
+    "awsbackendmismatch": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
         "details": {
@@ -61,7 +56,7 @@
             "credentialsProfile": "default"
         }
     },
-    "aws-test-2": {
+    "awsbackend2": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
         "details": {
@@ -71,7 +66,7 @@
             "credentialsProfile": "default_2"
         }
     },
-    "azuretest": {
+    "azurebackend": {
         "type": "azure",
         "legacyAwsBehavior": true,
         "details": {
@@ -81,7 +76,7 @@
           "azureContainerName": "s3test"
         }
     },
-    "azuretest2": {
+    "azurebackend2": {
         "type": "azure",
         "legacyAwsBehavior": true,
         "details": {
@@ -91,7 +86,7 @@
           "azureContainerName": "s3test2"
         }
     },
-    "azuretestmismatch": {
+    "azurebackendmismatch": {
         "type": "azure",
         "legacyAwsBehavior": true,
         "details": {

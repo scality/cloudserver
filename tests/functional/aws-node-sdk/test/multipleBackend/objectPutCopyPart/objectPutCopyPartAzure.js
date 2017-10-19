@@ -10,8 +10,8 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
   memLocation } = require('../utils');
 
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
+const describeSkipIfNotMultiple = config.backends.data !== 'multiple'
+    ? describe.skip : describe;
 
 let azureContainerName;
 
