@@ -15,8 +15,8 @@ const bucketName = 'bucketname';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
-const fileLocation = 'file-test';
-const memLocation = 'mem-test';
+const fileLocation = 'scality-internal-file';
+const memLocation = 'scality-internal-mem';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
@@ -91,7 +91,7 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     });
 
     it('should put an object to AWS', done => {
-        put(memLocation, 'aws-test', 'localhost', () => {
+        put(memLocation, 'awsbackend', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
@@ -112,21 +112,21 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     });
 
     it('should put an object to AWS based on bucket location', done => {
-        put('aws-test', null, 'localhost', () => {
+        put('awsbackend', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put an object to Azure based on bucket location', done => {
-        put('azuretest', null, 'localhost', () => {
+        put('azurebackend', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
     it('should put an object to Azure based on object location', done => {
-        put(memLocation, 'azuretest', 'localhost', () => {
+        put(memLocation, 'azurebackend', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });

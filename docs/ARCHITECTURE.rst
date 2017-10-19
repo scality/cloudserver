@@ -971,7 +971,7 @@ location-constraint as follows
 
 .. code:: json
 
-    "aws-test": {
+    "awsbackend": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
         "details": {

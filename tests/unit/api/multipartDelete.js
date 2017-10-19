@@ -34,7 +34,7 @@ const initiateRequest = {
     url: `/${objectKey}?uploads`,
 };
 const eastLocation = 'us-east-1';
-const westLocation = 'file-test';
+const westLocation = 'scality-internal-file';
 
 function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {

@@ -158,7 +158,7 @@ function putMPU(key, body, cb) {
     const obj = {
         partLocations: [{
             key: 1,
-            dataStoreName: 'mem-test',
+            dataStoreName: 'scality-internal-mem',
             dataStoreETag: `1:${calculatedHash}`,
         }],
         key: partKey,
@@ -471,7 +471,7 @@ describe('Replication object MD without bucket replication config', () => {
                 status: 'PENDING',
                 content: ['DATA', 'METADATA'],
                 destination: 'arn:aws:s3:::destination-bucket',
-                storageClass: 'aws-test',
+                storageClass: 'awsbackend',
                 role: 'arn:aws:iam::account-id:role/resource',
                 storageType: 'aws_s3',
                 dataStoreVersionId: '',
@@ -494,7 +494,7 @@ describe('Replication object MD without bucket replication config', () => {
                             prefix: keyA,
                             enabled: true,
                             id: 'test-id',
-                            storageClass: 'aws-test',
+                            storageClass: 'awsbackend',
                         }],
                     },
                 }));

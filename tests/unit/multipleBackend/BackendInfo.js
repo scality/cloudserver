@@ -6,8 +6,8 @@ const { config } = require('../../../lib/Config');
 const log = new DummyRequestLogger();
 const data = config.backends.data;
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
 const dummyBackendInfo = new BackendInfo(memLocation, fileLocation,
     '127.0.0.1');
 

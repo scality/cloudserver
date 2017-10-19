@@ -3,9 +3,9 @@ const parseLC = require('../../../lib/data/locationConstraintParser');
 const inMemory = require('../../../lib/data/in_memory/backend').backend;
 const DataFileInterface = require('../../../lib/data/file/backend');
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
-const awsLocation = 'aws-test';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
+const awsLocation = 'awsbackend';
 const clients = parseLC();
 
 describe('locationConstraintParser', () => {

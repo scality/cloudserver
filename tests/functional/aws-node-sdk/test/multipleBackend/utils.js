@@ -10,15 +10,15 @@ const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 const authdata = require('../../../../../conf/authdata.json');
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
-const awsLocation = 'aws-test';
-const awsLocation2 = 'aws-test-2';
-const awsLocationMismatch = 'aws-test-mismatch';
-const awsLocationEncryption = 'aws-test-encryption';
-const azureLocation = 'azuretest';
-const azureLocation2 = 'azuretest2';
-const azureLocationMismatch = 'azuretestmismatch';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
+const awsLocation = 'awsbackend';
+const awsLocation2 = 'awsbackend2';
+const awsLocationMismatch = 'awsbackendmismatch';
+const azureLocation = 'azurebackend';
+const azureLocation2 = 'azurebackend2';
+const azureLocationMismatch = 'azurebackendmismatch';
+const awsLocationEncryption = 'awsbackendencryption';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
@@ -27,9 +27,8 @@ let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
 
-if (config.backends.data === 'multiple' && !process.env.S3_END_TO_END) {
+if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
-    // can only get real aws config if not running end-to-end
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;

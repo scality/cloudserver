@@ -15,8 +15,8 @@ const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const destBucketName = 'destbucketname';
 const sourceBucketName = 'sourcebucketname';
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
 
 function _createBucketPutRequest(bucketName, bucketLoc) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +

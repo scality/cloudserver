@@ -27,12 +27,12 @@ const bucketName = 'superbucket9999999';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const body = Buffer.from('I am a body', 'utf8');
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
 const awsBucket = 'multitester555';
-const awsLocation = 'aws-test';
-const awsLocation2 = 'aws-test-2';
-const awsLocationMismatch = 'aws-test-mismatch';
+const awsLocation = 'awsbackend';
+const awsLocation2 = 'awsbackend2';
+const awsLocationMismatch = 'awsbackendmismatch';
 const partETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
