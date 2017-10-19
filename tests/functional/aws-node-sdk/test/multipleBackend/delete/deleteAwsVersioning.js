@@ -102,14 +102,16 @@ function _deleteDeleteMarkers(s3, bucket, key, deleteMarkerVids, cb) {
 }
 
 function _awsGetLatestVerId(key, body, cb) {
-    return awsS3.getObject({ Bucket: awsBucket, Key: key }, (err, result) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object from AWS, got error ${err}`);
-        const resultMD5 = expectedETag(result.Body, false);
-        const expectedMD5 = expectedETag(body, false);
-        assert.strictEqual(resultMD5, expectedMD5);
-        return cb(null, result.VersionId);
-    });
+    const getObject = awsS3.getObject.bind(awsS3);
+    return setTimeout(getObject, 10000, { Bucket: awsBucket, Key: key },
+        (err, result) => {
+            assert.strictEqual(err, null, 'Expected success ' +
+                `getting object from AWS, got error ${err}`);
+            const resultMD5 = expectedETag(result.Body, false);
+            const expectedMD5 = expectedETag(body, false);
+            assert.strictEqual(resultMD5, expectedMD5);
+            return cb(null, result.VersionId);
+        });
 }
 
 function _getAssertDeleted(s3, params, cb) {
@@ -124,12 +126,13 @@ function _getAssertDeleted(s3, params, cb) {
 
 function _awsGetAssertDeleted(params, cb) {
     const { key, versionId, errorCode } = params;
-    return awsS3.getObject({ Bucket: awsBucket, Key: key, VersionId:
-        versionId }, err => {
-        assert.strictEqual(err.code, errorCode);
-        assert.strictEqual(err.statusCode, 404);
-        return cb();
-    });
+    const getObject = awsS3.getObject.bind(awsS3);
+    return setTimeout(getObject, 10000, { Bucket: awsBucket, Key: key,
+        VersionId: versionId }, err => {
+            assert.strictEqual(err.code, errorCode);
+            assert.strictEqual(err.statusCode, 404);
+            return cb();
+        });
 }
 
 describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
@@ -300,6 +303,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'existing null version that is not the latest version in s3 metadata,' +
         ' but the data of the first null version will remain in AWS',
         function itF(done) {
+            this.timeout(60000);
             const key = `somekey-${Date.now()}`;
             const data = [undefined, 'data1'];
             async.waterfall([
@@ -320,7 +324,6 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 next => suspendVersioning(s3, bucket, next),
                 // overwrites null version in s3 metadata but does not send
                 // additional delete to AWS to clean up previous "null" version
-                // -- see note above
                 next => delAndAssertResult(s3, { bucket, key,
                     resultType: newDeleteMarker }, next),
                 (s3dmVid, next) => {
