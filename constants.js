@@ -107,6 +107,10 @@ const constants = {
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
     /* eslint-disable camelcase */
     externalBackends: { aws_s3: true, azure: true },
+    // healthcheck default call from nginx is every 2 seconds
+    // for external backends, don't call unless at least 1 minute
+    // (60,000 milliseconds) since last call
+    exteralBackendHealthCheckInterval: 60000,
     versioningNotImplBackends: { azure: true },
     mpuMDStoredExternallyBackend: { aws_s3: true },
     /* eslint-enable camelcase */
