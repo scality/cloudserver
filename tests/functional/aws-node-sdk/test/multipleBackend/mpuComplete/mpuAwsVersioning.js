@@ -122,9 +122,9 @@ function testSuite() {
             });
         });
 
-        it.only('versioning not configured: if complete mpu on already-existing ' +
-        'object, metadata should be overwritten but should not delete the ' +
-        'previous version in AWS', function itF(done) {
+        it('versioning not configured: if complete mpu on already-existing ' +
+        'object, metadata should be overwritten but data of previous version' +
+        'in AWS should not be deleted', function itF(done) {
             const key = `somekey-${Date.now()}`;
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
@@ -138,7 +138,7 @@ function testSuite() {
                     { bucket, key, uploadId, partArray, expectVersionId:
                         false }, next),
                 next => s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
-                    null }, next),
+                    'null' }, next),
                 (delData, next) => getAndAssertResult(s3, { bucket, key,
                     expectedError: 'NoSuchKey' }, next),
                 next => awsGetLatestVerId(key, '', next),
