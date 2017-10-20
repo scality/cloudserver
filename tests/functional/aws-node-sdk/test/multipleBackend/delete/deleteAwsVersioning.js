@@ -1,14 +1,13 @@
 const assert = require('assert');
-const AWS = require('aws-sdk');
 const async = require('async');
 const { errors } = require('arsenal');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { config } = require('../../../../../../lib/Config');
-const { getRealAwsConfig } = require('../../support/awsConfig');
 
 const {
+    describeSkipIfNotMultiple,
+    awsS3,
     awsLocation,
     awsBucket,
     putToAwsBackend,
@@ -18,22 +17,11 @@ const {
     putNullVersionsToAws,
     putVersionsToAws,
     getAndAssertResult,
-    expectedETag,
+    awsGetLatestVerId,
 } = require('../utils');
 
 const someBody = 'testbody';
 const bucket = 'buckettestmultiplebackenddeleteversioning';
-
-let awsS3;
-
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
-
-if (describeSkipIfNotMultiple !== describe.skip) {
-    // can only get real aws config if not running end-to-end
-    const awsConfig = getRealAwsConfig(awsLocation);
-    awsS3 = new AWS.S3(awsConfig);
-}
 
 // order of items by index:
 // 0 - whether to expect a version id
@@ -101,19 +89,6 @@ function _deleteDeleteMarkers(s3, bucket, key, deleteMarkerVids, cb) {
     }, () => cb());
 }
 
-function _awsGetLatestVerId(key, body, cb) {
-    const getObject = awsS3.getObject.bind(awsS3);
-    return setTimeout(getObject, 10000, { Bucket: awsBucket, Key: key },
-        (err, result) => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `getting object from AWS, got error ${err}`);
-            const resultMD5 = expectedETag(result.Body, false);
-            const expectedMD5 = expectedETag(body, false);
-            assert.strictEqual(resultMD5, expectedMD5);
-            return cb(null, result.VersionId);
-        });
-}
-
 function _getAssertDeleted(s3, params, cb) {
     const { key, versionId, errorCode } = params;
     return s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
@@ -172,7 +147,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, someBody,
                     err => next(err)),
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
@@ -187,11 +162,11 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, someBody,
                     err => next(err)),
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'awsVerId', resultError:
                     'InvalidArgument' }, err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetLatestVerId(key, someBody,
+                (awsVerId, next) => awsGetLatestVerId(key, someBody,
                     (err, resultVid) => {
                         assert.strictEqual(resultVid, awsVerId);
                         next();
@@ -205,7 +180,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [someBody],
                     err => next(err)),
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
@@ -220,7 +195,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
-                (s3vid, next) => _awsGetLatestVerId(key, someBody,
+                (s3vid, next) => awsGetLatestVerId(key, someBody,
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 (s3VerId, awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: s3VerId, resultType: deleteVersion },
@@ -272,7 +247,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [someBody],
                     err => next(err)),
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
                 (awsNullVid, next) => {
                     this.test.awsNullVid = awsNullVid;
                     next();
@@ -288,7 +263,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
                 // get directly to aws however will give us first null version
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
                 (awsLatestVid, next) => {
                     assert.strictEqual(awsLatestVid, this.test.awsNullVid);
                     next();
@@ -310,7 +285,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // put null version
                 next => putToAwsBackend(s3, bucket, key, data[0],
                     err => next(err)),
-                next => _awsGetLatestVerId(key, '', next),
+                next => awsGetLatestVerId(key, '', next),
                 (awsNullVid, next) => {
                     this.test.awsNullVid = awsNullVid;
                     next();
@@ -343,7 +318,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     next),
                 // we get the null version that should have been "overwritten"
                 // when getting the latest version in AWS now
-                next => _awsGetLatestVerId(key, '', next),
+                next => awsGetLatestVerId(key, '', next),
                 (awsLatestVid, next) => {
                     assert.strictEqual(awsLatestVid, this.test.awsNullVid);
                     next();
@@ -384,7 +359,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (s3vid, next) => getAndAssertResult(s3, { bucket, key,
                     body: someBody, expectedVersionId: s3vid }, next),
                 // latest version in aws should now be object originally put
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
             ], done);
         });
 
@@ -402,7 +377,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (s3vid, next) => getAndAssertResult(s3, { bucket, key,
                     body: someBody, expectedVersionId: s3vid }, next),
                 // latest version in aws should now be object originally put
-                next => _awsGetLatestVerId(key, someBody, next),
+                next => awsGetLatestVerId(key, someBody, next),
             ], done);
         });
 
@@ -442,7 +417,8 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // should get the last null version
                 next => getAndAssertResult(s3, { bucket, key,
                     body: data[2], expectedVersionId: 'null' }, next),
-                next => _awsGetLatestVerId(key, data[2], err => next(err)),
+                next => awsGetLatestVerId(key, data[2],
+                    err => next(err)),
                 // delete the null version
                 next => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
@@ -451,7 +427,8 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
                 // NOTE: latest version in aws will be the second null version
-                next => _awsGetLatestVerId(key, data[1], err => next(err)),
+                next => awsGetLatestVerId(key, data[1],
+                    err => next(err)),
             ], done);
         });
 
@@ -461,7 +438,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
-                (s3vid, next) => _awsGetLatestVerId(key, someBody,
+                (s3vid, next) => awsGetLatestVerId(key, someBody,
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 // put an object in AWS
                 (s3vid, awsVid, next) => awsS3.putObject({ Bucket: awsBucket,
@@ -486,7 +463,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             async.waterfall([
                 next => putVersionsToAws(s3, bucket, key, [someBody],
                     (err, versionIds) => next(err, versionIds[0])),
-                (s3vid, next) => _awsGetLatestVerId(key, someBody,
+                (s3vid, next) => awsGetLatestVerId(key, someBody,
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 // delete the object in AWS
                 (s3vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,

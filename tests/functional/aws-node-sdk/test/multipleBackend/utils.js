@@ -17,8 +17,10 @@ const awsLocationMismatch = 'aws-test-mismatch';
 const azureLocation = 'azuretest';
 const azureLocation2 = 'azuretest2';
 const azureLocationMismatch = 'azuretestmismatch';
+const awsLocationEncryption = 'aws-test-encryption';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
+const awsTimeout = 10000;
 let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
@@ -43,6 +45,7 @@ const utils = {
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
+    awsLocationEncryption,
 };
 
 utils.uniqName = name => `${name}${new Date().getTime()}`;
@@ -209,16 +212,18 @@ utils.getAndAssertResult = (s3, params, cb) => {
         });
 };
 
-utils.awsGetLatestVerId = (key, body, cb) =>
-    awsS3.getObject({ Bucket: awsBucket, Key: key }, (err, result) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object from AWS, got error ${err}`);
-        const resultMD5 = utils.expectedETag(result.Body, false);
-        const expectedMD5 = utils.expectedETag(body, false);
-        assert.strictEqual(resultMD5, expectedMD5);
-        return cb(null, result.VersionId);
-    });
-
+utils.awsGetLatestVerId = (key, body, cb) => {
+    const getObject = awsS3.getObject.bind(awsS3);
+    return setTimeout(getObject, awsTimeout, { Bucket: awsBucket, Key: key },
+        (err, result) => {
+            assert.strictEqual(err, null, 'Expected success ' +
+                `getting object from AWS, got error ${err}`);
+            const resultMD5 = utils.expectedETag(result.Body, false);
+            const expectedMD5 = utils.expectedETag(body, false);
+            assert.strictEqual(resultMD5, expectedMD5);
+            return cb(null, result.VersionId);
+        });
+};
 
 utils.tagging = {};
 

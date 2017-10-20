@@ -1,21 +1,23 @@
 const async = require('async');
 const assert = require('assert');
-const AWS = require('aws-sdk');
 
 const { s3middleware } = require('arsenal');
-const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { fileLocation, awsLocation, azureLocation, azureLocationMismatch,
-    getAzureClient, getAzureContainerName } = require('../utils');
-const { getRealAwsConfig } =
-    require('../../support/awsConfig');
+const {
+    describeSkipIfNotMultiple,
+    fileLocation,
+    awsS3,
+    awsLocation,
+    awsBucket,
+    azureLocation,
+    azureLocationMismatch,
+    getAzureClient,
+    getAzureContainerName,
+} = require('../utils');
 
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
-const awsBucket = 'multitester555';
 const azureContainerName = getAzureContainerName();
 const azureClient = getAzureClient();
 const azureTimeout = 20000;
@@ -106,8 +108,7 @@ function testSuite() {
             this.currentTest.key = `somekey-${Date.now()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            const awsConfig = getRealAwsConfig(awsLocation);
-            this.currentTest.awsClient = new AWS.S3(awsConfig);
+            this.currentTest.awsClient = awsS3;
             return s3.createBucketAsync({ Bucket: azureContainerName })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);

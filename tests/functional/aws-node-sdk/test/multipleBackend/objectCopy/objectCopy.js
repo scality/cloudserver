@@ -8,7 +8,8 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
-const { memLocation, awsLocation, awsLocation2, awsLocationMismatch } =
+const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
+    awsLocation2, awsLocationMismatch, awsLocationEncryption } =
     require('../utils');
 
 const bucket = 'buckettestmultiplebackendobjectcopy';
@@ -18,13 +19,9 @@ const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const awsLocationEncryption = 'aws-test-encryption';
 
 let bucketUtil;
 let s3;
-let awsS3;
-const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
-    || process.env.S3_END_TO_END) ? describe.skip : describe;
 
 function putSourceObj(location, isEmptyObj, cb) {
     const key = `somekey-${Date.now()}`;
@@ -105,15 +102,13 @@ callback) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend object copy',
+describeSkipIfNotMultiple('MultipleBackend object copy: AWS',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            const awsConfig = getRealAwsConfig(awsLocation);
-            awsS3 = new AWS.S3(awsConfig);
             process.stdout.write('Creating bucket\n');
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketAsync = createEncryptedBucketPromise;
