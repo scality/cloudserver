@@ -8,12 +8,20 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
-const { describeSkipIfNotMultiple, awsS3, awsBucket, memLocation, awsLocation,
-    awsLocation2, awsLocationMismatch, awsLocationEncryption }
-    = require('../utils');
+const {
+    describeSkipIfNotMultiple,
+    awsS3,
+    awsBucket,
+    memLocation,
+    awsLocation,
+    awsLocation2,
+    awsLocationMismatch,
+    awsLocationEncryption,
+    enableVersioning,
+} = require('../utils');
 
-const bucket = 'buckettestmultiplebackendobjectcopy';
-const body = Buffer.from('I am a body', 'utf8');
+const bucket = 'buckettestmultiplebackendobjectcopyawsversioning';
+const someBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
@@ -22,30 +30,9 @@ const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 let bucketUtil;
 let s3;
 
-function putSourceObj(location, isEmptyObj, cb) {
-    const key = `somekey-${Date.now()}`;
-    const sourceParams = { Bucket: bucket, Key: key,
-        Metadata: {
-            'scal-location-constraint': location,
-            'test-header': 'copyme',
-        },
-    };
-    if (!isEmptyObj) {
-        sourceParams.Body = body;
-    }
-    process.stdout.write('Putting source object\n');
-    s3.putObject(sourceParams, (err, result) => {
-        assert.equal(err, null, `Error putting source object: ${err}`);
-        if (isEmptyObj) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
-        } else {
-            assert.strictEqual(result.ETag, `"${correctMD5}"`);
-        }
-        cb(key);
-    });
-}
 
-function assertGetObjects(sourceKey, sourceBucket, sourceLoc, destKey,
+
+function assertGetObjects(sourceParams, destParams, destKey,
 destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation,
 callback) {
     const sourceGetParams = { Bucket: sourceBucket, Key: sourceKey };
@@ -178,8 +165,102 @@ function testSuite() {
             });
         }); */
 
-        it.only('should return NotImplemented copying an object from mem to a ' +
-        'versioning enable AWS bucket', done => {
+/*
+copy from mem / file => aws (versioning enabled)
+—> object put should return version id, should be able to get successfully
+
+copy from aws => aws (versioning enabled)
+—> object copy should return version id, should be able to get successfully
+*/
+
+/*
+// create generate source & dest key?
+const source = {
+    location: memLocation,
+    isEmpty: false,
+    key: `sourceKey-${Date.now()}`,
+}
+const dest = {
+    location: awsLocation,
+
+}
+const directive = 'REPLACE';
+*/
+
+        // steps to generalize:
+        // put source object
+        // put versioning
+        // copy object
+        // do a get to both sides & aws?
+
+        // function that takes test params and generates params for putting
+        // the source object and the copy object params
+        // also generates the params needed for the get asserts
+        // copy function will take the copy params and assert params <--
+        // this
+        //
+
+        function _getTestMetadata(location) {
+            return {
+                'scal-location-constraint': location,
+                'test-header': 'copyme',
+            };
+        }
+
+        function putSourceObj(testParams, cb) {
+            const { sourceBucket, sourceLocation, isEmptyObj } = testParams;
+            const sourceKey = `somekey-${Date.now()}`;
+            const sourceParams = {
+                Bucket: sourceBucket,
+                Key: sourceKey,
+                Metadata: _getTestMetadata(sourceLocation),
+            };
+            if (!isEmptyObj) {
+                sourceParams.Body = someBody;
+            }
+            s3.putObject(sourceParams, (err, result) => {
+                assert.strictEqual(err, null,
+                    `Error putting source object: ${err}`);
+                if (isEmptyObj) {
+                    assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+                } else {
+                    assert.strictEqual(result.ETag, `"${correctMD5}"`);
+                }
+                Object.assign(testParams, {
+                    sourceKey,
+                    sourceVersionId: result.VersionId,
+                });
+                cb(null);
+            });
+        }
+
+        it.only('should get a version id copying an object from mem to a ' +
+        'versioning enabled AWS bucket', function itF(done) {
+            const testParams = {
+                sourceBucket: bucket,
+                sourceLocation: memLocation,
+//                sourceVersionId:
+                destBucket: bucket,
+                destLocation: awsLocation,
+                destBucketVersioningState: 'Enabled',
+                isEmpty: false,
+                directive: 'REPLACE',
+            };
+            // an example:
+            // put object with source location in source bucket (ver enabled)
+            // return version id
+            // enable versioning on bucket
+            // copy object from source bucket to dest bucket
+            // assert version id returned putting object in dest bucket
+            // return version id
+            // finally assert objects in all buckets
+
+            async.waterfall([
+                next => putSourceObj(testParams),
+                next => enableVersioning(s3, testParams.sourceBucket, next),
+                next =>
+
+            ]);
             putSourceObj(memLocation, false, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
@@ -198,10 +279,19 @@ function testSuite() {
                         `Expected success, got error ${err}`);
                     process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, (err, data) => {
+                        const source = {
+                            key, bucket, loc: awsLocation,
+                        };
+                        const dest = { key: copyKey, bucket, loc: memLocation }
+                        sourceKey, sourceBucket, sourceLoc,
+
                         console.log('data from aws', data)
                         assert.strictEqual(err, null,
                             `Got err copying object: ${err}`);
-                        assert(data.VersionId, 'Expected version id')
+                        assertGetObjects(key, bucket, awsLocation, copyKey,
+                            bucket, memLocation, key, 'REPLACE', false, awsS3,
+                            awsLocation, done);
+                        assert(data.VersionId, 'Expected version id');
                         done();
                     });
                 });
