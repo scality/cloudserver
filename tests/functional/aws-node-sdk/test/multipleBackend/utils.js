@@ -149,6 +149,8 @@ utils.expectedETag = (body, getStringified = true) => {
 };
 
 utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
+    console.log('aaaain put to aws backend')
+    console.log('what is cb in putToAWsBackend?', cb)
     s3.putObject({ Bucket: bucket, Key: key, Body: body,
     Metadata: { 'scal-location-constraint': awsLocation } },
         (err, result) => cb(err, result.VersionId));

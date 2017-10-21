@@ -16,10 +16,15 @@ const {
     awsLocationMismatch,
     awsLocationEncryption,
     enableVersioning,
+    putToAwsBackend,
+    awsGetLatestVerId,
 } = require('../utils');
 
-const bucket = 'buckettestmultiplebackendobjectcopyawsversioning';
+const sourceBucketName = 'buckettestobjectcopyawsversioning-source';
+const destBucketName = 'buckettestobjectcopyawsversioning-dest';
+
 const someBody = Buffer.from('I am a body', 'utf8');
+const wrongVersionBody = 'this is not the content you wanted';
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
@@ -90,17 +95,19 @@ function copyObject(testParams, cb) {
         } else {
             assert.strictEqual(data.VersionId, undefined);
         }
-        Object.assign(testParams, {
-            destKey,
-            destVersionId: data.VersionId,
+        return awsGetLatestVerId(destKey, someBody, (err, awsVersionId) => {
+            Object.assign(testParams, {
+                destKey,
+                destVersionId: data.VersionId,
+                awsVersionId,
+            });
+            cb();
         });
-        cb();
     });
 }
 
-function assertGetObjects(testParams, cb/* sourceParams, destParams, destKey,
-destBucket, destLoc, awsKey, mdDirective, isEmptyObj, awsS3, awsLocation,
-callback*/) {
+function assertGetObjects(testParams, cb) {
+    console.log('assertGetObjecs');
     const {
         sourceBucket,
         sourceLocation,
@@ -112,6 +119,7 @@ callback*/) {
         destKey,
         destVersionId,
         destVersioningState,
+        awsVersionId,
         isEmpty,
         directive,
     } = testParams;
@@ -119,7 +127,8 @@ callback*/) {
         VersionId: sourceVersionId };
     const destGetParams = { Bucket: destBucket, Key: destKey,
         VersionId: destVersionId };
-    const awsParams = { Bucket: awsBucket, Key: destKey };
+    const awsParams = { Bucket: awsBucket, Key: destKey,
+        VersionId: awsVersionId };
 
     async.series([
         cb => s3.getObject(sourceGetParams, cb),
@@ -166,46 +175,64 @@ callback*/) {
 }
 
 // describeSkipIfNotMultiple
-describe.only('AWS backend object copy with versioning',
+describe('AWS backend object copy with versioning',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            process.stdout.write('Creating bucket\n');
-            if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
+            process.stdout.write('Creating buckets\n');
+            /* if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketAsync = createEncryptedBucketPromise;
-            }
-            return s3.createBucketAsync({ Bucket: bucket })
+            } */
+            return s3.createBucketAsync({ Bucket: sourceBucketName })
+            .then(() => s3.createBucketAsync({ Bucket: destBucketName }))
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
             });
         });
 
-        afterEach(() => {
-            process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
+        afterEach(() => bucketUtil.empty(sourceBucketName)
+            .then(() => bucketUtil.deleteOne(sourceBucketName))
             .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
+                process.stdout.write('Error deleting source bucket ' +
+                `in afterEach: ${err}\n`);
                 throw err;
-            });
-        });
+            })
+            .then(() => bucketUtil.empty(destBucketName))
+            .then(() => bucketUtil.deleteOne(destBucketName))
+        );
 
         it('should copy an object from one bucket to another on AWS backend',
         done => {
-
+            const testParams = {
+                sourceBucket: sourceBucketName,
+                sourceLocation: awsLocation,
+                destBucket: destBucketName,
+                destLocation: awsLocation,
+                destBucketVersioningState: 'Enabled',
+                isEmpty: false,
+                directive: 'REPLACE',
+            };
+            async.waterfall([
+                next => putSourceObj(testParams, next),
+                next => enableVersioning(s3, testParams.sourceBucket,
+                    next),
+                next => copyObject(testParams, next),
+                // put another version to test and make sure version id from
+                // copy was stored to get the right version
+                next => putToAwsBackend(s3, destBucketName, testParams.destKey,
+                    wrongVersionBody, () => next()),
+                next => assertGetObjects(testParams, next),
+            ], done);
         });
 
         [{
             sourceLocation: memLocation,
             directive: 'REPLACE',
-        }, {
+        },/* {
             sourceLocation: fileLocation,
             directive: 'REPLACE',
         }, {
@@ -214,17 +241,17 @@ function testSuite() {
         }, {
             sourceLocation: fileLocation,
             directive: 'COPY',
-        }].forEach(testParams => {
+        }*/].forEach(testParams => {
             Object.assign(testParams, {
-                sourceBucket: bucket,
+                sourceBucket: sourceBucketName,
                 sourceVersioningState: 'Enabled',
-                destBucket: bucket,
+                destBucket: sourceBucketName,
                 destLocation: awsLocation,
                 destVersioningState: 'Enabled',
                 isEmpty: false,
             });
             const { sourceLocation, directive } = testParams;
-            it(`should copy a version from ${sourceLocation} to same bucket ` +
+            it.only(`should copy a version from ${sourceLocation} to same bucket ` +
                 `on AWS backend with versioning with ${directive} directive`,
                 done => {
                     async.waterfall([
@@ -234,6 +261,10 @@ function testSuite() {
                         // to be used in object copy
                         next => putSourceObj(testParams, next),
                         next => copyObject(testParams, next),
+                        // put another version to test and make sure version id
+                        // from copy was stored to get the right version
+                        next => putToAwsBackend(s3, destBucketName,
+                            testParams.destKey, wrongVersionBody, () => next()),
                         next => assertGetObjects(testParams, next),
                     ], done);
                 });
