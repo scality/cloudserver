@@ -144,6 +144,20 @@ describeF() {
                 });
             });
 
+            it('should return error InternalError putting an invalid key ' +
+            'name to Azure', done => {
+                const params = {
+                    Bucket: azureContainerName,
+                    Key: '.',
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                    Body: normalBody,
+                };
+                s3.putObject(params, err => {
+                    assert.strictEqual(err.code, 'InternalError');
+                    done();
+                });
+            });
+
             it('should return error NotImplemented putting a ' +
             'version to Azure', function itF(done) {
                 s3.putBucketVersioning({
