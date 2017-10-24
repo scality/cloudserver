@@ -94,7 +94,7 @@ function completeAndAssertMpu(s3, params, cb) {
 
 describeSkipIfNotMultiple('AWS backend complete mpu with versioning',
 function testSuite() {
-    this.timeout(30000);
+    this.timeout(50000);
     withV4(sigCfg => {
         const bucketUtil = new BucketUtility('default', sigCfg);
         const s3 = bucketUtil.s3;

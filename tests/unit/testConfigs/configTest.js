@@ -1,66 +1,145 @@
 const assert = require('assert');
 const utils = require('../../../lib/data/external/utils');
+const BucketInfo = require('arsenal').models.BucketInfo;
+
+const userBucketOwner = 'Bart';
+const creationDate = new Date().toJSON();
+const serverSideEncryption = { cryptoScheme: 123, algorithm: 'algo',
+masterKeyId: 'masterKeyId', mandatory: false };
+const bucketOne = new BucketInfo('bucketone',
+  userBucketOwner, userBucketOwner, creationDate,
+  BucketInfo.currentModelVersion());
+const bucketTwo = new BucketInfo('buckettwo',
+  userBucketOwner, userBucketOwner, creationDate,
+  BucketInfo.currentModelVersion());
+const bucketOnetWithEncryption = new BucketInfo('bucketone',
+    userBucketOwner, userBucketOwner, creationDate,
+    BucketInfo.currentModelVersion(), undefined, undefined, undefined,
+    serverSideEncryption);
+const bucketTwoWithEncryption = new BucketInfo('buckettwo',
+    userBucketOwner, userBucketOwner, creationDate,
+    BucketInfo.currentModelVersion(), undefined, undefined, undefined,
+    serverSideEncryption);
 
 const results = [
   { sourceLocationConstraintName: 'azuretest',
     destLocationConstraintName: 'azuretest',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: true,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'azuretest2',
     destLocationConstraintName: 'azuretest2',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: true,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'aws-test',
     destLocationConstraintName: 'aws-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: true,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'aws-test',
     destLocationConstraintName: 'aws-test-2',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: true,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'aws-test-2',
     destLocationConstraintName: 'aws-test-2',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: true,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'mem-test',
     destLocationConstraintName: 'mem-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'mem-test',
     destLocationConstraintName: 'azuretest',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'azuretest',
     destLocationConstraintName: 'mem-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'aws-test',
     destLocationConstraintName: 'mem-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'mem-test',
     destLocationConstraintName: 'aws-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'azuretest',
     destLocationConstraintName: 'aws-test',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
   },
   { sourceLocationConstraintName: 'azuretest',
     destLocationConstraintName: 'azuretest2',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketOne,
     boolExpected: false,
+    description: 'same bucket metadata',
+  },
+  { sourceLocationConstraintName: 'azuretest',
+    destLocationConstraintName: 'azuretest',
+    sourceBucketMD: bucketOne,
+    destBucketMD: bucketTwo,
+    boolExpected: true,
+    description: 'different non-encrypted bucket metadata',
+  },
+  { sourceLocationConstraintName: 'azuretest',
+    destLocationConstraintName: 'azuretest',
+    sourceBucketMD: bucketOnetWithEncryption,
+    destBucketMD: bucketOnetWithEncryption,
+    boolExpected: true,
+    description: 'same encrypted bucket metadata',
+  },
+  { sourceLocationConstraintName: 'azuretest',
+    destLocationConstraintName: 'azuretest',
+    sourceBucketMD: bucketOnetWithEncryption,
+    destBucketMD: bucketTwoWithEncryption,
+    boolExpected: false,
+    description: 'different encrypted bucket metadata',
   },
 ];
 
 describe('Testing Config.js function: ', () => {
     results.forEach(result => {
         it(`should return ${result.boolExpected} if source location ` +
-        `constriant name equals to ${result.sourceLocationConstraintName} ` +
-        'destination location constraint equals to' +
-        `and ${result.destLocationConstraintName}`, done => {
+        `constraint === ${result.sourceLocationConstraintName} ` +
+        'and destination location constraint ===' +
+        ` ${result.destLocationConstraintName} and ${result.description}`,
+        done => {
             const isCopy = utils.externalBackendCopy(
               result.sourceLocationConstraintName,
-              result.destLocationConstraintName);
+              result.destLocationConstraintName, result.sourceBucketMD,
+              result.destBucketMD);
             assert.strictEqual(isCopy, result.boolExpected);
             done();
         });
