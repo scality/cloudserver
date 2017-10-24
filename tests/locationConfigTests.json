@@ -15,6 +15,11 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
+    "mem": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
     "mem-test": {
         "type": "mem",
         "legacyAwsBehavior": false,
@@ -80,7 +85,7 @@
         "type": "azure",
         "legacyAwsBehavior": true,
         "details": {
-          "azureBlobEndpoint": "https://mystique.blob.core.fake.net",
+          "azureBlobEndpoint": "https://mystique2.blob.core.fake.net",
           "bucketMatch": true,
           "azureBlobSAS": "sv=2015-04-05&sr=b&si=tutorial-policy-635959936345100803&sig=9aCzs76n0E7y5BpEi2GvsSv433BZa22leDOZXX%2BXXIU%3D",
           "azureContainerName": "s3test2"

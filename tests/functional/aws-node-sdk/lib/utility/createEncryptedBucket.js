@@ -19,6 +19,12 @@ function createEncryptedBucket(bucketParams, cb) {
     const endpointWithoutHttp = config.endpoint.split('//')[1];
     const host = endpointWithoutHttp.split(':')[0];
     const port = endpointWithoutHttp.split(':')[1];
+    let locationConstraint;
+    if (bucketParams.CreateBucketConfiguration &&
+        bucketParams.CreateBucketConfiguration.LocationConstraint) {
+        locationConstraint = bucketParams.CreateBucketConfiguration
+        .LocationConstraint;
+    }
 
     const prog = `${__dirname}/../../../../../bin/create_encrypted_bucket.js`;
     let args = [
@@ -30,6 +36,9 @@ function createEncryptedBucket(bucketParams, cb) {
         '-p', port,
         '-v',
     ];
+    if (locationConstraint) {
+        args = args.concat(['-l', locationConstraint]);
+    }
     if (config.sslEnabled) {
         args = args.concat('-s');
     }
