@@ -191,7 +191,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should return an InternalError if trying to delete ' +
+        it('should return an ServiceUnavailable if trying to delete ' +
         'tags from object that was deleted from AWS directly',
         done => {
             const key = `somekey-${Date.now()}`;
@@ -201,11 +201,11 @@ function testSuite() {
                 (awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
                     Key: key, VersionId: awsVid }, next),
                 (delData, next) => delTaggingAndAssert(s3, { bucket, key,
-                    expectedError: 'InternalError' }, next),
+                    expectedError: 'ServiceUnavailable' }, next),
             ], done);
         });
 
-        it('should return an InternalError if trying to delete ' +
+        it('should return an ServiceUnavailable if trying to delete ' +
         'tags from object that was deleted from AWS directly',
         done => {
             const key = `somekey-${Date.now()}`;
@@ -216,7 +216,8 @@ function testSuite() {
                 (s3Vid, awsVid, next) => awsS3.deleteObject({ Bucket: awsBucket,
                     Key: key, VersionId: awsVid }, err => next(err, s3Vid)),
                 (s3Vid, next) => delTaggingAndAssert(s3, { bucket, key,
-                    versionId: s3Vid, expectedError: 'InternalError' }, next),
+                    versionId: s3Vid, expectedError: 'ServiceUnavailable' },
+                    next),
             ], done);
         });
     });

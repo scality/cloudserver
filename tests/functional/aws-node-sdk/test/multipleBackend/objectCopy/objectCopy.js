@@ -602,7 +602,7 @@ function testSuite() {
                     };
                     process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, err => {
-                        assert.strictEqual(err.code, 'InternalError');
+                        assert.strictEqual(err.code, 'ServiceUnavailable');
                         done();
                     });
                 });
