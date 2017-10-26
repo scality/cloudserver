@@ -217,12 +217,8 @@ function testSuite() {
                     versionIds.push(...ids);
                     next();
                 },
-                next => getAndAssertResult(s3, {
-                    bucket, key, body: data[4],
-                    versionId: versionIds[4],
-                    expectedVersionId: versionIds[4],
-                },
-                    next),
+                next => getAndAssertResult(s3, { bucket, key, body: data[4],
+                    expectedVersionId: versionIds[4] }, next),
             ], done);
         });
 
