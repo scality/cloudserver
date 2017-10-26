@@ -234,7 +234,8 @@ utils.awsGetLatestVerId = (key, body, cb) => {
                 `getting object from AWS, got error ${err}`);
             const resultMD5 = utils.expectedETag(result.Body, false);
             const expectedMD5 = utils.expectedETag(body, false);
-            assert.strictEqual(resultMD5, expectedMD5);
+            assert.strictEqual(resultMD5, expectedMD5,
+                'expected different body');
             return cb(null, result.VersionId);
         });
 };

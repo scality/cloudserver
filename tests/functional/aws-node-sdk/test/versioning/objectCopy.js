@@ -467,17 +467,18 @@ describe('Object Version Copy', () => {
         it('should copy a 0 byte object to same destination', done => {
             const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
             s3.putObject({ Bucket: sourceBucketName, Key: sourceObjName,
-                Body: '' }, (err, res) => {
+                Body: '' }, (err, putRes) => {
                 checkNoError(err);
                 copySource = `${sourceBucketName}/${sourceObjName}` +
-                    `?versionId=${res.VersionId}`;
+                    `?versionId=${putRes.VersionId}`;
                 s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
                     CopySource: copySource,
                     StorageClass: 'REDUCED_REDUNDANCY',
                 },
-                    (err, res) => {
+                    (err, copyRes) => {
                         checkNoError(err);
-                        assert.strictEqual(res.ETag, emptyFileETag);
+                        assert.notEqual(copyRes.VersionId, putRes.VersionId);
+                        assert.strictEqual(copyRes.ETag, emptyFileETag);
                         s3.getObject({ Bucket: sourceBucketName,
                             Key: sourceObjName }, (err, res) => {
                             assert.deepStrictEqual(res.Metadata,
