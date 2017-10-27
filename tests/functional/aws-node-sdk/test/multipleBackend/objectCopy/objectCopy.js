@@ -13,6 +13,7 @@ const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
     require('../utils');
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const bucketAws = 'bucketawstestmultiplebackendobjectcopy';
+const awsServerSideEncryptionbucket = 'awsserversideencryptionbucketobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -120,6 +121,12 @@ function testSuite() {
                   LocationConstraint: memLocation,
               },
             })
+            .then(() => s3.createBucketAsync({
+                Bucket: awsServerSideEncryptionbucket,
+                CreateBucketConfiguration: {
+                    LocationConstraint: awsLocationEncryption,
+                },
+            }))
             .then(() => s3.createBucketAsync({ Bucket: bucketAws,
               CreateBucketConfiguration: {
                   LocationConstraint: awsLocation,
@@ -135,9 +142,15 @@ function testSuite() {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
             .then(() => bucketUtil.empty(bucketAws))
+            .then(() => bucketUtil.empty(awsServerSideEncryptionbucket))
             .then(() => {
                 process.stdout.write(`Deleting bucket ${bucket}\n`);
                 return bucketUtil.deleteOne(bucket);
+            })
+            .then(() => {
+                process.stdout.write('Deleting bucket ' +
+                `${awsServerSideEncryptionbucket}\n`);
+                return bucketUtil.deleteOne(awsServerSideEncryptionbucket);
             })
             .then(() => {
                 process.stdout.write(`Deleting bucket ${bucketAws}\n`);
@@ -245,7 +258,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS with encryption', done => {
+        it('should copy an object from mem to AWS with aws server side ' +
+        'encryption', done => {
             putSourceObj(memLocation, false, bucket, key => {
                 const copyKey = `copyKey-${Date.now()}`;
                 const copyParams = {
@@ -288,6 +302,56 @@ function testSuite() {
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         undefined, key, 'REPLACE', false,
                         awsS3, awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object on AWS with aws server side encryption',
+        done => {
+            putSourceObj(awsLocation, false, bucket, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucket,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'REPLACE',
+                    Metadata: {
+                        'scal-location-constraint': awsLocationEncryption },
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
+                        awsLocationEncryption, copyKey, 'REPLACE', false, awsS3,
+                        awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object on AWS with aws server side ' +
+        'encrypted bucket', done => {
+            putSourceObj(awsLocation, false, awsServerSideEncryptionbucket,
+            key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: awsServerSideEncryptionbucket,
+                    Key: copyKey,
+                    CopySource: `/${awsServerSideEncryptionbucket}/${key}`,
+                    MetadataDirective: 'COPY',
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, awsServerSideEncryptionbucket,
+                        awsLocation, copyKey, awsServerSideEncryptionbucket,
+                        awsLocationEncryption, copyKey, 'COPY',
+                        false, awsS3, awsLocation, done);
                 });
             });
         });
