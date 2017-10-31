@@ -144,8 +144,8 @@ describeF() {
                 });
             });
 
-            it('should return error InternalError putting an invalid key ' +
-            'name to Azure', done => {
+            it('should return error ServiceUnavailable putting an invalid ' +
+            'key name to Azure', done => {
                 const params = {
                     Bucket: azureContainerName,
                     Key: '.',
@@ -153,7 +153,7 @@ describeF() {
                     Body: normalBody,
                 };
                 s3.putObject(params, err => {
-                    assert.strictEqual(err.code, 'InternalError');
+                    assert.strictEqual(err.code, 'ServiceUnavailable');
                     done();
                 });
             });
@@ -281,13 +281,13 @@ describeF() {
                     });
                 });
 
-                it('should return InternalError', function itFn(done) {
+                it('should return ServiceUnavailable', function itFn(done) {
                     s3.putObject({
                         Bucket: azureContainerName,
                         Key: this.test.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     }, err => {
-                        assert.strictEqual(err.code, 'InternalError');
+                        assert.strictEqual(err.code, 'ServiceUnavailable');
                         done();
                     });
                 });

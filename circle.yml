@@ -9,6 +9,8 @@ general:
 machine:
   node:
     version: 6.9.5
+  services:
+    - redis
   ruby:
     version: "2.4.1"
   environment:
