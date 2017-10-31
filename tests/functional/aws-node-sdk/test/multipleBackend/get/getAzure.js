@@ -154,7 +154,7 @@ function testSuite() {
                     Bucket: azureContainerName,
                     Key: azureObject,
                 }, err => {
-                    assert.strictEqual(err.code, 'InternalError');
+                    assert.strictEqual(err.code, 'ServiceUnavailable');
                     done();
                 });
             });

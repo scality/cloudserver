@@ -423,7 +423,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
                 const listParams = getListParams(objectKey, uploadId);
                 listParts(authInfo, listParams, log, err => {
-                    assert.deepStrictEqual(err, errors.InternalError
+                    assert.deepStrictEqual(err, errors.ServiceUnavailable
                       .customizeDescription('Error returned from AWS: ' +
                       'The specified upload does not exist. The upload ID ' +
                       'may be invalid, or the upload may have been aborted ' +
@@ -482,14 +482,14 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should return InternalError if MPU deleted directly from AWS ' +
+    it('should return ServiceUnavailable if MPU deleted directly from AWS ' +
     'and try to complete from S3', done => {
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             abortMPU(uploadId, getAwsParams(objectKey), () => {
                 const compParams = getCompleteParams(objectKey, uploadId);
                 completeMultipartUpload(authInfo, compParams, log, err => {
-                    assert.strictEqual(err.code, 500);
+                    assert.strictEqual(err.code, 503);
                     done();
                 });
             });
