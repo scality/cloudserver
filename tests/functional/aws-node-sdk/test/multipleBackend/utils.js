@@ -61,44 +61,35 @@ const utils = {
 utils.uniqName = name => `${name}${new Date().getTime()}`;
 
 utils.getAzureClient = () => {
-    let isTestingAzure;
-    let azureBlobEndpoint;
-    let azureBlobSAS;
-    let azureClient;
-    if (process.env[`${azureLocation}_AZURE_BLOB_ENDPOINT`]) {
-        isTestingAzure = true;
-        azureBlobEndpoint = process.env[`${azureLocation}_AZURE_BLOB_ENDPOINT`];
-    } else if (config.locationConstraints[azureLocation] &&
-          config.locationConstraints[azureLocation].details &&
-          config.locationConstraints[azureLocation].details.azureBlobEndpoint) {
-        isTestingAzure = true;
-        azureBlobEndpoint =
-          config.locationConstraints[azureLocation].details.azureBlobEndpoint;
-    } else {
-        isTestingAzure = false;
-    }
+    const params = {};
+    const envMap = {
+        azureStorageEndpoint: 'AZURE_STORAGE_ENDPOINT',
+        azureStorageAccountName: 'AZURE_STORAGE_ACCOUNT_NAME',
+        azureStorageAccessKey: 'AZURE_STORAGE_ACCESS_KEY',
+    };
 
-    if (isTestingAzure) {
-        if (process.env[`${azureLocation}_AZURE_BLOB_SAS`]) {
-            azureBlobSAS = process.env[`${azureLocation}_AZURE_BLOB_SAS`];
-            isTestingAzure = true;
-        } else if (config.locationConstraints[azureLocation] &&
-            config.locationConstraints[azureLocation].details &&
-            config.locationConstraints[azureLocation].details.azureBlobSAS
-        ) {
-            azureBlobSAS = config.locationConstraints[azureLocation].details
-              .azureBlobSAS;
-            isTestingAzure = true;
-        } else {
-            isTestingAzure = false;
+    const isTestingAzure = Object.keys(envMap).every(key => {
+        const envVariable = process.env[`${azureLocation}_${envMap[key]}`];
+        if (envVariable) {
+            params[key] = envVariable;
+            return true;
         }
+        if (config.locationConstraints[azureLocation] &&
+            config.locationConstraints[azureLocation].details &&
+            config.locationConstraints[azureLocation].details[key]) {
+            params[key] =
+                config.locationConstraints[azureLocation].details[key];
+            return true;
+        }
+        return false;
+    });
+
+    if (!isTestingAzure) {
+        return undefined;
     }
 
-    if (isTestingAzure) {
-        azureClient = azure.createBlobServiceWithSas(azureBlobEndpoint,
-          azureBlobSAS);
-    }
-    return azureClient;
+    return azure.createBlobService(params.azureStorageAccountName,
+        params.azureStorageAccessKey, params.azureStorageEndpoint);
 };
 
 utils.getAzureContainerName = () => {
