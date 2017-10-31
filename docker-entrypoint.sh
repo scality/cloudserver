@@ -99,6 +99,10 @@ if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     mv config.json.tmp config.json
 fi
 
+if test -v INITIAL_INSTANCE_ID && test -v S3METADATAPATH && ! test -f ${S3METADATAPATH}/uuid ; then
+    echo -n ${INITIAL_INSTANCE_ID} > ${S3METADATAPATH}/uuid
+fi
+
 # s3 secret credentials for Zenko
 if [ -r /run/secrets/s3-credentials ] ; then
     . /run/secrets/s3-credentials
