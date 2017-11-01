@@ -48,7 +48,7 @@ class Reader extends EventEmitter {
 }
 
 describe('BucketFileInterface::internalListObject', alldone => {
-    const bucketfile = new BucketFileInterface();
+    const bucketfile = new BucketFileInterface({ noDbOpen: true });
 
     // stub db to inspect the extensions
     const db = {
