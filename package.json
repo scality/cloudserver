@@ -30,6 +30,7 @@
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
     "sproxydclient": "scality/sproxydclient",
+    "string-hash": "^1.1.3",
     "utapi": "scality/utapi",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient",
