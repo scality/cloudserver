@@ -99,11 +99,16 @@ function _getAssertDeleted(s3, params, cb) {
         });
 }
 
-function _awsGetAssertDeleted(params, cb) {
+function _awsGetAssertDeleted(params, cb, isRetry) {
     const { key, versionId, errorCode } = params;
     const getObject = awsS3.getObject.bind(awsS3);
-    return setTimeout(getObject, 10000, { Bucket: awsBucket, Key: key,
+    const timeout = isRetry ? 30000 : 10000;
+    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
         VersionId: versionId }, err => {
+            if ((!err || err.statusCode !== 404) && !isRetry) {
+                // expected 404 error, retry once with a longer timeout
+                _awsGetAssertDeleted(params, cb, true);
+            }
             assert.strictEqual(err.code, errorCode);
             assert.strictEqual(err.statusCode, 404);
             return cb();
@@ -112,7 +117,7 @@ function _awsGetAssertDeleted(params, cb) {
 
 describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
     'using object location constraint', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -278,7 +283,6 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         'existing null version that is not the latest version in s3 metadata,' +
         ' but the data of the first null version will remain in AWS',
         function itF(done) {
-            this.timeout(60000);
             const key = `somekey-${Date.now()}`;
             const data = [undefined, 'data1'];
             async.waterfall([
@@ -481,7 +485,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
 
 describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
     'using bucket location constraint', function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     const createBucketParams = {
         Bucket: bucket,
         CreateBucketConfiguration: {

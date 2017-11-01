@@ -23,7 +23,7 @@ const someBody = 'teststring';
 
 describeSkipIfNotMultiple('AWS backend object put/get tagging with versioning',
 function testSuite() {
-    this.timeout(30000);
+    this.timeout(120000);
     const tags = { key1: 'value1', key2: 'value2' };
 
     withV4(sigCfg => {
