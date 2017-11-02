@@ -4,11 +4,10 @@ const { s3middleware } = require('arsenal');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 
 const { config } = require('../../../../../../lib/Config');
-const authdata = require('../../../../../../conf/authdata.json');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
-  memLocation, awsLocation, awsS3 } = require('../utils');
+  memLocation, awsLocation, awsS3, getOwnerInfo } = require('../utils');
 
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
@@ -45,8 +44,7 @@ const keyObjectMemory = 'objectputcopypartMemory';
 const keyObjectAWS = 'objectputcopypartAWS';
 const azureClient = getAzureClient();
 
-const accountName = authdata.accounts[0].name;
-const accountID = authdata.accounts[0].canonicalID;
+const { ownerID, ownerDisplayName } = getOwnerInfo('account1');
 
 const result = {
     Bucket: '',
@@ -56,11 +54,11 @@ const result = {
     IsTruncated: false,
     Parts: [],
     Initiator:
-     { ID: accountID,
-       DisplayName: accountName },
+     { ID: ownerID,
+       DisplayName: ownerDisplayName },
     Owner:
-     { DisplayName: accountName,
-       ID: accountID },
+     { DisplayName: ownerDisplayName,
+       ID: ownerID },
     StorageClass: 'STANDARD',
 };
 

@@ -10,6 +10,7 @@ const {
     putVersionsToAws,
     getAndAssertResult,
     describeSkipIfNotMultiple,
+    getOwnerInfo,
 } = require('../utils');
 
 const someBody = 'testbody';
@@ -45,9 +46,10 @@ class _AccessControlPolicy {
     }
 }
 
+const { ownerID, ownerDisplayName } = getOwnerInfo('account1');
 const ownerParams = {
-    ownerID: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
-    ownerDisplayName: 'Bart',
+    ownerID,
+    ownerDisplayName,
 };
 const testAcp = new _AccessControlPolicy(ownerParams);
 testAcp.addGrantee('Group', constants.publicId, 'READ');
