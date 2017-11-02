@@ -20,7 +20,8 @@ const azureLocation2 = 'azuretest2';
 const azureLocationMismatch = 'azuretestmismatch';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
-const awsTimeout = 10000;
+const awsFirstTimeout = 10000;
+const awsSecondTimeout = 30000;
 let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
@@ -217,14 +218,23 @@ utils.getAndAssertResult = (s3, params, cb) => {
         });
 };
 
-utils.awsGetLatestVerId = (key, body, cb) => {
+utils.awsGetLatestVerId = (key, body, cb, isRetry) => {
     const getObject = awsS3.getObject.bind(awsS3);
-    return setTimeout(getObject, awsTimeout, { Bucket: awsBucket, Key: key },
+    const timeout = isRetry ? awsSecondTimeout : awsFirstTimeout;
+    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key },
         (err, result) => {
+            if (err && !isRetry) {
+                // retry operation with longer timeout
+                return utils.awsGetLatestVerId(key, body, cb, true);
+            }
             assert.strictEqual(err, null, 'Expected success ' +
                 `getting object from AWS, got error ${err}`);
             const resultMD5 = utils.expectedETag(result.Body, false);
             const expectedMD5 = utils.expectedETag(body, false);
+            if (resultMD5 !== expectedMD5 && !isRetry) {
+                // retry operation with longer timeout
+                return utils.awsGetLatestVerId(key, body, cb, true);
+            }
             assert.strictEqual(resultMD5, expectedMD5,
                 'expected different body');
             return cb(null, result.VersionId);
