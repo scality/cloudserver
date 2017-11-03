@@ -586,7 +586,7 @@ function testSuite() {
             });
         });
 
-        it('should return error if AWS source object has ' +
+        it.only('should return error if AWS source object has ' +
         'been deleted', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const awsBucket =
