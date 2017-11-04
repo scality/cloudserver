@@ -17,13 +17,18 @@ function getAwsCredentials(profile, credFile) {
 }
 
 function getRealAwsConfig(awsLocation) {
-    const cp =
-        config.locationConstraints[awsLocation].details.credentialsProfile
-        || 'default';
-    const credentials = getAwsCredentials(cp, '/.aws/credentials');
-    const realAwsConfig = { credentials, signatureVersion: 'v4' };
-
-    return realAwsConfig;
+    const { credentialsProfile, credentials: locCredentials } =
+        config.locationConstraints[awsLocation].details;
+    if (credentialsProfile) {
+        const credentials = getAwsCredentials(credentialsProfile,
+            '/.aws/credentials');
+        return { credentials, signatureVersion: 'v4' };
+    }
+    return {
+        accessKeyId: locCredentials.accessKey,
+        secretAccessKey: locCredentials.secretKey,
+        signatureVersion: 'v4',
+    };
 }
 
 module.exports = {

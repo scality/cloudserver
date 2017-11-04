@@ -391,7 +391,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     });
 
     it('should only return number of parts equal to specified maxParts',
-    done => {
+    function itF(done) {
+        this.timeout(90000);
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             const listParams = getListParams(objectKey, uploadId);
