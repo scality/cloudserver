@@ -103,5 +103,16 @@
             "bucketMatch": false,
             "azureContainerName": "s3test"
         }
+    },
+    "gcp-test": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "https://www.googleapis.com/storage/v1",
+            "bucketMatch": true,
+            "projectId": "zenko-hackathon",
+            "gcpBucketName": "my-zenko-bucket",
+            "credentialsEnv": "GCP_CRED"
+        }
     }
 }

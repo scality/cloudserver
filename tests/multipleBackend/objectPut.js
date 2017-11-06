@@ -132,6 +132,20 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         });
     });
 
+    it('should put an object to GCP based on bucket location', done => {
+        put('gcp-test', null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
+    it('should put an object to GCP based on object location', done => {
+        put('mem', 'gcp-test', 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should put an object to file based on request endpoint', done => {
         put(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
