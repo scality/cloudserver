@@ -8,6 +8,7 @@ const azure = require('azure-storage');
 
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
+const authdata = require('../../../../../conf/authdata.json');
 
 const memLocation = 'mem-test';
 const fileLocation = 'file-test';
@@ -57,6 +58,29 @@ const utils = {
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
+};
+
+utils.getOwnerInfo = account => {
+    let ownerID;
+    let ownerDisplayName;
+    if (process.env.S3_END_TO_END) {
+        if (account === 'account1') {
+            ownerID = process.env.CANONICAL_ID;
+            ownerDisplayName = process.env.ACCOUNT_NAME;
+        } else {
+            ownerID = process.env.ACCOUNT2_CANONICAL_ID;
+            ownerDisplayName = process.env.ACCOUNT2_NAME;
+        }
+    } else {
+        if (account === 'account1') {
+            ownerID = authdata.accounts[0].canonicalID;
+            ownerDisplayName = authdata.accounts[0].name;
+        } else {
+            ownerID = authdata.accounts[1].canonicalID;
+            ownerDisplayName = authdata.accounts[1].name;
+        }
+    }
+    return { ownerID, ownerDisplayName };
 };
 
 utils.uniqName = name => `${name}${new Date().getTime()}`;
