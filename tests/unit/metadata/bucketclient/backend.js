@@ -1,7 +1,7 @@
 const assert = require('assert');
 const http = require('http');
 const BucketClientInterface =
-    require('../../../../lib/metadata/bucketclient/backend').default;
+    require('../../../../lib/metadata/bucketclient/backend');
 const { DummyRequestLogger } =
     require('../../helpers.js');
 
