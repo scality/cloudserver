@@ -101,7 +101,6 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
-        // SKIP because no mem, file, or AWS location constraints in E2E.
         describeSkipIfNotMultiple('with set location from "x-amz-meta-scal-' +
             'location-constraint" header', function describe() {
             if (!process.env.S3_END_TO_END) {
