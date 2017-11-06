@@ -8,8 +8,11 @@ const data = config.backends.data;
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
+const legacyLocation = 'legacy';
 const dummyBackendInfo = new BackendInfo(memLocation, fileLocation,
     '127.0.0.1');
+const isLocationLegacy = process.env.S3_LOCATION_FILE ===
+'tests/locationConfig/locationConfigLegacy.json';
 
 describe('BackendInfo class', () => {
     describe('controllingBackendParam', () => {
@@ -33,26 +36,36 @@ describe('BackendInfo class', () => {
             assert((res.description).indexOf('Bucket ' +
             'Location Error') > -1);
         });
-        it('should return object with applicable error if requestEndpoint ' +
-        'is invalid, no objectLocationConstraint or bucketLocationConstraint' +
-        'was provided and data backend is set to "scality"', () => {
+        it('If requestEndpoint is invalid, no objectLocationConstraint or ' +
+        'bucketLocationConstraint was provided, data backend is set to ' +
+        '"scality" should return isValid if legacy location constraint and ' +
+        '"object with applicable error" if not', () => {
             config.backends.data = 'scality';
             const res = BackendInfo.controllingBackendParam(
                 undefined, undefined, 'notValid', log);
-            assert.equal(res.isValid, false);
-            assert((res.description).indexOf('Endpoint ' +
-            'Location Error') > -1);
+            if (isLocationLegacy) {
+                assert.equal(res.isValid, true);
+            } else {
+                assert.equal(res.isValid, false);
+                assert((res.description).indexOf('Endpoint ' +
+                'Location Error') > -1);
+            }
         });
-        it('should return object with applicable error if requestEndpoint ' +
-        'is invalid, no objectLocationConstraint or ' +
-        'bucketLocationConstraint was provided and ' +
-        'data backend is set to "multiple"', () => {
+        it('If requestEndpoint is invalid, no objectLocationConstraint or ' +
+        'bucketLocationConstraint was provided and data backend is set to ' +
+        '"multiple" and legacy location constraint should return isValid if ' +
+        'legacy location constraint and "object with applicable error" if not',
+        () => {
             config.backends.data = 'multiple';
             const res = BackendInfo.controllingBackendParam(
                 undefined, undefined, 'notValid', log);
-            assert.equal(res.isValid, false);
-            assert((res.description).indexOf('Endpoint ' +
-            'Location Error') > -1);
+            if (isLocationLegacy) {
+                assert.equal(res.isValid, true);
+            } else {
+                assert.equal(res.isValid, false);
+                assert((res.description).indexOf('Endpoint ' +
+                'Location Error') > -1);
+            }
         });
         it('should return isValid if requestEndpoint ' +
         'is invalid and data backend is set to "file"', () => {
@@ -96,6 +109,15 @@ describe('BackendInfo class', () => {
             const controllingLC =
                 dummyBackendInfo.getControllingLocationConstraint();
             assert.strictEqual(controllingLC, memLocation);
+        });
+    });
+    describe('legacy for getControllingLocationConstraint', () => {
+        const dummyBackendInfoLegacy = new BackendInfo(null, null,
+          '127.0.0.1', legacyLocation);
+        it('should return legacy location constraint', () => {
+            const controllingLC =
+            dummyBackendInfoLegacy.getControllingLocationConstraint();
+            assert.strictEqual(controllingLC, legacyLocation);
         });
     });
     describe('getters', () => {

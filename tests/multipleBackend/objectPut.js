@@ -132,7 +132,8 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         });
     });
 
-    it('should put an object to file based on request endpoint', done => {
+    it('should put an object to us-east-1 which is file based on bucket' +
+    ' location if no locationConstraint provided', done => {
         put(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();

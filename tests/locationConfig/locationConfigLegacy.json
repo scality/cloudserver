@@ -1,0 +1,107 @@
+
+{
+    "legacy": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "us-east-1": {
+        "type": "file",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
+    "scality-internal-file": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "dataFile": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-internal-mem": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-us-west-1": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "awsbackendencryption": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "serverSideEncryption": true
+        }
+    },
+    "awsbackend": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default"
+        }
+    },
+    "awsbackendmismatch": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": false,
+            "credentialsProfile": "default"
+        }
+    },
+    "awsbackend2": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester222",
+            "bucketMatch": true,
+            "credentialsProfile": "default_2"
+        }
+    },
+    "azurebackend": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key001",
+            "bucketMatch": true,
+            "azureContainerName": "s3test"
+        }
+    },
+    "azurebackend2": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname2.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname2",
+            "azureStorageAccessKey": "Fake00Key002",
+            "bucketMatch": true,
+            "azureContainerName": "s3test2"
+        }
+    },
+    "azurebackendmismatch": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key001",
+            "bucketMatch": false,
+            "azureContainerName": "s3test"
+        }
+    }
+}
