@@ -17,7 +17,7 @@ const {
 
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const normalBody = Buffer.from('I am a body', 'utf8');

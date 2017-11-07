@@ -13,7 +13,7 @@ const {
 } = require('../utils');
 
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const keys = getAzureKeys();
 const keyObject = 'getazure';
 

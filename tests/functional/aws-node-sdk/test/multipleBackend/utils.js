@@ -15,10 +15,11 @@ const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
 const awsLocation2 = 'awsbackend2';
 const awsLocationMismatch = 'awsbackendmismatch';
+const awsLocationEncryption = 'awsbackendencryption';
 const azureLocation = 'azurebackend';
 const azureLocation2 = 'azurebackend2';
 const azureLocationMismatch = 'azurebackendmismatch';
-const awsLocationEncryption = 'awsbackendencryption';
+const azureLocationNonExistContainer = 'azurenonexistcontainer';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
@@ -57,6 +58,7 @@ const utils = {
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
+    azureLocationNonExistContainer,
 };
 
 utils.getOwnerInfo = account => {
@@ -116,7 +118,7 @@ utils.getAzureClient = () => {
         params.azureStorageAccessKey, params.azureStorageEndpoint);
 };
 
-utils.getAzureContainerName = () => {
+utils.getAzureContainerName = azureLocation => {
     let azureContainerName;
     if (config.locationConstraints[azureLocation] &&
     config.locationConstraints[azureLocation].details &&

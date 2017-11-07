@@ -7,7 +7,7 @@ const { describeSkipIfNotMultiple, awsS3, awsBucket, getAzureClient,
     azureLocation } = require('../utils');
 
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const bucket = 'testmultbackendtagging';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';

@@ -19,7 +19,7 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const bucketAzure = 'bucketazuretestmultiplebackendobjectcopy';

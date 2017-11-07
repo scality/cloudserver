@@ -14,7 +14,7 @@ const {
 } = require('../utils');
 
 const keyObject = 'deleteazure';
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const keys = getAzureKeys();
 const azureClient = getAzureClient();
 
