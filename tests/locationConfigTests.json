@@ -10,22 +10,12 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
-    "file": {
-        "type": "file",
-        "legacyAwsBehavior": false,
-        "details": {}
-    },
     "dataFile": {
         "type": "file",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "scality-internal-mem": {
-        "type": "mem",
-        "legacyAwsBehavior": false,
-        "details": {}
-    },
-    "mem": {
         "type": "mem",
         "legacyAwsBehavior": false,
         "details": {}
