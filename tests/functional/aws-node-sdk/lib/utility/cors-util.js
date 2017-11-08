@@ -27,7 +27,9 @@ const statusCode = {
 function methodRequest(params, callback) {
     const { method, bucket, objectKey, query, headers, code,
         headersResponse, headersOmitted, isWebsite } = params;
-    const websiteHostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
+    const websiteHostname = process.env.S3_END_TO_END ?
+        `${bucket}.s3-website-us-east-1.scality.com` :
+        `${bucket}.s3-website-us-east-1.amazonaws.com`;
 
     const options = {
         port,
