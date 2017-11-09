@@ -25,16 +25,29 @@ let s3;
 const awsTimeout = 30000;
 const retryTimeout = 10000;
 
+function _retryWithTimeouts(fn, numberRetry) {
+    const timeout = {
+        0: 0,
+        1: retryTimeout,
+        2: awsTimeout,
+    };
+    const maxRetries = 2;
+    try {
+        setTimeout(() => {
+            fn();
+        }, timeout[numberRetry]);
+    } catch (e) {
+        if (numberRetry !== maxRetries) {
+            _retryWithTimeouts(fn, numberRetry + 1);
+        } else {
+            throw e;
+        }
+    }
+}
+
 function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
     process.stdout.write('Getting object\n');
-    s3.getObject({ Bucket: bucket, Key: objectKey },
-    function s3GetCallback(err, res) {
-        if (err && err.code === 'NetworkingError') {
-            return setTimeout(() => {
-                process.stdout.write('Getting object retry\n');
-                s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
-            }, retryTimeout);
-        }
+    s3.getObject({ Bucket: bucket, Key: objectKey }, (err, res) => {
         assert.strictEqual(err, null, 'Expected success, got error ' +
         `on call to AWS through S3: ${err}`);
         assert.strictEqual(res.ETag, `"${s3MD5}"`);
@@ -165,10 +178,10 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
                           () => done());
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
 
@@ -198,10 +211,10 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         awsGetCheck(key, correctMD5, correctMD5, awsLocation,
                           () => done());
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
 
@@ -215,7 +228,7 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         awsS3.getObject({ Bucket: awsBucket, Key: key },
                         (err, res) => {
                             if (process.env.ENABLE_KMS_ENCRYPTION) {
@@ -225,7 +238,7 @@ describe('MultipleBackend put object', function testSuite() {
                             }
                             done();
                         });
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
 
@@ -238,10 +251,10 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         awsGetCheck(key, correctMD5, correctMD5,
                           awsLocationEncryption, () => done());
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
 
@@ -261,7 +274,7 @@ describe('MultipleBackend put object', function testSuite() {
                         assert(res.VersionId);
                         next(null, res.ETag);
                     }),
-                    (eTag, next) => setTimeout(() => {
+                    (eTag, next) => _retryWithTimeouts(() => {
                         awsS3.getObject({ Bucket: awsBucket, Key: key },
                         (err, res) => {
                             if (process.env.ENABLE_KMS_ENCRYPTION) {
@@ -273,7 +286,7 @@ describe('MultipleBackend put object', function testSuite() {
                             assert(res.VersionId);
                             next();
                         });
-                    }, awsTimeout),
+                    }, 0),
                 ], done);
             });
 
@@ -285,10 +298,10 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected sucess, ' +
                         `got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation,
                           () => done());
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
 
@@ -306,7 +319,7 @@ describe('MultipleBackend put object', function testSuite() {
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        setTimeout(() => {
+                        _retryWithTimeouts(() => {
                             s3.getObject({ Bucket: bucket, Key: key },
                             (err, res) => {
                                 assert.equal(err, null, 'Expected success, ' +
@@ -320,7 +333,7 @@ describe('MultipleBackend put object', function testSuite() {
                                     done();
                                 });
                             });
-                        }, awsTimeout);
+                        }, 0);
                     });
                 });
             });
@@ -339,10 +352,10 @@ describe('MultipleBackend put object', function testSuite() {
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        setTimeout(() => {
+                        _retryWithTimeouts(() => {
                             awsGetCheck(key, correctMD5, correctMD5,
                               awsLocation, () => done());
-                        }, awsTimeout);
+                        }, 0);
                     });
                 });
             });
@@ -362,14 +375,14 @@ describe('MultipleBackend put object', function testSuite() {
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        setTimeout(() => {
+                        _retryWithTimeouts(() => {
                             awsGetCheck(key, correctMD5, correctMD5,
                             awsLocation, result => {
                                 assert.strictEqual(result.Metadata
                                     ['unique-header'], 'second object');
                                 done();
                             });
-                        }, awsTimeout);
+                        }, 0);
                     });
                 });
             });
@@ -461,7 +474,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
                 return s3.putObject(params, err => {
                     assert.equal(err, null,
                         `Expected success, got error ${err}`);
-                    setTimeout(() => {
+                    _retryWithTimeouts(() => {
                         s3.getObject({ Bucket: bucket, Key: key },
                         (err, res) => {
                             assert.strictEqual(err, null,
@@ -475,7 +488,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
                                 done();
                             });
                         });
-                    }, awsTimeout);
+                    }, 0);
                 });
             });
         });

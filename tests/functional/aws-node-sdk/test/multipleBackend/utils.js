@@ -241,22 +241,29 @@ utils.getAndAssertResult = (s3, params, cb) => {
         });
 };
 
-utils.awsGetLatestVerId = (key, body, cb, isRetry) => {
+utils.awsGetLatestVerId = (key, body, cb, retryNumber) => {
+    const _retryNumber = retryNumber === undefined ? 0 : retryNumber;
+    const retryTimeout = {
+        0: 0,
+        1: awsFirstTimeout,
+        2: awsSecondTimeout,
+    };
+    const maxRetries = 2;
     const getObject = awsS3.getObject.bind(awsS3);
-    const timeout = isRetry ? awsSecondTimeout : awsFirstTimeout;
+    const timeout = retryTimeout[_retryNumber];
     return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key },
         (err, result) => {
-            if (err && !isRetry) {
+            if (err && _retryNumber !== maxRetries) {
                 // retry operation with longer timeout
-                return utils.awsGetLatestVerId(key, body, cb, true);
+                return utils.awsGetLatestVerId(key, body, cb, _retryNumber + 1);
             }
             assert.strictEqual(err, null, 'Expected success ' +
                 `getting object from AWS, got error ${err}`);
             const resultMD5 = utils.expectedETag(result.Body, false);
             const expectedMD5 = utils.expectedETag(body, false);
-            if (resultMD5 !== expectedMD5 && !isRetry) {
+            if (resultMD5 !== expectedMD5 && _retryNumber !== maxRetries) {
                 // retry operation with longer timeout
-                return utils.awsGetLatestVerId(key, body, cb, true);
+                return utils.awsGetLatestVerId(key, body, cb, _retryNumber + 1);
             }
             assert.strictEqual(resultMD5, expectedMD5,
                 'expected different body');
