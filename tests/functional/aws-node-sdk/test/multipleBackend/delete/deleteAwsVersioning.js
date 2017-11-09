@@ -99,15 +99,23 @@ function _getAssertDeleted(s3, params, cb) {
         });
 }
 
-function _awsGetAssertDeleted(params, cb, isRetry) {
+function _awsGetAssertDeleted(params, cb, retryNumber) {
     const { key, versionId, errorCode } = params;
+    const _retryNumber = retryNumber === undefined ? 0 : retryNumber;
+    const retryTimeout = {
+        0: 0,
+        1: 10000,
+        2: 30000,
+    };
+    const maxRetries = 2;
     const getObject = awsS3.getObject.bind(awsS3);
-    const timeout = isRetry ? 30000 : 10000;
+    const timeout = retryTimeout[_retryNumber];
     return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
         VersionId: versionId }, err => {
-            if ((!err || err.statusCode !== 404) && !isRetry) {
+            if ((!err || err.statusCode !== 404)
+            && _retryNumber !== maxRetries) {
                 // expected 404 error, retry once with a longer timeout
-                _awsGetAssertDeleted(params, cb, true);
+                return _awsGetAssertDeleted(params, cb, _retryNumber + 1);
             }
             assert.strictEqual(err.code, errorCode);
             assert.strictEqual(err.statusCode, 404);
