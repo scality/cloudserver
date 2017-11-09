@@ -26,28 +26,28 @@ const testRequest = {
 
 const testChecks = [
     {
-        data: 'file-test',
-        locationSent: 'file-test',
+        data: 'scality-internal-file',
+        locationSent: 'scality-internal-file',
         parsedHost: '127.1.2.3',
-        locationReturn: 'file-test',
+        locationReturn: 'scality-internal-file',
         isError: false,
     },
     {
-        data: 'file-test',
+        data: 'scality-internal-file',
         locationSent: 'wronglocation',
         parsedHost: '127.1.0.0',
         locationReturn: undefined,
         isError: true,
     },
     {
-        data: 'file-test',
+        data: 'scality-internal-file',
         locationSent: '',
         parsedHost: '127.0.0.1',
         locationReturn: config.restEndpoints['127.0.0.1'],
         isError: false,
     },
     {
-        data: 'file-test',
+        data: 'scality-internal-file',
         locationSent: '',
         parsedHost: '127.3.2.1',
         locationReturn: 'us-east-1',

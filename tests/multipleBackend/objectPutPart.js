@@ -17,10 +17,10 @@ const constants = require('../../constants');
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
-const awsLocation = 'aws-test';
-const awsLocationMismatch = 'aws-test-mismatch';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
+const awsLocation = 'awsbackend';
+const awsLocationMismatch = 'awsbackendmismatch';
 const awsConfig = getRealAwsConfig(awsLocation);
 const s3 = new AWS.S3(awsConfig);
 

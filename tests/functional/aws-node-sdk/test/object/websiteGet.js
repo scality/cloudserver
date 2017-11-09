@@ -16,7 +16,9 @@ const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? 'awsbucketwebsitetester' :
     'bucketwebsitetester';
 const port = process.env.AWS_ON_AIR ? 80 : 8000;
-const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
+const hostname = process.env.S3_END_TO_END ?
+    `${bucket}.s3-website-us-east-1.scality.com` :
+    `${bucket}.s3-website-us-east-1.amazonaws.com`;
 const endpoint = `${transport}://${hostname}:${port}`;
 const redirectEndpoint = `${transport}://www.google.com`;
 

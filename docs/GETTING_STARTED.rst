@@ -127,9 +127,9 @@ You can run the linter with:
 Running functional tests locally:
 
 For the AWS backend and Azure backend tests to pass locally,
-you must modify tests/locationConfigTests.json so that aws-test
+you must modify tests/locationConfigTests.json so that awsbackend
 specifies a bucketname of a bucket you have access to based on
-your credentials profile and modify azureTest with details
+your credentials profile and modify "azurebackend" with details
 for your Azure account.
 
 The test suite requires additional tools, **s3cmd** and **Redis**

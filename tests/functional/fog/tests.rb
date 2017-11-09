@@ -160,7 +160,7 @@ describe Fog do
         streamObject = $bucket.files.create(
             :key => "awsStreamObject",
             :body => File.open(fileToStream),
-            :metadata => { "x-amz-meta-scal-location-constraint":"aws-test" },
+            :metadata => { "x-amz-meta-scal-location-constraint":"awsbackend" },
             :content_type => "text/plain",
             :acl => "private")
         expect(streamObject.etag).to eq($fileToStreamMd5)
@@ -184,7 +184,7 @@ describe Fog do
     it "should initiate a multipart upload on AWS (regular v4 auth)", :skip => true do
         response = connection.initiate_multipart_upload(
             $bucketName, "awsMpuObject",
-            options = { "x-amz-meta-scal-location-constraint": "aws-test" },
+            options = { "x-amz-meta-scal-location-constraint": "awsbackend" },
         )
         $awsUploadId = response.body["UploadId"]
     end

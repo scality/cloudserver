@@ -34,7 +34,7 @@ to your ``locationConfig.json`` file with the ``aws_s3`` location type:
 .. code:: json
 
 (...)
-    "aws-test": {
+    "awsbackend": {
         "type": "aws_s3",
         "details": {
             "awsEndpoint": "s3.amazonaws.com",

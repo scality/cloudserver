@@ -38,7 +38,7 @@ const bucketPutRequest = {
     url: '/',
     post: '<CreateBucketConfiguration ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<LocationConstraint>mem-test</LocationConstraint>' +
+    '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
     '</CreateBucketConfiguration >',
 };
 const objectKey = 'testObject';

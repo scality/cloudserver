@@ -6,8 +6,8 @@ const { DummyRequestLogger } = require('../helpers');
 const locationConstraintCheck
     = require('../../../lib/api/apiUtils/object/locationConstraintCheck');
 
-const memLocation = 'mem-test';
-const fileLocation = 'file-test';
+const memLocation = 'scality-internal-mem';
+const fileLocation = 'scality-internal-file';
 const bucketName = 'nameOfBucket';
 const owner = 'canonicalID';
 const ownerDisplayName = 'bucketOwner';

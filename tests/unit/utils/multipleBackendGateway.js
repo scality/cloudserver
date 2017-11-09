@@ -1,7 +1,7 @@
 const assert = require('assert');
 const { checkExternalBackend } = require('../../../lib/data/external/utils');
 const awsLocations = [
-    'aws-test',
+    'awsbackend',
 ];
 
 const statusSuccess = {
@@ -20,8 +20,8 @@ const externalBackendHealthCheckInterval = 10000;
 function getClients(isSuccess) {
     const status = isSuccess ? statusSuccess : statusFailure;
     return {
-        'aws-test': {
-            healthcheck: (location, cb) => cb(null, { 'aws-test': status }),
+        awsbackend: {
+            healthcheck: (location, cb) => cb(null, { awsbackend: status }),
         },
     };
 }
@@ -41,7 +41,7 @@ describe('Testing _checkExternalBackend', function describeF() {
             if (err) {
                 return done(err);
             }
-            assert.strictEqual(res['aws-test'], statusSuccess);
+            assert.strictEqual(res.awsbackend, statusSuccess);
             return done();
         });
     });
@@ -55,7 +55,7 @@ describe('Testing _checkExternalBackend', function describeF() {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res['aws-test'], statusFailure);
+                assert.strictEqual(res.awsbackend, statusFailure);
                 return done();
             });
         }, externalBackendHealthCheckInterval + 1);

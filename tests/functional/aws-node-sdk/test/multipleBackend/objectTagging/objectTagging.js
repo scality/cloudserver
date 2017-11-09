@@ -116,11 +116,11 @@ function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
             return cb();
         });
     }
-    if (backend === 'aws-test') {
+    if (backend === 'awsbackend') {
         setTimeout(() => {
             get(() => awsGet(key, tagCheck, isEmpty, isMpu, callback));
         }, cloudTimeout);
-    } else if (backend === 'azuretest') {
+    } else if (backend === 'azurebackend') {
         setTimeout(() => {
             get(() => azureGet(key, tagCheck, isEmpty, callback));
         }, cloudTimeout);
@@ -192,7 +192,7 @@ function testSuite() {
 
         describe('putObject with tags and putObjectTagging', () => {
             testBackends.forEach(backend => {
-                const itSkipIfAzure = backend === 'azuretest' ? it.skip : it;
+                const itSkipIfAzure = backend === 'azurebackend' ? it.skip : it;
                 it(`should put an object with tags to ${backend} backend`,
                 done => {
                     const key = `somekey-${Date.now()}`;
