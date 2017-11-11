@@ -105,6 +105,7 @@ const constants = {
 
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
+    legacyLocations: ['sproxyd', 'legacy'],
     /* eslint-disable camelcase */
     externalBackends: { aws_s3: true, azure: true },
     // healthcheck default call from nginx is every 2 seconds

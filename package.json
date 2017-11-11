@@ -78,7 +78,9 @@
     "start_utapi": "node lib/utapi/utapi.js",
     "utapi_replay": "node lib/utapi/utapiReplay.js",
     "test": "CI=true S3BACKEND=mem mocha --recursive tests/unit",
+    "test_legacy_location": "CI=true S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --recursive tests/unit",
     "multiple_backend_test": "CI=true S3BACKEND=mem S3DATA=multiple mocha -t 20000 --recursive tests/multipleBackend",
-    "unit_coverage": "CI=true mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --reporter mocha-junit-reporter --recursive tests/unit"
+    "unit_coverage": "CI=true mkdir -p coverage/unit/ && S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unit.xml istanbul cover --dir coverage/unit _mocha -- --reporter mocha-junit-reporter --recursive tests/unit",
+    "unit_coverage_legacy_location": "CI=true mkdir -p coverage/unitlegacylocation/ && S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem MOCHA_FILE=$CIRCLE_TEST_REPORTS/unit/unitlegacylocation.xml istanbul cover --dir coverage/unitlegacylocation _mocha -- --reporter mocha-junit-reporter --recursive tests/unit"
   }
 }
