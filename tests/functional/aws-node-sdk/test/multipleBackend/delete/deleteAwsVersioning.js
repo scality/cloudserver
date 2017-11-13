@@ -18,6 +18,7 @@ const {
     putVersionsToAws,
     getAndAssertResult,
     awsGetLatestVerId,
+    getAwsRetry,
 } = require('../utils');
 
 const someBody = 'testbody';
@@ -99,28 +100,13 @@ function _getAssertDeleted(s3, params, cb) {
         });
 }
 
-function _awsGetAssertDeleted(params, cb, retryNumber) {
+function _awsGetAssertDeleted(params, cb) {
     const { key, versionId, errorCode } = params;
-    const _retryNumber = retryNumber === undefined ? 0 : retryNumber;
-    const retryTimeout = {
-        0: 0,
-        1: 10000,
-        2: 30000,
-    };
-    const maxRetries = 2;
-    const getObject = awsS3.getObject.bind(awsS3);
-    const timeout = retryTimeout[_retryNumber];
-    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
-        VersionId: versionId }, err => {
-            if ((!err || err.statusCode !== 404)
-            && _retryNumber !== maxRetries) {
-                // expected 404 error, retry once with a longer timeout
-                return _awsGetAssertDeleted(params, cb, _retryNumber + 1);
-            }
-            assert.strictEqual(err.code, errorCode);
-            assert.strictEqual(err.statusCode, 404);
-            return cb();
-        });
+    return getAwsRetry({ key, versionId }, 0, err => {
+        assert.strictEqual(err.code, errorCode);
+        assert.strictEqual(err.statusCode, 404);
+        return cb();
+    });
 }
 
 describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
