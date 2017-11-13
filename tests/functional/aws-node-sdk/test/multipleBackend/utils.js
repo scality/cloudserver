@@ -241,8 +241,8 @@ utils.getAndAssertResult = (s3, params, cb) => {
         });
 };
 
-utils.awsGetLatestVerId = (key, body, cb, retryNumber) => {
-    const _retryNumber = retryNumber === undefined ? 0 : retryNumber;
+utils.getAwsRetry = (params, retryNumber, assertCb) => {
+    const { key, versionId } = params;
     const retryTimeout = {
         0: 0,
         1: awsFirstTimeout,
@@ -250,26 +250,33 @@ utils.awsGetLatestVerId = (key, body, cb, retryNumber) => {
     };
     const maxRetries = 2;
     const getObject = awsS3.getObject.bind(awsS3);
-    const timeout = retryTimeout[_retryNumber];
-    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key },
-        (err, result) => {
-            if (err && _retryNumber !== maxRetries) {
-                // retry operation with longer timeout
-                return utils.awsGetLatestVerId(key, body, cb, _retryNumber + 1);
+    const timeout = retryTimeout[retryNumber];
+    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
+        VersionId: versionId },
+        (err, res) => {
+            try {
+                // note: this will only catch exceptions thrown before an
+                // asynchronous call
+                return assertCb(err, res);
+            } catch (e) {
+                if (retryNumber !== maxRetries) {
+                    return utils.getAwsRetry(params, retryNumber + 1,
+                        assertCb);
+                }
+                throw e;
             }
-            assert.strictEqual(err, null, 'Expected success ' +
-                `getting object from AWS, got error ${err}`);
-            const resultMD5 = utils.expectedETag(result.Body, false);
-            const expectedMD5 = utils.expectedETag(body, false);
-            if (resultMD5 !== expectedMD5 && _retryNumber !== maxRetries) {
-                // retry operation with longer timeout
-                return utils.awsGetLatestVerId(key, body, cb, _retryNumber + 1);
-            }
-            assert.strictEqual(resultMD5, expectedMD5,
-                'expected different body');
-            return cb(null, result.VersionId);
         });
 };
+
+utils.awsGetLatestVerId = (key, body, cb) =>
+    utils.getAwsRetry({ key }, 0, (err, result) => {
+        assert.strictEqual(err, null, 'Expected success ' +
+            `getting object from AWS, got error ${err}`);
+        const resultMD5 = utils.expectedETag(result.Body, false);
+        const expectedMD5 = utils.expectedETag(body, false);
+        assert.strictEqual(resultMD5, expectedMD5, 'expected different body');
+        return cb(null, result.VersionId);
+    });
 
 utils.tagging = {};
 

@@ -8,7 +8,7 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
-const { describeSkipIfNotMultiple, awsS3, awsBucket, awsLocation,
+const { describeSkipIfNotMultiple, getAwsRetry, awsLocation,
     awsLocationEncryption, memLocation, fileLocation } = require('../utils');
 const bucket = 'buckettestmultiplebackendput';
 const body = Buffer.from('I am a body', 'utf8');
@@ -22,54 +22,53 @@ const bigAWSMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 let bucketUtil;
 let s3;
 
-const awsTimeout = 30000;
 const retryTimeout = 10000;
 
-function _retryWithTimeouts(fn, numberRetry) {
-    const timeout = {
-        0: 0,
-        1: retryTimeout,
-        2: awsTimeout,
-    };
-    const maxRetries = 2;
-    try {
-        setTimeout(() => {
-            fn();
-        }, timeout[numberRetry]);
-    } catch (e) {
-        if (numberRetry !== maxRetries) {
-            _retryWithTimeouts(fn, numberRetry + 1);
-        } else {
-            throw e;
+function getAwsSuccess(key, awsMD5, location, cb) {
+    return getAwsRetry({ key }, 0, (err, res) => {
+        assert.strictEqual(err, null, 'Expected success, got error ' +
+        `on direct AWS call: ${err}`);
+        if (location === awsLocationEncryption) {
+            // doesn't check ETag because it's different
+            // with every PUT with encryption
+            assert.strictEqual(res.ServerSideEncryption, 'AES256');
         }
-    }
+        if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
+            assert.strictEqual(res.ETag, `"${awsMD5}"`);
+        }
+        assert.strictEqual(res.Metadata['scal-location-constraint'],
+            location);
+        return cb(res);
+    });
+}
+
+function getAwsError(key, expectedError, cb) {
+    return getAwsRetry({ key }, 0, err => {
+        assert.notStrictEqual(err, undefined,
+            'Expected error but did not find one');
+        assert.strictEqual(err.code, expectedError,
+            `Expected error code ${expectedError} but got ${err.code}`);
+        cb();
+    });
 }
 
 function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
     process.stdout.write('Getting object\n');
-    s3.getObject({ Bucket: bucket, Key: objectKey }, (err, res) => {
+    s3.getObject({ Bucket: bucket, Key: objectKey },
+    function s3GetCallback(err, res) {
+        if (err && err.code === 'NetworkingError') {
+            return setTimeout(() => {
+                process.stdout.write('Getting object retry\n');
+                s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
+            }, retryTimeout);
+        }
         assert.strictEqual(err, null, 'Expected success, got error ' +
         `on call to AWS through S3: ${err}`);
         assert.strictEqual(res.ETag, `"${s3MD5}"`);
         assert.strictEqual(res.Metadata['scal-location-constraint'],
             location);
         process.stdout.write('Getting object from AWS\n');
-        return awsS3.getObject({ Bucket: awsBucket, Key: objectKey },
-        (err, res) => {
-            assert.strictEqual(err, null, 'Expected success, got error ' +
-            `on direct AWS call: ${err}`);
-            if (location === awsLocationEncryption) {
-                // doesn't check ETag because it's different
-                // with every PUT with encryption
-                assert.strictEqual(res.ServerSideEncryption, 'AES256');
-            }
-            if (process.env.ENABLE_KMS_ENCRYPTION !== 'true') {
-                assert.strictEqual(res.ETag, `"${awsMD5}"`);
-            }
-            assert.strictEqual(res.Metadata['scal-location-constraint'],
-                location);
-            return cb(res);
-        });
+        return getAwsSuccess(objectKey, awsMD5, location, cb);
     });
 }
 
@@ -175,13 +174,11 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Metadata: { 'scal-location-constraint': awsLocation },
                 };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
-                          () => done());
-                    }, 0);
+                    return awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
+                      () => done());
                 });
             });
 
@@ -208,13 +205,11 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        awsGetCheck(key, correctMD5, correctMD5, awsLocation,
-                          () => done());
-                    }, 0);
+                    return awsGetCheck(key, correctMD5, correctMD5, awsLocation,
+                      () => done());
                 });
             });
 
@@ -225,20 +220,11 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        awsS3.getObject({ Bucket: awsBucket, Key: key },
-                        (err, res) => {
-                            if (process.env.ENABLE_KMS_ENCRYPTION) {
-                                assert.notEqual(res.Body, body);
-                            } else {
-                                assert.deepStrictEqual(res.Body, body);
-                            }
-                            done();
-                        });
-                    }, 0);
+                    return getAwsSuccess(key, correctMD5, awsLocation,
+                        () => done());
                 });
             });
 
@@ -248,13 +234,11 @@ describe('MultipleBackend put object', function testSuite() {
                     Body: body,
                     Metadata: { 'scal-location-constraint':
                     awsLocationEncryption } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        awsGetCheck(key, correctMD5, correctMD5,
-                          awsLocationEncryption, () => done());
-                    }, 0);
+                    return awsGetCheck(key, correctMD5, correctMD5,
+                      awsLocationEncryption, () => done());
                 });
             });
 
@@ -274,19 +258,8 @@ describe('MultipleBackend put object', function testSuite() {
                         assert(res.VersionId);
                         next(null, res.ETag);
                     }),
-                    (eTag, next) => _retryWithTimeouts(() => {
-                        awsS3.getObject({ Bucket: awsBucket, Key: key },
-                        (err, res) => {
-                            if (process.env.ENABLE_KMS_ENCRYPTION) {
-                                assert.notEqual(res.Body, body);
-                            } else {
-                                assert.deepStrictEqual(res.Body, body);
-                                assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                            }
-                            assert(res.VersionId);
-                            next();
-                        });
-                    }, 0),
+                    (eTag, next) => getAwsSuccess(key, correctMD5, awsLocation,
+                        () => next()),
                 ], done);
             });
 
@@ -295,13 +268,11 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected sucess, ' +
                         `got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation,
-                          () => done());
-                    }, 0);
+                    return awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation,
+                      () => done());
                 });
             });
 
@@ -311,29 +282,23 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     params.Metadata =
                         { 'scal-location-constraint': fileLocation };
-                    s3.putObject(params, err => {
+                    return s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        _retryWithTimeouts(() => {
-                            s3.getObject({ Bucket: bucket, Key: key },
-                            (err, res) => {
-                                assert.equal(err, null, 'Expected success, ' +
-                                    `got error ${err}`);
-                                assert.strictEqual(
-                                    res.Metadata['scal-location-constraint'],
-                                    fileLocation);
-                                awsS3.getObject({ Bucket: awsBucket,
-                                    Key: key }, err => {
-                                    assert.strictEqual(err.code, 'NoSuchKey');
-                                    done();
-                                });
-                            });
-                        }, 0);
+                        return s3.getObject({ Bucket: bucket, Key: key },
+                        (err, res) => {
+                            assert.equal(err, null, 'Expected success, ' +
+                                `got error ${err}`);
+                            assert.strictEqual(
+                                res.Metadata['scal-location-constraint'],
+                                fileLocation);
+                            return getAwsError(key, 'NoSuchKey', done);
+                        });
                     });
                 });
             });
@@ -344,18 +309,16 @@ describe('MultipleBackend put object', function testSuite() {
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     params.Metadata = {
                         'scal-location-constraint': awsLocation };
-                    s3.putObject(params, err => {
+                    return s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        _retryWithTimeouts(() => {
-                            awsGetCheck(key, correctMD5, correctMD5,
-                              awsLocation, () => done());
-                        }, 0);
+                        return awsGetCheck(key, correctMD5, correctMD5,
+                            awsLocation, () => done());
                     });
                 });
             });
@@ -367,22 +330,20 @@ describe('MultipleBackend put object', function testSuite() {
                     Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation,
                         'unique-header': 'first object' } };
-                s3.putObject(params, err => {
+                return s3.putObject(params, err => {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     params.Metadata = { 'scal-location-constraint': awsLocation,
                         'unique-header': 'second object' };
-                    s3.putObject(params, err => {
+                    return s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
-                        _retryWithTimeouts(() => {
-                            awsGetCheck(key, correctMD5, correctMD5,
-                            awsLocation, result => {
-                                assert.strictEqual(result.Metadata
-                                    ['unique-header'], 'second object');
-                                done();
-                            });
-                        }, 0);
+                        return awsGetCheck(key, correctMD5, correctMD5,
+                        awsLocation, result => {
+                            assert.strictEqual(result.Metadata
+                                ['unique-header'], 'second object');
+                            done();
+                        });
                     });
                 });
             });
@@ -474,21 +435,8 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
                 return s3.putObject(params, err => {
                     assert.equal(err, null,
                         `Expected success, got error ${err}`);
-                    _retryWithTimeouts(() => {
-                        s3.getObject({ Bucket: bucket, Key: key },
-                        (err, res) => {
-                            assert.strictEqual(err, null,
-                                `Expected success, got error ${err}`);
-                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                            awsS3.getObject({ Bucket: awsBucket, Key: key },
-                            (err, res) => {
-                                assert.strictEqual(err, null,
-                                    `Expected success, got error ${err}`);
-                                assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                                done();
-                            });
-                        });
-                    }, 0);
+                    return awsGetCheck(key, correctMD5, correctMD5, undefined,
+                        () => done());
                 });
             });
         });
