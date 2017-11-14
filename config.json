@@ -61,7 +61,7 @@
         "port": 9992
     },
     "recordLog": {
-        "enabled": false,
+        "enabled": true,
         "recordLogName": "s3-recordlog"
     }
 }
