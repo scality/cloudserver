@@ -406,6 +406,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     });
 
     it('should only list parts after PartNumberMarker', done => {
+        this.timeout(90000);
         const objectKey = `key-${Date.now()}`;
         mpuSetup(awsLocation, objectKey, uploadId => {
             const listParams = getListParams(objectKey, uploadId);
