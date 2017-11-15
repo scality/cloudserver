@@ -13,7 +13,7 @@ const getBlockId = azureMpuUtils.getBlockId;
 
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const expectedMD5 = 'a63c90cc3684ad8b0a2176a6a8fe9005';
 
 let bucketUtil;

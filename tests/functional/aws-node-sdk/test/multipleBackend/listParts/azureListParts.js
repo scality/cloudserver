@@ -5,7 +5,7 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName }
     = require('../utils');
 
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const bodyFirstPart = Buffer.alloc(10);
 const bodySecondPart = Buffer.alloc(104857610);
 

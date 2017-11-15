@@ -18,7 +18,7 @@ const {
 
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const azureClient = getAzureClient();
 const azureTimeout = 20000;
 

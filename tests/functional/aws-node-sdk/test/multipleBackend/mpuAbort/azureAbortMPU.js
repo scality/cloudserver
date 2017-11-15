@@ -11,7 +11,7 @@ const maxSubPartSize = azureMpuUtils.maxSubPartSize;
 
 const keyObject = 'abortazure';
 const azureClient = getAzureClient();
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 const expectedMD5 = 'a63c90cc3684ad8b0a2176a6a8fe9005';
 
 let bucketUtil;

@@ -8,7 +8,7 @@ const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName }
 
 const keyName = `somekey-${Date.now()}`;
 
-const azureContainerName = getAzureContainerName();
+const azureContainerName = getAzureContainerName(azureLocation);
 let s3;
 let bucketUtil;
 

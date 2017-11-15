@@ -98,5 +98,16 @@
             "bucketMatch": false,
             "azureContainerName": "s3test"
         }
+    },
+    "azurenonexistcontainer": {
+        "type": "azure",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key123",
+            "bucketMatch": true,
+            "azureContainerName": "s3createbucketonfly"
+        }
     }
 }
