@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const crypto = require('crypto');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
@@ -13,6 +14,12 @@ const {
     fileLocation,
     azureLocation,
     azureLocationMismatch,
+    enableVersioning,
+    putObject,
+    assertVersionedObj,
+    deleteAllSnapShots,
+    deleteAllBlobs,
+    assertNoSnapshots,
 } = require('../utils');
 
 const keyObject = 'putazure';
@@ -75,20 +82,6 @@ describeF() {
                         LocationConstraint: azureLocation,
                     },
                 }, done));
-
-            it('should return a NotImplemented error if try to put ' +
-            'versioning to bucket with Azure location', done => {
-                const params = {
-                    Bucket: azureContainerName,
-                    VersioningConfiguration: {
-                        Status: 'Enabled',
-                    },
-                };
-                s3.putBucketVersioning(params, err => {
-                    assert.strictEqual(err.code, 'NotImplemented');
-                    done();
-                });
-            });
 
             it('should put an object to Azure, with no object location ' +
             'header, based on bucket location', function it(done) {
@@ -170,26 +163,6 @@ describeF() {
                 s3.putObject(params, err => {
                     assert.strictEqual(err.code, 'ServiceUnavailable');
                     done();
-                });
-            });
-
-            it('should return error NotImplemented putting a ' +
-            'version to Azure', function itF(done) {
-                s3.putBucketVersioning({
-                    Bucket: azureContainerName,
-                    VersioningConfiguration: versioningEnabled,
-                }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
-                    const params = { Bucket: azureContainerName,
-                        Key: this.test.keyName,
-                        Body: normalBody,
-                        Metadata: { 'scal-location-constraint':
-                        azureLocation } };
-                    s3.putObject(params, err => {
-                        assert.strictEqual(err.code, 'NotImplemented');
-                        done();
-                    });
                 });
             });
 
@@ -306,6 +279,83 @@ describeF() {
                         done();
                     });
                 });
+            });
+        });
+
+        describe('versioning behavior', () => {
+            const keyPrefix = crypto.createHash('md5')
+                .update(Math.random().toString())
+                .digest('hex');
+            const key = `${keyPrefix}/versioned-blob-${Date.now()}`;
+
+            beforeEach(done =>
+                s3.createBucket({
+                    Bucket: azureContainerName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: azureLocation,
+                    },
+                }, done));
+
+            it('should allow putting bucket versioning', done =>
+                enableVersioning(s3, azureContainerName, done));
+
+            it('should not create a snapshot of a zero-byte object when ' +
+            'versioning is not enabled', done =>
+                async.series([
+                    next =>
+                        putObject(s3, azureContainerName, key, undefined, next),
+                    next =>
+                        assertNoSnapshots(azureClient, azureContainerName,
+                            keyPrefix, next),
+                ], done));
+
+            it('should not create a snapshot when versioning is not enabled',
+            done =>
+                async.series([
+                    next =>
+                        putObject(s3, azureContainerName, key, 'a', next),
+                    next =>
+                        assertNoSnapshots(azureClient, azureContainerName,
+                            keyPrefix, next),
+                ], done));
+
+            describe('put object', () => {
+                beforeEach(done =>
+                    enableVersioning(s3, azureContainerName, done));
+
+                afterEach(done =>
+                    deleteAllSnapShots(azureClient, azureContainerName,
+                    keyPrefix, err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        deleteAllBlobs(azureClient, azureContainerName,
+                            keyPrefix, done);
+                    }));
+
+                it('should create a snapshot for a zero-byte object', done =>
+                    async.waterfall([
+                        next => putObject(s3, azureContainerName, key,
+                            undefined, next),
+                        (data, next) =>
+                            assertVersionedObj(s3, azureContainerName, key,
+                                data.VersionId, '', next),
+                    ], done));
+
+                it('should create snapshots for the associated version IDs',
+                    done => async.waterfall([
+                        next =>
+                            putObject(s3, azureContainerName, key, 'a', next),
+                        (data1, next) =>
+                            putObject(s3, azureContainerName, key, 'b',
+                                (err, data2) => next(err, data1, data2)),
+                        (data1, data2, next) =>
+                            assertVersionedObj(s3, azureContainerName, key,
+                                data1.VersionId, 'a', err => next(err, data2)),
+                        (data2, next) =>
+                            assertVersionedObj(s3, azureContainerName, key,
+                                data2.VersionId, 'b', next),
+                    ], done));
             });
         });
     });
