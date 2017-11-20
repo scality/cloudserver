@@ -20,25 +20,25 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "aws-sdk": "2.28.0",
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#rel/7.2",
     "async": "~2.5.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient",
+    "bucketclient": "scality/bucketclient#rel/7.2",
     "commander": "^2.9.0",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
-    "sproxydclient": "scality/sproxydclient",
+    "sproxydclient": "scality/sproxydclient#rel/7.2",
     "utapi": "scality/utapi",
     "utf8": "~2.1.1",
-    "vaultclient": "scality/vaultclient",
-    "werelogs": "scality/werelogs",
+    "vaultclient": "scality/vaultclient#rel/7.2",
+    "werelogs": "scality/werelogs#rel/7.2",
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-scality": "scality/Guidelines",
+    "eslint-config-scality": "scality/Guidelines#rel/7.2",
     "ioredis": "2.4.0",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
@@ -50,7 +50,7 @@
     "tv4": "^1.2.7"
   },
   "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient"
+    "cdmiclient": "scality/cdmiclient#rel/7.2"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
