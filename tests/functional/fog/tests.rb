@@ -9,7 +9,8 @@ rubyConfig = JSON.parse(config)
 
 transport = rubyConfig["transport"];
 ipAddress = rubyConfig["ipAddress"];
-endpoint = "#{transport}://#{ipAddress}:8000";
+port = ENV['CI_S3_FRONTEND_PORT'] || 8000;
+endpoint = "#{transport}://#{ipAddress}:#{port}";
 
 if(rubyConfig["certPath"])
     Excon.defaults[:ssl_ca_path] = rubyConfig["caCertPath"]

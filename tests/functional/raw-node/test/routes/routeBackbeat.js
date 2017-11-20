@@ -46,10 +46,11 @@ function checkObjectData(s3, objectKey, dataValue, done) {
 function makeBackbeatRequest(params, callback) {
     const { method, headers, bucket, objectKey, resourceType,
             authCredentials, requestBody } = params;
+    const port = process.env.CI_S3_FRONTEND_PORT || 8000;
     const options = {
         authCredentials,
         hostname: ipAddress,
-        port: 8000,
+        port,
         method,
         headers,
         path: `/_/backbeat/${resourceType}/${bucket}/${objectKey}`,

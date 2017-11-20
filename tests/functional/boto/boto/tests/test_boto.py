@@ -8,13 +8,17 @@ class Test(object):
 
     connection = None
 
+    port = 8000
+    if os.getenv('CI_S3_FRONTEND_PORT'):
+        port = os.getenv('CI_S3_FRONTEND_PORT')
+
     def setup_method(self, _):
         """setup the connection"""
         # OrdinaryCallingFormat ==> tell boto not to use DNS for bucket
         self.connection = S3Connection(aws_access_key_id='accessKey1',
                                        aws_secret_access_key='verySecretKey1',
                                        is_secure=False,
-                                       port=8000,
+                                       port=self.port,
                                        calling_format=OrdinaryCallingFormat(),
                                        host=os.getenv('IP'))
 

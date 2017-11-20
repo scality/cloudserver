@@ -7,6 +7,8 @@ const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? 'https' : 'http';
 
+const port = process.env.CI_S3_FRONTEND_PORT || 8000;
+
 const ssl = conf.https;
 let httpOptions;
 if (ssl && ssl.ca) {
@@ -24,7 +26,7 @@ const DEFAULT_GLOBAL_OPTIONS = {
     sslEnabled: ssl !== undefined,
 };
 const DEFAULT_MEM_OPTIONS = {
-    endpoint: `${transport}://127.0.0.1:8000`,
+    endpoint: `${transport}://127.0.0.1:${port}`,
     s3ForcePathStyle: true,
 };
 const DEFAULT_AWS_OPTIONS = {};
@@ -50,7 +52,7 @@ function _getMemConfig(profile, config) {
         , { credentials }, config);
 
     if (process.env.IP) {
-        memConfig.endpoint = `${transport}://${process.env.IP}:8000`;
+        memConfig.endpoint = `${transport}://${process.env.IP}:${port}`;
     }
 
     return memConfig;

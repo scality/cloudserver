@@ -17,10 +17,11 @@ const reportAttributes = [
 ];
 
 function options(token = 'report-token-1') {
+    const port = process.env.CI_S3_FRONTEND_PORT || 8000;
     return {
         host: conf.ipAddress,
         path: '/_/report',
-        port: 8000,
+        port,
         headers: { 'x-scal-report-token': token },
     };
 }

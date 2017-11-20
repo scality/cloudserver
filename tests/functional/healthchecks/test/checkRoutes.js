@@ -19,10 +19,11 @@ redis.on('error', () => {});
 
 const transportStr = conf.transport;
 const transport = transportStr === 'http' ? http : https;
+const port = process.env.CI_S3_FRONTEND_PORT || 8000;
 const options = {
     host: conf.ipAddress,
     path: '/_/healthcheck',
-    port: 8000,
+    port,
 };
 
 function checkResult(expectedStatus, res) {

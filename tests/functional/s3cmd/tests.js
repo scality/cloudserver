@@ -29,6 +29,20 @@ const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
+function modifyPort(av) {
+    let avChangePort;
+    if (process.env.CI_S3_FRONTEND_PORT) {
+        avChangePort = av.concat([
+            `--host=127.0.0.1:${process.env.CI_S3_FRONTEND_PORT}`,
+            '--host-bucket=%(bucket).localhost:' +
+            `${process.env.CI_S3_FRONTEND_PORT}`,
+        ]);
+    } else {
+        avChangePort = av;
+    }
+    return avChangePort;
+}
+
 function safeJSONParse(s) {
     let res;
     try {
@@ -82,6 +96,7 @@ function exec(args, done, exitCode) {
     if (isScality) {
         av = av.concat(isScality);
     }
+    av = modifyPort(av);
     process.stdout.write(`${program} ${av}\n`);
     proc.spawn(program, av, { stdio: 'inherit' }).on('exit', code => {
         assert.strictEqual(code, exit,
@@ -96,6 +111,7 @@ function checkRawOutput(args, lineFinder, testString, stream, cb) {
     if (isScality) {
         av = av.concat(isScality);
     }
+    av = modifyPort(av);
     process.stdout.write(`${program} ${av}\n`);
     const allData = [];
     const allErrData = [];
@@ -173,7 +189,8 @@ function readJsonFromChild(child, lineFinder, cb) {
 // Pull line of interest from stderr (to get debug output)
 function provideLineOfInterest(args, lineFinder, cb) {
     const argsWithCfg = ['-c', configCfg].concat(args);
-    const av = isScality ? argsWithCfg.concat(isScality) : argsWithCfg;
+    let av = isScality ? argsWithCfg.concat(isScality) : argsWithCfg;
+    av = modifyPort(av);
     process.stdout.write(`${program} ${av}\n`);
     const child = proc.spawn(program, av);
     readJsonFromChild(child, lineFinder, cb);
@@ -201,7 +218,8 @@ function retrieveInfo() {
                 const hostInfo = value.split(':');
                 if (hostInfo.length > 1) {
                     res.host = hostInfo[0];
-                    res.port = parseInt(hostInfo[1], 10);
+                    res.port = process.env.CI_S3_FRONTEND_PORT ||
+                    parseInt(hostInfo[1], 10);
                 } else {
                     res.host = hostInfo[0];
                     res.port = 80;

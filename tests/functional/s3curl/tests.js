@@ -13,6 +13,7 @@ if (conf.https && conf.https.ca) {
     sslArguments = ['-s', '--cacert', conf.httpsPath.ca];
 }
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const port = process.env.CI_S3_FRONTEND_PORT || 8000;
 const program = `${__dirname}/s3curl.pl`;
 const upload = 'test1MB';
 const aclUpload = 'test500KB';
@@ -24,7 +25,7 @@ const prefix = 'topLevel';
 const delimiter = '/';
 let ownerCanonicalId = '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d52'
     + '18e7cd47ef2be';
-const endpoint = `${transport}://${ipAddress}:8000`;
+const endpoint = `${transport}://${ipAddress}:${port}`;
 
 // Let's precompute a few paths
 const bucketPath = `${endpoint}/${bucket}`;
