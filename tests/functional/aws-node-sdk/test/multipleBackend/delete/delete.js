@@ -38,39 +38,39 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 process.stdout.write('Putting object to mem\n');
                 const params = { Bucket: bucket, Key: memObject, Body: body,
                     Metadata: { 'scal-location-constraint': memLocation } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .then(() => {
                 process.stdout.write('Putting object to file\n');
                 const params = { Bucket: bucket, Key: fileObject, Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .then(() => {
                 process.stdout.write('Putting object to AWS\n');
                 const params = { Bucket: bucket, Key: awsObject, Body: body,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .then(() => {
                 process.stdout.write('Putting 0-byte object to AWS\n');
                 const params = { Bucket: bucket, Key: emptyObject,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .then(() => {
                 process.stdout.write('Putting large object to AWS\n');
                 const params = { Bucket: bucket, Key: bigObject,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': awsLocation } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .then(() => {
                 process.stdout.write('Putting object to AWS\n');
                 const params = { Bucket: bucket, Key: mismatchObject,
                     Body: body, Metadata:
                     { 'scal-location-constraint': awsLocationMismatch } };
-                return s3.putObject(params);
+                return s3.putObjectAsync(params);
             })
             .catch(err => {
                 process.stdout.write(`Error putting objects: ${err}\n`);
