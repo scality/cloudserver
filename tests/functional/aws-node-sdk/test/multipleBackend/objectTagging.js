@@ -154,6 +154,9 @@ function mpuWaterfall(params, cb) {
 
 describeSkipIfNotMultiple('Object tagging with multiple backends',
 function testSuite() {
+    if (!process.env.S3_END_TO_END) {
+        this.retries(2);
+    }
     this.timeout(80000);
     withV4(sigCfg => {
         beforeEach(() => {
