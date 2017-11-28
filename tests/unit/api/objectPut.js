@@ -266,7 +266,7 @@ describe('objectPut API', () => {
                         // orphan objects don't get deleted
                         // until the next tick
                         // in memory
-                        process.nextTick(() => {
+                        setImmediate(() => {
                             // Data store starts at index 1
                             assert.strictEqual(ds[0], undefined);
                             assert.strictEqual(ds[1], undefined);
@@ -308,7 +308,7 @@ describe('objectPut API with versioning', () => {
                 undefined, log, err => {
                     // wait until next tick since mem backend executes
                     // deletes in the next tick
-                    process.nextTick(() => {
+                    setImmediate(() => {
                         // old null version should be deleted
                         versioningTestUtils.assertDataStoreValues(ds,
                             [undefined, objData[1]]);
@@ -318,7 +318,7 @@ describe('objectPut API with versioning', () => {
             // create another null version
             callback => objectPut(authInfo, testPutObjectRequests[2],
                 undefined, log, err => {
-                    process.nextTick(() => {
+                    setImmediate(() => {
                         // old null version should be deleted
                         versioningTestUtils.assertDataStoreValues(ds,
                             [undefined, undefined, objData[2]]);
@@ -362,7 +362,7 @@ describe('objectPut API with versioning', () => {
             objectPut(authInfo, testPutObjectRequests[2], undefined,
                 log, err => {
                     assert.ifError(err, `Unexpected err: ${err}`);
-                    process.nextTick(() => {
+                    setImmediate(() => {
                         // old null version should be deleted after putting
                         // new null version
                         versioningTestUtils.assertDataStoreValues(ds,
@@ -391,7 +391,7 @@ describe('objectPut API with versioning', () => {
                 // orphan objects don't get deleted
                 // until the next tick
                 // in memory
-                process.nextTick(() => {
+                setImmediate(() => {
                     // Data store starts at index 1
                     assert.strictEqual(ds[0], undefined);
                     assert.strictEqual(ds[1], undefined);

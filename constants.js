@@ -108,6 +108,10 @@ const constants = {
     legacyLocations: ['sproxyd', 'legacy'],
     /* eslint-disable camelcase */
     externalBackends: { aws_s3: true, azure: true },
+    // some of the available data backends  (if called directly rather
+    // than through the multiple backend gateway) need a key provided
+    // as a string as first parameter of the get/delete methods.
+    clientsRequireStringKey: { sproxyd: true, cdmi: true },
     // healthcheck default call from nginx is every 2 seconds
     // for external backends, don't call unless at least 1 minute
     // (60,000 milliseconds) since last call
