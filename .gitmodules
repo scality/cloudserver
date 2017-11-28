@@ -1,0 +1,4 @@
+[submodule "arsenal"]
+	path = arsenal
+	url = git@github.com:scality/Arsenal
+	branch = wip/config-overlay
