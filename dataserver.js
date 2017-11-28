@@ -12,7 +12,8 @@ if (config.backends.data === 'file' ||
             port: config.dataDaemon.port,
             dataStore: new arsenal.storage.data.file.DataFileStore(
                 { dataPath: config.dataDaemon.dataPath,
-                    log: config.log }),
+                    log: config.log,
+                    noSync: true }),
             log: config.log });
     dataServer.setup(err => {
         if (err) {
