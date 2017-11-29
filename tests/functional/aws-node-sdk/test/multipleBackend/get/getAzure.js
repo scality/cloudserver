@@ -16,6 +16,8 @@ const { config } = require('../../../../../../lib/Config');
 
 const normalBody = Buffer.from('I am a body', 'utf8');
 
+const azureTimeout = 10000;
+
 const describeSkipIfNotMultiple = (config.backends.data !== 'multiple'
     || process.env.S3_END_TO_END) ? describe.skip : describe;
 
@@ -52,20 +54,23 @@ function testSuite() {
         });
         keys.forEach(key => {
             describe(`${key.describe} size`, () => {
+                const testKey = `${key.name}-${Date.now()}`;
                 before(done => {
-                    s3.putObject({
-                        Bucket: azureContainerName,
-                        Key: key.name,
-                        Body: key.body,
-                        Metadata: {
-                            'scal-location-constraint': azureLocation,
-                        },
-                    }, done);
+                    setTimeout(() => {
+                        s3.putObject({
+                            Bucket: azureContainerName,
+                            Key: testKey,
+                            Body: key.body,
+                            Metadata: {
+                                'scal-location-constraint': azureLocation,
+                            },
+                        }, done);
+                    }, azureTimeout);
                 });
 
                 it(`should get an ${key.describe} object from Azure`, done => {
                     s3.getObject({ Bucket: azureContainerName, Key:
-                      key.name },
+                      testKey },
                         (err, res) => {
                             assert.equal(err, null, 'Expected success ' +
                                 `but got error ${err}`);
