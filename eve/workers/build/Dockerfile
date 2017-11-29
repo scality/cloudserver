@@ -47,6 +47,7 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
 ARG BUILDBOT_VERSION
 RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
+USER eve
 
 WORKDIR /home/eve/workspace
 CMD buildbot-worker create-worker . "$BUILDMASTER:$BUILDMASTER_PORT" "$WORKERNAME" "$WORKERPASS" \
