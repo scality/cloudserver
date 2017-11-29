@@ -14,7 +14,6 @@ const {
 const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
 const azureClient = getAzureClient();
-
 describe('Healthcheck response', () => {
     it('should return result for every location constraint in ' +
     'locationConfig and every external locations with flightCheckOnStartUp ' +

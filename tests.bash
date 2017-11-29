@@ -2,20 +2,8 @@
 set -x #echo on
 set -e #exit at the first error
 
-cat >>~/.aws/credentials <<EOF
-[default]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT
-[default_2]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT_2
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT_2
-[google]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
-[google_2]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
-EOF
+source /home/eve/.bashrc &> /dev/null
+source ./eve/workers/build/bash_profile &> /dev/null
 
 MYPWD=$(pwd)
 
@@ -29,13 +17,13 @@ export REMOTE_MANAGEMENT_DISABLE=1
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
 
-  npm run --silent lint -- --max-warnings 0
-
-  npm run --silent lint_md
-
-  flake8 $(git ls-files "*.py")
-
-  yamllint $(git ls-files "*.yml")
+#  npm run --silent lint -- --max-warnings 0
+#
+#  npm run --silent lint_md
+#
+#  flake8 $(git ls-files "*.py")
+#
+#  yamllint $(git ls-files "*.yml")
 
   mkdir -p $CIRCLE_TEST_REPORTS/unit
 
@@ -46,11 +34,9 @@ then
   npm run start_dmd &
   bash wait_for_local_port.bash 9990 40 &&
   npm run multiple_backend_test
-
   killandsleep 9990
 
   # Run S3 with multiple data backends ; run ft_tests
-
   S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_java.txt & bash wait_for_local_port.bash 8000 40 && cd ./tests/functional/jaws && mvn test
 
   killandsleep 8000

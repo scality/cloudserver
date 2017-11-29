@@ -4,11 +4,14 @@ const arsenal = require('arsenal');
 const { config } = require('./lib/Config.js');
 const logger = require('./lib/utilities/logger');
 
+console.log(config.backends.data);
+console.log(config.backends.metadata);
 if (config.backends.data === 'file' ||
     (config.backends.data === 'multiple' &&
      config.backends.metadata !== 'scality') &&
      (config.backends.auth !== 'scality' &&
       config.backends.metadata !== 'mongodb')) {
+    console.log('!!Data Server Setup');
     const dataServer = new arsenal.network.rest.RESTServer(
         { bindAddress: config.dataDaemon.bindAddress,
             port: config.dataDaemon.port,
