@@ -1,0 +1,7 @@
+curl
+default-jdk
+libdigest-hmac-perl
+lsof
+maven
+netcat
+redis-server
