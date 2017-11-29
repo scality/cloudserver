@@ -6,7 +6,7 @@ branches:
     stage: pre-merge
 models:
   - env: &global_env
-      CI: '1'
+      CI: 'true'
       CIRCLE_ARTIFACTS: '/tmp'
       CIRCLE_NODE_TOTAL: "4"
       CIRCLE_TEST_REPORTS: '/tmp'
