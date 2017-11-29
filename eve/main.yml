@@ -1,0 +1,102 @@
+---
+version: 0.2
+
+branches:
+  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
+    stage: pre-merge
+  development/*:
+    stage: post-merge
+
+models:
+  - Git: &clone
+      name: Pull repo
+      repourl: '%(prop:git_reference)s'
+      shallow: True
+      retryFetch: True
+      haltOnFailure: True
+      # Machine Setup
+  - ShellCommandWthSecrets: &credentials
+      name: Setup Credentials
+      command: bash eve/workers/build/credentials.bash
+      haltOnFailure: True
+  - ShellCommandWithSecrets: &npm-install
+      name: install modules
+      command: npm install
+      haltOnFailure: True
+stages:
+  pre-merge:
+    worker:
+      type: local
+    steps:
+      - SetProperty:
+          property: artifacts_name
+          value: "scality-s3-%(prop:buildnumber)s"
+          haltOnFailure: True
+
+      - TriggerStages:
+          name: Launch all workers
+          stage_names:
+            - linting-coverage
+            - mongo-ft-tests
+          waitForFinish: True
+          haltOnFailure: True
+
+  linting-coverage:
+    worker:
+      type: docker
+      path: eve/workers/build
+      volumes: &default_volumes
+        - '/home/eve/workspace'
+    steps:
+      - Git: *clone
+      - ShellCommand: *npm-install
+      - ShellCommand:
+          name: Linting
+          command: |
+            npm run --silent lint -- --max-warnings 0
+            npm run --silent lint_md
+            flake8 $(git ls-files "*.py")
+            yamllint $(git ls-files "*.yml")
+      - ShellCommand:
+          name: Unit Coverage
+          command: |
+            mkdir -p $CIRCLE_TEST_REPORTS/unit
+            npm run unit_coverage
+            npm run unit_coverage_legacy_location
+          haltOnFailure: True
+          env:
+            CIRCLE_TEST_REPORTS: /tmp
+
+  mongo-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars: &mongo-vars
+        S3BACKEND: "mem"
+        S3DATA: ""
+        MPU_TESTING: "yes"
+        S3METADATA: mongodb
+        CI_PROXY: "false"
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommandWithSecrets:
+          command: |
+            . /root/.aws/exports &> /dev/null
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_test
+          env:
+            <<: *mongo-vars
+
+  post-merge:
+    worker:
+      type: local
+    steps:
+      - Git: *clone
+      - ShellCommand:
+          name: Nightly Build
+          command: docker build -t zenko/cloudserver:nightly .
