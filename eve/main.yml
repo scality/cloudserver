@@ -6,10 +6,13 @@ branches:
     stage: pre-merge
 models:
   - env: &global_env
-      CIRCLE_NODE_TOTAL: "4"
-      ENABLE_LOCAL_CACHE: "1"
+      CI: '1'
       CIRCLE_ARTIFACTS: '/tmp'
-      REPORT_TOKEN: report-token-1
+      CIRCLE_NODE_TOTAL: "4"
+      CIRCLE_TEST_REPORTS: '/tmp'
+      CI_REPORTS: '/tmp'
+      ENABLE_LOCAL_CACHE: "1"
+      REPORT_TOKEN: 'report-token-1'
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -52,7 +55,7 @@ stages:
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: sudo -E bash tests.bash
+          command: sudo -E env && sudo -E bash tests.bash
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: "0"
