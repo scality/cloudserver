@@ -1,2 +1,4 @@
 default-jdk
 redis-server
+netcat
+lsof
