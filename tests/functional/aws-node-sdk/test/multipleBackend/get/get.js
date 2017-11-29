@@ -277,6 +277,16 @@ describe('Multiple backend get object', function testSuite() {
                         done();
                     });
             });
+            it('should get an object using range query from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: bigObject,
+                    Range: 'bytes=0-9' },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
+                            `error ${err}`);
+                        assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                        done();
+                    });
+            });
         });
 
         describeSkipIfNotMultiple('with bucketMatch set to false', () => {
