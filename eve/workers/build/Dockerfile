@@ -24,13 +24,12 @@ RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
 
 # Install RVM and gems
 ENV RUBY_VERSION="2.4.1"
-COPY gems.list /tmp/
+COPY ./gems.list /tmp/
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 \
-    && curl -sSL https://get.rvm.io | sudo bash -s stable \
+    && curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION \
     && usermod -a -G rvm eve
 RUN /bin/bash -l -c "\
-    rvm install ruby-$RUBY_VERSION  \
-    && rvm --default use ruby-$RUBY_VERSION \
+    source /usr/local/rvm/scripts/rvm \
     && cat /tmp/gems.list | xargs gem install \
     && rm /tmp/gems.list"
 
@@ -45,6 +44,7 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
 # environment vars into the bash profile
 COPY ./bash_profile /home/eve/.bash_profile
 RUN chown eve /home/eve/.bash_profile
+
 #
 # Run buildbot-worker on startup
 #
@@ -52,11 +52,9 @@ RUN chown eve /home/eve/.bash_profile
 ARG BUILDBOT_VERSION
 RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
-RUN rm -rf /usr/bin/clear_console \
-    && ln -s /usr/bin/clear /usr/bin/clear_console
 USER eve
 
-
 WORKDIR /home/eve/workspace
-CMD buildbot-worker create-worker . "$BUILDMASTER:$BUILDMASTER_PORT" "$WORKERNAME" "$WORKERPASS" \
-    && buildbot-worker start --nodaemon
+CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS \
+    && buildbot-worker start --nodaemon"]
+ENTRYPOINT ["/bin/bash", "-l"]

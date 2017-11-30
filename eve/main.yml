@@ -75,7 +75,7 @@ stages:
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: bash -l tests.bash
+          command: . ~/.bash_profile && bash -l tests.bash
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: "0"
