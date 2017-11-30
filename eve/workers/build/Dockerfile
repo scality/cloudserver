@@ -42,8 +42,8 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
 
 
 # environment vars into the bash profile
-COPY ./bash_profile /root/.bash_profile
-
+COPY ./bash_profile /home/eve/.bash_profile
+RUN chown eve /home/eve/.bash_profile
 #
 # Run buildbot-worker on startup
 #
