@@ -50,6 +50,8 @@ COPY ./bash_profile /home/eve/.bash_profilw
 ARG BUILDBOT_VERSION
 RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
+RUN rm -rf /usr/bin/clear_console \
+    && ln -s /usr/bin/clear /usr/bin/clear_console
 USER eve
 
 WORKDIR /home/eve/workspace
