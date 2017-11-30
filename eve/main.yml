@@ -80,7 +80,7 @@ stages:
             <<: *global_env
             CIRCLE_NODE_INDEX: "0"
           timeout: 60
-      - ShellCommand:
+      - ShellCommandWithSecrets:
           command: env && ls -la /tmp/ && cat /tmp/*.txt
           haltOnFailure: True
   node1:
