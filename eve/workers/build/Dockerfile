@@ -40,8 +40,8 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
     && rm -f /tmp/pip_packages.list \
     && mkdir /home/eve/.aws 
 
-# environment vars into the bash_rc
-COPY ./bash_rc /home/eve/.bash_rc
+# environment vars into the bash profile
+COPY ./bash_profile /home/eve/.bash_profilw
 
 #
 # Run buildbot-worker on startup
