@@ -86,7 +86,6 @@ stages:
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
           haltOnFailure: True
- 
   node1:
     worker: *master-worker
     steps:
