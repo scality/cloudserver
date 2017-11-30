@@ -81,7 +81,8 @@ stages:
             <<: *global_env
           timeout: 120
       - ShellCommandWithSecrets:
-          command: cat /tmp/server_multiple_java.txt
+          command: echo $azurebackend2_AZURE_STORAGE_ENDPOINT && \
+            cat /tmp/server_multiple_java.txt
           haltOnFailure: True
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
