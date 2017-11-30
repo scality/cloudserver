@@ -9,7 +9,7 @@ const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
-    awsLocation2, awsLocationMismatch, awsLocationEncryption } =
+    azureLocation, awsLocation2, awsLocationMismatch, awsLocationEncryption } =
     require('../utils');
 const bucket = 'buckettestmultiplebackendobjectcopy';
 const bucketAws = 'bucketawstestmultiplebackendobjectcopy';
@@ -180,6 +180,30 @@ function testSuite() {
                     assert.strictEqual(result.CopyObjectResult.ETag,
                         `"${correctMD5}"`);
                     assertGetObjects(key, bucket, memLocation, copyKey,
+                        bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
+                        awsLocation, done);
+                });
+            });
+        });
+
+        it('should copy an object from Azure to AWS relying on ' +
+        'destination bucket location',
+        done => {
+            putSourceObj(azureLocation, false, bucket, key => {
+                const copyKey = `copyKey-${Date.now()}`;
+                const copyParams = {
+                    Bucket: bucketAws,
+                    Key: copyKey,
+                    CopySource: `/${bucket}/${key}`,
+                    MetadataDirective: 'COPY',
+                };
+                process.stdout.write('Copying object\n');
+                s3.copyObject(copyParams, (err, result) => {
+                    assert.equal(err, null, 'Expected success but got ' +
+                    `error: ${err}`);
+                    assert.strictEqual(result.CopyObjectResult.ETag,
+                        `"${correctMD5}"`);
+                    assertGetObjects(key, bucket, azureLocation, copyKey,
                         bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
                         awsLocation, done);
                 });

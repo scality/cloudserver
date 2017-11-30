@@ -101,6 +101,8 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
         if (mdDirective === 'COPY') {
             assert.strictEqual(sourceRes.Metadata['test-header'],
                 destRes.Metadata['test-header']);
+            assert.strictEqual(azureRes[0].metadata.test_header,
+                destRes.Metadata['test-header']);
         }
         assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
         assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
