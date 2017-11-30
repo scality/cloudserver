@@ -53,8 +53,8 @@ ARG BUILDBOT_VERSION
 RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
 USER eve
-
+COPY ./bash_profile /home/eve/.bashrc
+RUN exec bash -l
 WORKDIR /home/eve/workspace
 CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS \
     && buildbot-worker start --nodaemon"]
-#ENTRYPOINT ["/bin/bash", "-l"]

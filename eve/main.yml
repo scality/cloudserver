@@ -81,7 +81,7 @@ stages:
             <<: *global_env
           timeout: 60
       - ShellCommandWithSecrets:
-          command: ls -la /home/eve && cat /tmp/*.txt
+          command: cat
           haltOnFailure: True
   node1:
     worker: *master-worker
