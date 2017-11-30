@@ -81,7 +81,7 @@ stages:
             CIRCLE_NODE_INDEX: "0"
           timeout: 60
       - ShellCommandWithSecrets:
-          command: ls -la /tmp/ && cat /tmp/*.txt
+          command: env && ls -la /home/eve && cat /tmp/*.txt
           haltOnFailure: True
   node1:
     worker: *master-worker
