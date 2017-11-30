@@ -41,7 +41,7 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
     && mkdir /home/eve/.aws 
 
 # environment vars into the bash profile
-COPY ./bash_profile /home/eve/.bash_profilw
+COPY ./bash_profile /home/eve/.bash_profile
 
 #
 # Run buildbot-worker on startup
