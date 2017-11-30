@@ -75,8 +75,7 @@ stages:
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: sudo -E TERM=dumb bash -l \
-            "source /home/eve/.bash_profile && tests.bash"
+          command: sudo -E TERM=dumb bash -l tests.bash
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: "0"
