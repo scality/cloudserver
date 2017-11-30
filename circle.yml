@@ -11,6 +11,7 @@ machine:
     version: 6.9.5
   services:
     - redis
+    - docker
   ruby:
     version: "2.4.1"
   environment:
@@ -39,5 +40,7 @@ dependencies:
 
 test:
   override:
+    - docker run --name squid-proxy -d --net=host
+      --publish 3128:3128 sameersbn/squid:3.3.8-23
     - bash tests.bash:
         parallel: true
