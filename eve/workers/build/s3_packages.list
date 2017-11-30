@@ -1,4 +1,5 @@
 default-jdk
-redis-server
-netcat
 lsof
+maven
+netcat
+redis-server
