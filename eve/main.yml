@@ -79,9 +79,14 @@ stages:
           env:
             CIRCLE_NODE_INDEX: "0"
             <<: *global_env
+          timeout: 120
+      - ShellCommandWithSecrets:
+          command: cat server_multiple_java.txt
+          haltOnFailure: True
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
           haltOnFailure: True
+ 
   node1:
     worker: *master-worker
     steps:
