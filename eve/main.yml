@@ -81,7 +81,7 @@ stages:
             <<: *global_env
           timeout: 120
       - ShellCommandWithSecrets:
-          command: cat server_multiple_java.txt
+          command: cat /tmp/server_multiple_java.txt
           haltOnFailure: True
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
