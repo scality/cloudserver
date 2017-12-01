@@ -108,7 +108,7 @@ stages:
           command: |
             . ~/.bashrc &> /dev/null \
             && npm run start_dmd &> /tmp/dmd_logs.txt \
-            & wait_for_local_port.bash 9990 40 \
+            & bash wait_for_local_port.bash 9990 40 \
             && npm run multiple_backend_test
           env: *global_env
           timeout: 120
