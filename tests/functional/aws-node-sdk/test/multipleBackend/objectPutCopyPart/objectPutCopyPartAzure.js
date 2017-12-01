@@ -27,6 +27,8 @@ const normalBodySize = 11;
 const normalBody = Buffer.from('I am a body', 'utf8');
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
+const sixBytesMD5 = 'c978a461602f0372b5f970157927f723';
+
 const oneKb = 1024;
 const oneKbBody = Buffer.alloc(oneKb);
 const oneKbMD5 = '0f343b0931126a20f133d67c2b018a3b';
@@ -418,6 +420,52 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
                               `"${normalMD5}"`);
                             assert.strictEqual(res.Parts[0].Size,
                               normalBodySize);
+                            next();
+                        });
+                    },
+                ], done);
+            });
+
+            it('should copy part from Azure object with range to MPU ' +
+            'with AWS location', function ifF(done) {
+                const params = {
+                    Bucket: memBucketName,
+                    CopySource:
+                      `${azureContainerName}/${this.test.keyNameNormalAzure}`,
+                    Key: this.test.mpuKeyNameAWS,
+                    CopySourceRange: 'bytes=0-5',
+                    PartNumber: 1,
+                    UploadId: this.test.uploadIdAWS,
+                };
+                async.waterfall([
+                    next => s3.uploadPartCopy(params, (err, res) => {
+                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
+                        `success, got error: ${err}`);
+                        assert.strictEqual(res.ETag, `"${sixBytesMD5}"`);
+                        next(err);
+                    }),
+                    next => {
+                        const awsBucket =
+                          config.locationConstraints[awsLocation]
+                          .details.bucketName;
+                        awsS3.listParts({
+                            Bucket: awsBucket,
+                            Key: this.test.mpuKeyNameAWS,
+                            UploadId: this.test.uploadIdAWS,
+                        }, (err, res) => {
+                            assert.equal(err, null,
+                            'listParts: Expected success,' +
+                            ` got error: ${err}`);
+                            assert.strictEqual(res.Bucket, awsBucket);
+                            assert.strictEqual(res.Key,
+                              this.test.mpuKeyNameAWS);
+                            assert.strictEqual(res.UploadId,
+                              this.test.uploadIdAWS);
+                            assert.strictEqual(res.Parts.length, 1);
+                            assert.strictEqual(res.Parts[0].PartNumber, 1);
+                            assert.strictEqual(res.Parts[0].ETag,
+                              `"${sixBytesMD5}"`);
+                            assert.strictEqual(res.Parts[0].Size, 6);
                             next();
                         });
                     },
