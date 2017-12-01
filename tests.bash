@@ -16,7 +16,7 @@ aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
 aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
 aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
 EOF
-#source ~/.bashrc
+source ~/.bashrc &> /dev/null
 MYPWD=$(pwd)
 
 killandsleep () {

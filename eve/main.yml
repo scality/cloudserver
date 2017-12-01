@@ -80,7 +80,7 @@ stages:
           env:
             CIRCLE_NODE_INDEX: "0"
             <<: *global_env
-          timeout: 60
+          timeout: 120
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
           env:
