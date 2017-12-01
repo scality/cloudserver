@@ -47,7 +47,7 @@ models:
                bucketwebsitetester.s3-website-us-east-1.amazonaws.com
                ' >> /etc/hosts"
       haltOnFailure: True
-  - ShellCommand: &aws-credentials
+  - ShellCommandWthSecrets: &aws-credentials
       name: Setup AWS Credentials
       command: bash %(prop:worker_path)s/aws.bash
       haltOnFailure: True
@@ -83,6 +83,7 @@ stages:
       - ShellCommand: *update_hosts
       - ShellCommand:
           command: rm -rf node_modules
+      - ShellCommandWithSecrets: *aws-credentials
       - ShellCommand:
           name: install modules
           command: npm install
