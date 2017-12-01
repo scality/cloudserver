@@ -17,22 +17,22 @@ models:
 #      AWS_ACCESS_KEY_ID_DEFAULT_2: "$AWS_S3_BACKEND_ACCESS_KEY_2"
 #      AWS_SECRET_ACCESS_KEY_DEFAULT: "$AWS_S3_BACKEND_SECRET_KEY"
 #      AWS_SECRET_ACCESS_KEY_DEFAULT_2: "$AWS_S3_BACKEND_SECRET_KEY_2"
-      azurebackend2_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY_2"
-      azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: "$AZURE_BACKEND_ACCOUNT_NAME_2"
-      azurebackend2_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT_2"
-      azurebackend_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY"
-      azurebackend_AZURE_STORAGE_ACCOUNT_NAME: "$AZURE_BACKEND_ACCOUNT_NAME"
-      azurebackend_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
-      azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY"
-      azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: |
-        "$AZURE_BACKEND_ACCOUNT_NAME"
-      azurebackendmismatch_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
-      azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: |
-        "$AZURE_BACKEND_ACCESS_KEY"
-      azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: |
-        "$AZURE_BACKEND_ACCOUNT_NAME"
-      azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: '$AZURE_BACKEND_ENDPOINT'
-      azuretest_AZURE_BLOB_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
+#      azurebackend2_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY_2"
+#      azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: "$AZURE_BACKEND_ACCOUNT_NAME_2"
+#      azurebackend2_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT_2"
+#      azurebackend_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY"
+#      azurebackend_AZURE_STORAGE_ACCOUNT_NAME: "$AZURE_BACKEND_ACCOUNT_NAME"
+#      azurebackend_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
+#      azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY"
+#      azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: |
+#        "$AZURE_BACKEND_ACCOUNT_NAME"
+#      azurebackendmismatch_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
+#      azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: |
+#        "$AZURE_BACKEND_ACCESS_KEY"
+#      azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: |
+#        "$AZURE_BACKEND_ACCOUNT_NAME"
+#      azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: '$AZURE_BACKEND_ENDPOINT'
+#      azuretest_AZURE_BLOB_ENDPOINT: "$AZURE_BACKEND_ENDPOINT"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -73,7 +73,7 @@ stages:
           command: rm -rf node_modules
       - ShellCommand:
           name: get api node modules from cache
-          command: mv /home/eve/node_reqs/node_modules 
+          command: 'mv /home/eve/node_reqs/node_modules .'
       - ShellCommand:
           name: install modules
           command: npm install
