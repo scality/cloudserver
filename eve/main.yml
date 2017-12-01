@@ -75,13 +75,13 @@ stages:
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: bash -l tests.bash
+          command: source ~/.bashrc && bash -l tests.bash
           env:
             CIRCLE_NODE_INDEX: "0"
             <<: *global_env
           timeout: 60
       - ShellCommandWithSecrets:
-          command: source ~/.bashrc && \
+          command: . ~/.bashrc && \
             echo $azurebackend2_AZURE_STORAGE_ENDPOINT && \
             cat /tmp/server_multiple_java.txt
           haltOnFailure: True
