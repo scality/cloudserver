@@ -72,11 +72,14 @@ stages:
       - ShellCommand:
           command: rm -rf node_modules
       - ShellCommand:
+          name: get api node modules from cache
+          command: mv /home/eve/node_reqs/node_modules 
+      - ShellCommand:
+          name: install modules
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: echo $azurebackend2_AZURE_STORAGE_ACCESS_KEY && \
-            bash -l tests.bash
+          command: bash -l tests.bash
           env:
             CIRCLE_NODE_INDEX: "0"
             <<: *global_env
