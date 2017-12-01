@@ -47,6 +47,18 @@ models:
                bucketwebsitetester.s3-website-us-east-1.amazonaws.com
                ' >> /etc/hosts"
       haltOnFailure: True
+  - ShellCommand: &aws-credentials
+      name: Setup AWS Credentials
+      command: bash %(prop:worker_path)s/aws.bash
+      haltOnFailure: True
+  - ShellCommand: &kill-s3
+      name: Kill S3
+      command: bash %(prop:worker_path)s/killandsleep.bash 8000
+      haltOnFailure: True
+  - ShellCommand: &kill-dmd
+      name: Kill DMD
+      command: bash %(prop:worker_path)s/killandsleep.bash 9990
+      haltOnFailure: True
 stages:
   pre-merge:
     worker: &master-worker
@@ -74,13 +86,32 @@ stages:
       - ShellCommand:
           name: install modules
           command: npm install
+          haltOnFailure: True
+      - ShellCommand:
+          name: Linting
+          command: |
+            npm run --silent lint -- --max-warnings 0
+            npm run --silent lint_md
+            flake8 $(git ls-files "*.py")
+            yamllint $(git ls-files "*.yml")
+      - ShellCommand:
+          name: Unit Coverage
+          command: |
+            mkdir -p $CIRCLE_TEST_REPORTS/unit
+            npm run unit_coverage
+            npm run unit_coverage_legacy_location
+          env: *global_env
+          haltOnFailure: True
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: bash -l tests.bash
-          env:
-            CIRCLE_NODE_INDEX: "0"
-            <<: *global_env
+          command: |
+            bash -l -c "source ~/.bashrc
+            npm run start_dmd &
+            bash wait_for_local_port.bash 9990 40
+            npm run multiple_backend_test"
+          env: *global_env
           timeout: 120
+      - ShellCommand: *kill-dmd
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
           env:
