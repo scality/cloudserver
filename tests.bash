@@ -45,17 +45,17 @@ then
 
   npm run start_dmd &
   bash wait_for_local_port.bash 9990 40 &&
-  npm run multiple_backend_test
+  npm run multiple_backend_test &&
 
   killandsleep 9990
 
   # Run S3 with multiple data backends ; run ft_tests
-
-  S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_java.txt & bash wait_for_local_port.bash 8000 40 && cd ./tests/functional/jaws && mvn test
+#> $CIRCLE_ARTIFACTS/server_multiple_java.txt
+  S3BACKEND=mem S3DATA=multiple npm start  & bash wait_for_local_port.bash 8000 40 && cd ./tests/functional/jaws && mvn test
 
   killandsleep 8000
   cd $MYPWD
-
+exit
   S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_fog.txt & bash wait_for_local_port.bash 8000 40 && cd tests/functional/fog && rspec tests.rb
 
   cd $MYPWD
