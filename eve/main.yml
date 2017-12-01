@@ -109,8 +109,8 @@ stages:
 #            && npm run start_dmd &> /tmp/dmd_logs.txt \
           command: |
             . ~/.bashrc &> /dev/null \
-            && npm run start_mdserver &> /tmp/md_logs.txt \
-            & npm run start_dataserver &> /tmp/data_logs.txt \
+            && npm run start_mdserver \
+            & npm run start_dataserver \
             & bash wait_for_local_port.bash 9990 40 \
             && npm run multiple_backend_test
           env: *global_env
