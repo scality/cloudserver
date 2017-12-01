@@ -13,10 +13,10 @@ models:
       CI_REPORTS: '/tmp'
       ENABLE_LOCAL_CACHE: "1"
       REPORT_TOKEN: 'report-token-1'
-      AWS_ACCESS_KEY_ID_DEFAULT: "$AWS_S3_BACKEND_ACCESS_KEY"
-      AWS_ACCESS_KEY_ID_DEFAULT_2: "$AWS_S3_BACKEND_ACCESS_KEY_2"
-      AWS_SECRET_ACCESS_KEY_DEFAULT: "$AWS_S3_BACKEND_SECRET_KEY"
-      AWS_SECRET_ACCESS_KEY_DEFAULT_2: "$AWS_S3_BACKEND_SECRET_KEY_2"
+#      AWS_ACCESS_KEY_ID_DEFAULT: "$AWS_S3_BACKEND_ACCESS_KEY"
+#      AWS_ACCESS_KEY_ID_DEFAULT_2: "$AWS_S3_BACKEND_ACCESS_KEY_2"
+#      AWS_SECRET_ACCESS_KEY_DEFAULT: "$AWS_S3_BACKEND_SECRET_KEY"
+#      AWS_SECRET_ACCESS_KEY_DEFAULT_2: "$AWS_S3_BACKEND_SECRET_KEY_2"
       azurebackend2_AZURE_STORAGE_ACCESS_KEY: "$AZURE_BACKEND_ACCESS_KEY_2"
       azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: "$AZURE_BACKEND_ACCOUNT_NAME_2"
       azurebackend2_AZURE_STORAGE_ENDPOINT: "$AZURE_BACKEND_ENDPOINT_2"
@@ -75,16 +75,11 @@ stages:
           command: npm install
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-          command: source ~/.bashrc && bash -l tests.bash
+          command: bash -l tests.bash
           env:
             CIRCLE_NODE_INDEX: "0"
             <<: *global_env
           timeout: 60
-      - ShellCommandWithSecrets:
-          command: . ~/.bashrc && \
-            echo $azurebackend2_AZURE_STORAGE_ENDPOINT && \
-            cat /tmp/server_multiple_java.txt
-          haltOnFailure: True
       - ShellCommandWithSecrets:
           command: cat /tmp/*.txt
           env:
