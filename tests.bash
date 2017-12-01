@@ -16,7 +16,11 @@ aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
 aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
 aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
 EOF
-cat ~/.aws/credentials
+if [ -z "$AZURE_BACKEND_ACCESS_KEY_2" ]; then
+    echo "Need to check env"
+    exit 1
+fi 
+
 MYPWD=$(pwd)
 
 killandsleep () {
