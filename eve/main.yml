@@ -84,18 +84,18 @@ stages:
       - ShellCommand:
           command: rm -rf node_modules
       - ShellCommandWithSecrets: *aws-credentials
-      - ShellCommand:
+      - ShellCommandWithSecrets:
           name: install modules
           command: npm install
           haltOnFailure: True
-      - ShellCommand:
+      - ShellCommandWithSecrets:
           name: Linting
           command: |
             npm run --silent lint -- --max-warnings 0
             npm run --silent lint_md
             flake8 $(git ls-files "*.py")
             yamllint $(git ls-files "*.yml")
-      - ShellCommand:
+      - ShellCommandWithSecrets:
           name: Unit Coverage
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
@@ -107,9 +107,9 @@ stages:
           name: Node 1 Tests
           command: |
             . ~/.bashrc &> /dev/null \
-            bash -l "npm run start_dmd &> /tmp/dmd_logs.txt &"
-            bash -l "wait_for_local_port.bash 9990 40"
-            bash -l "npm run multiple_backend_test"
+            && npm run start_dmd &> /tmp/dmd_logs.txt \
+            & wait_for_local_port.bash 9990 40 \
+            && npm run multiple_backend_test
           env: *global_env
           timeout: 120
       - ShellCommand: *kill-dmd
