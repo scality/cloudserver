@@ -20,6 +20,7 @@ const bigObject = `bigObject-${Date.now()}`;
 const mismatchObject = `mismatch-${Date.now()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
+const bigBodyLen = bigBody.length;
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const bigMD5 = 'f1c9645dbc14efddc7d8a322685f26eb';
@@ -273,6 +274,19 @@ describe('Multiple backend get object', function testSuite() {
                     (err, res) => {
                         assert.equal(err, null, 'Expected success but got ' +
                             `error ${err}`);
+                        assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                        done();
+                    });
+            });
+            it('should get an object using range query from AWS', done => {
+                s3.getObject({ Bucket: bucket, Key: bigObject,
+                    Range: 'bytes=0-9' },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
+                            `error ${err}`);
+                        assert.strictEqual(res.ContentLength, '10');
+                        assert.strictEqual(res.ContentRange,
+                            `bytes 0-9/${bigBodyLen}`);
                         assert.strictEqual(res.ETag, `"${bigMD5}"`);
                         done();
                     });
