@@ -22,6 +22,7 @@ config.locationConstraints[azureLocation].details.azureContainerName) {
 }
 
 const memBucketName = 'membucketnameputcopypartazure';
+const awsBucketName = 'awsbucketnameputcopypartazure';
 
 const normalBodySize = 11;
 const normalBody = Buffer.from('I am a body', 'utf8');
@@ -669,6 +670,136 @@ function describeF() {
                             subPartSize: [100 * 1024 * 1024, 5 * 1024 * 1024],
                         };
                         assertCopyPart(infos, next);
+                    },
+                ], done);
+            });
+        });
+    });
+});
+
+describeSkipIfNotMultiple('Put Copy Part to AZURE with complete MPU',
+function describeF() {
+    this.timeout(800000);
+    withV4(sigCfg => {
+        beforeEach(() => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+        });
+
+        afterEach(() => {
+            process.stdout.write('Emptying bucket azureContainerName\n');
+            return bucketUtil.empty(azureContainerName)
+            .then(() => {
+                process.stdout.write('Deleting bucket azureContainerName\n');
+                return bucketUtil.deleteOne(azureContainerName);
+            })
+            .then(() => {
+                process.stdout.write('Emptying bucket awsBucketName\n');
+                return bucketUtil.empty(awsBucketName);
+            })
+            .then(() => {
+                process.stdout.write('Deleting bucket awsBucketName\n');
+                return bucketUtil.deleteOne(awsBucketName);
+            })
+            .catch(err => {
+                process.stdout.write(`Error in afterEach: ${err}\n`);
+                throw err;
+            });
+        });
+        describe('Basic test with complete MPU from AWS to Azure location: ',
+        () => {
+            beforeEach(function beF(done) {
+                this.currentTest.keyNameAws =
+                `onehundredandfivembazure${uniqName(keyObjectAWS)}`;
+                this.currentTest.mpuKeyNameAzure =
+                `mpukeyname${uniqName(keyObjectAzure)}`;
+
+                const createMpuParams = {
+                    Bucket: azureContainerName,
+                    Key: this.currentTest.mpuKeyNameAzure,
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                };
+                async.waterfall([
+                    next => s3.createBucket({ Bucket: awsBucketName },
+                      err => next(err)),
+                    next => s3.createBucket({ Bucket: azureContainerName },
+                      err => next(err)),
+                    next => s3.putObject({
+                        Bucket: awsBucketName,
+                        Key: this.currentTest.keyNameAws,
+                        Body: fiveMbBody,
+                        Metadata: { 'scal-location-constraint': awsLocation },
+                    }, err => next(err)),
+                    next => s3.createMultipartUpload(createMpuParams,
+                    (err, res) => {
+                        assert.equal(err, null, 'createMultipartUpload: ' +
+                        `Expected success, got error: ${err}`);
+                        this.currentTest.uploadId = res.UploadId;
+                        next();
+                    }),
+                ], done);
+            });
+
+            it('should copy two 5 MB part from Azure to MPU with Azure ' +
+            'location', function ifF(done) {
+                const uploadParams = {
+                    Bucket: azureContainerName,
+                    CopySource:
+                      `${awsBucketName}/` +
+                      `${this.test.keyNameAws}`,
+                    Key: this.test.mpuKeyNameAzure,
+                    PartNumber: 1,
+                    UploadId: this.test.uploadId,
+                };
+                const uploadParams2 = {
+                    Bucket: azureContainerName,
+                    CopySource:
+                      `${awsBucketName}/` +
+                      `${this.test.keyNameAws}`,
+                    Key: this.test.mpuKeyNameAzure,
+                    PartNumber: 2,
+                    UploadId: this.test.uploadId,
+                };
+                async.waterfall([
+                    next => s3.uploadPartCopy(uploadParams, (err, res) => {
+                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
+                        `success, got error: ${err}`);
+                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                        next(err);
+                    }),
+                    next => s3.uploadPartCopy(uploadParams2, (err, res) => {
+                        assert.equal(err, null, 'uploadPartCopy: Expected ' +
+                        `success, got error: ${err}`);
+                        assert.strictEqual(res.ETag, `"${fiveMbMD5}"`);
+                        next(err);
+                    }),
+                    next => {
+                        const completeMpuParams = {
+                            Bucket: azureContainerName,
+                            Key: this.test.mpuKeyNameAzure,
+                            MultipartUpload: {
+                                Parts: [
+                                    {
+                                        ETag: `"${fiveMbMD5}"`,
+                                        PartNumber: 1,
+                                    },
+                                    {
+                                        ETag: `"${fiveMbMD5}"`,
+                                        PartNumber: 2,
+                                    },
+                                ],
+                            },
+                            UploadId: this.test.uploadId,
+                        };
+                        s3.completeMultipartUpload(completeMpuParams,
+                        (err, res) => {
+                            assert.equal(err, null, 'completeMultipartUpload:' +
+                            ` Expected success, got error: ${err}`);
+                            assert.strictEqual(res.Bucket, azureContainerName);
+                            assert.strictEqual(res.Key,
+                              this.test.mpuKeyNameAzure);
+                            next();
+                        });
                     },
                 ], done);
             });
