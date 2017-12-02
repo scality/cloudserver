@@ -112,6 +112,22 @@ describe('PUT object taggings', () => {
             });
         });
 
+        it('should put object tagging if key and value are unicode characters',
+        done => {
+            s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
+              Tagging: { TagSet: [
+                  {
+                      Key: '昨¿Ñù',
+                      Value: '昨¿Ñù',
+                  },
+              ] },
+          }, (err, data) => {
+                assert.ifError(err, `Found unexpected err ${err}`);
+                assert.strictEqual(Object.keys(data).length, 0);
+                done();
+            });
+        });
+
         it('should return InvalidTag if key is an empty string', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
               Tagging: { TagSet: [
