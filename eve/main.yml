@@ -110,7 +110,7 @@ stages:
           command: |
             . ~/.bashrc &> /dev/null \
             && npm run start_mdserver \
-            & npm run start_dataserver \
+            && npm run start_dataserver \
             & bash wait_for_local_port.bash 9991 40 \
             && npm run multiple_backend_test
           env: *global_env
