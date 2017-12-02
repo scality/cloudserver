@@ -78,7 +78,7 @@ stages:
           #  - node1
           #  - node2
           #  - node3
-          waitForFinish: False
+          waitForFinish: True
           haltOnFailure: True
   node0:
     worker: *master-worker

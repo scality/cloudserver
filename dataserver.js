@@ -4,6 +4,8 @@ const arsenal = require('arsenal');
 const { config } = require('./lib/Config.js');
 const logger = require('./lib/utilities/logger');
 
+console.log(config.backends.data);
+console.log(config.backends.metadata);
 if (config.backends.data === 'file' ||
     (config.backends.data === 'multiple' &&
      config.backends.metadata !== 'scality') &&
@@ -16,13 +18,13 @@ if (config.backends.data === 'file' ||
                 { dataPath: config.dataDaemon.dataPath,
                     log: config.log }),
             log: config.log });
+        console.log('Data Server Setup');
     dataServer.setup(err => {
         if (err) {
             logger.error('Error initializing REST data server',
                          { error: err });
             return;
         }
-        console.log('Data Server starting');
         dataServer.start();
     });
 }
