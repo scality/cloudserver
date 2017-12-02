@@ -1,0 +1,174 @@
+{
+    "version": "1.0",
+    "metadata": {
+        "apiVersion": "2017-11-01",
+        "checksumFormat": "md5",
+        "endpointPrefix": "s3",
+        "globalEndpoint": "storage.googleapi.com",
+        "protocol": "rest-xml",
+        "serviceAbbreviation": "GCP",
+        "serviceFullName": "Google Cloud Storage",
+        "signatureVersion": "s3",
+        "timestampFormat": "rfc822",
+        "uid": "gcp-2017-11-01"
+    },
+    "operations": {
+        "HeadBucket": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    }
+                }
+            }
+        },
+        "GetBucketVersioning": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Status": {}
+                }
+            }
+        },
+        "ListObjectVersions": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versions"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "KeyMarker": {
+                        "location": "querystring",
+                        "locationName": "key-marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "VersionIdMarker": {
+                        "location": "querystring",
+                        "locationName": "generation-marker"
+                    }
+                }
+            },
+            "output": {
+                "shape": "VersionsShape"
+            }
+        }
+    },
+    "shapes": {
+        "MetadataShape": {
+            "type": "map",
+            "key": {},
+            "value": {}
+        },
+        "VersionsShape": {
+            "locationName": "ListBucketResult",
+            "type": "structure",
+            "members": {
+                "Name": {},
+                "Prefix": {},
+                "Delimiter": {},
+                "MaxKeys": {
+                    "type": "integer"
+                },
+                "IsTruncated": {
+                    "type": "boolean"
+                },
+                "VersionIdMarker": {
+                    "locationName": "GenerationMarker"
+                },
+                "NextVersionIdMarker": {
+                    "locationName": "NextGenerationMarker"
+                },
+                "Versions": {
+                    "locationName": "Version",
+                    "type": "list",
+                    "member": {
+                        "type": "structure",
+                        "members": {
+                            "ETag": {},
+                            "Size": {
+                                "type": "integer"
+                            },
+                            "StorageClass": {},
+                            "Key": {},
+                            "VersionId": {
+                                "locationName": "Generation"
+                            },
+                            "MetaVersionId": {
+                                "locationName": "MetaGeneration"
+                            },
+                            "IsLatest": {
+                                "type": "boolean"
+                            },
+                            "DeletedTime": {
+                                "type": "timestamp"
+                            },
+                            "LastModified": {
+                                "type": "timestamp"
+                            },
+                            "Owner": {
+                                "shape": "OwnerShape"
+                            }
+                        }
+                    },
+                    "flattened": true
+                },
+                "CommonPrefixes": {
+                    "locationName": "CommonPrefixes",
+                    "type": "list",
+                    "member": {
+                        "type": "structure",
+                        "members": {
+                            "Prefix": {}
+                        }
+                    },
+                    "flattened": true
+                }
+            }
+        }
+    }
+}
