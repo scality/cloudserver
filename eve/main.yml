@@ -108,13 +108,13 @@ stages:
           name: Node 1 Tests
 #            && npm run start_mdserver \
 #            & npm run start_dataserver \
-          command: bash -l tests.bash
-#          command: |
-#            . ~/.bashrc &> /dev/null \
-#            && npm run start_dmd &> /tmp/dmd_logs.txt \
-#            & bash wait_for_local_port.bash 9990 40 \
-#            && npm run multiple_backend_test
-          usePTY: True
+#          command: bash -l tests.bash
+          command: |
+            . ~/.bashrc &> /dev/null \
+            && npm run start_dmd &> /tmp/dmd_logs.txt \
+            & bash wait_for_local_port.bash 9990 40 \
+            && npm run multiple_backend_test > /tmp/server_multiple.txt
+          want_stdout: False
           env: 
             <<: *global_env
             CIRCLE_NODE_INDEX: '0'
