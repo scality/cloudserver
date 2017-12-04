@@ -106,12 +106,12 @@ stages:
           haltOnFailure: True
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-#            && npm run start_dmd &> /tmp/dmd_logs.txt \
+#            && npm run start_mdserver \
+#            & npm run start_dataserver \
           command: |
             . ~/.bashrc &> /dev/null \
-            && npm run start_mdserver \
-            && npm run start_dataserver \
-            & bash wait_for_local_port.bash 9991 40 \
+            && npm run start_dmd \
+            & bash wait_for_local_port.bash 9990 40 \
             && npm run multiple_backend_test
           usePTY: True
           env: *global_env
