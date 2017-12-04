@@ -108,17 +108,18 @@ stages:
           name: Node 1 Tests
 #            && npm run start_mdserver \
 #            & npm run start_dataserver \
-          command: |
-            . ~/.bashrc &> /dev/null \
-            && npm run start_dmd \
-            & bash wait_for_local_port.bash 9990 40 \
-            && npm run multiple_backend_test
+          command: bash -l tests.bash
+#          command: |
+#            . ~/.bashrc &> /dev/null \
+#            && npm run start_dmd &> /tmp/dmd_logs.txt \
+#            & bash wait_for_local_port.bash 9990 40 \
+#            && npm run multiple_backend_test
           usePTY: True
           env: *global_env
           timeout: 120
       - ShellCommand: *kill-dmd
       - ShellCommandWithSecrets:
-          command: cat /tmp/md_logs.txt && cat /tmp/data_logs.txt
+          command: ls -la && cat /tmp/*.txt
           env:
             <<: *global_env
           haltOnFailure: True
