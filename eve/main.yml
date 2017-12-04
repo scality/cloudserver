@@ -113,6 +113,7 @@ stages:
             && npm run start_dataserver \
             & bash wait_for_local_port.bash 9991 40 \
             && npm run multiple_backend_test
+          usePTY: True
           env: *global_env
           timeout: 120
       - ShellCommand: *kill-dmd
