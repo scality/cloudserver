@@ -115,7 +115,9 @@ stages:
 #            & bash wait_for_local_port.bash 9990 40 \
 #            && npm run multiple_backend_test
           usePTY: True
-          env: *global_env
+          env: 
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '0'
           timeout: 120
       - ShellCommand: *kill-dmd
       - ShellCommandWithSecrets:
