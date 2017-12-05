@@ -89,35 +89,39 @@ stages:
           command: rm -rf node_modules
       - ShellCommandWithSecrets: *aws-credentials
       - ShellCommandWithSecrets: *npm-install
-      - ShellCommandWithSecrets:
-          name: Linting
-          command: |
-            npm run --silent lint -- --max-warnings 0
-            npm run --silent lint_md
-            flake8 $(git ls-files "*.py")
-            yamllint $(git ls-files "*.yml")
-      - ShellCommandWithSecrets:
-          name: Unit Coverage
-          command: |
-            mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run unit_coverage
-            npm run unit_coverage_legacy_location
-          env: *global_env
-          haltOnFailure: True
+#      - ShellCommandWithSecrets:
+#          name: Linting
+#          command: |
+#            npm run --silent lint -- --max-warnings 0
+#            npm run --silent lint_md
+#            flake8 $(git ls-files "*.py")
+#            yamllint $(git ls-files "*.yml")
+#      - ShellCommandWithSecrets:
+#          name: Unit Coverage
+#          command: |
+#            mkdir -p $CIRCLE_TEST_REPORTS/unit
+#            npm run unit_coverage
+#            npm run unit_coverage_legacy_location
+#          env: *global_env
+#          haltOnFailure: True
+      - TriggerStages:
+          name: Launch DMD
+          stage_name: 
+            - start-dmd
+          waitForFinish: False
       - ShellCommandWithSecrets:
           name: Node 1 Tests
 #            && npm run start_mdserver \
 #            & npm run start_dataserver \
-          command: bash -l tests.bash
-#          command: |
-#            . ~/.bashrc &> /dev/null \
 #            && npm run start_dmd &> /tmp/dmd_logs.txt \
-#            & bash wait_for_local_port.bash 9990 40 \
-#            && npm run multiple_backend_test
-#          usePTY: True
+#          command: bash -l tests.bash
+          command: |
+            . ~/.bashrc &> /dev/null \
+            && bash wait_for_local_port.bash 9990 40 \
+            && npm run multiple_backend_test
           env: 
             <<: *global_env
-            CIRCLE_NODE_INDEX: '1'
+            CIRCLE_NODE_INDEX: '0'
           timeout: 120
       - ShellCommand: *kill-dmd
       - ShellCommandWithSecrets:
@@ -125,6 +129,10 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
+  start-dmd:
+    - ShellCommandWithSecrets:
+      name: Start DMD
+      command: npm run start_dmd
   node1:
     worker: *master-worker
     steps:
