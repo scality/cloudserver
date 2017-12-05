@@ -105,7 +105,7 @@ stages:
 #          env: *global_env
 #          haltOnFailure: True
       - ShellCommand:
-          command: ln -s %(prop:worker_path)s /home/eve/S3
+          command: ln -s $PWD /home/eve/S3
       - ShellCommandWithSecrets:
           name: Start DMD
           command: sudo -E supervisord -c /etc/supervisor/supervisord.conf
