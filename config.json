@@ -27,7 +27,8 @@
     "cdmi": {
         "host": "localhost",
         "port": 81,
-        "path": "/dewpoint"
+        "path": "/dewpoint",
+        "readonly": true
     },
     "bucketd": {
         "bootstrap": ["localhost"]
