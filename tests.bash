@@ -45,7 +45,7 @@ then
 
   sudo -E supervisord -c /etc/supervisor/supervisord.conf
   bash wait_for_local_port.bash 9990 40 &&
-  npm run multiple_backend_test &&
+  npm run multiple_backend_test
   killandsleep 9990
 
   # Run S3 with multiple data backends ; run ft_tests
@@ -53,7 +53,7 @@ then
 
   killandsleep 8000
   cd $MYPWD
-exit 1
+
   S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_fog.txt & bash wait_for_local_port.bash 8000 40 && cd tests/functional/fog && rspec tests.rb
 
   cd $MYPWD

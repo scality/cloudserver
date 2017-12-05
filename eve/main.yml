@@ -94,6 +94,7 @@ stages:
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '0'
+          want_stderr: False
 #      - ShellCommandWithSecrets:
 #          name: Linting
 #          command: |
@@ -136,12 +137,44 @@ stages:
     worker: *master-worker
     steps:
       - Git: *clone
+      - ShellCommand: *update_hosts
+      - ShellCommand:
+          command: rm -rf node_modules
+      - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommandWithSecrets: *npm-install
+      - ShellCommandWithSecrets:
+          command: bash -l tests.bash
+          env:
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '1'
+
   node2:
     worker: *master-worker
     steps:
       - Git: *clone
+      - ShellCommand: *update_hosts
+      - ShellCommand:
+          command: rm -rf node_modules
+      - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommandWithSecrets: *npm-install
+      - ShellCommandWithSecrets:
+          command: bash -l tests.bash
+          env:
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '2'
+
   node3:
     worker: *master-worker
     steps:
       - Git: *clone
       - ShellCommand: *update_hosts
+      - ShellCommand:
+          command: rm -rf node_modules
+      - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommandWithSecrets: *npm-install
+      - ShellCommandWithSecrets:
+          command: bash -l tests.bash
+          env:
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '3'
+
