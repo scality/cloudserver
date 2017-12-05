@@ -104,6 +104,11 @@ stages:
 #            npm run unit_coverage_legacy_location
 #          env: *global_env
 #          haltOnFailure: True
+      - TriggerStages:
+          name: Launch DMD
+          stage_name: 
+            - start-dmd
+          waitForFinish: False
       - ShellCommandWithSecrets:
           name: Node 1 Tests
 #            && npm run start_mdserver \
