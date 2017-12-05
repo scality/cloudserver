@@ -106,8 +106,7 @@ stages:
 #          haltOnFailure: True
       - ShellCommandWithSecrets:
           name: Start DMD
-          command: npm run start_dmd
-          waitForFinish: False
+          command: supervisord -c /etc/supervisor/supervisord.conf -n
       - ShellCommandWithSecrets:
           name: Node 1 Tests
           command: |

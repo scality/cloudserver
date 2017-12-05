@@ -3,3 +3,4 @@ lsof
 maven
 netcat
 redis-server
+supervisor
