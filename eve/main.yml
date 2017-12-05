@@ -104,11 +104,13 @@ stages:
 #            npm run unit_coverage_legacy_location
 #          env: *global_env
 #          haltOnFailure: True
+      - ShellCommand:
+          command: ln -s %(prop:worker_path)s /home/eve/S3
       - ShellCommandWithSecrets:
           name: Start DMD
           command: sudo -E supervisord -c /etc/supervisor/supervisord.conf
           env:
-            WORK_DIR: "%(prop:worker_path)s"
+            WORK_DIR: /home/eve/S3
       - ShellCommandWithSecrets:
           name: Node 1 Tests
           command: |
