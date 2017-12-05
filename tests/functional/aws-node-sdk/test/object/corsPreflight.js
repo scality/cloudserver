@@ -36,29 +36,6 @@ describe('Preflight CORS request on non-existing bucket', () => {
         methodRequest({ method: 'GET', bucket, headers, code: 'NoSuchBucket',
             headersResponse: null }, done);
     });
-    it('should respond AccessForbidden to OPTIONS request if not get service ' +
-        'call and undefined bucket', done => {
-        const headers = {
-            'Origin': allowedOrigin,
-            'Access-Control-Request-Method': 'GET',
-        };
-        methodRequest({ method: 'OPTIONS', bucket: '', objectKey: 'key',
-            headers, code: 'AccessForbidden', headersResponse: null }, done);
-    });
-    it('should respond with 200 and access control headers to ' +
-        'OPTIONS request for get service call', done => {
-        const headers = {
-            'Origin': allowedOrigin,
-            'Access-Control-Request-Method': 'GET',
-        };
-        const headersResponse = {
-            'access-control-allow-origin': '*',
-            'access-control-allow-methods': 'GET',
-            vary,
-        };
-        methodRequest({ method: 'OPTIONS', bucket: '', headers, code: 200,
-            headersResponse }, done);
-    });
     it('should return BadRequest for OPTIONS request without origin', done => {
         const headers = {};
         methodRequest({ method: 'OPTIONS', bucket, headers, code: 'BadRequest',
