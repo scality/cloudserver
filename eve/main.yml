@@ -104,16 +104,12 @@ stages:
 #            npm run unit_coverage_legacy_location
 #          env: *global_env
 #          haltOnFailure: True
-       - ShellCommandWithSecrets:
+      - ShellCommandWithSecrets:
           name: Start DMD
           command: npm run start_dmd
           waitForFinish: False
       - ShellCommandWithSecrets:
           name: Node 1 Tests
-#            && npm run start_mdserver \
-#            & npm run start_dataserver \
-#            && npm run start_dmd &> /tmp/dmd_logs.txt \
-#          command: bash -l tests.bash
           command: |
             . ~/.bashrc &> /dev/null \
             && bash wait_for_local_port.bash 9990 40 \
