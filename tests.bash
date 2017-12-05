@@ -45,7 +45,7 @@ then
 
   #sudo -E supervisord -c /etc/supervisor/supervisord.conf
   npm run start_dmd &> /$CIRCLE_ARTIFACTS/dmd_server.txt &
-  bash wait_for_local_port.bash 9990 40 &&
+  bash wait_for_local_port.bash 9991 40 &&
   npm run multiple_backend_test
   killandsleep 9990
 
