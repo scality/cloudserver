@@ -29,13 +29,13 @@ export REMOTE_MANAGEMENT_DISABLE=1
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
 
-  npm run --silent lint -- --max-warnings 0
-
-  npm run --silent lint_md
-
-  flake8 $(git ls-files "*.py")
-
-  yamllint $(git ls-files "*.yml")
+#  npm run --silent lint -- --max-warnings 0
+#
+#  npm run --silent lint_md
+#
+#  flake8 $(git ls-files "*.py")
+#
+#  yamllint $(git ls-files "*.yml")
 
   mkdir -p $CIRCLE_TEST_REPORTS/unit
 
@@ -43,7 +43,6 @@ then
 
   npm run unit_coverage_legacy_location
 
-  ln -s $PWD /home/eve/S3
   sudo -E supervisord -c /etc/supervisor/supervisord.conf
   bash wait_for_local_port.bash 9990 40 &&
   npm run multiple_backend_test &&
