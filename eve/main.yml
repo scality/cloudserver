@@ -129,10 +129,10 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
-  start-dmd:
-    - ShellCommandWithSecrets:
-      name: Start DMD
-      command: npm run start_dmd
+    start-dmd:
+      - ShellCommandWithSecrets:
+        name: Start DMD
+        command: npm run start_dmd
   node1:
     worker: *master-worker
     steps:
