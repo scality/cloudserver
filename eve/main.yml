@@ -106,7 +106,9 @@ stages:
 #          haltOnFailure: True
       - ShellCommandWithSecrets:
           name: Start DMD
-          command: sudo supervisord -c /etc/supervisor/supervisord.conf
+          command: sudo -E supervisord -c /etc/supervisor/supervisord.conf
+          env:
+            WORK_DIR: %(prop:worker_path)s
       - ShellCommandWithSecrets:
           name: Node 1 Tests
           command: |
