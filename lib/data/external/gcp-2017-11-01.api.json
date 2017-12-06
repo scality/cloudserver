@@ -296,6 +296,142 @@
                 "payload": "Body"
             }
         },
+        "HeadObject": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                     "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "IfMatch": {
+                        "location": "header",
+                        "locationName": "If-Match"
+                    },
+                    "IfModifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Modified-Since",
+                        "type": "timestamp"
+                    },
+                    "IfNoneMatch": {
+                        "location": "header",
+                        "locationName": "If-None-Match"
+                    },
+                    "IfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Unmodified-Since",
+                        "type": "timestamp"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    }, 
+                    "AcceptRanges": {
+                        "location": "header",
+                        "locationName": "accept-ranges"
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "LastModified": {
+                        "location": "header",
+                        "locationName": "Last-Modified",
+                        "type": "timestamp"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "StorageClass": {
+                        "location": "headers",
+                        "locationName": "x-goog-storage-class"
+                    }
+                }
+            }
+        },
         "GetBucketVersioning": {
             "http": {
                 "method": "GET",
