@@ -132,6 +132,170 @@
                 }
             }
         },
+        "GetObject": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "IfMatch": {
+                        "location": "header",
+                        "locationName": "If-Match"
+                    },
+                    "IfModifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Modified-Since",
+                        "type": "timestamp"
+                    },
+                    "IfNoneMatch": {
+                        "location": "header",
+                        "locationName": "If-None-Match"
+                    },
+                    "IfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Unmodified-Since",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "ResponseCacheControl": {
+                        "location": "querystring",
+                        "locationName": "response-cache-control"
+                    },
+                    "ResponseContentDisposition": {
+                        "location": "querystring",
+                        "locationName": "response-content-disposition"
+                    },
+                    "ResponseContentEncoding": {
+                        "location": "querystring",
+                        "locationName": "response-content-encoding"
+                    },
+                    "ResponseContentLanguage": {
+                        "location": "querystring",
+                        "locationName": "response-content-language"
+                    },
+                    "ResponseContentType": {
+                        "location": "querystring",
+                        "locationName": "response-content-type"
+                    },
+                    "ResponseExpires": {
+                        "location": "querystring",
+                        "locationName": "response-expires",
+                        "type": "timestamp"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Body": {
+                        "streaming": true,
+                        "type": "blob"
+                    },
+                    "AcceptRanges": {
+                        "location": "header",
+                        "locationName": "accept-ranges"
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "LastModified": {
+                        "location": "header",
+                        "locationName": "Last-Modified",
+                        "type": "timestamp"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentRange": {
+                        "location": "header",
+                        "locationName": "Content-Range"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "WebsiteRedirectLocation": {
+                        "location": "header",
+                        "locationName": "x-goog-website-redirect-location"
+                    },
+                    "ServerSideEncryption": {
+                        "location": "header",
+                        "locationName": "x-goog-server-side-encryption"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "StorageClass": {
+                        "location": "header",
+                        "locationName": "x-goog-storage-class"
+                    }
+                },
+                "payload": "Body"
+            }
+        },
         "GetBucketVersioning": {
             "http": {
                 "method": "GET",
