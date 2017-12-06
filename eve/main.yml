@@ -90,26 +90,27 @@ stages:
 #            npm run unit_coverage_legacy_location
 #          env: *global_env
 #          haltOnFailure: True
-      - ShellCommand:
-          command: ln -s $PWD /home/eve/S3 && ls ~/S3
-      - ShellCommandWithSecrets:
-          name: Run all tests
-          command: sudo -E supervisord -c /etc/supervisor/supervisord.conf -n
-          env: 
-            <<: *global_env
-            CIRCLE_NODE_INDEX: '0'
-            WORK_DIR: /home/eve/S3
+# testing with supervisor
+#      - ShellCommand:
+#          command: ln -s $PWD /home/eve/S3 && ls ~/S3
 #      - ShellCommandWithSecrets:
-#          name: Node 1 Tests
-#          command: |
-#            . ~/.bashrc &> /dev/null \
-#            && bash wait_for_local_port.bash 9991 40 \
-#            && npm run multiple_backend_test || exit 1
+#          name: Run all tests
+#          command: sudo -E supervisord -c /etc/supervisor/supervisord.conf -n
 #          env: 
 #            <<: *global_env
 #            CIRCLE_NODE_INDEX: '0'
-#          timeout: 120
-#      - ShellCommand: *kill-dmd
+#            WORK_DIR: /home/eve/S3
+      - ShellCommandWithSecrets:
+          name: Node 1 Tests
+          command: |
+            . ~/.bashrc &> /dev/null \
+            && bash wait_for_local_port.bash 9991 40 \
+            && npm run multiple_backend_test || exit 1
+          env: 
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '0'
+          timeout: 120
+      - ShellCommand: *kill-dmd
       - ShellCommandWithSecrets:
           command: ls -la && cat /tmp/*.txt
           env:
