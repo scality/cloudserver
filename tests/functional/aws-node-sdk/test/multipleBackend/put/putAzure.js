@@ -70,11 +70,26 @@ describeF() {
         });
         describe('with bucket location header', () => {
             beforeEach(done =>
-              s3.createBucket({ Bucket: azureContainerName,
-                  CreateBucketConfiguration: {
-                      LocationConstraint: azureLocation,
-                  },
-              }, done));
+                s3.createBucket({ Bucket: azureContainerName,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: azureLocation,
+                    },
+                }, done));
+
+            it('should return a NotImplemented error if try to put ' +
+            'versioning to bucket with Azure location', done => {
+                const params = {
+                    Bucket: azureContainerName,
+                    VersioningConfiguration: {
+                        Status: 'Enabled',
+                    },
+                };
+                s3.putBucketVersioning(params, err => {
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+
             it('should put an object to Azure, with no object location ' +
             'header, based on bucket location', function it(done) {
                 const params = {
