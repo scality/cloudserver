@@ -9,6 +9,7 @@ const azure = require('azure-storage');
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 const authdata = require('../../../../../conf/authdata.json');
+const GCP = require('../../../../../lib/data/external/GcpService');
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
@@ -20,19 +21,43 @@ const azureLocation = 'azurebackend';
 const azureLocation2 = 'azurebackend2';
 const azureLocationMismatch = 'azurebackendmismatch';
 const azureLocationNonExistContainer = 'azurenonexistcontainer';
+const gcpLocation = 'gcpbackend';
+const gcpLocation2 = 'gcpbackend2';
+const gcpLocationMismatch = 'gcpbackendmismatch';
+const gcpLocationEncryption = 'gcpbackendencryption';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
 const awsSecondTimeout = 30000;
+const s3Backends = ['AWS', 'GCP'];
+const s3Locations = {
+    AWS: {
+        s3Location: awsLocation,
+        s3Location2: awsLocation2,
+        s3LocationMismatch: awsLocationMismatch,
+        s3LocationEncryption: awsLocationEncryption,
+    },
+    GCP: {
+        s3Location: gcpLocation,
+        s3Location2: gcpLocation2,
+        s3LocationMismatch: gcpLocationMismatch,
+        s3LocationEncryption: gcpLocationEncryption,
+    },
+};
 let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
+let gcpS3;
+let gcpBucket;
 
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+    const gcpConfig = getRealAwsConfig(gcpLocation);
+    gcpS3 = new GCP(gcpConfig);
+    gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
 }
 
 function _assertErrorResult(err, expectedError, desc) {
@@ -49,6 +74,8 @@ const utils = {
     describeSkipIfNotMultiple,
     awsS3,
     awsBucket,
+    gcpS3,
+    gcpBucket,
     fileLocation,
     memLocation,
     awsLocation,
@@ -59,6 +86,20 @@ const utils = {
     azureLocation2,
     azureLocationMismatch,
     azureLocationNonExistContainer,
+    gcpLocation,
+    gcpLocation2,
+    gcpLocationMismatch,
+    gcpLocationEncryption,
+    s3Locations,
+};
+
+utils.withGCP = function withGCP(testFn) {
+    function fn() {
+        s3Backends.forEach(s3Type => {
+            testFn.call(this, s3Type);
+        });
+    }
+    return fn;
 };
 
 utils.getOwnerInfo = account => {
@@ -166,10 +207,20 @@ utils.expectedETag = (body, getStringified = true) => {
     return `"${eTagValue}"`;
 };
 
-utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
+function checkArguments(s3Type, cb) {
+    if (typeof s3Type === 'function' && cb === undefined) {
+        return { type: 'AWS', callback: s3Type };
+    }
+    const type = s3Type === 'GCP' ? 'GCP' : 'AWS';
+    return { type, callback: cb };
+}
+
+utils.putToAwsBackend = (s3, bucket, key, body, s3Type, cb) => {
+    const { type, callback } = checkArguments(s3Type, cb);
+    const { s3Location } = s3Locations[type];
     s3.putObject({ Bucket: bucket, Key: key, Body: body,
-    Metadata: { 'scal-location-constraint': awsLocation } },
-        (err, result) => cb(err, result.VersionId));
+    Metadata: { 'scal-location-constraint': s3Location } },
+        (err, result) => callback(err, result.VersionId));
 };
 
 utils.enableVersioning = (s3, bucket, cb) => {
@@ -190,25 +241,28 @@ utils.suspendVersioning = (s3, bucket, cb) => {
     });
 };
 
-utils.mapToAwsPuts = (s3, bucket, key, dataArray, cb) => {
+utils.mapToAwsPuts = (s3, bucket, key, dataArray, s3Type, cb) => {
+    const { type, callback } = checkArguments(s3Type, cb);
     async.mapSeries(dataArray, (data, next) => {
-        utils.putToAwsBackend(s3, bucket, key, data, next);
+        utils.putToAwsBackend(s3, bucket, key, data, type, next);
     }, (err, results) => {
         assert.strictEqual(err, null, 'Expected success ' +
             `putting object, got error ${err}`);
-        cb(null, results);
+        callback(null, results);
     });
 };
 
-utils.putVersionsToAws = (s3, bucket, key, versions, cb) => {
+utils.putVersionsToAws = (s3, bucket, key, versions, s3Type, cb) => {
+    const { type, callback } = checkArguments(s3Type, cb);
     utils.enableVersioning(s3, bucket, () => {
-        utils.mapToAwsPuts(s3, bucket, key, versions, cb);
+        utils.mapToAwsPuts(s3, bucket, key, versions, type, callback);
     });
 };
 
-utils.putNullVersionsToAws = (s3, bucket, key, versions, cb) => {
+utils.putNullVersionsToAws = (s3, bucket, key, versions, s3Type, cb) => {
+    const { type, callback } = checkArguments(s3Type, cb);
     utils.suspendVersioning(s3, bucket, () => {
-        utils.mapToAwsPuts(s3, bucket, key, versions, cb);
+        utils.mapToAwsPuts(s3, bucket, key, versions, type, callback);
     });
 };
 
@@ -244,16 +298,19 @@ utils.getAndAssertResult = (s3, params, cb) => {
 };
 
 utils.getAwsRetry = (params, retryNumber, assertCb) => {
-    const { key, versionId } = params;
+    const { key, versionId, s3Type } = params;
     const retryTimeout = {
         0: 0,
         1: awsFirstTimeout,
         2: awsSecondTimeout,
     };
     const maxRetries = 2;
-    const getObject = awsS3.getObject.bind(awsS3);
+    const getObject = s3Type === 'GCP' ?
+        gcpS3.getObject.bind(gcpS3) : awsS3.getObject.bind(awsS3);
+    const bucket = s3Type === 'GCP' ? gcpBucket : awsBucket;
+    assert(getObject, `Unable to retrieve client for ${s3Type}`);
     const timeout = retryTimeout[retryNumber];
-    return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
+    return setTimeout(getObject, timeout, { Bucket: bucket, Key: key,
         VersionId: versionId },
         (err, res) => {
             try {
@@ -270,15 +327,17 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
         });
 };
 
-utils.awsGetLatestVerId = (key, body, cb) =>
-    utils.getAwsRetry({ key }, 0, (err, result) => {
+utils.awsGetLatestVerId = (key, body, s3Type, cb) => {
+    const { type, callback } = checkArguments(s3Type, cb);
+    return utils.getAwsRetry({ key, s3Type: type }, 0, (err, result) => {
         assert.strictEqual(err, null, 'Expected success ' +
             `getting object from AWS, got error ${err}`);
         const resultMD5 = utils.expectedETag(result.Body, false);
         const expectedMD5 = utils.expectedETag(body, false);
         assert.strictEqual(resultMD5, expectedMD5, 'expected different body');
-        return cb(null, result.VersionId);
+        return callback(null, result.VersionId);
     });
+};
 
 utils.tagging = {};
 
@@ -361,12 +420,13 @@ utils.tagging.delTaggingAndAssert = (s3, params, cb) => {
 };
 
 utils.tagging.awsGetAssertTags = (params, cb) => {
-    const { key, versionId, expectedTags } = params;
+    const { key, versionId, expectedTags, s3Type } = params;
+    const s3Bucket = s3Type === 'GCP' ? gcpBucket : awsBucket;
     const expectedTagResult = _getTaggingConfig(expectedTags);
-    awsS3.getObjectTagging({ Bucket: awsBucket, Key: key,
+    awsS3.getObjectTagging({ Bucket: s3Bucket, Key: key,
         VersionId: versionId }, (err, data) => {
         assert.strictEqual(err, null, 'got unexpected error getting ' +
-            `tags directly from AWS: ${err}`);
+            `tags directly from ${s3Type}: ${err}`);
         assert.deepStrictEqual(data.TagSet, expectedTagResult.TagSet);
         return cb();
     });
