@@ -432,6 +432,42 @@
                 }
             }
         },
+        "DeleteObject": {
+            "http": {
+                "method": "DELETE",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    }
+                }
+            }
+        },
         "GetBucketVersioning": {
             "http": {
                 "method": "GET",
