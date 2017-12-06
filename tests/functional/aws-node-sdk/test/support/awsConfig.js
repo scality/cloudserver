@@ -18,23 +18,26 @@ function getAwsCredentials(profile, credFile) {
 }
 
 function getRealAwsConfig(awsLocation) {
-    const { credentialsProfile, credentials: locCredentials } =
+    const { awsEndpoint, credentialsProfile, credentials: locCredentials } =
         config.locationConstraints[awsLocation].details;
+    const params = {
+        endpoint: `https://${awsEndpoint}`,
+        signatureVersion: 'v4',
+    };
     if (credentialsProfile) {
         const credentials = getAwsCredentials(credentialsProfile,
             '/.aws/credentials');
-        return { credentials, signatureVersion: 'v4' };
+        params.credentials = credentials;
+        return params;
     }
-    return {
-        httpOptions: {
-            agent: new https.Agent({
-                keepAlive: true,
-            }),
-        },
-        accessKeyId: locCredentials.accessKey,
-        secretAccessKey: locCredentials.secretKey,
-        signatureVersion: 'v4',
+    params.httpOptions = {
+        agent: new https.Agent({
+            keepAlive: true,
+        }),
     };
+    params.accessKeyId = locCredentials.accessKey;
+    params.secretAccessKey = locCredentials.secretKey;
+    return params;
 }
 
 module.exports = {
