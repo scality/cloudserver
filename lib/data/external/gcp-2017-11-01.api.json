@@ -31,6 +31,107 @@
                 }
             }
         },
+        "PutObject": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    },
+                    "ACL": {
+                        "location": "header",
+                        "locationName": "x-goog-acl"
+                    },
+                    "Body": {
+                        "streaming": true,
+                        "type": "blob"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ContentMD5": {
+                        "location": "header",
+                        "locationName": "Content-MD5"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    }
+                },
+                "payload": "Body"
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                     "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
         "GetBucketVersioning": {
             "http": {
                 "method": "GET",
@@ -108,7 +209,9 @@
             "locationName": "ListBucketResult",
             "type": "structure",
             "members": {
-                "Name": {},
+                "Bucket": {
+                    "locationName": "Name"
+                },
                 "Prefix": {},
                 "Delimiter": {},
                 "MaxKeys": {
