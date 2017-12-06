@@ -132,6 +132,20 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         });
     });
 
+    it('should put an object to GCP based on bucket location', done => {
+        put('gcpbackend', null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
+    it('should put an object to GCP based on object location', done => {
+        put(memLocation, 'gcpbackend', 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should put an object to us-east-1 which is file based on bucket' +
     ' location if no locationConstraint provided', done => {
         put(null, null, 'localhost', () => {
