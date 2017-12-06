@@ -432,6 +432,115 @@
                 }
             }
         },
+        "CopyObject": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "CopySource",
+                    "Key"
+                ],
+                "members": {
+                    "ACL": {
+                        "location": "header",
+                        "locationName": "x-goog-acl"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "CopySource": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source"
+                    },
+                    "CopySourceIfMatch": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-match"
+                    },
+                    "CopySourceIfModifiedSince": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-modified-since"
+                    },
+                    "CopySourceIfNoneMatch": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-none-match"
+                    },
+                    "CopySourceIfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-unmodified-since",
+                        "type": "timestamp"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "MetadataDirective": {
+                        "location": "header",
+                        "locationName": "x-goog-metadata-directive"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "CopySourceVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "CopySourceMetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            },
+            "alias": "PutObjectCopy"
+        },
         "DeleteObject": {
             "http": {
                 "method": "DELETE",
