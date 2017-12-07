@@ -640,15 +640,14 @@ describe('Object Version Copy', () => {
             });
         });
 
-        it('should return an error if attempt to copy with same source as' +
-            'destination and do not change any metadata', done => {
+        it('should copy a version to same object name to restore ' +
+        'version of object', done => {
             s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
-                CopySource: copySource,
-            },
-                err => {
-                    checkError(err, 'InvalidRequest');
-                    done();
-                });
+            CopySource: copySource },
+            (err, res) =>
+                successCopyCheck(err, res, originalMetadata,
+                sourceBucketName, sourceObjName, done)
+            );
         });
 
         it('should return an error if attempt to copy from nonexistent bucket',
