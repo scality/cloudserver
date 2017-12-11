@@ -47,12 +47,30 @@ stages:
       - TriggerStages:
           name: trigger all tests in parallel
           stage_names:
+            - static-analysis
             # - node0
             # - node1
             # - node2
             # - node3
           waitForFinish: True
           haltOnFailure: True
+
+  static-analysis:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand:
+          name: run lint
+          command: npm run --silent lint -- --max-warnings 0
+      - ShellCommand:
+          name: run lint_md
+          command: npm run --silent lint_md
+      - ShellCommand:
+          name: run flake8
+          command: flake8 $(git ls-files "*.py")
+      - ShellCommand:
+          name: run yamllint
+          command: yamllint $(git ls-files "*.yml")
 
   # TODO: deduplicate using a setvar for node number
   node0:

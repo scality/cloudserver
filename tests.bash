@@ -36,15 +36,6 @@ killandsleep () {
 
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
-
-  npm run --silent lint -- --max-warnings 0
-
-  npm run --silent lint_md
-
-  flake8 $(git ls-files "*.py")
-
-  yamllint $(git ls-files "*.yml")
-
   mkdir -p $CIRCLE_TEST_REPORTS/unit
 
   #npm run unit_coverage
