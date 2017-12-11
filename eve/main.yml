@@ -49,6 +49,7 @@ stages:
           stage_names:
             - static-analysis
             - unit-tests
+            - multi-backends-unit-tests
             # - node0
             # - node1
             # - node2
@@ -90,6 +91,19 @@ stages:
       #     name: run unit tests
       #     command: npm run unit_coverage
       #     env: *circle_ci_env
+
+  multi-backends-unit-tests:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommandWithSecrets: *aws_credentials
+      - ShellCommand:
+          name: start data & meta data server
+          command: npm run start_dmd & bash wait_for_local_port.bash 9990 40
+      - ShellCommand:
+          name: run multi-backends unit tests
+          command: npm run multiple_backend_test
 
   # TODO: deduplicate using a setvar for node number
   node0:
