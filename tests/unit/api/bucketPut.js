@@ -7,6 +7,7 @@ const { config } = require('../../../lib/Config');
 const constants = require('../../../constants');
 const metadata = require('../metadataswitch');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const originalLCs = Object.assign({}, config.locationConstraints);
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -290,6 +291,51 @@ describe('bucketPut API', () => {
                 assert.deepStrictEqual(err, null);
                 assert.deepStrictEqual(newLocation,
                     bucketInfo.getLocationConstraint());
+                done();
+            });
+        });
+    });
+
+    describe('Config::setLocationConstraints', () => {
+        const bucketName = `test-bucket-${Date.now()}`;
+        const newLC = {};
+        const newLCKey = `test_location_constraint_${Date.now()}`;
+        newLC[newLCKey] = {
+            type: 'aws_s3',
+            legacyAwsBehavior: true,
+            details: {
+                awsEndpoint: 's3.amazonaws.com',
+                bucketName: `test-detail-bucket-${Date.now()}`,
+                bucketMatch: true,
+                credentialsProfile: 'default',
+            },
+        };
+        const newLCs = Object.assign({}, config.locationConstraints, newLC);
+        const req = Object.assign({}, testRequest, {
+            bucketName,
+            post: '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<CreateBucketConfiguration ' +
+                'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+                    `<LocationConstraint>${newLCKey}</LocationConstraint>` +
+                '</CreateBucketConfiguration>',
+        });
+
+        afterEach(() => config.setLocationConstraints(originalLCs));
+
+        it('should return error if location constraint config is not updated',
+            done => bucketPut(authInfo, req, log, err => {
+                const expectedError = errors.InvalidLocationConstraint;
+                expectedError.description = 'value of the location you are ' +
+                    `attempting to set - ${newLCKey} - is not listed in the ` +
+                    'locationConstraint config';
+                assert.deepStrictEqual(err, expectedError);
+                done();
+            }));
+
+        it('should accept updated location constraint config', done => {
+            config.setLocationConstraints(newLCs);
+            bucketPut(authInfo, req, log, err => {
+                assert.strictEqual(err, null);
                 done();
             });
         });
