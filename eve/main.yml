@@ -47,10 +47,10 @@ stages:
       - TriggerStages:
           name: trigger all tests in parallel
           stage_names:
-            - node0
-            - node1
-            - node2
-            - node3
+            # - node0
+            # - node1
+            # - node2
+            # - node3
           waitForFinish: True
           haltOnFailure: True
 
