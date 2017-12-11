@@ -48,6 +48,7 @@ stages:
           name: trigger all tests in parallel
           stage_names:
             - static-analysis
+            - unit-tests
             # - node0
             # - node1
             # - node2
@@ -71,6 +72,24 @@ stages:
       - ShellCommand:
           name: run yamllint
           command: yamllint $(git ls-files "*.yml")
+
+  unit-tests:
+    worker: *master-worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *node_modules
+      - ShellCommand:
+          name: create report directory
+          command: mkdir -p $CIRCLE_TEST_REPORTS/unit
+          env: *circle_ci_env
+      - ShellCommand:
+          name: run legacy unit test
+          command: npm run unit_coverage_legacy_location
+          env: *circle_ci_env
+      # - ShellCommand:
+      #     name: run unit tests
+      #     command: npm run unit_coverage
+      #     env: *circle_ci_env
 
   # TODO: deduplicate using a setvar for node number
   node0:

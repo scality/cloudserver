@@ -36,12 +36,6 @@ killandsleep () {
 
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
-  mkdir -p $CIRCLE_TEST_REPORTS/unit
-
-  #npm run unit_coverage
-
-  npm run unit_coverage_legacy_location
-
   npm run start_dmd &
   bash wait_for_local_port.bash 9990 40 &&
   npm run multiple_backend_test
