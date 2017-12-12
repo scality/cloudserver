@@ -1,4 +1,3 @@
-
 {
     "us-east-1": {
         "type": "file",
@@ -108,6 +107,94 @@
             "azureStorageAccessKey": "Fake00Key123",
             "bucketMatch": true,
             "azureContainerName": "s3createbucketonfly"
+        }
+    },
+    "gcpbackend": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "overflowBucketName": "zenko-gcp-overflow",
+            "bucketMatch": true,
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "servieKey": "fake001"
+            }
+        }
+    },
+    "gcpbackend2": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket-2",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "overflowBucketName": "zenko-gcp-overflow",
+            "bucketMatch": true,
+            "credentialsProfile": "google_2",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake002",
+                "servieKey": "fake002"
+            }
+        }
+    },
+    "gcpbackendmismatch": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "overflowBucketName": "zenko-gcp-overflow",
+            "bucketMatch": false,
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "servieKey": "fake001"
+            }
+        }
+    },
+    "gcpbackendproxy": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "proxy": "https://proxy.server",
+            "https": true,
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "overflowBucketName": "zenko-gcp-overflow",
+            "bucketMatch": false,
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "servieKey": "fake001"
+            }
+        }
+    },
+    "gcpbackendnoproxy": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "https": false,
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "overflowBucketName": "zenko-gcp-overflow",
+            "bucketMatch": false,
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "servieKey": "fake001"
+            }
         }
     }
 }
