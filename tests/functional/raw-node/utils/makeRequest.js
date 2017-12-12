@@ -5,6 +5,7 @@ const https = require('https');
 const querystring = require('querystring');
 
 const conf = require('../../../../lib/Config').config;
+const { GcpSigner } = require('../../../../lib/data/external/GCP');
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -42,6 +43,7 @@ function _decodeURI(uri) {
  * @param {object} [params.authCredentials] - authentication credentials
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
+ * @param {object} params.GCP - flag to setup for GCP request
  * @param {string} [params.requestBody] - request body contents
  * @param {boolean} [params.jsonResponse] - if true, response is
  *   expected to be received in JSON format (including errors)
@@ -59,6 +61,26 @@ function makeRequest(params, callback) {
         path: path || '/',
         rejectUnauthorized: false,
     };
+
+    if (queryObj) {
+        const qs = querystring.stringify(queryObj);
+        options.path = `${options.path}?${qs}`;
+    }
+
+    if (params.GCP && authCredentials) {
+        const getAuthObject = {
+            endpoint: { host: hostname },
+            method,
+            path: options.path || '/',
+            headers,
+        };
+        const signer = new GcpSigner(getAuthObject);
+        signer.addAuthorization(authCredentials, new Date());
+        Object.assign(options.headers, {
+            Authorization: getAuthObject.headers.Authorization,
+            Date: getAuthObject.headers['x-goog-date'],
+        });
+    }
 
     const req = transport.request(options, res => {
         const body = [];
@@ -91,7 +113,7 @@ function makeRequest(params, callback) {
     const encodedPath = req.path;
     // decode path because signing code re-encodes it
     req.path = _decodeURI(encodedPath);
-    if (authCredentials) {
+    if (authCredentials && !params.GCP) {
         if (queryObj) {
             auth.client.generateV4Headers(req, queryObj,
                 authCredentials.accessKey, authCredentials.secretKey, 's3');
@@ -144,7 +166,28 @@ function makeS3Request(params, callback) {
     makeRequest(options, callback);
 }
 
+function makeGcpRequest(params, callback) {
+    const { method, queryObj, headers, bucket, objectKey, authCredentials,
+        requestBody } = params;
+    const options = {
+        authCredentials,
+        requestBody,
+        hostname: 'storage.googleapis.com',
+        port: 80,
+        method,
+        queryObj,
+        headers: headers || {},
+        path: bucket ? `/${bucket}/` : '/',
+        GCP: true,
+    };
+    if (objectKey) {
+        options.path = `${options.path}${objectKey}`;
+    }
+    makeRequest(options, callback);
+}
+
 module.exports = {
     makeRequest,
     makeS3Request,
+    makeGcpRequest,
 };
