@@ -16,6 +16,7 @@ const awsLocation = 'awsbackend';
 const awsLocation2 = 'awsbackend2';
 const awsLocationMismatch = 'awsbackendmismatch';
 const awsLocationEncryption = 'awsbackendencryption';
+const b2Location = 'b2backend';
 const azureLocation = 'azurebackend';
 const azureLocation2 = 'azurebackend2';
 const azureLocationMismatch = 'azurebackendmismatch';
@@ -55,6 +56,7 @@ const utils = {
     awsLocation2,
     awsLocationMismatch,
     awsLocationEncryption,
+    b2Location,
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
@@ -134,6 +136,30 @@ utils.getAzureKeys = () => {
         {
             describe: 'empty',
             name: `somekey-${Date.now()}`,
+            body: '',
+            MD5: 'd41d8cd98f00b204e9800998ecf8427e',
+        },
+        {
+            describe: 'normal',
+            name: `somekey-${Date.now()}`,
+            body: Buffer.from('I am a body', 'utf8'),
+            MD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a',
+        },
+        {
+            describe: 'big',
+            name: `bigkey-${Date.now()}`,
+            body: Buffer.alloc(10485760),
+            MD5: 'f1c9645dbc14efddc7d8a322685f26eb',
+        },
+    ];
+    return keys;
+};
+
+utils.getB2Keys = () => {
+    const keys = [
+        {
+            describe: 'empty',
+            name: `emptykey-${Date.now()}`,
             body: '',
             MD5: 'd41d8cd98f00b204e9800998ecf8427e',
         },
