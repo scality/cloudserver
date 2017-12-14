@@ -159,5 +159,15 @@
                 "servieKey": "fake001"
             }
         }
+    },
+	"b2backend": {
+        "type": "b2",
+        "legacyAwsBehavior": false,
+        "details": {
+            "b2StorageEndpoint": "api.backblazeb2.com",
+            "b2AccountId": "fakeccountid",
+            "b2ApplicationKey": "Fake00key123",
+            "b2BucketName":"zenkotester"
+        }
     }
 }

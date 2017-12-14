@@ -383,14 +383,124 @@ endpoint :code:`zenkotos3.com`:
 
 .. code:: json
 
-    (...)
-    "restEndpoints": {
-        "localhost": "us-east-1",
-        "127.0.0.1": "us-east-1",
-        "cloudserver-front": "us-east-1",
-        "s3.docker.test": "us-east-1",
-        "127.0.0.2": "us-east-1",
-        "zenkotos3.com": "custom-location"
-    },
-    (...)
+  (...)
+  "restEndpoints": {
+      "localhost": "us-east-1",
+      "127.0.0.1": "us-east-1",
+      "cloudserver-front": "us-east-1",
+      "s3.docker.test": "us-east-1",
+      "127.0.0.2": "us-east-1",
+      "zenkotos3.com": "custom-location"
+  },
+  (...)
 
+Backblaze as a data backend
+---------------------------
+
+From the Backblaze b2 web page
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From the Backblaze b2 web page, from your Storage Account dashboard, create a bucket where you will host your data for this new location constraint.
+
+You will also need to get one of your b2 application key and to provide it to CloudServer. This can be found from B2 Cloud Storage Buckets dashboard: click on 'Show Account ID and Application Key', then select you account ID and click on 'Create Application Key'.
+Important: When you create a new application key, the old one will no longer work.
+
+In this example, our bucket will be named ``b2bucket``.
+
+From the CloudServer repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+locationConfig.json
+^^^^^^^^^^^^^^^^^^^
+
+Edit `locationConfig.json` to add a new location constraint. This location constraint will contain the information for the Backblaze B2 bucket to which you will be writing your data whenever you create a CloudServer bucket in this location. There are a few `configurable options` here:
+
+- :code:`type` : set to :code:`b2` to indicate this location constraint is writing data to Backblaze B2;
+- :code:`legacyAwsBehavior` : always set to :code:`false`;
+- :code:`b2StorageEndpoint` :  always set to :code:`api.backblazeb2.com`;
+- :code:`b2AccountId` : the B2 Account Id to which your bucket belongs;
+- :code:`b2ApplicationKey` : the Application Keys associated to your Account.
+- :code:`b2BucketName` : set to an existing bucket in your Backblaze B2 storage account. A non-existing bucket is automatically created;
+
+.. code:: json
+
+  (...)
+	"b2-test": {
+		"type": "b2",
+		"legacyAwsBehavior": false,
+		"details": {
+			"b2StorageEndpoint": "api.backblazeb2.com",
+			"b2AccountId": "123456789",
+			"b2ApplicationKey": "9019bdaa70e062f442218ae806ec2a22dd7b2dc0",
+			"b2BucketName":"b2bucket"
+		}
+	},
+  (...)
+
+You should now be able to start the server and start writing data to Backblaze through CloudServer.
+
+Start the server with the ability to write to Backblaze
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Inside the repository, once all the files have been edited, you should be able
+to start the server and start writing data to AWS S3 through CloudServer.
+
+.. code:: shell
+
+   # Start the server locally
+   $> S3DATA=multiple npm start
+
+ Testing: put an object to Backblaze using CloudServer
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to start testing pushing to Backblaze, you will need to create a local bucket in the Backblaze region - this local bucket will only store the metadata locally, while both the data and any user metadata (x-amz-meta headers sent with a PUT object, and tags) will be stored on Backblaze.
+
+.. code:: shell
+
+	# Create a local bucket storing data in Backblaze
+	$> s3cmd --host=127.0.0.1:8000 mb s3://b2bucket --region=b2-test
+	# Put an object to Backblaze, and store the metadata locally
+	$> s3cmd --host=127.0.0.1:8000 put /etc/hosts s3://b2bucket/testput
+	  upload: '/etc/hosts' -> 's3://b2bucket/testput'  [1 of 1]
+	  330 of 330   100% in    0s   380.87 B/s  done
+	# List locally to check you have the metadata
+	$> s3cmd --host=127.0.0.1:8000 ls s3://b2bucket
+   	  2017-10-24 14:38       330   s3://b2bucket/testput
+
+
+Then, from your Backblaze account, if you go into your bucket, you should see your newly uploaded object:
+
+.. WARNING::
+	You may experience some latency in the web interface after updating your data on Backblaze. This is due to Backblaze's caching system. It may take several minutes to appear. The refresh button (small arrow) next to 'Buckets/`b2bucket`' into the Browse File page, help displays updated infos faster.
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+Make sure your :code:`~/.s3cfg` file has credentials matching your local CloudServer credentials defined in :code:`conf/authdata.json`. By default, the access key is accessKey1 and the secret key is verySecretKey1. For more informations, refer to our template ~/.s3cfg .
+
+Pre-existing objects in your Backblaze bucket can unfortunately not be accessed by CloudServer at this time.
+
+ Getting Started
+ Testing
+ Running functional tests locally:
+
+For the AWS backend, Azure backend and Backblaze backend tests to pass locally, you must modify :code:`tests/locationConfigTests.json` so that :code:`"awsbackend"` specifies a bucketname of a bucket you have access to based on your credentials profile and modify :code:`“azurebackend”` with details for your Azure account.
+For Backblaze, modify :code:`"b2backend"` :
+
+.. code:: json
+
+  (...)
+	"b2backend": {
+		"type": "b2",
+		"legacyAwsBehavior": false,
+		"details": {
+			"b2StorageEndpoint": "api.backblazeb2.com",
+			"b2AccountId": "123456789",
+			"b2ApplicationKey": "9019bdaa70e062f442218ae806ec2a22dd7b2dc0",
+			"b2BucketName":"b2bucket"
+		}
+	},
+	(...)
+
+.. WARNING::
+	The name must be "b2backend" for the tests to work properly !!
