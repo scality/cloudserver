@@ -106,7 +106,7 @@ const constants = {
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
     legacyLocations: ['sproxyd', 'legacy'],
     /* eslint-disable camelcase */
-    externalBackends: { aws_s3: true, azure: true, gcp: true },
+    externalBackends: { aws_s3: true, azure: true, gcp: true, b2: true },
     // some of the available data backends  (if called directly rather
     // than through the multiple backend gateway) need a key provided
     // as a string as first parameter of the get/delete methods.
@@ -115,7 +115,7 @@ const constants = {
     // for external backends, don't call unless at least 1 minute
     // (60,000 milliseconds) since last call
     externalBackendHealthCheckInterval: 60000,
-    versioningNotImplBackends: { azure: true },
+    versioningNotImplBackends: { azure: true, b2: true },
     mpuMDStoredExternallyBackend: { aws_s3: true },
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
