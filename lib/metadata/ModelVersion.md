@@ -68,3 +68,15 @@ this._cors = cors || null;
 
 Used to store the bucket website configuration info
 and to store CORS rules to apply to cross-domain requests
+
+## Model version 6
+
+### Properties Added
+
+```javascript
+this._lifecycleConfiguration = lifecycleConfiguration || null;
+```
+
+### Usage
+
+Used to store the bucket lifecycle configuration info
