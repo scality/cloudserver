@@ -19,5 +19,16 @@
             "access": "accessKey2",
             "secret": "verySecretKey2"
         }]
+    },
+    {
+        "name": "Clueso",
+        "email": "inspector@clueso.info",
+        "arn": "arn:aws:iam::123456789014:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/clueso",
+        "shortid": "123456789014",
+        "keys": [{
+            "access": "cluesoKey1",
+            "secret": "cluesoSecretKey1"
+        }]
     }]
 }
