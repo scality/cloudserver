@@ -28,7 +28,7 @@
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
     "sproxydclient": "scality/sproxydclient#rel/7.0",
-    "utapi": "scality/utapi#rel/7.0",
+    "utapi": "scality/utapi#fix/utapi-versioning-metrics",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient#rel/7.0",
     "werelogs": "scality/werelogs#rel/7.0",
