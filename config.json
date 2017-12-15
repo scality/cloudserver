@@ -9,7 +9,8 @@
         "s3.docker.test": "us-east-1",
         "127.0.0.2": "us-east-1",
         "s3.amazonaws.com": "us-east-1",
-        "zenko-cloudserver-replicator": "us-east-1"
+        "zenko-cloudserver-replicator": "us-east-1",
+        "lb": "us-east-1"
     },
     "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
                         "s3-website.us-east-2.amazonaws.com",
@@ -53,6 +54,11 @@
     },
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1"]
+    },
+    "livy": {
+        "host": "livy",
+        "port": 8998,
+        "transport": "http"
     },
     "metadataClient": {
         "host": "localhost",
