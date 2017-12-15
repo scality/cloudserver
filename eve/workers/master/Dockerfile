@@ -1,12 +1,14 @@
-FROM scality/nodesvc-base
+FROM ubuntu:trusty
 
 #
 # Install apt packages needed by the buildchain
 #
 
 COPY s3_packages.list buildbot_worker_packages.list /tmp/
-RUN apt-get update -q \
+RUN apt-get update -q && apt-get -qy install curl apt-transport-https \
     && apt-get install -qy software-properties-common python-software-properties \
+    && curl --silent https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - \
+    && echo "deb https://deb.nodesource.com/node_6.x trusty main" > /etc/apt/sources.list.d/nodesource.list \
     && add-apt-repository ppa:ubuntu-toolchain-r/test \
     && apt-add-repository ppa:brightbox/ruby-ng \
     && apt-get update -q \
