@@ -97,7 +97,14 @@ describe('Complete MPU', () => {
 
             it('should complete an MPU with fewer parts than were ' +
                 'originally put without returning a version id', done => {
-                _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
+                s3.uploadPart({ Bucket: bucket, Key: key,
+                      PartNumber: 2, UploadId: uploadId, Body: 'foo2' },
+                      err => {
+                          assert.strictEqual(err, null,
+                              'Unexpected error putting part');
+                          _completeMpuAndCheckVid(uploadId, eTag, undefined,
+                              done);
+                      });
             });
         });
 
