@@ -25,7 +25,6 @@ const {
 const keyObject = 'putazure';
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
-const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 
 const normalBody = Buffer.from('I am a body', 'utf8');
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -329,7 +328,7 @@ describeF() {
                         if (err) {
                             return done(err);
                         }
-                        deleteAllBlobs(azureClient, azureContainerName,
+                        return deleteAllBlobs(azureClient, azureContainerName,
                             keyPrefix, done);
                     }));
 

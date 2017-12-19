@@ -216,7 +216,7 @@ utils.putObject = (s3, bucket, key, body, cb) => {
     s3.putObject({
         Bucket: bucket,
         Key: key,
-        Body: body
+        Body: body,
     }, cb);
 };
 
@@ -233,26 +233,29 @@ utils.assertVersionedObj = (s3, bucket, key, versionId, expectedBody, cb) => {
 };
 
 utils.listSnapshotsWithPrefix = (azure, container, prefix, cb) => {
-    const options = { include: 'snapshots'};
+    const options = { include: 'snapshots' };
     azure.listBlobsSegmentedWithPrefix(container, prefix, null, options,
         (err, result) => {
+            if (err) {
+                return cb(err);
+            }
             const snapshotBlobs =
                 result.entries.filter(entry => entry.snapshot !== undefined);
             return cb(err, snapshotBlobs);
         });
-}
+};
 
 utils.deleteAllSnapShots = (azure, container, prefix, cb) => {
     utils.listSnapshotsWithPrefix(azure, container, prefix, (err, blobs) => {
-            if (err) {
-                return cb(err);
-            }
-            async.each(blobs, (blob, next) => {
-                const options = { snapshotId: blob.snapshot };
-                azure.deleteBlob(container, blob.name, options, next);
-            }, cb);
-        });
-}
+        if (err) {
+            return cb(err);
+        }
+        return async.each(blobs, (blob, next) => {
+            const options = { snapshotId: blob.snapshot };
+            azure.deleteBlob(container, blob.name, options, next);
+        }, cb);
+    });
+};
 
 utils.deleteAllBlobs = (azure, container, prefix, cb) => {
     azure.listBlobsSegmentedWithPrefix(container, prefix, null, {},
@@ -260,11 +263,11 @@ utils.deleteAllBlobs = (azure, container, prefix, cb) => {
             if (err) {
                 return cb(err);
             }
-            async.each(result.entries, (entry, next) =>
+            return async.each(result.entries, (entry, next) =>
                 azure.deleteBlob(container, entry.name, {}, next),
             cb);
         });
-}
+};
 
 utils.assertNoSnapshots = (azure, container, prefix, cb) => {
     utils.listSnapshotsWithPrefix(azure, container, prefix, (err, blobs) => {
@@ -274,7 +277,7 @@ utils.assertNoSnapshots = (azure, container, prefix, cb) => {
         assert.strictEqual(blobs.length, 0);
         return cb();
     });
-}
+};
 
 utils.getAndAssertResult = (s3, params, cb) => {
     const { bucket, key, body, versionId, expectedVersionId, expectedTagCount,

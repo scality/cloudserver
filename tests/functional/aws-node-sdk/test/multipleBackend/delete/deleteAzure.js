@@ -13,11 +13,8 @@ const {
     azureLocation,
     azureLocationMismatch,
     enableVersioning,
-    putObject,
     assertVersionedObj,
     deleteAllSnapShots,
-    assertNoSnapshots,
-    listSnapshotsWithPrefix,
     deleteAllBlobs,
     expectedETag,
 } = require('../utils');
@@ -297,7 +294,7 @@ function testSuite() {
                         if (err) {
                             return done(err);
                         }
-                        deleteAllBlobs(azureClient, azureContainerName,
+                        return deleteAllBlobs(azureClient, azureContainerName,
                             keyPrefix, done);
                     }));
 
@@ -316,7 +313,7 @@ function testSuite() {
                     s3.getObject({
                         Bucket: azureContainerName,
                         Key: key,
-                    }, (err, data) => {
+                    }, err => {
                         assert.strictEqual(err.code, 'NoSuchKey');
                         return next();
                     }),
@@ -331,7 +328,7 @@ function testSuite() {
                             // a zero-byte blob denoting the "delete marker".
                             assert.strictEqual(result.entries.length, 2);
                             const snapshots = result.entries.filter(entry =>
-                                entry.snapshot !== undefined)
+                                entry.snapshot !== undefined);
                             assert.strictEqual(snapshots.length, 1);
                             const { contentMD5 } = snapshots[0].contentSettings;
                             assert.strictEqual(contentMD5, getAzureMD5(body1));
@@ -365,7 +362,7 @@ function testSuite() {
                         s3.getObject({
                             Bucket: azureContainerName,
                             Key: key,
-                        }, (err, data) => {
+                        }, err => {
                             assert.notStrictEqual(err, null);
                             assert.strictEqual(err.code, 'NoSuchKey');
                             return next();
@@ -375,7 +372,7 @@ function testSuite() {
                             Bucket: azureContainerName,
                             Key: key,
                             VersionId: deleteMarkerVersionId,
-                        }, (err, data) => {
+                        }, err => {
                             assert.strictEqual(err, null);
                             return next();
                         }),
@@ -387,9 +384,7 @@ function testSuite() {
                             assert.strictEqual(err, null);
                             assert.strictEqual(
                                 data.ETag, expectedETag(data.Body));
-                            setTimeout(() => {
-                                return next();
-                            }, 3000);
+                            setTimeout(() => next(), 3000);
                         }),
                     next =>
                         // The blob should be equivalent to the latest snapshot.
@@ -421,14 +416,15 @@ function testSuite() {
                             data.VersionId, body2, next),
                     next => {
                         const options = { include: 'snapshots' };
-                        azureClient.listBlobsSegmentedWithPrefix(azureContainerName,
-                            keyPrefix, null, options, (err, result) => {
+                        azureClient.listBlobsSegmentedWithPrefix(
+                            azureContainerName, keyPrefix, null, options,
+                            (err, result) => {
                                 if (err) {
                                     return done(err);
                                 }
                                 assert.strictEqual(result.entries.length, 3);
-                                const snapshots = result.entries.filter(entry =>
-                                    entry.snapshot !== undefined)
+                                const snapshots = result.entries.filter(
+                                    entry => entry.snapshot !== undefined);
                                 assert.strictEqual(snapshots.length, 2);
                                 secondSnapshot = snapshots[1];
                                 assert.strictEqual(
@@ -445,48 +441,47 @@ function testSuite() {
                             Bucket: azureContainerName,
                             Key: key,
                             VersionId: masterVersionID,
-                        }, (err, data) => {
+                        }, err => {
                             assert.strictEqual(err, null);
-                            setTimeout(() => {
-                                return next();
-                            }, azureTimeout);
+                            setTimeout(() => next(), azureTimeout);
                         }),
                     next => {
                         const options = { include: 'snapshots' };
-                        azureClient.listBlobsSegmentedWithPrefix(azureContainerName,
-                            keyPrefix, null, options, (err, result) => {
+                        azureClient.listBlobsSegmentedWithPrefix(
+                            azureContainerName, keyPrefix, null, options,
+                            (err, result) => {
                                 if (err) {
                                     return done(err);
                                 }
                                 assert.strictEqual(result.entries.length, 2);
-                                const snapshots = result.entries.filter(entry =>
-                                    entry.snapshot !== undefined)
+                                const snapshots = result.entries.filter(
+                                    entry => entry.snapshot !== undefined);
                                 assert.strictEqual(snapshots.length, 1);
                                 assert.deepStrictEqual(
                                     secondSnapshot, snapshots[0]);
                                 return next();
                             });
                     },
-                ], done)
+                ], done);
             });
 
-            it('should delete snapshot and blob if deleting last version', done =>
+            it('should delete snapshot and blob if deleting last version',
+            done =>
                 async.waterfall([
                     next =>
                         s3.deleteObject({
                             Bucket: azureContainerName,
                             Key: key,
                             VersionId: masterVersionID,
-                        }, (err, data) => {
+                        }, err => {
                             assert.strictEqual(err, null);
-                            setTimeout(() => {
-                                return next();
-                            }, azureTimeout);
+                            setTimeout(() => next(), azureTimeout);
                         }),
                     next => {
                         const options = { include: 'snapshots' };
-                        azureClient.listBlobsSegmentedWithPrefix(azureContainerName,
-                            keyPrefix, null, options, (err, result) => {
+                        azureClient.listBlobsSegmentedWithPrefix(
+                            azureContainerName, keyPrefix, null, options,
+                            (err, result) => {
                                 if (err) {
                                     return done(err);
                                 }
