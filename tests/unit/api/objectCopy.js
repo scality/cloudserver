@@ -95,7 +95,7 @@ describe('objectCopy with versioning', () => {
         objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
             undefined, log, err => {
                 assert.ifError(err, `Unexpected err: ${err}`);
-                process.nextTick(() => {
+                setImmediate(() => {
                     versioningTestUtils
                         .assertDataStoreValues(ds, expectedValues);
                     done();
