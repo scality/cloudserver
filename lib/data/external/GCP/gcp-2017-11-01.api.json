@@ -12,6 +12,205 @@
         "timestampFormat": "rfc822",
         "uid": "gcp-2017-11-01"
     },
-    "operations": {},
-    "shapes": {}
+    "operations": {
+        "HeadBucket": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "CreateBucket": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "ACL": {
+                        "location": "header",
+                        "locationName": "x-goog-acl"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "CreateBucketConfiguration": {
+                        "locationName": "CreateBucketConfiguration",
+                        "type": "structure",
+                        "members": {
+                            "LocationConstraint": {},
+                            "StorageClass": {}
+                        }
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                },
+                "payload": "CreateBucketConfiguration"
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "DeleteBucket": {
+            "http": {
+                "method": "DELETE",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            }
+        },
+        "listObjects": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "Marker": {
+                        "location": "querystring",
+                        "locationName": "marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "IsTruncated": {
+                        "type": "boolean"
+                    },
+                    "Marker": {},
+                    "NextMarker": {},
+                    "Contents": {
+                        "shape": "ContentsShape"
+                    },
+                    "Name": {},
+                    "Prefix": {},
+                    "Delimiter": {},
+                    "MaxKeys": {
+                        "type": "integer"
+                    },
+                    "CommonPrefixes": {
+                        "shape": "CommonPrefixShape"
+                    }
+                }
+            }
+        }
+    },
+    "shapes": {
+        "OwnerShape": {
+            "locationName": "Owner",
+            "type": "structure",
+            "members": {
+                "ID": {},
+                "DisplayName": {}
+            }
+        },
+        "ContentsShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Key": {},
+                    "LastModified": {
+                        "type": "timestamp"
+                    },
+                    "ETag": {},
+                    "Size": {
+                        "type": "integer"
+                    },
+                    "StorageClass": {},
+                    "Owner": {
+                        "shape": "OwnerShape"
+                    }
+                }
+            },
+            "flattened": true
+        },
+        "CommonPrefixShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Prefix": {}
+                }
+            },
+            "flattened": true
+        }
+    }
 }
