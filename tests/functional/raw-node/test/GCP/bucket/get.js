@@ -5,24 +5,89 @@ const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
-const constants = require('../../../../../../constants');
+const { listingHardLimit } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
+const bucketName = `somebucket-${Date.now()}`;
+const smallSize = 20;
+const bigSize = listingHardLimit + 1;
+const config = getRealAwsConfig(credentialOne);
+const gcpClient = new GCP(config);
+
+function populateBucket(createdObjects, callback) {
+    process.stdout.write(
+        `Putting ${createdObjects.length} objects into bucket\n`);
+    async.mapLimit(createdObjects, 10,
+    (object, moveOn) => {
+        makeGcpRequest({
+            method: 'PUT',
+            bucket: bucketName,
+            objectKey: object,
+            authCredentials: config.credentials,
+        }, err => moveOn(err));
+    }, err => {
+        if (err) {
+            process.stdout
+                .write(`err putting objects ${err.code}`);
+        }
+        return callback(err);
+    });
+}
+
+function removeObjects(createdObjects, callback) {
+    process.stdout.write(
+        `Deleting ${createdObjects.length} objects from bucket\n`);
+    async.mapLimit(createdObjects, 10,
+    (object, moveOn) => {
+        makeGcpRequest({
+            method: 'DELETE',
+            bucket: bucketName,
+            objectKey: object,
+            authCredentials: config.credentials,
+        }, err => moveOn(err));
+    }, err => {
+        if (err) {
+            process.stdout
+                .write(`err deleting objects ${err.code}`);
+        }
+        return callback(err);
+    });
+}
 
 describe('GCP: GET Bucket', function testSuite() {
     this.timeout(180000);
-    const config = getRealAwsConfig(credentialOne);
-    const gcpClient = new GCP(config);
+
+    before(done => {
+        gcpRequestRetry({
+            method: 'PUT',
+            bucket: bucketName,
+            authCredentials: config.credentials,
+        }, 0, err => {
+            if (err) {
+                process.stdout.write(`err in creating bucket ${err}\n`);
+            }
+            return done(err);
+        });
+    });
+
+    after(done => {
+        gcpRequestRetry({
+            method: 'DELETE',
+            bucket: bucketName,
+            authCredentials: config.credentials,
+        }, 0, err => {
+            if (err) {
+                process.stdout.write(`err in deleting bucket ${err}\n`);
+            }
+            return done(err);
+        });
+    });
 
     describe('without existing bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${Date.now()}`;
-            return done();
-        });
-
-        it('should return 404 and NoSuchBucket', function testFn(done) {
+        it('should return 404 and NoSuchBucket', done => {
+            const badBucketName = `nonexistingbucket-${Date.now()}`;
             gcpClient.getBucket({
-                Bucket: this.test.bucketName,
+                Bucket: badBucketName,
             }, err => {
                 assert(err);
                 assert.strictEqual(err.statusCode, 404);
@@ -33,101 +98,28 @@ describe('GCP: GET Bucket', function testSuite() {
     });
 
     describe('with existing bucket', () => {
-        let numberObjects;
-        beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${Date.now()}`;
-            this.currentTest.createdObjects = Array.from(
-                Array(numberObjects).keys()).map(i => `someObject-${i}`);
-            process.stdout
-                .write(`Creating test bucket\n`);
-            return async.waterfall([
-                next => gcpRequestRetry({
-                    method: 'PUT',
-                    bucket: this.currentTest.bucketName,
-                    authCredentials: config.credentials,
-                }, 0, err => {
-                    if (err) {
-                        process.stdout.write(`err creating bucket ${err.code}`);
-                    }
-                    return next(err);
-                }),
-                next => {
-                    process.stdout.write(
-                        `Putting ${numberObjects} objects into bucket\n`);
-                    async.mapLimit(this.currentTest.createdObjects, 10,
-                    (object, moveOn) => {
-                        makeGcpRequest({
-                            method: 'PUT',
-                            bucket: this.currentTest.bucketName,
-                            objectKey: object,
-                            authCredentials: config.credentials,
-                        }, err => moveOn(err));
-                    }, err => {
-                        if (err) {
-                            process.stdout
-                                .write(`err putting objects ${err.code}`);
-                        }
-                        return next(err);
-                    });
-                },
-            ], err => done(err));
-        });
-
-        afterEach(function afterFn(done) {
-            return async.waterfall([
-                next => {
-                    process.stdout.write(
-                        `Deleting ${numberObjects} objects from bucket\n`);
-                    async.mapLimit(this.currentTest.createdObjects, 10,
-                    (object, moveOn) => {
-                        makeGcpRequest({
-                            method: 'DELETE',
-                            bucket: this.currentTest.bucketName,
-                            objectKey: object,
-                            authCredentials: config.credentials,
-                        }, err => moveOn(err));
-                    }, err => {
-                        if (err) {
-                            process.stdout
-                                .write(`err deleting objects ${err.code}`);
-                        }
-                        return next(err);
-                    });
-                },
-                next => gcpRequestRetry({
-                    method: 'DELETE',
-                    bucket: this.currentTest.bucketName,
-                    authCredentials: config.credentials,
-                }, 0, err => {
-                    if (err) {
-                        process.stdout.write(`err deleting bucket ${err.code}`);
-                    }
-                    return next(err);
-                }),
-            ], err => done(err));
-        });
-
         describe('with less than listingHardLimit number of objects', () => {
-            before('Number of objects: 20', () => {
-                numberObjects = 20;
-            });
+            const createdObjects = Array.from(
+                Array(smallSize).keys()).map(i => `someObject-${i}`);
 
-            it('should list all 20 created objects',
-            function testFn(done) {
-                return gcpClient.listObjects({
-                    Bucket: this.test.bucketName,
+            before(done => populateBucket(createdObjects, done));
+
+            after(done => removeObjects(createdObjects, done));
+
+            it(`should list all ${smallSize} created objects`, done => {
+                gcpClient.listObjects({
+                    Bucket: bucketName,
                 }, (err, res) => {
                     assert.equal(err, null, `Expected success, but got ${err}`);
-                    assert.strictEqual(res.Contents.length, numberObjects);
+                    assert.strictEqual(res.Contents.length, smallSize);
                     return done();
                 });
             });
 
             describe('with MaxKeys at 10', () => {
-                it('should list MaxKeys number of objects',
-                function testFn(done) {
-                    return gcpClient.listObjects({
-                        Bucket: this.test.bucketName,
+                it('should list MaxKeys number of objects', done => {
+                    gcpClient.listObjects({
+                        Bucket: bucketName,
                         MaxKeys: 10,
                     }, (err, res) => {
                         assert.equal(err, null,
@@ -140,33 +132,34 @@ describe('GCP: GET Bucket', function testSuite() {
         });
 
         describe('with more than listingHardLimit number of objects', () => {
-            before('Number of objects: 1001', () => {
-                numberObjects = constants.listingHardLimit + 1;
-            });
+            const createdObjects = Array.from(
+                Array(bigSize).keys()).map(i => `someObject-${i}`);
 
-            it('should list at max 1000 of objects created',
-            function testFn(done) {
-                return gcpClient.listObjects({
-                    Bucket: this.test.bucketName,
+            before(done => populateBucket(createdObjects, done));
+
+            after(done => removeObjects(createdObjects, done));
+
+            it('should list at max 1000 of objects created', done => {
+                gcpClient.listObjects({
+                    Bucket: bucketName,
                 }, (err, res) => {
                     assert.equal(err, null, `Expected success, but got ${err}`);
                     assert.strictEqual(res.Contents.length,
-                        constants.listingHardLimit);
+                        listingHardLimit);
                     return done();
                 });
             });
 
             describe('with MaxKeys at 1001', () => {
-                it('should list at max 1000, ignoring MaxKeys',
-                function testFn(done) {
-                    return gcpClient.listObjects({
-                        Bucket: this.test.bucketName,
+                it('should list at max 1000, ignoring MaxKeys', done => {
+                    gcpClient.listObjects({
+                        Bucket: bucketName,
                         MaxKeys: 1001,
                     }, (err, res) => {
                         assert.equal(err, null,
                             `Expected success, but got ${err}`);
                         assert.strictEqual(res.Contents.length,
-                            constants.listingHardLimit);
+                            listingHardLimit);
                         return done();
                     });
                 });
