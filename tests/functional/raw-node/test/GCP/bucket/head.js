@@ -40,11 +40,6 @@ describe('GCP: HEAD Bucket', () => {
                 if (err) {
                     return done(err);
                 }
-                if (!res) {
-                    // should not happen
-                    return done(
-                        new Error('Error: success response does not result'));
-                }
                 this.currentTest.bucketObj = {
                     MetaVersionId: res.headers['x-goog-metageneration'],
                 };
@@ -61,8 +56,6 @@ describe('GCP: HEAD Bucket', () => {
                 if (err) {
                     process.stdout
                         .write(`err deleting bucket: ${err.code}\n`);
-                } else {
-                    process.stdout.write('Deleted bucket\n');
                 }
                 return done(err);
             });
