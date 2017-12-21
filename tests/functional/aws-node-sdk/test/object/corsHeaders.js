@@ -297,24 +297,7 @@ describe('Cross Origin Resource Sharing requests', () => {
     });
 
     describe('on non-existing bucket', () => {
-        it('should respond to getService request with CORS headers ' +
-            'as long as Origin is sent in the request', done => {
-            const expectedHeaders = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                vary,
-            };
-            _checkHeaders(s3.listBuckets, {}, allowedOrigin,
-            expectedHeaders, done);
-        });
-
-        it('should not respond to getService request with CORS headers ' +
-            'if no Origin is sent in the request', done => {
-            _checkHeaders(s3.listBuckets, {}, undefined,
-            null, done);
-        });
-
-        it('should not respond to other request with CORS headers, even ' +
+        it('should not respond to request with CORS headers, even ' +
             'if request was sent with Origin header', done => {
             _checkHeaders(s3.listObjects, { Bucket: 'nonexistingbucket' },
             allowedOrigin, null, done);
@@ -357,6 +340,13 @@ describe('Cross Origin Resource Sharing requests', () => {
         });
 
         describe('when request Origin/method match CORS configuration', () => {
+            it('should not respond with CORS headers to GET service (list ' +
+            'buckets), even if Origin/method match CORS rule', done => {
+                // no bucket specified in this request
+                _checkHeaders(s3.listBuckets, {}, allowedOrigin,
+                    null, done);
+            });
+
             it('should not respond with CORS headers after deleting bucket, ' +
             'even if Origin/method match CORS rule', done => {
                 s3.deleteBucket({ Bucket: bucket }, err => {

@@ -150,6 +150,19 @@ describe('Multi-Object Delete Error Responses', () => {
                 });
             });
 
+        it('should return error if request deletion of 0 objects',
+            () => {
+                const objects = createObjectsList(0);
+                return s3.deleteObjectsAsync({
+                    Bucket: bucketName,
+                    Delete: {
+                        Objects: objects,
+                    },
+                }).catch(err => {
+                    checkError(err, 'MalformedXML');
+                });
+            });
+
         it('should return no error if try to delete non-existent objects',
             () => {
                 const objects = createObjectsList(1000);
