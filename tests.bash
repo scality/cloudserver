@@ -55,6 +55,13 @@ then
 
   S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple npm run ft_awssdk
 
+  cd $MYPWD
+  killandsleep 8000
+
+  # Run external backend tests with proxy ; run ft_awssdk_external_backends
+
+  S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple CI_PROXY=true npm start > $CIRCLE_ARTIFACTS/server_external_backends_proxy_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple CI_PROXY=true npm run ft_awssdk_external_backends
+
   killandsleep 8000
 
 fi

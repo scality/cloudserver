@@ -26,7 +26,7 @@ const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const keys = getAzureKeys();
 /* eslint-disable camelcase */
 const azureMetadata = {
-    x_amz_meta_scal_location_constraint: azureLocation,
+    scal_location_constraint: azureLocation,
 };
 /* eslint-enable camelcase */
 
@@ -145,7 +145,7 @@ describeF() {
                 };
                 const azureMetadataMismatch = {
                     /* eslint-disable camelcase */
-                    x_amz_meta_scal_location_constraint: azureLocationMismatch,
+                    scal_location_constraint: azureLocationMismatch,
                     /* eslint-enable camelcase */
                 };
                 s3.putObject(params, err => {
