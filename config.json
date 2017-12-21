@@ -24,6 +24,14 @@
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
                         "s3-website.scality.test"],
+    "replicationEndpoints": [{
+        "site": "zenko",
+        "servers": ["127.0.0.1:8000"],
+        "default": true
+    }, {
+        "site": "us-east-2",
+        "type": "aws_s3"
+    }],
     "cdmi": {
         "host": "localhost",
         "port": 81,

@@ -26,7 +26,7 @@ const namespace = 'default';
 const bucketName = 'source-bucket';
 const mpuShadowBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const bucketARN = `arn:aws:s3:::${bucketName}`;
-const storageClassType = 'STANDARD';
+const storageClassType = 'zenko';
 const keyA = 'key-A';
 const keyB = 'key-B';
 
@@ -69,6 +69,7 @@ const taggingDeleteReq = new TaggingConfigTester()
 
 const emptyReplicationMD = {
     status: '',
+    backends: [],
     content: [],
     destination: '',
     storageClass: '',
@@ -280,6 +281,10 @@ describe('Replication object MD without bucket replication config', () => {
     `${hasStorageClass ? 'with' : 'without'} storage class`, () => {
         const replicationMD = {
             status: 'PENDING',
+            backends: [{
+                site: 'zenko',
+                status: 'PENDING',
+            }],
             content: ['DATA', 'METADATA'],
             destination: bucketARN,
             storageClass: '',
@@ -466,16 +471,24 @@ describe('Replication object MD without bucket replication config', () => {
                 });
         });
 
-        ['awsbackend', 'azurebackend'].forEach(backend => {
+        ['awsbackend',
+        'azurebackend',
+        'awsbackend,azurebackend'].forEach(backend => {
             const storageTypeMap = {
-                awsbackend: 'aws_s3',
-                azurebackend: 'azure',
+                'awsbackend': 'aws_s3',
+                'azurebackend': 'azure',
+                'awsbackend,azurebackend': 'aws_s3,azure',
             };
             const storageType = storageTypeMap[backend];
-            describe('Object metadata replicationInfo storageType value: ' +
-            `${storageType}`, () => {
+            const backends = backend.split(',').map(site => ({
+                site,
+                status: 'PENDING',
+            }));
+            describe('Object metadata replicationInfo storageType value',
+            () => {
                 const expectedReplicationInfo = {
                     status: 'PENDING',
+                    backends,
                     content: ['DATA', 'METADATA'],
                     destination: 'arn:aws:s3:::destination-bucket',
                     storageClass: backend,
