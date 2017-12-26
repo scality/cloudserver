@@ -23,7 +23,7 @@ const bucketNames = {
 };
 
 describe('GCP: Initiate MPU', function testSuite() {
-    this.timeout(16000);
+    this.timeout(180000);
     let config;
     let gcpClient;
 

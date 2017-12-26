@@ -362,7 +362,7 @@
                 }
             }
         },
-        "PutObject": {
+        "PutObjectReq": {
             "http": {
                 "method": "PUT",
                 "requestUri": "/{Bucket}/{Key+}"
