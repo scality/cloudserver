@@ -170,6 +170,61 @@
                     }
                 }
             }
+        },
+        "PutBucketVersioning": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "VersioningConfiguration"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ContentMD5": {
+                        "location": "header",
+                        "locationName": "Content-MD5"
+                    },
+                    "VersioningConfiguration": {
+                        "locationName": "VersioningConfiguration",
+                        "type": "structure",
+                        "members": {
+                            "Status": {}
+                        }
+                    }
+                },
+                "payload": "VersioningConfiguration"
+            }
+        },
+        "GetBucketVersioning": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Status": {}
+                }
+            }
         }
     },
     "shapes": {
