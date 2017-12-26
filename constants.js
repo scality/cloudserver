@@ -39,6 +39,8 @@ const constants = {
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
     blacklistedPrefixes: { bucket: [], object: [] },
+    // GCP Object Tagging Prefix
+    gcpTaggingPrefix: 'aws-tag-',
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
