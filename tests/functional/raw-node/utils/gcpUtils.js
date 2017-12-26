@@ -82,6 +82,43 @@ function gcpMpuSetup(params, callback) {
     });
 }
 
+function genPutTagObj(size, duplicate) {
+    const retTagSet = [];
+    Array.from(Array(size).keys()).forEach(ind => {
+        retTagSet.push({
+            Key: duplicate ? 'dupeKey' : `key${ind}`,
+            Value: `Value${ind}`,
+        });
+    });
+    return retTagSet;
+}
+
+function genGetTagObj(size, tagPrefix) {
+    const retObj = {};
+    const expectedTagObj = [];
+    for (let i = 1; i <= size; ++i) {
+        retObj[`${tagPrefix}testtag${i}`] = `testtag${i}`;
+        expectedTagObj.push({
+            Key: `testtag${i}`,
+            Value: `testtag${i}`,
+        });
+    }
+    return { tagHeader: retObj, expectedTagObj };
+}
+
+function genDelTagObj(size, tagPrefix) {
+    const headers = {};
+    const expectedTagObj = {};
+    const expectedMetaObj = {};
+    for (let i = 1; i <= size; ++i) {
+        headers[`${tagPrefix}testtag${i}`] = `testtag${i}`;
+        expectedTagObj[`${tagPrefix}testtag${i}`] = `testtag${i}`;
+        headers[`x-goog-meta-testmeta${i}`] = `testmeta${i}`;
+        expectedMetaObj[`x-goog-meta-testmeta${i}`] = `testmeta${i}`;
+    }
+    return { headers, expectedTagObj, expectedMetaObj };
+}
+
 /*
 <CreateBucketConfiguration>
   <LocationConstraint><location></LocationConstraint>
@@ -104,4 +141,7 @@ module.exports = {
     gcpClientRetry,
     setBucketClass,
     gcpMpuSetup,
+    genPutTagObj,
+    genGetTagObj,
+    genDelTagObj,
 };
