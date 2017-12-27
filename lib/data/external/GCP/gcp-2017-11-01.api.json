@@ -1,0 +1,17 @@
+{
+    "version": "1.0",
+    "metadata": {
+        "apiVersion": "2017-11-01",
+        "checksumFormat": "md5",
+        "endpointPrefix": "s3",
+        "globalEndpoint": "storage.googleapi.com",
+        "protocol": "rest-xml",
+        "serviceAbbreviation": "GCP",
+        "serviceFullName": "Google Cloud Storage",
+        "signatureVersion": "s3",
+        "timestampFormat": "rfc822",
+        "uid": "gcp-2017-11-01"
+    },
+    "operations": {},
+    "shapes": {}
+}
