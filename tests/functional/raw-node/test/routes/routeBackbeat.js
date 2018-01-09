@@ -1,6 +1,8 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
+const { versioning } = require('arsenal');
+const versionIdUtils = versioning.VersionID;
 
 const { makeRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
@@ -16,6 +18,46 @@ const backbeatAuthCredentials = {
 const TEST_BUCKET = 'backbeatbucket';
 const TEST_KEY = 'fookey';
 const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
+
+const testArn = 'aws::iam:123456789012:user/bart';
+const testKey = 'testkey';
+const testKeyUTF8 = '䆩鈁櫨㟔罳';
+const testData = 'testkey data';
+const testDataMd5 = crypto.createHash('md5')
+          .update(testData, 'utf-8')
+          .digest('hex');
+const testMd = {
+    'md-model-version': 2,
+    'owner-display-name': 'Bart',
+    'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
+                 'fd6e09d98eacf8f8d5218e7cd47ef2be'),
+    'last-modified': '2017-05-15T20:32:40.032Z',
+    'content-length': testData.length,
+    'content-md5': testDataMd5,
+    'x-amz-server-version-id': '',
+    'x-amz-storage-class': 'STANDARD',
+    'x-amz-server-side-encryption': '',
+    'x-amz-server-side-encryption-aws-kms-key-id': '',
+    'x-amz-server-side-encryption-customer-algorithm': '',
+    'location': null,
+    'acl': {
+        Canned: 'private',
+        FULL_CONTROL: [],
+        WRITE_ACP: [],
+        READ: [],
+        READ_ACP: [],
+    },
+    'nullVersionId': '99999999999999999999RG001  ',
+    'isDeleteMarker': false,
+    'versionId': '98505119639965999999RG001  9',
+    'replicationInfo': {
+        status: 'COMPLETED',
+        backends: [{ site: 'zenko', status: 'PENDING' }],
+        content: ['DATA', 'METADATA'],
+        destination: 'arn:aws:s3:::dummy-dest-bucket',
+        storageClass: 'STANDARD',
+    },
+};
 
 function checkObjectData(s3, objectKey, dataValue, done) {
     s3.getObject({
@@ -45,7 +87,7 @@ function checkObjectData(s3, objectKey, dataValue, done) {
  */
 function makeBackbeatRequest(params, callback) {
     const { method, headers, bucket, objectKey, resourceType,
-            authCredentials, requestBody } = params;
+            authCredentials, requestBody, queryObj } = params;
     const options = {
         authCredentials,
         hostname: ipAddress,
@@ -55,6 +97,7 @@ function makeBackbeatRequest(params, callback) {
         path: `/_/backbeat/${resourceType}/${bucket}/${objectKey}`,
         requestBody,
         jsonResponse: true,
+        queryObj,
     };
     makeRequest(options, callback);
 }
@@ -88,46 +131,6 @@ describeSkipIfAWS('backbeat routes:', () => {
     });
 
     describe('backbeat PUT routes:', () => {
-        const testArn = 'aws::iam:123456789012:user/bart';
-        const testKey = 'testkey';
-        const testKeyUTF8 = '䆩鈁櫨㟔罳';
-        const testData = 'testkey data';
-        const testDataMd5 = crypto.createHash('md5')
-                  .update(testData, 'utf-8')
-                  .digest('hex');
-        const testMd = {
-            'md-model-version': 2,
-            'owner-display-name': 'Bart',
-            'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
-                         'fd6e09d98eacf8f8d5218e7cd47ef2be'),
-            'last-modified': '2017-05-15T20:32:40.032Z',
-            'content-length': testData.length,
-            'content-md5': testDataMd5,
-            'x-amz-server-version-id': '',
-            'x-amz-storage-class': 'STANDARD',
-            'x-amz-server-side-encryption': '',
-            'x-amz-server-side-encryption-aws-kms-key-id': '',
-            'x-amz-server-side-encryption-customer-algorithm': '',
-            'location': null,
-            'acl': {
-                Canned: 'private',
-                FULL_CONTROL: [],
-                WRITE_ACP: [],
-                READ: [],
-                READ_ACP: [],
-            },
-            'nullVersionId': '99999999999999999999RG001  ',
-            'isDeleteMarker': false,
-            'versionId': '98505119639965999999RG001  9',
-            'replicationInfo': {
-                status: 'PENDING',
-                backends: [{ site: 'zenko', status: 'PENDING' }],
-                content: ['DATA', 'METADATA'],
-                destination: 'arn:aws:s3:::dummy-dest-bucket',
-                storageClass: 'STANDARD',
-            },
-        };
-
         describe('PUT data + metadata should create a new complete object',
         () => {
             [{
@@ -394,20 +397,59 @@ describeSkipIfAWS('backbeat routes:', () => {
          });
     });
 
-    describe('backbeat error handling:', () => {
-        it('GET should respond with 405 Method Not Allowed',
-           done => {
-               makeBackbeatRequest({
-                   method: 'GET', bucket: TEST_BUCKET,
-                   objectKey: TEST_KEY, resourceType: 'metadata',
-                   authCredentials: backbeatAuthCredentials,
-               },
-               err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 405);
-                   assert.strictEqual(err.code, 'MethodNotAllowed');
-                   done();
-               });
-           });
+    describe('GET Metadata route:', () => {
+        beforeEach(done => makeBackbeatRequest({
+            method: 'PUT', bucket: TEST_BUCKET,
+            objectKey: TEST_KEY,
+            resourceType: 'metadata',
+            authCredentials: backbeatAuthCredentials,
+            requestBody: JSON.stringify(testMd),
+        }, done));
+
+        it('should return metadata blob for a versionId', done => {
+            makeBackbeatRequest({
+                method: 'GET', bucket: TEST_BUCKET,
+                objectKey: TEST_KEY, resourceType: 'metadata',
+                authCredentials: backbeatAuthCredentials,
+                queryObj: {
+                    versionId: versionIdUtils.encode(testMd.versionId),
+                },
+            }, (err, data) => {
+                const parsedBody = JSON.parse(JSON.parse(data.body).Body);
+                assert.strictEqual(data.statusCode, 200);
+                assert.deepStrictEqual(parsedBody, testMd);
+                done();
+            });
+        });
+
+        it('should return error if bucket does not exist ', done => {
+            makeBackbeatRequest({
+                method: 'GET', bucket: 'blah',
+                objectKey: TEST_KEY, resourceType: 'metadata',
+                authCredentials: backbeatAuthCredentials,
+                queryObj: {
+                    versionId: versionIdUtils.encode(testMd.versionId),
+                },
+            }, (err, data) => {
+                assert.strictEqual(data.statusCode, 404);
+                assert.strictEqual(JSON.parse(data.body).code, 'NoSuchBucket');
+                done();
+            });
+        });
+
+        it('should return error if object does not exist ', done => {
+            makeBackbeatRequest({
+                method: 'GET', bucket: TEST_BUCKET,
+                objectKey: 'blah', resourceType: 'metadata',
+                authCredentials: backbeatAuthCredentials,
+                queryObj: {
+                    versionId: versionIdUtils.encode(testMd.versionId),
+                },
+            }, (err, data) => {
+                assert.strictEqual(data.statusCode, 404);
+                assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
+                done();
+            });
+        });
     });
 });
