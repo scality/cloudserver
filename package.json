@@ -23,6 +23,7 @@
     "arsenal": "scality/Arsenal#rel/7.4",
     "async": "~2.5.0",
     "azure-storage": "^2.1.0",
+    "backo": "^1.1.0",
     "bucketclient": "scality/bucketclient#rel/7.4",
     "commander": "^2.9.0",
     "google-auto-auth": "^0.9.1",
