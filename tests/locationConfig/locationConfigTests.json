@@ -123,7 +123,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake001",
-                "servieKey": "fake001"
+                "serviceKey": "fake001"
             }
         }
     },
@@ -141,7 +141,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake002",
-                "servieKey": "fake002"
+                "serviceKey": "fake002"
             }
         }
     },
@@ -159,7 +159,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake001",
-                "servieKey": "fake001"
+                "serviceKey": "fake001"
             }
         }
     }
