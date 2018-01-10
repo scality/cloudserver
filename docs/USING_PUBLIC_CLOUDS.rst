@@ -25,6 +25,7 @@ From the AWS S3 Console (or any AWS S3 CLI tool)
 Create a bucket to host data for this new location constraint.
 This bucket must have versioning enabled. You can activate this option at
 step 2 of bucket creation in the Console.
+
 - From the AWS CLI, use :code:`put-bucket-versioning` from the :code:`s3api`
   commands on your bucket of choice;
 - From any other tool, see that tool's documentation.
@@ -350,6 +351,137 @@ for details.
 
 CloudServer cannot access pre-existing objects in your MS Azure container
 at this time.
+
+Google Cloud Storage as a Data Backend
+--------------------------------------
+
+From the the Google Cloud Console
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create the necessary buckets to use Google Cloud Storage as a data backend:
+
+- a main bucket set to storage class :code:`multi-regional`
+- a multipart upload bucket set to storage class :code:`regional`
+- an overflow bucket set to storage class :code:`multi-regional`
+
+.. NOTE::
+  The main and overflow buckets of storage class :code:`multi-regional` should be
+  set to the same location
+
+The buckets must have versioning enabled:
+
+- This can be set using the cloud shell with command :code:`gsutil versioning on gs://${bucketname}`;
+- With AWS CLI set to the google endpoint and credentials, use
+  :code:`put-bucket-versioning` from the :code:`s3api` commands on your bucket of choice;
+- Using other tools, please refer to your tool's documentation.
+
+From the CloudServer respository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+locationConfig.json
+^^^^^^^^^^^^^^^^^^^
+
+Edit this file to add a new location constraint. This location constraint will
+contain the information for the Google Cloud Storage bucket to which you will
+be writing your data whenever you create a CloudServer bucket in this location.
+There are a few configurable options here:
+
+- :code:`type` : set to :code:`gcp` to indicate this location constraint is
+  writing data to Google Cloud Storage;
+- :code:`legacyAwsBehavior` : set to :code:`true` to indicate this region should
+  behave like AWS S3 :code:`us-east-1` region, set to :code:`false` to indicate
+  this region should behave like any other AWS S3 region;
+- :code:`bucketName` : set to an *existing bucket different from mpuBucketName*
+  *and overflowBucketName* in your Google Cloud Account;
+  this is the bucket in which your data will be stored for this location constraint;
+- :code:`mpuBucketName` : set to an *existing bucket different from bucketName*
+  *and overflowBucketName* in your Google Cloud Account; this is a bucket in which GCP
+  multipart upload temporary objects will be stored;
+- :code:`overflowBucketName` : set to an *existing bucket different from bucketName*
+  *and mpuBucketName* in your Google Cloud Account; this is a bucket in which GCP
+  multipart upload will use to perform the final compose operation.
+- :code:`gcpEndpoint` : set to your bucket's endpoint, usually :code:`storage.googleapis.com`;
+- :code:`bucketMatch` : set to :code:`true` if you want your object name to be the
+  same in your local bucket and your GCP bucket; set to :code:`false` if you
+  want your object name to be of the form :code:`{{localBucketName}}/{{objectname}}`
+  in your GCP hosted bucket;
+- :code:`credentialsProfile` and :code:`credentials` are two ways to provide
+  your GCP credentials for the buckets, *use only one of them* :
+
+  - :code:`credentialsProfile` : set to the profile name allowing you to access
+    your GCP bucket from your :code:`~/.aws/credentials` file;
+  - :code:`credentials` : set the two fields inside the object (:code:`accessKey`
+    and :code:`secretKey`) to their respective values from your GCP Interop credentials.
+
+- :code:`serviceCredentials` : set the fields inside the object ( :code:`scopes`,
+  :code:`keyFilename`, and/or both :code:`serviceEmail` and :code:`serviceKey`)
+
+  - :code:`scopes`: set to one of the following service scopes (https://developers.google.com/identity/protocols/googlescopes#storagev1)
+  - :code:`keyFilename`: set to the full path of the GCP service keyfile
+  - :code:`serviceEmail`: set to the service email that can be found in the GCP service keyfile
+  - :code:`serviceKey`: set to the private key that can be found in the GCP service keyfile
+
+In this example, our buckets will be named :code:`zenkobucket`,
+:code:`zenkobucketmpu`, :code:`zenkobucketoverflow` and have versioning enabled.
+
+.. code:: json
+
+    (...)
+    "gcp-test": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenkobucket",
+            "mpuBucketName": "zenkobucketmpu",
+            "overflowBucketName": "zenkobucketoverflow",
+            "bucketMatch": true,
+            "credentialsProfile": "zenko",
+            "serviceCredentials": {
+                "scopes": "google cloud service scope",
+                "keyFilename": "/full/path/to/service/key",
+                "serviceEmail": "serviceaccount@email",
+                "serviceKey": "privateKey"
+            }
+        }
+    },
+    (...)
+
+.. code:: json
+
+    (...)
+    "gcp-test": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenkobucket",
+            "mpuBucketName": "zenkobucketmpu",
+            "overflowBucketName": "zenkobucketoverflow",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "WHDBFKILOSDDVF78NPMQ",
+                "secretKey": "87hdfGCvDS+YYzefKLnjjZEYstOIuIjs/2X72eET"
+            },
+            "serviceCredentials": {
+                "scopes": "google cloud service scope",
+                "keyFilename": "/full/path/to/service/key",
+                "serviceEmail": "serviceaccount@email",
+                "serviceKey": "privateKey"
+            }
+        }
+    },
+    (...)
+
+.. WARNING::
+   If you set :code:`bucketMatch` to :code:`true`, we strongly advise that you
+   only have one local bucket per GCP location.
+   Without :code:`bucketMatch` set to :code:`false`, your object names in your
+   GCP bucket will not be prefixed with your Cloud Server bucket name. This
+   means that if you put an object :code:`foo` to your CloudServer bucket
+   :code:`zenko1` and you then put a different :code:`foo` to your CloudServer
+   bucket :code:`zenko2` and both :code:`zenko1` and :code:`zenko2` point to the
+   same GCP bucket, the second :code:`foo` will overwrite the first :code:`foo`.
 
 For Any Data Backend
 --------------------
