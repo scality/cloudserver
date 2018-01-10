@@ -105,6 +105,68 @@
                 }
             }
         },
+        "listVersions": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versions"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "Marker": {
+                        "location": "querystring",
+                        "locationName": "marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "IsTruncated": {
+                        "type": "boolean"
+                    },
+                    "Marker": {},
+                    "NextMarker": {},
+                    "Versions": {
+                        "locationName": "Version",
+                        "shape": "ContentsShape"
+                    },
+                    "Name": {},
+                    "Prefix": {},
+                    "Delimiter": {},
+                    "MaxKeys": {
+                        "type": "integer"
+                    },
+                    "CommonPrefixes": {
+                        "shape": "CommonPrefixShape"
+                    }
+                }
+            }
+        },
         "PutBucketVersioning": {
             "http": {
                 "method": "PUT",
@@ -612,6 +674,92 @@
                     }
                 }
             }
+        },
+        "ComposeObject": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}?compose"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Source": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "MetadataDirective": {
+                        "location": "header",
+                        "locationName": "x-goog-metadata-directive"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "Content-Encoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "MultipartUpload": {
+                        "locationName": "ComposeRequest",
+                        "type": "structure",
+                        "members": {
+                            "Parts": {
+                                "locationName": "Component",
+                                "type": "list",
+                                "member": {
+                                    "type": "structure",
+                                    "members": {
+                                        "PartName": {
+                                            "locationName": "Name"
+                                        }
+                                    }
+                                },
+                                "flattened": true
+                            }
+                        }
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                },
+                "payload": "MultipartUpload"
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ETag": {},
+                    "VersioId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
         }
     },
     "shapes": {
@@ -644,6 +792,9 @@
                     "StorageClass": {},
                     "Owner": {
                         "shape": "OwnerShape"
+                    },
+                    "VersionId": {
+                        "locationName": "Generation"
                     }
                 }
             },
