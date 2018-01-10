@@ -37,19 +37,22 @@ function checkGeneratedID(xml, cb) {
 
 // Create replication configuration XML with an tag optionally omitted.
 function createReplicationXML(missingTag, tagValue) {
-    const Role = missingTag === 'Role' ? '' :
+    let Role = missingTag === 'Role' ? '' :
         '<Role>' +
             'arn:aws:iam::account-id:role/src-resource,' +
             'arn:aws:iam::account-id:role/dest-resource' +
         '</Role>';
+    Role = tagValue && tagValue.Role ? `<Role>${tagValue.Role}</Role>` : Role;
     let ID = missingTag === 'ID' ? '' : '<ID>foo</ID>';
     ID = tagValue && tagValue.ID === '' ? '<ID/>' : ID;
     const Prefix = missingTag === 'Prefix' ? '' : '<Prefix>foo</Prefix>';
     const Status = missingTag === 'Status' ? '' : '<Status>Enabled</Status>';
     const Bucket = missingTag === 'Bucket' ? '' :
         '<Bucket>arn:aws:s3:::destination-bucket</Bucket>';
-    const StorageClass = missingTag === 'StorageClass' ? '' :
+    let StorageClass = missingTag === 'StorageClass' ? '' :
         '<StorageClass>STANDARD</StorageClass>';
+    StorageClass = tagValue && tagValue.StorageClass ?
+        `<StorageClass>${tagValue.StorageClass}</StorageClass>` : StorageClass;
     const Destination = missingTag === 'Destination' ? '' :
         `<Destination>${Bucket + StorageClass}</Destination>`;
     const Rule = missingTag === 'Rule' ? '' :
@@ -79,6 +82,15 @@ describe('\'getReplicationConfiguration\' function', () => {
     replicationUtils.optionalConfigProperties.forEach(prop => {
         it(`should accept replication configuration without '${prop}'`,
             done => checkError(createReplicationXML(prop), null, done));
+    });
+
+    it(`should accept replication configuration without 'Bucket' when there
+    is no Scality destination in the Storage Class`, done => {
+        const xml = createReplicationXML('Bucket', {
+            StorageClass: 'us-east-2',
+            Role: 'arn:aws:iam::account-id:role/src-resource',
+        });
+        checkError(xml, null, done);
     });
 
     it("should create a rule 'ID' if omitted from the replication " +

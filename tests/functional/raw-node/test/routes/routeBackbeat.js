@@ -121,6 +121,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             'versionId': '98505119639965999999RG001  9',
             'replicationInfo': {
                 status: 'PENDING',
+                backends: [{ site: 'zenko', status: 'PENDING' }],
                 content: ['DATA', 'METADATA'],
                 destination: 'arn:aws:s3:::dummy-dest-bucket',
                 storageClass: 'STANDARD',
