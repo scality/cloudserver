@@ -74,8 +74,11 @@
         "recordLogName": "s3-recordlog"
     },
     "mongodb": {
-	"host": "localhost",
-	"port": 27018,
-	"database": "metadata"
+       "host": "localhost",
+       "port": 27018,
+       "writeConcern": "majority",
+       "replicaSet": "",
+       "readPreference": "primary",
+       "database": "metadata"
     }
 }
