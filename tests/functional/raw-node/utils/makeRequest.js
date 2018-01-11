@@ -59,10 +59,6 @@ function makeRequest(params, callback) {
         path: path || '/',
         rejectUnauthorized: false,
     };
-    if (queryObj) {
-        const qs = querystring.stringify(queryObj);
-        options.path = `${options.path}?${qs}`;
-    }
 
     const req = transport.request(options, res => {
         const body = [];
@@ -107,6 +103,10 @@ function makeRequest(params, callback) {
     }
     // restore original URL-encoded path
     req.path = encodedPath;
+    if (queryObj) {
+        const qs = querystring.stringify(queryObj);
+        req.path = `${options.path}?${qs}`;
+    }
     if (requestBody) {
         req.write(requestBody);
     }
