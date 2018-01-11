@@ -191,7 +191,8 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             Prefix: 'bar',
             Status: 'Enabled',
         }]);
-        config.Role = 'arn:aws:iam::account-id:role/resource';
+        config.Role = 'arn:aws:iam::account-id:role/resource,' +
+            'arn:aws:iam::account-id:role/resource1';
         checkError(config, null, done);
     });
 
@@ -345,14 +346,12 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
 
     // A combination of external destination storage classes.
     replicationUtils.validMultipleStorageClasses.forEach(storageClass => {
-        const ruleConfig = setConfigRules({
+        const config = setConfigRules({
             Destination: {
                 Bucket: `arn:aws:s3:::${destinationBucket}`,
                 StorageClass: storageClass,
             },
         });
-        const config = Object.assign({}, ruleConfig,
-            { Role: 'arn:aws:iam::account-id:role' });
 
         it('should accept configuration when \'StorageClass\' is ' +
             `${storageClass}`, done => checkError(config, null, done));
