@@ -284,10 +284,11 @@ describe('Replication object MD without bucket replication config', () => {
             backends: [{
                 site: 'zenko',
                 status: 'PENDING',
+                dataStoreVersionId: '',
             }],
             content: ['DATA', 'METADATA'],
             destination: bucketARN,
-            storageClass: '',
+            storageClass: 'zenko',
             role: 'arn:aws:iam::account-id:role/src-resource,' +
                 'arn:aws:iam::account-id:role/dest-resource',
             storageType: '',
@@ -483,6 +484,7 @@ describe('Replication object MD without bucket replication config', () => {
             const backends = backend.split(',').map(site => ({
                 site,
                 status: 'PENDING',
+                dataStoreVersionId: '',
             }));
             describe('Object metadata replicationInfo storageType value',
             () => {
