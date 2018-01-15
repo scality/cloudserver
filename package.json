@@ -26,6 +26,7 @@
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
     "node-forge": "^0.7.1",
+    "node-livy-client": "scality/node-livy-client",
     "node-sql-parser": "0.0.1",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
