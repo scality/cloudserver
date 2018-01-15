@@ -52,9 +52,12 @@ function _performSearch(host,
             }
         });
     });
-
+    // generateV4Headers exepects request object with path that does not
+    // include query
+    request.path = `/${bucketName}`;
     auth.client.generateV4Headers(request, { search: query },
         accessKey, secretKey, 's3');
+    request.path = `/${bucketName}?search=${escapedSearch}`;
     if (verbose) {
         logger.info('request headers', { headers: request._headers });
     }
