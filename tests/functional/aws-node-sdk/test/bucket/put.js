@@ -126,6 +126,12 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 testFn(shortName, done);
             });
 
+            it('should return 403 if name is reserved (e.g., METADATA)',
+                done => {
+                    const reservedName = 'METADATA';
+                    testFn(reservedName, done, 403, 'AccessDenied');
+                });
+
             itSkipIfAWS('should return 400 if name is longer than 63 chars',
                 done => {
                     const longName = 'x'.repeat(64);
