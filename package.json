@@ -26,7 +26,6 @@
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
-    "mongodb": "^2.2.31",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
     "sproxydclient": "scality/sproxydclient",
