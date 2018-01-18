@@ -225,6 +225,10 @@ utils.getAndAssertResult = (s3, params, cb) => {
                 `getting object, got error ${err}`);
             if (body) {
                 assert(data.Body, 'expected object body in response');
+                assert.equal(data.Body.length, data.ContentLength,
+                    `received data of length ${data.Body.length} does not ` +
+                    'equal expected based on ' +
+                    `content length header of ${data.ContentLength}`);
                 const expectedMD5 = utils.expectedETag(body, false);
                 const resultMD5 = utils.expectedETag(data.Body, false);
                 assert.strictEqual(resultMD5, expectedMD5);
