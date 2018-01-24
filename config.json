@@ -77,8 +77,5 @@
 	"host": "localhost",
 	"port": 27018,
 	"database": "metadata"
-    },
-    "log": {
-	"logLevel": "trace"
     }
 }
