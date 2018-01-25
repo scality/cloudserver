@@ -98,12 +98,14 @@ stages:
       - Git: *clone
       - ShellCommand: *node_modules
       - ShellCommandWithSecrets: *aws_credentials
-      - ShellCommand:
+      - ShellCommandWithSecrets:
           name: run multi-backends unit tests
-          command: >
-              npm run start_dmd &
-              bash wait_for_local_port.bash 9990 40 &&
-              npm run multiple_backend_test
+          command: mocha -t 20000 --recursive tests/multipleBackend
+          env:
+            CI: 'true'
+            S3BACKEND: mem
+            S3DATA: multiple
+
 
   # TODO: deduplicate using a setvar for node number
   node0:
