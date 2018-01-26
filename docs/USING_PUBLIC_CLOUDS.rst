@@ -1,4 +1,4 @@
-Using Public Clouds as data backends
+Using Public Clouds as Data Backends
 ====================================
 
 Introduction
@@ -7,64 +7,61 @@ Introduction
 As stated in our `GETTING STARTED guide <../GETTING_STARTED/#location-configuration>`__,
 new data backends can be added by creating a region (also called location
 constraint) with the right endpoint and credentials.
-This section of the documentation shows you how to set up our currently
-supported public cloud backends:
+This section shows you how to set up the public cloud backends Scality currently
+supports:
 
 - `Amazon S3 <#aws-s3-as-a-data-backend>`__ ;
 - `Microsoft Azure <#microsoft-azure-as-a-data-backend>`__ .
 
-For each public cloud backend, you will have to edit your CloudServer
-:code:`locationConfig.json` and do a few setup steps on the applicable public
-cloud backend.
+For each public cloud backend, you must edit your CloudServer
+:code:`locationConfig.json` and perform a few setup steps.
 
-AWS S3 as a data backend
+AWS S3 as a Data Backend
 ------------------------
 
 From the AWS S3 Console (or any AWS S3 CLI tool)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create a bucket where you will host your data for this new location constraint.
-This bucket must have versioning enabled:
-
-- This is an option you may choose to activate at step 2 of Bucket Creation in
-  the Console;
-- With AWS CLI, use :code:`put-bucket-versioning` from the :code:`s3api`
+Create a bucket to host data for this new location constraint.
+This bucket must have versioning enabled. You can activate this option at
+step 2 of bucket creation in the Console.
+- From the AWS CLI, use :code:`put-bucket-versioning` from the :code:`s3api`
   commands on your bucket of choice;
-- Using other tools, please refer to your tool's documentation.
+- From any other tool, see that tool's documentation.
 
-In this example, our bucket will be named ``zenkobucket`` and has versioning
+In the present example, our bucket is named ``zenkobucket`` and has versioning
 enabled.
 
-From the CloudServer repository
+From the CloudServer Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 locationConfig.json
 ^^^^^^^^^^^^^^^^^^^
 
-Edit this file to add a new location constraint. This location constraint will
-contain the information for the AWS S3 bucket to which you will be writing your
-data whenever you create a CloudServer bucket in this location.
-There are a few configurable options here:
+Edit this file to add a new location constraint. This location constraint must
+contain the information for the AWS S3 bucket to which you will write your
+data when you create a CloudServer bucket in this location.
 
+There are a few configurable options here:
 - :code:`type` : set to :code:`aws_s3` to indicate this location constraint is
   writing data to AWS S3;
 - :code:`legacyAwsBehavior` : set to :code:`true` to indicate this region should
-  behave like AWS S3 :code:`us-east-1` region, set to :code:`false` to indicate
-  this region should behave like any other AWS S3 region;
-- :code:`bucketName` : set to an *existing bucket* in your AWS S3 Account; this
+  behave like AWS S3
+- :code:`us-east-1` : set to :code:`false` to indicate this region must behave like
+  any other AWS S3 region;
+- :code:`bucketName` : set to an *existing bucket* in your AWS S3 account. This
   is the bucket in which your data will be stored for this location constraint;
 - :code:`awsEndpoint` : set to your bucket's endpoint, usually :code:`s3.amazonaws.com`;
-- :code:`bucketMatch` : set to :code:`true` if you want your object name to be the
-  same in your local bucket and your AWS S3 bucket; set to :code:`false` if you
-  want your object name to be of the form :code:`{{localBucketName}}/{{objectname}}`
-  in your AWS S3 hosted bucket;
+- :code:`bucketMatch` : set to :code:`true` for your object name to be the
+  same in the local bucket and the AWS S3 bucket; set to :code:`false` for your
+  object name to be of the form :code:`{{localBucketName}}/{{objectname}}`
+  in the AWS S3 hosted bucket;
 - :code:`credentialsProfile` and :code:`credentials` are two ways to provide
-  your AWS S3 credentials for that bucket, *use only one of them* :
-
-  - :code:`credentialsProfile` : set to the profile name allowing you to access
-    your AWS S3 bucket from your :code:`~/.aws/credentials` file;
-  - :code:`credentials` : set the two fields inside the object (:code:`accessKey`
-    and :code:`secretKey`) to their respective values from your AWS credentials.
+  AWS S3 credentials for a bucket. *Use only one.* :
+- :code:`credentialsProfile` : set to the profile name to allow access to
+  the AWS S3 bucket from the :code:`~/.aws/credentials` file;
+- :code:`credentials` : set the two fields inside the object (:code:`accessKey`
+  and :code:`secretKey`) to their respective values from your AWS credentials.
 
 .. code:: json
 
@@ -100,27 +97,24 @@ There are a few configurable options here:
     (...)
 
 .. WARNING::
-   If you set :code:`bucketMatch` to :code:`true`, we strongly advise that you
-   only have one local bucket per AWS S3 location.
-   Without :code:`bucketMatch` set to :code:`false`, your object names in your
-   AWS S3 bucket will not be prefixed with your Cloud Server bucket name. This
-   means that if you put an object :code:`foo` to your CloudServer bucket
-   :code:`zenko1` and you then put a different :code:`foo` to your CloudServer
-   bucket :code:`zenko2` and both :code:`zenko1` and :code:`zenko2` point to the
-   same AWS bucket, the second :code:`foo` will overwrite the first :code:`foo`.
+   If you set :code:`bucketMatch` to :code:`true`, maintain only one local
+   bucket per AWS S3 location. If :code:`bucketMatch` is set :code:`true`,
+   object names in the AWS S3 bucket are not prefixed with a CloudServer
+   bucket name. When an object is put to the :code:`zenko1` CloudServer bucket
+   and a different object with the same name is put to the :code:`zenko2`
+   CloudServer bucket, both :code:`zenko1` and :code:`zenko2` point to the
+   same AWS bucket, and the second object overwrites the first.
 
 ~/.aws/credentials
 ^^^^^^^^^^^^^^^^^^
 
 .. TIP::
-   If you explicitly set your :code:`accessKey` and :code:`secretKey` in the 
-   :code:`credentials` object of your :code:`aws_s3` location in your
-   :code:`locationConfig.json` file, you may skip this section
+   If you have explicitly set :code:`accessKey` and :code:`secretKey`
+   in your :code:`aws_s3` location's :code:`credentials` object
+   (:code:`locationConfig.json`), skip this section.
 
-Make sure your :code:`~/.aws/credentials` file has a profile matching the one
-defined in your :code:`locationConfig.json`. Following our previous example, it
-would look like:
-
+Make sure :code:`~/.aws/credentials` has a profile that matches the one defined
+in :code:`locationConfig.json`. Following the previous example:
 
 .. code:: shell
 
@@ -128,27 +122,26 @@ would look like:
     aws_access_key_id=WHDBFKILOSDDVF78NPMQ
     aws_secret_access_key=87hdfGCvDS+YYzefKLnjjZEYstOIuIjs/2X72eET
 
-Start the server with the ability to write to AWS S3
+Start the Server with the Ability to Write to AWS S3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Inside the repository, once all the files have been edited, you should be able
-to start the server and start writing data to AWS S3 through CloudServer.
+Once all files in the repository are edited, start the server and begin
+writing data to AWS S3 through CloudServer.
 
 .. code:: shell
 
    # Start the server locally
    $> S3DATA=multiple npm start
 
-Run the server as a docker container with the ability to write to AWS S3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run the Server as a Docker Container that Can Write to AWS S3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. TIP::
-   If you set the :code:`credentials` object in your
-   :code:`locationConfig.json` file, you don't need to mount your
-   :code:`.aws/credentials` file
+   If you set the :code:`credentials` object in :code:`locationConfig.json`
+   file, there is no need to mount :code:`.aws/credentials`.
 
-Mount all the files that have been edited to override defaults, and do a
-standard Docker run; then you can start writing data to AWS S3 through
+Mount all files that have been edited to override defaults and do a
+standard Docker run. Then you can start writing data to AWS S3 through
 CloudServer.
 
 .. code:: shell
@@ -163,14 +156,15 @@ CloudServer.
    -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
    -d scality/s3server
 
-Testing: put an object to AWS S3 using CloudServer
+Testing: Put an Object to AWS S3 Using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to start testing pushing to AWS S3, you will need to create a local
-bucket in the AWS S3 location constraint - this local bucket will only store the
-metadata locally, while both the data and any user metadata (:code:`x-amz-meta`
-headers sent with a PUT object, and tags) will be stored on AWS S3.
-This example is based on all our previous steps.
+To start testing pushing to AWS S3, create a local bucket in the AWS S3
+location constraint. This local bucket only stores the metadata locally,
+while both the data and any user metadata (:code:`x-amz-meta` headers
+sent with a PUT object, and tags) are stored on AWS S3.
+
+The following example builds on the previous steps.
 
 .. code:: shell
 
@@ -184,8 +178,7 @@ This example is based on all our previous steps.
    $> s3cmd --host=127.0.0.1:8000 ls s3://zenkobucket
     2017-10-23 10:26       330   s3://zenkobucket/testput
 
-Then, from the AWS Console, if you go into your bucket, you should see your
-newly uploaded object:
+Accessing the bucket from the AWS console exposes the newly uploaded object:
 
 .. figure:: ../res/aws-console-successful-put.png
    :alt: AWS S3 Console upload example
@@ -193,68 +186,67 @@ newly uploaded object:
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
-Make sure your :code:`~/.s3cfg` file has credentials matching your local
-CloudServer credentials defined in :code:`conf/authdata.json`. By default, the
+Ensure the :code:`~/.s3cfg` file has credentials that match your local
+CloudServer credentials, defined in :code:`conf/authdata.json`. By default, the
 access key is :code:`accessKey1` and the secret key is :code:`verySecretKey1`.
-For more informations, refer to our template `~/.s3cfg <./CLIENTS/#s3cmd>`__ .
+For more informations, see our template `~/.s3cfg <./CLIENTS/#s3cmd>`__ .
 
-Pre-existing objects in your AWS S3 hosted bucket can unfortunately not be
-accessed by CloudServer at this time.
+CloudServer cannot access pre-existing objects in your AWS S3 hosted bucket.
 
-Make sure versioning is enabled in your remote AWS S3 hosted bucket. To check,
-using the AWS Console, click on your bucket name, then on "Properties" at the
-top, and then you should see something like this:
+Make sure versioning is enabled in your remote AWS S3-hosted bucket. Using the
+AWS Console, check by clicking your bucket name, and then "Properties" at the
+top. You should see something like:
 
 .. figure:: ../res/aws-console-versioning-enabled.png
    :alt: AWS Console showing versioning enabled
 
-Microsoft Azure as a data backend
+Microsoft Azure as a Data Backend
 ---------------------------------
 
 From the MS Azure Console
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-From your Storage Account dashboard, create a container where you will host your
-data for this new location constraint.
+From your storage account dashboard, create a container to host data for the
+new location constraint.
 
-You will also need to get one of your Storage Account Access Keys, and to
-provide it to CloudServer.
-This can be found from your Storage Account dashboard, under "Settings, then
+You must provide one of your storage access keys to CloudServer.
+This can be found from your Storage Account dashboard, under "Settings," then
 "Access keys".
 
-In this example, our container will be named ``zenkontainer``, and will belong
-to the ``zenkomeetups`` Storage Account.
+In this example, our container, named ``zenkontainer``, belongs to the
+``zenkomeetups`` storage account.
 
-From the CloudServer repository
+From the CloudServer Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 locationConfig.json
 ^^^^^^^^^^^^^^^^^^^
 
-Edit this file to add a new location constraint. This location constraint will
-contain the information for the MS Azure container to which you will be writing
-your data whenever you create a CloudServer bucket in this location.
-There are a few configurable options here:
+Edit this file to add a new location constraint, containing the information for
+the MS Azure container to which you will write your data whenever you create a
+CloudServer bucket in this location.
+
+Configurable options include:
 
 - :code:`type` : set to :code:`azure` to indicate this location constraint is
   writing data to MS Azure;
-- :code:`legacyAwsBehavior` : set to :code:`true` to indicate this region should
-  behave like AWS S3 :code:`us-east-1` region, set to :code:`false` to indicate
-  this region should behave like any other AWS S3 region (in the case of MS Azure
+- :code:`legacyAwsBehavior` : set to :code:`true` to indicate this region shall
+  behave like the AWS S3 :code:`us-east-1` region; set to :code:`false` to indicate
+  this region shall behave like any other AWS S3 region (in the case of MS Azure-
   hosted data, this is mostly relevant for the format of errors);
 - :code:`azureStorageEndpoint` : set to your storage account's endpoint, usually
   :code:`https://{{storageAccountName}}.blob.core.windows.name`;
 - :code:`azureContainerName` : set to an *existing container* in your MS Azure
-  storage account; this is the container in which your data will be stored for
+  storage account. This is the container in which your data shll be stored for
   this location constraint;
-- :code:`bucketMatch` : set to :code:`true` if you want your object name to be
-  the same in your local bucket and your MS Azure container; set to
-  :code:`false` if you want your object name to be of the form
-  :code:`{{localBucketName}}/{{objectname}}` in your MS Azure container ;
-- :code:`azureStorageAccountName` : the MS Azure Storage Account to which your
+- :code:`bucketMatch` : set to :code:`true` for the object name to be
+  the same in the local bucket and the MS Azure container; set to
+  :code:`false` for the object name to take the form
+  :code:`{{localBucketName}}/{{objectname}}` in the MS Azure container ;
+- :code:`azureStorageAccountName` : the MS Azure storage account to which your
   container belongs;
-- :code:`azureStorageAccessKey` : one of the Access Keys associated to the above
-  defined MS Azure Storage Account.
+- :code:`azureStorageAccessKey` : one of the access keys associated with the
+  above-defined MS Azure storage account.
 
 .. code:: json
 
@@ -273,21 +265,19 @@ There are a few configurable options here:
     (...)
 
 .. WARNING::
-   If you set :code:`bucketMatch` to :code:`true`, we strongly advise that you
-   only have one local bucket per MS Azure location.
-   Without :code:`bucketMatch` set to :code:`false`, your object names in your
-   MS Azure container will not be prefixed with your Cloud Server bucket name.
-   This means that if you put an object :code:`foo` to your CloudServer bucket
-   :code:`zenko1` and you then put a different :code:`foo` to your CloudServer
-   bucket :code:`zenko2` and both :code:`zenko1` and :code:`zenko2` point to the
-   same MS Azure container, the second :code:`foo` will overwrite the first
-   :code:`foo`.
+   If you set :code:`bucketMatch` to :code:`true`, maintain only one local
+   bucket per AWS S3 location. If :code:`bucketMatch` is set :code:`true`,
+   object names in the AWS S3 bucket are not prefixed with a CloudServer
+   bucket name. When an object is put to the :code:`zenko1` CloudServer bucket
+   and a different object with the same name is put to the :code:`zenko2`
+   CloudServer bucket, both :code:`zenko1` and :code:`zenko2` point to the
+   same AWS bucket, and the second object overwrites the first.
 
 .. TIP::
-   You may export environment variables to **override** some of your
-   :code:`locationConfig.json` variable ; the syntax for them is
-   :code:`{{region-name}}_{{ENV_VAR_NAME}}`; currently, the available variables
-   are those shown below, with the values used in the current example:
+   You can export environment variables to override some of your
+   :code:`locationConfig.json` variables. The syntax for these is
+   :code:`{{region-name}}_{{ENV_VAR_NAME}}`. Currently available variables
+   are shown below, with the values used in the present example:
 
    .. code:: shell
 
@@ -295,23 +285,22 @@ There are a few configurable options here:
       $> export azure-test_AZURE_STORAGE_ACCESS_KEY="auhyDo8izbuU4aZGdhxnWh0ODKFP3IWjsN1UfFaoqFbnYzPj9bxeCVAzTIcgzdgqomDKx6QS+8ov8PYCON0Nxw=="
       $> export azure-test_AZURE_STORAGE_ENDPOINT="https://zenkomeetups.blob.core.windows.net/"
 
-Start the server with the ability to write to MS Azure
+Start the Server With the Ability to Write to MS Azure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Inside the repository, once all the files have been edited, you should be able
-to start the server and start writing data to MS Azure through CloudServer.
+Inside the repository, once all files have been edited, start
+the server and begin writing data to MS Azure through CloudServer.
 
 .. code:: shell
 
    # Start the server locally
    $> S3DATA=multiple npm start
 
-Run the server as a docker container with the ability to write to MS Azure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run the Server as a Docker Container that Can Write to MS Azure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Mount all the files that have been edited to override defaults, and do a
-standard Docker run; then you can start writing data to MS Azure through
-CloudServer.
+Mount all edited files to override defaults and do a standard Docker run.
+Then start writing data to MS Azure through CloudServer.
 
 .. code:: shell
 
@@ -324,14 +313,13 @@ CloudServer.
    -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
    -d scality/s3server
 
-Testing: put an object to MS Azure using CloudServer
+Testing: Put an Object to MS Azure Using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to start testing pushing to MS Azure, you will need to create a local
-bucket in the MS Azure region - this local bucket will only store the metadata
-locally, while both the data and any user metadata (:code:`x-amz-meta` headers
-sent with a PUT object, and tags) will be stored on MS Azure.
-This example is based on all our previous steps.
+To test pushing to MS Azure, create a local bucket in the MS Azure region.
+This local bucket only stores metadata locally, while both the data and any
+user metadata (:code:`x-amz-meta` headers sent with a PUT object and tags)
+are stored on MS Azure. This example is based on the previous steps.
 
 .. code:: shell
 
@@ -345,8 +333,8 @@ This example is based on all our previous steps.
    $> s3cmd --host=127.0.0.1:8000 ls s3://zenkobucket
     2017-10-24 14:38       330   s3://zenkontainer/testput
 
-Then, from the MS Azure Console, if you go into your container, you should see
-your newly uploaded object:
+From the MS Azure console, go into the container to see the newly uploaded
+object:
 
 .. figure:: ../res/azure-console-successful-put.png
    :alt: MS Azure Console upload example
@@ -354,31 +342,33 @@ your newly uploaded object:
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
-Make sure your :code:`~/.s3cfg` file has credentials matching your local
-CloudServer credentials defined in :code:`conf/authdata.json`. By default, the
-access key is :code:`accessKey1` and the secret key is :code:`verySecretKey1`.
-For more informations, refer to our template `~/.s3cfg <./CLIENTS/#s3cmd>`__ .
+Make sure the :code:`~/.s3cfg` file's credentials match the local
+CloudServer credentials defined in :code:`conf/authdata.json`. The default
+access key is :code:`accessKey1` and the default secret key is
+:code:`verySecretKey1`. See the `~/.s3cfg <./CLIENTS/#s3cmd>`__  template
+for details.
 
-Pre-existing objects in your MS Azure container can unfortunately not be
-accessed by CloudServer at this time.
+CloudServer cannot access pre-existing objects in your MS Azure container
+at this time.
 
-For any data backend
+For Any Data Backend
 --------------------
 
-From the CloudServer repository
+From the CloudServer Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 config.json
 ^^^^^^^^^^^
 
 .. IMPORTANT::
-   You only need to follow this section if you want to define a given location
-   as the default for a specific endpoint
+   Only follow this section to define a given location as the default for
+   a specific endpoint
 
-Edit the :code:`restEndpoint` section of your :code:`config.json` file to add
-an endpoint definition matching the location you want to use as a default for an
+Edit the :code:`restEndpoint` section of :code:`config.json` file to add an
+endpoint definition matching the location you want to use as a default for an
 endpoint to this specific endpoint.
-In this example, we'll make :code:`custom-location` our default location for the
+
+In this example, :code:`custom-location` is the default location for the
 endpoint :code:`zenkotos3.com`:
 
 .. code:: json
@@ -393,4 +383,3 @@ endpoint :code:`zenkotos3.com`:
         "zenkotos3.com": "custom-location"
     },
     (...)
-
