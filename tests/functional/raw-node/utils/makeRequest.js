@@ -61,17 +61,14 @@ function makeRequest(params, callback) {
         path: path || '/',
         rejectUnauthorized: false,
     };
-
-    if (queryObj) {
-        const qs = querystring.stringify(queryObj);
-        options.path = `${options.path}?${qs}`;
-    }
+    const qs = querystring.stringify(queryObj);
 
     if (params.GCP && authCredentials) {
+        const gcpPath = queryObj ? `${options.path}?${qs}` : options.path;
         const getAuthObject = {
             endpoint: { host: hostname },
             method,
-            path: options.path || '/',
+            path: gcpPath || '/',
             headers,
         };
         const signer = new GcpSigner(getAuthObject);
@@ -125,10 +122,7 @@ function makeRequest(params, callback) {
     }
     // restore original URL-encoded path
     req.path = encodedPath;
-    if (queryObj) {
-        const qs = querystring.stringify(queryObj);
-        req.path = `${options.path}?${qs}`;
-    }
+    req.path = queryObj ? `${options.path}?${qs}` : req.path;
     if (requestBody) {
         req.write(requestBody);
     }
@@ -166,6 +160,19 @@ function makeS3Request(params, callback) {
     makeRequest(options, callback);
 }
 
+/** makeGcpRequest - utility function to generate a request against GCP
+ * @param {object} params - params for making request
+ * @param {string} params.method - request method
+ * @param {object} [params.queryObj] - query fields and their string values
+ * @param {object} [params.headers] - headers and their string values
+ * @param {string} [params.bucket] - bucket name
+ * @param {string} [params.objectKey] - object key name
+ * @param {object} [params.authCredentials] - authentication credentials
+ * @param {object} params.authCredentials.accessKey - access key
+ * @param {object} params.authCredentials.secretKey - secret key
+ * @param {function} callback - with error and response parameters
+ * @return {undefined} - and call callback
+ */
 function makeGcpRequest(params, callback) {
     const { method, queryObj, headers, bucket, objectKey, authCredentials,
         requestBody } = params;
