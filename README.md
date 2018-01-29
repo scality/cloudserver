@@ -5,7 +5,7 @@
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
-[![Docker Pulls][badgetwitter]](https://twitter.com/Zenko_io)
+[![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
 
 ## Overview
 
@@ -134,7 +134,7 @@ This starts a Zenko CloudServer on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 
-[badgetwitter]: https://img.shields.io/twitter/follow/s3server.svg?style=social&label=Follow
+[badgetwitter]: https://img.shields.io/twitter/follow/zenko.svg?style=social&label=Follow
 [badgedocker]: https://img.shields.io/docker/pulls/scality/s3server.svg
 [badgepub]: https://circleci.com/gh/scality/S3.svg?style=svg
 [badgepriv]: http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae
