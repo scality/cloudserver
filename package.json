@@ -34,7 +34,7 @@
     "multilevel": "^7.3.0",
     "node-uuid": "^1.4.3",
     "on-finished": "^2.3.0",
-    "sproxydclient": "scality/sproxydclient",
+    "sproxydclient": "scality/sproxydclient#lhs/bug2",
     "utapi": "scality/utapi#rel/6.4",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient#rel/6.4",
