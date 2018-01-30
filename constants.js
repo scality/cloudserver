@@ -83,7 +83,6 @@ const constants = {
         'accelerate',
         'analytics',
         'inventory',
-        'lifecycle',
         'list-type',
         'logging',
         'metrics',
