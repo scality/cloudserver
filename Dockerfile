@@ -20,4 +20,4 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "npm", "start" ]
 
-EXPOSE 8000
+EXPOSE 8001
