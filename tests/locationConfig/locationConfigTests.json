@@ -114,6 +114,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
@@ -122,7 +123,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake001",
-                "servieKey": "fake001"
+                "serviceKey": "fake001"
             }
         }
     },
@@ -131,6 +132,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket-2",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
@@ -139,7 +141,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake002",
-                "servieKey": "fake002"
+                "serviceKey": "fake002"
             }
         }
     },
@@ -148,6 +150,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
@@ -156,7 +159,7 @@
             "serviceCredentials": {
                 "scopes": "https://www.googleapis.com/auth/cloud-platform",
                 "serviceEmail": "fake001",
-                "servieKey": "fake001"
+                "serviceKey": "fake001"
             }
         }
     }
