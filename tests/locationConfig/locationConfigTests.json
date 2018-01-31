@@ -114,6 +114,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
@@ -131,6 +132,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket-2",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
@@ -148,6 +150,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
+            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "overflowBucketName": "zenko-gcp-overflow",
