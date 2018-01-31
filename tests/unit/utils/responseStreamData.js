@@ -14,11 +14,21 @@ const owner = 'accessKey1canonicalID';
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
+const postBody2 = Buffer.from('I am also a body', 'utf8');
 const errCode = null;
 const overrideHeaders = {};
 const resHeaders = {};
 const dataStoreEntry = {
     value: postBody,
+    keyContext: {
+        bucketName,
+        owner,
+        namespace,
+    },
+};
+
+const dataStoreEntry2 = {
+    value: postBody2,
     keyContext: {
         bucketName,
         owner,
@@ -50,7 +60,7 @@ describe('responseStreamData:', () => {
     });
 
     it('should stream full requested object data for two part object', done => {
-        ds.push(null, dataStoreEntry, dataStoreEntry);
+        ds.push(null, dataStoreEntry, dataStoreEntry2);
         const dataLocations = [
             {
                 key: 1,
@@ -69,7 +79,7 @@ describe('responseStreamData:', () => {
         });
         response.on('end', () => {
             const data = response._getData();
-            const doublePostBody = postBody.toString().concat(postBody);
+            const doublePostBody = postBody.toString().concat(postBody2);
             assert.strictEqual(data, doublePostBody);
             done();
         });
