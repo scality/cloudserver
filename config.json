@@ -55,11 +55,6 @@
     "healthChecks": {
         "allowFrom": ["127.0.0.1/8", "::1", "0.0.0.0/0"]
     },
-    "livy": {
-        "host": "livy",
-        "port": 8998,
-        "transport": "http"
-    },
     "metadataClient": {
         "host": "localhost",
         "port": 9993
