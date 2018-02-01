@@ -81,6 +81,19 @@ if [[ "$METADATA_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .metadataClient.host=\"$METADATA_HOST\""
 fi
 
+if [[ "$MONGODB_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.host=\"$MONGODB_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.port=27017"
+fi
+
+if [[ "$MONGODB_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.port=$MONGODB_PORT"
+fi
+
+if [[ "$MONGODB_RS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.replicaSet=\"$MONGODB_RS\""
+fi
+
 if [[ "$REDIS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
