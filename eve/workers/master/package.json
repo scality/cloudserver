@@ -43,7 +43,7 @@
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
-    "mocha": "^2.3.4",
+    "mocha": "^5.0.0",
     "mocha-junit-reporter": "1.11.1",
     "node-mocks-http": "^1.5.2",
     "s3blaster": "scality/s3blaster",

@@ -98,6 +98,9 @@ stages:
       - Git: *clone
       - ShellCommand: *node_modules
       - ShellCommandWithSecrets: *aws_credentials
+      - ShellCommand:
+          name: Checkout mocha version
+          command: mocha --version; ./node_modules/mocha/bin/mocha --version
       - ShellCommandWithSecrets:
           name: run multi-backends unit tests
           command: mocha -t 20000 --recursive tests/multipleBackend
@@ -105,7 +108,9 @@ stages:
             CI: 'true'
             S3BACKEND: mem
             S3DATA: multiple
-
+      - ShellCommand:
+          name: Process
+          command: ps -aux
 
   # TODO: deduplicate using a setvar for node number
   node0:
