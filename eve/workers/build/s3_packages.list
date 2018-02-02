@@ -2,5 +2,6 @@ default-jdk
 lsof
 maven
 netcat
+nodejs
 redis-server
 supervisor

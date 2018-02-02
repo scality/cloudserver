@@ -45,8 +45,7 @@ then
 
   npm run unit_coverage_legacy_location
 
-  #sudo -E supervisord -c /etc/supervisor/supervisord.conf
-  npm run start_dmd &> /$CIRCLE_ARTIFACTS/dmd_server.txt &
+  npm run start_dmd &
   bash wait_for_local_port.bash 9990 40 &&
   npm run multiple_backend_test
   killandsleep 9990

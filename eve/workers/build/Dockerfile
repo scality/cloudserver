@@ -1,9 +1,9 @@
-FROM node:6-slim
+FROM buildpack-deps:jessie-curl
 
 #
 # Install packages needed by the buildchain
 #
-
+ENV LANG C.UTF-8
 COPY ./s3_packages.list ./buildbot_worker_packages.list /tmp/
 RUN apt-get update \
     && cat /tmp/*packages.list | xargs apt-get install -y \
@@ -14,10 +14,10 @@ RUN apt-get update \
 #
 # Add user eve
 #
-
-RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
-    && adduser eve sudo \
-    && sed -ri 's/(%sudo.*)ALL$/\1NOPASSWD:ALL/' /etc/sudoers
+#
+#RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
+#    && adduser eve sudo \
+#    && sed -ri 's/(%sudo.*)ALL$/\1NOPASSWD:ALL/' /etc/sudoers
 #
 # Install Dependencies
 #
@@ -53,10 +53,10 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ARG BUILDBOT_VERSION
 RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
-USER eve
+#USER eve
 COPY ./bash_profile /home/eve/.bashrc
 COPY ./bash_profile /home/eve/.bash_profile
 RUN exec bash -l
-WORKDIR /home/eve/workspace
-CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS \
-    && buildbot-worker start --nodaemon"]
+#WORKDIR /home/eve/workspace
+CMD ["supervisord", "-n"]
+#CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPAS   && buildbot-worker start --nodaemon"]
