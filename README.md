@@ -121,8 +121,9 @@ where the data is saved. If the bucket has no location
 constraint, the endpoint of the PUT request will be
 used to determine location.
 
-See the Configuration section below to learn how to set
-location constraints.
+See the Configuration section in our documentation
+[here](http://s3-server.readthedocs.io/en/latest/GETTING_STARTED/#configuration)
+to learn how to set location constraints.
 
 ## Run it with an in-memory backend
 
