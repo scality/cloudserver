@@ -3,7 +3,7 @@ FROM ubuntu:trusty
 #
 # Install apt packages needed by the buildchain
 #
-
+ENV LANG C.UTF-8
 COPY s3_packages.list buildbot_worker_packages.list /tmp/
 RUN apt-get update -q && apt-get -qy install curl apt-transport-https \
     && apt-get install -qy software-properties-common python-software-properties \
@@ -59,6 +59,7 @@ RUN pip install buildbot-worker==$BUILDBOT_VERSION
 
 ENV CXX=g++-4.9
 USER eve
+ENV LANG C.UTF-8
 WORKDIR /home/eve/workspace
 CMD buildbot-worker create-worker . "$BUILDMASTER:$BUILDMASTER_PORT" "$WORKERNAME" "$WORKERPASS" \
     && sudo service redis-server start \
