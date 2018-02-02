@@ -14,10 +14,10 @@ RUN apt-get update \
 #
 # Add user eve
 #
-#
-#RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
-#    && adduser eve sudo \
-#    && sed -ri 's/(%sudo.*)ALL$/\1NOPASSWD:ALL/' /etc/sudoers
+
+RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
+    && adduser eve sudo \
+    && sed -ri 's/(%sudo.*)ALL$/\1NOPASSWD:ALL/' /etc/sudoers
 #
 # Install Dependencies
 #
@@ -42,8 +42,8 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
 
 
 # environment vars into the bash profile
-#COPY ./bash_profile /home/eve/.bash_profile
-#RUN chown eve /home/eve/.bash_profile
+COPY ./bash_profile /home/eve/.bash_profile
+RUN chown eve /home/eve/.bash_profile
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 #
@@ -58,5 +58,5 @@ COPY ./bash_profile /home/eve/.bashrc
 COPY ./bash_profile /home/eve/.bash_profile
 RUN exec bash -l
 #WORKDIR /home/eve/workspace
-CMD ["supervisord", "-n"]
+CMD ["sudo", "supervisord", "-n"]
 #CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPAS   && buildbot-worker start --nodaemon"]
