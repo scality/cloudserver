@@ -1,15 +1,8 @@
 const { makeGcpRequest } = require('./makeRequest');
 
 function gcpRequestRetry(params, retry, callback) {
-    const retryTimeout = {
-        0: 0,
-        1: 1000,
-        2: 2000,
-        3: 4000,
-        4: 8000,
-    };
     const maxRetries = 4;
-    const timeout = retryTimeout[retry];
+    const timeout = Math.pow(2, retry) * 1000;
     return setTimeout(makeGcpRequest, timeout, params, (err, res) => {
         if (err) {
             if (retry <= maxRetries && err.statusCode === 429) {
@@ -21,6 +14,21 @@ function gcpRequestRetry(params, retry, callback) {
     });
 }
 
+function gcpClientRetry(fn, params, callback, retry = 0) {
+    const maxRetries = 4;
+    const timeout = Math.pow(2, retry) * 1000;
+    return setTimeout(fn, timeout, params, (err, res) => {
+        if (err) {
+            if (retry <= maxRetries && err.statusCode === 429) {
+                return gcpClientRetry(fn, params, callback, retry + 1);
+            }
+            return callback(err);
+        }
+        return callback(null, res);
+    });
+}
+
 module.exports = {
     gcpRequestRetry,
+    gcpClientRetry,
 };
