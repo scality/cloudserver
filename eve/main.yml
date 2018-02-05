@@ -20,6 +20,10 @@ models:
       CI: 'true'
       CI_REPORTS: '/tmp'
       ENABLE_LOCAL_CACHE: '1'
+      S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+  - env: &gcp_credentials_env
+      GOOGLE_SERVICE_KEY: $GOOGLE_S3_SERVICE_KEY
+      GOOGLE_SERVICE_EMAIL: $GOOGLE_S3_SERVICE_EMAIL
   - ShellCommand: &node_modules
       name: make node_modules available
       command: ln -s /usr/lib/node_modules .
@@ -35,6 +39,18 @@ models:
           aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY_2
           aws_secret_access_key = $AWS_S3_BACKEND_SECRET_KEY_2
           EOF
+
+  - ShellCommandWithSecrets: &gcp_credentials
+      name: Add GCP credentials
+      command: |-
+        mkdir -p ~/.gcp;
+        cat >>~/.gcp/servicekey <<EOF
+        {
+          "type": "service_account",
+          "private_key": "$GOOGLE_S3_SERVICE_KEY",
+          "client_email": "$GOOGLE_S3_SERVICE_EMAIL"
+        }
+        EOF
 
 stages:
   pre-merge:
@@ -98,9 +114,7 @@ stages:
       - Git: *clone
       - ShellCommand: *node_modules
       - ShellCommandWithSecrets: *aws_credentials
-      - ShellCommand:
-          name: Checkout mocha version
-          command: mocha --version; ./node_modules/mocha/bin/mocha --version
+      - ShellCommandWithSecrets: *gcp_credentials
       - ShellCommandWithSecrets:
           name: run multi-backends unit tests
           command: mocha -t 20000 --recursive tests/multipleBackend
@@ -110,8 +124,8 @@ stages:
             S3DATA: multiple
             GOOGLE_SERVICE_KEY: '$GOOGLE_S3_SERVICE_KEY'
             GOOGLE_SERVICE_EMAIL: '$GOOGLE_S3_SERVICE_EMAIL'
-            gcpbackend_GCP_SERVICE_KEY: '$GOOGLE_S3_SERVICE_KEY'
-            gcpbackend_GCP_SERVICE_EMAIL: '$GOOGLE_S3_SERVICE_EMAIL'
+
+
       - ShellCommand:
           name: Process
           command: ps -aux
