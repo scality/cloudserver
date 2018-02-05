@@ -2,30 +2,30 @@
 set -x #echo on
 set -e #exit at the first error
 
-mkdir -p ~/.aws
-cat >>~/.aws/credentials <<EOF
-[default]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT
-[default_2]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT_2
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT_2
-[google]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
-[google_2]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
-EOF
+# mkdir -p ~/.aws
+# cat >>~/.aws/credentials <<EOF
+# [default]
+# aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT
+# aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT
+# [default_2]
+# aws_access_key_id = $AWS_ACCESS_KEY_ID_DEFAULT_2
+# aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_DEFAULT_2
+# [google]
+# aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE
+# aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
+# [google_2]
+# aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
+# aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
+# EOF
 
-mkdir ${HOME}/.gcp #create directory for GCP service credential
-cat >>${HOME}/.gcp/servicekey <<EOF
-{
-  "type": "service_account",
-  "private_key": "$GOOGLE_SERVICE_KEY",
-  "client_email": "$GOOGLE_SERVICE_EMAIL"
-}
-EOF
+# mkdir ${HOME}/.gcp #create directory for GCP service credential
+# cat >>${HOME}/.gcp/servicekey <<EOF
+# {
+#   "type": "service_account",
+#   "private_key": "$GOOGLE_SERVICE_KEY",
+#   "client_email": "$GOOGLE_SERVICE_EMAIL"
+# }
+# EOF
 
 MYPWD=$(pwd)
 
@@ -38,24 +38,24 @@ if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
   # Run S3 with multiple data backends ; run ft_tests
 
-  S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_java.txt & bash wait_for_local_port.bash 8000 40 && cd ./tests/functional/jaws && mvn test
+  S3BACKEND=mem S3DATA=multiple npm start # > $CIRCLE_ARTIFACTS/server_multiple_java.txt & bash wait_for_local_port.bash 8000 40 && cd ./tests/functional/jaws && mvn test
 
   killandsleep 8000
   cd $MYPWD
 
-  S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_fog.txt & bash wait_for_local_port.bash 8000 40 && cd tests/functional/fog && rspec tests.rb
+  S3BACKEND=mem S3DATA=multiple npm start #> $CIRCLE_ARTIFACTS/server_multiple_fog.txt & bash wait_for_local_port.bash 8000 40 && cd tests/functional/fog && rspec tests.rb
 
   cd $MYPWD
   killandsleep 8000
 
-  S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple npm run ft_awssdk
+  S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start # > $CIRCLE_ARTIFACTS/server_multiple_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple npm run ft_awssdk
 
   cd $MYPWD
   killandsleep 8000
 
   # Run external backend tests with proxy ; run ft_awssdk_external_backends
 
-  S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple CI_PROXY=true npm start > $CIRCLE_ARTIFACTS/server_external_backends_proxy_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple CI_PROXY=true npm run ft_awssdk_external_backends
+  S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple CI_PROXY=true npm start #> $CIRCLE_ARTIFACTS/server_external_backends_proxy_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=multiple CI_PROXY=true npm run ft_awssdk_external_backends
 
   killandsleep 8000
 
@@ -128,7 +128,7 @@ then
   S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_test
 
   killandsleep 8000
-  
+
 fi
 
 if [ $CIRCLE_NODE_INDEX -eq 3 ]

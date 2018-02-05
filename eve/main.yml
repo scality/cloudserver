@@ -50,7 +50,7 @@ stages:
             - static-analysis
             - unit-tests
             - multi-backends-unit-tests
-            # - node0
+            - node0
             # - node1
             # - node2
             # - node3
@@ -108,6 +108,10 @@ stages:
             CI: 'true'
             S3BACKEND: mem
             S3DATA: multiple
+            GOOGLE_SERVICE_KEY: '$GOOGLE_S3_SERVICE_KEY'
+            GOOGLE_SERVICE_EMAIL: '$GOOGLE_S3_SERVICE_EMAIL'
+            gcpbackend_GCP_SERVICE_KEY: '$GOOGLE_S3_SERVICE_KEY'
+            gcpbackend_GCP_SERVICE_EMAIL: '$GOOGLE_S3_SERVICE_EMAIL'
       - ShellCommand:
           name: Process
           command: ps -aux
@@ -118,7 +122,9 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *node_modules
-      - ShellCommand:
+      - ShellCommandWithSecrets: *aws_credentials
+      - ShellCommandWithSecrets: *gcp_credentials
+      - ShellCommandWithSecrets:
           name: run tests
           command: sudo -E bash tests.bash
           env:
