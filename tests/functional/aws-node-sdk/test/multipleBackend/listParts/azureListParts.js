@@ -6,8 +6,10 @@ const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName }
     = require('../utils');
 
 const azureContainerName = getAzureContainerName(azureLocation);
-const bodyFirstPart = Buffer.alloc(10);
-const bodySecondPart = Buffer.alloc(104857610);
+const firstPartSize = 10;
+const bodyFirstPart = Buffer.alloc(firstPartSize);
+const secondPartSize = 15;
+const bodySecondPart = Buffer.alloc(secondPartSize);
 
 let bucketUtil;
 let s3;
@@ -67,10 +69,10 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
                 assert.equal(err, null, `Err listing parts: ${err}`);
                 assert.strictEqual(data.Parts.length, 2);
                 assert.strictEqual(data.Parts[0].PartNumber, 1);
-                assert.strictEqual(data.Parts[0].Size, 10);
+                assert.strictEqual(data.Parts[0].Size, firstPartSize);
                 assert.strictEqual(data.Parts[0].ETag, this.test.firstEtag);
                 assert.strictEqual(data.Parts[1].PartNumber, 2);
-                assert.strictEqual(data.Parts[1].Size, 104857610);
+                assert.strictEqual(data.Parts[1].Size, secondPartSize);
                 assert.strictEqual(data.Parts[1].ETag, this.test.secondEtag);
                 done();
             });
@@ -85,7 +87,7 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
             (err, data) => {
                 assert.equal(err, null, `Err listing parts: ${err}`);
                 assert.strictEqual(data.Parts[0].PartNumber, 2);
-                assert.strictEqual(data.Parts[0].Size, 104857610);
+                assert.strictEqual(data.Parts[0].Size, secondPartSize);
                 assert.strictEqual(data.Parts[0].ETag, this.test.secondEtag);
                 done();
             });
