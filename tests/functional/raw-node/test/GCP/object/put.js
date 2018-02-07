@@ -58,7 +58,7 @@ describe('GCP: PUT Object', function testSuite() {
             this.currentTest.key = `somekey-${Date.now()}`;
             gcpRequestRetry({
                 method: 'PUT',
-                bucket: this.currentTest.bucketName,
+                bucket: bucketName,
                 objectKey: this.currentTest.key,
                 authCredentials: config.credentials,
             }, 0, (err, res) => {
