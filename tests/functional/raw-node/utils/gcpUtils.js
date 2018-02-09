@@ -49,7 +49,8 @@ function gcpMpuSetup(params, callback) {
             }
             const arrayData = Array.from(Array(partCount).keys());
             const etagList = Array(partCount);
-            return async.each(arrayData,
+            let count = 0;
+            return async.eachLimit(arrayData, 10,
             (info, moveOn) => {
                 gcpClient.uploadPart({
                     Bucket: bucketNames.mpu.Name,
@@ -62,6 +63,7 @@ function gcpMpuSetup(params, callback) {
                     if (err) {
                         return moveOn(err);
                     }
+                    process.stdout.write(`Uploaded Parts: ${++count}\n`);
                     etagList[info] = res.ETag;
                     return moveOn(null);
                 });
