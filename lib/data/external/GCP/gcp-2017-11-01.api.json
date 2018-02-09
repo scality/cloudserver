@@ -12,6 +12,194 @@
         "timestampFormat": "rfc822",
         "uid": "gcp-2017-11-01"
     },
-    "operations": {},
-    "shapes": {}
+    "operations": {
+        "HeadBucket": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "listObjects": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "Marker": {
+                        "location": "querystring",
+                        "locationName": "marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "IsTruncated": {
+                        "type": "boolean"
+                    },
+                    "Marker": {},
+                    "NextMarker": {},
+                    "Contents": {
+                        "shape": "ContentsShape"
+                    },
+                    "Name": {},
+                    "Prefix": {},
+                    "Delimiter": {},
+                    "MaxKeys": {
+                        "type": "integer"
+                    },
+                    "CommonPrefixes": {
+                        "shape": "CommonPrefixShape"
+                    }
+                }
+            }
+        },
+        "PutBucketVersioning": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "VersioningConfiguration"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ContentMD5": {
+                        "location": "header",
+                        "locationName": "Content-MD5"
+                    },
+                    "VersioningConfiguration": {
+                        "locationName": "VersioningConfiguration",
+                        "type": "structure",
+                        "members": {
+                            "Status": {}
+                        }
+                    }
+                },
+                "payload": "VersioningConfiguration"
+            }
+        },
+        "GetBucketVersioning": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Status": {}
+                }
+            }
+        }
+    },
+    "shapes": {
+        "OwnerShape": {
+            "locationName": "Owner",
+            "type": "structure",
+            "members": {
+                "ID": {},
+                "DisplayName": {}
+            }
+        },
+        "ContentsShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Key": {},
+                    "LastModified": {
+                        "type": "timestamp"
+                    },
+                    "ETag": {},
+                    "Size": {
+                        "type": "integer"
+                    },
+                    "StorageClass": {},
+                    "Owner": {
+                        "shape": "OwnerShape"
+                    }
+                }
+            },
+            "flattened": true
+        },
+        "CommonPrefixShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Prefix": {}
+                }
+            },
+            "flattened": true
+        }
+    }
 }
