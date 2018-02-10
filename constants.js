@@ -123,8 +123,11 @@ const constants = {
     // for external backends, don't call unless at least 1 minute
     // (60,000 milliseconds) since last call
     externalBackendHealthCheckInterval: 60000,
-    versioningNotImplBackends: { azure: true },
-    mpuMDStoredExternallyBackend: { aws_s3: true },
+    versioningNotImplBackends: { azure: true, gcp: true },
+    mpuMDStoredExternallyBackend: { aws_s3: true, gcp: true },
+    skipBatchDeleteBackends: { azure: true, gcp: true },
+    s3HandledBackends: { azure: true, gcp: true },
+    hasCopyPartBackends: { aws_s3: true, gcp: true },
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
     azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
