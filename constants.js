@@ -39,6 +39,8 @@ const constants = {
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
     blacklistedPrefixes: { bucket: [], object: [] },
+    // GCP Object Tagging Prefix
+    gcpTaggingPrefix: 'aws-tag-',
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
@@ -63,6 +65,10 @@ const constants = {
     // AWS sets a minimum size limit for parts except for the last part.
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
+
+    // AWS sets a maximum total parts limit
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    maximumAllowedPartCount: 10000,
 
     // Max size on put part or copy part is 5GB. For functional
     // testing use 110 MB as max

@@ -33,8 +33,6 @@ describe('GCP: GET Bucket Versioning', () => {
         }, 0, err => {
             if (err) {
                 process.stdout.write(`err in creating bucket ${err}\n`);
-            } else {
-                process.stdout.write('Created bucket\n');
             }
             return done(err);
         });
@@ -48,8 +46,6 @@ describe('GCP: GET Bucket Versioning', () => {
         }, 0, err => {
             if (err) {
                 process.stdout.write(`err in deleting bucket ${err}\n`);
-            } else {
-                process.stdout.write('Deleted bucket\n');
             }
             return done(err);
         });
