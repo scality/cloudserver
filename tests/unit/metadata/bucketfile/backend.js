@@ -2,9 +2,10 @@ const EventEmitter = require('events');
 const assert = require('assert');
 
 const extensions = require('arsenal').algorithms.list;
+const { config } = require('../../../../lib/Config');
 
 const BucketFileInterface =
-    require('../../../../lib/metadata/bucketfile/backend');
+    require('arsenal').storage.metadata.file.BucketFileInterface;
 
 const KEY_LENGTH = 15;
 const KEY_COUNT = 1000;
@@ -48,7 +49,16 @@ class Reader extends EventEmitter {
 }
 
 describe('BucketFileInterface::internalListObject', alldone => {
-    const bucketfile = new BucketFileInterface({ noDbOpen: true });
+    const logger = { info: () => {}, debug: () => {}, error: () => {} };
+    const bucketfile = new BucketFileInterface({
+        bucketdBootstrap: ['localhost'],
+        bucketdLog: null,
+        noDbOpen: true,
+        metadataClient: {
+            host: config.metadataClient.host,
+            port: config.metadataClient.port,
+        },
+    }, logger);
 
     // stub db to inspect the extensions
     const db = {
@@ -67,7 +77,6 @@ describe('BucketFileInterface::internalListObject', alldone => {
     };
 
     // stub functions and components
-    const logger = { info: () => {}, debug: () => {}, error: () => {} };
     bucketfile.loadDBIfExists = (bucket, log, callback) => callback(null, db);
 
     Object.keys(extensions).forEach(listingType => {
