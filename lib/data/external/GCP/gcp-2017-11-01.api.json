@@ -625,7 +625,7 @@
             "type": "structure",
             "members": {
                 "ID": {},
-                "DisplayName": {}
+                "Name": {}
             }
         },
         "ContentsShape": {
