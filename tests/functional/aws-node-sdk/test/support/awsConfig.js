@@ -19,7 +19,8 @@ function getAwsCredentials(profile, credFile) {
 
 function getRealAwsConfig(location) {
     const { awsEndpoint, gcpEndpoint, jsonEndpoint,
-        credentialsProfile, credentials: locCredentials } =
+        credentialsProfile, credentials: locCredentials,
+        bucketName, mpuBucketName, overflowBucketName } =
         config.locationConstraints[location].details;
     const params = {
         endpoint: gcpEndpoint ?
@@ -27,6 +28,9 @@ function getRealAwsConfig(location) {
         signatureVersion: 'v4',
     };
     if (config.locationConstraints[location].type === 'gcp') {
+        params.mainBucket = bucketName;
+        params.mpuBucket = mpuBucketName;
+        params.overflowBucket = overflowBucketName;
         params.jsonEndpoint = `https://${jsonEndpoint}`;
         params.authParams = config.getGcpServiceParams(location);
     }
