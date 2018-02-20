@@ -4,7 +4,9 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, awsS3, awsBucket, getAwsRetry,
     getAzureClient, getAzureContainerName, convertMD5, memLocation,
-    fileLocation, awsLocation, azureLocation } = require('../utils');
+    fileLocation, awsLocation, azureLocation,
+    gcpBucket, gcpLocation, gcpClient } = require('../utils');
+const { GcpUtils } = require('../../../../../../lib/data/external/GCP');
 
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
@@ -20,7 +22,8 @@ let bucketUtil;
 let s3;
 
 const putParams = { Bucket: bucket, Body: body };
-const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
+const testBackends = [memLocation, fileLocation, awsLocation,
+    azureLocation, gcpLocation];
 const tagString = 'key1=value1&key2=value2';
 const putTags = {
     TagSet: [
@@ -93,6 +96,30 @@ function azureGet(key, tagCheck, isEmpty, callback) {
     });
 }
 
+function gcpGet(key, tagCheck, isEmpty, isMpu, callback) {
+    process.stdout.write('Getting object from GCP\n');
+    gcpClient.getObject({
+        Bucket: gcpBucket,
+        Key: key,
+    }, (err, res) => {
+        assert.equal(err, null);
+        if (isEmpty) {
+            assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+        } else if (isMpu) {
+            assert.strictEqual(res.ETag, `"${mpuMD5}"`);
+        } else {
+            assert.strictEqual(res.ETag, `"${correctMD5}"`);
+        }
+        if (tagCheck) {
+            const tags = GcpUtils.retrieveTags(res.Metdata);
+            assert.strictEqual(tags, tagObj);
+        } else {
+            assert.strictEqual(res.metadata.tags, undefined);
+        }
+        return callback();
+    });
+}
+
 function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
     function get(cb) {
         process.stdout.write('Getting object\n');
@@ -120,6 +147,10 @@ function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
     } else if (backend === 'azurebackend') {
         setTimeout(() => {
             get(() => azureGet(key, tagCheck, isEmpty, callback));
+        }, cloudTimeout);
+    } else if (backend === 'gcp') {
+        setTimeout(() => {
+            get(() => gcpGet(key, tagCheck, isEmpty, isMpu, callback));
         }, cloudTimeout);
     } else {
         get(callback);
