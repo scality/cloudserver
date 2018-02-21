@@ -6,6 +6,8 @@ const AWS = require('aws-sdk');
 const async = require('async');
 const azure = require('azure-storage');
 
+const { GCP } = require('../../../../../lib/data/external/GCP');
+
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
 const authdata = require('../../../../../conf/authdata.json');
@@ -20,6 +22,9 @@ const azureLocation = 'azurebackend';
 const azureLocation2 = 'azurebackend2';
 const azureLocationMismatch = 'azurebackendmismatch';
 const azureLocationNonExistContainer = 'azurenonexistcontainer';
+const gcpLocation = 'gcpbackend';
+const gcpLocation2 = 'gcpbackend2';
+const gcpLocationMismatch = 'gcpbackendmismatch';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
@@ -28,11 +33,18 @@ let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
 
+let gcpClient;
+let gcpBucket;
+
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+
+    const gcpConfig = getRealAwsConfig(gcpLocation);
+    gcpClient = new GCP(gcpConfig);
+    gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
 }
 
 function _assertErrorResult(err, expectedError, desc) {
@@ -49,6 +61,8 @@ const utils = {
     describeSkipIfNotMultiple,
     awsS3,
     awsBucket,
+    gcpClient,
+    gcpBucket,
     fileLocation,
     memLocation,
     awsLocation,
@@ -59,6 +73,9 @@ const utils = {
     azureLocation2,
     azureLocationMismatch,
     azureLocationNonExistContainer,
+    gcpLocation,
+    gcpLocation2,
+    gcpLocationMismatch,
 };
 
 utils.getOwnerInfo = account => {
