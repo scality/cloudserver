@@ -26,7 +26,7 @@ objects into a new single object, though with some limitations.
 | - A generated composite object can have at most 1024 objects used
 |
 | More information can be found in the following link:
-| `<https://cloud.google.com/storage/docs/composite-objects>`__ 
+| `<https://cloud.google.com/storage/docs/composite-objects>`__
 |
 
 Since multipart upload in AWS can support up to 10,000 parts, the MPU
