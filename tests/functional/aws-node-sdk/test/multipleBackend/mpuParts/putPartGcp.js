@@ -38,7 +38,7 @@ function checkMPUResult(bucket, key, uploadId, objCount, expected, cb) {
 
 describeSkipIfNotMultiple('MultipleBacked put part to GCP', function
 describeFn() {
-    this.timeout(80000);
+    this.timeout(180000);
     withV4(sigCfg => {
         beforeEach(function beforeFn() {
             this.currentTest.key = uniqName(keyObject);
