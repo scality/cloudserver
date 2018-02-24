@@ -13,6 +13,8 @@ const bigBody = Buffer.alloc(10485760);
 const s3MD5 = 'bfb875032e51cbe2a60c5b6b99a2153f-2';
 const expectedContentLength = '10485771';
 const gcpTimeout = 5000;
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
 
 let s3;
 let bucketUtil;
@@ -86,7 +88,7 @@ function mpuSetup(key, location, cb) {
     });
 }
 
-describeSkipIfNotMultiple('Complete MPU API for GCP data backend',
+skipIfNotMultipleorIfProxy('Complete MPU API for GCP data backend',
 function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {

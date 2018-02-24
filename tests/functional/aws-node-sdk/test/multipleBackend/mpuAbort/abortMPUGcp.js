@@ -11,6 +11,8 @@ const bucket = 'buckettestmultiplebackendabortmpu-gcp';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const gcpTimeout = 5000;
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
 
 let bucketUtil;
 let s3;
@@ -30,7 +32,7 @@ function checkMPUList(bucket, key, uploadId, cb) {
     });
 }
 
-describeSkipIfNotMultiple('Abort MPU on GCP data backend', function
+skipIfNotMultipleorIfProxy('Abort MPU on GCP data backend', function
 descrbeFn() {
     this.timeout(180000);
     withV4(sigCfg => {

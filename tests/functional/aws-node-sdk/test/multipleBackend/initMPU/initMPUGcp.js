@@ -11,10 +11,13 @@ const { createMpuKey } =
 const bucket = 'buckettestmultiplebackendinitmpu-gcp';
 const keyName = `somekey-${Date.now()}`;
 
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
+
 let s3;
 let bucketUtil;
 
-describeSkipIfNotMultiple('Initiate MPU to GCP', () => {
+skipIfNotMultipleorIfProxy('Initiate MPU to GCP', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);

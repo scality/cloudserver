@@ -13,6 +13,8 @@ const bucket = 'buckettestmultiplebackendputpart-gcp';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
 
 let bucketUtil;
 let s3;
@@ -36,7 +38,7 @@ function checkMPUResult(bucket, key, uploadId, objCount, expected, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBacked put part to GCP', function
+skipIfNotMultipleorIfProxy('MultipleBacked put part to GCP', function
 describeFn() {
     this.timeout(180000);
     withV4(sigCfg => {

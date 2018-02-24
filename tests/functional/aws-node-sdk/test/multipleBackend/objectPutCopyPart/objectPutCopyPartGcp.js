@@ -7,6 +7,8 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, uniqName, gcpBucketMPU,
     gcpClient, gcpLocation, gcpLocationMismatch, memLocation,
     awsLocation, awsS3, getOwnerInfo } = require('../utils');
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
 
 const bucket = 'buckettestmultiplebackendpartcopy-gcp';
 
@@ -91,7 +93,7 @@ function assertCopyPart(infos, cb) {
     ], cb);
 }
 
-describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
+skipIfNotMultipleorIfProxy('Put Copy Part to GCP', function describeFn() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(done => {
@@ -609,7 +611,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to GCP with complete MPU',
+skipIfNotMultipleorIfProxy('Put Copy Part to GCP with complete MPU',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {

@@ -10,11 +10,13 @@ const firstPartSize = 10;
 const bodyFirstPart = Buffer.alloc(firstPartSize);
 const secondPartSize = 15;
 const bodySecondPart = Buffer.alloc(secondPartSize);
+const skipIfNotMultipleorIfProxy = process.env.CI_PROXY === 'true' ?
+    describe.skip : describeSkipIfNotMultiple;
 
 let bucketUtil;
 let s3;
 
-describeSkipIfNotMultiple('List parts of MPU on GCP data backend', () => {
+skipIfNotMultipleorIfProxy('List parts of MPU on GCP data backend', () => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {
             this.currentTest.key = `somekey-${Date.now()}`;
