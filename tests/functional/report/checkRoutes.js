@@ -85,6 +85,15 @@ describe('Report route', () => {
         });
     });
 
+    it('should remove unwanted sections from config', done => {
+        queryReport(done, response => {
+            if (response.config && response.config.mongodb) {
+                return done(new Error('config contains unwanted sections'));
+            }
+            return done();
+        });
+    });
+
     it('should remove report token from config', done => {
         queryReport(done, response => {
             if (response.config && response.config.reportToken) {
