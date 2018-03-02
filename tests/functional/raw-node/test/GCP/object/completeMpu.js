@@ -14,18 +14,14 @@ const bucketNames = {
     },
     mpu: {
         Name: `mpubucket-${Date.now()}`,
-        Type: 'REGIONAL',
-    },
-    overflow: {
-        Name: `overflowbucket-${Date.now()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
-const numParts = 10000;
+const numParts = 1024;
 const partSize = 10;
 
 const smallMD5 = '583c466f3f31d97b361adc60caea72f5-1';
-const bigMD5 = '0bd3785d5d1e3c90988917837bbf57fc-10000';
+const bigMD5 = '9c8a62e2c04a512ce348d8280497b49e-1024';
 
 function gcpMpuSetupWrapper(params, callback) {
     gcpMpuSetup(params, (err, result) => {
@@ -109,7 +105,6 @@ describe('GCP: Complete MPU', function testSuite() {
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Overflow: bucketNames.overflow.Name,
                 Key: this.test.key,
                 UploadId: this.test.uploadId,
                 MultipartUpload: { Parts: [] },
@@ -147,7 +142,6 @@ describe('GCP: Complete MPU', function testSuite() {
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Overflow: bucketNames.overflow.Name,
                 Key: this.test.key,
                 UploadId: this.test.uploadId,
                 MultipartUpload: { Parts: parts },
@@ -186,7 +180,6 @@ describe('GCP: Complete MPU', function testSuite() {
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Overflow: bucketNames.overflow.Name,
                 Key: this.test.key,
                 UploadId: this.test.uploadId,
                 MultipartUpload: { Parts: parts },

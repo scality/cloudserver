@@ -41,7 +41,7 @@ describe('GCP: COPY Object', function testSuite() {
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404 and \'Not Found\'', done => {
+        it('should return 404 and \'NoSuchKey\'', done => {
             const missingObject = `nonexistingkey-${Date.now()}`;
             const someKey = `somekey-${Date.now()}`;
             gcpClient.copyObject({
@@ -50,8 +50,8 @@ describe('GCP: COPY Object', function testSuite() {
                 CopySource: `/${bucketName}/${missingObject}`,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.code, 404);
-                assert.strictEqual(err.message, 'Not Found');
+                assert.strictEqual(err.statusCode, 404);
+                assert.strictEqual(err.code, 'NoSuchKey');
                 return done();
             });
         });
