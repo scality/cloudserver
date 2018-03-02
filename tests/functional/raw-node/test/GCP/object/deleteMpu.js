@@ -14,10 +14,6 @@ const bucketNames = {
     },
     mpu: {
         Name: `mpubucket-${Date.now()}`,
-        Type: 'REGIONAL',
-    },
-    overflow: {
-        Name: `overflowbucket-${Date.now()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -108,7 +104,6 @@ describe('GCP: Abort MPU', function testSuite() {
                     const params = {
                         Bucket: bucketNames.main.Name,
                         MPU: bucketNames.mpu.Name,
-                        Overflow: bucketNames.overflow.Name,
                         Key: this.test.key,
                         UploadId: this.test.uploadId,
                     };
@@ -151,7 +146,6 @@ describe('GCP: Abort MPU', function testSuite() {
                     const params = {
                         Bucket: bucketNames.main.Name,
                         MPU: bucketNames.mpu.Name,
-                        Overflow: bucketNames.overflow.Name,
                         Key: this.test.key,
                         UploadId: this.test.uploadId,
                     };

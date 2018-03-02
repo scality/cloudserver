@@ -13,10 +13,6 @@ const bucketNames = {
     },
     mpu: {
         Name: `mpubucket-${Date.now()}`,
-        Type: 'REGIONAL',
-    },
-    overflow: {
-        Name: `overflowbucket-${Date.now()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -87,7 +83,6 @@ describe('GCP: Upload Object', function testSuite() {
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
             MPU: bucketNames.mpu.Name,
-            Overflow: bucketNames.overflow.Name,
             Key: key,
             Body: body,
         }, (err, res) => {
@@ -103,7 +98,6 @@ describe('GCP: Upload Object', function testSuite() {
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
             MPU: bucketNames.mpu.Name,
-            Overflow: bucketNames.overflow.Name,
             Key: key,
             Body: bigBody,
         }, (err, res) => {
