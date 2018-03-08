@@ -114,17 +114,10 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
             "bucketMatch": true,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "credentialsProfile": "google"
         }
     },
     "gcpbackend2": {
@@ -132,17 +125,10 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket-2",
             "mpuBucketName": "zenko-gcp-mpu-2",
-            "overflowBucketName": "zenko-gcp-overflow-2",
             "bucketMatch": true,
-            "credentialsProfile": "google_2",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake002",
-                "serviceKey": "fake002"
-            }
+            "credentialsProfile": "google_2"
         }
     },
     "gcpbackendmismatch": {
@@ -150,17 +136,10 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "jsonEndpoint": "www.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
             "bucketMatch": false,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "credentialsProfile": "google"
         }
     }
 }

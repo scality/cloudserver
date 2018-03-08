@@ -14,10 +14,6 @@ const bucketNames = {
     },
     mpu: {
         Name: `mpubucket-${Date.now()}`,
-        Type: 'REGIONAL',
-    },
-    overflow: {
-        Name: `overflowbucket-${Date.now()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -96,7 +92,6 @@ describe('GCP: Initiate MPU', function testSuite() {
             (uploadId, next) => gcpClient.abortMultipartUpload({
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Overflow: bucketNames.overflow.Name,
                 UploadId: uploadId,
                 Key: keyName,
             }, err => {

@@ -63,7 +63,9 @@ function gcpMpuSetup(params, callback) {
                     if (err) {
                         return moveOn(err);
                     }
-                    process.stdout.write(`Uploaded Parts: ${++count}\n`);
+                    if (!(++count % 100)) {
+                        process.stdout.write(`Uploaded Parts: ${count}\n`);
+                    }
                     etagList[info] = res.ETag;
                     return moveOn(null);
                 });

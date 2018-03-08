@@ -70,6 +70,8 @@ const constants = {
     // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
     maximumAllowedPartCount: 10000,
 
+    gcpMaximumAllowedPartCount: 1024,
+
     // Max size on put part or copy part is 5GB. For functional
     // testing use 110 MB as max
     maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
