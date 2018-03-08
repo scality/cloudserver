@@ -17,6 +17,9 @@ class DummyService {
         };
         return callback(null, retObj);
     }
+    deleteObject(params, callback) {
+        return callback();
+    }
     // To-Do: add tests for other methods
 }
 

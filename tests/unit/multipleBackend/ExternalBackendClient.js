@@ -13,6 +13,7 @@ const backendClients = [
             bucketName: 'awsTestBucketName',
             dataStoreName: 'awsDataStore',
             serverSideEncryption: false,
+            bucketMatch: true,
             type: 'aws',
         },
     },
@@ -24,6 +25,7 @@ const backendClients = [
             bucketName: 'gcpTestBucketName',
             mpuBucket: 'gcpTestMpuBucketName',
             dataStoreName: 'gcpDataStore',
+            bucketMatch: true,
             type: 'gcp',
         },
     },
@@ -71,4 +73,31 @@ backendClients.forEach(backend => {
         });
     });
     // To-Do: test the other external client methods
+});
+
+describe('Test GCP versioning delete marker', () => {
+    let testClient;
+
+    before(() => {
+        const backend = backendClients[1];
+        testClient = new backend.Class(backend.config);
+        testClient._client = new DummyService(backend.config);
+    });
+
+    it('should return "0" as delete marker versionId', done => {
+        const stream = 'testValue';
+        const size = stream.length;
+        const keyContext = {
+            objectKey: 'testKeyValue',
+            isDeleteMarker: true,
+        };
+        const reqUids = '1234';
+
+        testClient.put(stream, size, keyContext, reqUids,
+        (err, key, versionId) => {
+            assert.strictEqual(key, keyContext.objectKey);
+            assert.strictEqual(versionId, '0');
+            return done();
+        });
+    });
 });
