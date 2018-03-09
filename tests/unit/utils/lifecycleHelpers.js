@@ -30,7 +30,7 @@ function getLifecycleXml() {
         '<Rule>' +
         `<ID>${id1}</ID>` +
         '<Status>Enabled</Status>' +
-        `<Filter><Prefix>${prefix}</Prefix></Filter>` +
+        `<Prefix>${prefix}</Prefix>` +
         `<${action1}><Days>${days1}</Days></${action1}>` +
         '</Rule>' +
         '<Rule>' +
