@@ -35,6 +35,7 @@ let awsBucket;
 
 let gcpClient;
 let gcpBucket;
+let gcpBucketMPU;
 
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
@@ -45,6 +46,8 @@ if (config.backends.data === 'multiple') {
     const gcpConfig = getRealAwsConfig(gcpLocation);
     gcpClient = new GCP(gcpConfig);
     gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
+    gcpBucketMPU =
+        config.locationConstraints[gcpLocation].details.mpuBucketName;
 }
 
 function _assertErrorResult(err, expectedError, desc) {
@@ -63,6 +66,7 @@ const utils = {
     awsBucket,
     gcpClient,
     gcpBucket,
+    gcpBucketMPU,
     fileLocation,
     memLocation,
     awsLocation,
