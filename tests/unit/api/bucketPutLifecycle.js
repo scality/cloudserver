@@ -29,8 +29,8 @@ const expectedLifecycleConfig = {
             },
             actions: [
                 {
-                    actionName: 'Expiration',
-                    days: 365,
+                    actionName: 'AbortIncompleteMultipartUpload',
+                    days: 30,
                 },
             ],
         },
@@ -44,12 +44,35 @@ const expectedLifecycleConfig = {
                         key: 'test-key1',
                         val: 'test-value1',
                     },
+                    {
+                        key: 'test-key2',
+                        val: 'test-value2',
+                    },
                 ],
             },
             actions: [
                 {
                     actionName: 'NoncurrentVersionExpiration',
                     days: 1,
+                },
+            ],
+        },
+        {
+            ruleID: 'test-id3',
+            ruleStatus: 'Disabled',
+            filter: {
+                rulePrefix: '',
+                tags: [
+                    {
+                        key: 'test-key1',
+                        val: 'test-value1',
+                    },
+                ],
+            },
+            actions: [
+                {
+                    actionName: 'Expiration',
+                    days: 365,
                 },
             ],
         },
