@@ -91,15 +91,18 @@ describe('responseStreamData:', () => {
         const response = httpMocks.createResponse({
             eventEmitter: EventEmitter,
         });
-        response.connection = {
-            destroy: () => {
-                data.get = prev;
-                done();
-            },
+        let destroyed = false;
+        response.destroy = () => {
+            data.get = prev;
+            destroyed = true;
         };
         response.on('end', () => {
             data.get = prev;
-            done(new Error('end reached instead of destroying connection'));
+            if (!destroyed) {
+                return done(new Error('end reached instead of destroying ' +
+                    'connection'));
+            }
+            return done();
         });
         return responseStreamData(errCode, overrideHeaders,
             resHeaders, dataLocations, data.get, response, null, log);
