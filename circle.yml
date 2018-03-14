@@ -20,11 +20,16 @@ machine:
     REPORT_TOKEN: report-token-1
   hosts:
     bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
+  post:
+    - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+    - echo "deb https://dl.yarnpkg.com/debian/ stable main" |
+      sudo tee /etc/apt/sources.list.d/yarn.list
+    - sudo apt-get update && sudo apt-get install yarn -y
 
 dependencies:
   override:
     - rm -rf node_modules
-    - npm install
+    - yarn install --pure-lockfile
   post:
     - sudo pip install flake8 yamllint
     - sudo pip install s3cmd==1.6.1
