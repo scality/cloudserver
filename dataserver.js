@@ -6,7 +6,8 @@ const logger = require('./lib/utilities/logger');
 
 if (config.backends.data === 'file' ||
     (config.backends.data === 'multiple' &&
-     config.backends.metadata !== 'scality')) {
+     config.backends.metadata !== 'scality' &&
+     config.backends.metadata !== 'mongodb')) {
     const dataServer = new arsenal.network.rest.RESTServer(
         { bindAddress: config.dataDaemon.bindAddress,
             port: config.dataDaemon.port,
