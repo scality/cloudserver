@@ -12,6 +12,921 @@
         "timestampFormat": "rfc822",
         "uid": "gcp-2017-11-01"
     },
-    "operations": {},
-    "shapes": {}
+    "operations": {
+        "HeadBucket": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "listObjects": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "Marker": {
+                        "location": "querystring",
+                        "locationName": "marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "IsTruncated": {
+                        "type": "boolean"
+                    },
+                    "Marker": {},
+                    "NextMarker": {},
+                    "Contents": {
+                        "shape": "ContentsShape"
+                    },
+                    "Name": {},
+                    "Prefix": {},
+                    "Delimiter": {},
+                    "MaxKeys": {
+                        "type": "integer"
+                    },
+                    "CommonPrefixes": {
+                        "shape": "CommonPrefixShape"
+                    }
+                }
+            }
+        },
+        "listVersions": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versions"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Delimiter": {
+                        "location": "querystring",
+                        "locationName": "delimiter"
+                    },
+                    "Marker": {
+                        "location": "querystring",
+                        "locationName": "marker"
+                    },
+                    "MaxKeys": {
+                        "location": "querystring",
+                        "locationName": "max-keys",
+                        "type": "integer"
+                    },
+                    "Prefix": {
+                        "location": "querystring",
+                        "locationName": "prefix"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "IsTruncated": {
+                        "type": "boolean"
+                    },
+                    "Marker": {},
+                    "NextMarker": {},
+                    "Versions": {
+                        "locationName": "Version",
+                        "shape": "ContentsShape"
+                    },
+                    "Name": {},
+                    "Prefix": {},
+                    "Delimiter": {},
+                    "MaxKeys": {
+                        "type": "integer"
+                    },
+                    "CommonPrefixes": {
+                        "shape": "CommonPrefixShape"
+                    }
+                }
+            }
+        },
+        "PutBucketVersioning": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "VersioningConfiguration"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "ContentMD5": {
+                        "location": "header",
+                        "locationName": "Content-MD5"
+                    },
+                    "VersioningConfiguration": {
+                        "locationName": "VersioningConfiguration",
+                        "type": "structure",
+                        "members": {
+                            "Status": {}
+                        }
+                    }
+                },
+                "payload": "VersioningConfiguration"
+            }
+        },
+        "GetBucketVersioning": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}?versioning"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Status": {}
+                }
+            }
+        },
+        "HeadObject": {
+            "http": {
+                "method": "HEAD",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                     "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "IfMatch": {
+                        "location": "header",
+                        "locationName": "If-Match"
+                    },
+                    "IfModifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Modified-Since",
+                        "type": "timestamp"
+                    },
+                    "IfNoneMatch": {
+                        "location": "header",
+                        "locationName": "If-None-Match"
+                    },
+                    "IfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Unmodified-Since",
+                        "type": "timestamp"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    },
+                    "AcceptRanges": {
+                        "location": "header",
+                        "locationName": "accept-ranges"
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "LastModified": {
+                        "location": "header",
+                        "locationName": "Last-Modified",
+                        "type": "timestamp"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "StorageClass": {
+                        "location": "headers",
+                        "locationName": "x-goog-storage-class"
+                    }
+                }
+            }
+        },
+        "PutObjectReq": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Date": {
+                        "location": "header",
+                        "locationName": "Date",
+                        "type": "timestamp"
+                    },
+                    "ACL": {
+                        "location": "header",
+                        "locationName": "x-goog-acl"
+                    },
+                    "Body": {
+                        "streaming": true,
+                        "type": "blob"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ContentMD5": {
+                        "location": "header",
+                        "locationName": "Content-MD5"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                },
+                "payload": "Body"
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                     "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "GetObject": {
+            "http": {
+                "method": "GET",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "IfMatch": {
+                        "location": "header",
+                        "locationName": "If-Match"
+                    },
+                    "IfModifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Modified-Since",
+                        "type": "timestamp"
+                    },
+                    "IfNoneMatch": {
+                        "location": "header",
+                        "locationName": "If-None-Match"
+                    },
+                    "IfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "If-Unmodified-Since",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Range": {
+                        "location": "header",
+                        "locationName": "Range"
+                    },
+                    "ResponseCacheControl": {
+                        "location": "querystring",
+                        "locationName": "response-cache-control"
+                    },
+                    "ResponseContentDisposition": {
+                        "location": "querystring",
+                        "locationName": "response-content-disposition"
+                    },
+                    "ResponseContentEncoding": {
+                        "location": "querystring",
+                        "locationName": "response-content-encoding"
+                    },
+                    "ResponseContentLanguage": {
+                        "location": "querystring",
+                        "locationName": "response-content-language"
+                    },
+                    "ResponseContentType": {
+                        "location": "querystring",
+                        "locationName": "response-content-type"
+                    },
+                    "ResponseExpires": {
+                        "location": "querystring",
+                        "locationName": "response-expires",
+                        "type": "timestamp"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Body": {
+                        "streaming": true,
+                        "type": "blob"
+                    },
+                    "AcceptRanges": {
+                        "location": "header",
+                        "locationName": "accept-ranges"
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "LastModified": {
+                        "location": "header",
+                        "locationName": "Last-Modified",
+                        "type": "timestamp"
+                    },
+                    "ContentLength": {
+                        "location": "header",
+                        "locationName": "Content-Length",
+                        "type": "long"
+                    },
+                    "ETag": {
+                        "location": "header",
+                        "locationName": "ETag"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentRange": {
+                        "location": "header",
+                        "locationName": "Content-Range"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "WebsiteRedirectLocation": {
+                        "location": "header",
+                        "locationName": "x-goog-website-redirect-location"
+                    },
+                    "ServerSideEncryption": {
+                        "location": "header",
+                        "locationName": "x-goog-server-side-encryption"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "StorageClass": {
+                        "location": "header",
+                        "locationName": "x-goog-storage-class"
+                    }
+                },
+                "payload": "Body"
+            }
+        },
+        "DeleteObject": {
+            "http": {
+                "method": "DELETE",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "VersionId": {
+                        "location": "querystring",
+                        "locationName": "generation"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    }
+                }
+            }
+        },
+        "ComposeObject": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}?compose"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "Key"
+                ],
+                "members": {
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "Source": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "MetadataDirective": {
+                        "location": "header",
+                        "locationName": "x-goog-metadata-directive"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "Content-Encoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "MultipartUpload": {
+                        "locationName": "ComposeRequest",
+                        "type": "structure",
+                        "members": {
+                            "Parts": {
+                                "locationName": "Component",
+                                "type": "list",
+                                "member": {
+                                    "type": "structure",
+                                    "members": {
+                                        "PartName": {
+                                            "locationName": "Name"
+                                        }
+                                    }
+                                },
+                                "flattened": true
+                            }
+                        }
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                },
+                "payload": "MultipartUpload"
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ETag": {},
+                    "VersioId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                }
+            }
+        },
+        "CopyObject": {
+            "http": {
+                "method": "PUT",
+                "requestUri": "/{Bucket}/{Key+}"
+            },
+            "input": {
+                "type": "structure",
+                "required": [
+                    "Bucket",
+                    "CopySource",
+                    "Key"
+                ],
+                "members": {
+                    "ACL": {
+                        "location": "header",
+                        "locationName": "x-goog-acl"
+                    },
+                    "Bucket": {
+                        "location": "uri",
+                        "locationName": "Bucket"
+                    },
+                    "CacheControl": {
+                        "location": "header",
+                        "locationName": "Cache-Control"
+                    },
+                    "ContentDisposition": {
+                        "location": "header",
+                        "locationName": "Content-Disposition"
+                    },
+                    "ContentEncoding": {
+                        "location": "header",
+                        "locationName": "Content-Encoding"
+                    },
+                    "ContentLanguage": {
+                        "location": "header",
+                        "locationName": "Content-Language"
+                    },
+                    "ContentType": {
+                        "location": "header",
+                        "locationName": "Content-Type"
+                    },
+                    "CopySource": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source"
+                    },
+                    "CopySourceIfMatch": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-match"
+                    },
+                    "CopySourceIfModifiedSince": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-modified-since"
+                    },
+                    "CopySourceIfNoneMatch": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-none-match"
+                    },
+                    "CopySourceIfUnmodifiedSince": {
+                        "location": "header",
+                        "locationName": "x-goog-copy-source-if-unmodified-since",
+                        "type": "timestamp"
+                    },
+                    "Expires": {
+                        "location": "header",
+                        "locationName": "Expires",
+                        "type": "timestamp"
+                    },
+                    "Key": {
+                        "location": "uri",
+                        "locationName": "Key"
+                    },
+                    "Metadata": {
+                        "shape": "MetadataShape",
+                        "location": "headers",
+                        "locationName": "x-goog-meta-"
+                    },
+                    "MetadataDirective": {
+                        "location": "header",
+                        "locationName": "x-goog-metadata-directive"
+                    },
+                    "ProjectId": {
+                        "location": "header",
+                        "locationName": "x-goog-project-id"
+                    }
+                }
+            },
+            "output": {
+                "type": "structure",
+                "members": {
+                    "CopyObjectResult": {
+                        "type": "structure",
+                        "members": {
+                            "ETag": {},
+                            "LastModified": {
+                                "type": "timestamp"
+                            }
+                        }
+                    },
+                    "Expiration": {
+                        "location": "header",
+                        "locationName": "x-goog-expiration"
+                    },
+                    "ContentHash": {
+                        "location": "header",
+                        "locationName": "x-goog-hash"
+                    },
+                    "VersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-generation"
+                    },
+                    "MetaVersionId": {
+                        "location": "header",
+                        "locationName": "x-goog-metageneration"
+                    }
+                },
+                "payload": "CopyObjectResult"
+            }
+        }
+    },
+    "shapes": {
+        "MetadataShape": {
+            "type": "map",
+            "key": {},
+            "value": {}
+        },
+        "OwnerShape": {
+            "locationName": "Owner",
+            "type": "structure",
+            "members": {
+                "ID": {},
+                "Name": {}
+            }
+        },
+        "ContentsShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Key": {},
+                    "LastModified": {
+                        "type": "timestamp"
+                    },
+                    "ETag": {},
+                    "Size": {
+                        "type": "integer"
+                    },
+                    "StorageClass": {},
+                    "Owner": {
+                        "shape": "OwnerShape"
+                    },
+                    "VersionId": {
+                        "locationName": "Generation"
+                    }
+                }
+            },
+            "flattened": true
+        },
+        "CommonPrefixShape": {
+            "type": "list",
+            "member": {
+                "type": "structure",
+                "members": {
+                    "Prefix": {}
+                }
+            },
+            "flattened": true
+        }
+    }
 }
