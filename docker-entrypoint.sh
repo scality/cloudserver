@@ -102,6 +102,14 @@ if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
 
+if [[ "$CRR_METRICS_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.host=\"$CRR_METRICS_HOST\""
+fi
+
+if [[ "$CRR_METRICS_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.port=$CRR_METRICS_PORT"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
