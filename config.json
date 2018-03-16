@@ -34,6 +34,10 @@
         "site": "us-east-2",
         "type": "aws_s3"
     }],
+    "backbeat": {
+        "host": "localhost",
+        "port": 8900
+    },
     "cdmi": {
         "host": "localhost",
         "port": 81,
