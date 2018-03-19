@@ -6,7 +6,7 @@ set -e
 # modifying config.json
 JQ_FILTERS_CONFIG="."
 
-# ENDPOINT var accepts comma separated values
+# ENDPOINT var can accept comma separated values
 # for multiple endpoint locations
 if [[ "$ENDPOINT" ]]; then
     IFS="," read -ra HOST_NAMES <<< "$ENDPOINT"
@@ -83,7 +83,7 @@ if [[ "$METADATA_HOST" ]]; then
 fi
 
 if [[ "$MONGODB_HOSTS" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.hosts=\"$MONGODB_HOSTS\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.replicaSetHosts=\"$MONGODB_HOSTS\""
 fi
 
 if [[ "$MONGODB_RS" ]]; then
