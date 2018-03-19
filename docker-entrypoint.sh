@@ -6,14 +6,15 @@ set -e
 # modifying config.json
 JQ_FILTERS_CONFIG="."
 
+# ENDPOINT var accepts comma separated values
+# for multiple endpoint locations
 if [[ "$ENDPOINT" ]]; then
-    HOST_NAME="$ENDPOINT"
-fi
-
-if [[ "$HOST_NAME" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$HOST_NAME\"]=\"us-east-1\""
-    echo "Host name has been modified to $HOST_NAME"
-    echo "Note: In your /etc/hosts file on Linux, OS X, or Unix with root permissions, make sure to associate 127.0.0.1 with $HOST_NAME"
+    IFS="," read -ra HOST_NAMES <<< "$ENDPOINT"
+    for host in "${HOST_NAMES[@]}"; do 
+        JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$host\"]=\"us-east-1\""
+    done
+    echo "Host name has been modified to ${HOST_NAMES[@]}"
+    echo "Note: In your /etc/hosts file on Linux, OS X, or Unix with root permissions, make sure to associate 127.0.0.1 with ${HOST_NAMES[@]}"
 fi
 
 if [[ "$LOG_LEVEL" ]]; then
@@ -25,7 +26,7 @@ if [[ "$LOG_LEVEL" ]]; then
     fi
 fi
 
-if [[ "$SSL" && "$HOST_NAME" ]]; then
+if [[ "$SSL" && "$HOST_NAMES" ]]; then
 # This condition makes sure that the certificates are not generated twice. (for docker restart)
 if [ ! -f ./ca.key ] || [ ! -f ./ca.crt ] || [ ! -f ./server.key ] || [ ! -f ./server.crt ] ; then
 # Compute config for utapi tests
@@ -36,15 +37,15 @@ prompt = no
 req_extensions = s3_req
 
 [req_distinguished_name]
-CN = ${HOST_NAME}
+CN = ${HOST_NAMES[0]}
 
 [s3_req]
 subjectAltName = @alt_names
 extendedKeyUsage = serverAuth, clientAuth
 
 [alt_names]
-DNS.1 = *.${HOST_NAME}
-DNS.2 = ${HOST_NAME}
+DNS.1 = *.${HOST_NAMES[0]}
+DNS.2 = ${HOST_NAMES[0]}
 
 EOF
 
