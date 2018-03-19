@@ -39,6 +39,8 @@ const constants = {
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
     blacklistedPrefixes: { bucket: [], object: [] },
+    // GCP Object Tagging Prefix
+    gcpTaggingPrefix: 'aws-tag-',
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
@@ -63,6 +65,12 @@ const constants = {
     // AWS sets a minimum size limit for parts except for the last part.
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
+
+    // AWS sets a maximum total parts limit
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    maximumAllowedPartCount: 10000,
+
+    gcpMaximumAllowedPartCount: 1024,
 
     // Max size on put part or copy part is 5GB. For functional
     // testing use 110 MB as max
@@ -115,8 +123,11 @@ const constants = {
     // for external backends, don't call unless at least 1 minute
     // (60,000 milliseconds) since last call
     externalBackendHealthCheckInterval: 60000,
-    versioningNotImplBackends: { azure: true },
-    mpuMDStoredExternallyBackend: { aws_s3: true },
+    versioningNotImplBackends: { azure: true, gcp: true },
+    mpuMDStoredExternallyBackend: { aws_s3: true, gcp: true },
+    skipBatchDeleteBackends: { azure: true, gcp: true },
+    s3HandledBackends: { azure: true, gcp: true },
+    hasCopyPartBackends: { aws_s3: true, gcp: true },
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
     azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
