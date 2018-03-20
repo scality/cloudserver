@@ -33,7 +33,7 @@ to your ``locationConfig.json`` file with the ``aws_s3`` location type:
 
 .. code:: json
 
-(...)
+    (...)
     "awsbackend": {
         "type": "aws_s3",
         "details": {
@@ -43,7 +43,7 @@ to your ``locationConfig.json`` file with the ``aws_s3`` location type:
             "credentialsProfile": "aws_hosted_profile"
         }
     }
-(...)
+    (...)
 
 You will also have to edit your AWS credentials file to be able to use your
 command line tool of choice. This file should mention credentials for all the
@@ -52,12 +52,12 @@ profiles.
 
 .. code:: json
 
-[default]
-aws_access_key_id=accessKey1
-aws_secret_access_key=verySecretKey1
-[aws_hosted_profile]
-aws_access_key_id={{YOUR_ACCESS_KEY}}
-aws_secret_access_key={{YOUR_SECRET_KEY}}
+    [default]
+    aws_access_key_id=accessKey1
+    aws_secret_access_key=verySecretKey1
+    [aws_hosted_profile]
+    aws_access_key_id={{YOUR_ACCESS_KEY}}
+    aws_secret_access_key={{YOUR_SECRET_KEY}}
 
 Just as you need to mount your locationConfig.json, you will need to mount your
 AWS credentials file at run time:
@@ -71,15 +71,15 @@ to get in the source bucket. ACL's would have to be updated
 on AWS directly to enable this.
 
 S3BACKEND
-~~~~~~
+~~~~~~~~~
 
 S3BACKEND=file
-^^^^^^^^^^^
+^^^^^^^^^^^^^^
 When storing file data, for it to be persistent you must mount docker volumes
 for both data and metadata. See `this section <#using-docker-volumes-in-production>`__
 
 S3BACKEND=mem
-^^^^^^^^^^
+^^^^^^^^^^^^^
 This is ideal for testing - no data will remain after container is shutdown.
 
 ENDPOINT
@@ -89,9 +89,9 @@ This variable specifies your endpoint. If you have a domain such as
 new.host.com, by specifying that here, you and your users can direct s3
 server requests to new.host.com.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e ENDPOINT=new.host.com scality/s3server
+    $ docker run -d --name s3server -p 8000:8000 -e ENDPOINT=new.host.com scality/s3server
 
 Note: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
 permissions, make sure to associate 127.0.0.1 with ``new.host.com``
@@ -107,7 +107,7 @@ You can set credentials for many accounts by editing
 want to specify one set of your own, you can use these environment
 variables.
 
-.. code:: shell
+.. code-block:: shell
 
     docker run -d --name s3server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=newAccessKey
     -e SCALITY_SECRET_ACCESS_KEY=newSecretKey scality/s3server
@@ -123,9 +123,9 @@ This variable allows you to change the log level: info, debug or trace.
 The default is info. Debug will give you more detailed logs and trace
 will give you the most detailed.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e LOG_LEVEL=trace scality/s3server
+    $ docker run -d --name s3server -p 8000:8000 -e LOG_LEVEL=trace scality/s3server
 
 SSL
 ~~~
@@ -144,9 +144,9 @@ extra container to do SSL/TLS termination such as haproxy/nginx/stunnel
 to limit what an exploit on either component could expose, as well as
 certificates in a mounted volume
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e SSL=TRUE -e ENDPOINT=<YOUR_ENDPOINT>
+    $ docker run -d --name s3server -p 8000:8000 -e SSL=TRUE -e ENDPOINT=<YOUR_ENDPOINT>
     scality/s3server
 
 More information about how to use S3 server with SSL
@@ -159,9 +159,9 @@ This variable instructs the Zenko CloudServer, and its data and metadata
 components to listen on the specified address. This allows starting the data
 or metadata servers as standalone services, for example.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
+    $ docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
     scality/s3server npm run start_dataserver
 
 
@@ -172,9 +172,9 @@ These variables configure the data and metadata servers to use,
 usually when they are running on another host and only starting the stateless
 Zenko CloudServer.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -e DATA_HOST=s3server-data
+    $ docker run -d --name s3server -e DATA_HOST=s3server-data
     -e METADATA_HOST=s3server-metadata scality/s3server npm run start_s3server
 
 REDIS\_HOST
@@ -183,9 +183,9 @@ REDIS\_HOST
 Use this variable to connect to the redis cache server on another host than
 localhost.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000
+    $ docker run -d --name s3server -p 8000:8000
     -e REDIS_HOST=my-redis-server.example.com scality/s3server
 
 REDIS\_PORT
@@ -194,9 +194,9 @@ REDIS\_PORT
 Use this variable to connect to the redis cache server on another port than
 the default 6379.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000
+    $ docker run -d --name s3server -p 8000:8000
     -e REDIS_PORT=6379 scality/s3server
 
 Tunables and Setup Tips
@@ -215,9 +215,9 @@ Docker volumes to host your data and metadata outside your Zenko CloudServer
 Docker container. Otherwise, the data and metadata will be destroyed
 when you erase the container.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -­v $(pwd)/data:/usr/src/app/localData -­v $(pwd)/metadata:/usr/src/app/localMetadata
+    $ docker run -­v $(pwd)/data:/usr/src/app/localData -­v $(pwd)/metadata:/usr/src/app/localMetadata
     -p 8000:8000 ­-d scality/s3server
 
 This command mounts the host directory, ``./data``, into the container
@@ -233,11 +233,12 @@ Adding modifying or deleting accounts or users credentials
 2. Use `Docker
    Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__
    to override the default ``authdata.json`` through a docker file mapping.
+
 For example:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json -p 8000:8000 -d
+    $ docker run -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json -p 8000:8000 -d
     scality/s3server
 
 Specifying your own host name
@@ -272,9 +273,9 @@ More information about location configuration
 Then, run your Scality S3 Server using `Docker
 Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d scality/s3server
+    $ docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d scality/s3server
 
 Your local ``config.json`` file will override the default one through a
 docker file mapping.
@@ -292,7 +293,7 @@ The user needs to exist within the container, and own the folder
 
 For instance, you can modify these lines in the dockerfile:
 
-.. code:: shell
+.. code-block:: shell
 
     ...
     && groupadd -r -g 1001 scality \
@@ -316,7 +317,7 @@ Sample ways to run it for CI are:
 - With custom locations (one in-memory, one hosted on AWS), and custom
   credentials mounted:
 
-.. code:: shell
+.. code-block:: shell
 
     docker run --name CloudServer -p 8000:8000
     -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
@@ -328,7 +329,7 @@ Sample ways to run it for CI are:
   and custom credentials set as environment variables
   (see `this section <#scality-access-key-id-and-scality-secret-access-key>`__):
 
-.. code:: shell
+.. code-block:: shell
 
     docker run --name CloudServer -p 8000:8000
     -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
@@ -346,7 +347,7 @@ multiple backends capabilities of Zenko CloudServer, and that you will have a
 custom endpoint for your local storage, and custom credentials for your local
 storage:
 
-.. code:: shell
+.. code-block:: shell
 
     docker run -d --name CloudServer
     -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata
