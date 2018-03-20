@@ -8,7 +8,7 @@ general:
 
 machine:
   node:
-    version: 6.9.5
+    version: 8.9.0
   services:
     - redis
     - docker
