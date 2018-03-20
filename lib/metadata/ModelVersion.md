@@ -80,3 +80,15 @@ this._lifecycleConfiguration = lifecycleConfiguration || null;
 ### Usage
 
 Used to store the bucket lifecycle configuration info
+
+## Model version 7
+
+### Properties Added
+
+```javascript
+this._uid = uid || undefined;
+```
+
+### Usage
+
+Used to set a unique identifier on a bucket
