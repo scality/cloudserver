@@ -1,0 +1,91 @@
+Zenko Cloudserver for Developpers
+=================================
+:Revision: v1.0
+:Date: 2018-03-20
+:Email: <zenko@scality.com>
+
+[.lead]
+This set of documents aims at bootstrapping developpers with Zenko's Cloudserver
+module, so they can then go on and contribute features.
+In order to achieve this, we're going to cover a number of subjects:
+
+- <<cloning-and-building,cloning, installing, and building your own image>>; 
+- <<support-new-public-cloud, adding support to a new public cloud backend>>;
+- <<telling-story-usecase, telling the community about your story or usecase>>.
+
+== [[cloning-and-building]]
+== Cloning, installing, and building your own image
+
+To clone Zenko's Cloudserver, simply run:
+
+ ~# git clone https://github.com/scality/S3 cloudserver
+ ~# cd cloudserver
+
+To install all dependencies (necessary to run), do:
+
+ ~/cloudserver# npm install
+
+TIP: Some optional dependencies may fail, resulting in you seeing `NPM WARN`
+     messages; these can safely be ignored.
+
+// Add link to user doc
+To run the service locally, use:
+
+ ~/cloudserver# npm start
+
+TIP: Refer to the User documentation for all available options
+
+// Add link to Docker doc
+To build your own Docker image, run:
+
+ ~/cloudserver# docker build . -t {{YOUR_DOCKERHUB_ACCOUNT}}/cloudserver:{{OPTIONAL_VERSION_TAG}}
+
+To then push your Docker image to your own hub, run:
+
+ ~/cloudserver# docker push {{YOUR_DOCKERHUB_ACCOUNT}}/cloudserver:{{OPTIONAL_VERSION_TAG}}
+
+NOTE: To perform this last operation, you will need to be authenticated with
+      DockerHub
+
+== [[support-new-public-cloud]]
+== Add support for a new Public Cloud backend
+
+.Backend Support
+[align="center",halign="center",valign="center",options="header"]
+|=======================================================================
+|Backend type    |Currently supported |Active WIP |Community suggestion 
+|Private disk/fs |x                   |           |                     
+|AWS S3          |x                   |           |                     
+|Microsoft Azure |x                   |           |                     
+|Backblaze B2    |                    |x          |                     
+|Google Cloud    |                    |x          |                     
+|Openstack Swift |                    |           |x                    
+|=======================================================================
+
+IMPORTANT: Should you want to request a new backend support, please do so by
+           opening a Github issue, and filling out the "Feature Request" section
+           of our template. Thanks!
+
+We always encourage our community to offer new extensions to Zenko, and new
+backend support is paramount to meeting more community needs.
+If that is something you want to contribute (or just do on your own version of
+the cloudserver image), go read our link:NEW_BACKEND.adoc[step-by-step guide] on
+where to start to add support for a new backend.
+//TODO:add link to contributing guidelines
+If you wish to make this a contribution, please make sure you follow our
+Contributing Guidelines.
+
+If you need help with anything, please search our https://forum.scality.com[Forum]
+for more information. If you can't find what you need, open a thread, and our
+community memebers and core team will be right with you!
+
+== [[telling-story-usecase]]
+== Telling the community about your story or usecase
+
+The best part of being open source is learning from such a diverse crowd. At
+Scality, we're always curious to learn about what you do with Zenko and Zenko
+Cloudserver.
+If you wish to tell us your story, if you want us to advertise your extension,
+or if you want to publish a tutorial on how to replicatie your setup, please
+reach out either on https://forum.scality.com[the Zenko Forum], or send us an
+mailto:zenko@scality.com[email].
