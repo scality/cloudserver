@@ -1,0 +1,53 @@
+= Adding a new backend
+
+One of Zenko's Cloudserver commitment is to simplify multicloud storage by
+using one API (the S3 API) to access all clouds. With that in mind, supporting
+more and more backends is one of Zenko's Community priorities. And you, as a
+developer, are welcome to join that trend!
+
+If you're planning to add a new backend for your own usage, go ahead and read
+the doc. If you have any questions during the development process, search our
+https://forum.scality.com[forum] and, if there is no answer to your question
+already there, open a new thread.
+
+If you're planning to contribute your backend support to our official
+repository, please follow these steps:
+
+- familiarize yourself with our https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md[Contributing Guidelines];
+- open a Github issue and fill out Feature Request form, and specify you would
+like to contribute it yourself;
+- wait for our core team to get back to you with an answer on whether we are
+interested in taking that contribution in (and hence committing to maintaining
+it over time);
+- once approved, fork this https://www.github.com/scality/S3[repository], and
+get started!
+- reach out to us on the https://forum.scality.com[forum] with any question you
+may have during the development process (after reading this document, of
+course!);
+- when you think it's ready, let us know so that we create a feature branch
+against which we'll compare and review your code;
+- open a pull request with your changes against that dedicated feature branch;
+//TODO: Add Hall of Fame section in the community report
+- once that pull request gets merged, you're done (and you'll join our Hall of
+Fame ;) );
+- finally, we'll let you know when we merge this into master.
+
+TIP: While we do take care of the final rebase (when we merge your feature
+     branch on master), we do ask that you keep up to date with our master until
+     then; find out more https://help.github.com/articles/syncing-a-fork/[here].
+
+IMPORTANT: If we do not approve your feature request, you may of course still
+           work on supporting a new backend: all our "no" means is that we do
+           not have the resources, as part of our core development team, to
+           maintain this feature for the moment.
+           _If your code is clean and your extension works nicely, we will be_
+           _glad to advertise it as part of the Zenko Galaxy_
+
+//TODO: Get approval for Zenko Galaxy as the name of our hub - sound appropriate with Orbit ;)
+
+There are two main types of backend you could want Zenko to support:
+
+== link:S3_COMPATIBLE_BACKENDS.adoc[S3 compatible data backends]
+
+== link:NON_S3_COMPATIBLE_BACKENDS.adoc[Data backends using another protocol than the S3 protocol]
+
