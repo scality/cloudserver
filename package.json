@@ -36,7 +36,6 @@
     "vaultclient": "scality/vaultclient#rel/7.4",
     "werelogs": "scality/werelogs#rel/7.4",
     "xml2js": "~0.4.16",
-    "qs": "6.5.1",
     "diskusage": "0.2.4"
   },
   "devDependencies": {
