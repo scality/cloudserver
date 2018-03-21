@@ -23,6 +23,11 @@ function getAzureDetails(replaceParams) {
     }, replaceParams);
 }
 
+// FIXME: most of tests using a line-wrapped regexp are broken,
+// because such regexp is converted to a string which does not enforce
+// the check of the message. A more durable solution would be use
+// 'joi' for config parsing.
+
 describe('locationConstraintAssert', () => {
     it('should throw error if locationConstraints is not an object', () => {
         assert.throws(() => {
