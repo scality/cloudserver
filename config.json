@@ -23,7 +23,8 @@
                         "s3-website-eu-west-1.amazonaws.com",
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
-                        "s3-website.scality.test"],
+                        "s3-website.scality.test",
+                        "zenkoazuretest.blob.core.windows.net"],
     "replicationEndpoints": [{
         "site": "zenko",
         "servers": ["127.0.0.1:8000"],

@@ -45,7 +45,10 @@ dependencies:
 
 test:
   override:
+    - openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509
+      -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy"
+      -keyout /tmp/CA.pem  -out /tmp/CA.pem
     - docker run --name squid-proxy -d --net=host
-      --publish 3128:3128 sameersbn/squid:3.3.8-23
+      -v /tmp/CA.pem:/ssl/myca.pem:ro -p 3129:3129 ssalaues/squid
     - bash tests.bash:
         parallel: true
