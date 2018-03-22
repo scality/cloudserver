@@ -145,7 +145,7 @@ then
   mkdir /tmp/mongodb
   docker run -d -p 27018:27017 -v /tmp/mongodb:/data/db mongo:3.6.2
   bash wait_for_local_port.bash 27018 40
-  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_test
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_test && npm run multiple_backend_test
 
   killandsleep 8000
   
