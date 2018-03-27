@@ -17,15 +17,6 @@ aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
 aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
 EOF
 
-mkdir ${HOME}/.gcp #create directory for GCP service credential
-cat >>${HOME}/.gcp/servicekey <<EOF
-{
-  "type": "service_account",
-  "private_key": "$GOOGLE_SERVICE_KEY",
-  "client_email": "$GOOGLE_SERVICE_EMAIL"
-}
-EOF
-
 MYPWD=$(pwd)
 
 killandsleep () {
