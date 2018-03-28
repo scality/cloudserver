@@ -8,11 +8,15 @@ const bucket = `versioning-bucket-${Date.now()}`;
 describe('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(60000);
     let s3;
+    let replicationAccountS3;
 
     // setup test
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
+        const configReplication = getConfig('replication',
+            { signatureVersion: 'v4' });
         s3 = new S3(config);
+        replicationAccountS3 = new S3(configReplication);
         s3.createBucket({ Bucket: bucket }, done);
     });
 
@@ -142,6 +146,17 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             },
         };
         s3.putBucketVersioning(params, done);
+    });
+
+    it('should accept valid versioning configuration if user is a ' +
+    'replication user', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                Status: 'Enabled',
+            },
+        };
+        replicationAccountS3.putBucketVersioning(params, done);
     });
 
     it('should retrieve the valid versioning configuration', done => {

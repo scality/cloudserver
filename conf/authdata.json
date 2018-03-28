@@ -30,5 +30,16 @@
             "access": "cluesoKey1",
             "secret": "cluesoSecretKey1"
         }]
+    },
+    {
+        "name": "Replication",
+        "email": "inspector@replication.info",
+        "arn": "arn:aws:iam::123456789015:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/replication",
+        "shortid": "123456789015",
+        "keys": [{
+            "access": "replicationKey1",
+            "secret": "replicationSecretKey1"
+        }]
     }]
 }
