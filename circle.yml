@@ -49,6 +49,6 @@ test:
       -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy"
       -keyout /tmp/CA.pem  -out /tmp/CA.pem
     - docker run --name squid-proxy -d --net=host
-      -v /tmp/CA.pem:/ssl/myca.pem:ro -p 3129:3129 ssalaues/squid
+      -v /tmp/CA.pem:/ssl/myca.pem:ro -p 3129:3129 scality/ci-squid
     - bash tests.bash:
         parallel: true
