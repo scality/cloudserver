@@ -24,6 +24,8 @@ killandsleep () {
   sleep 10
 }
 
+export REMOTE_MANAGEMENT_DISABLE=1
+
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
 
