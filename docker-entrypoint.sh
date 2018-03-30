@@ -90,6 +90,10 @@ if [[ "$MONGODB_RS" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.replicaSet=\"$MONGODB_RS\""
 fi
 
+if [[ "$MONGODB_DATABASE" ]]; then
+   JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
+fi
+
 if [[ "$REDIS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
