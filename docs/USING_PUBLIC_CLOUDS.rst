@@ -11,7 +11,8 @@ This section of the documentation shows you how to set up our currently
 supported public cloud backends:
 
 - `Amazon S3 <#aws-s3-as-a-data-backend>`__ ;
-- `Microsoft Azure <#microsoft-azure-as-a-data-backend>`__ .
+- `Microsoft Azure <#microsoft-azure-as-a-data-backend>`__ ;
+- `Google Cloud Storage <#google-cloud-storage-as-a-data-backend>`__ .
 
 For each public cloud backend, you will have to edit your CloudServer
 :code:`locationConfig.json` and do a few setup steps on the applicable public
@@ -113,7 +114,7 @@ There are a few configurable options here:
 ^^^^^^^^^^^^^^^^^^
 
 .. TIP::
-   If you explicitly set your :code:`accessKey` and :code:`secretKey` in the 
+   If you explicitly set your :code:`accessKey` and :code:`secretKey` in the
    :code:`credentials` object of your :code:`aws_s3` location in your
    :code:`locationConfig.json` file, you may skip this section
 
@@ -361,6 +362,199 @@ For more informations, refer to our template `~/.s3cfg <./CLIENTS/#s3cmd>`__ .
 
 Pre-existing objects in your MS Azure container can unfortunately not be
 accessed by CloudServer at this time.
+
+Google Cloud Storage as a data backend
+--------------------------------------
+
+From the Google Cloud Console
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From the Google Cloud Store, create a two buckets for this new location
+constraint: one bucket where you will host your data and the other for
+performing multipart upload.
+
+You will also need to get one of your Interoperability Credentials and provide
+it to CloudServer.
+This can be found in the Google Cloud Storage "Settings" tab then under
+"Interopability".
+
+In this example, our buckets will be ``zenkobucket`` and ``zenkompubucket``.
+
+From the CloudServer repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+locationConfig.json
+^^^^^^^^^^^^^^^^^^^
+
+Edit this file to add a new location constraint. This location constraint will
+constain the information for the Google Cloud Storage bucket to which you will
+be writing your data whenever you create a CloudServer bucket in this location.
+There are a few configurable options here:
+
+- :code:`type` : set to :code:`gcp` to indicate this location constraint is
+  writing data to Google Cloud Storage;
+- :code:`legacyAwsBehavior` : set to :code:`true` to indicate this region should
+  behave like AWS S3 :code:`us-east-1` region, set to :code:`false` to indicate
+  this region should behave like any other AWS S3 region;
+- :code:`bucketName` : set to an *existing bucket* in your Google Cloud Storage
+  Account; this is the bucket in which your data will be stored for this
+  location constraint;
+- :code:`mpuBucketName` : set to an *existing bucket*  in your Google Cloud
+  Storage Account; this is the bucket in which parts for multipart uploads will
+  be stored for this location constraint;
+- :code:`gcpEndpoint` : set to your bucket's endpoint, usually :code:`storage.googleapis.com`;
+- :code:`bucketMatch` : set to :code:`true` if you want your object name to be same
+  in your local bucket and your Google Cloud Storage bucket; set to :code:`false`
+  if you want your object name to be of the form :code:`{{localBucketName}}/{{objectname}}`
+  in your Google Cloud Storage hosted bucket;
+- :code:`credentialsProfile` and :code:`credentials` are two ways to provide
+  your Google Cloud Storage Interoperability credentials for that bucket,
+  *use only one of them* :
+
+  - :code:`credentialsProfile` : set to the profile name allowing you to access
+    your Google Cloud Storage bucket from your :code:`~/.aws/credentials` file;
+  - :code:`credentials` : set the two fields inside the object (:code:`accessKey`
+    and :code:`secretKey`) to their respective values from your Google Cloud Storage
+    Interoperability credentials.
+
+.. code:: json
+
+    (...)
+    "gcp-test": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "storage.googleapis.com",
+            "bucketName": "zenkobucket",
+            "mpuBucketName": "zenkompubucket",
+            "bucketMatch": true,
+            "credentialsProfile": "zenko"
+        }
+    },
+    (...)
+
+.. code:: json
+
+    (...)
+    "gcp-test": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "storage.googleapis.com",
+            "bucketName": "zenkobucket",
+            "bucketMatch": true,
+            "mpuBucketName": "zenkompubucket",
+            "credentials": {
+                "accessKey": "WHDBFKILOSDDVF78NPMQ",
+                "secretKey": "87hdfGCvDS+YYzefKLnjjZEYstOIuIjs/2X72eET"
+            }
+        }
+    },
+    (...)
+
+.. WARNING::
+   If you set :code:`bucketMatch` to :code:`true`, we strongly advise that you
+   only have one local bucket per Google Cloud Storage location.
+   Without :code:`bucketMatch` set to :code:`false`, your object names in your
+   Google Cloud Storage bucket will not be prefixed with your Cloud Server
+   bucket name. This means that if you put an object :code:`foo` to your
+   CloudServer bucket :code:`zenko1` and you then put a different :code:`foo` to
+   your CloudServer bucket :code:`zenko2` and both :code:`zenko1` and
+   :code:`zenko2` point to the same Google Cloud Storage bucket, the second
+   :code:`foo` will overwrite the first :code:`foo`.
+
+~/.aws/credentials
+^^^^^^^^^^^^^^^^^^
+
+.. TIP::
+   If you explicitly set your :code:`accessKey` and :code:`secretKey` in the
+   :code:`credentials` object of your :code:`gcp` location in your
+   :code:`locationConfig.json` file, you may skip this section
+
+Make sure your :code:`~/.aws/credentials` file has a profile matching the one
+defined in your :code:`locationConfig.json`. Following our previous example, it
+would look like:
+
+
+.. code:: shell
+
+    [zenko]
+    aws_access_key_id=WHDBFKILOSDDVF78NPMQ
+    aws_secret_access_key=87hdfGCvDS+YYzefKLnjjZEYstOIuIjs/2X72eET
+
+Start the server with the ability to write to Google Cloud Storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Inside the respository, once all the files have been edited, you shoul dbe able
+to start the server and start writing data to Google Cloud Storage through
+CloudServer.
+
+.. code:: shell
+
+  # Start the server locally
+  $> S3DATA=multiple npm start
+
+Run the server as a docker container with the ability to write to Google Cloud Storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. TIP::
+  If you set the :code:`credentials` object in you
+  :code:`locationConfig.json` file, you don't need to mount your
+  :code:`.aws/credentials` file
+
+Mount all the files that have been edited to override defaults, and do a
+standard Docker run; then you can start wiriting to Google Cloud Storage through
+CloudServer.
+
+.. code:: shell
+
+   # Start the server in a Docker container
+   $> sudo docker run -d --name CloudServer \
+   -v $(pwd)/data:/usr/src/app/localData \
+   -v $(pwd)/metadata:/usr/src/app/localMetadata \
+   -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
+   -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
+   -v ~/.aws/credentials:/root/.aws/credentials \
+   -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
+   -d scality/s3server
+
+Testing: put an object to Google Cloud Storage using CloudServer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to start testing pushing to AWS S3, you will need to create a local
+bucket in the AWS S3 location constraint - this local bucket will only store the
+metadata locally, while both the data and any user metadata (:code:`x-amz-meta`
+headers sent with a PUT object, and tags) will be stored on AWS S3.
+This example is based on all our previous steps.
+
+.. code:: shell
+
+   # Create a local bucket storing data in AWS S3
+   $> s3cmd --host=127.0.0.1:8000 mb s3://zenkobucket --region=gcp-test
+   # Put an object to Google Cloud Storage, and store the metadata locally
+   $> s3cmd --host=127.0.0.1:8000 put /etc/hosts s3://zenkobucket/testput
+    upload: '/etc/hosts' -> 's3://zenkobucket/testput'  [1 of 1]
+     330 of 330   100% in    0s   380.87 B/s  done
+   # List locally to check you have the metadata
+   $> s3cmd --host=127.0.0.1:8000 ls s3://zenkobucket
+    2017-10-23 10:26       330   s3://zenkobucket/testput
+
+Then, from the Google Cloud Console, if you go into your bucket, you should see
+your newly uploaded object:
+
+.. figure:: ../res/gcp-console-successful-put.png
+   :alt: Google Cloud Storage Console upload example
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+Make sure your :code:`~/.s3cfg` file has credentials matching your local
+CloudServer credentials defined in :code:`conf/authdata.json`. By default, the
+access key is :code:`accessKey1` and the secret key is :code:`verySecretKey1`.
+For more informations, refer to our template `~/.s3cfg <./CLIENTS/#s3cmd>`__ .
+
+Pre-existing objects in your Google Cloud Storage hosted bucket can
+unfortunately not be accessed by CloudServer at this time.
 
 For any data backend
 --------------------
