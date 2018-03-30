@@ -29,6 +29,8 @@ machine:
 
 dependencies:
   override:
+    - docker run -d -p 27018:27018 -p 27019:27018 -p 27020:27018
+      --name ci-mongo scality/ci-mongo:3.4
     - rm -rf node_modules
     - yarn install --pure-lockfile
   post:
