@@ -1,6 +1,6 @@
 {
   "name": "s3",
-  "version": "7.4.0",
+  "version": "7.4.0-orbit-test",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
@@ -20,12 +20,13 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "aws-sdk": "2.28.0",
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#forward/orbit",
     "async": "~2.5.0",
     "azure-storage": "^2.1.0",
     "backo": "^1.1.0",
     "bucketclient": "scality/bucketclient",
     "commander": "^2.9.0",
+    "node-forge": "^0.7.1",
     "diskusage": "0.2.4",
     "google-auto-auth": "^0.9.1",
     "mongodb": "^2.2.31",
