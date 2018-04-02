@@ -8,6 +8,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const getConfig = require('../support/config');
 const withV4 = require('../support/withV4');
 const svcSchema = require('../../schema/service');
+const testBucket = 'testbucket';
 
 const describeFn = process.env.AWS_ON_AIR
     ? describe.skip
@@ -32,6 +33,26 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 assert.strictEqual(error.statusCode, 403);
                 assert.strictEqual(error.code, 'AccessDenied');
 
+                done();
+            });
+        });
+    });
+
+    describe('List Objects V2', () => {
+        let s3;
+        let config;
+
+        beforeEach(done => {
+            config = getConfig('default');
+            s3 = new S3(config);
+            s3.createBucket({ Bucket: testBucket }, done);
+        });
+
+        it('should return NotImplemented', done => {
+            s3.listObjectsV2({ Bucket: testBucket }, error => {
+                assert(error);
+                assert.strictEqual(error.statusCode, 501);
+                assert.strictEqual(error.code, 'NotImplemented');
                 done();
             });
         });
