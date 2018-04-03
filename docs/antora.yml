@@ -1,0 +1,8 @@
+name: cloudserver
+title: Zenko CloudServer
+version: '1.0'
+start_page: ROOT:README.adoc
+nav:
+- modules/ROOT/nav.adoc
+- modules/USERS/nav.adoc
+- modules/DEVELOPERS/nav.adoc

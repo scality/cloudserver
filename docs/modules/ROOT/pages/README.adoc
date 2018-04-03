@@ -1,0 +1,172 @@
+[[zenko-cloudserver]]
+Zenko CloudServer
+-----------------
+
+image:res/scality-cloudserver-logo.png[Zenko CloudServer logo]
+
+https://circleci.com/gh/scality/S3[image:https://circleci.com/gh/scality/S3.svg?style=svg[CircleCI]]
+http://ci.ironmann.io/gh/scality/S3[image:http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae[Scality
+CI]]
+https://hub.docker.com/r/scality/s3server/[image:https://img.shields.io/docker/pulls/scality/s3server.svg[Docker
+Pulls]]
+https://twitter.com/zenko[image:https://img.shields.io/twitter/follow/zenko.svg?style=social&label=Follow[Docker
+Pulls]]
+
+[[overview]]
+Overview
+~~~~~~~~
+
+CloudServer (formerly S3 Server) is an open-source Amazon S3-compatible
+object storage server that is part of https://www.zenko.io[Zenko],
+Scality’s Open Source Multi-Cloud Data Controller.
+
+CloudServer provides a single AWS S3 API interface to access multiple
+backend data storage both on-premise or public in the cloud.
+
+CloudServer is useful for Developers, either to run as part of a
+continous integration test environment to emulate the AWS S3 service
+locally or as an abstraction layer to develop object storage enabled
+application on the go.
+
+[[learn-more-at-www.zenko.iocloudserver]]
+Learn more at
+https://www.zenko.io/cloudserver/[www.zenko.io/cloudserver]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[may-i-offer-you-some-lovely-documentation]]
+http://s3-server.readthedocs.io/en/latest/[May I offer you some lovely
+documentation?]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[docker]]
+Docker
+~~~~~~
+
+https://hub.docker.com/r/scality/s3server/[Run your Zenko CloudServer
+with Docker]
+
+[[contributing]]
+Contributing
+~~~~~~~~~~~~
+
+In order to contribute, please follow the
+https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md[Contributing
+Guidelines].
+
+[[installation]]
+Installation
+~~~~~~~~~~~~
+
+[[dependencies]]
+Dependencies
+^^^^^^^^^^^^
+
+Building and running the Zenko CloudServer requires node.js 6.9.5 and
+npm v3 . Up-to-date versions can be found at
+https://github.com/nodesource/distributions[Nodesource].
+
+[[clone-source-code]]
+Clone source code
+^^^^^^^^^^^^^^^^^
+
+[source,shell]
+----
+git clone https://github.com/scality/S3.git
+----
+
+[[install-js-dependencies]]
+Install js dependencies
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Go to the ./S3 folder,
+
+[source,shell]
+----
+npm install
+----
+
+If you get an error regarding installation of the diskUsage module,
+please install g++.
+
+If you get an error regarding level-down bindings, try clearing your npm
+cache:
+
+[source,shell]
+----
+npm cache clear
+----
+
+[[run-it-with-a-file-backend]]
+Run it with a file backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[source,shell]
+----
+npm start
+----
+
+This starts a Zenko CloudServer on port 8000. Two additional ports 9990
+and 9991 are also open locally for internal transfer of metadata and
+data, respectively.
+
+The default access key is accessKey1 with a secret key of
+verySecretKey1.
+
+By default the metadata files will be saved in the localMetadata
+directory and the data files will be saved in the localData directory
+within the ./S3 directory on your machine. These directories have been
+pre-created within the repository. If you would like to save the data or
+metadata in different locations of your choice, you must specify them
+with absolute paths. So, when starting the server:
+
+[source,shell]
+----
+mkdir -m 700 $(pwd)/myFavoriteDataPath
+mkdir -m 700 $(pwd)/myFavoriteMetadataPath
+export S3DATAPATH="$(pwd)/myFavoriteDataPath"
+export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
+npm start
+----
+
+[[run-it-with-multiple-data-backends]]
+Run it with multiple data backends
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[source,shell]
+----
+export S3DATA='multiple'
+npm start
+----
+
+This starts a Zenko CloudServer on port 8000. The default access key is
+accessKey1 with a secret key of verySecretKey1.
+
+With multiple backends, you have the ability to choose where each object
+will be saved by setting the following header with a locationConstraint
+on a PUT request:
+
+[source,shell]
+----
+'x-amz-meta-scal-location-constraint':'myLocationConstraint'
+----
+
+If no header is sent with a PUT object request, the location constraint
+of the bucket will determine where the data is saved. If the bucket has
+no location constraint, the endpoint of the PUT request will be used to
+determine location.
+
+See the Configuration section in our documentation
+http://s3-server.readthedocs.io/en/latest/GETTING_STARTED/#configuration[here]
+to learn how to set location constraints.
+
+[[run-it-with-an-in-memory-backend]]
+Run it with an in-memory backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[source,shell]
+----
+npm run mem_backend
+----
+
+This starts a Zenko CloudServer on port 8000. The default access key is
+accessKey1 with a secret key of verySecretKey1.

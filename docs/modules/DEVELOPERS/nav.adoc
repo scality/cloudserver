@@ -1,0 +1,4 @@
+* xref:GETTING_STARTED.adoc[Getting Started]
+* xref:NEW_BACKEND.adoc[Adding a new backend]
+** xref:S3_COMPATIBLE_BACKENDS.adoc[Backends supporting the S3 protocol]
+** xref:NON_S3_COMPATIBLE_BACKENDS.adoc[Backends supporting other protocols]
