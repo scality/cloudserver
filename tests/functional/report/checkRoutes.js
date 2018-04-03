@@ -69,7 +69,7 @@ describe('Report route', () => {
 
     it('should contain config', done => {
         queryReport(done, response => {
-            if (!response.config || !response.config.locationConstraints) {
+            if (!response.config || !response.config.overlayVersion) {
                 return done(new Error('response missing config'));
             }
             return done();
