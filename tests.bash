@@ -24,6 +24,8 @@ killandsleep () {
   sleep 10
 }
 
+export REMOTE_MANAGEMENT_DISABLE=1
+
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
 
@@ -98,37 +100,37 @@ fi
 if [ $CIRCLE_NODE_INDEX -eq 2 ]
 then
 
-  S3BACKEND=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_mem_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_awssdk
+  S3BACKEND=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_mem_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_awssdk
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_s3cmd
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3cmd
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_s3curl.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_s3curl
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_s3curl.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3curl
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_rawnode.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_node
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_rawnode.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_node
 
   killandsleep 8000
 
   # Run S3 with mem Backend + KMS Encryption ; run ft_tests
 
-  S3BACKEND=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_mem_kms_awssdk.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_awssdk
+  S3BACKEND=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_mem_kms_awssdk.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_awssdk
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_s3cmd
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_s3cmd
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_s3curl.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_s3curl
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_s3curl.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_s3curl
 
   killandsleep 8000
 
-  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_rawnode.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_node
+  S3BACKEND=mem npm start > $CIRCLE_ARTIFACTS/server_mem_kms_rawnode.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_node
 
   killandsleep 8000
 
@@ -136,10 +138,10 @@ then
   mkdir /tmp/mongodb
   docker run -d -p 27018:27017 -v /tmp/mongodb:/data/db mongo:3.6.2
   bash wait_for_local_port.bash 27018 40
-  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_test
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_test
 
   killandsleep 8000
-  
+
 fi
 
 if [ $CIRCLE_NODE_INDEX -eq 3 ]
@@ -147,49 +149,49 @@ then
 
   # Run S3 with file Backend ; run ft_tests
 
-  S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_file_awssdk.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_awssdk
+  S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_file_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_awssdk
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_management.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_management
+  REMOTE_MANAGEMENT_DISABLE=0 S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_management.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_management
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_s3cmd
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3cmd
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_s3curl.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_s3curl
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_s3curl.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3curl
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_rawnode.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_node
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_rawnode.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_node
 
   killandsleep 8000
 
   # Run S3 with file Backend + KMS Encryption ; run ft_tests
 
-  S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_file_kms_awssdk.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_awssdk
+  S3BACKEND=file S3VAULT=mem MPU_TESTING=yes npm start > $CIRCLE_ARTIFACTS/server_file_kms_awssdk.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_awssdk
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_s3cmd
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_s3cmd
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_s3curl.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_s3curl
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_s3curl.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_s3curl
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_rawnode.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_node
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_rawnode.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_node
 
   killandsleep 8000
 
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_management
+  REMOTE_MANAGEMENT_DISABLE=0 S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_management
 
   killandsleep 8000
 
-  S3BACKEND=mem ENABLE_LOCAL_CACHE=true npm start > $CIRCLE_ARTIFACTS/server_mem_healthchecks.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_LOCAL_CACHE=true npm run ft_healthchecks
+  S3BACKEND=mem ENABLE_LOCAL_CACHE=true npm start > $CIRCLE_ARTIFACTS/server_mem_healthchecks.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_LOCAL_CACHE=true S3DATA=file npm run ft_healthchecks
 
   killandsleep 8000
 

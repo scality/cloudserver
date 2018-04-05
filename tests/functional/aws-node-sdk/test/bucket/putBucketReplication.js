@@ -69,13 +69,14 @@ function setConfigRules(val) {
 describe('aws-node-sdk test putBucketReplication bucket status', () => {
     let s3;
     let otherAccountS3;
+    let replicationAccountS3;
     const replicationParams = getReplicationParams(replicationConfig);
 
-    function checkVersioningError(versioningStatus, expectedErr, cb) {
+    function checkVersioningError(s3Client, versioningStatus, expectedErr, cb) {
         const versioningParams = getVersioningParams(versioningStatus);
         return series([
-            next => s3.putBucketVersioning(versioningParams, next),
-            next => s3.putBucketReplication(replicationParams, next),
+            next => s3Client.putBucketVersioning(versioningParams, next),
+            next => s3Client.putBucketReplication(replicationParams, next),
         ], err => {
             assertError(err, expectedErr);
             return cb();
@@ -86,6 +87,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
+        replicationAccountS3 = new BucketUtility('replication', {}).s3;
         return done();
     });
 
@@ -117,10 +119,14 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
         it('should not put configuration on bucket with \'Suspended\'' +
             'versioning', done =>
-            checkVersioningError('Suspended', 'InvalidRequest', done));
+            checkVersioningError(s3, 'Suspended', 'InvalidRequest', done));
 
         it('should put configuration on a bucket with versioning', done =>
-            checkVersioningError('Enabled', null, done));
+            checkVersioningError(s3, 'Enabled', null, done));
+
+        it('should put configuration on a bucket with versioning if ' +
+        'user is a replication user', done =>
+            checkVersioningError(replicationAccountS3, 'Enabled', null, done));
     });
 });
 

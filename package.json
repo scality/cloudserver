@@ -29,15 +29,20 @@
     "diskusage": "0.2.4",
     "google-auto-auth": "^0.9.1",
     "https-proxy-agent": "^2.2.0",
+    "mongodb": "^2.2.31",
+    "node-forge": "^0.7.1",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.0.2",
+    "request": "^2.81.0",
     "sproxydclient": "scality/sproxydclient",
+    "sql-where-parser": "~2.2.1",
     "utapi": "scality/utapi",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
     "vaultclient": "scality/vaultclient",
     "werelogs": "scality/werelogs",
-    "xml2js": "~0.4.16"
+    "xml2js": "~0.4.16",
+    "prom-client": "^10.2.3"
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
