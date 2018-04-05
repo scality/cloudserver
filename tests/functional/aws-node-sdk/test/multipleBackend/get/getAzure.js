@@ -53,7 +53,10 @@ function testSuite() {
             });
         });
         keys.forEach(key => {
-            describe(`${key.describe} size`, () => {
+            describe(`${key.describe} size`, function fn() {
+                // This test has been observed to be flaky, so allow the test to
+                // fail three times consecutively before the suite itself fails.
+                this.retries(2);
                 const testKey = `${key.name}-${Date.now()}`;
                 before(done => {
                     setTimeout(() => {
@@ -69,6 +72,8 @@ function testSuite() {
                 });
 
                 it(`should get an ${key.describe} object from Azure`, done => {
+                    // Log the key name to help investigate potential flakiness.
+                    process.stdout.write(`key: ${testKey}`);
                     s3.getObject({ Bucket: azureContainerName, Key:
                       testKey },
                         (err, res) => {
