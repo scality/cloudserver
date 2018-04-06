@@ -42,11 +42,10 @@ const testCases = [
 
 describe('proxyCompareURL util function', () => {
     testCases.forEach(test => {
-        it(`should return ${test.expRes} if ${test.desc}`, done => {
+        it(`should return ${test.expRes} if ${test.desc}`, () => {
             process.env.NO_PROXY = test.noProxy;
             const proxyMatch = proxyCompareUrl(test.endpoint);
             assert.strictEqual(test.expRes, proxyMatch);
-            done();
         });
     });
 
