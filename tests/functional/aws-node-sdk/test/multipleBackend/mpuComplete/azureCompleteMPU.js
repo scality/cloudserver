@@ -103,6 +103,10 @@ function mpuSetup(key, location, cb) {
 describeSkipIfNotMultiple('Complete MPU API for Azure data backend',
 function testSuite() {
     this.timeout(150000);
+    // This test has been observed to be flaky, so allow the test to fail three
+    // times consecutively before the suite itself fails.
+    this.retries(2);
+
     withV4(sigCfg => {
         beforeEach(function beFn() {
             this.currentTest.key = `somekey-${Date.now()}`;

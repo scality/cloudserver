@@ -106,7 +106,11 @@ describeF() {
             });
         });
 
-        describe('with no bucket location header', () => {
+        describe('with no bucket location header', function fn() {
+            // This test has been observed to be flaky, so allow the test to
+            // fail three times consecutively before the suite itself fails.
+            this.retries(2);
+
             beforeEach(() =>
               s3.createBucketAsync({ Bucket: azureContainerName })
                 .catch(err => {
