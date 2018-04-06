@@ -103,5 +103,16 @@
             "bucketMatch": false,
             "azureContainerName": "s3test"
         }
+    },
+    "gcpbackend": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": true,
+            "credentialsProfile": "google"
+        }
     }
 }
