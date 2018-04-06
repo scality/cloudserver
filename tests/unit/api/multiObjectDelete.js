@@ -68,6 +68,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
         });
     });
 
+
     it('should successfully get object metadata and then ' +
         'delete metadata and data', done => {
         getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
