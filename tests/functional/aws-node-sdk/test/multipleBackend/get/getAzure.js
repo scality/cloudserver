@@ -73,7 +73,8 @@ function testSuite() {
 
                 it(`should get an ${key.describe} object from Azure`, done => {
                     // Log the key name to help investigate potential flakiness.
-                    process.stdout.write(`key: ${testKey}`);
+                    process.stdout.write(`should get an ${key.describe} ` +
+                        `object from Azure test key name: ${testKey}`);
                     s3.getObject({ Bucket: azureContainerName, Key:
                       testKey },
                         (err, res) => {
