@@ -114,7 +114,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "bucketName": "zenko-gcp-bucket",
+            "bucketName": "zenko-gcp-bucket-ver",
             "mpuBucketName": "zenko-gcp-mpu",
             "bucketMatch": true,
             "credentialsProfile": "google"
@@ -125,7 +125,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "bucketName": "zenko-gcp-bucket-2",
+            "bucketName": "zenko-gcp-bucket-ver-2",
             "mpuBucketName": "zenko-gcp-mpu-2",
             "bucketMatch": true,
             "credentialsProfile": "google_2"
@@ -136,7 +136,7 @@
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
-            "bucketName": "zenko-gcp-bucket",
+            "bucketName": "zenko-gcp-bucket-ver",
             "mpuBucketName": "zenko-gcp-mpu",
             "bucketMatch": false,
             "credentialsProfile": "google"
