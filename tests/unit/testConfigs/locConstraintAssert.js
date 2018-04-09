@@ -5,11 +5,11 @@ class LocationConstraint {
     constructor(type, legacyAwsBehavior, details) {
         this.type = type || 'scality';
         this.legacyAwsBehavior = legacyAwsBehavior || false;
-        this.details = details || {
+        this.details = Object.assign({}, {
             awsEndpoint: 's3.amazonaws.com',
             bucketName: 'tester',
             credentialsProfile: 'default',
-        };
+        }, details || {});
     }
 }
 
@@ -223,5 +223,62 @@ describe('locationConstraintAssert', () => {
         },
         '/bad location constraint: "azurefaketest" ' +
         'azureStorageAccessKey is not a valid base64 string/');
+    });
+
+    it('should set https to true by default', () => {
+        const usEast1 = new LocationConstraint();
+        const locationConstraint = new LocationConstraint('aws_s3', true);
+        assert.doesNotThrow(() => {
+            locationConstraintAssert({
+                'us-east-1': usEast1,
+                'awshttpsDefault': locationConstraint,
+            });
+        }, '/bad location constraint awshttpsDefault,' +
+        'incorrect default config for https');
+        assert.strictEqual(locationConstraint.details.https, true,
+            'https config should be true');
+    });
+
+    it('should override default if https is set to false', () => {
+        const usEast1 = new LocationConstraint();
+        const locationConstraint = new LocationConstraint('aws_s3', true, {
+            https: false,
+        });
+        assert.doesNotThrow(() => {
+            locationConstraintAssert({
+                'us-east-1': usEast1,
+                'awshttpsFalse': locationConstraint,
+            });
+        }, '/bad location constraint awshttpsFalse,' +
+        'incorrect config for https');
+        assert.strictEqual(locationConstraint.details.https, false,
+            'https config should be false');
+    });
+
+    it('should set pathStyle config option to false by default', () => {
+        const usEast1 = new LocationConstraint();
+        const locationConstraint = new LocationConstraint('aws_s3', true);
+        assert.doesNotThrow(() => {
+            locationConstraintAssert({
+                'us-east-1': usEast1,
+                'awsdefaultstyle': locationConstraint,
+            });
+        }, '/bad location constraint, unable to set default config');
+        assert.strictEqual(locationConstraint.details.pathStyle, false,
+            'pathstyle config should be false');
+    });
+
+    it('should override default if pathStyle is set to true', () => {
+        const usEast1 = new LocationConstraint();
+        const locationConstraint = new LocationConstraint('aws_s3', true,
+        { pathStyle: true });
+        assert.doesNotThrow(() => {
+            locationConstraintAssert({
+                'us-east-1': usEast1,
+                'awspathstyle': locationConstraint,
+            });
+        }, '/bad location constraint, unable to set pathSytle config');
+        assert.strictEqual(locationConstraint.details.pathStyle, true,
+            'pathstyle config should be true');
     });
 });
