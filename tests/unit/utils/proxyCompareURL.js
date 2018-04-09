@@ -1,5 +1,5 @@
 const assert = require('assert');
-const proxyCompareURL = require('../../../lib/data/utils');
+const proxyCompareUrl = require('../../../lib/data/proxyCompareUrl');
 
 const testCases = [
     {
@@ -44,7 +44,7 @@ describe('proxyCompareURL util function', () => {
     testCases.forEach(test => {
         it(`should return ${test.expRes} if ${test.desc}`, done => {
             process.env.NO_PROXY = test.noProxy;
-            const proxyMatch = proxyCompareURL(test.endpoint);
+            const proxyMatch = proxyCompareUrl(test.endpoint);
             assert.strictEqual(test.expRes, proxyMatch);
             done();
         });
