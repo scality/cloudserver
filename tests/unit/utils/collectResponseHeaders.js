@@ -19,4 +19,10 @@ describe('Middleware: Collect Response Headers', () => {
                 undefined);
         });
     });
+
+    // TODO: Add test for 'x-amz-website-redirect-location' when it is an empty
+    // string: should return undefined for that value.
+
+    // TODO: Add test for 'x-amz-website-redirect-location' when it has a value:
+    // should return the given value.
 });

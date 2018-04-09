@@ -318,6 +318,8 @@ describe('GET object', () => {
                       return done();
                   });
             });
+            // TODO: Add test where website redirect header is not given. It
+            // should not be included in the response.
         });
 
         describe('x-amz-tagging-count', () => {

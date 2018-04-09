@@ -409,5 +409,7 @@ describe('HEAD object, conditions', () => {
                 done();
             });
         });
+
+        // TODO: Add test for expected head object response.
     });
 });
