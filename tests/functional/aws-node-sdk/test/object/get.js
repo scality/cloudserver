@@ -299,24 +299,54 @@ describe('GET object', () => {
         });
 
         describe('x-amz-website-redirect-location header', () => {
-            before(done => {
+            it('should return website redirect header if specified in ' +
+                'objectPUT request', done => {
                 const params = {
                     Bucket: bucketName,
                     Key: objectName,
                     WebsiteRedirectLocation: '/',
                 };
-                s3.putObject(params, err => done(err));
+                s3.putObject(params, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return s3.getObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    },
+                    (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res.WebsiteRedirectLocation, '/');
+                        return done();
+                    });
+                });
             });
-            it('should return website redirect header if specified in ' +
+
+            it('should not return website redirect header if omitted in ' +
                 'objectPUT request', done => {
-                s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.WebsiteRedirectLocation, '/');
-                      return done();
-                  });
+                const params = {
+                    Bucket: bucketName,
+                    Key: objectName,
+                };
+                return s3.putObject(params, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return s3.getObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    },
+                    (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res.WebsiteRedirectLocation,
+                            undefined);
+                        return done();
+                    });
+                });
             });
         });
 
