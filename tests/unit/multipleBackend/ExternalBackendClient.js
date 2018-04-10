@@ -1,4 +1,5 @@
 const assert = require('assert');
+
 const AwsClient = require('../../../lib/data/external/AwsClient');
 const GcpClient = require('../../../lib/data/external/GcpClient');
 const DummyService = require('../DummyService');
@@ -28,13 +29,14 @@ const backendClients = [
         },
     },
 ];
+const log = new DummyRequestLogger();
 
 backendClients.forEach(backend => {
     let testClient;
 
     before(() => {
         testClient = new backend.Class(backend.config);
-        testClient._client = new DummyService(backend.config);
+        testClient._client = new DummyService({ versioning: true });
     });
 
     describe(`${backend.name} completeMPU:`, () => {
@@ -58,8 +60,6 @@ backendClients.forEach(backend => {
             const key = 'externalBackendTestKey';
             const bucketName = 'externalBackendTestBucket';
             const uploadId = 'externalBackendTestUploadId';
-            const log = new DummyRequestLogger();
-
             testClient.completeMPU(jsonList, null, key, uploadId, bucketName,
             log, (err, res) => {
                 assert.strictEqual(typeof res.key, 'string');
