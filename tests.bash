@@ -153,7 +153,7 @@ then
 
   killandsleep 8000
 
-  REMOTE_MANAGEMENT_DISABLE=0 S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_management.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_management
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_management.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_management
 
   killandsleep 8000
 
@@ -187,7 +187,7 @@ then
 
   killandsleep 8000
 
-  REMOTE_MANAGEMENT_DISABLE=0 S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_management
+  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt & bash wait_for_local_port.bash 8000 40 && ENABLE_KMS_ENCRYPTION=true npm run ft_management
 
   killandsleep 8000
 
