@@ -474,10 +474,12 @@ describe('Replication object MD without bucket replication config', () => {
 
         ['awsbackend',
         'azurebackend',
+        'gcpbackend',
         'awsbackend,azurebackend'].forEach(backend => {
             const storageTypeMap = {
                 'awsbackend': 'aws_s3',
                 'azurebackend': 'azure',
+                'gcpbackend': 'gcp',
                 'awsbackend,azurebackend': 'aws_s3,azure',
             };
             const storageType = storageTypeMap[backend];
