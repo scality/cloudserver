@@ -134,11 +134,25 @@ then
 
   killandsleep 8000
 
-  docker pull mongo:3.6.2
-  mkdir /tmp/mongodb
-  docker run -d -p 27018:27017 -v /tmp/mongodb:/data/db mongo:3.6.2
-  bash wait_for_local_port.bash 27018 40
-  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_test
+  # Run with mongdb backend ; run ft_tests 
+
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_awssdk.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_awssdk
+
+  killandsleep 8000
+
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_s3cmd.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3cmd
+
+  killandsleep 8000
+ 
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_s3curl.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_s3curl
+
+  killandsleep 8000
+
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_healthchecks.txt & bash wait_for_local_port.bash 8000 40 && S3DATA=file npm run ft_healthchecks
+
+  killandsleep 8000
+
+  S3BACKEND=mem MPU_TESTING=yes S3METADATA=mongodb npm start > $CIRCLE_ARTIFACTS/server_mongodb_management.txt & bash wait_for_local_port.bash 8000 40 && npm run ft_management
 
   killandsleep 8000
 
@@ -197,4 +211,4 @@ then
 
 fi
 
-exit 0
+exit $?

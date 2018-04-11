@@ -81,7 +81,7 @@
         "recordLogName": "s3-recordlog"
     },
     "mongodb": {
-       "replicaSetHosts": "localhost:27017,localhost:27018,localhost:27019",
+       "replicaSetHosts": "localhost:27018,localhost:27019,localhost:27020",
        "writeConcern": "majority",
        "replicaSet": "rs0",
        "readPreference": "primary",
