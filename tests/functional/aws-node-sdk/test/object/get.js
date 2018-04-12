@@ -299,6 +299,11 @@ describe('GET object', () => {
         });
 
         describe('x-amz-website-redirect-location header', () => {
+            afterEach(done => s3.deleteObject({
+                Bucket: bucketName,
+                Key: objectName,
+            }, done));
+
             it('should return website redirect header if specified in ' +
                 'objectPUT request', done => {
                 const params = {
