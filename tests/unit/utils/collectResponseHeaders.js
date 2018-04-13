@@ -19,4 +19,9 @@ describe('Middleware: Collect Response Headers', () => {
                 undefined);
         });
     });
+
+    it('should add the Accept-Ranges header', () => {
+        const headers = collectResponseHeaders({});
+        assert.strictEqual(headers['Accept-Ranges'], 'bytes');
+    });
 });
