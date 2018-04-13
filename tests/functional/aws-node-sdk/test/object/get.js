@@ -224,7 +224,7 @@ describe('GET object', () => {
             });
 
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
-            'Content-Encoding, Expires]', () => {
+            'Content-Encoding, Expires, Accept-Ranges]', () => {
             describe('if specified in put object request', () => {
                 before(done => {
                     const params = {
@@ -255,6 +255,7 @@ describe('GET object', () => {
                           assert.strictEqual(res.ContentType, contentType);
                           assert.strictEqual(res.Expires,
                               new Date(expires).toGMTString());
+                          assert.strictEqual(res.AcceptRanges, 'bytes');
                           return done();
                       });
                 });
