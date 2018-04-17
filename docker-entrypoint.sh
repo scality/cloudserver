@@ -116,7 +116,7 @@ if [[ "$CRR_METRICS_PORT" ]]; then
 fi
 
 if [[ "$HEALTHCHECKS_ALLOWFROM" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .server.healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
 fi
 
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
