@@ -4,10 +4,10 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, gcpClient, gcpBucket, gcpBucketMPU,
-    gcpLocation, uniqName } = require('../utils');
+    gcpLocation, uniqName, genUniqID } = require('../utils');
 
 const keyObject = 'abortgcp';
-const bucket = 'buckettestmultiplebackendabortmpu-gcp';
+const bucket = `abortmpugcp${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const gcpTimeout = 5000;

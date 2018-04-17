@@ -1,13 +1,14 @@
 const assert = require('assert');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genGetTagObj } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genGetTagObj, genUniqID } =
+    require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { gcpTaggingPrefix } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 const tagSize = 10;
 
@@ -31,8 +32,8 @@ describe('GCP: GET Object Tagging', () => {
     });
 
     beforeEach(function beforeFn(done) {
-        this.currentTest.key = `somekey-${Date.now()}`;
-        this.currentTest.specialKey = `veryspecial-${Date.now()}`;
+        this.currentTest.key = `somekey-${genUniqID()}`;
+        this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const { tagHeader, expectedTagObj } =
             genGetTagObj(tagSize, gcpTagPrefix);
         this.currentTest.tagObj = expectedTagObj;

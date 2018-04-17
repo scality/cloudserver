@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
@@ -25,7 +25,7 @@ describe('GCP: GET Bucket Versioning', () => {
     const gcpClient = new GCP(config);
 
     beforeEach(function beforeFn(done) {
-        this.currentTest.bucketName = `somebucket-${Date.now()}`;
+        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
         gcpRequestRetry({
             method: 'PUT',
             bucket: this.currentTest.bucketName,

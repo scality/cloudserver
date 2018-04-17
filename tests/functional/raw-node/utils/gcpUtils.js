@@ -1,7 +1,10 @@
 const async = require('async');
 const assert = require('assert');
+const uuid = require('uuid/v4');
 
 const { makeGcpRequest } = require('./makeRequest');
+
+const genUniqID = () => uuid().replace(/-/g, '');
 
 function gcpRequestRetry(params, retry, callback) {
     const maxRetries = 4;
@@ -146,4 +149,5 @@ module.exports = {
     genPutTagObj,
     genGetTagObj,
     genDelTagObj,
+    genUniqID,
 };

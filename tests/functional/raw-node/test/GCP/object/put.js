@@ -1,12 +1,12 @@
 const assert = require('assert');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: PUT Object', function testSuite() {
     this.timeout(30000);
@@ -55,7 +55,7 @@ describe('GCP: PUT Object', function testSuite() {
 
     describe('with existing object in bucket', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             gcpRequestRetry({
                 method: 'PUT',
                 bucket: bucketName,
@@ -85,7 +85,7 @@ describe('GCP: PUT Object', function testSuite() {
 
     describe('without existing object in bucket', () => {
         it('should successfully put object', function testFn(done) {
-            this.test.key = `somekey-${Date.now()}`;
+            this.test.key = `somekey-${genUniqID()}`;
             gcpClient.putObject({
                 Bucket: bucketName,
                 Key: this.test.key,

@@ -2,14 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
-const objectKey = `somekey-${Date.now()}`;
-const badObjectKey = `nonexistingkey-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
+const objectKey = `somekey-${genUniqID()}`;
+const badObjectKey = `nonexistingkey-${genUniqID()}`;
 
 describe('GCP: DELETE Object', function testSuite() {
     this.timeout(30000);

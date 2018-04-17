@@ -6,12 +6,12 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, uniqName, gcpBucketMPU,
     gcpClient, gcpLocation, gcpLocationMismatch, memLocation,
-    awsLocation, awsS3, getOwnerInfo } = require('../utils');
+    awsLocation, awsS3, getOwnerInfo, genUniqID } = require('../utils');
 
-const bucket = 'buckettestmultiplebackendpartcopy-gcp';
+const bucket = `partcopygcp${genUniqID()}`;
 
-const memBucketName = 'membucketnameputcopypartgcp';
-const awsBucketName = 'awsbucketnameputcopypartgcp';
+const memBucketName = `memeputcopypartgcp${genUniqID()}`;
+const awsBucketName = `awsputcopypartgcp${genUniqID()}`;
 
 const normalBodySize = 11;
 const normalBody = Buffer.from('I am a body', 'utf8');

@@ -6,13 +6,14 @@ const {
     describeSkipIfNotMultiple,
     gcpLocation,
     gcpLocationMismatch,
+    genUniqID,
 } = require('../utils');
 
-const bucket = 'buckettestmultiplebackenddelete-gcp';
-const gcpObject = `gcpObject-${Date.now()}`;
-const emptyObject = `emptyObject-${Date.now()}`;
-const bigObject = `bigObject-${Date.now()}`;
-const mismatchObject = `mismatchObject-${Date.now()}`;
+const bucket = `deletegcp${genUniqID()}`;
+const gcpObject = `gcpObject-${genUniqID()}`;
+const emptyObject = `emptyObject-${genUniqID()}`;
+const bigObject = `bigObject-${genUniqID()}`;
+const mismatchObject = `mismatchObject-${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 

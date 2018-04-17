@@ -2,18 +2,19 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, setBucketClass } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, setBucketClass, genUniqID } =
+    require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `somebucket-${Date.now()}`,
+        Name: `somebucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
     mpu: {
-        Name: `mpubucket-${Date.now()}`,
+        Name: `mpubucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -57,8 +58,8 @@ describe('GCP: Initiate MPU', function testSuite() {
     });
 
     it('Should create a multipart upload object', done => {
-        const keyName = `somekey-${Date.now()}`;
-        const specialKey = `special-${Date.now()}`;
+        const keyName = `somekey-${genUniqID()}`;
+        const specialKey = `special-${genUniqID()}`;
         async.waterfall([
             next => gcpClient.createMultipartUpload({
                 Bucket: bucketNames.mpu.Name,

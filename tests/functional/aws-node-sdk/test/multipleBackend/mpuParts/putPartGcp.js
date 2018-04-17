@@ -4,12 +4,13 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, gcpClient, gcpBucket, gcpBucketMPU,
-    gcpLocation, gcpLocationMismatch, uniqName } = require('../utils');
+    gcpLocation, gcpLocationMismatch, uniqName, genUniqID }
+    = require('../utils');
 const { createMpuKey } =
     require('../../../../../../lib/data/external/GCP').GcpUtils;
 
 const keyObject = 'putgcp';
-const bucket = 'buckettestmultiplebackendputpart-gcp';
+const bucket = `putpartgcp${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';

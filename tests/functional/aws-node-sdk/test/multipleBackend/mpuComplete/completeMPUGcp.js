@@ -4,10 +4,10 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, fileLocation, awsS3, awsLocation, awsBucket,
-    gcpClient, gcpBucket, gcpLocation, gcpLocationMismatch } =
+    gcpClient, gcpBucket, gcpLocation, gcpLocationMismatch, genUniqID } =
     require('../utils');
 
-const bucket = 'buckettestmultiplebackendcompletempu-gcp';
+const bucket = `completempugcp${genUniqID()}`;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const s3MD5 = 'bfb875032e51cbe2a60c5b6b99a2153f-2';
@@ -91,7 +91,7 @@ function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             this.currentTest.awsClient = awsS3;

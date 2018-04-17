@@ -3,9 +3,9 @@ const assert = require('assert');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, gcpClient, gcpBucket,
-    gcpLocation, fileLocation } = require('../utils');
+    gcpLocation, fileLocation, genUniqID } = require('../utils');
 
-const bucket = 'buckettestmultiplebackendput-gcp';
+const bucket = `putgcp${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -125,7 +125,7 @@ describeFn() {
                 const { location, Body } = test.input;
                 const { s3MD5, gcpMD5 } = test.output;
                 it(test.msg, done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = { Bucket: bucket, Key: key, Body,
                         Metadata: { 'scal-location-constraint': location },
                     };
@@ -146,7 +146,7 @@ describeFn() {
 
             it('should put objects with same key to GCP ' +
             'then file, and object should only be present in file', done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
@@ -174,7 +174,7 @@ describeFn() {
 
             it('should put objects with same key to file ' +
             'then GCP, and object should only be present on GCP', done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation } };
@@ -194,7 +194,7 @@ describeFn() {
 
             it('should put two objects to GCP with same ' +
             'key, and newest object should be returned', done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': gcpLocation,
@@ -250,7 +250,7 @@ describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
             }, err => {
                 assert.equal(err, null, `Error creating bucket: ${err}`);
                 process.stdout.write('Putting object\n');
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key, Body: body };
                 return s3.putObject(params, err => {
                     assert.equal(err, null,

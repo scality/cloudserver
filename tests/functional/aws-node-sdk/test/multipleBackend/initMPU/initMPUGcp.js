@@ -3,13 +3,13 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, gcpClient, gcpBucketMPU, gcpLocation } =
-    require('../utils');
+const { describeSkipIfNotMultiple, gcpClient, gcpBucketMPU, gcpLocation,
+    genUniqID } = require('../utils');
 const { createMpuKey } =
     require('../../../../../../lib/data/external/GCP').GcpUtils;
 
-const bucket = 'buckettestmultiplebackendinitmpu-gcp';
-const keyName = `somekey-${Date.now()}`;
+const bucket = `initmpugcp${genUniqID()}`;
+const keyName = `somekey-${genUniqID()}`;
 
 let s3;
 let bucketUtil;

@@ -2,10 +2,10 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, gcpLocation }
+const { describeSkipIfNotMultiple, gcpLocation, genUniqID }
     = require('../utils');
 
-const bucket = 'buckettestmultiplebackendlistparts-gcp';
+const bucket = `listpartsgcp${genUniqID()}`;
 const firstPartSize = 10;
 const bodyFirstPart = Buffer.alloc(firstPartSize);
 const secondPartSize = 15;
@@ -17,7 +17,7 @@ let s3;
 describeSkipIfNotMultiple('List parts of MPU on GCP data backend', () => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucketAsync({ Bucket: bucket })

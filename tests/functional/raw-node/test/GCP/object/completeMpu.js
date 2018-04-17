@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const { GCP, GcpUtils } = require('../../../../../../lib/data/external/GCP');
-const { gcpRequestRetry, setBucketClass, gcpMpuSetup } =
+const { gcpRequestRetry, setBucketClass, gcpMpuSetup, genUniqID } =
     require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
@@ -9,11 +9,11 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `somebucket-${Date.now()}`,
+        Name: `somebucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
     mpu: {
-        Name: `mpubucket-${Date.now()}`,
+        Name: `mpubucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -91,7 +91,7 @@ describe('GCP: Complete MPU', function testSuite() {
 
     describe('when MPU has 0 parts', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
@@ -119,7 +119,7 @@ describe('GCP: Complete MPU', function testSuite() {
 
     describe('when MPU has 1 uploaded part', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
@@ -157,7 +157,7 @@ describe('GCP: Complete MPU', function testSuite() {
 
     describe('when MPU has 1024 uploaded parts', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,

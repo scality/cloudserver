@@ -1,18 +1,19 @@
 const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
-const { gcpRequestRetry, setBucketClass } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, setBucketClass, genUniqID } =
+    require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
 const bucketNames = {
     main: {
-        Name: `somebucket-${Date.now()}`,
+        Name: `somebucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
     mpu: {
-        Name: `mpubucket-${Date.now()}`,
+        Name: `mpubucket-${genUniqID()}`,
         Type: 'MULTI_REGIONAL',
     },
 };
@@ -79,7 +80,7 @@ describe('GCP: Upload Object', function testSuite() {
     });
 
     it('should put an object to GCP', done => {
-        const key = `somekey-${Date.now()}`;
+        const key = `somekey-${genUniqID()}`;
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
             MPU: bucketNames.mpu.Name,
@@ -94,7 +95,7 @@ describe('GCP: Upload Object', function testSuite() {
     });
 
     it('should put a large object to GCP', done => {
-        const key = `somekey-${Date.now()}`;
+        const key = `somekey-${genUniqID()}`;
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
             MPU: bucketNames.mpu.Name,
