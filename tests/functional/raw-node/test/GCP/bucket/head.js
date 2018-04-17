@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
@@ -12,7 +12,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('without existing bucket', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${Date.now()}`;
+            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
             return done();
         });
 
@@ -29,7 +29,7 @@ describe('GCP: HEAD Bucket', () => {
 
     describe('with existing bucket', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${Date.now()}`;
+            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
             process.stdout
                 .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
             gcpRequestRetry({

@@ -2,6 +2,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const { errors } = require('arsenal');
 const AWS = require('aws-sdk');
+const uuid = require('uuid/v4');
 
 const async = require('async');
 const azure = require('azure-storage');
@@ -82,6 +83,8 @@ const utils = {
     gcpLocationMismatch,
 };
 
+utils.genUniqID = () => uuid().replace(/-/g, '');
+
 utils.getOwnerInfo = account => {
     let ownerID;
     let ownerDisplayName;
@@ -105,7 +108,7 @@ utils.getOwnerInfo = account => {
     return { ownerID, ownerDisplayName };
 };
 
-utils.uniqName = name => `${name}${new Date().getTime()}`;
+utils.uniqName = name => `${name}-${utils.genUniqID()}`;
 
 utils.getAzureClient = () => {
     const params = {};
@@ -154,19 +157,19 @@ utils.getAzureKeys = () => {
     const keys = [
         {
             describe: 'empty',
-            name: `somekey-${Date.now()}`,
+            name: `somekey-${utils.genUniqID()}`,
             body: '',
             MD5: 'd41d8cd98f00b204e9800998ecf8427e',
         },
         {
             describe: 'normal',
-            name: `somekey-${Date.now()}`,
+            name: `somekey-${utils.genUniqID()}`,
             body: Buffer.from('I am a body', 'utf8'),
             MD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a',
         },
         {
             describe: 'big',
-            name: `bigkey-${Date.now()}`,
+            name: `bigkey-${utils.genUniqID()}`,
             body: Buffer.alloc(10485760),
             MD5: 'f1c9645dbc14efddc7d8a322685f26eb',
         },
@@ -396,6 +399,5 @@ utils.tagging.awsGetAssertTags = (params, cb) => {
         return cb();
     });
 };
-
 
 module.exports = utils;

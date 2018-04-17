@@ -2,12 +2,12 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: COPY Object', function testSuite() {
     this.timeout(180000);
@@ -42,8 +42,8 @@ describe('GCP: COPY Object', function testSuite() {
 
     describe('without existing object in bucket', () => {
         it('should return 404 and \'NoSuchKey\'', done => {
-            const missingObject = `nonexistingkey-${Date.now()}`;
-            const someKey = `somekey-${Date.now()}`;
+            const missingObject = `nonexistingkey-${genUniqID()}`;
+            const someKey = `somekey-${genUniqID()}`;
             gcpClient.copyObject({
                 Bucket: bucketName,
                 Key: someKey,
@@ -59,9 +59,9 @@ describe('GCP: COPY Object', function testSuite() {
 
     describe('with existing object in bucket', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
-            this.currentTest.copyKey = `copykey-${Date.now()}`;
-            this.currentTest.initValue = `${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
+            this.currentTest.copyKey = `copykey-${genUniqID()}`;
+            this.currentTest.initValue = `${genUniqID()}`;
             makeGcpRequest({
                 method: 'PUT',
                 bucket: bucketName,
@@ -109,7 +109,7 @@ describe('GCP: COPY Object', function testSuite() {
 
         it('should successfully copy with REPLACE directive',
         function testFn(done) {
-            const newValue = `${Date.now()}`;
+            const newValue = `${genUniqID()}`;
             async.waterfall([
                 next => gcpClient.copyObject({
                     Bucket: bucketName,

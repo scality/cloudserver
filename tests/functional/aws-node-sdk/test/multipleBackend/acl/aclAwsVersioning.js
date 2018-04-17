@@ -11,10 +11,11 @@ const {
     getAndAssertResult,
     describeSkipIfNotMultiple,
     getOwnerInfo,
+    genUniqID,
 } = require('../utils');
 
 const someBody = 'testbody';
-const bucket = 'buckettestmultiplebackendaclsawsversioning';
+const bucket = `alcawsversioning${genUniqID()}`;
 
 class _AccessControlPolicy {
     constructor(params) {
@@ -176,7 +177,7 @@ function testSuite() {
 
         it('versioning not configured: should put/get acl successfully when ' +
         'versioning not configured', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
                 assert.strictEqual(versionId, undefined);
                 getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
@@ -187,7 +188,7 @@ function testSuite() {
         it('versioning suspended then enabled: should put/get acl on null ' +
         'version successfully even when latest version is not null version',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [undefined],
                     err => next(err)),
@@ -202,7 +203,7 @@ function testSuite() {
 
         it('versioning enabled: should get correct acl using version IDs',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']
             .map(perm => {
                 const acp = new _AccessControlPolicy(ownerParams);
@@ -227,7 +228,7 @@ function testSuite() {
 
         it('versioning enabled: should get correct acl when getting ' +
         'without version ID', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']
             .map(perm => {
                 const acp = new _AccessControlPolicy(ownerParams);

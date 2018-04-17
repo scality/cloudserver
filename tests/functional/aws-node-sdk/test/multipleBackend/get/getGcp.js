@@ -5,13 +5,14 @@ const {
     describeSkipIfNotMultiple,
     gcpLocation,
     gcpLocationMismatch,
+    genUniqID,
 } = require('../utils');
 
-const bucket = 'buckettestmultiplebackendget-gcp';
-const gcpObject = `gcpobject-${Date.now()}`;
-const emptyGcpObject = `emptyObject-${Date.now()}`;
-const bigObject = `bigObject-${Date.now()}`;
-const mismatchObject = `mismatch-${Date.now()}`;
+const bucket = `getgcp${genUniqID()}`;
+const gcpObject = `gcpobject-${genUniqID()}`;
+const emptyGcpObject = `emptyObject-${genUniqID()}`;
+const bigObject = `bigObject-${genUniqID()}`;
+const mismatchObject = `mismatch-${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const bigBodyLen = bigBody.length;

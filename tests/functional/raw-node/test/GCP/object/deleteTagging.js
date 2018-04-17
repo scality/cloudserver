@@ -2,13 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry, genDelTagObj } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genDelTagObj, genUniqID } =
+    require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { gcpTaggingPrefix } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 let config;
 let gcpClient;
@@ -69,8 +70,8 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
     });
 
     beforeEach(function beforeFn(done) {
-        this.currentTest.key = `somekey-${Date.now()}`;
-        this.currentTest.specialKey = `veryspecial-${Date.now()}`;
+        this.currentTest.key = `somekey-${genUniqID()}`;
+        this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const { headers, expectedTagObj, expectedMetaObj } =
             genDelTagObj(10, gcpTagPrefix);
         this.currentTest.expectedTagObj = expectedTagObj;

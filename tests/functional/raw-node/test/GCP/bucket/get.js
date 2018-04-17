@@ -2,13 +2,13 @@ const assert = require('assert');
 const async = require('async');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 const { listingHardLimit } = require('../../../../../../constants');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 const smallSize = 20;
 const bigSize = listingHardLimit + 1;
 const config = getRealAwsConfig(credentialOne);
@@ -85,7 +85,7 @@ describe('GCP: GET Bucket', function testSuite() {
 
     describe('without existing bucket', () => {
         it('should return 404 and NoSuchBucket', done => {
-            const badBucketName = `nonexistingbucket-${Date.now()}`;
+            const badBucketName = `nonexistingbucket-${genUniqID()}`;
             gcpClient.getBucket({
                 Bucket: badBucketName,
             }, err => {

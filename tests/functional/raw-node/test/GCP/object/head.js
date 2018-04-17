@@ -1,12 +1,12 @@
 const assert = require('assert');
 const { GCP } = require('../../../../../../lib/data/external/GCP');
 const { makeGcpRequest } = require('../../../utils/makeRequest');
-const { gcpRequestRetry } = require('../../../utils/gcpUtils');
+const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =
     require('../../../../aws-node-sdk/test/support/awsConfig');
 
 const credentialOne = 'gcpbackend';
-const bucketName = `somebucket-${Date.now()}`;
+const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: HEAD Object', function testSuite() {
     this.timeout(30000);
@@ -41,7 +41,7 @@ describe('GCP: HEAD Object', function testSuite() {
 
     describe('with existing object in bucket', () => {
         beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             makeGcpRequest({
                 method: 'PUT',
                 bucket: bucketName,
@@ -89,7 +89,7 @@ describe('GCP: HEAD Object', function testSuite() {
 
     describe('without existing object in bucket', () => {
         it('should return 404', done => {
-            const badObjectkey = `nonexistingkey-${Date.now()}`;
+            const badObjectkey = `nonexistingkey-${genUniqID()}`;
             gcpClient.headObject({
                 Bucket: bucketName,
                 Key: badObjectkey,
