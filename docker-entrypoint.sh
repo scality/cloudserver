@@ -115,6 +115,10 @@ if [[ "$CRR_METRICS_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.port=$CRR_METRICS_PORT"
 fi
 
+if [[ "$HEALTHCHECKS_ALLOWFROM" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .server.healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
