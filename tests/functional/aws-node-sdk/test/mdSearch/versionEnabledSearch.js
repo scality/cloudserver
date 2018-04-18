@@ -1,11 +1,12 @@
 const s3Client = require('./utils/s3SDK');
-const { runAndCheckSearch, removeAllVersions } = require('./utils/helpers');
+const { runAndCheckSearch, removeAllVersions, runIfMongo } =
+    require('./utils/helpers');
 
 const userMetadata = { food: 'pizza' };
 const updatedMetadata = { food: 'salad' };
 const masterKey = 'master';
 
-describe('Search in version enabled bucket', () => {
+runIfMongo('Search in version enabled bucket', () => {
     const bucketName = `versionedbucket${Date.now()}`;
     const VersioningConfiguration = {
         MFADelete: 'Disabled',
@@ -25,7 +26,8 @@ describe('Search in version enabled bucket', () => {
                     Key: masterKey, Metadata: userMetadata },
                     err => {
                         // give ingestion pipeline some time
-                        setTimeout(() => done(err), 45000);
+                        // setTimeout(() => done(err), 45000);
+                        done(err);
                     });
             });
         });
@@ -43,8 +45,7 @@ describe('Search in version enabled bucket', () => {
 
     it('should list just master object with searched for metadata', done => {
         const encodedSearch =
-        encodeURIComponent('userMd.\`x-amz-meta-food\`' +
-        `="${userMetadata.food}"`);
+        encodeURIComponent(`"x-amz-meta-food"="${userMetadata.food}"`);
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, masterKey, done);
     });
@@ -56,14 +57,14 @@ describe('Search in version enabled bucket', () => {
                     err => {
                 // give ingestion pipeline some time and make sure
                 // cache expires (60 second cache expiry)
-                        setTimeout(() => done(err), 75000);
+                        // setTimeout(() => done(err), 75000);
+                        done(err);
                     });
         });
 
         it('should list just master object with updated metadata', done => {
             const encodedSearch =
-            encodeURIComponent('userMd.\`x-amz-meta-food\`' +
-            `="${updatedMetadata.food}"`);
+            encodeURIComponent(`"x-amz-meta-food"="${updatedMetadata.food}"`);
             return runAndCheckSearch(s3Client, bucketName,
                 encodedSearch, masterKey, done);
         });

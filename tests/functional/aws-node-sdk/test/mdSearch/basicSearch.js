@@ -1,13 +1,12 @@
 const s3Client = require('./utils/s3SDK');
-const runAndCheckSearch = require('./utils/helpers').runAndCheckSearch;
+const { runAndCheckSearch, runIfMongo } = require('./utils/helpers');
 
 const objectKey = 'findMe';
 const hiddenKey = 'leaveMeAlone';
 const userMetadata = { food: 'pizza' };
 const updatedUserMetadata = { food: 'cake' };
 
-
-describe('Basic search', () => {
+runIfMongo('Basic search', () => {
     const bucketName = `basicsearchmebucket${Date.now()}`;
     before(done => {
         s3Client.createBucket({ Bucket: bucketName }, err => {
@@ -23,7 +22,8 @@ describe('Basic search', () => {
                     Key: hiddenKey },
                     err => {
                         // give ingestion pipeline some time
-                        setTimeout(() => done(err), 45000);
+                        // setTimeout(() => done(err), 45000);
+                        done(err);
                     });
             });
         });
@@ -50,15 +50,14 @@ describe('Basic search', () => {
 
     it('should list object with searched for user metadata', done => {
         const encodedSearch =
-            encodeURIComponent('userMd.\`x-amz-meta-food\`' +
-            `="${userMetadata.food}"`);
+            encodeURIComponent(`"x-amz-meta-food"="${userMetadata.food}"`);
         return runAndCheckSearch(s3Client, bucketName, encodedSearch,
             objectKey, done);
     });
 
     it('should return empty listing when no object has user md', done => {
         const encodedSearch =
-        encodeURIComponent('userMd.\`x-amz-meta-food\`="nosuchfood"');
+        encodeURIComponent('"x-amz-meta-food"="nosuchfood"');
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, null, done);
     });
@@ -69,14 +68,15 @@ describe('Basic search', () => {
                 Metadata: updatedUserMetadata }, err => {
                 // give ingestion pipeline some time and make sure
                 // cache expires (60 second cache expiry)
-                setTimeout(() => done(err), 75000);
+                // setTimeout(() => done(err), 75000);
+                done(err);
             });
         });
 
         it('should list object with searched for updated user metadata',
             done => {
                 const encodedSearch =
-                encodeURIComponent('userMd.\`x-amz-meta-food\`' +
+                encodeURIComponent('"x-amz-meta-food"' +
                 `="${updatedUserMetadata.food}"`);
                 return runAndCheckSearch(s3Client, bucketName, encodedSearch,
                 objectKey, done);
@@ -84,7 +84,7 @@ describe('Basic search', () => {
     });
 });
 
-describe('Search when no objects in bucket', () => {
+runIfMongo('Search when no objects in bucket', () => {
     const bucketName = `noobjectbucket${Date.now()}`;
     before(done => {
         s3Client.createBucket({ Bucket: bucketName }, done);

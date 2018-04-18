@@ -2,7 +2,6 @@ const S3 = require('aws-sdk').S3;
 
 const config = {
     sslEnabled: false,
-    logger: process.stdout,
     endpoint: 'http://127.0.0.1:8000',
     apiVersions: { s3: '2006-03-01' },
     signatureCache: false,

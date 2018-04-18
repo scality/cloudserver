@@ -16,6 +16,9 @@ function _deleteVersionList(s3Client, versionList, bucket, callback) {
 
 const testUtils = {};
 
+testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ?
+    describe : describe.skip;
+
 testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch,
     keyToFind, done) => {
     const searchRequest = s3Client.listObjects({ Bucket: bucketName });
