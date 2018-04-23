@@ -1,7 +1,7 @@
 {
   "name": "s3",
-  "version": "7.4.0",
-  "description": "S3 connector",
+  "version": "1.0.0-zenko",
+  "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
     "node": ">=6.9.5"
@@ -12,7 +12,7 @@
     "cloud",
     "server"
   ],
-  "author": "Giorgio Regni",
+  "author": "Scality Inc.",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/scality/S3/issues"
