@@ -92,3 +92,15 @@ this._uid = uid || undefined;
 ### Usage
 
 Used to set a unique identifier on a bucket
+
+## Model version 8
+
+### Properties Added
+
+```javascript
+this._readLocationConstraint = readLocationConstraint || null;
+```
+
+### Usage
+
+Used to store default read location of the bucket
