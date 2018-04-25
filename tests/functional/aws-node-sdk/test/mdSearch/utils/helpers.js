@@ -20,23 +20,29 @@ testUtils.runIfMongo = process.env.S3METADATA === 'mongodb' ?
     describe : describe.skip;
 
 testUtils.runAndCheckSearch = (s3Client, bucketName, encodedSearch,
-    keyToFind, done) => {
+    testResult, done) => {
     const searchRequest = s3Client.listObjects({ Bucket: bucketName });
     searchRequest.on('build', () => {
         searchRequest.httpRequest.path =
         `${searchRequest.httpRequest.path}?search=${encodedSearch}`;
     });
     searchRequest.on('success', res => {
-        if (keyToFind) {
+        if (testResult) {
             assert(res.data.Contents[0], 'should be Contents listed');
-            assert.strictEqual(res.data.Contents[0].Key, keyToFind);
+            assert.strictEqual(res.data.Contents[0].Key, testResult);
             assert.strictEqual(res.data.Contents.length, 1);
         } else {
             assert.strictEqual(res.data.Contents.length, 0);
         }
         return done();
     });
-    searchRequest.on('error', done);
+    searchRequest.on('error', err => {
+        if (testResult) {
+            assert.strictEqual(err.code, testResult.code);
+            assert.strictEqual(err.message, testResult.message);
+        }
+        return done();
+    });
     searchRequest.send();
 };
 
