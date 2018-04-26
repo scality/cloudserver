@@ -3,6 +3,8 @@ const assert = require('assert');
 const { DummyRequestLogger } = require('../helpers');
 const { getReplicationConfiguration } =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
+const validateConfiguration =
+    require('../../../lib/api/apiUtils/bucket/validateReplicationConfig');
 const replicationUtils =
     require('../../functional/aws-node-sdk/lib/utility/replication');
 const log = new DummyRequestLogger();
@@ -103,4 +105,66 @@ describe('\'getReplicationConfiguration\' function', () => {
         const xml = createReplicationXML(undefined, { ID: '' });
         return checkGeneratedID(xml, done);
     });
+});
+
+describe('\'validateConfiguration\' function', () => {
+    const withDefaultRead = {
+        role: 'arn:aws:iam::account-id:role/src-resource,' +
+            'arn:aws:iam::account-id:role/dest-resource',
+        destination: 'arn:aws:s3:::destination-bucket',
+        rules: [{
+            prefix: 'test-prefix',
+            enabled: true,
+            id: 'test-id',
+            storageClass: 'STANDARD,us-east-2',
+        }],
+    };
+
+    const withoutDefaultRead = {
+        role: 'arn:aws:iam::account-id:role/src-resource,' +
+            'arn:aws:iam::account-id:role/dest-resource',
+        destination: 'arn:aws:s3:::destination-bucket',
+        rules: [{
+            prefix: 'test-prefix',
+            enabled: true,
+            id: 'test-id',
+            storageClass: 'STANDARD',
+        }],
+    };
+
+    [
+        {
+            msg: 'When read/write locations are the same',
+            setDefault: false,
+            bucket: {
+                getLocationConstraint: () => 'us-east-1',
+                getReadLocationConstraint: () => 'us-east-1',
+            },
+        },
+        {
+            msg: 'When read/write locations are different',
+            setDefault: true,
+            bucket: {
+                getLocationConstraint: () => 'us-east-1',
+                getReadLocationConstraint: () => 'us-east-2',
+            },
+        },
+    ].forEach(suite => describe(suite.msg, () => {
+        [
+            {
+                msg: 'and read location is not present in the replication ' +
+                'config',
+                input: withoutDefaultRead,
+                res: !suite.setDefault,
+            },
+            {
+                msg: 'and read location is present in the replication config',
+                input: withDefaultRead,
+                res: true,
+            },
+        ].forEach(test => it(test.msg, () => {
+            const result = validateConfiguration(test.input, suite.bucket);
+            assert.strictEqual(result, test.res);
+        }));
+    }));
 });
