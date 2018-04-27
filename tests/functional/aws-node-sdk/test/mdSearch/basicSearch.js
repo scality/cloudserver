@@ -45,6 +45,25 @@ runIfMongo('Basic search', () => {
             encodedSearch, objectKey, done);
     });
 
+    it('should list object with regex searched for system metadata', done => {
+        const encodedSearch = encodeURIComponent('key LIKE "find.*"');
+        return runAndCheckSearch(s3Client, bucketName,
+            encodedSearch, objectKey, done);
+    });
+
+    it('should list object with regex searched for system metadata with flags',
+    done => {
+        const encodedSearch = encodeURIComponent('key LIKE "/FIND.*/i"');
+        return runAndCheckSearch(s3Client, bucketName,
+            encodedSearch, objectKey, done);
+    });
+
+    it('should return empty when no object match regex', done => {
+        const encodedSearch = encodeURIComponent('key LIKE "/NOTFOUND.*/i"');
+        return runAndCheckSearch(s3Client, bucketName,
+            encodedSearch, null, done);
+    });
+
     it('should list object with searched for user metadata', done => {
         const encodedSearch =
             encodeURIComponent(`x-amz-meta-food="${userMetadata.food}"`);
@@ -97,5 +116,36 @@ runIfMongo('Search when no objects in bucket', () => {
         const encodedSearch = encodeURIComponent(`key="${objectKey}"`);
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, null, done);
+    });
+});
+
+runIfMongo('Invalid regular expression searches', () => {
+    const bucketName = `noobjectbucket${Date.now()}`;
+    before(done => {
+        s3Client.createBucket({ Bucket: bucketName }, done);
+    });
+
+    after(done => {
+        s3Client.deleteBucket({ Bucket: bucketName }, done);
+    });
+
+    it('should return error if pattern is invalid', done => {
+        const encodedSearch = encodeURIComponent('key LIKE "/((helloworld/"');
+        const testError = {
+            code: 'InternalError',
+            message: 'We encountered an internal error. Please try again.',
+        };
+        return runAndCheckSearch(s3Client, bucketName,
+            encodedSearch, testError, done);
+    });
+
+    it('should return error if regex flag is invalid', done => {
+        const encodedSearch = encodeURIComponent('key LIKE "/((helloworld/ii"');
+        const testError = {
+            code: 'InternalError',
+            message: 'We encountered an internal error. Please try again.',
+        };
+        return runAndCheckSearch(s3Client, bucketName,
+            encodedSearch, testError, done);
     });
 });
