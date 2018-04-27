@@ -12,6 +12,7 @@ const { ds } = require('../../../lib/data/in_memory/backend');
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const DummyRequest = require('../DummyRequest');
+const { maximumAllowedUploadSize } = require('../../../constants');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -101,7 +102,6 @@ describe('objectPut API', () => {
         }, postBody);
     });
 
-
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -119,6 +119,17 @@ describe('objectPut API', () => {
                         done();
                     });
             });
+    });
+
+    it('should return error if the upload size exceeds the ' +
+    'maximum allowed upload size for a single PUT request', done => {
+        testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.deepStrictEqual(err, errors.EntityTooLarge);
+                done();
+            });
+        });
     });
 
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
