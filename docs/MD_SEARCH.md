@@ -1,4 +1,4 @@
-# Metadata Search Documenation
+# Metadata Search Documentation
 
 ## Description
 
@@ -11,11 +11,11 @@ stored in Zenko.
 
 ## Design
 
-The Metadata Search feature expands on the existing `GET Bucket` S3 API by 
+The Metadata Search feature expands on the existing `GET Bucket` S3 API by
 enabling users to conduct metadata searches by adding the custom Zenko query
-string parameter, `search`. The `search` parameter is structured as a pseudo 
-SQL WHERE clause, and supports basic SQL operators. For example: 
-`"A=1 AND B=2 OR C=3"` (complex queries can be built using nesting 
+string parameter, `search`. The `search` parameter is structured as a pseudo
+SQL WHERE clause, and supports basic SQL operators. For example:
+`"A=1 AND B=2 OR C=3"` (complex queries can be built using nesting
 operators, `(` and `)`).
 
 The search process is as follows:
@@ -42,17 +42,18 @@ The search process is as follows:
     Authorization: authorization string
     ```
 
-+ If the request does *not* contain the `search` query parameter, Zenko performs a
-  normal bucket listing and returns an XML result containing the list of objects.
-+ If the request *does* contain the `search` query parameter, Zenko parses and 
++ If the request does *not* contain the `search` query parameter, Zenko performs
+  a normal bucket listing and returns an XML result containing the list of
+  objects.
++ If the request *does* contain the `search` query parameter, Zenko parses and
   validates the search string.
 
     + If the search string is invalid, Zenko returns an `InvalidArgument` error.
-    + If the search string is valid, Zenko parses it and generates an abstract syntax
-      tree (AST). The AST is then passed to the MongoDB backend to be used as the 
-      query filter for retrieving objects from a bucket that satisfies the requested
-      search conditions. Zenko parses the filtered results and returns them as the 
-      response.
+    + If the search string is valid, Zenko parses it and generates an abstract
+      syntax tree (AST). The AST is then passed to the MongoDB backend to be
+      used as the query filter for retrieving objects from a bucket that
+      satisfies the requested search conditions. Zenko parses the filtered
+      results and returns them as the response.
 
 Metadata search results have the same structure as a `GET Bucket` response:
 
@@ -83,7 +84,7 @@ Metadata search results have the same structure as a `GET Bucket` response:
 
 ## Performing Metadata Searches with Zenko
 
-A successful request to Zenko requires: 
+A successful request to Zenko requires:
 
 + Zenko credentials
 + A signed Auth V4 request
@@ -94,7 +95,7 @@ With requirements, you can peform metadata searches by:
   [Scality/S3](https://github.com/scality/S3) GitHub repository.
 + Creating an AuthV4-signed HTTP request to Zenko in your preferred programming
   language.
-  
+
 ### Using the S3 Tool
 
 After cloning the [Scality/S3](https://github.com/scality/S3) GitHub repository
@@ -140,7 +141,7 @@ node bin/search_bucket -a accessKey1 -k verySecretKey1 -b zenkobucket \
 ### Coding Examples
 
 Search requests can be also performed by making HTTP requests authenticated
-with the `AWS Signature version 4` scheme.\
+with the AWS Signature version 4 scheme.\
 For more about the V4 authentication scheme, see:
 
 + http://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
@@ -199,6 +200,7 @@ differ in that:
     ```
 
 + Search queries do not support all SQL operators.
+
   + Supported SQL operators: `=`, `<`, `>`, `<=`, `>=`, `!=`,
     `AND`, `OR`, `LIKE`, `<>`
   + Unsupported SQL operators: `NOT`, `BETWEEN`, `IN`, `IS`, `+`,
@@ -208,6 +210,7 @@ differ in that:
 
 Regular expressions in Zenko metadata search differ from SQL in the following
 ways:
+
 + Wildcards are represented with `.*` instead of `%`.
 + Regex patterns must be wrapped in quotes. Failure to do this can lead to
   misinterpretation of patterns.
