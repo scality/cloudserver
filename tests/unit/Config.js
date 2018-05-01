@@ -23,12 +23,12 @@ describe('Config', () => {
 
         const newAcct = {
             name: 'Bart2',
-            email: 'sampleaccount1@sampling.com',
+            email: 'sampleaccount@sampling2.com',
             arn: 'arn:aws:iam::123456789016:root',
             canonicalID:
-            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf',
+            '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bg',
             shortid: '123456789016',
-            keys: [{ access: 'accessKey1', secret: 'verySecretKey1' }],
+            keys: [{ access: 'accessKey3', secret: 'verySecretKey3' }],
         };
         config.setAuthDataAccounts([newAcct]);
 
