@@ -1,7 +1,7 @@
 {
   "name": "s3",
-  "version": "7.4.0",
-  "description": "S3 connector",
+  "version": "1.0.0-zenko",
+  "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
     "node": ">=6.9.5"
@@ -12,19 +12,19 @@
     "cloud",
     "server"
   ],
-  "author": "Giorgio Regni",
+  "author": "Scality Inc.",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/scality/S3/issues"
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "scality/Arsenal",
+    "arsenal": "scality/Arsenal#z/1.0",
     "async": "~2.5.0",
     "aws-sdk": "2.28.0",
     "azure-storage": "^2.1.0",
     "backo": "^1.1.0",
-    "bucketclient": "scality/bucketclient",
+    "bucketclient": "scality/bucketclient#z/1.0",
     "commander": "^2.9.0",
     "diskusage": "0.2.4",
     "google-auto-auth": "^0.9.1",
@@ -35,13 +35,13 @@
     "npm-run-all": "~4.0.2",
     "prom-client": "^10.2.3",
     "request": "^2.81.0",
-    "sproxydclient": "scality/sproxydclient",
+    "sproxydclient": "scality/sproxydclient#z/1.0",
     "sql-where-parser": "~2.2.1",
-    "utapi": "scality/utapi",
+    "utapi": "scality/utapi#z/1.0",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
-    "vaultclient": "scality/vaultclient",
-    "werelogs": "scality/werelogs",
+    "vaultclient": "scality/vaultclient#z/1.0",
+    "werelogs": "scality/werelogs#z/1.0",
     "ws": "^5.1.0",
     "xml2js": "~0.4.16"
   },
@@ -49,7 +49,7 @@
     "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-scality": "scality/Guidelines",
+    "eslint-config-scality": "scality/Guidelines#z/1.0",
     "ioredis": "2.4.0",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
@@ -57,11 +57,11 @@
     "mocha": "^2.3.4",
     "mocha-junit-reporter": "1.11.1",
     "node-mocks-http": "^1.5.2",
-    "s3blaster": "scality/s3blaster",
+    "s3blaster": "scality/s3blaster#z/1.0",
     "tv4": "^1.2.7"
   },
   "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient"
+    "cdmiclient": "scality/cdmiclient#z/1.0"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
@@ -77,6 +77,7 @@
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha -t 40000 *.js",
     "ft_s3curl": "cd tests/functional/s3curl && mocha -t 40000 *.js",
     "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management",
+    "ft_search": "cd tests/functional/aws-node-sdk && mocha -t 90000 test/mdSearch",
     "install_ft_deps": "npm install aws-sdk@2.28.0 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
     "lint": "eslint $(git ls-files '*.js')",
     "lint_md": "mdlint $(git ls-files '*.md')",

@@ -1,4 +1,5 @@
 const assert = require('assert');
+
 const { BackendInfo } = require('../../../lib/api/apiUtils/object/BackendInfo');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const DummyRequest = require('../DummyRequest');
