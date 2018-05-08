@@ -129,6 +129,15 @@ describe('patchConfiguration', () => {
                         bucketName: 'gcpbucketname',
                     },
                 },
+                'sproxydbackendtest': {
+                    name: 'sproxydbackendtest',
+                    locationType: 'location-scality-sproxyd-v1',
+                    details: {
+                        chordCos: 3,
+                        bootstrapList: ['localhost:8001', 'localhost:8002'],
+                        proxyPath: '/proxy/path',
+                    },
+                },
             },
             browserAccess: {
                 enabled: true,
@@ -197,6 +206,22 @@ describe('patchConfiguration', () => {
                         },
                         legacyAwsBehavior: false,
                         type: 'gcp',
+                    },
+                    'sproxydbackendtest': {
+                        details: {
+                            connector: {
+                                sproxyd: {
+                                    chordCos: 3,
+                                    bootstrap: [
+                                        'localhost:8001',
+                                        'localhost:8002',
+                                    ],
+                                    path: '/proxy/path',
+                                },
+                            },
+                        },
+                        legacyAwsBehavior: false,
+                        type: 'scality',
                     },
                 },
             };
