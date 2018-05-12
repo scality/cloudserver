@@ -119,7 +119,7 @@ runIfMongo('Search when no objects in bucket', () => {
     });
 });
 
-runIfMongo('Invalid regular expression searches', () => {
+describe.skip('Invalid regular expression searches', () => {
     const bucketName = `noobjectbucket${Date.now()}`;
     before(done => {
         s3Client.createBucket({ Bucket: bucketName }, done);
