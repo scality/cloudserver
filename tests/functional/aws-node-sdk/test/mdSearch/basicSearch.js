@@ -120,7 +120,7 @@ runIfMongo('Search when no objects in bucket', () => {
 });
 
 runIfMongo('Invalid regular expression searches', () => {
-    const bucketName = `noobjectbucket${Date.now()}`;
+    const bucketName = `badregex-${Date.now()}`;
     before(done => {
         s3Client.createBucket({ Bucket: bucketName }, done);
     });
@@ -132,18 +132,8 @@ runIfMongo('Invalid regular expression searches', () => {
     it('should return error if pattern is invalid', done => {
         const encodedSearch = encodeURIComponent('key LIKE "/((helloworld/"');
         const testError = {
-            code: 'InternalError',
-            message: 'We encountered an internal error. Please try again.',
-        };
-        return runAndCheckSearch(s3Client, bucketName,
-            encodedSearch, testError, done);
-    });
-
-    it('should return error if regex flag is invalid', done => {
-        const encodedSearch = encodeURIComponent('key LIKE "/((helloworld/ii"');
-        const testError = {
-            code: 'InternalError',
-            message: 'We encountered an internal error. Please try again.',
+            code: 'InvalidArgument',
+            message: 'Invalid sql where clause sent as search query',
         };
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, testError, done);

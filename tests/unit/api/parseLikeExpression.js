@@ -14,11 +14,11 @@ describe('parseLikeExpression', () => {
         },
         {
             input: '/ice-cream-cone/',
-            output: { $regex: 'ice-cream-cone', $options: '' },
+            output: { $regex: /ice-cream-cone/, $options: '' },
         },
         {
             input: '/ice-cream-cone/i',
-            output: { $regex: 'ice-cream-cone', $options: 'i' },
+            output: { $regex: /ice-cream-cone/, $options: 'i' },
         },
         {
             input: 'an/ice-cream-cone/',
@@ -26,7 +26,7 @@ describe('parseLikeExpression', () => {
         },
         {
             input: '///',
-            output: { $regex: '/', $options: '' },
+            output: { $regex: /\//, $options: '' },
         },
     ];
     tests.forEach(test => it('should return correct MongoDB query object: ' +
