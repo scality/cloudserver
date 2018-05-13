@@ -6,6 +6,9 @@ const getConfig = require('../support/config');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
+const skipIfMongo = process.env.S3METADATA === 'mongodb' ?
+    describe.skip : describe;
+
 function comp(v1, v2) {
     if (v1.Key > v2.Key) {
         return 1;
@@ -23,7 +26,8 @@ function comp(v1, v2) {
 }
 
 
-describe('aws-node-sdk test bucket versioning listing', function testSuite() {
+skipIfMongo('aws-node-sdk test bucket versioning listing',
+function testSuite() {
     this.timeout(600000);
     let s3;
     const masterVersions = [];
