@@ -8,7 +8,7 @@ if (config.backends.data === 'file' ||
     (config.backends.data === 'multiple' &&
      config.backends.metadata !== 'scality') &&
      (config.backends.auth !== 'scality' &&
-      config.backends.metadata !== 'mongodb')) {
+      config.backends.metadata === 'mongodb')) {
     const dataServer = new arsenal.network.rest.RESTServer(
         { bindAddress: config.dataDaemon.bindAddress,
             port: config.dataDaemon.port,
