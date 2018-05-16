@@ -6,8 +6,10 @@ const getConfig = require('../support/config');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
+const skipIfMongo = process.env.S3METADATA === 'mongodb' ?
+    describe.skip : describe;
 
-describe('aws-node-sdk test bucket versioning', function testSuite() {
+skipIfMongo('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(600000);
     let s3;
     const versionIds = [];
