@@ -94,13 +94,22 @@ if [[ "$MONGODB_DATABASE" ]]; then
    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
 fi
 
-if [[ "$REDIS_HOST" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
+if [[ "$LOCAL_CACHE_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$LOCAL_CACHE_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
 fi
 
+if [[ "$LOCAL_CACHE_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=$LOCAL_CACHE_PORT"
+fi
+
+if [[ "$REDIS_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
+fi
+
 if [[ "$REDIS_PORT" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=$REDIS_PORT"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_PORT"
 fi
 
 if [[ "$RECORDLOG_ENABLED" ]]; then
