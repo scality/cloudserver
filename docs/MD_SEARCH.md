@@ -1,4 +1,4 @@
-# Metadata Search Documenation
+# Metadata Search Documentation
 
 ## Description
 
@@ -11,12 +11,12 @@ stored in Zenko.
 
 ## Design
 
-The MD Search feature expands on the existing `GET Bucket` S3 API. It allows
-users to conduct metadata searches by adding the custom Zenko querystring
-parameter, `search`. The `search` parameter is of a pseudo
-SQL WHERE clause structure and supports basic SQL operators:
-ex. `"A=1 AND B=2 OR C=3"` (more complex queries can also be achieved with the
-use of nesting operators, `(` and `)`).
+The Metadata Search feature expands on the existing `GET Bucket` S3 API by
+enabling users to conduct metadata searches by adding the custom Zenko query
+string parameter, `search`. The `search` parameter is structured as a pseudo
+SQL WHERE clause, and supports basic SQL operators. For example:
+`"A=1 AND B=2 OR C=3"` (complex queries can be built using nesting
+operators, `(` and `)`).
 
 The search process is as follows:
 
@@ -42,24 +42,20 @@ The search process is as follows:
     Authorization: authorization string
     ```
 
-+ If the request does not contain the query param `search`, a normal bucket
-  listing is performed and a XML result containing the list of objects will be
-  returned as the response.
-+ If the request does contain the query parameter `search`, the search string is
-  parsed and validated.
++ If the request does *not* contain the `search` query parameter, Zenko performs
+  a normal bucket listing and returns an XML result containing the list of
+  objects.
++ If the request *does* contain the `search` query parameter, Zenko parses and
+  validates the search string.
 
-    + If the search string is invalid, an `InvalidArgument` error will be
-      returned as response.
-    + If the search string is valid, it will be parsed and an abstract syntax
-      tree (AST) is generated.
+    + If the search string is invalid, Zenko returns an `InvalidArgument` error.
+    + If the search string is valid, Zenko parses it and generates an abstract
+      syntax tree (AST). The AST is then passed to the MongoDB backend to be
+      used as the query filter for retrieving objects from a bucket that
+      satisfies the requested search conditions. Zenko parses the filtered
+      results and returns them as the response.
 
-+ The AST is then passed to the MongoDB backend to be used as the query filter
-  for retrieving objects in a bucket that satisfies the requested search
-  conditions.
-+ The filtered results are then parsed and returned as the response.
-
-The results from MD search is of the same structure as the `GET Bucket`
-results:
+Metadata search results have the same structure as a `GET Bucket` response:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -86,31 +82,31 @@ results:
 </ListBucketResult>
 ```
 
-## Performing MD Search with Zenko
+## Performing Metadata Searches with Zenko
 
-To make a successful request to Zenko, you would need
+A successful request to Zenko requires:
 
-+ Zenko Credentials
-+ Sign request with Auth V4
++ Zenko credentials
++ A signed Auth V4 request
 
 With requirements, you can peform metadata searches by:
 
-+ using the `search_bucket` tool in the
++ Using the `search_bucket` tool in the
   [Scality/S3](https://github.com/scality/S3) GitHub repository.
-+ creating an AuthV4 signed HTTP request to Zenko in the programming language of
-  choice
++ Creating an AuthV4-signed HTTP request to Zenko in your preferred programming
+  language.
 
 ### Using the S3 Tool
 
 After cloning the [Scality/S3](https://github.com/scality/S3) GitHub repository
-and installing the necessary dependencies, you can run the following command
-in the S3 project root directory to access the search tool.
+and installing the necessary dependencies, run the following command in the S3
+project’s root directory to access the search tool:
 
 ```
 node bin/search_bucket
 ```
 
-This will generate the following output
+This generates the following output:
 
 ```
 Usage: search_bucket [options]
@@ -129,7 +125,7 @@ Options:
   -h, --help                    output usage information
 ```
 
-In the following examples, our Zenko Server is accessible on endpoint
+In the following examples, Zenko Server is accessible on endpoint
 `http://127.0.0.1:8000` and contains the bucket `zenkobucket`.
 
 ```
@@ -145,8 +141,8 @@ node bin/search_bucket -a accessKey1 -k verySecretKey1 -b zenkobucket \
 ### Coding Examples
 
 Search requests can be also performed by making HTTP requests authenticated
-with the `AWS Signature version 4` scheme.\
-See the following urls for more information about the V4 authentication scheme.
+with the AWS Signature version 4 scheme.\
+For more about the V4 authentication scheme, see:
 
 + http://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
 + http://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html
@@ -188,11 +184,11 @@ To search tags:
 
 ### Differences from SQL
 
-The MD search queries are similar to the `WHERE` clauses of SQL queries, but
-they differ in that:
+Zenko metadata search queries are similar to SQL-query `WHERE` clauses, but
+differ in that:
 
-+ MD search queries follow the `PCRE` format
-+ Search queries do not require values with hyphens to be enclosed in
++ They follow the `PCRE` format
++ They do not require values with hyphens to be enclosed in
   backticks, ``(`)``
 
     ```
@@ -203,21 +199,23 @@ they differ in that:
         x-amz-meta-search-item = ice-cream-cone
     ```
 
-+ The search queries do not support all of the SQL operators.
++ Search queries do not support all SQL operators.
 
-  + Supported SQL Operators: `=`, `<`, `>`, `<=`, `>=`, `!=`,
+  + Supported SQL operators: `=`, `<`, `>`, `<=`, `>=`, `!=`,
     `AND`, `OR`, `LIKE`, `<>`
-  + Unsupported SQL Operators: `NOT`, `BETWEEN`, `IN`, `IS`, `+`,
+  + Unsupported SQL operators: `NOT`, `BETWEEN`, `IN`, `IS`, `+`,
     `-`, `%`, `^`, `/`, `*`, `!`
 
-#### Using Regular Expressions in MD Search
+#### Using Regular Expressions in Metadata Search
 
-+ Regular expressions used in MD search differs from SQL in that wildcards are
-  represented with `.*` instead of `%`.
-+ Regex patterns must be wrapped in quotes as not doing so can lead to
+Regular expressions in Zenko metadata search differ from SQL in the following
+ways:
+
++ Wildcards are represented with `.*` instead of `%`.
++ Regex patterns must be wrapped in quotes. Failure to do this can lead to
   misinterpretation of patterns.
-+ Regex patterns can be written in form of the `/pattern/` syntax or
-  just the pattern if one does not require regex options, similar to `PCRE`.
++ As with `PCRE`, regular espressions can be entered in either the `/pattern/`
+  syntax or as the pattern istelf if regex options are not required.
 
 Example regular expressions:
 
