@@ -3,7 +3,7 @@
     "metadata": {
         "apiVersion": "2017-11-01",
         "checksumFormat": "md5",
-        "endpointPrefix": "s3",
+        "endpointPrefix": "storage",
         "globalEndpoint": "storage.googleapi.com",
         "protocol": "rest-xml",
         "serviceAbbreviation": "GCP",

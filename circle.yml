@@ -21,6 +21,7 @@ machine:
     REMOTE_MANAGEMENT_DISABLE: 1
   hosts:
     bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
+    testRequestBucket.localhost: 127.0.0.1
   post:
     - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
     - echo "deb https://dl.yarnpkg.com/debian/ stable main" |
