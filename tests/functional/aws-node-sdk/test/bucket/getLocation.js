@@ -88,7 +88,7 @@ describeSkipAWS('GET bucket location ', () => {
                     assert.strictEqual(err, null, 'Error creating bucket: ' +
                         `${err}`);
                     const host = request.service.endpoint.hostname;
-                    let endpoint = config.restEndpoints[host];
+                    let endpoint = config.restEndpoints[host].write;
                     // s3 actually returns '' for us-east-1
                     if (endpoint === 'us-east-1') {
                         endpoint = '';
