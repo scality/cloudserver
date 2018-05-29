@@ -1,3 +1,6 @@
 node_modules
 localData/*
 localMetadata/*
+tests/
+**.md
+examples/
