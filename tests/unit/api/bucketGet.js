@@ -125,6 +125,31 @@ describe('bucketGet API', () => {
         });
     });
 
+    it('should return empty list when max-keys is set to 0', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '0' },
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
+                undefined, log, next),
+            (resHeaders, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.Content, undefined);
+            done();
+        });
+    });
+
     it('should return no more keys than max-keys specified', done => {
         const testGetRequest = {
             bucketName,

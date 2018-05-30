@@ -106,6 +106,12 @@ describe('validate search where clause', () => {
             result: errors.InvalidArgument.customizeDescription('Search ' +
                 'param contains unknown attribute: madeUp'),
         },
+        {
+            it: 'should disallow unsupported query operators',
+            searchParams: 'x-amz-meta-dog BETWEEN "labrador"',
+            result: errors.InvalidArgument.customizeDescription(
+                'Invalid sql where clause sent as search query'),
+        },
     ];
 
     tests.forEach(test => {
