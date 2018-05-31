@@ -105,3 +105,16 @@ this._readLocationConstraint = readLocationConstraint || null;
 ### Usage
 
 Used to store default read location of the bucket
+
+## Model version 9
+
+### Properties Added
+
+```javascript
+this._isNFS = isNFS || null;
+```
+
+### Usage
+
+Used to determine whether the bucket is on NFS
+
