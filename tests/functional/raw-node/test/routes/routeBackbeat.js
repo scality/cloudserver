@@ -102,7 +102,7 @@ function makeBackbeatRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-describeSkipIfAWS('backbeat routes:', () => {
+describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
     let s3;
 
@@ -130,7 +130,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             .then(() => done());
     });
 
-    describe('backbeat PUT routes:', () => {
+    describe('backbeat PUT routes', () => {
         describe('PUT data + metadata should create a new complete object',
         () => {
             [{
@@ -322,7 +322,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             });
         });
     });
-    describe('backbeat authorization checks:', () => {
+    describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
              it(`${test.method} ${test.resourceType} should respond with ` +
@@ -397,7 +397,7 @@ describeSkipIfAWS('backbeat routes:', () => {
          });
     });
 
-    describe('GET Metadata route:', () => {
+    describe('GET Metadata route', () => {
         beforeEach(done => makeBackbeatRequest({
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: TEST_KEY,
@@ -422,7 +422,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             });
         });
 
-        it('should return error if bucket does not exist ', done => {
+        it('should return error if bucket does not exist', done => {
             makeBackbeatRequest({
                 method: 'GET', bucket: 'blah',
                 objectKey: TEST_KEY, resourceType: 'metadata',
@@ -437,7 +437,7 @@ describeSkipIfAWS('backbeat routes:', () => {
             });
         });
 
-        it('should return error if object does not exist ', done => {
+        it('should return error if object does not exist', done => {
             makeBackbeatRequest({
                 method: 'GET', bucket: TEST_BUCKET,
                 objectKey: 'blah', resourceType: 'metadata',
@@ -450,6 +450,105 @@ describeSkipIfAWS('backbeat routes:', () => {
                 assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
                 done();
             });
+        });
+    });
+    describe('Batch Delete Route', () => {
+        it('should batch delete a location', done => {
+            let versionId;
+            let location;
+
+            async.series([
+                done => s3.putObject({
+                    Bucket: TEST_BUCKET,
+                    Key: 'batch-delete-test-key',
+                    Body: new Buffer('hello'),
+                }, done),
+                done => s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: 'batch-delete-test-key',
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), 'hello');
+                    versionId = data.VersionId;
+                    done();
+                }),
+                done => {
+                    makeBackbeatRequest({
+                        method: 'GET', bucket: TEST_BUCKET,
+                        objectKey: 'batch-delete-test-key',
+                        resourceType: 'metadata',
+                        authCredentials: backbeatAuthCredentials,
+                        queryObj: {
+                            versionId,
+                        },
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.strictEqual(data.statusCode, 200);
+                        const metadata = JSON.parse(
+                            JSON.parse(data.body).Body);
+                        location = metadata.location;
+                        done();
+                    });
+                },
+                done => {
+                    const options = {
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        requestBody:
+                        `{"Locations":${JSON.stringify(location)}}`,
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, done);
+                },
+                done => s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: 'batch-delete-test-key',
+                }, err => {
+                    // should error out as location shall no longer exist
+                    assert(err);
+                    done();
+                }),
+            ], done);
+        });
+        it('should fail with error if given malformed JSON', done => {
+            async.series([
+                done => {
+                    const options = {
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        requestBody: 'NOTJSON',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, done);
+                },
+            ], err => {
+                assert(err);
+                done();
+            });
+        });
+        it('should skip batch delete of a non-existent location', done => {
+            async.series([
+                done => {
+                    const options = {
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        requestBody:
+                        '{"Locations":' +
+                            '[{"key":"abcdef","dataStoreName":"us-east-1"}]}',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, done);
+                },
+            ], done);
         });
     });
 });
