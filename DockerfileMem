@@ -14,6 +14,7 @@ RUN apt-get update \
     && rm -rf ~/.node-gyp \
     && rm -rf /tmp/npm-*
 
+ENV REMOTE_MANAGEMENT_DISABLE true
 ENV S3BACKEND mem
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]

@@ -17,6 +17,8 @@ RUN apt-get update \
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
+ENV REMOTE_MANAGEMENT_DISABLE true
+
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "npm", "start" ]
 
