@@ -14,10 +14,11 @@ const {
     putToAwsBackend,
     awsGetLatestVerId,
     getAndAssertResult,
+    genUniqID,
 } = require('../utils');
 
-const sourceBucketName = 'buckettestobjectcopyawsversioning-source';
-const destBucketName = 'buckettestobjectcopyawsversioning-dest';
+const sourceBucketName = `awsversioningsrc${genUniqID()}`;
+const destBucketName = `awsversioningdst${genUniqID()}`;
 
 const someBody = Buffer.from('I am a body', 'utf8');
 const wrongVersionBody = 'this is not the content you wanted';
@@ -52,7 +53,7 @@ function createBuckets(testParams, cb) {
 
 function putSourceObj(testParams, cb) {
     const { sourceBucket, isEmptyObj } = testParams;
-    const sourceKey = `sourcekey-${Date.now()}`;
+    const sourceKey = `sourcekey-${genUniqID()}`;
     const sourceParams = {
         Bucket: sourceBucket,
         Key: sourceKey,
@@ -81,7 +82,7 @@ function copyObject(testParams, cb) {
     const { sourceBucket, sourceKey, sourceVersionId, sourceVersioningState,
         destBucket, directive, destVersioningState, isEmptyObj }
         = testParams;
-    const destKey = `destkey-${Date.now()}`;
+    const destKey = `destkey-${genUniqID()}`;
     const copyParams = {
         Bucket: destBucket,
         Key: destKey,
@@ -307,7 +308,7 @@ function testSuite() {
         it('versioning not configured: if copy object to a pre-existing ' +
         'object on AWS backend, metadata should be overwritten but data of ' +
         'previous version in AWS should not be deleted', function itF(done) {
-            const destKey = `destkey-${Date.now()}`;
+            const destKey = `destkey-${genUniqID()}`;
             const testParams = {
                 sourceBucket: sourceBucketName,
                 sourceLocation: awsLocation,

@@ -7,7 +7,7 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
     require('../helpers');
 const constants = require('../../../constants');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');
@@ -474,10 +474,12 @@ describe('Replication object MD without bucket replication config', () => {
 
         ['awsbackend',
         'azurebackend',
+        'gcpbackend',
         'awsbackend,azurebackend'].forEach(backend => {
             const storageTypeMap = {
                 'awsbackend': 'aws_s3',
                 'azurebackend': 'azure',
+                'gcpbackend': 'gcp',
                 'awsbackend,azurebackend': 'aws_s3,azure',
             };
             const storageType = storageTypeMap[backend];

@@ -1,4 +1,3 @@
-
 {
     "us-east-1": {
         "type": "file",
@@ -46,6 +45,17 @@
             "credentialsProfile": "default"
         }
     },
+    "awsbackendhttp": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "https": false
+        }
+    },
     "awsbackendmismatch": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
@@ -64,6 +74,17 @@
             "bucketName": "multitester222",
             "bucketMatch": true,
             "credentialsProfile": "default_2"
+        }
+    },
+    "awsbackendPathStyle": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "pathStyle": true
         }
     },
     "azurebackend": {
@@ -108,6 +129,61 @@
             "azureStorageAccessKey": "Fake00Key123",
             "bucketMatch": true,
             "azureContainerName": "s3createbucketonfly"
+        }
+    },
+    "gcpbackend": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": true,
+            "credentialsProfile": "google"
+        }
+    },
+    "gcpbackend2": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket-2",
+            "mpuBucketName": "zenko-gcp-mpu-2",
+            "bucketMatch": true,
+            "credentialsProfile": "google_2"
+        }
+    },
+    "gcpbackendmismatch": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": false,
+            "credentialsProfile": "google"
+        }
+    },
+    "withversioning": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": true
+        }
+    },
+    "withoutversioning": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": false
         }
     }
 }

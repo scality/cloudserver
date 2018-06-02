@@ -8,7 +8,9 @@
         "cloudserver-front": "us-east-1",
         "s3.docker.test": "us-east-1",
         "127.0.0.2": "us-east-1",
-        "s3.amazonaws.com": "us-east-1"
+        "s3.amazonaws.com": "us-east-1",
+        "zenko-cloudserver-replicator": "us-east-1",
+        "lb": "us-east-1"
     },
     "websiteEndpoints": ["s3-website-us-east-1.amazonaws.com",
                         "s3-website.us-east-2.amazonaws.com",
@@ -23,7 +25,8 @@
                         "s3-website-eu-west-1.amazonaws.com",
                         "s3-website-sa-east-1.amazonaws.com",
                         "s3-website.localhost",
-                        "s3-website.scality.test"],
+                        "s3-website.scality.test",
+                        "zenkoazuretest.blob.core.windows.net"],
     "replicationEndpoints": [{
         "site": "zenko",
         "servers": ["127.0.0.1:8000"],
@@ -32,6 +35,10 @@
         "site": "us-east-2",
         "type": "aws_s3"
     }],
+    "backbeat": {
+        "host": "localhost",
+        "port": 8900
+    },
     "cdmi": {
         "host": "localhost",
         "port": 81,
@@ -45,7 +52,7 @@
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 10,
+    "clusters": 1,
     "log": {
         "logLevel": "info",
         "dumpLevel": "error"
@@ -70,15 +77,14 @@
         "port": 9991
     },
     "recordLog": {
-        "enabled": false,
+        "enabled": true,
         "recordLogName": "s3-recordlog"
     },
     "mongodb": {
-	"host": "localhost",
-	"port": 27018,
-	"database": "metadata"
-    },
-    "log": {
-	"logLevel": "trace"
+       "replicaSetHosts": "localhost:27018,localhost:27019,localhost:27020",
+       "writeConcern": "majority",
+       "replicaSet": "rs0",
+       "readPreference": "primary",
+       "database": "metadata"
     }
 }

@@ -2,9 +2,12 @@ const assert = require('assert');
 const crypto = require('crypto');
 const { errors } = require('arsenal');
 const AWS = require('aws-sdk');
+const uuid = require('uuid/v4');
 
 const async = require('async');
 const azure = require('azure-storage');
+
+const { GCP } = require('../../../../../lib/data/external/GCP');
 
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');
@@ -20,6 +23,9 @@ const azureLocation = 'azurebackend';
 const azureLocation2 = 'azurebackend2';
 const azureLocationMismatch = 'azurebackendmismatch';
 const azureLocationNonExistContainer = 'azurenonexistcontainer';
+const gcpLocation = 'gcpbackend';
+const gcpLocation2 = 'gcpbackend2';
+const gcpLocationMismatch = 'gcpbackendmismatch';
 const versioningEnabled = { Status: 'Enabled' };
 const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
@@ -28,11 +34,21 @@ let describeSkipIfNotMultiple = describe.skip;
 let awsS3;
 let awsBucket;
 
+let gcpClient;
+let gcpBucket;
+let gcpBucketMPU;
+
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+
+    const gcpConfig = getRealAwsConfig(gcpLocation);
+    gcpClient = new GCP(gcpConfig);
+    gcpBucket = config.locationConstraints[gcpLocation].details.bucketName;
+    gcpBucketMPU =
+        config.locationConstraints[gcpLocation].details.mpuBucketName;
 }
 
 function _assertErrorResult(err, expectedError, desc) {
@@ -49,6 +65,9 @@ const utils = {
     describeSkipIfNotMultiple,
     awsS3,
     awsBucket,
+    gcpClient,
+    gcpBucket,
+    gcpBucketMPU,
     fileLocation,
     memLocation,
     awsLocation,
@@ -59,7 +78,12 @@ const utils = {
     azureLocation2,
     azureLocationMismatch,
     azureLocationNonExistContainer,
+    gcpLocation,
+    gcpLocation2,
+    gcpLocationMismatch,
 };
+
+utils.genUniqID = () => uuid().replace(/-/g, '');
 
 utils.getOwnerInfo = account => {
     let ownerID;
@@ -84,7 +108,7 @@ utils.getOwnerInfo = account => {
     return { ownerID, ownerDisplayName };
 };
 
-utils.uniqName = name => `${name}${new Date().getTime()}`;
+utils.uniqName = name => `${name}-${utils.genUniqID()}`;
 
 utils.getAzureClient = () => {
     const params = {};
@@ -133,19 +157,19 @@ utils.getAzureKeys = () => {
     const keys = [
         {
             describe: 'empty',
-            name: `somekey-${Date.now()}`,
+            name: `somekey-${utils.genUniqID()}`,
             body: '',
             MD5: 'd41d8cd98f00b204e9800998ecf8427e',
         },
         {
             describe: 'normal',
-            name: `somekey-${Date.now()}`,
+            name: `somekey-${utils.genUniqID()}`,
             body: Buffer.from('I am a body', 'utf8'),
             MD5: 'be747eb4b75517bf6b3cf7c5fbb62f3a',
         },
         {
             describe: 'big',
-            name: `bigkey-${Date.now()}`,
+            name: `bigkey-${utils.genUniqID()}`,
             body: Buffer.alloc(10485760),
             MD5: 'f1c9645dbc14efddc7d8a322685f26eb',
         },
@@ -225,6 +249,10 @@ utils.getAndAssertResult = (s3, params, cb) => {
                 `getting object, got error ${err}`);
             if (body) {
                 assert(data.Body, 'expected object body in response');
+                assert.equal(data.Body.length, data.ContentLength,
+                    `received data of length ${data.Body.length} does not ` +
+                    'equal expected based on ' +
+                    `content length header of ${data.ContentLength}`);
                 const expectedMD5 = utils.expectedETag(body, false);
                 const resultMD5 = utils.expectedETag(data.Body, false);
                 assert.strictEqual(resultMD5, expectedMD5);
@@ -371,6 +399,5 @@ utils.tagging.awsGetAssertTags = (params, cb) => {
         return cb();
     });
 };
-
 
 module.exports = utils;

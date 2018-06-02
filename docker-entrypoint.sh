@@ -6,14 +6,15 @@ set -e
 # modifying config.json
 JQ_FILTERS_CONFIG="."
 
+# ENDPOINT var can accept comma separated values
+# for multiple endpoint locations
 if [[ "$ENDPOINT" ]]; then
-    HOST_NAME="$ENDPOINT"
-fi
-
-if [[ "$HOST_NAME" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$HOST_NAME\"]=\"us-east-1\""
-    echo "Host name has been modified to $HOST_NAME"
-    echo "Note: In your /etc/hosts file on Linux, OS X, or Unix with root permissions, make sure to associate 127.0.0.1 with $HOST_NAME"
+    IFS="," read -ra HOST_NAMES <<< "$ENDPOINT"
+    for host in "${HOST_NAMES[@]}"; do 
+        JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$host\"]=\"us-east-1\""
+    done
+    echo "Host name has been modified to ${HOST_NAMES[@]}"
+    echo "Note: In your /etc/hosts file on Linux, OS X, or Unix with root permissions, make sure to associate 127.0.0.1 with ${HOST_NAMES[@]}"
 fi
 
 if [[ "$LOG_LEVEL" ]]; then
@@ -25,7 +26,7 @@ if [[ "$LOG_LEVEL" ]]; then
     fi
 fi
 
-if [[ "$SSL" && "$HOST_NAME" ]]; then
+if [[ "$SSL" && "$HOST_NAMES" ]]; then
 # This condition makes sure that the certificates are not generated twice. (for docker restart)
 if [ ! -f ./ca.key ] || [ ! -f ./ca.crt ] || [ ! -f ./server.key ] || [ ! -f ./server.crt ] ; then
 # Compute config for utapi tests
@@ -36,15 +37,15 @@ prompt = no
 req_extensions = s3_req
 
 [req_distinguished_name]
-CN = ${HOST_NAME}
+CN = ${HOST_NAMES[0]}
 
 [s3_req]
 subjectAltName = @alt_names
 extendedKeyUsage = serverAuth, clientAuth
 
 [alt_names]
-DNS.1 = *.${HOST_NAME}
-DNS.2 = ${HOST_NAME}
+DNS.1 = *.${HOST_NAMES[0]}
+DNS.2 = ${HOST_NAMES[0]}
 
 EOF
 
@@ -81,6 +82,18 @@ if [[ "$METADATA_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .metadataClient.host=\"$METADATA_HOST\""
 fi
 
+if [[ "$MONGODB_HOSTS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.replicaSetHosts=\"$MONGODB_HOSTS\""
+fi
+
+if [[ "$MONGODB_RS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.replicaSet=\"$MONGODB_RS\""
+fi
+
+if [[ "$MONGODB_DATABASE" ]]; then
+   JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
+fi
+
 if [[ "$REDIS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
@@ -94,9 +107,25 @@ if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
 
+if [[ "$CRR_METRICS_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.host=\"$CRR_METRICS_HOST\""
+fi
+
+if [[ "$CRR_METRICS_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.port=$CRR_METRICS_PORT"
+fi
+
+if [[ "$HEALTHCHECKS_ALLOWFROM" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
+fi
+
+if test -v INITIAL_INSTANCE_ID && test -v S3METADATAPATH && ! test -f ${S3METADATAPATH}/uuid ; then
+    echo -n ${INITIAL_INSTANCE_ID} > ${S3METADATAPATH}/uuid
 fi
 
 # s3 secret credentials for Zenko

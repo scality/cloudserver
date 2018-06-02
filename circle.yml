@@ -8,7 +8,7 @@ general:
 
 machine:
   node:
-    version: 6.9.5
+    version: 6.13.1
   services:
     - redis
     - docker
@@ -18,13 +18,21 @@ machine:
     CXX: g++-4.9
     ENABLE_LOCAL_CACHE: true
     REPORT_TOKEN: report-token-1
+    REMOTE_MANAGEMENT_DISABLE: 1
   hosts:
     bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
+  post:
+    - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+    - echo "deb https://dl.yarnpkg.com/debian/ stable main" |
+      sudo tee /etc/apt/sources.list.d/yarn.list
+    - sudo apt-get update && sudo apt-get install yarn -y
 
 dependencies:
   override:
+    - docker run -d -p 27018:27018 -p 27019:27018 -p 27020:27018
+      --name ci-mongo scality/ci-mongo:3.4
     - rm -rf node_modules
-    - npm install
+    - yarn install --pure-lockfile
   post:
     - sudo pip install flake8 yamllint
     - sudo pip install s3cmd==1.6.1
@@ -33,14 +41,17 @@ dependencies:
     - gem install mime-types -v 3.1
     - gem install rspec -v 3.5
     - gem install json
-    - gem install digest
+    # - gem install digest
     # java sdk dependencies
     - sudo apt-get install -y -q default-jdk
 
 
 test:
   override:
+    - openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509
+      -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy"
+      -keyout /tmp/CA.pem  -out /tmp/CA.pem
     - docker run --name squid-proxy -d --net=host
-      --publish 3128:3128 sameersbn/squid:3.3.8-23
+      -v /tmp/CA.pem:/ssl/myca.pem:ro -p 3129:3129 scality/ci-squid
     - bash tests.bash:
         parallel: true

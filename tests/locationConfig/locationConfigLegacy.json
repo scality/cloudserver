@@ -8,6 +8,7 @@
     "us-east-1": {
         "type": "file",
         "legacyAwsBehavior": true,
+
         "details": {}
     },
     "scality-internal-file": {
@@ -61,6 +62,17 @@
             "credentialsProfile": "default"
         }
     },
+    "awsbackendhttp": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "https": false
+        }
+    },
     "awsbackend2": {
         "type": "aws_s3",
         "legacyAwsBehavior": true,
@@ -102,6 +114,39 @@
             "azureStorageAccessKey": "Fake00Key001",
             "bucketMatch": false,
             "azureContainerName": "s3test"
+        }
+    },
+    "gcpbackend": {
+        "type": "gcp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": true,
+            "credentialsProfile": "google"
+        }
+    },
+    "withversioning": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": true
+        }
+    },
+    "withoutversioning": {
+        "type": "aws_s3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": false
         }
     }
 }

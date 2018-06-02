@@ -17,24 +17,31 @@ function getAwsCredentials(profile, credFile) {
     return new AWS.SharedIniFileCredentials({ profile, filename });
 }
 
-function getRealAwsConfig(awsLocation) {
-    const { credentialsProfile, credentials: locCredentials } =
-        config.locationConstraints[awsLocation].details;
+function getRealAwsConfig(location) {
+    const { awsEndpoint, gcpEndpoint, credentialsProfile,
+        credentials: locCredentials, bucketName, mpuBucketName } =
+        config.locationConstraints[location].details;
+    const params = {
+        endpoint: gcpEndpoint ?
+            `https://${gcpEndpoint}` : `https://${awsEndpoint}`,
+        signatureVersion: 'v4',
+    };
+    if (config.locationConstraints[location].type === 'gcp') {
+        params.mainBucket = bucketName;
+        params.mpuBucket = mpuBucketName;
+    }
+    params.httpOptions = {
+        agent: new https.Agent({ keepAlive: true }),
+    };
     if (credentialsProfile) {
         const credentials = getAwsCredentials(credentialsProfile,
             '/.aws/credentials');
-        return { credentials, signatureVersion: 'v4' };
+        params.credentials = credentials;
+        return params;
     }
-    return {
-        httpOptions: {
-            agent: new https.Agent({
-                keepAlive: true,
-            }),
-        },
-        accessKeyId: locCredentials.accessKey,
-        secretAccessKey: locCredentials.secretKey,
-        signatureVersion: 'v4',
-    };
+    params.accessKeyId = locCredentials.accessKey;
+    params.secretAccessKey = locCredentials.secretKey;
+    return params;
 }
 
 module.exports = {

@@ -69,7 +69,7 @@ describe('Report route', () => {
 
     it('should contain config', done => {
         queryReport(done, response => {
-            if (!response.config || !response.config.locationConstraints) {
+            if (!response.config) {
                 return done(new Error('response missing config'));
             }
             return done();
@@ -80,6 +80,15 @@ describe('Report route', () => {
         queryReport(done, response => {
             if (response.config && response.config.authData) {
                 return done(new Error('response config contains auth data'));
+            }
+            return done();
+        });
+    });
+
+    it('should remove unwanted sections from config', done => {
+        queryReport(done, response => {
+            if (response.config && response.config.mongodb) {
+                return done(new Error('config contains unwanted sections'));
             }
             return done();
         });

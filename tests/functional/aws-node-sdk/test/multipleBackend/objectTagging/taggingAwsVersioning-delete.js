@@ -2,8 +2,6 @@ const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const bucket = 'testawsbackendtaggingdeleteversioned';
-
 const { removeAllVersions } = require('../../../lib/utility/versioning-util');
 const {
     describeSkipIfNotMultiple,
@@ -15,9 +13,11 @@ const {
     putVersionsToAws,
     awsGetLatestVerId,
     tagging,
+    genUniqID,
 } = require('../utils');
-
 const { putTaggingAndAssert, delTaggingAndAssert, awsGetAssertTags } = tagging;
+
+const bucket = `awsversioningtagdel${genUniqID()}`;
 const someBody = 'teststring';
 
 describeSkipIfNotMultiple('AWS backend object delete tagging with versioning ',
@@ -45,7 +45,7 @@ function testSuite() {
 
         it('versioning not configured: should delete a tag set on the ' +
         'latest version if no version is specified', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
@@ -58,7 +58,7 @@ function testSuite() {
 
         it('versioning not configured: should delete a tag set on the ' +
         'version if specified (null)', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
                 (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
@@ -72,7 +72,7 @@ function testSuite() {
         it('versioning suspended: should delete a tag set on the latest ' +
         'version if no version is specified', done => {
             const data = [undefined, 'test1', 'test2'];
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, data, next),
                 (versionIds, next) => putTaggingAndAssert(s3, { bucket, key,
@@ -85,7 +85,7 @@ function testSuite() {
 
         it('versioning suspended: should delete a tag set on a specific ' +
         'version (null)', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [undefined],
                     next),
@@ -100,7 +100,7 @@ function testSuite() {
 
         it('versioning enabled then suspended: should delete a tag set on ' +
         'a specific (non-null) version if specified', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
@@ -121,7 +121,7 @@ function testSuite() {
 
         it('versioning enabled: should delete a tag set on the latest ' +
         'version if no version is specified', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
@@ -135,7 +135,7 @@ function testSuite() {
 
         it('versioning enabled: should delete a tag set on a specific version',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
@@ -150,7 +150,7 @@ function testSuite() {
 
         it('versioning enabled: should delete a tag set on a specific ' +
         'version that is not the latest version', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
@@ -173,7 +173,7 @@ function testSuite() {
 
         it('versioning suspended then enabled: should delete a tag set on ' +
         'a specific version (null) if specified', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [undefined],
                     () => next()),
@@ -194,7 +194,7 @@ function testSuite() {
         it('should return an ServiceUnavailable if trying to delete ' +
         'tags from object that was deleted from AWS directly',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
                 (putData, next) => awsGetLatestVerId(key, '', next),
@@ -208,7 +208,7 @@ function testSuite() {
         it('should return an ServiceUnavailable if trying to delete ' +
         'tags from object that was deleted from AWS directly',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
                 (putData, next) => awsGetLatestVerId(key, '',

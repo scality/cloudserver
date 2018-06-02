@@ -5,7 +5,7 @@
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
-[![Docker Pulls][badgetwitter]](https://twitter.com/Zenko_io)
+[![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
 
 ## Overview
 
@@ -121,8 +121,9 @@ where the data is saved. If the bucket has no location
 constraint, the endpoint of the PUT request will be
 used to determine location.
 
-See the Configuration section below to learn how to set
-location constraints.
+See the Configuration section in our documentation
+[here](http://s3-server.readthedocs.io/en/latest/GETTING_STARTED/#configuration)
+to learn how to set location constraints.
 
 ## Run it with an in-memory backend
 
@@ -134,7 +135,7 @@ This starts a Zenko CloudServer on port 8000.
 The default access key is accessKey1 with
 a secret key of verySecretKey1.
 
-[badgetwitter]: https://img.shields.io/twitter/follow/s3server.svg?style=social&label=Follow
+[badgetwitter]: https://img.shields.io/twitter/follow/zenko.svg?style=social&label=Follow
 [badgedocker]: https://img.shields.io/docker/pulls/scality/s3server.svg
 [badgepub]: https://circleci.com/gh/scality/S3.svg?style=svg
 [badgepriv]: http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae

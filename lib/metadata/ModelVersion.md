@@ -68,3 +68,40 @@ this._cors = cors || null;
 
 Used to store the bucket website configuration info
 and to store CORS rules to apply to cross-domain requests
+
+## Model version 6
+
+### Properties Added
+
+```javascript
+this._lifecycleConfiguration = lifecycleConfiguration || null;
+```
+
+### Usage
+
+Used to store the bucket lifecycle configuration info.
+Backwards compatible: add a uid to bucket if not exist. Otherwise, use existing
+
+## Model version 7
+
+### Properties Added
+
+```javascript
+this._uid = uid || uuid();
+```
+
+### Usage
+
+Used to set a unique identifier on a bucket
+
+## Model version 8
+
+### Properties Added
+
+```javascript
+this._readLocationConstraint = readLocationConstraint || null;
+```
+
+### Usage
+
+Used to store default read location of the bucket
