@@ -69,12 +69,12 @@ stages:
           command: rm -rf node_modules
 #      - ShellCommandWithSecrets: *aws-credentials
       - ShellCommandWithSecrets: *npm-install
-#      - ShellCommandWithSecrets:
-#          command: bash -l tests.bash
-#          env:
-#            <<: *global_env
-#            CIRCLE_NODE_INDEX: '0'
-#          timeout: 120
+      - ShellCommandWithSecrets:
+          command: bash -l tests.bash
+          env:
+            <<: *global_env
+            CIRCLE_NODE_INDEX: '0'
+          timeout: 120
 #      - ShellCommandWithSecrets:
 #          name: Linting
 #          command: |
@@ -100,22 +100,22 @@ stages:
 #            <<: *global_env
 #            CIRCLE_NODE_INDEX: '0'
 #            WORK_DIR: /home/eve/S3
-      - ShellCommandWithSecrets:
-          name: Node 1 Tests
-          command: |
-            . ~/.bashrc &> /dev/null \
-            && bash wait_for_local_port.bash 9991 40 \
-            && npm run multiple_backend_test || exit 1
-          env: 
-            <<: *global_env
-            CIRCLE_NODE_INDEX: '0'
-          timeout: 120
-      - ShellCommand: *kill-dmd
-      - ShellCommandWithSecrets:
-          command: ls -la && cat /tmp/*.txt
-          env:
-            <<: *global_env
-          haltOnFailure: True
+#      - ShellCommandWithSecrets:
+#          name: Node 1 Tests
+#          command: |
+#            . ~/.bashrc &> /dev/null \
+#            && bash wait_for_local_port.bash 9991 40 \
+#            && npm run multiple_backend_test || exit 1
+#          env: 
+#            <<: *global_env
+#            CIRCLE_NODE_INDEX: '0'
+#          timeout: 120
+#      - ShellCommand: *kill-dmd
+#      - ShellCommandWithSecrets:
+#          command: ls -la && cat /tmp/*.txt
+#          env:
+#            <<: *global_env
+#          haltOnFailure: True
   node1:
     worker: *master-worker
     steps:
