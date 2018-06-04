@@ -59,4 +59,4 @@ COPY ./bash_profile /home/eve/.bash_profile
 #RUN exec bash -l
 #WORKDIR /home/eve/workspace
 #CMD ["sudo", "supervisord", "-n"]
-CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPAS   && buildbot-worker start --nodaemon"]
+CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS   && buildbot-worker start --nodaemon"]
