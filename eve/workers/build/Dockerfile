@@ -56,7 +56,7 @@ RUN pip install buildbot-worker==$BUILDBOT_VERSION
 #USER eve
 COPY ./bash_profile /home/eve/.bashrc
 COPY ./bash_profile /home/eve/.bash_profile
-RUN exec bash -l
+#RUN exec bash -l
 #WORKDIR /home/eve/workspace
-CMD ["sudo", "supervisord", "-n"]
-#CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPAS   && buildbot-worker start --nodaemon"]
+#CMD ["sudo", "supervisord", "-n"]
+CMD ["/bin/bash", "-l", "-c", "buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPAS   && buildbot-worker start --nodaemon"]
