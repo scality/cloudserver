@@ -1,10 +1,11 @@
 #!/bin/bash -x
 set -x #echo on
 set -e #exit at the first error
-
-source /home/eve/.bashrc &> /dev/null
+set -u #fail on unset variables
+source /home/eve/.bashrc
+source ./eve/workers/build/bash_profile
 mkdir -p ~/.aws/
-cat >>~/.aws/credentials <<EOF
+cat >>$(pwd)/credentials <<EOF
 [default]
 aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY
 aws_secret_access_key = $AWS_S3_BACKEND_SECRET_KEY
@@ -12,12 +13,13 @@ aws_secret_access_key = $AWS_S3_BACKEND_SECRET_KEY
 aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY_2
 aws_secret_access_key = $AWS_S3_BACKEND_SECRET_KEY_2
 [google]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE
+aws_access_key_id = $AWS_GCP_BACKEND_ACCESS_KEY
+aws_secret_access_key = $AWS_GCP_BACKEND_SECRET_KEY
 [google_2]
-aws_access_key_id = $AWS_ACCESS_KEY_ID_GOOGLE_2
-aws_secret_access_key = $AWS_SECRET_ACCESS_KEY_GOOGLE_2
+aws_access_key_id = $AWS_GCP_BACKEND_ACCESS_KEY_2
+aws_secret_access_key = $AWS_GCP_BACKEND_SECRET_KEY_2
 EOF
+AWS_CONFIG_FILE=$(pwd)/credentials
 
 MYPWD=$(pwd)
 
