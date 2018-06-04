@@ -67,7 +67,7 @@ stages:
       - ShellCommand: *update_hosts
       - ShellCommand:
           command: rm -rf node_modules
-      - ShellCommandWithSecrets: *aws-credentials
+#      - ShellCommandWithSecrets: *aws-credentials
       - ShellCommandWithSecrets: *npm-install
 #      - ShellCommandWithSecrets:
 #          command: bash -l tests.bash
