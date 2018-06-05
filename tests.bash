@@ -1,7 +1,7 @@
 #!/bin/bash -x
 set -x #echo on
 set -e #exit at the first error
-set -u #fail on unset variables
+
 source /home/eve/.bashrc
 source ./eve/workers/build/bash_profile
 mkdir -p /root/.aws/
