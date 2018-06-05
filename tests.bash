@@ -19,9 +19,9 @@ aws_secret_access_key = $AWS_GCP_BACKEND_SECRET_KEY
 aws_access_key_id = $AWS_GCP_BACKEND_ACCESS_KEY_2
 aws_secret_access_key = $AWS_GCP_BACKEND_SECRET_KEY_2
 EOF
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
 cp $(pwd)/credentials /root/.aws/
-AWS_CONFIG_FILE=$(pwd)/credentials
-CI=true
 MYPWD=$(pwd)
 
 killandsleep () {
