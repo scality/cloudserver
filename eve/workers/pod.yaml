@@ -70,6 +70,10 @@ spec:
         - sh
         - -exc
         - |
+          mkdir -p /ssl
+          openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 \
+           -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy" \
+           -keyout /ssl/myca.pem  -out /ssl/myca.pem
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
