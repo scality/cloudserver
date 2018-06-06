@@ -1,11 +1,12 @@
-tcl
 ca-certificates
 git
 gnupg
 libffi-dev
 libssl-dev
+python-pip
 python2.7
 python2.7-dev
-python-pip
 software-properties-common
 sudo
+tcl
+wget
