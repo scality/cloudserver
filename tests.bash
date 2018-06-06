@@ -32,7 +32,7 @@ then
 #  npm run unit_coverage_legacy_location
 
   npm run start_dmd &
-  bash wait_for_local_port.bash 9990 40 &&
+  bash wait_for_local_port.bash 9990 40
   npm run multiple_backend_test
   killandsleep 9990
 
