@@ -30,7 +30,7 @@ models:
       haltOnFailure: True
   - ShellCommandWthSecrets: &aws-credentials
       name: Setup AWS Credentials
-      command: bash %(prop:worker_path)s/aws.bash
+      command: bash eve/worker/build/aws.bash
       haltOnFailure: True
   - ShellCommandWithSecrets: &npm-install
       name: install modules

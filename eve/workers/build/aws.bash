@@ -2,6 +2,7 @@
 set -x #echo on
 set -e #exit at the first error
 mkdir -p ~/.aws
+source eve/workers/build/bash_profile &> /dev/null
 cat >>~/.aws/credentials <<EOF
 [default]
 aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY
