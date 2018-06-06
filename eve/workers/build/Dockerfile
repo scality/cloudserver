@@ -1,4 +1,4 @@
-FROM ubuntu:zenial
+FROM ubuntu:xenial
 
 #
 # Install packages needed by the buildchain
