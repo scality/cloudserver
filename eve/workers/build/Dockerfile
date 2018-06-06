@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM buildpack-deps:jessie-curl
 
 #
 # Install packages needed by the buildchain
