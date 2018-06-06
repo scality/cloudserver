@@ -286,4 +286,18 @@ describe('locationConstraintAssert', () => {
         assert.strictEqual(locationConstraint.details.pathStyle, true,
             'pathstyle config should be true');
     });
+
+    it('should throw error if sizeLimitGB is not a number', () => {
+        const usEast1 = new LocationConstraint();
+        const locationConstraint = new LocationConstraint('aws_s3', true,
+            { sizeLimitGB: true });
+        assert.throws(() => {
+            locationConstraintAssert({
+                'us-east-1': usEast1,
+                'awsstoragesizelimit': locationConstraint,
+            });
+        },
+        '/bad config: locationConstraints[region].details.sizeLimitGB ' +
+        'must be a number (in gigabytes)');
+    });
 });
