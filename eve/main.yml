@@ -44,23 +44,23 @@ stages:
       volumes: &default_volumes
         - '/home/eve/workspace'
     steps:
-      - Git: *clone
-      - ShellCommandWithSecrets: *npm-install
-      - ShellCommandWithSecrets:
-          name: Linting
-          command: |
-            npm run --silent lint -- --max-warnings 0
-            npm run --silent lint_md
-            flake8 $(git ls-files "*.py")
-            yamllint $(git ls-files "*.yml")
-      - ShellCommandWithSecrets:
-          name: Unit Coverage
-          command: |
-            mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run unit_coverage
-            npm run unit_coverage_legacy_location
-          env: *global_env
-          haltOnFailure: True
+#      - Git: *clone
+#      - ShellCommandWithSecrets: *npm-install
+#      - ShellCommandWithSecrets:
+#          name: Linting
+#          command: |
+#            npm run --silent lint -- --max-warnings 0
+#            npm run --silent lint_md
+#            flake8 $(git ls-files "*.py")
+#            yamllint $(git ls-files "*.yml")
+#      - ShellCommandWithSecrets:
+#          name: Unit Coverage
+#          command: |
+#            mkdir -p $CIRCLE_TEST_REPORTS/unit
+#            npm run unit_coverage
+#            npm run unit_coverage_legacy_location
+#          env: *global_env
+#          haltOnFailure: True
       - TriggerStages:
           name: Launch all nodes simultaneously
           stage_names:
