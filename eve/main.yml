@@ -73,7 +73,7 @@ stages:
           haltOnFailure: True
   external-backend-with-proxy:
     worker:
-      type: kubernetes
+      type: kube_pod
       path: eve/workers/proxy-pod.yaml
       images:
         aggressor: eve/workers/build
