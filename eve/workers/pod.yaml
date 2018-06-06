@@ -86,6 +86,6 @@ spec:
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
-   volumes:
-     - name: creds
-       emptyDir: {}
+  volumes:
+    - name: creds
+      emptyDir: {}
