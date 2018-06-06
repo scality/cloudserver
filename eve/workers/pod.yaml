@@ -47,6 +47,8 @@ spec:
        - npm
        - start
       env:
+        - name: CI
+          value: "true"
         - name: S3BACKEND
           value: "{{ vars.S3BACKEND }}"
         - name: MPU_TESTING
