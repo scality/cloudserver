@@ -18,6 +18,9 @@ spec:
         limits:
           cpu: 500m
           memory: 1Gi
+      volumeMounts:
+        - name: creds
+          mountPath: /root/.aws
       command:
         - bash
         - -lc
@@ -46,6 +49,10 @@ spec:
       command:
        - npm
        - start
+      volumeMounts:
+        - name: creds
+          readOnly: false
+          mountPath: /root/.aws
       env:
         - name: CI
           value: "true"
@@ -79,3 +86,6 @@ spec:
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
+   volumes:
+     - name: creds
+       emptyDir: {}
