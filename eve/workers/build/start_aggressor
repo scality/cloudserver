@@ -1,0 +1,8 @@
+#!/bin/bash
+set -exo pipefail
+
+buildbot-worker create-worker ${HOME} \
+  "${BUILDMASTER}:${BUILDMASTER_PORT}" \
+  "${WORKERNAME}" "${WORKERPASS}"
+
+exec buildbot-worker start --nodaemon

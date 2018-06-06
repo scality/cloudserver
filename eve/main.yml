@@ -30,7 +30,7 @@ models:
       haltOnFailure: True
   - ShellCommandWthSecrets: &aws-credentials
       name: Setup AWS Credentials
-      command: bash eve/worker/build/aws.bash
+      command: bash eve/workers/build/aws.bash
       haltOnFailure: True
   - ShellCommandWithSecrets: &npm-install
       name: install modules
@@ -65,10 +65,10 @@ stages:
           name: Launch all nodes simultaneously
           stage_names:
             - external-backend-with-proxy
-            - node0
-            - node1
-            - node2
-            - node3
+#            - node0
+#            - node1
+#            - node2
+#            - node3
           waitForFinish: True
           haltOnFailure: True
   external-backend-with-proxy:
@@ -79,10 +79,10 @@ stages:
         aggressor: eve/workers/build
         squid: eve/workers/squid
         s3: "."
-      vars: &ci-vars
-        S3BACKEND: mem
-        MPU_TESTING: yes
-        S3DATA: multiple
+      vars: &proxy-vars
+        S3BACKEND: "mem"
+        MPU_TESTING: "yes"
+        S3DATA: "multiple"
         CI_PROXY: "true"
     steps:
       - Git: *clone
@@ -94,7 +94,7 @@ stages:
             npm run ft_awssdk_external_backends
           env:
             <<: *global_env
-            <<: *ci-vars
+            <<: *proxy-vars
   node0:
     worker: *master-worker
     steps:
