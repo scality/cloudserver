@@ -57,6 +57,7 @@ stages:
     worker: *master-worker
     steps:
       - Git: *clone
+      - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
           name: Linting
           command: |

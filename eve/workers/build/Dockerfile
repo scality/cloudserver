@@ -5,10 +5,14 @@ FROM buildpack-deps:jessie-curl
 #
 ENV LANG C.UTF-8
 COPY ./s3_packages.list ./buildbot_worker_packages.list /tmp/
-RUN apt-get update \
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 \
+    && echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.4.list \
+    && apt-get update \
     && cat /tmp/*packages.list | xargs apt-get install -y \
     && wget https://nodejs.org/dist/v6.9.5/node-v6.9.5-linux-x64.tar.xz \
     && tar -C /usr/local --strip-components 1 -xvf node-v6.9.5-linux-x64.tar.xz \
+    && wget https://raw.githubusercontent.com/scality/S3/development/8.0/package.json \
+    && npm install -g \
     && pip install pip==9.0.1 \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /tmp/packages.list

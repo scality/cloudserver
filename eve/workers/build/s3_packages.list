@@ -2,7 +2,7 @@ default-jdk
 libdigest-hmac-perl
 lsof
 maven
-mongodb-org
+mongodb-org-server
 netcat
 nodejs
 redis-server
