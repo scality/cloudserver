@@ -13,13 +13,17 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 200m
+          cpu: 100m
           memory: 512Mi
         limits:
           cpu: 500m
           memory: 1Gi
       command:
-        - /bin/start_aggressor
+        - bash
+        - -lc
+        - |
+          buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS
+          buildbot-worker start --nodaemon
       env:
         - name: S3BACKEND
           value: "{{ vars.S3BACKEND }}"
