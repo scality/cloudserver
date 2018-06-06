@@ -77,7 +77,7 @@ stages:
       path: eve/workers/pod.yaml
       images:
         aggressor: eve/workers/build
-        ci: eve/workers/squid
+        squid: eve/workers/squid
         s3: "."
       vars: &ci-vars
         S3BACKEND: mem
@@ -114,6 +114,7 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
+          timeout: 300
   node1:
     worker: *master-worker
     steps:
@@ -133,6 +134,7 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
+          timeout: 300
   node2:
     worker: *master-worker
     steps:
@@ -152,6 +154,7 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
+          timeout: 300
   node3:
     worker: *master-worker
     steps:
@@ -171,3 +174,4 @@ stages:
           env:
             <<: *global_env
           haltOnFailure: True
+          timeout: 300
