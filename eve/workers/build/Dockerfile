@@ -49,7 +49,7 @@ RUN cat /tmp/pip_packages.list | xargs pip install \
 COPY ./bash_profile /home/eve/.bash_profile
 RUN chown eve /home/eve/.bash_profile
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
+COPY ./start_aggressor /bin/start_aggressor
 #
 # Run buildbot-worker on startup
 #

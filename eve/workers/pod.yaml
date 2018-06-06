@@ -19,7 +19,7 @@ spec:
           cpu: 500m
           memory: 1Gi
       command:
-        - eve/workers/build/start_aggressor
+        - /bin/start_aggressor
       env:
         - name: S3BACKEND
           value: "{{ vars.S3BACKEND }}"
