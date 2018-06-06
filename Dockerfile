@@ -13,8 +13,7 @@ WORKDIR /usr/src/app
 RUN npm install --production \
     && npm cache clear \
     && rm -rf ~/.node-gyp \
-    && rm -rf /tmp/npm-* \
-    && apt-get autoremove --purge -y python git build-essential
+    && rm -rf /tmp/npm-*
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 

@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "proxy-ci-test-pod"
+spec:
+  activeDeadlineSeconds: 3600
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 10
+  containers:
+    - name: aggressor
+      image: {{ images.aggressor }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+      command:
+       - sh
+       - -exc
+       - |
+         buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS
+         buildbot-worker start --nodaemon
+      env:
+        - name: S3BACKEND
+          value: "{{ vars.S3BACKEND }}"
+        - name: MPU_TESTING
+          value: "{{ vars.MPU_TESTING }}"
+        - name: S3DATA
+          value: "{{ vars.S3DATA }}"
+        - name: CI_PROXY
+          value: "{{ vars.CI_PROXY }}"
+    - name: s3
+      image: {{ images.s3 }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1Gi
+      command:
+       - npm
+       - start
+      env:
+        - name: S3BACKEND
+          value: "{{ vars.S3BACKEND }}"
+        - name: MPU_TESTING
+          value: "{{ vars.MPU_TESTING }}"
+        - name: S3DATA
+          value: "{{ vars.S3DATA }}"
+        - name: CI_PROXY
+          value: "{{ vars.CI_PROXY }}"
+    {% if vars.CI_PROXY -%}
+    - name: squid
+      image: {{ images.squid }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      command:
+        - sh
+        - -exc
+        - |
+          squid -f /etc/squid/squid.conf -N -z
+          squid -f /etc/squid/squid.conf -NYCd 1
+    {%- endif %}

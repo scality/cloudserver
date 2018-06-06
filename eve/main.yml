@@ -74,7 +74,7 @@ stages:
   external-backend-with-proxy:
     worker:
       type: kube_pod
-      path: eve/workers/proxy-pod.yaml
+      path: eve/workers/pod.yaml
       images:
         aggressor: eve/workers/build
         ci: eve/workers/squid
