@@ -48,7 +48,7 @@ spec:
           memory: 2Gi
       command:
        - sh
-       - -exc
+       - -exc
        - |
          if ! [ -f "/root/.aws/credentials" ]; then
             exit 1
