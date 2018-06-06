@@ -11,8 +11,6 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14
     && cat /tmp/*packages.list | xargs apt-get install -y \
     && wget https://nodejs.org/dist/v6.9.5/node-v6.9.5-linux-x64.tar.xz \
     && tar -C /usr/local --strip-components 1 -xvf node-v6.9.5-linux-x64.tar.xz \
-    && wget https://raw.githubusercontent.com/scality/S3/development/8.0/package.json \
-    && npm install -g \
     && pip install pip==9.0.1 \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /tmp/packages.list
