@@ -47,8 +47,13 @@ spec:
           cpu: 500m
           memory: 2Gi
       command:
-       - npm
-       - start
+       - sh
+       - -exc
+       - |
+         if ! [ -f "/root/.aws/credentials" ]; then
+            exit 1
+         fi
+         npm start
       volumeMounts:
         - name: creds
           readOnly: false
