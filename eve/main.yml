@@ -13,6 +13,7 @@ models:
       CI_REPORTS: '/tmp'
       ENABLE_LOCAL_CACHE: "1"
       REPORT_TOKEN: 'report-token-1'
+      REMOTE_MANAGEMENT_DISABLE: '1'
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -43,19 +44,6 @@ stages:
       volumes: &default_volumes
         - '/home/eve/workspace'
     steps:
-      - TriggerStages:
-          name: Launch all nodes simultaneously
-          stage_names:
-            - coverage
-            - node0
-            - node1
-            - node2
-            - node3
-          waitForFinish: True
-          haltOnFailure: True
-  coverage:
-    worker: *master-worker
-    steps:
       - Git: *clone
       - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
@@ -73,7 +61,40 @@ stages:
             npm run unit_coverage_legacy_location
           env: *global_env
           haltOnFailure: True
-
+      - TriggerStages:
+          name: Launch all nodes simultaneously
+          stage_names:
+            - external-backend-with-proxy
+            - node0
+            - node1
+            - node2
+            - node3
+          waitForFinish: True
+          haltOnFailure: True
+  external-backend-with-proxy:
+    worker:
+      type: kubernetes
+      path: eve/workers/proxy-pod.yaml
+      images:
+        aggressor: eve/workers/build
+        ci: eve/workers/squid
+        s3: "."
+      vars: &ci-vars
+        S3BACKEND: mem
+        MPU_TESTING: yes
+        S3DATA: multiple
+        CI_PROXY: "true"
+    steps:
+      - Git: *clone
+      - ShellCommand: *npm-install
+      - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommandWithSecrets:
+          command: |
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_awssdk_external_backends
+          env:
+            <<: *global_env
+            <<: *ci-vars
   node0:
     worker: *master-worker
     steps:
@@ -88,7 +109,6 @@ stages:
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '0'
-          timeout: 120
       - ShellCommandWithSecrets:
           command: ls -la && cat /tmp/*.txt
           env:
