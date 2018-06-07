@@ -71,7 +71,7 @@ stages:
 #            - node2
 #            - node3
           waitForFinish: True
-          haltOnFailure: True
+#          haltOnFailure: True
   external-backend-with-proxy:
     worker:
       type: kube_pod
