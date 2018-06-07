@@ -16,8 +16,8 @@ spec:
           cpu: 100m
           memory: 512Mi
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: "1"
+          memory: 2Gi
       volumeMounts:
         - name: creds
           readOnly: false
@@ -58,7 +58,7 @@ spec:
         - bash
         - -exc
         - |
-          sleep 7
+          sleep 10
           ls -la /root/.aws/
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
