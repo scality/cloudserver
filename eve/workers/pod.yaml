@@ -20,6 +20,7 @@ spec:
           memory: 1Gi
       volumeMounts:
         - name: creds
+          readOnly: false
           mountPath: /root/.aws
       command:
         - bash
@@ -50,11 +51,7 @@ spec:
        - sh
        - -exc
        - |
-         ls /root/.aws
-         if ! [ -f "/root/.aws/credentials" ]; then
-            exit 1
-         fi
-         npm start
+          npm start
       volumeMounts:
         - name: creds
           readOnly: false

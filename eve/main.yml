@@ -91,11 +91,31 @@ stages:
       - ShellCommandWithSecrets:
           command: |
             . ./eve/workers/build/bash_profile &> /dev/null
+            npm start > $CIRCLE_ARTIFACTS/server_external_backends_proxy_awssdk.txt &
             bash wait_for_local_port.bash 8000 40
             npm run ft_awssdk_external_backends
+            kill -9 $(lsof -t -i:8000) || exit 1
           env:
             <<: *global_env
             <<: *proxy-vars
+  mongo-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars: &mongo-vars
+        S3BACKEND: "mem"
+        MPU_TESTING: "yes"
+        S3METADATA: "mongodb"
+     steps:
+       - Git: *clone
+       -ShellCommand: *npm-install
+      - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommandWithSecrets:
+          command: |
+            . ./eve/workers/build/bash_profile &> /dev/null
   node0:
     worker: *master-worker
     steps:
