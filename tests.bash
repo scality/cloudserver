@@ -232,12 +232,12 @@ then
   ENABLE_KMS_ENCRYPTION=true S3DATA=file npm run ft_node
 
   killandsleep 8000
-
-  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt &
-  bash wait_for_local_port.bash 8000 40
-  ENABLE_KMS_ENCRYPTION=true npm run ft_management
-
-  killandsleep 8000
+#  Disabled see jira ZENKO-478
+#  S3BACKEND=file S3VAULT=mem npm start > $CIRCLE_ARTIFACTS/server_file_kms_management.txt &
+#  bash wait_for_local_port.bash 8000 40
+#  ENABLE_KMS_ENCRYPTION=true npm run ft_management
+#
+#  killandsleep 8000
 
   S3BACKEND=mem ENABLE_LOCAL_CACHE=true npm start > $CIRCLE_ARTIFACTS/server_mem_healthchecks.txt &
   bash wait_for_local_port.bash 8000 40
