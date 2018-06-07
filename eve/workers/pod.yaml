@@ -58,11 +58,15 @@ spec:
         - bash
         - -exc
         - |
-          . /root/.aws/exports || exit 1
+          sleep 7
+          ls -la /root/.aws/
+          source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
       env:
         - name: CI
           value: "true"
+        - name: S3_LOCATION_FILE
+          value: /usr/src/app/tests/locationConfig/locationConfigTests.json
         - name: S3BACKEND
           value: "{{ vars.S3BACKEND }}"
         - name: MPU_TESTING
