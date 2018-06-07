@@ -66,6 +66,8 @@ spec:
           value: "{{ vars.S3METADATA }}"
         - name: MONGODB_HOSTS
           value: "localhost:27018"
+        - name: MONGODB_RS
+          value: "rs0"
     {% if vars.S3METADATA == "mongodb" -%}
     - name: mongo
       image: scality/ci-mongo:3.4
