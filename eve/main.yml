@@ -44,34 +44,34 @@ stages:
       volumes: &default_volumes
         - '/home/eve/workspace'
     steps:
-#      - Git: *clone
-#      - ShellCommandWithSecrets: *npm-install
-#      - ShellCommandWithSecrets:
-#          name: Linting
-#          command: |
-#            npm run --silent lint -- --max-warnings 0
-#            npm run --silent lint_md
-#            flake8 $(git ls-files "*.py")
-#            yamllint $(git ls-files "*.yml")
-#      - ShellCommandWithSecrets:
-#          name: Unit Coverage
-#          command: |
-#            mkdir -p $CIRCLE_TEST_REPORTS/unit
-#            npm run unit_coverage
-#            npm run unit_coverage_legacy_location
-#          env: *global_env
-#          haltOnFailure: True
+      - Git: *clone
+      - ShellCommandWithSecrets: *npm-install
+      - ShellCommandWithSecrets:
+          name: Linting
+          command: |
+            npm run --silent lint -- --max-warnings 0
+            npm run --silent lint_md
+            flake8 $(git ls-files "*.py")
+            yamllint $(git ls-files "*.yml")
+      - ShellCommandWithSecrets:
+          name: Unit Coverage
+          command: |
+            mkdir -p $CIRCLE_TEST_REPORTS/unit
+            npm run unit_coverage
+            npm run unit_coverage_legacy_location
+          env: *global_env
+          haltOnFailure: True
       - TriggerStages:
           name: Launch all nodes simultaneously
           stage_names:
             - external-backend-with-proxy
             - mongo-ft-tests
-#            - node0
-#            - node1
-#            - node2
-#            - node3
+            - node0
+            - node1
+            - node2
+            - node3
           waitForFinish: True
-#          haltOnFailure: True
+          haltOnFailure: True
   external-backend-with-proxy:
     worker:
       type: kube_pod
@@ -96,7 +96,7 @@ stages:
             # npm start &
             bash wait_for_local_port.bash 8000 40
             npm run ft_awssdk_external_backends
-            kill -9 $(lsof -t -i:8000) || exit 1
+            # kill -9 $(lsof -t -i:8000) || exit 1
           env:
             <<: *global_env
             <<: *proxy-vars

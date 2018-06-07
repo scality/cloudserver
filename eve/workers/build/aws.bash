@@ -2,6 +2,7 @@
 set -x #echo on
 set -e #exit at the first error
 
+mkdir -p ~/.aws
 cat >>/root/.aws/exports <<EOF
 export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
@@ -23,7 +24,6 @@ export azuretest_AZURE_BLOB_ENDPOINT="$AZURE_BACKEND_ENDPOINT"
 EOF
 
 source /root/.aws/exports &> /dev/null
-mkdir -p ~/.aws
 cat >>/root/.aws/credentials <<EOF
 [default]
 aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY
