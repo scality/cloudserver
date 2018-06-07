@@ -50,6 +50,7 @@ spec:
        - sh
        - -exc
        - |
+         ls /root/.aws
          if ! [ -f "/root/.aws/credentials" ]; then
             exit 1
          fi
