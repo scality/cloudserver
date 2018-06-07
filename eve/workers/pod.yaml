@@ -51,6 +51,9 @@ spec:
         - name: creds
           readOnly: false
           mountPath: /root/.aws
+        - name: certs
+          readOnly: true
+          mountPath: /tmp
       env:
         - name: CI
           value: "true"
@@ -74,12 +77,22 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
+          cpu: 100m
+          memory: 128Mi
         limits:
           cpu: 500m
-          memory: 1Gi
+          memory: 512Mi
     {%- endif %}
+    - name: redis
+      image: redis:4-alpine
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
     {% if vars.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
@@ -87,10 +100,14 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 256Mi
+          memory: 128Mi
         limits:
-          cpu: 500m
-          memory: 1Gi
+          cpu: 250m
+          memory: 256Mi
+      volumeMounts:
+        - name: certs
+          readOnly: false
+          mountPath: /ssl
       command:
         - sh
         - -exc
@@ -99,9 +116,12 @@ spec:
           openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 \
            -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy" \
            -keyout /ssl/myca.pem  -out /ssl/myca.pem
+          cp /ssl/myca.pem /ssl/CA.pem
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
   volumes:
     - name: creds
+      emptyDir: {}
+    - name: certs
       emptyDir: {}
