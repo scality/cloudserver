@@ -65,6 +65,7 @@ stages:
           name: Launch all nodes simultaneously
           stage_names:
             - external-backend-with-proxy
+            - mongo-ft-tests
 #            - node0
 #            - node1
 #            - node2
@@ -77,12 +78,12 @@ stages:
       path: eve/workers/pod.yaml
       images:
         aggressor: eve/workers/build
-        squid: eve/workers/squid
         s3: "."
       vars: &proxy-vars
         S3BACKEND: "mem"
         MPU_TESTING: "yes"
         S3DATA: "multiple"
+        S3METADATA: ""
         CI_PROXY: "true"
     steps:
       - Git: *clone
@@ -92,7 +93,7 @@ stages:
           command: |
             set -ex
             . ./eve/workers/build/bash_profile &> /dev/null
-            npm start &
+            # npm start &
             bash wait_for_local_port.bash 8000 40
             npm run ft_awssdk_external_backends
             kill -9 $(lsof -t -i:8000) || exit 1
@@ -108,15 +109,18 @@ stages:
         s3: "."
       vars: &mongo-vars
         S3BACKEND: "mem"
+        S3DATA: ""
         MPU_TESTING: "yes"
-        S3METADATA: "mongodb"
+        S3METADATA: mongodb
+        CI_PROXY: "false"
     steps:
       - Git: *clone
       - ShellCommand: *npm-install
       - ShellCommandWithSecrets: *aws-credentials
       - ShellCommandWithSecrets:
-          command: |
-            . ./eve/workers/build/bash_profile &> /dev/null
+          command: npm run ft_test
+          env:
+            <<: *global_env
   node0:
     worker: *master-worker
     steps:

@@ -37,39 +37,50 @@ spec:
           value: "{{ vars.S3DATA }}"
         - name: CI_PROXY
           value: "{{ vars.CI_PROXY }}"
-#    - name: s3
-#      image: {{ images.s3 }}
-#      imagePullPolicy: IfNotPresent
-#      resources:
-#        requests:
-#          cpu: 200m
-#          memory: 512Mi
-#        limits:
-#          cpu: 500m
-#          memory: 2Gi
-#      command:
-#       - sh
-#       - -exc
-#       - |
-#          npm start
-#      volumeMounts:
-#        - name: creds
-#          readOnly: false
-#          mountPath: /root/.aws
-#      env:
-#        - name: CI
-#          value: "true"
-#        - name: S3BACKEND
-#          value: "{{ vars.S3BACKEND }}"
-#        - name: MPU_TESTING
-#          value: "{{ vars.MPU_TESTING }}"
-#        - name: S3DATA
-#          value: "{{ vars.S3DATA }}"
-#        - name: CI_PROXY
-#          value: "{{ vars.CI_PROXY }}"
-    {% if vars.CI_PROXY -%}
+    - name: s3
+      image: {{ images.s3 }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      volumeMounts:
+        - name: creds
+          readOnly: false
+          mountPath: /root/.aws
+      env:
+        - name: CI
+          value: "true"
+        - name: S3BACKEND
+          value: "{{ vars.S3BACKEND }}"
+        - name: MPU_TESTING
+          value: "{{ vars.MPU_TESTING }}"
+        - name: S3DATA
+          value: "{{ vars.S3DATA }}"
+        - name: CI_PROXY
+          value: "{{ vars.CI_PROXY }}"
+        - name: S3METADATA
+          value: "{{ vars.S3METADATA }}"
+        - name: MONGODB_HOSTS
+          value: "localhost:27018"
+    {% if vars.S3METADATA == "mongodb" -%}
+    - name: mongo
+      image: scality/ci-mongo:3.4
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+    {%- endif %}
+    {% if vars.CI_PROXY == "true" -%}
     - name: squid
-      image: {{ images.squid }}
+      image: scality/ci-squid
       imagePullPolicy: IfNotPresent
       resources:
         requests:
