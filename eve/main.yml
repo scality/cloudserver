@@ -109,9 +109,9 @@ stages:
         S3BACKEND: "mem"
         MPU_TESTING: "yes"
         S3METADATA: "mongodb"
-     steps:
-       - Git: *clone
-       -ShellCommand: *npm-install
+    steps:
+      - Git: *clone
+      - ShellCommand: *npm-install
       - ShellCommandWithSecrets: *aws-credentials
       - ShellCommandWithSecrets:
           command: |
