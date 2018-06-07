@@ -3,7 +3,7 @@ set -x #echo on
 set -e #exit at the first error
 set -o pipefail
 source /home/eve/.bashrc &> /dev/null
-source ./eve/workers/build/bash_profile &> /dev/null
+source /root/.aws/exports &> /dev/null
 
 MYPWD=$(pwd)
 

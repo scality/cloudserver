@@ -54,6 +54,12 @@ spec:
         - name: certs
           readOnly: true
           mountPath: /tmp
+      command:
+        - sh
+        - -exc
+        - |
+          . /root/.aws/exports
+          /usr/src/app/docker-entrypoint.sh npm start
       env:
         - name: CI
           value: "true"
