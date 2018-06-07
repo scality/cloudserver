@@ -123,6 +123,7 @@ stages:
             npm run ft_test
           env:
             <<: *global_env
+            <<: *mongo-vars
   node0:
     worker: *master-worker
     steps:
