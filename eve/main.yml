@@ -87,12 +87,12 @@ stages:
         CI_PROXY: "true"
     steps:
       - Git: *clone
-      - ShellCommand: *npm-install
       - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommand: *npm-install
       - ShellCommandWithSecrets:
           command: |
             set -ex
-            . ./eve/workers/build/bash_profile &> /dev/null
+            . /root/.aws/exports &> /dev/null
             # npm start &
             bash wait_for_local_port.bash 8000 40
             npm run ft_awssdk_external_backends
@@ -115,10 +115,12 @@ stages:
         CI_PROXY: "false"
     steps:
       - Git: *clone
-      - ShellCommand: *npm-install
       - ShellCommandWithSecrets: *aws-credentials
+      - ShellCommand: *npm-install
       - ShellCommandWithSecrets:
-          command: npm run ft_test
+          command: |
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_test
           env:
             <<: *global_env
   node0:

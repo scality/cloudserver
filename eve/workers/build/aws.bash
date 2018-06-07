@@ -22,7 +22,7 @@ export azurenonexistcontainer_AZURE_STORAGE_ENDPOINT="$AZURE_BACKEND_ENDPOINT"
 export azuretest_AZURE_BLOB_ENDPOINT="$AZURE_BACKEND_ENDPOINT"
 EOF
 
-source eve/workers/build/bash_profile &> /dev/null
+source /root/.aws/exports &> /dev/null
 mkdir -p ~/.aws
 cat >>/root/.aws/credentials <<EOF
 [default]
