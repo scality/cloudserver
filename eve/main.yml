@@ -13,7 +13,6 @@ models:
       CI_REPORTS: '/tmp'
       ENABLE_LOCAL_CACHE: "1"
       REPORT_TOKEN: 'report-token-1'
-      REMOTE_MANAGEMENT_DISABLE: '1'
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -44,6 +43,10 @@ stages:
       volumes: &default_volumes
         - '/home/eve/workspace'
     steps:
+      - SetProperty:
+          property: artifacts_name
+          value: "scality-s3-%(prop:buildnumber)s"
+          haltOnFailure: True
       - Git: *clone
       - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
@@ -135,15 +138,19 @@ stages:
       - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
           command: bash -l tests.bash
+          timeout: 300
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '0'
-      - ShellCommandWithSecrets:
-          command: ls -la && cat /tmp/*.txt
-          env:
-            <<: *global_env
-          haltOnFailure: True
-          timeout: 300
+      - ShellCommand:
+          name: prepare artifacts
+          command: |
+            mkdir -p artifacts/node0
+            cp /tmp/*.txt artifacts/node0
+      - Upload: &upload_artifacts
+          source: artifacts
+          urls:
+            - "*"
   node1:
     worker: *master-worker
     steps:
@@ -155,15 +162,16 @@ stages:
       - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
           command: bash -l tests.bash
+          timeout: 300
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '1'
-      - ShellCommandWithSecrets:
-          command: ls -la && cat /tmp/*.txt
-          env:
-            <<: *global_env
-          haltOnFailure: True
-          timeout: 300
+      - ShellCommand:
+          name: prepare artifacts
+          command: |
+            mkdir -p artifacts/node1
+            cp /tmp/*.txt artifacts/node1
+      - Upload: *upload_artifacts
   node2:
     worker: *master-worker
     steps:
@@ -178,12 +186,12 @@ stages:
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '2'
-      - ShellCommandWithSecrets:
-          command: ls -la && cat /tmp/*.txt
-          env:
-            <<: *global_env
-          haltOnFailure: True
-          timeout: 300
+      - ShellCommand:
+          name: prepare artifacts
+          command: |
+            mkdir -p artifacts/node2
+            cp /tmp/*.txt artifacts/node2
+      - Upload: *upload_artifacts
   node3:
     worker: *master-worker
     steps:
@@ -195,12 +203,13 @@ stages:
       - ShellCommandWithSecrets: *npm-install
       - ShellCommandWithSecrets:
           command: bash -l tests.bash
+          timeout: 300
           env:
             <<: *global_env
             CIRCLE_NODE_INDEX: '3'
-      - ShellCommandWithSecrets:
-          command: ls -la && cat /tmp/*.txt
-          env:
-            <<: *global_env
-          haltOnFailure: True
-          timeout: 300
+      - ShellCommand:
+          name: prepare artifacts
+          command: |
+            mkdir -p artifacts/node3
+            cp /tmp/*.txt artifacts/node3
+      - Upload: *upload_artifacts

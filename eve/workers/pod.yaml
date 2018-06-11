@@ -29,6 +29,8 @@ spec:
           buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS
           buildbot-worker start --nodaemon
       env:
+        - name: CI
+          value: "true"
         - name: S3BACKEND
           value: "{{ vars.S3BACKEND }}"
         - name: MPU_TESTING
@@ -37,6 +39,8 @@ spec:
           value: "{{ vars.S3DATA }}"
         - name: CI_PROXY
           value: "{{ vars.CI_PROXY }}"
+        - name: REMOTE_MANAGEMENT_DISABLE
+          value: "1"
     - name: s3
       image: {{ images.s3 }}
       imagePullPolicy: IfNotPresent
@@ -56,10 +60,9 @@ spec:
           mountPath: /tmp
       command:
         - bash
-        - -exc
+        - -ec
         - |
           sleep 10
-          ls -la /root/.aws/
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
       env:
@@ -83,6 +86,8 @@ spec:
           value: "localhost:27018"
         - name: MONGODB_RS
           value: "rs0"
+        - name: REMOTE_MANAGEMENT_DISABLE
+          value: "1"
     {% if vars.S3METADATA == "mongodb" -%}
     - name: mongo
       image: scality/ci-mongo:3.4
