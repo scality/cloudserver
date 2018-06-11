@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 wait_for_local_port() {
     local port=$1

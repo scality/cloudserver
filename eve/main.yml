@@ -67,12 +67,12 @@ stages:
       - TriggerStages:
           name: Launch all nodes simultaneously
           stage_names:
-            - external-backend-with-proxy
-            - mongo-ft-tests
+           # - external-backend-with-proxy
+           # - mongo-ft-tests
             - node0
-            - node1
-            - node2
-            - node3
+           # - node1
+           # - node2
+           # - node3
           waitForFinish: True
           haltOnFailure: True
   external-backend-with-proxy:
@@ -141,7 +141,7 @@ stages:
               source /home/eve/.bashrc &> /dev/null
               source /root/.aws/exports &> /dev/null
               npm run start_dmd &
-              bash wait_for_local_port.bash 9990 40
+              . wait_for_local_port.bash 9990 40
               npm run multiple_backend_test
               kill -9 $(lsof -t -i:9990) || true
           timeout: 300
@@ -157,7 +157,7 @@ stages:
               source /root/.aws/exports &> /dev/null
               S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_java.txt &
               S3PID=$!
-              bash wait_for_local_port.bash 8000 40
+              . wait_for_local_port.bash 8000 40
               cd ./tests/functional/jaws && mvn test
               kill -9 $S3PID && exit 0
           timeout: 300
@@ -170,7 +170,7 @@ stages:
               source /root/.aws/exports &> /dev/null
               S3BACKEND=mem S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_fog.txt &
               S3PID=$!
-              bash wait_for_local_port.bash 8000 40
+              . wait_for_local_port.bash 8000 40
               cd tests/functional/fog && rspec tests.rb
               kill -9 $S3PID && exit 0
           timeout: 300
@@ -183,7 +183,7 @@ stages:
               source /root/.aws/exports &> /dev/null
               S3BACKEND=mem MPU_TESTING=yes S3DATA=multiple npm start > $CIRCLE_ARTIFACTS/server_multiple_awssdk.txt &
               S3PID=$!
-              bash wait_for_local_port.bash 8000 40
+              . wait_for_local_port.bash 8000 40
               S3DATA=multiple npm run ft_awssdk
               kill -9 $S3PID && exit 0
           timeout: 300
