@@ -6,7 +6,7 @@ const httpPort = 8888;
 
 // test values
 const host = 'localhost:8888';
-const Bucket = 'testRequestBucket';
+const Bucket = 'testrequestbucket';
 const Key = 'testRequestKey';
 const MultipartUpload = { Parts: [{ PartName: 'part' }] };
 const CopySource = 'copyBucket/copyKey';
