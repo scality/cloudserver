@@ -4,7 +4,7 @@ MAINTAINER Giorgio Regni <gr@scality.com>
 WORKDIR /usr/src/app
 
 # Keep the .git directory in order to properly report version
-COPY . /usr/src/app
+COPY ./package.json .
 
 RUN apt-get update \
     && apt-get install -y jq python git build-essential --no-install-recommends \
@@ -14,6 +14,8 @@ RUN apt-get update \
     && npm cache clear \
     && rm -rf ~/.node-gyp \
     && rm -rf /tmp/npm-*
+
+COPY ./ ./
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
