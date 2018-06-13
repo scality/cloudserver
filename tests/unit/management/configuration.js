@@ -250,6 +250,7 @@ describe('patchConfiguration', () => {
                                     path: '/proxy/path',
                                 },
                             },
+                            supportsVersioning: true,
                         },
                         legacyAwsBehavior: false,
                         isTransient: false,
