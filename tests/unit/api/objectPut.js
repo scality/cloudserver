@@ -101,7 +101,6 @@ describe('objectPut API', () => {
         }, postBody);
     });
 
-
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -119,6 +118,17 @@ describe('objectPut API', () => {
                         done();
                     });
             });
+    });
+
+    it('should return error if the upload size exceeds the ' +
+    ' maximum allowed upload size for a single PUT request', done => {
+        testPutObjectRequest.parsedContentLength = 10737418240;
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.deepStrictEqual(err, errors.EntityTooLarge);
+                done();
+            });
+        });
     });
 
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
