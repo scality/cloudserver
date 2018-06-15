@@ -99,4 +99,18 @@ stages:
       - Git: *clone
       - ShellCommand:
           name: Nightly Build
-          command: docker build -t zenko/cloudserver:nightly .
+          command: >
+            docker build
+            -t %(secret:private_registry_url)s/zenko/cloudserver:nightly .
+      - ShellCommand:
+          name: Private Registry Login
+          command: >
+            docker login
+            -u '%(secret:private_registry_username)s'
+            -p '%(secret:private_registry_password)s'
+            '%(secret:private_registry_url)s'
+      - ShellCommand:
+          name: Push Nightly
+          command: >
+            docker push
+            %(secret:private_registry_url)s/zenko/cloudserver:nightly
