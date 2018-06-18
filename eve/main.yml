@@ -33,6 +33,8 @@ models:
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
+  - env: &mem-vars
+      S3BACKEND: "mem"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -46,6 +48,10 @@ models:
   - ShellCommandWithSecrets: &npm-install
       name: install modules
       command: npm install
+      haltOnFailure: True
+  - ShellCommand: &wait_for_local_port
+      name: Wait for S3 to listen
+      command: bash wait_for_local_port.bash 8000 40
       haltOnFailure: True
 stages:
   pre-merge:
@@ -63,6 +69,7 @@ stages:
             - linting-coverage
             - multiple-backend-test
             - mongo-ft-tests
+            - mem-tests
           waitForFinish: True
           haltOnFailure: True
 
@@ -111,12 +118,12 @@ stages:
       - Git: *clone
       - ShellCommandWithSecrets: *credentials
       - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
       - ShellCommandWithSecrets:
           command: |
             bash -c "
             source /root/.aws/exports &> /dev/null
             set -ex
-            bash wait_for_local_port.bash 8000 40
             npm run multiple_backend_test"
           env:
             <<: *multiple-backend-vars
@@ -150,14 +157,38 @@ stages:
       - Git: *clone
       - ShellCommandWithSecrets: *credentials
       - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
       - ShellCommandWithSecrets:
           command: |
             . /root/.aws/exports &> /dev/null
-            bash wait_for_local_port.bash 8000 40
             npm run ft_test
           env:
             <<: *mongo-vars
             <<: *global-env
+
+  mem-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
+      - ShellCommand:
+          command: mvn test
+          workdir: build/tests/functional/jaws
+          env:
+            <<: *mem-vars
+      - ShellCommand:
+          command: rspec tests.rb
+          workdir: build/tests/functional/fog
+          env:
+            <<: *mem-vars
+
   post-merge:
     worker:
       type: local
