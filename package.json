@@ -73,6 +73,7 @@
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha test/multipleBackend",
     "ft_management": "cd tests/functional/report && npm test",
     "ft_node": "cd tests/functional/raw-node && npm test",
+    "ft_node_routes": "cd tests/functional/raw-node && npm run test-routes",
     "ft_gcp": "cd tests/functional/raw-node && npm run test-gcp",
     "ft_healthchecks": "cd tests/functional/healthchecks && npm test",
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha -t 40000 *.js",
