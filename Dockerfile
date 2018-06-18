@@ -14,8 +14,11 @@ RUN npm install --production \
     && npm cache clear \
     && rm -rf ~/.node-gyp \
     && rm -rf /tmp/npm-*
-COPY . ./
+# For CI builds
+COPY ./eve/workers/build ./eve/workers/build
 RUN bash -l ./eve/workers/build/build.sh
+
+COPY . ./
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
