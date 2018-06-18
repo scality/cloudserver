@@ -23,6 +23,10 @@ models:
       name: install modules
       command: npm install
       haltOnFailure: True
+  - ShellCommand: &wait_for_local_port
+      name: Wait for S3 to listen
+      command: bash wait_for_local_port.bash 8000 40
+      haltOnFailure: True 
 stages:
   pre-merge:
     worker:
@@ -36,8 +40,9 @@ stages:
       - TriggerStages:
           name: Launch all workers
           stage_names:
-            - linting-coverage
-            - mongo-ft-tests
+            # - linting-coverage
+            # - mongo-ft-tests
+            - mem-ft-tests
           waitForFinish: True
           haltOnFailure: True
 
@@ -91,6 +96,38 @@ stages:
             npm run ft_test
           env:
             <<: *mongo-vars
+
+  mem-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars: &mem-vars
+        S3BACKEND: "mem"
+        S3DATA: ""
+        MPU_TESTING: "" 
+        S3METADATA: ""
+        CI_PROXY: "false"
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
+      - ShellCommand:
+          command: |
+            set -ex
+            cd ./tests/functional/jaws mvn test
+          env:
+            <<: *mem-vars
+      - ShellCommand:
+          command: |
+            set -ex
+            rspec tests.rb
+          env:
+            <<: *mem-vars
+          workdir: ./build/tests/functional/fog
 
   post-merge:
     worker:
