@@ -71,7 +71,7 @@ spec:
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
       env:
-        {% if vars.env.S3DATA == "multiple" -%}
+        {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" -%}
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
         {%- endif %}
@@ -97,7 +97,7 @@ spec:
         - name: {{ key }}
           value: "{{ value }}"
         {% endfor %}
-    {% if vars.env.S3METADATA == "mongodb" -%}
+    {% if vars.env.S3METADATA is defined and vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
       image: scality/ci-mongo:3.4
       imagePullPolicy: IfNotPresent
@@ -119,7 +119,7 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
-    {% if vars.env.CI_PROXY == "true" -%}
+    {% if vars.env.CI_PROXY is defined and vars.env.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
       imagePullPolicy: IfNotPresent
