@@ -1,0 +1,153 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "proxy-ci-test-pod"
+spec:
+  activeDeadlineSeconds: 3600
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 10
+  hostAliases:
+  - ip: "127.0.0.1"
+    hostnames:
+    - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com"
+  containers:
+    - name: aggressor
+      image: {{ images.aggressor }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+      volumeMounts:
+        - name: creds
+          readOnly: false
+          mountPath: /root/.aws
+      command:
+        - bash
+        - -lc
+        - |
+          buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS
+          buildbot-worker start --nodaemon
+      env:
+        - name: CI
+          value: "true"
+        - name: ENABLE_LOCAL_CACHE
+          value: "true"
+        - name: REPORT_TOKEN
+          value: "report-token-1"
+        - name: REMOTE_MANAGEMENT_DISABLE
+          value: "1"
+        {% for key, value in vars.env.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
+    - name: s3
+      image: {{ images.s3 }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      volumeMounts:
+        - name: creds
+          readOnly: false
+          mountPath: /root/.aws
+        - name: certs
+          readOnly: true
+          mountPath: /tmp
+      command:
+        - bash
+        - -ec
+        - |
+          # wait for exports to be created
+          sleep 10
+          source /root/.aws/exports || exit 1
+          /usr/src/app/docker-entrypoint.sh npm start
+      env:
+        {% if vars.env.S3DATA == "multiple" -%}
+        - name: S3_LOCATION_FILE
+          value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
+        {%- endif %}
+        - name: CI
+          value: "true"
+        - name: ENABLE_LOCAL_CACHE
+          value: "true"
+        - name: MONGODB_HOSTS
+          value: "localhost:27018"
+        - name: MONGODB_RS
+          value: "rs0"
+        - name: REDIS_HOST
+          value: "localhost"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REPORT_TOKEN
+          value: "report-token-1"
+        - name: REMOTE_MANAGEMENT_DISABLE
+          value: "1"
+        - name: HEALTHCHECKS_ALLOWFROM
+          value: "0.0.0.0/0"
+        {% for key, value in vars.env.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
+    {% if vars.env.S3METADATA == "mongodb" -%}
+    - name: mongo
+      image: scality/ci-mongo:3.4
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    {%- endif %}
+    - name: redis
+      image: redis:alpine
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    {% if vars.env.CI_PROXY == "true" -%}
+    - name: squid
+      image: scality/ci-squid
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+      volumeMounts:
+        - name: certs
+          readOnly: false
+          mountPath: /ssl
+      command:
+        - sh
+        - -exc
+        - |
+          mkdir -p /ssl
+          openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 \
+           -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy" \
+           -keyout /ssl/myca.pem  -out /ssl/myca.pem
+          cp /ssl/myca.pem /ssl/CA.pem
+          squid -f /etc/squid/squid.conf -N -z
+          squid -f /etc/squid/squid.conf -NYCd 1
+    {%- endif %}
+  volumes:
+    - name: creds
+      emptyDir: {}
+    - name: certs
+      emptyDir: {}

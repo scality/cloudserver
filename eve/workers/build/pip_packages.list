@@ -1,0 +1,3 @@
+flake8
+s3cmd==1.6.1
+yamllint
