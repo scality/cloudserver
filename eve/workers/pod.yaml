@@ -37,18 +37,14 @@ spec:
           value: "true"
         - name: ENABLE_LOCAL_CACHE
           value: "true"
-        - name: S3BACKEND
-          value: "{{ vars.S3BACKEND }}"
-        - name: MPU_TESTING
-          value: "{{ vars.MPU_TESTING }}"
-        - name: S3DATA
-          value: "{{ vars.S3DATA }}"
-        - name: CI_PROXY
-          value: "{{ vars.CI_PROXY }}"
         - name: REPORT_TOKEN
           value: "report-token-1"
         - name: REMOTE_MANAGEMENT_DISABLE
           value: "1"
+        {% for key, value in vars.env.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
     - name: s3
       image: {{ images.s3 }}
       imagePullPolicy: IfNotPresent
@@ -75,28 +71,18 @@ spec:
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
       env:
-        {% if vars.S3DATA == "multiple" -%}
+        {% if vars.env.S3DATA == "multiple" -%}
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
         {%- endif %}
         - name: CI
           value: "true"
-        - name: CI_PROXY
-          value: "{{ vars.CI_PROXY }}"
         - name: ENABLE_LOCAL_CACHE
           value: "true"
-        - name: S3BACKEND
-          value: "{{ vars.S3BACKEND }}"
-        - name: S3DATA
-          value: "{{ vars.S3DATA }}"
-        - name: S3METADATA
-          value: "{{ vars.S3METADATA }}"
         - name: MONGODB_HOSTS
           value: "localhost:27018"
         - name: MONGODB_RS
           value: "rs0"
-        - name: MPU_TESTING
-          value: "{{ vars.MPU_TESTING }}"
         - name: REDIS_HOST
           value: "localhost"
         - name: REDIS_PORT
@@ -107,7 +93,11 @@ spec:
           value: "1"
         - name: HEALTHCHECKS_ALLOWFROM
           value: "0.0.0.0/0"
-    {% if vars.S3METADATA == "mongodb" -%}
+        {% for key, value in vars.env.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
+    {% if vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
       image: scality/ci-mongo:3.4
       imagePullPolicy: IfNotPresent
@@ -129,7 +119,7 @@ spec:
         limits:
           cpu: 200m
           memory: 512Mi
-    {% if vars.CI_PROXY == "true" -%}
+    {% if vars.env.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
       imagePullPolicy: IfNotPresent
