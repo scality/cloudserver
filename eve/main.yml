@@ -8,6 +8,31 @@ branches:
     stage: post-merge
 
 models:
+  - env: &global-env
+      b2backend_B2_ACCOUNT_ID: '%(secret:b2backend_b2_account_id)s'
+      b2backend_B2_STORAGE_ACCESS_KEY: >
+        '%(secret:b2backend_b2_storage_access_key)s'
+      b2backend_B2_STORAGE_ENDPOINT: '%(secret:b2backend_b2_storage_endpoint)s'
+      gcpbackend2_GCP_SERVICE_EMAIL: '%(secret:gcp2_service_email)s'
+      gcpbackend2_GCP_SERVICE_KEY: '%(secret:gcp2_service_key)s'
+      gcpbackend2_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+      gcpbackend_GCP_SERVICE_EMAIL: '%(secret:gcp_service_email)s'
+      gcpbackend_GCP_SERVICE_KEY: '%(secret:gcp_service_key)s'
+      gcpbackendmismatch_GCP_SERVICE_EMAIL: >
+        '%(secret:gcpbackendmismatch_gcp_service_email)s'
+      gcpbackendmismatch_GCP_SERVICE_KEY: >
+        '%(secret:gcpbackendmismatch_gcp_service_key)s'
+      gcpbackend_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+      gcpbackendmismatch_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+      gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+      gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  - env: &mongo-vars
+      S3BACKEND: "mem"
+      S3DATA: ""
+      MPU_TESTING: "yes"
+      S3METADATA: mongodb
+      CI_PROXY: "false"
+
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -74,12 +99,10 @@ stages:
       images:
         aggressor: eve/workers/build
         s3: "."
-      vars: &mongo-vars
-        S3BACKEND: "mem"
-        S3DATA: ""
-        MPU_TESTING: "yes"
-        S3METADATA: mongodb
-        CI_PROXY: "false"
+      vars:
+        env:
+          <<: *mongo-vars
+          <<: *global-env
     steps:
       - Git: *clone
       - ShellCommandWithSecrets: *credentials
@@ -91,7 +114,7 @@ stages:
             npm run ft_test
           env:
             <<: *mongo-vars
-
+            <<: *global-env
   post-merge:
     worker:
       type: local
