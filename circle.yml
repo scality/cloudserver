@@ -41,7 +41,6 @@ dependencies:
     - gem install mime-types -v 3.1
     - gem install rspec -v 3.5
     - gem install json
-    # - gem install digest
     # java sdk dependencies
     - sudo apt-get install -y -q default-jdk
 
