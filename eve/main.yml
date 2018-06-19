@@ -28,21 +28,17 @@ models:
       gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
   - env: &mongo-vars
       S3BACKEND: "mem"
-      S3DATA: ""
       MPU_TESTING: "yes"
       S3METADATA: mongodb
-      CI_PROXY: "false"
-  - env: &multiple-backend
+  - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
-      CI_PROXY: "false"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
       shallow: True
       retryFetch: True
       haltOnFailure: True
-      # Machine Setup
   - ShellCommandWthSecrets: &credentials
       name: Setup Credentials
       command: bash eve/workers/build/credentials.bash
@@ -107,7 +103,7 @@ stages:
         s3: "."
       vars:
         env:
-          <<: *multiple-backend
+          <<: *multiple-backend-vars
           <<: *global-env
     steps:
       - Git: *clone
