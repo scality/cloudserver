@@ -138,6 +138,21 @@ describe('patchConfiguration', () => {
                         proxyPath: '/proxy/path',
                     },
                 },
+                'transienttest': {
+                    name: 'transienttest',
+                    locationType: 'location-file-v1',
+                    isTransient: true,
+                },
+                'sizelimitedtest': {
+                    name: 'sizelimitedtest',
+                    locationType: 'location-file-v1',
+                    sizeLimitGB: 1024,
+                },
+                'sizezerotest': {
+                    name: 'sizezerotest',
+                    locationType: 'location-file-v1',
+                    sizeLimitGB: 0,
+                },
             },
             browserAccess: {
                 enabled: true,
@@ -163,8 +178,18 @@ describe('patchConfiguration', () => {
                     }],
                 },
                 locationConstraints: {
-                    'legacy': { type: 'mem', legacyAwsBehavior: false },
-                    'us-east-1': { type: 'file', legacyAwsBehavior: true },
+                    'legacy': {
+                        type: 'mem',
+                        legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
+                    },
+                    'us-east-1': {
+                        type: 'file',
+                        legacyAwsBehavior: true,
+                        isTransient: false,
+                        sizeLimitGB: null,
+                    },
                     'azurebackendtest': {
                         details: {
                             azureContainerName: 'azurebucketname',
@@ -174,6 +199,8 @@ describe('patchConfiguration', () => {
                             bucketMatch: 'azurebucketmatch',
                         },
                         legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
                         type: 'azure',
                     },
                     'awsbackendtest': {
@@ -191,6 +218,8 @@ describe('patchConfiguration', () => {
                             supportsVersioning: true,
                         },
                         legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
                         type: 'aws_s3',
                     },
                     'gcpbackendtest': {
@@ -205,6 +234,8 @@ describe('patchConfiguration', () => {
                             mpuBucketName: undefined,
                         },
                         legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
                         type: 'gcp',
                     },
                     'sproxydbackendtest': {
@@ -221,7 +252,27 @@ describe('patchConfiguration', () => {
                             },
                         },
                         legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
                         type: 'scality',
+                    },
+                    'transienttest': {
+                        type: 'file',
+                        legacyAwsBehavior: false,
+                        isTransient: true,
+                        sizeLimitGB: null,
+                    },
+                    'sizelimitedtest': {
+                        type: 'file',
+                        legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: 1024,
+                    },
+                    'sizezerotest': {
+                        type: 'file',
+                        legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
                     },
                 },
             };
