@@ -102,6 +102,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
+        aggressorMemLimit: "1Gi"
+        s3MemLimit: "2Gi"
         env:
           <<: *multiple-backend-vars
           <<: *global-env
@@ -139,6 +141,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1Gi"
         env:
           <<: *mongo-vars
           <<: *global-env

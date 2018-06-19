@@ -18,10 +18,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 512Mi
+          memory: 1Gi
         limits:
           cpu: "1"
-          memory: 2Gi
+          memory: {{ vars.aggressorMemLimit }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -51,10 +51,10 @@ spec:
       resources:
         requests:
           cpu: 200m
-          memory: 512Mi
+          memory: 1Gi
         limits:
           cpu: 500m
-          memory: 1Gi
+          memory: {{ vars.s3MemLimit }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -104,10 +104,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 384Mi
         limits:
           cpu: 500m
-          memory: 512Mi
+          memory: 384Mi
     {%- endif %}
     - name: redis
       image: redis:alpine
@@ -118,7 +118,7 @@ spec:
           memory: 128Mi
         limits:
           cpu: 200m
-          memory: 512Mi
+          memory: 128Mi
     {% if vars.env.CI_PROXY is defined and vars.env.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
@@ -129,7 +129,7 @@ spec:
           memory: 128Mi
         limits:
           cpu: 250m
-          memory: 256Mi
+          memory: 128Mi
       volumeMounts:
         - name: certs
           readOnly: false
