@@ -30,6 +30,10 @@ models:
       S3BACKEND: "mem"
       MPU_TESTING: "yes"
       S3METADATA: mongodb
+  - env: &mem-multiple-mpu-vars
+      S3BACKEND: "mem"
+      S3DATA: "multiple"
+      MPU_TESTING: "yes"
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
@@ -44,13 +48,16 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: True
   - ShellCommandWithSecrets: &npm-install
-      name: install modules
+      name: Install modules
       command: npm install
       haltOnFailure: True
   - ShellCommand: &s3-log
       name: s3 logs
       command: cat /artifacts/s3.log || exit 0
-
+  - ShellCommandWithSecrets: &wait_for_local_port
+      name: Wait for S3 to listen
+      command: bash wait_for_local_port.bash 8000 40
+      haltOnFailure: True
 stages:
   pre-merge:
     worker:
@@ -67,6 +74,7 @@ stages:
             - linting-coverage
             - multiple-backend-test
             - mongo-ft-tests
+            - mem-multiple-mpu-test
           waitForFinish: True
           haltOnFailure: True
 
@@ -108,7 +116,7 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "1Gi"
+        aggressorMemLimit: "1536Mi"
         s3MemLimit: "2Gi"
         env:
           <<: *multiple-backend-vars
@@ -117,12 +125,12 @@ stages:
       - Git: *clone
       - ShellCommandWithSecrets: *credentials
       - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
       - ShellCommandWithSecrets:
           command: |
             bash -c "
             source /root/.aws/exports &> /dev/null
             set -ex
-            bash wait_for_local_port.bash 8000 40
             npm run multiple_backend_test"
           env:
             <<: *multiple-backend-vars
@@ -157,16 +165,43 @@ stages:
       - Git: *clone
       - ShellCommandWithSecrets: *credentials
       - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
       - ShellCommandWithSecrets:
           command: |
-            . /root/.aws/exports &> /dev/null
-            bash wait_for_local_port.bash 8000 40
             npm run ft_test
           env:
             <<: *mongo-vars
             <<: *global-env
       - ShellCommand: *s3-log
 
+  mem-multiple-mpu-test:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1Gi"
+        env:
+          <<: *global-env
+          <<: *mem-multiple-mpu-vars
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand: *wait_for_local_port
+      - ShellCommandWithSecrets:
+          command: |
+            bash -c "
+            set -ex
+            source /root/.aws/exports &> /dev/null
+            npm run ft_awssdk"
+          env:
+            <<: *global-env
+            <<: *mem-multiple-mpu-vars
+      - ShellCommand: *s3-log
   post-merge:
     worker:
       type: local
