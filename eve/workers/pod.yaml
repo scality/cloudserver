@@ -18,10 +18,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 512Mi
+          memory: 1Gi
         limits:
           cpu: "1"
-          memory: 2Gi
+          memory: {{ vars.aggressorMemLimit }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -51,10 +51,10 @@ spec:
       resources:
         requests:
           cpu: 200m
-          memory: 512Mi
+          memory: 1Gi
         limits:
           cpu: 500m
-          memory: 1Gi
+          memory: {{ vars.s3MemLimit }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -71,7 +71,7 @@ spec:
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start
       env:
-        {% if vars.env.S3DATA == "multiple" -%}
+        {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" -%}
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
         {%- endif %}
@@ -97,17 +97,17 @@ spec:
         - name: {{ key }}
           value: "{{ value }}"
         {% endfor %}
-    {% if vars.env.S3METADATA == "mongodb" -%}
+    {% if vars.env.S3METADATA is defined and vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
       image: scality/ci-mongo:3.4
       imagePullPolicy: IfNotPresent
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 384Mi
         limits:
           cpu: 500m
-          memory: 512Mi
+          memory: 384Mi
     {%- endif %}
     - name: redis
       image: redis:alpine
@@ -118,8 +118,8 @@ spec:
           memory: 128Mi
         limits:
           cpu: 200m
-          memory: 512Mi
-    {% if vars.env.CI_PROXY == "true" -%}
+          memory: 128Mi
+    {% if vars.env.CI_PROXY is defined and vars.env.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
       imagePullPolicy: IfNotPresent
@@ -129,7 +129,7 @@ spec:
           memory: 128Mi
         limits:
           cpu: 250m
-          memory: 256Mi
+          memory: 128Mi
       volumeMounts:
         - name: certs
           readOnly: false

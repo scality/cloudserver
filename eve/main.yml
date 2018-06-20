@@ -28,18 +28,17 @@ models:
       gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
   - env: &mongo-vars
       S3BACKEND: "mem"
-      S3DATA: ""
       MPU_TESTING: "yes"
       S3METADATA: mongodb
-      CI_PROXY: "false"
-
+  - env: &multiple-backend-vars
+      S3BACKEND: "mem"
+      S3DATA: "multiple"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
       shallow: True
       retryFetch: True
       haltOnFailure: True
-      # Machine Setup
   - ShellCommandWthSecrets: &credentials
       name: Setup Credentials
       command: bash eve/workers/build/credentials.bash
@@ -62,6 +61,7 @@ stages:
           name: Launch all workers
           stage_names:
             - linting-coverage
+            - multiple-backend-test
             - mongo-ft-tests
           waitForFinish: True
           haltOnFailure: True
@@ -89,10 +89,12 @@ stages:
             npm run unit_coverage
             npm run unit_coverage_legacy_location
           haltOnFailure: True
-          env:
+          env: &shared-vars
             CIRCLE_TEST_REPORTS: /tmp
+            CIRCLE_ARTIFACTS: /tmp
+            CI_REPORTS: /tmp
 
-  mongo-ft-tests:
+  multiple-backend-test:
     worker:
       type: kube_pod
       path: eve/workers/pod.yaml
@@ -100,6 +102,47 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
+        aggressorMemLimit: "1Gi"
+        s3MemLimit: "2Gi"
+        env:
+          <<: *multiple-backend-vars
+          <<: *global-env
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommandWithSecrets:
+          command: |
+            bash -c "
+            source /root/.aws/exports &> /dev/null
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            npm run multiple_backend_test"
+          env:
+            <<: *multiple-backend-vars
+            <<: *global-env
+            S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+      - ShellCommand:
+          command: mvn test
+          workdir: build/tests/functional/jaws
+          env:
+            <<: *multiple-backend-vars
+      - ShellCommand:
+          command: rspec tests.rb
+          workdir: build/tests/functional/fog
+          env:
+            <<: *multiple-backend-vars
+
+  mongo-ft-tests:
+    worker: &s3-pod
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1Gi"
         env:
           <<: *mongo-vars
           <<: *global-env
