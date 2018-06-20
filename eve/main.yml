@@ -33,6 +33,10 @@ models:
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
+  - env: &file-mem-mpu
+      S3BACKEND: "file"
+      S3VAULT: "mem"
+      MPU_TESTING: "yes"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -65,6 +69,7 @@ stages:
           name: Launch all workers
           stage_names:
             - linting-coverage
+            - file-ft-tests
             - multiple-backend-test
             - mongo-ft-tests
           waitForFinish: True
@@ -160,10 +165,38 @@ stages:
       - ShellCommandWithSecrets:
           command: |
             . /root/.aws/exports &> /dev/null
+            set -ex
             bash wait_for_local_port.bash 8000 40
             npm run ft_test
           env:
             <<: *mongo-vars
+            <<: *global-env
+      - ShellCommand: *s3-log
+
+  file-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1536Mi"
+        env:
+          <<: *file-mem-mpu
+          <<: *global-env
+    steps:
+      - Git: *clone
+      - ShellCommandWithSecrets: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommandWithSecrets:
+          command: |
+            . /root/.aws/exports &> /dev/null
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_test
+          env:
+            <<: *file-mem-mpu
             <<: *global-env
       - ShellCommand: *s3-log
 
