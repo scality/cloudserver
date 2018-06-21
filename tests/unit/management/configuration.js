@@ -90,11 +90,13 @@ describe('patchConfiguration', () => {
                 'legacy': {
                     name: 'legacy',
                     locationType: 'location-mem-v1',
+                    details: {},
                 },
                 'us-east-1': {
                     name: 'us-east-1',
                     locationType: 'location-file-v1',
                     legacyAwsBehavior: true,
+                    details: {},
                 },
                 'azurebackendtest': {
                     name: 'azurebackendtest',
@@ -142,16 +144,19 @@ describe('patchConfiguration', () => {
                     name: 'transienttest',
                     locationType: 'location-file-v1',
                     isTransient: true,
+                    details: {},
                 },
                 'sizelimitedtest': {
                     name: 'sizelimitedtest',
                     locationType: 'location-file-v1',
                     sizeLimitGB: 1024,
+                    details: {},
                 },
                 'sizezerotest': {
                     name: 'sizezerotest',
                     locationType: 'location-file-v1',
                     sizeLimitGB: 0,
+                    details: {},
                 },
             },
             browserAccess: {
@@ -183,12 +188,14 @@ describe('patchConfiguration', () => {
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
+                        details: {},
                     },
                     'us-east-1': {
                         type: 'file',
                         legacyAwsBehavior: true,
                         isTransient: false,
                         sizeLimitGB: null,
+                        details: {},
                     },
                     'azurebackendtest': {
                         details: {
@@ -262,18 +269,21 @@ describe('patchConfiguration', () => {
                         legacyAwsBehavior: false,
                         isTransient: true,
                         sizeLimitGB: null,
+                        details: {},
                     },
                     'sizelimitedtest': {
                         type: 'file',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: 1024,
+                        details: {},
                     },
                     'sizezerotest': {
                         type: 'file',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
+                        details: {},
                     },
                 },
             };
