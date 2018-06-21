@@ -163,6 +163,23 @@ stages:
       type: local
     steps:
       - Git: *clone
+      - ShellCommand: &docker_login
+          name: Private Registry Login
+          command: >
+            docker login
+            -u '%(secret:private_registry_username)s'
+            -p '%(secret:private_registry_password)s'
+            '%(secret:private_registry_url)s'
+      - SetProperty: &docker_image_name
+          name: Set docker image name property
+          property: docker_image_name
+          value:
+            "%(secret:private_registry_url)s/zenko/cloudserver:\
+            %(prop:commit_short_revision)s"
       - ShellCommand:
-          name: Nightly Build
-          command: docker build -t zenko/cloudserver:nightly .
+          name: Build docker image
+          command: >-
+            docker build -t %(prop:docker_image_name)s .
+      - ShellCommand:
+          name: Push image
+          command: docker push %(prop:docker_image_name)s
