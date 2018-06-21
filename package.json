@@ -85,6 +85,7 @@
     "mem_backend": "S3BACKEND=mem node index.js",
     "perf": "mocha tests/performance/s3standard.js",
     "start": "npm-run-all --parallel start_dmd start_s3server",
+    "start_mongo": "npm run cloudserver",
     "start_mdserver": "node mdserver.js",
     "start_dataserver": "node dataserver.js",
     "start_s3server": "node index.js",
