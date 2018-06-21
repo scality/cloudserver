@@ -47,6 +47,10 @@ models:
       name: install modules
       command: npm install
       haltOnFailure: True
+  - ShellCommand: &s3-log
+      name: s3 logs
+      command: cat /artifacts/s3.log || exit 0
+
 stages:
   pre-merge:
     worker:
@@ -88,11 +92,13 @@ stages:
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage
             npm run unit_coverage_legacy_location
-          haltOnFailure: True
           env: &shared-vars
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
             CI_REPORTS: /tmp
+      - ShellCommand:
+          name: Unit Coverage logs
+          command: find /tmp/unit -exec cat {} \;
 
   multiple-backend-test:
     worker:
@@ -132,6 +138,7 @@ stages:
           workdir: build/tests/functional/fog
           env:
             <<: *multiple-backend-vars
+      - ShellCommand: *s3-log
 
   mongo-ft-tests:
     worker: &s3-pod
@@ -158,6 +165,8 @@ stages:
           env:
             <<: *mongo-vars
             <<: *global-env
+      - ShellCommand: *s3-log
+
   post-merge:
     worker:
       type: local
