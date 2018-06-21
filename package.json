@@ -24,7 +24,7 @@
     "async": "~2.5.0",
     "google-auto-auth": "^0.9.1",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#rel/7.4",
+    "bucketclient": "scality/bucketclient#ft/ZENKO-267-Routes-MD-Ingestion",
     "commander": "^2.9.0",
     "diskusage": "0.2.4",
     "mongodb": "^2.2.31",
