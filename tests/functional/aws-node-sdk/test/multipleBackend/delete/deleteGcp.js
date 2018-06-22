@@ -17,7 +17,8 @@ const mismatchObject = `mismatchObject-${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 
-describeSkipIfNotMultiple('Multiple backend delete', () => {
+describeSkipIfNotMultiple('Multiple backend delete', function testSuite() {
+    this.timeout(120000);
     withV4(sigCfg => {
         let bucketUtil;
         let s3;

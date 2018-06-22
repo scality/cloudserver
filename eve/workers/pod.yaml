@@ -11,6 +11,7 @@ spec:
   - ip: "127.0.0.1"
     hostnames:
     - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com"
+    - "testrequestbucket.localhost"
   containers:
     - name: aggressor
       image: {{ images.aggressor }}

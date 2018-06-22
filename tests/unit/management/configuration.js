@@ -276,7 +276,7 @@ describe('patchConfiguration', () => {
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: 1024,
-                        details: {supportsVersioning: true },
+                        details: { supportsVersioning: true },
                     },
                     'sizezerotest': {
                         type: 'file',
