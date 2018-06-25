@@ -14,6 +14,7 @@ const reportAttributes = [
     'serverVersion',
     'systemStats',
     'itemCounts',
+    'capabilities',
 ];
 
 function options(token = 'report-token-1') {
