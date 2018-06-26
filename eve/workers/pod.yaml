@@ -56,7 +56,7 @@ spec:
           cpu: 200m
           memory: 1Gi
         limits:
-          cpu: "1"
+          cpu: "2"
           memory: {{ vars.s3MemLimit }}
       volumeMounts:
         - name: creds
@@ -73,7 +73,7 @@ spec:
         - -ec
         - |
           # wait for exports to be created
-          sleep 10
+          sleep 15
           source /root/.aws/exports || exit 1
           /usr/src/app/docker-entrypoint.sh npm start | tee -a /artifacts/s3.log
       env:
@@ -115,6 +115,7 @@ spec:
           cpu: 500m
           memory: 384Mi
     {%- endif %}
+    {% if vars.redis is defined and vars.redis == "enabled" -%}
     - name: redis
       image: redis:alpine
       imagePullPolicy: IfNotPresent
@@ -125,6 +126,7 @@ spec:
         limits:
           cpu: 200m
           memory: 128Mi
+    {%- endif %}
     {% if vars.env.CI_PROXY is defined and vars.env.CI_PROXY == "true" -%}
     - name: squid
       image: scality/ci-squid
