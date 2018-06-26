@@ -188,14 +188,14 @@ describe('patchConfiguration', () => {
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
-                        details: {},
+                        details: { supportsVersioning: true },
                     },
                     'us-east-1': {
                         type: 'file',
                         legacyAwsBehavior: true,
                         isTransient: false,
                         sizeLimitGB: null,
-                        details: {},
+                        details: { supportsVersioning: true },
                     },
                     'azurebackendtest': {
                         details: {
@@ -269,21 +269,21 @@ describe('patchConfiguration', () => {
                         legacyAwsBehavior: false,
                         isTransient: true,
                         sizeLimitGB: null,
-                        details: {},
+                        details: { supportsVersioning: true },
                     },
                     'sizelimitedtest': {
                         type: 'file',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: 1024,
-                        details: {},
+                        details: {supportsVersioning: true },
                     },
                     'sizezerotest': {
                         type: 'file',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
-                        details: {},
+                        details: { supportsVersioning: true },
                     },
                 },
             };
