@@ -289,7 +289,7 @@ describe('patchConfiguration', () => {
             };
             assertConfig(actualConf, expectedConf);
             assert.deepStrictEqual(actualConf.restEndpoints['1.1.1.1'],
-                { read: 'us-east-1', write: 'us-east-1' });
+                                   'us-east-1');
             return done();
         });
     });
