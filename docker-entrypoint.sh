@@ -103,6 +103,15 @@ if [[ "$REDIS_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=$REDIS_PORT"
 fi
 
+if [[ "$REDIS_HA_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HA_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
+fi
+
+if [[ "$REDIS_HA_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
+fi
+
 if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
