@@ -113,7 +113,7 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "1Gi"
+        aggressorMemLimit: "2Gi"
         s3MemLimit: "2Gi"
         env:
           <<: *multiple-backend-vars
@@ -154,7 +154,8 @@ stages:
         s3: "."
       vars:
         aggressorMemLimit: "2Gi"
-        s3MemLimit: "1Gi"
+        s3MemLimit: "1664Mi"
+        redis: enabled
         env:
           <<: *mongo-vars
           <<: *global-env
@@ -181,8 +182,9 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "2Gi"
-        s3MemLimit: "1536Mi"
+        aggressorMemLimit: "1920Mi"
+        s3MemLimit: "2Gi"
+        redis: enabled
         env:
           <<: *file-mem-mpu
           <<: *global-env
@@ -193,6 +195,7 @@ stages:
       - ShellCommandWithSecrets:
           command: |
             . /root/.aws/exports &> /dev/null
+            set -ex
             bash wait_for_local_port.bash 8000 40
             npm run ft_test
           env:
