@@ -29,6 +29,7 @@
     "commander": "^2.9.0",
     "diskusage": "0.2.4",
     "google-auto-auth": "^0.9.1",
+    "http-proxy": "^1.17.0",
     "https-proxy-agent": "^2.2.0",
     "mongodb": "^2.2.31",
     "node-forge": "^0.7.1",
