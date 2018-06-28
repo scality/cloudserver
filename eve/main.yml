@@ -232,7 +232,7 @@ stages:
       - ShellCommand:
           name: Build docker image
           command: >-
-            docker build -t %(prop:docker_image_name)s .
+            docker build --no-cache -t %(prop:docker_image_name)s .
       - ShellCommand:
           name: Push image
           command: docker push %(prop:docker_image_name)s
