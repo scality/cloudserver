@@ -33,7 +33,7 @@
     "multilevel": "^7.3.0",
     "node-uuid": "^1.4.3",
     "sproxydclient": "scality/sproxydclient#32319d89",
-    "utapi": "scality/utapi#GA6.4.7",
+    "utapi": "scality/utapi#93e52019",
     "utf8": "~2.1.1",
     "vaultclient": "scality/vaultclient#913eb027",
     "werelogs": "scality/werelogs#40b92c54",
