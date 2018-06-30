@@ -26,6 +26,11 @@ models:
       gcpbackendmismatch_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
       gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
       gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  - env: &shared-vars
+      CIRCLE_TEST_REPORTS: /tmp
+      CIRCLE_ARTIFACTS: /tmp
+      CI_REPORTS: /tmp
+      CI: true
   - env: &mongo-vars
       S3BACKEND: "mem"
       MPU_TESTING: "yes"
@@ -109,21 +114,15 @@ stages:
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage
-          env: &shared-vars
-            CIRCLE_TEST_REPORTS: /tmp
-            CIRCLE_ARTIFACTS: /tmp
-            CI_REPORTS: /tmp
-            CI: true
+          env:
+            <<: *shared-vars
       - ShellCommand:
           name: Unit Coverage Legacy
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage_legacy_location
-          env: &shared-vars
-            CIRCLE_TEST_REPORTS: /tmp
-            CIRCLE_ARTIFACTS: /tmp
-            CI_REPORTS: /tmp
-            CI: true
+          env:
+            <<: *shared-vars
       - ShellCommand:
           name: Unit Coverage logs
           command: find /tmp/unit -exec cat {} \;
