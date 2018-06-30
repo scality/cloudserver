@@ -30,8 +30,8 @@ const testDetails = {
     type: 'all',
     extensions: { crr: [...sites, 'all'] },
     method: 'getAllMetrics',
-    dataPoints: ['bb:crr:ops', 'bb:crr:opsdone', 'bb:crr:bytes',
-        'bb:crr:bytesdone'],
+    dataPoints: ['bb:crr:ops', 'bb:crr:opsdone', 'bb:crr:opsfail',
+        'bb:crr:bytes', 'bb:crr:bytesdone', 'bb:crr:bytesfail'],
 };
 
 const testCRRKeys = [
@@ -39,11 +39,15 @@ const testCRRKeys = [
     ['noshow:bb:crr:bytes', 10000],
     ['noshow:bb:crr:opsdone', 5000],
     ['noshow:bb:crr:bytesdone', 5000],
+    ['noshow:bb:crr:opsfail', 1000],
+    ['noshow:bb:crr:bytesfail', 1000],
     ['noshow:bb:crr:failed', 0],
     ['test:bb:crr:ops', 10000],
     ['test:bb:crr:bytes', 10000],
     ['test:bb:crr:opsdone', 5000],
     ['test:bb:crr:bytesdone', 5000],
+    ['test:bb:crr:opsfail', 1000],
+    ['test:bb:crr:bytesfail', 1000],
     ['test:bb:crr:failed', 0],
 ];
 
@@ -103,6 +107,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             assert.ifError(err, `Expected success, but got error ${err}`);
             assert.deepStrictEqual(res, {
                 completions: { count: 10000, size: 10000 },
+                failures: { count: 2000, size: 2000 },
                 backlog: { count: 10000, size: 10000 },
                 throughput: { count: 11, size: 11 },
             });
@@ -116,6 +121,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             assert.ifError(err, `Expected success, but got error ${err}`);
             assert.deepStrictEqual(res, {
                 completions: { count: 5000, size: 5000 },
+                failures: { count: 1000, size: 1000 },
                 backlog: { count: 5000, size: 5000 },
                 throughput: { count: 5, size: 5 },
             });
@@ -152,16 +158,19 @@ describe('reportHandler::getCRRStats', function testSuite() {
             assert.ifError(err, `Expected success, but got error ${err}`);
             assert.deepStrictEqual(res, {
                 completions: { count: 10000, size: 10000 },
+                failures: { count: 2000, size: 2000 },
                 backlog: { count: 10000, size: 10000 },
                 throughput: { count: 11, size: 11 },
                 byLocation: {
                     test: {
                         completions: { count: 5000, size: 5000 },
+                        failures: { count: 1000, size: 1000 },
                         backlog: { count: 5000, size: 5000 },
                         throughput: { count: 5, size: 5 },
                     },
                     noshow: {
                         completions: { count: 5000, size: 5000 },
+                        failures: { count: 1000, size: 1000 },
                         backlog: { count: 5000, size: 5000 },
                         throughput: { count: 5, size: 5 },
                     },
