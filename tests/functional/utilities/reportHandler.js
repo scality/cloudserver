@@ -15,7 +15,7 @@ const testLocationConstraints = {
     noshow: { type: 'aws_s3' },
 };
 config.setReplicationEndpoints(testLocationConstraints);
-config.redis = { host: 'localhost', port: 6379 };
+config.localCache = { host: 'localhost', port: 6379 };
 
 const {
     _crrRequest,
@@ -129,7 +129,7 @@ describe('reportHandler::getCRRStats', function testSuite() {
     let redisClient;
 
     before(done => {
-        redisClient = new RedisClient(config.redis, logger);
+        redisClient = new RedisClient(config.localCache, logger);
         async.series([
             next => redisClient.clear(next),
             next => populateRedis(redisClient, next),
