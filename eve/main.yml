@@ -94,12 +94,12 @@ stages:
       - ShellCommand: *add-hostname
       - ShellCommand:
           name: Linting
+          haltOnFailure: True
           command: |
             npm run --silent lint -- --max-warnings 0
             npm run --silent lint_md
             flake8 $(git ls-files "*.py")
             yamllint $(git ls-files "*.yml")
-          haltOnFailure: True
       - ShellCommand:
           name: Unit Coverage
           command: |
