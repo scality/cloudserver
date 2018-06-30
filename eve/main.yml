@@ -30,7 +30,6 @@ models:
       CIRCLE_TEST_REPORTS: /tmp
       CIRCLE_ARTIFACTS: /tmp
       CI_REPORTS: /tmp
-      CI: true
   - env: &mongo-vars
       S3BACKEND: "mem"
       MPU_TESTING: "yes"
