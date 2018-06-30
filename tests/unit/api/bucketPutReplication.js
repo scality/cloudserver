@@ -3,7 +3,7 @@ const assert = require('assert');
 const { DummyRequestLogger } = require('../helpers');
 const { getReplicationConfiguration } =
     require('../../../lib/api/apiUtils/bucket/getReplicationConfiguration');
-const validateConfiguration =
+const validateReplicationConfig =
     require('../../../lib/api/apiUtils/bucket/validateReplicationConfig');
 const replicationUtils =
     require('../../functional/aws-node-sdk/lib/utility/replication');
@@ -107,64 +107,65 @@ describe('\'getReplicationConfiguration\' function', () => {
     });
 });
 
-describe('\'validateConfiguration\' function', () => {
-    const withDefaultRead = {
-        role: 'arn:aws:iam::account-id:role/src-resource,' +
-            'arn:aws:iam::account-id:role/dest-resource',
-        destination: 'arn:aws:s3:::destination-bucket',
-        rules: [{
-            prefix: 'test-prefix',
-            enabled: true,
-            id: 'test-id',
-            storageClass: 'STANDARD,us-east-2',
-        }],
+describe('\'validateReplicationConfig\' function', () => {
+    const nonTransientBucket = {
+        getLocationConstraint: () => 'us-east-1',
+    };
+    const transientBucket = {
+        getLocationConstraint: () => 'transientfile',
     };
 
-    const withoutDefaultRead = {
-        role: 'arn:aws:iam::account-id:role/src-resource,' +
-            'arn:aws:iam::account-id:role/dest-resource',
-        destination: 'arn:aws:s3:::destination-bucket',
-        rules: [{
-            prefix: 'test-prefix',
-            enabled: true,
-            id: 'test-id',
-            storageClass: 'STANDARD',
-        }],
-    };
+    it('should validate configuration when bucket location is ' +
+    'not transient and preferred read location is not specified', () => {
+        const withoutPreferredRead = {
+            role: 'arn:aws:iam::account-id:role/src-resource,' +
+                'arn:aws:iam::account-id:role/dest-resource',
+            destination: 'arn:aws:s3:::destination-bucket',
+            rules: [{
+                prefix: 'test-prefix',
+                enabled: true,
+                id: 'test-id',
+                storageClass: 'STANDARD,us-east-2',
+            }],
+        };
+        const result = validateReplicationConfig(withoutPreferredRead,
+                                                 nonTransientBucket);
+        assert.strictEqual(result, true);
+    });
 
-    [
-        {
-            msg: 'When read/write locations are the same',
-            setDefault: false,
-            bucket: {
-                getLocationConstraint: () => 'us-east-1',
-                getReadLocationConstraint: () => 'us-east-1',
-            },
-        },
-        {
-            msg: 'When read/write locations are different',
-            setDefault: true,
-            bucket: {
-                getLocationConstraint: () => 'us-east-1',
-                getReadLocationConstraint: () => 'us-east-2',
-            },
-        },
-    ].forEach(suite => describe(suite.msg, () => {
-        [
-            {
-                msg: 'and read location is not present in the replication ' +
-                'config',
-                input: withoutDefaultRead,
-                res: !suite.setDefault,
-            },
-            {
-                msg: 'and read location is present in the replication config',
-                input: withDefaultRead,
-                res: true,
-            },
-        ].forEach(test => it(test.msg, () => {
-            const result = validateConfiguration(test.input, suite.bucket);
-            assert.strictEqual(result, test.res);
-        }));
-    }));
+    it('should validate configuration when bucket location is transient ' +
+    'and preferred read location is specified', () => {
+        const withPreferredRead = {
+            role: 'arn:aws:iam::account-id:role/src-resource,' +
+                'arn:aws:iam::account-id:role/dest-resource',
+            destination: 'arn:aws:s3:::destination-bucket',
+            rules: [{
+                prefix: 'test-prefix',
+                enabled: true,
+                id: 'test-id',
+                storageClass: 'STANDARD,us-east-2:preferred_read',
+            }],
+        };
+        const result = validateReplicationConfig(withPreferredRead,
+                                                 transientBucket);
+        assert.strictEqual(result, true);
+    });
+
+    it('should not validate configuration when bucket location is ' +
+    'transient and preferred read location is not specified', () => {
+        const withoutPreferredRead = {
+            role: 'arn:aws:iam::account-id:role/src-resource,' +
+                'arn:aws:iam::account-id:role/dest-resource',
+            destination: 'arn:aws:s3:::destination-bucket',
+            rules: [{
+                prefix: 'test-prefix',
+                enabled: true,
+                id: 'test-id',
+                storageClass: 'STANDARD,us-east-2',
+            }],
+        };
+        const result = validateReplicationConfig(withoutPreferredRead,
+                                                 transientBucket);
+        assert.strictEqual(result, false);
+    });
 });

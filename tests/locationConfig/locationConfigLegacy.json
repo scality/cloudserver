@@ -148,5 +148,11 @@
             "credentialsProfile": "default",
             "supportsVersioning": false
         }
+    },
+    "transientfile": {
+        "type": "file",
+        "legacyAwsBehavior": false,
+        "details": {},
+        "isTransient": true
     }
 }
