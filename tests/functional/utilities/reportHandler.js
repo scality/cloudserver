@@ -82,7 +82,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             backbeatMetrics = new backbeat.Metrics({
                 redisConfig: config.redis,
                 validSites: sites,
-                internalStart: Date.now() - 90000,
+                internalStart: Date.now() - 900000,
             }, logger);
             return done();
         });
@@ -104,7 +104,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             assert.deepStrictEqual(res, {
                 completions: { count: 10000, size: 10000 },
                 backlog: { count: 10000, size: 10000 },
-                throughput: { count: 111, size: 111 },
+                throughput: { count: 11, size: 11 },
             });
             return done();
         });
@@ -117,7 +117,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             assert.deepStrictEqual(res, {
                 completions: { count: 5000, size: 5000 },
                 backlog: { count: 5000, size: 5000 },
-                throughput: { count: 55, size: 55 },
+                throughput: { count: 5, size: 5 },
             });
             done();
         });
