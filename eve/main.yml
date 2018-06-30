@@ -93,23 +93,37 @@ stages:
       - ShellCommand: *npm-install
       - ShellCommand: *add-hostname
       - ShellCommand:
-          name: Linting
-          haltOnFailure: True
-          command: |
-            npm run --silent lint -- --max-warnings 0
-            npm run --silent lint_md
-            flake8 $(git ls-files "*.py")
-            yamllint $(git ls-files "*.yml")
+          name: Lint Source Files
+          command: npm run --silent lint -- --max-warnings 0
+      - ShellCommand:
+          name: Lint Markdown
+          command: npm run --silent lint_md
+      - ShellCommand:
+          name: Lint Python
+          command: flake8 $(git ls-files "*.py")
+      - ShellCommand:
+          name: Lint Yaml
+          command: yamllint $(git ls-files "*.yml")
       - ShellCommand:
           name: Unit Coverage
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage
+          env: &shared-vars
+            CIRCLE_TEST_REPORTS: /tmp
+            CIRCLE_ARTIFACTS: /tmp
+            CI_REPORTS: /tmp
+            CI: true
+      - ShellCommand:
+          name: Unit Coverage Legacy
+          command: |
+            mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage_legacy_location
           env: &shared-vars
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
             CI_REPORTS: /tmp
+            CI: true
       - ShellCommand:
           name: Unit Coverage logs
           command: find /tmp/unit -exec cat {} \;
