@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
+  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*, user/*:
     stage: pre-merge
   development/*:
     stage: post-merge
@@ -57,6 +57,13 @@ models:
 
 stages:
   pre-merge:
+    worker:
+      type: local
+    steps:
+      - ShellCommand:
+          name: fail
+          command: exit 1
+  pre-merge-1:
     worker:
       type: local
     steps:
