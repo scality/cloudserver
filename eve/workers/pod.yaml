@@ -107,10 +107,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 384Mi
+          memory: 1Gi
         limits:
           cpu: 500m
-          memory: 384Mi
+          memory: 1Gi
     {%- endif %}
     {% if vars.redis is defined and vars.redis == "enabled" -%}
     - name: redis
