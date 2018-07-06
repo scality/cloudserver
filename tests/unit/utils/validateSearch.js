@@ -112,6 +112,16 @@ describe('validate search where clause', () => {
             result: errors.InvalidArgument.customizeDescription(
                 'Invalid sql where clause sent as search query'),
         },
+        {
+            it: 'should allow a simple search with tag query',
+            searchParams: 'tags.x-amz-meta-color="blue"',
+            result: undefined,
+        },
+        {
+            it: 'should allow a simple search with replicationStatus query',
+            searchParams: 'replication-status="PENDING"',
+            result: undefined,
+        },
     ];
 
     tests.forEach(test => {
