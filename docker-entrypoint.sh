@@ -116,6 +116,10 @@ if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
 
+if [[ "$STORAGE_LIMIT_ENABLED" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.metrics[.utapi.metrics | length]=\"location\""
+fi
+
 if [[ "$CRR_METRICS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.host=\"$CRR_METRICS_HOST\""
 fi
