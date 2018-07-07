@@ -178,7 +178,7 @@ Ruby
 ~~~~
 
 `AWS SDK for Ruby - Version 2 <http://docs.aws.amazon.com/sdkforruby/api/>`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: ruby
 
@@ -239,6 +239,7 @@ Python
 Client integration
 
 .. code:: python
+
     import boto3
 
     client = boto3.client(
@@ -253,6 +254,7 @@ Client integration
 Full integration (with object mapping)
 
 .. code:: python
+
     import os
 
     from botocore.utils import fix_s3_host
