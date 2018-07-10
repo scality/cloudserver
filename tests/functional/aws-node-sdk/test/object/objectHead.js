@@ -409,5 +409,36 @@ describe('HEAD object, conditions', () => {
                 done();
             });
         });
+
+        it('WebsiteRedirectLocation is set & it appears in response', done => {
+            const redirBktwBody = {
+                Bucket: bucketName,
+                Key: 'redir_present',
+                WebsiteRedirectLocation: 'http://google.com',
+                Body: 'hello',
+            };
+            const redirBkt = {
+                Bucket: bucketName,
+                Key: 'redir_present',
+            };
+            s3.putObject(redirBktwBody, err => {
+                checkNoError(err);
+                s3.headObject(redirBkt, (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.WebsiteRedirectLocation,
+                            'http://google.com');
+                    return done();
+                });
+            });
+        });
+
+        it('WebsiteRedirectLocation is not set & is absent', done => {
+            requestHead({}, (err, data) => {
+                checkNoError(err);
+                assert.strictEqual('WebsiteRedirectLocation' in data,
+                  false, 'WebsiteRedirectLocation header is present.');
+                done();
+            });
+        });
     });
 });
