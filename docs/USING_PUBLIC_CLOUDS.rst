@@ -243,7 +243,7 @@ There are a few configurable options here:
   this region should behave like any other AWS S3 region (in the case of MS Azure
   hosted data, this is mostly relevant for the format of errors);
 - :code:`azureStorageEndpoint` : set to your storage account's endpoint, usually
-  :code:`https://{{storageAccountName}}.blob.core.windows.name`;
+  :code:`https://{{storageAccountName}}.blob.core.windows.net`;
 - :code:`azureContainerName` : set to an *existing container* in your MS Azure
   storage account; this is the container in which your data will be stored for
   this location constraint;

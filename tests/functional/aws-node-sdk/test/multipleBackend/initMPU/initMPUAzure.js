@@ -3,10 +3,10 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName }
-    = require('../utils');
+const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName,
+    genUniqID } = require('../utils');
 
-const keyName = `somekey-${Date.now()}`;
+const keyName = `somekey-${genUniqID()}`;
 
 const azureContainerName = getAzureContainerName(azureLocation);
 let s3;

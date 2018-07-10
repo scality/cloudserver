@@ -14,6 +14,7 @@ const {
     azureLocationMismatch,
     getAzureClient,
     getAzureContainerName,
+    genUniqID,
 } = require('../utils');
 
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
@@ -105,7 +106,7 @@ function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
-            this.currentTest.key = `somekey-${Date.now()}`;
+            this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             this.currentTest.awsClient = awsS3;

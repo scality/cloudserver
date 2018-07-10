@@ -7,7 +7,7 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
     require('../helpers');
 const constants = require('../../../constants');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');
@@ -76,6 +76,7 @@ const emptyReplicationMD = {
     role: '',
     storageType: '',
     dataStoreVersionId: '',
+    isNFS: null,
 };
 
 // Check that the object key has the expected replication information.
@@ -293,6 +294,7 @@ describe('Replication object MD without bucket replication config', () => {
                 'arn:aws:iam::account-id:role/dest-resource',
             storageType: '',
             dataStoreVersionId: '',
+            isNFS: null,
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
@@ -474,10 +476,12 @@ describe('Replication object MD without bucket replication config', () => {
 
         ['awsbackend',
         'azurebackend',
+        'gcpbackend',
         'awsbackend,azurebackend'].forEach(backend => {
             const storageTypeMap = {
                 'awsbackend': 'aws_s3',
                 'azurebackend': 'azure',
+                'gcpbackend': 'gcp',
                 'awsbackend,azurebackend': 'aws_s3,azure',
             };
             const storageType = storageTypeMap[backend];
@@ -497,6 +501,7 @@ describe('Replication object MD without bucket replication config', () => {
                     role: 'arn:aws:iam::account-id:role/resource',
                     storageType,
                     dataStoreVersionId: '',
+                    isNFS: null,
                 };
 
                 // Expected for a metadata-only replication operation (for

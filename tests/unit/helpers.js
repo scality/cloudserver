@@ -3,7 +3,7 @@ const assert = require('assert');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const constants = require('../../constants');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const { resetCount, ds } = require('../../lib/data/in_memory/backend');
 const DummyRequest = require('./DummyRequest');
 

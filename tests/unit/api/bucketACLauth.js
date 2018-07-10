@@ -5,6 +5,8 @@ const { isBucketAuthorized }
     = require('../../../lib/api/apiUtils/authorization/aclChecks');
 
 const ownerCanonicalId = 'ownerCanonicalId';
+const lifecycleServiceAccountId = '0123456789abcdef/lifecycle';
+const unknownServiceAccountId = '0123456789abcdef/unknown';
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     'iAmTheOwnerDisplayName', creationDate);
@@ -36,6 +38,16 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
         {
             it: 'should allow access to bucket owner', canned: '',
             id: ownerCanonicalId, response: trueArray,
+        },
+        {
+            it: 'should allow access to lifecycle service account',
+            canned: '', id: lifecycleServiceAccountId, response: trueArray,
+        },
+        {
+            it: 'should allow public-user access for unknown ' +
+                'service account and private canned ACL',
+            canned: '', id: unknownServiceAccountId,
+            response: falseArrayBucketTrueArrayObject,
         },
         {
             it: 'should allow access to anyone if canned public-read ACL',
@@ -291,6 +303,21 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         const results = requestTypes.map(type =>
             isBucketAuthorized(bucket, type, ownerCanonicalId));
         assert.deepStrictEqual(results, [true, true]);
+    });
+
+    it('should allow access to lifecycle service account', () => {
+        // NOTE objectPut is not needed for lifecycle but still
+        // allowed, we would want more fine-grained implementation of
+        // ACLs for service accounts later.
+        const results = requestTypes.map(type =>
+            isBucketAuthorized(bucket, type, lifecycleServiceAccountId));
+        assert.deepStrictEqual(results, [true, true]);
+    });
+
+    it('should deny access to unknown service account', () => {
+        const results = requestTypes.map(type =>
+            isBucketAuthorized(bucket, type, unknownServiceAccountId));
+        assert.deepStrictEqual(results, [false, false]);
     });
 
     const orders = [

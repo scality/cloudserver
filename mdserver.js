@@ -2,7 +2,7 @@
 
 const { config } = require('./lib/Config.js');
 const MetadataFileServer =
-          require('arsenal').storage.metadata.MetadataFileServer;
+          require('arsenal').storage.metadata.file.MetadataFileServer;
 
 if (config.backends.metadata === 'file') {
     const mdServer = new MetadataFileServer(

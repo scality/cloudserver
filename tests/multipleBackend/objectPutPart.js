@@ -12,7 +12,7 @@ const initiateMultipartUpload
     = require('../../lib/api/initiateMultipartUpload');
 const objectPutPart = require('../../lib/api/objectPutPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const constants = require('../../constants');
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');

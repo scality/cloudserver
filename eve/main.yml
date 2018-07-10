@@ -90,7 +90,14 @@ models:
   - ShellCommand: &s3-log
       name: s3 logs
       command: cat /artifacts/s3.log || exit 0
-
+  - ShellCommand: &add-hostname
+      name: add hostname
+      command: |
+        echo "127.0.0.1 testrequestbucket.localhost" >> /etc/hosts
+        echo \
+        "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
+        >> /etc/hosts
+      haltOnFailure: True
 stages:
   pre-merge:
     worker:
@@ -120,6 +127,7 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *npm-install
+      - ShellCommand: *add-hostname
       - ShellCommand:
           name: Linting
           command: |
@@ -258,7 +266,7 @@ stages:
       - ShellCommand:
           name: Build docker image
           command: >-
-            docker build -t %(prop:docker_image_name)s .
+            docker build --no-cache -t %(prop:docker_image_name)s .
       - ShellCommand:
           name: Push image
           command: docker push %(prop:docker_image_name)s

@@ -224,7 +224,7 @@ describe('GET object', () => {
             });
 
         describe('Additional headers: [Cache-Control, Content-Disposition, ' +
-            'Content-Encoding, Expires]', () => {
+            'Content-Encoding, Expires, Accept-Ranges]', () => {
             describe('if specified in put object request', () => {
                 before(done => {
                     const params = {
@@ -255,6 +255,7 @@ describe('GET object', () => {
                           assert.strictEqual(res.ContentType, contentType);
                           assert.strictEqual(res.Expires,
                               new Date(expires).toGMTString());
+                          assert.strictEqual(res.AcceptRanges, 'bytes');
                           return done();
                       });
                 });
@@ -315,6 +316,28 @@ describe('GET object', () => {
                           return done(err);
                       }
                       assert.strictEqual(res.WebsiteRedirectLocation, '/');
+                      return done();
+                  });
+            });
+        });
+
+        describe('absent x-amz-website-redirect-location header', () => {
+            before(done => {
+                const params = {
+                    Bucket: bucketName,
+                    Key: objectName,
+                };
+                s3.putObject(params, err => done(err));
+            });
+            it('should return website redirect header if specified in ' +
+                'objectPUT request', done => {
+                s3.getObject({ Bucket: bucketName, Key: objectName },
+                  (err, res) => {
+                      if (err) {
+                          return done(err);
+                      }
+                      assert.strictEqual(res.WebsiteRedirectLocation,
+                          undefined);
                       return done();
                   });
             });

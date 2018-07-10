@@ -10,7 +10,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
     require('../unit/helpers');
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
-const metadata = require('../../lib/metadata/in_memory/metadata').metadata;
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
@@ -41,7 +41,7 @@ const bucketName = 'bucketname';
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
-const locMetaHeader = 'x-amz-meta-scal-location-constraint';
+const locMetaHeader = 'scal-location-constraint';
 const bucketPutRequest = {
     bucketName,
     namespace,
@@ -222,7 +222,8 @@ function assertObjOnBackend(expectedBackend, objectKey, cb) {
     return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
     (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
-        assert.strictEqual(metaHeaders[locMetaHeader], expectedBackend);
+        assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`],
+            expectedBackend);
         if (expectedBackend === awsLocation) {
             return s3.headObject({ Bucket: awsBucket, Key: objectKey },
             (err, result) => {

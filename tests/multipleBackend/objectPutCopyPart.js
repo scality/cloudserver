@@ -12,7 +12,7 @@ const initiateMultipartUpload
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const constants = require('../../constants');
 
 const s3 = new AWS.S3();

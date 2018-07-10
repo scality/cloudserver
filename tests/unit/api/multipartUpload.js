@@ -17,7 +17,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
 const { ds } = require('../../../lib/data/in_memory/backend');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');

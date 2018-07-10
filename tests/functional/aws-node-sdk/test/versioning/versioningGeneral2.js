@@ -6,7 +6,6 @@ const getConfig = require('../support/config');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
-
 describe('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(600000);
     let s3;

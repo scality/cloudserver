@@ -7,7 +7,8 @@ const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
-  memLocation, awsLocation, awsS3, getOwnerInfo } = require('../utils');
+  memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID }
+  = require('../utils');
 
 const describeSkipIfNotMultiple = config.backends.data !== 'multiple'
     ? describe.skip : describe;
@@ -21,8 +22,8 @@ config.locationConstraints[azureLocation].details.azureContainerName) {
       config.locationConstraints[azureLocation].details.azureContainerName;
 }
 
-const memBucketName = 'membucketnameputcopypartazure';
-const awsBucketName = 'awsbucketnameputcopypartazure';
+const memBucketName = `memputcopypartazure${genUniqID()}`;
+const awsBucketName = `awsputcopypartazure${genUniqID()}`;
 
 const normalBodySize = 11;
 const normalBody = Buffer.from('I am a body', 'utf8');

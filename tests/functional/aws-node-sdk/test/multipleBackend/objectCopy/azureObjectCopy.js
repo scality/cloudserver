@@ -14,6 +14,7 @@ const {
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
+    genUniqID,
 } = require('../utils');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
@@ -21,8 +22,8 @@ const { createEncryptedBucketPromise } =
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
 
-const bucket = 'buckettestmultiplebackendobjectcopy';
-const bucketAzure = 'bucketazuretestmultiplebackendobjectcopy';
+const bucket = `objectcopybucket${genUniqID()}`;
+const bucketAzure = `objectcopyazure${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = new Buffer(5 * 1024 * 1024);
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -116,8 +117,8 @@ function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
-            this.currentTest.key = `azureputkey-${Date.now()}`;
-            this.currentTest.copyKey = `azurecopyKey-${Date.now()}`;
+            this.currentTest.key = `azureputkey-${genUniqID()}`;
+            this.currentTest.copyKey = `azurecopyKey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');

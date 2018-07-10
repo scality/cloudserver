@@ -6,7 +6,7 @@ const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload
 = require('../../../lib/api/initiateMultipartUpload');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');

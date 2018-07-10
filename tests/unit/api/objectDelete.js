@@ -17,6 +17,10 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const objectKey = 'objectName';
+const earlyDate = new Date();
+const lateDate = new Date();
+earlyDate.setMinutes(earlyDate.getMinutes() - 30);
+lateDate.setMinutes(lateDate.getMinutes() + 30);
 
 function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
@@ -144,5 +148,81 @@ describe('objectDelete API', () => {
         testBucketPutRequest.headers['x-amz-acl'] = 'public-read-write';
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
+    });
+
+    describe('with \'modified\' headers', () => {
+        beforeEach(done => {
+            bucketPut(authInfo, testBucketPutRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log, done);
+            });
+        });
+
+        it('should return error if request includes \'if-unmodified-since\' ' +
+        'header and object has been modified', done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-unmodified-since': earlyDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.deepStrictEqual(err, errors.PreconditionFailed);
+                done();
+            });
+        });
+
+        it('should delete an object with \'if-unmodified-since\' header',
+        done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-unmodified-since': lateDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.strictEqual(err, null);
+                objectGet(authInfo, testGetObjectRequest, false, log,
+                err => {
+                    assert.deepStrictEqual(err, errors.NoSuchKey);
+                    done();
+                });
+            });
+        });
+
+        it('should return error if request includes \'if-modified-since\' ' +
+        'header and object has not been modified', done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-modified-since': lateDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.deepStrictEqual(err, errors.NotModified);
+                done();
+            });
+        });
+
+        it('should delete an object with \'if-modified-since\' header',
+        done => {
+            const testDeleteRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey,
+                headers: { 'if-modified-since': earlyDate },
+                url: `/${bucketName}/${objectKey}`,
+            });
+            objectDelete(authInfo, testDeleteRequest, log, err => {
+                assert.strictEqual(err, null);
+                objectGet(authInfo, testGetObjectRequest, false, log,
+                err => {
+                    assert.deepStrictEqual(err, errors.NoSuchKey);
+                    done();
+                });
+            });
+        });
     });
 });
