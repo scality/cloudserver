@@ -1,6 +1,6 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
-export default {
+const constants = {
     /*
      * Splitter is used to build the object name for the overview of a
      * multipart upload and to build the object names for each part of a
@@ -38,6 +38,9 @@ export default {
     // by the name of the final destination bucket for the object
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
+    blacklistedPrefixes: { bucket: [], object: [] },
+    // GCP Object Tagging Prefix
+    gcpTaggingPrefix: 'aws-tag-',
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
@@ -63,31 +66,78 @@ export default {
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
 
+    // AWS sets a maximum total parts limit
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    maximumAllowedPartCount: 10000,
+
+    gcpMaximumAllowedPartCount: 1024,
+
     // Max size on put part or copy part is 5GB. For functional
-    // testing use 100 MB as max
-    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 104857600 :
+    // testing use 110 MB as max
+    maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
         5368709120,
+
+    // Max size allowed in a single put object request is 5GB
+    // https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
+    maximumAllowedUploadSize: 5368709120,
+
+    // AWS states max size for user-defined metadata (x-amz-meta- headers) is
+    // 2 KB: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
+    // In testing, AWS seems to allow up to 88 more bytes, so we do the same.
+    maximumMetaHeadersSize: 2136,
 
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
-    unsupportedQueries: {
-        'accelerate': true,
-        'analytics': true,
-        'inventory': true,
-        'lifecycle': true,
-        'list-type': true,
-        'logging': true,
-        'metrics': true,
-        'notification': true,
-        'policy': true,
-        'replication': true,
-        'requestPayment': true,
-        'restore': true,
-        'tagging': true,
-        'torrent': true,
-        'versions': true,
-    },
+    unsupportedQueries: [
+        'accelerate',
+        'analytics',
+        'inventory',
+        'list-type',
+        'logging',
+        'metrics',
+        'notification',
+        'policy',
+        'requestPayment',
+        'restore',
+        'torrent',
+    ],
+    // Headers supported by AWS that we do not currently support.
+    unsupportedHeaders: [
+        'x-amz-server-side-encryption',
+        'x-amz-server-side-encryption-customer-algorithm',
+        'x-amz-server-side-encryption-aws-kms-key-id',
+        'x-amz-server-side-encryption-context',
+        'x-amz-server-side-encryption-customer-key',
+        'x-amz-server-side-encryption-customer-key-md5',
+    ],
+
+    // user metadata header to set object locationConstraint
+    objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
+    legacyLocations: ['sproxyd', 'legacy'],
+    /* eslint-disable camelcase */
+    externalBackends: { aws_s3: true, azure: true, gcp: true },
+    replicationBackends: { aws_s3: true, azure: true, gcp: true },
+    // some of the available data backends  (if called directly rather
+    // than through the multiple backend gateway) need a key provided
+    // as a string as first parameter of the get/delete methods.
+    clientsRequireStringKey: { sproxyd: true, cdmi: true },
+    // healthcheck default call from nginx is every 2 seconds
+    // for external backends, don't call unless at least 1 minute
+    // (60,000 milliseconds) since last call
+    externalBackendHealthCheckInterval: 60000,
+    versioningNotImplBackends: { azure: true, gcp: true },
+    mpuMDStoredExternallyBackend: { aws_s3: true, gcp: true },
+    skipBatchDeleteBackends: { azure: true, gcp: true },
+    s3HandledBackends: { azure: true, gcp: true },
+    hasCopyPartBackends: { aws_s3: true, gcp: true },
+    /* eslint-enable camelcase */
+    mpuMDStoredOnS3Backend: { azure: true },
+    azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
+    base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' +
+        '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
 };
+
+module.exports = constants;

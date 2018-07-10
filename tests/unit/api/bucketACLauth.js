@@ -1,10 +1,12 @@
-import assert from 'assert';
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import constants from '../../../constants';
-import { isBucketAuthorized } from
-    '../../../lib/api/apiUtils/authorization/aclChecks';
+const assert = require('assert');
+const BucketInfo = require('arsenal').models.BucketInfo;
+const constants = require('../../../constants');
+const { isBucketAuthorized }
+    = require('../../../lib/api/apiUtils/authorization/aclChecks');
 
 const ownerCanonicalId = 'ownerCanonicalId';
+const lifecycleServiceAccountId = '0123456789abcdef/lifecycle';
+const unknownServiceAccountId = '0123456789abcdef/unknown';
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     'iAmTheOwnerDisplayName', creationDate);
@@ -33,36 +35,66 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
     const falseArrayBucketTrueArrayObject = [false, false, true, true];
 
     const orders = [
-        { it: 'should allow access to bucket owner', canned: '',
-          id: ownerCanonicalId, response: trueArray },
-        { it: 'should allow access to anyone if canned public-read ACL',
-          canned: 'public-read', id: accountToVet, response: trueArray },
-        { it: 'should allow access to anyone if canned public-read-write ACL',
-          canned: 'public-read-write', id: accountToVet, response: trueArray },
-        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
-        + ' but should allow request on the object (objectGet, objectHead)'
-        + ' to public user if authenticated-read  ACL',
-          canned: 'authenticated-read', id: constants.publicId,
-          response: falseArrayBucketTrueArrayObject },
-        { it: 'should allow access to any authenticated user if authenticated' +
-          '-read ACL', canned: 'authenticated-read', id: accountToVet,
-          response: trueArray },
-        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
-        + ' but should allow request on the object (objectGet, objectHead)'
-        + ' to public user if private canned ACL',
-          canned: '', id: accountToVet,
-          response: falseArrayBucketTrueArrayObject },
-        { it: 'should not allow request on the bucket (bucketGet, bucketHead) '
-        + ' but should allow request on the object (objectGet, objectHead)'
-        + ' to just any user if private canned ACL',
-          canned: '', id: accountToVet,
-          response: falseArrayBucketTrueArrayObject },
-        { it: 'should allow access to user if account was granted FULL_CONTROL',
-          canned: '', id: accountToVet, response: trueArray,
-          aclParam: ['FULL_CONTROL', accountToVet] },
-        { it: 'should not allow access to just any user if private canned ACL',
-          canned: '', id: accountToVet, response: trueArray,
-          aclParam: ['READ', accountToVet] },
+        {
+            it: 'should allow access to bucket owner', canned: '',
+            id: ownerCanonicalId, response: trueArray,
+        },
+        {
+            it: 'should allow access to lifecycle service account',
+            canned: '', id: lifecycleServiceAccountId, response: trueArray,
+        },
+        {
+            it: 'should allow public-user access for unknown ' +
+                'service account and private canned ACL',
+            canned: '', id: unknownServiceAccountId,
+            response: falseArrayBucketTrueArrayObject,
+        },
+        {
+            it: 'should allow access to anyone if canned public-read ACL',
+            canned: 'public-read', id: accountToVet, response: trueArray,
+        },
+        {
+            it: 'should allow access to anyone if canned public-read-write ACL',
+            canned: 'public-read-write', id: accountToVet, response: trueArray,
+        },
+        {
+            it: 'should not allow request on the bucket (bucketGet, bucketHead)'
+            + ' but should allow request on the object (objectGet, objectHead)'
+            + ' to public user if authenticated-read  ACL',
+            canned: 'authenticated-read', id: constants.publicId,
+            response: falseArrayBucketTrueArrayObject,
+        },
+        {
+            it: 'should allow access to any authenticated user if authenticated'
+            + '-read ACL', canned: 'authenticated-read', id: accountToVet,
+            response: trueArray,
+        },
+        {
+            it: 'should not allow request on the bucket (bucketGet, bucketHead)'
+            + ' but should allow request on the object (objectGet, objectHead)'
+            + ' to public user if private canned ACL',
+            canned: '', id: accountToVet,
+            response: falseArrayBucketTrueArrayObject,
+        },
+        {
+            it: 'should not allow request on the bucket (bucketGet, bucketHead)'
+            + ' but should allow request on the object (objectGet, objectHead)'
+            + ' to just any user if private canned ACL',
+            canned: '', id: accountToVet,
+            response: falseArrayBucketTrueArrayObject,
+        },
+        {
+            it: 'should allow access to user if account was granted'
+            + ' FULL_CONTROL',
+            canned: '', id: accountToVet, response: trueArray,
+            aclParam: ['FULL_CONTROL', accountToVet],
+        },
+        {
+            it: 'should not allow access to just any user if private'
+            + ' canned ACL',
+            canned: '', id: accountToVet, response: trueArray,
+            aclParam: ['READ', accountToVet],
+        },
     ];
 
     orders.forEach(value => {
@@ -99,12 +131,18 @@ describe('bucket authorization for bucketGetACL', () => {
     });
 
     const orders = [
-        { it: 'log group only if canned log-delivery-write acl',
-          id: constants.logId, canned: 'log-delivery-write' },
-        { it: 'account only if account was granted FULL_CONTROL right',
-          id: accountToVet, aclParam: ['FULL_CONTROL', accountToVet] },
-        { it: 'account only if account was granted READ_ACP right',
-          id: accountToVet, aclParam: ['READ_ACP', accountToVet] },
+        {
+            it: 'log group only if canned log-delivery-write acl',
+            id: constants.logId, canned: 'log-delivery-write',
+        },
+        {
+            it: 'account only if account was granted FULL_CONTROL right',
+            id: accountToVet, aclParam: ['FULL_CONTROL', accountToVet],
+        },
+        {
+            it: 'account only if account was granted READ_ACP right',
+            id: accountToVet, aclParam: ['READ_ACP', accountToVet],
+        },
     ];
     orders.forEach(value => {
         it(`should allow access to ${value.it}`, done => {
@@ -179,11 +217,15 @@ describe('bucket authorization for bucketOwnerAction', () => {
     });
 
     const orders = [
-        { it: 'other account (even if other account has FULL_CONTROL rights ' +
-          'in bucket)', id: accountToVet, canned: '',
-          aclParam: ['FULL_CONTROL', accountToVet] },
-        { it: 'public user (even if bucket is public read write)',
-          id: constants.publicId, canned: 'public-read-write' },
+        {
+            it: 'other account (even if other account has FULL_CONTROL rights'
+            + ' in bucket)', id: accountToVet, canned: '',
+            aclParam: ['FULL_CONTROL', accountToVet],
+        },
+        {
+            it: 'public user (even if bucket is public read write)',
+            id: constants.publicId, canned: 'public-read-write',
+        },
     ];
     orders.forEach(value => {
         it(`should not allow access to ${value.it}`, done => {
@@ -219,11 +261,15 @@ describe('bucket authorization for bucketDelete', () => {
     });
 
     const orders = [
-        { it: 'other account (even if other account has FULL_CONTROL rights ' +
-          'in bucket)', id: accountToVet, canned: '',
-          aclParam: ['FULL_CONTROL', accountToVet] },
-        { it: 'public user (even if bucket is public read write)',
-          id: constants.publicId, canned: 'public-read-write' },
+        {
+            it: 'other account (even if other account has FULL_CONTROL rights '
+            + 'in bucket)', id: accountToVet, canned: '',
+            aclParam: ['FULL_CONTROL', accountToVet],
+        },
+        {
+            it: 'public user (even if bucket is public read write)',
+            id: constants.publicId, canned: 'public-read-write',
+        },
     ];
     orders.forEach(value => {
         it(`should not allow access to ${value.it}`, done => {
@@ -259,16 +305,37 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
+    it('should allow access to lifecycle service account', () => {
+        // NOTE objectPut is not needed for lifecycle but still
+        // allowed, we would want more fine-grained implementation of
+        // ACLs for service accounts later.
+        const results = requestTypes.map(type =>
+            isBucketAuthorized(bucket, type, lifecycleServiceAccountId));
+        assert.deepStrictEqual(results, [true, true]);
+    });
+
+    it('should deny access to unknown service account', () => {
+        const results = requestTypes.map(type =>
+            isBucketAuthorized(bucket, type, unknownServiceAccountId));
+        assert.deepStrictEqual(results, [false, false]);
+    });
+
     const orders = [
-        { it: 'anyone if canned public-read-write ACL',
-          canned: 'public-read-write', id: constants.publicId,
-          response: [true, true] },
-        { it: 'user if account was granted FULL_CONTROL', canned: '',
-          id: accountToVet, response: [false, false],
-          aclParam: ['FULL_CONTROL', accountToVet] },
-        { it: 'user if account was granted WRITE right', canned: '',
-          id: accountToVet, response: [false, false],
-          aclParam: ['WRITE', accountToVet] },
+        {
+            it: 'anyone if canned public-read-write ACL',
+            canned: 'public-read-write', id: constants.publicId,
+            response: [true, true],
+        },
+        {
+            it: 'user if account was granted FULL_CONTROL', canned: '',
+            id: accountToVet, response: [false, false],
+            aclParam: ['FULL_CONTROL', accountToVet],
+        },
+        {
+            it: 'user if account was granted WRITE right', canned: '',
+            id: accountToVet, response: [false, false],
+            aclParam: ['WRITE', accountToVet],
+        },
     ];
     orders.forEach(value => {
         it(`should allow access to ${value.it}`, done => {

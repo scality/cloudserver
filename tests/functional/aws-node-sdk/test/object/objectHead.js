@@ -1,8 +1,9 @@
-import assert from 'assert';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'alexbucketnottaken';
 const objectName = 'someObject';
@@ -405,6 +406,37 @@ describe('HEAD object, conditions', () => {
                 IfUnmodifiedSince: dateFromNow(-1),
             }, err => {
                 checkError(err, errors.PreconditionFailed.code);
+                done();
+            });
+        });
+
+        it('WebsiteRedirectLocation is set & it appears in response', done => {
+            const redirBktwBody = {
+                Bucket: bucketName,
+                Key: 'redir_present',
+                WebsiteRedirectLocation: 'http://google.com',
+                Body: 'hello',
+            };
+            const redirBkt = {
+                Bucket: bucketName,
+                Key: 'redir_present',
+            };
+            s3.putObject(redirBktwBody, err => {
+                checkNoError(err);
+                s3.headObject(redirBkt, (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.WebsiteRedirectLocation,
+                            'http://google.com');
+                    return done();
+                });
+            });
+        });
+
+        it('WebsiteRedirectLocation is not set & is absent', done => {
+            requestHead({}, (err, data) => {
+                checkNoError(err);
+                assert.strictEqual('WebsiteRedirectLocation' in data,
+                  false, 'WebsiteRedirectLocation header is present.');
                 done();
             });
         });

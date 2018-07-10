@@ -1,19 +1,18 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const bucketDeleteWebsite = require('../../../lib/api/bucketDeleteWebsite');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
     WebsiteConfig }
-from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+= require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 const config = new WebsiteConfig('index.html', 'error.html');
 config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
 { KeyPrefixEquals: 'docs/' });
@@ -36,8 +35,7 @@ const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() },
 describe('deleteBucketWebsite API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, () => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
             bucketPutWebsite(authInfo, testBucketPutWebsiteRequest, log, done);
         });
     });

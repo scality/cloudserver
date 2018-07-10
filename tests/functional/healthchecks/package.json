@@ -1,0 +1,16 @@
+{
+  "name": "Test-healthcheck",
+  "version": "0.1.0",
+  "description": "Test-healthcheck",
+  "main": "tests.js",
+  "repository": "",
+  "keywords": [
+    "test"
+  ],
+  "scripts": {
+    "test": "mocha -t 40000 test/",
+    "test-debug": "_mocha -t 40000 test/"
+  },
+  "author": ""
+}
+

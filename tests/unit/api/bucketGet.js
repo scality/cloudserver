@@ -1,16 +1,17 @@
-import assert from 'assert';
-import querystring from 'querystring';
+const assert = require('assert');
+const querystring = require('querystring');
 
-import async from 'async';
-import { parseString } from 'xml2js';
+const async = require('async');
+const { parseString } = require('xml2js');
 
-import bucketGet from '../../../lib/api/bucketGet';
-import bucketPut from '../../../lib/api/bucketPut';
-import objectPut from '../../../lib/api/objectPut';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import DummyRequest from '../DummyRequest';
+const bucketGet = require('../../../lib/api/bucketGet');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const objectPut = require('../../../lib/api/objectPut');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
-import { errors } from 'arsenal';
+const { errors } = require('arsenal');
+
 
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
@@ -19,7 +20,6 @@ const log = new DummyRequestLogger();
 const namespace = 'default';
 const postBody = Buffer.from('I am a body', 'utf8');
 const prefix = 'sub';
-const locationConstraint = 'us-west-1';
 
 let testPutBucketRequest;
 let testPutObjectRequest1;
@@ -75,16 +75,18 @@ describe('bucketGet API', () => {
 
         async.waterfall([
             next =>
-                bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+                bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) =>
-                objectPut(authInfo, testPutObjectRequest1, undefined,
-                log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
-                testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) =>
+                objectPut(authInfo, testPutObjectRequest1, undefined, log,
+                    next),
+            (resHeaders, next) => {
+                objectPut(authInfo, testPutObjectRequest2, undefined, log,
+                    next);
+            },
+            (resHeaders, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
-            (result, corsHeaders, next) => parseString(result, next),
+            (result, corsHeaders, next) =>
+                parseString(result, next),
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult
@@ -105,13 +107,12 @@ describe('bucketGet API', () => {
 
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (resHeaders, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -120,6 +121,31 @@ describe('bucketGet API', () => {
                                objectName1);
             assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
                                objectName2);
+            done();
+        });
+    });
+
+    it('should return empty list when max-keys is set to 0', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            headers: { host: '/' },
+            url: `/${bucketName}`,
+            query: { 'max-keys': '0' },
+        };
+
+        async.waterfall([
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
+            (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
+                undefined, log, next),
+            (resHeaders, next) => objectPut(authInfo,
+                testPutObjectRequest2, undefined, log, next),
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ],
+        (err, result) => {
+            assert.strictEqual(result.ListBucketResult.Content, undefined);
             done();
         });
     });
@@ -134,13 +160,12 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (resHeaders, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -176,13 +201,12 @@ describe('bucketGet API', () => {
             query: { 'max-keys': '99999' },
         };
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (resHeaders, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -203,15 +227,14 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (resHeaders, next) => objectPut(authInfo,
                 testPutObjectRequest2, undefined, log, next),
-            (result, corsHeaders, next) => objectPut(authInfo,
+            (resHeaders, next) => objectPut(authInfo,
                 testPutObjectRequest3, undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -235,11 +258,10 @@ describe('bucketGet API', () => {
 
         testPutObjectRequest1.objectKey += '&><"\'';
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => objectPut(authInfo, testPutObjectRequest1,
                 undefined, log, next),
-            (result, corsHeaders, next) => bucketGet(authInfo, testGetRequest,
+            (resHeaders, next) => bucketGet(authInfo, testGetRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
         ],
@@ -260,8 +282,7 @@ describe('bucketGet API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) =>
                 bucketGet(authInfo, testGetRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),

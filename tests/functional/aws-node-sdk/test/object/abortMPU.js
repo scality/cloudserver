@@ -1,7 +1,7 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const date = Date.now();
 const bucket = `abortmpu${date}`;
@@ -29,7 +29,7 @@ describe('Abort MPU', () => {
             .then(res => {
                 uploadId = res.UploadId;
                 return s3.uploadPartAsync({ Bucket: bucket, Key: key,
-                  PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
+                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
             })
             .catch(err => {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);

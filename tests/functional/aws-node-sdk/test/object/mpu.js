@@ -1,9 +1,9 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
-const bucket = 'object-test-mpu';
+const bucket = `object-test-mpu-${Date.now()}`;
 const objectKey = 'toAbort&<>"\'';
 
 // Get the expected object of listMPU API.

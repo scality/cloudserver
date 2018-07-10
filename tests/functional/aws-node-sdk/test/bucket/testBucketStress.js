@@ -1,7 +1,7 @@
-import { S3 } from 'aws-sdk';
-import { times, timesSeries, waterfall } from 'async';
+const { S3 } = require('aws-sdk');
+const { times, timesSeries, waterfall } = require('async');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 const bucket = `stress-test-bucket-${Date.now()}`;
 const text = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';

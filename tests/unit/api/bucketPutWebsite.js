@@ -1,21 +1,20 @@
-import assert from 'assert';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import { xmlContainsElem }
-    from '../../../lib/api/apiUtils/bucket/bucketWebsite';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const { xmlContainsElem }
+    = require('../../../lib/api/apiUtils/bucket/bucketWebsite');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
     WebsiteConfig }
-from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+    = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -37,8 +36,7 @@ function _getPutWebsiteRequest(xml) {
 
 describe('putBucketWebsite API', () => {
     before(() => cleanup());
-    beforeEach(done => bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done));
+    beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
     it('should update a bucket\'s metadata with website config obj', done => {

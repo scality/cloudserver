@@ -1,8 +1,6 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import routesUtils from '../../../lib/routes/routesUtils';
-
-const setPartRanges = routesUtils.setPartRanges;
+const setPartRanges = require('../../../lib/api/apiUtils/object/setPartRanges');
 
 describe('setPartRanges function', () => {
     it('should set range on a one part object', () => {
@@ -23,7 +21,7 @@ describe('setPartRanges function', () => {
             const dataLocations = [{ key: '1', size: '4', start: '0' },
                 { key: '2', size: '10', start: '4' },
                 { key: '3', size: '20', start: '14' },
-           ];
+            ];
             const outerRange = [0, 10];
             const actual =
                 setPartRanges(dataLocations, outerRange);
@@ -38,7 +36,7 @@ describe('setPartRanges function', () => {
             const dataLocations = [{ key: '1', size: '4', start: '0' },
                 { key: '2', size: '10', start: '4' },
                 { key: '3', size: '20', start: '14' },
-           ];
+            ];
             const outerRange = [2, 18];
             const actual =
                 setPartRanges(dataLocations, outerRange);
@@ -55,7 +53,7 @@ describe('setPartRanges function', () => {
             const dataLocations = [{ key: '1', size: '4', start: '0' },
                 { key: '2', size: '10', start: '4' },
                 { key: '3', size: '20', start: '14' },
-           ];
+            ];
             const outerRange = [5, 7];
             const actual =
                 setPartRanges(dataLocations, outerRange);
@@ -71,13 +69,13 @@ describe('setPartRanges function', () => {
             const dataLocations = [{ key: '1', size: '4', start: '0' },
                 { key: '2', size: '10', start: '4' },
                 { key: '3', size: '20', start: '14' },
-           ];
+            ];
             const outerRange = [5, 34];
             const actual =
                 setPartRanges(dataLocations, outerRange);
             assert.deepStrictEqual(actual, [{ key: '2', size: '9', start: '4',
                 range: [1, 9] },
-            { key: '3', size: '20', start: '14' },
-        ]);
+                { key: '3', size: '20', start: '14' },
+            ]);
         });
 });

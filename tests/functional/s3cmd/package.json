@@ -1,6 +1,0 @@
-{
-    "name": "s3cmd-tests",
-    "scripts": {
-        "test": "mocha -t 40000 *.js"
-    }
-}

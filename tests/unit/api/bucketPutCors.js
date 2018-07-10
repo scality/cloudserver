@@ -1,20 +1,20 @@
-import assert from 'assert';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import { _validator,
-    parseCorsXml } from '../../../lib/api/apiUtils/bucket/bucketCors';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const { _validator, parseCorsXml }
+    = require('../../../lib/api/apiUtils/bucket/bucketCors');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo,
-    CorsConfigTester } from '../helpers';
-import metadata from '../../../lib/metadata/wrapper';
+    CorsConfigTester }
+    = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -44,8 +44,7 @@ function _generateSampleXml(value) {
 describe('putBucketCORS API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done);
+        bucketPut(authInfo, testBucketPutRequest, log, done);
     });
     afterEach(() => cleanup());
 

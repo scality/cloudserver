@@ -16,4 +16,4 @@ const fakeDataSource = {
     },
 };
 
-export default fakeDataSource;
+module.exports = fakeDataSource;

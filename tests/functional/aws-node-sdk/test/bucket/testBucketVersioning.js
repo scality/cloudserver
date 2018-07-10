@@ -1,18 +1,22 @@
-import assert from 'assert';
-import { S3 } from 'aws-sdk';
+const assert = require('assert');
+const { S3 } = require('aws-sdk');
 
-import getConfig from '../support/config';
+const getConfig = require('../support/config');
 
 const bucket = `versioning-bucket-${Date.now()}`;
 
 describe('aws-node-sdk test bucket versioning', function testSuite() {
     this.timeout(60000);
     let s3;
+    let replicationAccountS3;
 
     // setup test
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
+        const configReplication = getConfig('replication',
+            { signatureVersion: 'v4' });
         s3 = new S3(config);
+        replicationAccountS3 = new S3(configReplication);
         s3.createBucket({ Bucket: bucket }, done);
     });
 
@@ -45,7 +49,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should not accept versioning configuration w/o \"Status\"', done => {
+    it('should not accept versioning configuration w/o "Status"', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -93,11 +97,43 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should retrieve an empty versioning configuration', done => {
+    it('should not accept versioning with MFA Delete enabled', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                MFADelete: 'Enabled',
+                Status: 'Enabled',
+            },
+        };
+        s3.putBucketVersioning(params, error => {
+            assert.notEqual(error, null, 'Expected failure but got success');
+            assert.strictEqual(error.statusCode, 501);
+            assert.strictEqual(error.code, 'NotImplemented');
+            done();
+        });
+    });
+
+    it('should accept versioning with MFA Delete disabled', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                MFADelete: 'Disabled',
+                Status: 'Enabled',
+            },
+        };
+        s3.putBucketVersioning(params, error => {
+            assert.equal(error, null, 'Expected success but got failure');
+            done();
+        });
+    });
+
+    it('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
+        // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
             assert.strictEqual(error, null);
-            assert.deepStrictEqual(data, {});
+            assert.deepStrictEqual(data, { MFADelete: 'Disabled',
+                Status: 'Enabled' });
             done();
         });
     });
@@ -110,6 +146,17 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             },
         };
         s3.putBucketVersioning(params, done);
+    });
+
+    it('should accept valid versioning configuration if user is a ' +
+    'replication user', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                Status: 'Enabled',
+            },
+        };
+        replicationAccountS3.putBucketVersioning(params, done);
     });
 
     it('should retrieve the valid versioning configuration', done => {

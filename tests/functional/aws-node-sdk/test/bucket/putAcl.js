@@ -1,15 +1,15 @@
-import assert from 'assert';
-import { S3 } from 'aws-sdk';
-import getConfig from '../support/config';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const assert = require('assert');
+const { S3 } = require('aws-sdk');
+const getConfig = require('../support/config');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = `bucketacl-bucket-${Date.now()}`;
 const bucketName = 'putbucketaclfttest';
 const grants = [];
 
 // results in body of 589824 bytes
-for (let i = 0; i < 100000; i ++) {
+for (let i = 0; i < 100000; i++) {
     grants.push({
         Grantee: {
             Type: 'CanonicalUser',

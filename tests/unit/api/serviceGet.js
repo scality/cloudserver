@@ -1,12 +1,12 @@
-import { errors } from 'arsenal';
-import assert from 'assert';
-import async from 'async';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const { parseString } = require('xml2js');
+const { errors } = require('arsenal');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import constants from '../../../constants';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
-import serviceGet from '../../../lib/api/serviceGet';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const constants = require('../../../constants');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const serviceGet = require('../../../lib/api/serviceGet');
 
 const authInfo = makeAuthInfo('accessKey1');
 const log = new DummyRequestLogger();
@@ -14,8 +14,6 @@ const namespace = 'default';
 const bucketName1 = 'bucketname1';
 const bucketName2 = 'bucketname2';
 const bucketName3 = 'bucketname3';
-const locationConstraint = 'us-west-1';
-
 
 describe('serviceGet API', () => {
     beforeEach(() => {
@@ -49,16 +47,13 @@ describe('serviceGet API', () => {
         };
         async.waterfall([
             function waterfall1(next) {
-                bucketPut(authInfo, testbucketPutRequest1, locationConstraint,
-                    log, next);
+                bucketPut(authInfo, testbucketPutRequest1, log, next);
             },
             function waterfall2(corsHeaders, next) {
-                bucketPut(authInfo, testbucketPutRequest2, locationConstraint,
-                    log, next);
+                bucketPut(authInfo, testbucketPutRequest2, log, next);
             },
             function waterfall3(corsHeaders, next) {
-                bucketPut(authInfo, testbucketPutRequest3, locationConstraint,
-                    log, next);
+                bucketPut(authInfo, testbucketPutRequest3, log, next);
             },
             function waterfall4(corsHeaders, next) {
                 serviceGet(authInfo, serviceGetRequest, log, next);

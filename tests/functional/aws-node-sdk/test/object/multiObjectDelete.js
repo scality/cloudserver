@@ -1,15 +1,11 @@
-import assert from 'assert';
-import Promise from 'bluebird';
+const assert = require('assert');
+const Promise = require('bluebird');
 
-import config from '../../../../../lib/Config';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
-
-const userBucketUtility = new BucketUtility('userBart', {});
-const userS3 = userBucketUtility.s3;
 
 const bucketName = 'multi-object-delete-234-634';
 const key = 'key';
@@ -38,7 +34,7 @@ function sortList(list) {
 
 function createObjectsList(size) {
     const objects = [];
-    for (let i = 1; i < (size + 1); i ++) {
+    for (let i = 1; i < (size + 1); i++) {
         objects.push({
             Key: `${key}${i}`,
         });
@@ -63,7 +59,7 @@ describe('Multi-Object Delete Success', function success() {
         })
         .then(() => {
             const objects = [];
-            for (let i = 1; i < 1001; i ++) {
+            for (let i = 1; i < 1001; i++) {
                 objects.push(`${key}${i}`);
             }
             const queued = [];
@@ -214,7 +210,7 @@ describe('Multi-Object Delete Access', function access() {
             throw err;
         })
         .then(() => {
-            for (let i = 1; i < 501; i ++) {
+            for (let i = 1; i < 501; i++) {
                 createObjects.push(s3.putObjectAsync({
                     Bucket: bucketName,
                     Key: `${key}${i}`,
@@ -257,14 +253,8 @@ describe('Multi-Object Delete Access', function access() {
 
 
     it('should batch delete objects where requester has permission', () => {
-        // if test run with file or mem backend, test user access for
-        // in memory implementation (which should grant user access).
-        // if using distributed backend, test with account since need
-        // policy authorizaing user for user to have access.
-        // tests of user with a distributed backend are in integration.
-        const requester = config.backends.auth === 'mem' ? userS3 : s3;
         const objects = createObjectsList(500);
-        return requester.deleteObjectsAsync({
+        return s3.deleteObjectsAsync({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,

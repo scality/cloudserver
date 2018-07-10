@@ -5,8 +5,7 @@ const process = require('process');
 const assert = require('assert');
 const fs = require('fs');
 const async = require('async');
-require('babel-core/register');
-const conf = require('../../../lib/Config').default;
+const conf = require('../../../lib/Config').config;
 
 const configCfg = conf.https ? 's3cfg_ssl' : 's3cfg';
 const program = 's3cmd';
@@ -28,6 +27,7 @@ const nonexist = 'nonexist';
 const invalidName = 'VOID';
 const emailAccount = 'sampleAccount1@sampling.com';
 const lowerCaseEmail = emailAccount.toLowerCase();
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function safeJSONParse(s) {
     let res;
@@ -254,20 +254,27 @@ describe('s3cmd putBucket', () => {
         exec(['mb', `s3://${bucket}`], done);
     });
 
+    // scality-us-west-1 is NOT using legacyAWSBehvior
+    // in test location config and in end to end so this test should
+    // pass by returning error. If legacyAWSBehvior, request
+    // would return a 200
     it('put the same bucket, should fail', done => {
-        exec(['mb', `s3://${bucket}`], done, 13);
+        exec([
+            'mb', `s3://${bucket}`,
+            '--bucket-location=scality-us-west-1',
+        ], done, 13);
     });
 
     it('put an invalid bucket, should fail', done => {
         exec(['mb', `s3://${invalidName}`], done, 11);
     });
 
-    it('should put a valid bucket with region (regardless of region)', done => {
-        exec(['mb', 's3://regioned', '--region=wherever'], done);
+    it('should put a valid bucket with region', done => {
+        exec(['mb', 's3://regioned', '--region=us-east-1'], done);
     });
 
     it('should delete bucket put with region', done => {
-        exec(['rb', 's3://regioned', '--region=wherever'], done);
+        exec(['rb', 's3://regioned', '--region=us-east-1'], done);
     });
 
     if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
@@ -293,9 +300,7 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
         exec(['setacl', `s3://${bucket}`, '--acl-public'], done);
     });
 
-    // s3cmd info returns error if bucket location is not implemented. This test
-    // will be unskipped in rel/7.0 after bucket location has been implemented.
-    it.skip('should get canned ACL that was set', done => {
+    it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
         'stdout', foundIt => {
             assert(foundIt);
@@ -304,13 +309,13 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
     });
 
     it('should set a specific ACL', done => {
-        exec(['setacl', `s3://${bucket}`,
-        `--acl-grant=write:${emailAccount}`], done);
+        exec([
+            'setacl', `s3://${bucket}`,
+            `--acl-grant=write:${emailAccount}`,
+        ], done);
     });
 
-    // s3cmd info returns error if bucket location is not implemented. This test
-    // will be unskipped in rel/7.0 after bucket location has been implemented.
-    it.skip('should get specific ACL that was set', done => {
+    it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
         `${lowerCaseEmail}: WRITE`, 'stdout', foundIt => {
             assert(foundIt);
@@ -406,8 +411,10 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
     });
 
     it('should copy an object to the same bucket', done => {
-        exec(['cp', `s3://${bucket}/${upload}`,
-        `s3://${bucket}/${upload}copy`], done);
+        exec([
+            'cp', `s3://${bucket}/${upload}`,
+            `s3://${bucket}/${upload}copy`,
+        ], done);
     });
 
     it('should get an object that was copied', done => {
@@ -441,8 +448,10 @@ describe('s3cmd copyObject without MPU to different bucket ' +
         });
 
         it('should copy an object to the new bucket', done => {
-            exec(['cp', `s3://${bucket}/${upload}`,
-            `s3://${copyBucket}/${upload}`], done);
+            exec([
+                'cp', `s3://${bucket}/${upload}`,
+                `s3://${copyBucket}/${upload}`,
+            ], done);
         });
 
         it('should get an object that was copied', done => {
@@ -467,9 +476,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
         exec(['setacl', `s3://${bucket}/${upload}`, '--acl-public'], done);
     });
 
-    // s3cmd info returns error if bucket location is not implemented. This test
-    // will be unskipped in rel/7.0 after bucket location has been implemented.
-    it.skip('should get canned ACL that was set', done => {
+    it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         '*anon*: READ', 'stdout', foundIt => {
             assert(foundIt);
@@ -482,9 +489,7 @@ describe('s3cmd put and get object ACLs', function aclObj() {
             `--acl-grant=read:${emailAccount}`], done);
     });
 
-    // s3cmd info returns error if bucket location is not implemented. This test
-    // will be unskipped in rel/7.0 after bucket location has been implemented.
-    it.skip('should get specific ACL that was set', done => {
+    it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         `${lowerCaseEmail}: READ`, 'stdout', foundIt => {
             assert(foundIt);
@@ -593,8 +598,10 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should copy an object that was put via multipart upload', done => {
-        exec(['cp', `s3://${bucket}/${MPUpload}`,
-        `s3://${bucket}/${MPUpload}copy`], done);
+        exec([
+            'cp', `s3://${bucket}/${MPUpload}`,
+            `s3://${bucket}/${MPUpload}copy`,
+        ], done);
     });
 
     it('should get an object that was copied', done => {
@@ -708,9 +715,7 @@ describe('s3cmd put, get and delete object with spaces ' +
     });
 });
 
-// s3cmd info returns error if bucket location is not implemented. These tests
-// will be unskipped in rel/7.0 after bucket location has been implemented.
-describe.skip('s3cmd info', () => {
+describe('s3cmd info', () => {
     const bucket = 's3cmdinfobucket';
 
     beforeEach(done => {
@@ -791,8 +796,10 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
         exec(['mb', `s3://${bucket}`], () => {
             createFile(upload16MB, 16777216, () => {
                 async.timesLimit(50, 1, (n, next) => {
-                    exec(['put', upload16MB, `s3://${bucket}/key${n}`,
-                    '--multipart-chunk-size-mb=5'], next);
+                    exec([
+                        'put', upload16MB, `s3://${bucket}/key${n}`,
+                        '--multipart-chunk-size-mb=5',
+                    ], next);
                 }, done);
             });
         });
@@ -804,5 +811,24 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
 
     after('delete the downloaded file', done => {
         deleteFile(upload16MB, done);
+    });
+});
+
+describeSkipIfE2E('If no location is sent with the request', () => {
+    beforeEach(done => {
+        exec(['mb', `s3://${bucket}`], done);
+    });
+    afterEach(done => {
+        exec(['rb', `s3://${bucket}`], done);
+    });
+    // WARNING: change "us-east-1" to another locationConstraint depending
+    // on the restEndpoints (./config.json)
+    it('endpoint should be used to determine the locationConstraint', done => {
+        checkRawOutput(['info', `s3://${bucket}`], 'Location', 'us-east-1',
+        'stdout',
+        foundIt => {
+            assert(foundIt);
+            done();
+        });
     });
 });

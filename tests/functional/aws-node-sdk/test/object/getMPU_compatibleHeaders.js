@@ -1,7 +1,7 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'testgetmpubucket';
 const objectName = 'key';
@@ -74,7 +74,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         'on MPU, when they are specified in creation of MPU',
         () => {
             const params = { Bucket: bucketName, Key: 'key', PartNumber: 1,
-            UploadId: uploadId };
+                UploadId: uploadId };
             return s3.uploadPartAsync(params)
             .catch(err => {
                 process.stdout.write(`Error in uploadPart ${err}\n`);

@@ -1,18 +1,17 @@
-import assert from 'assert';
-import crypto from 'crypto';
+const assert = require('assert');
+const crypto = require('crypto');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import bucketGetCors from '../../../lib/api/bucketGetCors';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const bucketGetCors = require('../../../lib/api/bucketGetCors');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo }
-from '../helpers';
+= require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketGetCorsTestBucket';
-const locationConstraint = 'us-west-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -60,8 +59,7 @@ function _comparePutGetXml(sampleXml, done) {
 describe('getBucketCors API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done);
+        bucketPut(authInfo, testBucketPutRequest, log, done);
     });
     afterEach(() => cleanup());
 

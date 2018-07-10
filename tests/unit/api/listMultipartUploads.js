@@ -1,12 +1,13 @@
-import assert from 'assert';
-import async from 'async';
-import querystring from 'querystring';
-import { parseString } from 'xml2js';
+const assert = require('assert');
+const async = require('async');
+const querystring = require('querystring');
+const { parseString } = require('xml2js');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import initiateMultipartUpload from '../../../lib/api/initiateMultipartUpload';
-import listMultipartUploads from '../../../lib/api/listMultipartUploads';
-import { cleanup, DummyRequestLogger, makeAuthInfo } from '../helpers';
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
 const log = new DummyRequestLogger();
 
@@ -14,7 +15,6 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-const locationConstraint = 'us-west-1';
 
 describe('listMultipartUploads API', () => {
     beforeEach(() => {
@@ -68,8 +68,7 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 testInitiateMPURequest1, log, next),
             (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
@@ -99,8 +98,7 @@ describe('listMultipartUploads API', () => {
 
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 testInitiateMPURequest1, log, next),
             (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
@@ -132,8 +130,7 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 testInitiateMPURequest1, log, next),
             (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
@@ -169,8 +166,7 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 testInitiateMPURequest1, log, next),
             (result, corsHeaders, next) => initiateMultipartUpload(authInfo,
@@ -202,8 +198,7 @@ describe('listMultipartUploads API', () => {
         };
 
         async.waterfall([
-            next => bucketPut(authInfo, testPutBucketRequest,
-                locationConstraint, log, next),
+            next => bucketPut(authInfo, testPutBucketRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authInfo,
                 testInitiateMPURequest1, log, next),
             (result, corsHeaders, next) => initiateMultipartUpload(authInfo,

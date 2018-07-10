@@ -1,6 +1,6 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import { isHealthy } from '../../../lib/utilities/healthcheckHandler';
+const { isHealthy } = require('../../../lib/utilities/healthcheckHandler');
 
 describe('isHealthy function for setHealthCheckResponse', () => {
     it('should return true', () => {

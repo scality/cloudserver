@@ -2,41 +2,44 @@
     "accounts": [{
         "name": "Bart",
         "email": "sampleaccount1@sampling.com",
-        "arn": "aws::iam:123456789012:root",
+        "arn": "arn:aws:iam::123456789012:root",
         "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be",
         "shortid": "123456789012",
         "keys": [{
             "access": "accessKey1",
             "secret": "verySecretKey1"
-        }],
-        "users": [{
-            "name": "Bart Jr",
-            "email": "user1.sampleaccount2@sampling.com",
-            "arn": "aws::iam:123456789013:bart",
-            "keys": [{
-                "access": "USERBARTFUNACCESSKEY",
-                "secret": "verySecretKey1"
-            }]
         }]
     }, {
         "name": "Lisa",
         "email": "sampleaccount2@sampling.com",
-        "arn": "aws::iam:accessKey2:user/Lisa",
+        "arn": "arn:aws:iam::123456789013:root",
         "canonicalID": "79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf",
-        "shortid": "123456789012",
+        "shortid": "123456789013",
         "keys": [{
             "access": "accessKey2",
             "secret": "verySecretKey2"
         }]
-    }, {
-        "name": "Docker",
-        "email": "sampleaccount3@sampling.com",
-        "arn": "aws::iam:accessKeyDocker:user/Docker",
-        "canonicalID": "sd359df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47eh3hd",
-        "shortid": "123456789012",
+    },
+    {
+        "name": "Clueso",
+        "email": "inspector@clueso.info",
+        "arn": "arn:aws:iam::123456789014:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/clueso",
+        "shortid": "123456789014",
         "keys": [{
-            "access": "accessKeyDocker",
-            "secret": "verySecretKeyDocker"
+            "access": "cluesoKey1",
+            "secret": "cluesoSecretKey1"
+        }]
+    },
+    {
+        "name": "Replication",
+        "email": "inspector@replication.info",
+        "arn": "arn:aws:iam::123456789015:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/replication",
+        "shortid": "123456789015",
+        "keys": [{
+            "access": "replicationKey1",
+            "secret": "replicationSecretKey1"
         }]
     }]
 }

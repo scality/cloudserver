@@ -1,26 +1,28 @@
-import assert from 'assert';
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
-import path from 'path';
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 
-import { S3 } from 'aws-sdk';
+const { S3 } = require('aws-sdk');
 
-import conf from '../../../../../lib/Config';
-import getConfig from '../support/config';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
+const conf = require('../../../../../lib/Config').config;
+const getConfig = require('../support/config');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const config = getConfig('default', { signatureVersion: 'v4' });
 const s3 = new S3(config);
 
+// Note: To run these tests locally, you may need to edit the machine's
+// /etc/hosts file to include the following line:
+// `127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com`
+
 const transport = conf.https ? 'https' : 'http';
 const bucket = process.env.AWS_ON_AIR ? `awsbucketwebsitetester-${Date.now()}` :
     'bucketwebsitetester';
-const hostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
-
+const hostname = process.env.S3_END_TO_END ?
+    `${bucket}.s3-website-us-east-1.scality.com` :
+    `${bucket}.s3-website-us-east-1.amazonaws.com`;
 const endpoint = process.env.AWS_ON_AIR ? `${transport}://${hostname}` :
     `${transport}://${hostname}:8000`;
-
 const redirectEndpoint = conf.https ? 'https://www.google.com/' :
     'http://www.google.com/';
 
@@ -29,54 +31,6 @@ const indexExpectedHeaders = {
     'etag': indexDocETag,
     'x-amz-meta-test': 'value',
 };
-
-/**
- * makeHeadRequest - makes head request and asserts expected response
- * @param {number} expectedStatusCode - expected response code
- * @param {object} expectedHeaders - expected headers in response with
- * expected values (e.g., {x-amz-error-code: AccessDenied})
- * @param {string | undefined} path - path for request or undefined if none
- * @param {function} cb - callback to end test
- * @return {undefined}
- */
-function makeHeadRequest(expectedStatusCode, expectedHeaders, path, cb) {
-    const options = {
-        hostname,
-        port: process.env.AWS_ON_AIR ? 80 : 8000,
-        method: 'HEAD',
-        rejectUnauthorized: false,
-    };
-    if (path) {
-        options.path = path;
-    }
-    const module = conf.https ? https : http;
-    const req = module.request(options, res => {
-        const body = [];
-        res.on('data', chunk => {
-            body.push(chunk);
-        });
-        res.on('error', err => {
-            process.stdout.write('err on post response');
-            return cb(err);
-        });
-        res.on('end', () => {
-            // body should be empty
-            assert.deepStrictEqual(body, []);
-            assert.strictEqual(res.statusCode, expectedStatusCode);
-            const headers = Object.keys(expectedHeaders);
-            for (let i = 0; i < headers.length; i++) {
-                assert.strictEqual(res.headers[headers[i]],
-                    expectedHeaders[headers[i]]);
-            }
-            return cb();
-        });
-    });
-    req.on('error', err => {
-        process.stdout.write('err from post request');
-        return cb(err);
-    });
-    req.end();
-}
 
 // Basic Expected Behavior:
 
@@ -130,7 +84,8 @@ describe('Head request on bucket website endpoint', () => {
             // so compatible with aws
             'x-amz-error-message': 'The specified bucket does not exist.',
         };
-        makeHeadRequest(404, expectedHeaders, undefined, done);
+        WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 404,
+            expectedHeaders, done);
     });
 
     describe('with existing bucket', () => {
@@ -144,7 +99,8 @@ describe('Head request on bucket website endpoint', () => {
                 'x-amz-error-message': 'The specified bucket does not ' +
                     'have a website configuration',
             };
-            makeHeadRequest(404, expectedHeaders, undefined, done);
+            WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 404,
+                expectedHeaders, done);
         });
 
         describe('with existing configuration', () => {
@@ -177,11 +133,13 @@ describe('Head request on bucket website endpoint', () => {
 
             it('should return indexDocument headers if no key ' +
                 'requested', done => {
-                makeHeadRequest(200, indexExpectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
+                    200, indexExpectedHeaders, done);
             });
 
             it('should return indexDocument headers if key requested', done => {
-                makeHeadRequest(200, indexExpectedHeaders, '/index.html', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/index.html`, 200, indexExpectedHeaders, done);
             });
         });
 
@@ -213,14 +171,15 @@ describe('Head request on bucket website endpoint', () => {
 
             it('should serve indexDocument if path request without key',
             done => {
-                makeHeadRequest(200, indexExpectedHeaders, '/pathprefix/',
-                    done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/pathprefix/`, 200, indexExpectedHeaders, done);
             });
 
             it('should serve indexDocument if path request with key',
             done => {
-                makeHeadRequest(200, indexExpectedHeaders,
-                    '/pathprefix/index.html', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/pathprefix/index.html`, 200,
+                    indexExpectedHeaders, done);
             });
         });
 
@@ -249,7 +208,8 @@ describe('Head request on bucket website endpoint', () => {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
                 };
-                makeHeadRequest(403, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 403,
+                    expectedHeaders, done);
             });
         });
 
@@ -265,7 +225,8 @@ describe('Head request on bucket website endpoint', () => {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
                 };
-                makeHeadRequest(403, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 403,
+                    expectedHeaders, done);
             });
         });
 
@@ -284,14 +245,16 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: redirectEndpoint,
                 };
-                makeHeadRequest(301, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    endpoint, 301, expectedHeaders, done);
             });
 
             it(`should redirect to ${redirectEndpoint}about`, done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -315,14 +278,16 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/',
                 };
-                makeHeadRequest(301, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
+                    301, expectedHeaders, done);
             });
 
             it('should redirect to https://google.com/about', done => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/about/',
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -353,7 +318,8 @@ describe('Head request on bucket website endpoint', () => {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
                 };
-                makeHeadRequest(403, expectedHeaders, '/madeup', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/madeup`, 403, expectedHeaders, done);
             });
         });
 
@@ -376,7 +342,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: redirectEndpoint,
                 };
-                makeHeadRequest(301, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 301,
+                    expectedHeaders, done);
             });
         });
 
@@ -399,7 +366,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -424,7 +392,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -450,7 +419,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -475,7 +445,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/about/',
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -503,7 +474,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect.html`,
                 };
-                makeHeadRequest(301, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 301,
+                    expectedHeaders, done);
             });
         });
 
@@ -527,7 +499,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about`,
                 };
-                makeHeadRequest(301, expectedHeaders, undefined, done);
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint, 301,
+                    expectedHeaders, done);
             });
         });
 
@@ -556,7 +529,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
 
@@ -588,7 +562,8 @@ describe('Head request on bucket website endpoint', () => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect/`,
                 };
-                makeHeadRequest(301, expectedHeaders, '/about/', done);
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/about/`, 301, expectedHeaders, done);
             });
         });
     });

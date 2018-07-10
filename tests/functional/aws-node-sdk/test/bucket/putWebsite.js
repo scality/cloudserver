@@ -1,8 +1,8 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-import { WebsiteConfigTester } from '../../lib/utility/website-util';
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { WebsiteConfigTester } = require('../../lib/utility/website-util');
 
 const bucketName = 'testbucketwebsitebucket';
 
@@ -80,7 +80,7 @@ describe('PUT bucket website', () => {
         'ReplaceKeyPrefixWith are present in same rule', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ ReplaceKeyPrefixWith: 'test',
-            ReplaceKeyWith: 'test' });
+                ReplaceKeyWith: 'test' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 
@@ -88,7 +88,7 @@ describe('PUT bucket website', () => {
         'ReplaceKeyPrefixWith are present in same rule', done => {
             const config = new WebsiteConfigTester('index.html');
             config.addRoutingRule({ ReplaceKeyPrefixWith: 'test',
-            ReplaceKeyWith: 'test' });
+                ReplaceKeyWith: 'test' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });
 

@@ -1,42 +1,43 @@
-import assert from 'assert';
-import crypto from 'crypto';
-import { errors } from 'arsenal';
+const assert = require('assert');
+const crypto = require('crypto');
+const { errors } = require('arsenal');
 
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import bucketGet from '../../../lib/api/bucketGet';
-import bucketGetACL from '../../../lib/api/bucketGetACL';
-import bucketGetCors from '../../../lib/api/bucketGetCors';
-import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
-import bucketHead from '../../../lib/api/bucketHead';
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutACL from '../../../lib/api/bucketPutACL';
-import bucketPutCors from '../../../lib/api/bucketPutCors';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import bucketDelete from '../../../lib/api/bucketDelete';
-import bucketDeleteCors from '../../../lib/api/bucketDeleteCors';
-import bucketDeleteWebsite from '../../../lib/api/bucketDeleteWebsite';
-import completeMultipartUpload from
-    '../../../lib/api/completeMultipartUpload';
-import config from '../../../lib/Config';
-import constants from '../../../constants';
-import DummyRequest from '../DummyRequest';
-import initiateMultipartUpload from
-    '../../../lib/api/initiateMultipartUpload';
-import { cleanup, createAlteredRequest } from '../helpers';
-import listMultipartUploads from '../../../lib/api/listMultipartUploads';
-import listParts from '../../../lib/api/listParts';
-import metadata from '../metadataswitch';
-import multipartDelete from '../../../lib/api/multipartDelete';
-import objectDelete from '../../../lib/api/objectDelete';
-import objectGet from '../../../lib/api/objectGet';
-import objectGetACL from '../../../lib/api/objectGetACL';
-import objectHead from '../../../lib/api/objectHead';
-import objectPut from '../../../lib/api/objectPut';
-import objectPutACL from '../../../lib/api/objectPutACL';
-import objectPutPart from '../../../lib/api/objectPutPart';
-import { DummyRequestLogger, makeAuthInfo } from '../helpers';
-import { parseString } from 'xml2js';
-import serviceGet from '../../../lib/api/serviceGet';
+const BucketInfo = require('arsenal').models.BucketInfo;
+const bucketGet = require('../../../lib/api/bucketGet');
+const bucketGetACL = require('../../../lib/api/bucketGetACL');
+const bucketGetCors = require('../../../lib/api/bucketGetCors');
+const bucketGetWebsite = require('../../../lib/api/bucketGetWebsite');
+const bucketHead = require('../../../lib/api/bucketHead');
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutACL = require('../../../lib/api/bucketPutACL');
+const bucketPutCors = require('../../../lib/api/bucketPutCors');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const bucketDelete = require('../../../lib/api/bucketDelete');
+const bucketDeleteCors = require('../../../lib/api/bucketDeleteCors');
+const bucketDeleteWebsite = require('../../../lib/api/bucketDeleteWebsite');
+const completeMultipartUpload
+    = require('../../../lib/api/completeMultipartUpload');
+const { config } = require('../../../lib/Config');
+const constants = require('../../../constants');
+const DummyRequest = require('../DummyRequest');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const { cleanup, createAlteredRequest, DummyRequestLogger, makeAuthInfo }
+    = require('../helpers');
+const listMultipartUploads = require('../../../lib/api/listMultipartUploads');
+const listParts = require('../../../lib/api/listParts');
+const metadata = require('../metadataswitch');
+const multipartDelete = require('../../../lib/api/multipartDelete');
+const objectDelete = require('../../../lib/api/objectDelete');
+const objectGet = require('../../../lib/api/objectGet');
+const objectGetACL = require('../../../lib/api/objectGetACL');
+const objectHead = require('../../../lib/api/objectHead');
+const objectPut = require('../../../lib/api/objectPut');
+const objectPutACL = require('../../../lib/api/objectPutACL');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const { parseString } = require('xml2js');
+
+const serviceGet = require('../../../lib/api/serviceGet');
 
 const log = new DummyRequestLogger();
 const accessKey = 'accessKey1';
@@ -63,8 +64,7 @@ const userBucketOwner = 'admin';
 const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
-const locationConstraint = 'us-west-1';
-
+const locationConstraint = 'us-east-1';
 
 describe('transient bucket handling', () => {
     beforeEach(done => {
@@ -74,7 +74,7 @@ describe('transient bucket handling', () => {
         bucketMD.addTransientFlag();
         bucketMD.setSpecificAcl(otherAccountAuthInfo.getCanonicalID(),
             'WRITE_ACP');
-        bucketMD.setLocationConstraint('us-east-1');
+        bucketMD.setLocationConstraint(locationConstraint);
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
                 done();
@@ -84,7 +84,7 @@ describe('transient bucket handling', () => {
 
     it('putBucket request should complete creation of transient bucket if ' +
         'request is from same account that originally put', done => {
-        bucketPut(authInfo, baseTestRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, baseTestRequest, log, err => {
             assert.ifError(err);
             serviceGet(authInfo, serviceGetRequest, log, (err, data) => {
                 parseString(data, (err, result) => {
@@ -100,18 +100,17 @@ describe('transient bucket handling', () => {
 
     it('putBucket request should return error if ' +
         'transient bucket created by different account', done => {
-        bucketPut(otherAccountAuthInfo, baseTestRequest, locationConstraint,
-            log, err => {
-                assert.deepStrictEqual(err, errors.BucketAlreadyExists);
-                serviceGet(otherAccountAuthInfo, serviceGetRequest,
-                    log, (err, data) => {
-                        parseString(data, (err, result) => {
-                            assert.strictEqual(result.ListAllMyBucketsResult
-                            .Buckets[0], '');
-                            done();
-                        });
+        bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
+            assert.deepStrictEqual(err, errors.BucketAlreadyExists);
+            serviceGet(otherAccountAuthInfo, serviceGetRequest,
+                log, (err, data) => {
+                    parseString(data, (err, result) => {
+                        assert.strictEqual(result.ListAllMyBucketsResult
+                        .Buckets[0], '');
+                        done();
                     });
-            });
+                });
+        });
     });
 
     it('ACLs from clean up putBucket request should overwrite ACLs from ' +
@@ -119,7 +118,7 @@ describe('transient bucket handling', () => {
         const alteredRequest = createAlteredRequest({
             'x-amz-acl': 'public-read' }, 'headers',
             baseTestRequest, baseTestRequest.headers);
-        bucketPut(authInfo, alteredRequest, locationConstraint, log, err => {
+        bucketPut(authInfo, alteredRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
                 assert.strictEqual(data._transient, false);
@@ -167,7 +166,7 @@ describe('transient bucket handling', () => {
     describe('objectPut on a transient bucket', () => {
         const objName = 'objectName';
         after(done => {
-            metadata.deleteObjectMD(bucketName, objName, log, () => {
+            metadata.deleteObjectMD(bucketName, objName, {}, log, () => {
                 done();
             });
         });
@@ -186,7 +185,7 @@ describe('transient bucket handling', () => {
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._transient, false);
                     assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    metadata.getObjectMD(bucketName, objName, log,
+                    metadata.getObjectMD(bucketName, objName, {}, log,
                         (err, obj) => {
                             assert.ifError(err);
                             assert.strictEqual(obj['content-md5'], etag);
@@ -201,7 +200,7 @@ describe('transient bucket handling', () => {
         const objName = 'objectName';
         after(done => {
             metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` +
-                `${bucketName}`, objName, log, () => {
+                `${bucketName}`, objName, {}, log, () => {
                     metadata.deleteBucket(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`, log, () => {
                             done();
@@ -378,29 +377,34 @@ describe('transient bucket handling', () => {
     });
 
     describe('multipartDelete request on a transient bucket', () => {
-        const originalUsEastBehavior = config.usEastBehavior;
         const deleteRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
         const uploadId = '5555';
         deleteRequest.objectKey = 'objectName';
         deleteRequest.query = { uploadId };
+        const originalLegacyAWSBehavior =
+            config.locationConstraints[locationConstraint].legacyAwsBehavior;
 
-        afterEach(done => {
-            config.usEastBehavior = originalUsEastBehavior;
+        after(done => {
+            config.locationConstraints[locationConstraint].legacyAwsBehavior =
+                originalLegacyAWSBehavior;
             done();
         });
 
-        it('should return NoSuchUpload error if usEastBehavior is enabled',
+        it('should return NoSuchUpload error if legacyAwsBehavior is enabled',
         done => {
-            config.usEastBehavior = true;
+            config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = true;
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchUpload);
                 done();
             });
         });
 
-        it('should return no error if usEastBehavior is not enabled', done => {
-            config.usEastBehavior = false;
+        it('should return no error if legacyAwsBehavior is not enabled',
+        done => {
+            config.locationConstraints[locationConstraint].
+                legacyAwsBehavior = false;
             multipartDelete(authInfo, deleteRequest, log, err => {
                 assert.strictEqual(err, null);
                 return done();
@@ -439,7 +443,7 @@ describe('transient bucket handling', () => {
     it('objectGet request on transient bucket should' +
         'return NoSuchBucket error',
         done => {
-            objectGet(authInfo, baseTestRequest,
+            objectGet(authInfo, baseTestRequest, false,
             log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchBucket);
                 done();

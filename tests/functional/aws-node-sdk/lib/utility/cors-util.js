@@ -1,8 +1,8 @@
-import assert from 'assert';
-import http from 'http';
-import https from 'https';
+const assert = require('assert');
+const http = require('http');
+const https = require('https');
 
-import conf from '../../../../../lib/Config';
+const conf = require('../../../../../lib/Config').config;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -15,6 +15,7 @@ const statusCode = {
     200: 200,
     301: 301, // website redirect
     403: 403, // website AccessDenied error
+    404: 404, // website NoSuchBucket error
     AccessForbidden: 403,
     AccessDenied: 403,
     BadRequest: 400,
@@ -23,10 +24,12 @@ const statusCode = {
     NoSuchBucket: 404,
 };
 
-export default function methodRequest(params, callback) {
+function methodRequest(params, callback) {
     const { method, bucket, objectKey, query, headers, code,
         headersResponse, headersOmitted, isWebsite } = params;
-    const websiteHostname = `${bucket}.s3-website-us-east-1.amazonaws.com`;
+    const websiteHostname = process.env.S3_END_TO_END ?
+        `${bucket}.s3-website-us-east-1.scality.com` :
+        `${bucket}.s3-website-us-east-1.amazonaws.com`;
 
     const options = {
         port,
@@ -56,7 +59,7 @@ export default function methodRequest(params, callback) {
         res.on('end', () => {
             const total = body.join('');
             if (code) {
-                const message = isNaN(parseInt(code, 10)) ?
+                const message = Number.isNaN(parseInt(code, 10)) ?
                     `<Code>${code}</Code>` : '';
                 assert(total.indexOf(message) > -1, `Expected ${message}`);
                 assert.deepEqual(res.statusCode, statusCode[code],
@@ -71,12 +74,12 @@ export default function methodRequest(params, callback) {
             // if no headersResponse provided, should not have these headers
             // in the request
                 ['access-control-allow-origin',
-                'access-control-allow-methods',
-                'access-control-allow-credentials',
-                'vary'].forEach(key => {
-                    assert.strictEqual(res.headers[key], undefined,
+                    'access-control-allow-methods',
+                    'access-control-allow-credentials',
+                    'vary'].forEach(key => {
+                        assert.strictEqual(res.headers[key], undefined,
                         `Error: ${key} should not have value`);
-                });
+                    });
             }
             if (headersOmitted) {
                 headersOmitted.forEach(key => {
@@ -96,7 +99,7 @@ export default function methodRequest(params, callback) {
 
 // for testing needs usually only need one rule, if support for more CORS
 // rules is desired, can refactor
-export function generateCorsParams(bucket, params) {
+function generateCorsParams(bucket, params) {
     const corsParams = {
         Bucket: bucket,
         CORSConfiguration: {
@@ -111,3 +114,8 @@ export function generateCorsParams(bucket, params) {
 
     return corsParams;
 }
+
+module.exports = {
+    methodRequest,
+    generateCorsParams,
+};

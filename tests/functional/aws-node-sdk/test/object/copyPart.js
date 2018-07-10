@@ -1,13 +1,12 @@
-import assert from 'assert';
-import crypto from 'crypto';
-import childProcess from 'child_process';
+const assert = require('assert');
+const crypto = require('crypto');
 
-import Promise from 'bluebird';
+const Promise = require('bluebird');
 
-import getConfig from '../support/config';
-import withV4 from '../support/withV4';
-import BucketUtility from '../../lib/utility/bucket-util';
-
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
+const { createEncryptedBucketPromise } =
+    require('../../lib/utility/createEncryptedBucket');
 
 const sourceBucketName = 'supersourcebucket81033016532';
 const sourceObjName = 'supersourceobject';
@@ -18,18 +17,8 @@ const content = 'I am the best content ever';
 const otherAccountBucketUtility = new BucketUtility('lisa', {});
 const otherAccountS3 = otherAccountBucketUtility.s3;
 
-// in constants, we set 100 MB as the max part size for testing purposes
-const oneHundredMBPlus1 = 104857601;
-
-function safeJSONParse(s) {
-    let res;
-    try {
-        res = JSON.parse(s);
-    } catch (e) {
-        return e;
-    }
-    return res;
-}
+// in constants, we set 110 MB as the max part size for testing purposes
+const oneHundredMBPlus11 = 110100481;
 
 function checkNoError(err) {
     assert.equal(err, null,
@@ -40,52 +29,6 @@ function checkError(err, code) {
     assert.notEqual(err, null, 'Expected failure but got success');
     assert.strictEqual(err.code, code);
 }
-
-function createEncryptedBucket(bucketParams, cb) {
-    process.stdout.write('Creating encrypted bucket' +
-    `${bucketParams.Bucket}`);
-    const config = getConfig();
-    const endpointWithoutHttp = config.endpoint.split('//')[1];
-    const host = endpointWithoutHttp.split(':')[0];
-    const port = endpointWithoutHttp.split(':')[1];
-
-    const prog = `${__dirname}/../../../../../bin/create_encrypted_bucket.js`;
-    let args = [
-        prog,
-        '-a', config.credentials.accessKeyId,
-        '-k', config.credentials.secretAccessKey,
-        '-b', bucketParams.Bucket,
-        '-h', host,
-        '-p', port,
-        '-v',
-    ];
-    if (config.sslEnabled) {
-        args = args.concat('-s');
-    }
-    const body = [];
-    const child = childProcess.spawn(args[0], args)
-    .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item => {
-            const json = safeJSONParse(item);
-            const test = !(json instanceof Error) && json.name === 'S3' &&
-                json.statusCode === 200;
-            if (test) {
-                return true;
-            }
-            return false;
-        });
-        if (!hasSucceed) {
-            process.stderr.write(`${body.join('')}\n`);
-            return cb(new Error('Cannot create encrypted bucket'));
-        }
-        return cb();
-    })
-    .on('error', cb);
-    child.stdout.on('data', chunk => body.push(chunk.toString()));
-}
-
-const createEncryptedBucketPromise = Promise.promisify(createEncryptedBucket);
-
 
 describe('Object Part Copy', () => {
     withV4(sigCfg => {
@@ -207,7 +150,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,
@@ -229,7 +172,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,
@@ -237,7 +180,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                    CopySourceRange: `bytes=0-${oneHundredMBPlus1}`,
+                    CopySourceRange: `bytes=0-${oneHundredMBPlus11}`,
                 },
                     err => {
                         checkError(err, 'EntityTooLarge');
@@ -252,7 +195,7 @@ describe('Object Part Copy', () => {
             s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: Buffer.alloc(oneHundredMBPlus1, 'packing'),
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
             }, err => {
                 checkNoError(err);
                 s3.uploadPartCopy({ Bucket: destBucketName,
@@ -469,32 +412,32 @@ describe('Object Part Copy', () => {
                         CopySource: `${sourceBucketName}/${sourceMpuKey}`,
                         PartNumber: 2,
                         UploadId: uploadId,
-                }).then(res => {
-                    assert.strictEqual(res.ETag, totalMpuObjectHash);
-                    assert(res.LastModified);
-                }).then(() => {
-                    process.stdout.write('Completing MPU');
-                    return s3.completeMultipartUploadAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                            Parts: [
+                    }).then(res => {
+                        assert.strictEqual(res.ETag, totalMpuObjectHash);
+                        assert(res.LastModified);
+                    }).then(() => {
+                        process.stdout.write('Completing MPU');
+                        return s3.completeMultipartUploadAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
                                 { ETag: totalMpuObjectHash, PartNumber: 1 },
                                 { ETag: totalMpuObjectHash, PartNumber: 2 },
-                            ],
-                        },
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.Bucket, destBucketName);
-                    assert.strictEqual(res.Key, destObjName);
+                                ],
+                            },
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.Bucket, destBucketName);
+                        assert.strictEqual(res.Key, destObjName);
                     // combined ETag returned by AWS (combination of part ETags
                     // with number of parts at the end)
-                    assert.strictEqual(res.ETag,
+                        assert.strictEqual(res.ETag,
                         '"5bba96810ff449d94aa8f5c5a859b0cb-2"');
-                }).catch(err => {
-                    checkNoError(err);
-                });
+                    }).catch(err => {
+                        checkNoError(err);
+                    });
                 });
             });
 
@@ -525,36 +468,36 @@ describe('Object Part Copy', () => {
                         PartNumber: 2,
                         UploadId: uploadId,
                         CopySourceRange: 'bytes=15242891-30242991',
-                }).then(res => {
-                    assert.strictEqual(res.ETag, part2ETag);
-                    assert(res.LastModified);
-                }).then(() => {
-                    process.stdout.write('Completing MPU');
-                    return s3.completeMultipartUploadAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                            Parts: [
+                    }).then(res => {
+                        assert.strictEqual(res.ETag, part2ETag);
+                        assert(res.LastModified);
+                    }).then(() => {
+                        process.stdout.write('Completing MPU');
+                        return s3.completeMultipartUploadAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
                                 { ETag: part1ETag, PartNumber: 1 },
                                 { ETag: part2ETag, PartNumber: 2 },
-                            ],
-                        },
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.Bucket, destBucketName);
-                    assert.strictEqual(res.Key, destObjName);
-                    assert.strictEqual(res.ETag, finalCombinedETag);
-                }).then(() => {
-                    process.stdout.write('Getting new object');
-                    return s3.getObjectAsync({
-                        Bucket: destBucketName,
-                        Key: destObjName,
-                    });
-                }).then(res => {
-                    assert.strictEqual(res.ContentLength, '25000092');
-                    assert.strictEqual(res.ETag, finalCombinedETag);
-                })
+                                ],
+                            },
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.Bucket, destBucketName);
+                        assert.strictEqual(res.Key, destObjName);
+                        assert.strictEqual(res.ETag, finalCombinedETag);
+                    }).then(() => {
+                        process.stdout.write('Getting new object');
+                        return s3.getObjectAsync({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                        });
+                    }).then(res => {
+                        assert.strictEqual(res.ContentLength, '25000092');
+                        assert.strictEqual(res.ETag, finalCombinedETag);
+                    })
                 .catch(err => {
                     checkNoError(err);
                 });
@@ -620,7 +563,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: 'madeupuploadid444233232',
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchUpload');
                     done();
@@ -633,7 +576,7 @@ describe('Object Part Copy', () => {
                     CopySource: `nobucket453234/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -646,7 +589,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchBucket');
                     done();
@@ -659,7 +602,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 1,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'NoSuchKey');
                     done();
@@ -672,7 +615,7 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/nokey`,
                     PartNumber: 10001,
                     UploadId: uploadId,
-            },
+                },
                 err => {
                     checkError(err, 'InvalidArgument');
                     done();

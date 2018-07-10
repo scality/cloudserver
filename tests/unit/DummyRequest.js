@@ -1,6 +1,6 @@
-import http from 'http';
+const http = require('http');
 
-export default class DummyRequest extends http.IncomingMessage {
+class DummyRequest extends http.IncomingMessage {
     constructor(obj, msg) {
         super();
         Object.keys(obj).forEach(x => {
@@ -27,3 +27,5 @@ export default class DummyRequest extends http.IncomingMessage {
         this.push(null);
     }
 }
+
+module.exports = DummyRequest;

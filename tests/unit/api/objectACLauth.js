@@ -1,9 +1,9 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import BucketInfo from '../../../lib/metadata/BucketInfo';
-import constants from '../../../constants';
-import { isObjAuthorized } from
-    '../../../lib/api/apiUtils/authorization/aclChecks';
+const BucketInfo = require('arsenal').models.BucketInfo;
+const constants = require('../../../constants');
+const { isObjAuthorized }
+    = require('../../../lib/api/apiUtils/authorization/aclChecks');
 
 const bucketOwnerCanonicalId = 'bucketOwnerCanonicalId';
 const creationDate = new Date().toJSON();
@@ -13,12 +13,13 @@ const accountToVet = 'accountToVetId';
 const objectOwnerCanonicalId = 'objectOwnerCanonicalId';
 const object = {
     'owner-id': objectOwnerCanonicalId,
-    'acl':
-       { Canned: 'private',
-         FULL_CONTROL: [],
-         WRITE_ACP: [],
-         READ: [],
-         READ_ACP: [] },
+    'acl': {
+        Canned: 'private',
+        FULL_CONTROL: [],
+        WRITE_ACP: [],
+        READ: [],
+        READ_ACP: [],
+    },
 };
 
 describe('object acl authorization for objectGet and objectHead', () => {

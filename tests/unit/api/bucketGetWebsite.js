@@ -1,17 +1,16 @@
-import assert from 'assert';
+const assert = require('assert');
 
-import bucketPut from '../../../lib/api/bucketPut';
-import bucketPutWebsite from '../../../lib/api/bucketPutWebsite';
-import bucketGetWebsite from '../../../lib/api/bucketGetWebsite';
-import { cleanup,
+const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutWebsite = require('../../../lib/api/bucketPutWebsite');
+const bucketGetWebsite = require('../../../lib/api/bucketGetWebsite');
+const { cleanup,
     DummyRequestLogger,
     makeAuthInfo }
-from '../helpers';
+= require('../helpers');
 
 const log = new DummyRequestLogger();
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketGetWebsiteTestBucket';
-const locationConstraint = 'us-west-1';
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -58,8 +57,7 @@ function _comparePutGetXml(sampleXml, done) {
 describe('getBucketWebsite API', () => {
     beforeEach(done => {
         cleanup();
-        bucketPut(authInfo, testBucketPutRequest,
-        locationConstraint, log, done);
+        bucketPut(authInfo, testBucketPutRequest, log, done);
     });
     afterEach(() => cleanup());
 
