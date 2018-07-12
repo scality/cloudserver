@@ -239,6 +239,7 @@ describe('patchConfiguration', () => {
                             },
                             gcpEndpoint: 'gcp.end.point',
                             mpuBucketName: undefined,
+                            https: true,
                         },
                         legacyAwsBehavior: false,
                         isTransient: false,
