@@ -2,9 +2,10 @@ const assert = require('assert');
 const { locationConstraintAssert } = require('../../../lib/Config');
 
 class LocationConstraint {
-    constructor(type, legacyAwsBehavior, details) {
+    constructor(type, legacyAwsBehavior, details, sizeLimit) {
         this.type = type || 'scality';
         this.legacyAwsBehavior = legacyAwsBehavior || false;
+        this.sizeLimitGB = sizeLimit || undefined;
         this.details = Object.assign({}, {
             awsEndpoint: 's3.amazonaws.com',
             bucketName: 'tester',
@@ -290,14 +291,14 @@ describe('locationConstraintAssert', () => {
     it('should throw error if sizeLimitGB is not a number', () => {
         const usEast1 = new LocationConstraint();
         const locationConstraint = new LocationConstraint('aws_s3', true,
-            { sizeLimitGB: true });
+            null, true);
         assert.throws(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awsstoragesizelimit': locationConstraint,
             });
         },
-        '/bad config: locationConstraints[region].details.sizeLimitGB ' +
+        '/bad config: locationConstraints[region].sizeLimitGB ' +
         'must be a number (in gigabytes)');
     });
 });
