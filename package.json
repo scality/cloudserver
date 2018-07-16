@@ -97,6 +97,7 @@
     "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
     "start_utapi": "node lib/utapi/utapi.js",
     "utapi_replay": "node lib/utapi/utapiReplay.js",
+    "management_agent": "node managementAgent.js",
     "test": "CI=true S3BACKEND=mem mocha --recursive tests/unit",
     "test_legacy_location": "CI=true S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --recursive tests/unit",
     "multiple_backend_test": "CI=true S3BACKEND=mem S3DATA=multiple mocha -t 20000 --recursive tests/multipleBackend",
