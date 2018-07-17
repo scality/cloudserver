@@ -48,11 +48,11 @@ describe("Head object 'ReplicationStatus' value", () => {
             beforeEach(done => s3.putBucketReplication({
                 Bucket: sourceBucket,
                 ReplicationConfiguration: {
-                    Role: 'arn:aws:iam::123456789012:role/src-resource,' +
-                        'arn:aws:iam::123456789012:role/dest-resource',
+                    Role: 'arn:aws:iam::123456789012:role/src-resource',
                     Rules: [
                         {
-                            Destination: { Bucket: 'arn:aws:s3:::dest-bucket' },
+                            Destination: { StorageClass: 'us-east-2',
+                            Bucket: 'arn:aws:s3:::dest-bucket' },
                             Prefix: keyPrefix,
                             Status: 'Enabled',
                         },
