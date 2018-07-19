@@ -395,6 +395,44 @@ describeSkipIfAWS('backbeat routes', () => {
                     });
                 });
          });
+        it('GET  /_/backbeat/api/... should respond with ' +
+           '503 on authenticated requests (API server down)',
+           done => {
+               const options = {
+                   authCredentials: {
+                       accessKey: 'accessKey2',
+                       secretKey: 'verySecretKey2',
+                   },
+                   hostname: ipAddress,
+                   port: 8000,
+                   method: 'GET',
+                   path: '/_/backbeat/api/crr/failed',
+                   jsonResponse: true,
+               };
+               makeRequest(options, err => {
+                   assert(err);
+                   assert.strictEqual(err.statusCode, 503);
+                   assert.strictEqual(err.code, 'ServiceUnavailable');
+                   done();
+               });
+           });
+        it('GET  /_/backbeat/api/... should respond with ' +
+           '403 Forbidden if the request is unauthenticated',
+           done => {
+               const options = {
+                   hostname: ipAddress,
+                   port: 8000,
+                   method: 'GET',
+                   path: '/_/backbeat/api/crr/failed',
+                   jsonResponse: true,
+               };
+               makeRequest(options, err => {
+                   assert(err);
+                   assert.strictEqual(err.statusCode, 403);
+                   assert.strictEqual(err.code, 'AccessDenied');
+                   done();
+               });
+           });
     });
 
     describe('GET Metadata route', () => {
