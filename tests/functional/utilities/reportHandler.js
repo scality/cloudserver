@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const http = require('http');
 const { backbeat } = require('arsenal');
 const { RedisClient } = require('arsenal').metrics;
 
@@ -20,6 +21,7 @@ config.localCache = { host: 'localhost', port: 6379 };
 const {
     _crrRequest,
     getCRRStats,
+    getReplicationStates,
 } = require('../../../lib/utilities/reportHandler');
 
 
@@ -178,5 +180,111 @@ describe('reportHandler::getCRRStats', function testSuite() {
             });
             return done();
         }, config);
+    });
+});
+
+describe('reportHandler::getReplicationStates', function testSuite() {
+    this.timeout(20000);
+    const testPort = '4242';
+    let httpServer;
+
+    const expectedStatusResults = {
+        location1: 'enabled',
+        location2: 'disabled',
+    };
+
+    const expectedScheduleResults = {
+        location1: 'none',
+        location2: new Date(),
+    };
+
+    function requestHandler(req, res) {
+        switch (req.url) {
+        case '/_/crr/status':
+            res.write(JSON.stringify(expectedStatusResults));
+            break;
+        case '/_/crr/resume/all':
+            res.write(JSON.stringify(expectedScheduleResults));
+            break;
+        default:
+            break;
+        }
+        res.end();
+    }
+
+
+    function requestFailHandler(req, res) {
+        const testError = {
+            code: 404,
+            description: 'reportHandler test error',
+        };
+        // eslint-disable-next-line no-param-reassign
+        res.statusCode = 404;
+        res.write(JSON.stringify(testError));
+        res.end();
+    }
+
+    describe('Test Request Failure Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestFailHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return empty object if a request error occurs', done => {
+            getReplicationStates(logger, (err, res) => {
+                assert.ifError(err, `Expected success, but got error ${err}`);
+                assert.deepStrictEqual(res, {});
+                done();
+            }, { host: 'nonexisthost', port: testPort });
+        });
+
+        it('should return empty object if response status code is >= 400',
+        done => {
+            getReplicationStates(logger, (err, res) => {
+                assert.ifError(err, `Expected success, but got error ${err}`);
+                assert.deepStrictEqual(res, {});
+                done();
+            }, { host: '', port: testPort });
+        });
+    });
+
+    describe('Test Request Success Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return correct results', done => {
+            getReplicationStates(logger, (err, res) => {
+                const expectedResults = {
+                    states: {
+                        location1: 'enabled',
+                        location2: 'disabled',
+                    },
+                    schedules: {
+                        location2: expectedScheduleResults.location2,
+                    },
+                };
+                assert.ifError(err, `Expected success, but got error ${err}`);
+                assert.deepStrictEqual(res, expectedResults);
+                done();
+            }, { host: 'localhost', port: testPort });
+        });
     });
 });
