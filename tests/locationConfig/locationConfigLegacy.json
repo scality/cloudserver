@@ -14,7 +14,6 @@
     "us-east-2": {
         "type": "file",
         "legacyAwsBehavior": true,
-
         "details": {}
     },
     "scality-internal-file": {
