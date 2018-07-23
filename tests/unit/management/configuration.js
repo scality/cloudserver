@@ -89,17 +89,20 @@ describe('patchConfiguration', () => {
             locations: {
                 'legacy': {
                     name: 'legacy',
+                    objectId: 'legacy',
                     locationType: 'location-mem-v1',
                     details: {},
                 },
                 'us-east-1': {
                     name: 'us-east-1',
+                    objectId: 'us-east-1',
                     locationType: 'location-file-v1',
                     legacyAwsBehavior: true,
                     details: {},
                 },
                 'azurebackendtest': {
                     name: 'azurebackendtest',
+                    objectId: 'azurebackendtest',
                     locationType: 'location-azure-v1',
                     details: {
                         bucketMatch: 'azurebucketmatch',
@@ -111,6 +114,7 @@ describe('patchConfiguration', () => {
                 },
                 'awsbackendtest': {
                     name: 'awsbackendtest',
+                    objectId: 'awsbackendtest',
                     locationType: 'location-aws-s3-v1',
                     details: {
                         bucketMatch: 'awsbucketmatch',
@@ -122,6 +126,7 @@ describe('patchConfiguration', () => {
                 },
                 'gcpbackendtest': {
                     name: 'gcpbackendtest',
+                    objectId: 'gcpbackendtest',
                     locationType: 'location-gcp-v1',
                     details: {
                         bucketMatch: 'gcpbucketmatch',
@@ -133,6 +138,7 @@ describe('patchConfiguration', () => {
                 },
                 'sproxydbackendtest': {
                     name: 'sproxydbackendtest',
+                    objectId: 'sproxydbackendtest',
                     locationType: 'location-scality-sproxyd-v1',
                     details: {
                         chordCos: 3,
@@ -142,18 +148,21 @@ describe('patchConfiguration', () => {
                 },
                 'transienttest': {
                     name: 'transienttest',
+                    objectId: 'transienttest',
                     locationType: 'location-file-v1',
                     isTransient: true,
                     details: {},
                 },
                 'sizelimitedtest': {
                     name: 'sizelimitedtest',
+                    objectId: 'sizelimitedtest',
                     locationType: 'location-file-v1',
                     sizeLimitGB: 1024,
                     details: {},
                 },
                 'sizezerotest': {
                     name: 'sizezerotest',
+                    objectId: 'sizezerotest',
                     locationType: 'location-file-v1',
                     sizeLimitGB: 0,
                     details: {},
@@ -185,6 +194,7 @@ describe('patchConfiguration', () => {
                 locationConstraints: {
                     'legacy': {
                         type: 'mem',
+                        objectId: 'legacy',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
@@ -192,6 +202,7 @@ describe('patchConfiguration', () => {
                     },
                     'us-east-1': {
                         type: 'file',
+                        objectId: 'us-east-1',
                         legacyAwsBehavior: true,
                         isTransient: false,
                         sizeLimitGB: null,
@@ -209,6 +220,7 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         type: 'azure',
+                        objectId: 'azurebackendtest',
                     },
                     'awsbackendtest': {
                         details: {
@@ -228,6 +240,7 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         type: 'aws_s3',
+                        objectId: 'awsbackendtest',
                     },
                     'gcpbackendtest': {
                         details: {
@@ -245,6 +258,7 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         type: 'gcp',
+                        objectId: 'gcpbackendtest',
                     },
                     'sproxydbackendtest': {
                         details: {
@@ -264,9 +278,11 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         type: 'scality',
+                        objectId: 'sproxydbackendtest',
                     },
                     'transienttest': {
                         type: 'file',
+                        objectId: 'transienttest',
                         legacyAwsBehavior: false,
                         isTransient: true,
                         sizeLimitGB: null,
@@ -274,6 +290,7 @@ describe('patchConfiguration', () => {
                     },
                     'sizelimitedtest': {
                         type: 'file',
+                        objectId: 'sizelimitedtest',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: 1024,
@@ -281,6 +298,7 @@ describe('patchConfiguration', () => {
                     },
                     'sizezerotest': {
                         type: 'file',
+                        objectId: 'sizezerotest',
                         legacyAwsBehavior: false,
                         isTransient: false,
                         sizeLimitGB: null,
