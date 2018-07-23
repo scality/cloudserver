@@ -87,9 +87,15 @@ models:
       name: install modules
       command: npm install
       haltOnFailure: True
-  - ShellCommand: &s3-log
-      name: s3 logs
-      command: cat /artifacts/s3.log || exit 0
+  - Upload: &upload-artifacts
+      source: /artifacts
+      urls:
+        - "*"
+  - ShellCommand: &follow-s3-log
+      logfiles:
+        s3:
+          filename: /artifacts/s3.log
+          follow: true
   - ShellCommand: &add-hostname
       name: add hostname
       command: |
@@ -173,6 +179,7 @@ stages:
             set -ex
             bash wait_for_local_port.bash 8000 40
             npm run multiple_backend_test"
+          <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
             <<: *global-env
@@ -180,14 +187,16 @@ stages:
       - ShellCommand:
           command: mvn test
           workdir: build/tests/functional/jaws
+          <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
       - ShellCommand:
           command: rspec tests.rb
           workdir: build/tests/functional/fog
+          <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
-      - ShellCommand: *s3-log
+      - Upload: *upload-artifacts
 
   mongo-ft-tests:
     worker: &s3-pod
@@ -212,10 +221,11 @@ stages:
             set -ex
             bash wait_for_local_port.bash 8000 40
             npm run ft_test
+          <<: *follow-s3-log
           env:
             <<: *mongo-vars
             <<: *global-env
-      - ShellCommand: *s3-log
+      - Upload: *upload-artifacts
 
   file-ft-tests:
     worker:
@@ -240,10 +250,11 @@ stages:
             set -ex
             bash wait_for_local_port.bash 8000 40
             npm run ft_test
+          <<: *follow-s3-log
           env:
             <<: *file-mem-mpu
             <<: *global-env
-      - ShellCommand: *s3-log
+      - Upload: *upload-artifacts
 
   post-merge:
     worker:
