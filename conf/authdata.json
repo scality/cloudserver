@@ -41,5 +41,16 @@
             "access": "replicationKey1",
             "secret": "replicationSecretKey1"
         }]
+    },
+    {
+        "name": "Lifecycle",
+        "email": "inspector@lifecycle.info",
+        "arn": "arn:aws:iam::123456789016:root",
+        "canonicalID": "http://acs.zenko.io/accounts/service/lifecycle",
+        "shortid": "123456789016",
+        "keys": [{
+            "access": "lifecycleKey1",
+            "secret": "lifecycleSecretKey1"
+        }]
     }]
 }
