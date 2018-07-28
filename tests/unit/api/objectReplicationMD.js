@@ -19,9 +19,9 @@ const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const authInfo = makeAuthInfo('accessKey1');
 const ownerID = authInfo.getCanonicalID();
+const authInfoLifecycleService = makeAuthInfo('lifecycleKey1');
 const namespace = 'default';
 const bucketName = 'source-bucket';
 const mpuShadowBucket = `${constants.mpuBucketPrefix}${bucketName}`;
@@ -378,6 +378,22 @@ describe('Replication object MD without bucket replication config', () => {
                 const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
                 assert.strictEqual(objectMD.isDeleteMarker, true);
                 checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                return done();
+            }));
+
+        it('should not update metadata if putting a delete marker owned by ' +
+        'Lifecycle service account', done =>
+            async.series([
+                next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                next => objectDelete(authInfoLifecycleService, deleteReq,
+                                     log, next),
+            ], err => {
+                if (err) {
+                    return done(err);
+                }
+                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                assert.strictEqual(objectMD.isDeleteMarker, true);
+                checkObjectReplicationInfo(keyA, emptyReplicationMD);
                 return done();
             }));
 
