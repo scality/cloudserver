@@ -86,5 +86,16 @@
        "replicaSet": "rs0",
        "readPreference": "primary",
        "database": "metadata"
+    },
+    "localCache": {
+        "host": "localhost",
+        "port": 6379
+    },
+    "utapi": {
+        "metrics": ["location"]
+    },
+    "redis": {
+        "host": "localhost",
+        "port": 6379
     }
 }
