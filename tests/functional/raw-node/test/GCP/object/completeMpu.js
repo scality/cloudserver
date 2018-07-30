@@ -22,6 +22,7 @@ const partSize = 10;
 
 const smallMD5 = '583c466f3f31d97b361adc60caea72f5-1';
 const bigMD5 = '9c8a62e2c04a512ce348d8280497b49e-1024';
+const maxMD5 = '0bd3785d5d1e3c90988917837bbf57fc-10000';
 
 function gcpMpuSetupWrapper(params, callback) {
     gcpMpuSetup(params, (err, result) => {
@@ -188,6 +189,44 @@ describe('GCP: Complete MPU', function testSuite() {
                 assert.equal(err, null,
                     `Expected success, but got error ${err}`);
                 assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                return done();
+            });
+        });
+    });
+
+    describe('when MPU has 10000 uploaded parts', () => {
+        beforeEach(function beforeFn(done) {
+            this.currentTest.key = `somekey-${genUniqID()}`;
+            gcpMpuSetupWrapper.call(this, {
+                gcpClient,
+                bucketNames,
+                key: this.currentTest.key,
+                partCount: 10000, partSize,
+            }, done);
+        });
+
+        it('should successfully complete MPU',
+        function testFn(done) {
+            const parts = GcpUtils.createMpuList({
+                Key: this.test.key,
+                UploadId: this.test.uploadId,
+            }, 'parts', 10000).map(item => {
+                Object.assign(item, {
+                    ETag: this.test.etagList[item.PartNumber - 1],
+                });
+                return item;
+            });
+            const params = {
+                Bucket: bucketNames.main.Name,
+                MPU: bucketNames.mpu.Name,
+                Key: this.test.key,
+                UploadId: this.test.uploadId,
+                MultipartUpload: { Parts: parts },
+            };
+            gcpClient.completeMultipartUpload(params, (err, res) => {
+                assert.equal(err, null,
+                    `Expected success, but got error ${err}`);
+                assert.strictEqual(res.ETag, `"${maxMD5}"`);
                 return done();
             });
         });
