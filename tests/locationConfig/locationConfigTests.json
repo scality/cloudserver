@@ -3,9 +3,7 @@
         "type": "file",
         "objectId": "us-east-1",
         "legacyAwsBehavior": true,
-        "details": {
-            "supportsVersioning": true
-        }
+        "details": {}
     },
     "us-east-2": {
         "type": "file",
@@ -124,7 +122,7 @@
             "bucketMatch": true,
             "credentialsProfile": "default"
         }
-    }
+    },
     "azurebackend": {
         "type": "azure",
         "objectId": "azurebackend",
