@@ -3,7 +3,9 @@
         "type": "file",
         "objectId": "us-east-1",
         "legacyAwsBehavior": true,
-        "details": {}
+        "details": {
+            "supportsVersioning": true
+        }
     },
     "us-east-2": {
         "type": "file",
@@ -21,6 +23,13 @@
         "type": "file",
         "objectId": "dataFile",
         "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "file-quota": {
+        "type": "file",
+        "objectId": "file-quota",
+        "legacyAwsBehavior": false,
+        "sizeLimitGB": 1,
         "details": {}
     },
     "scality-internal-mem": {
@@ -104,6 +113,18 @@
             "pathStyle": true
         }
     },
+    "awsbackendquota": {
+        "type": "aws_s3",
+        "objectId": "awsbackendquota",
+        "legacyAwsBehavior": true,
+        "sizeLimitGB": 1,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default"
+        }
+    }
     "azurebackend": {
         "type": "azure",
         "objectId": "azurebackend",
