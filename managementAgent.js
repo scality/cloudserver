@@ -3,6 +3,7 @@ const Uuid = require('uuid');
 
 const logger = require('./lib/utilities/logger');
 const { initManagement } = require('./lib/management');
+const { addOverlayMessageListener } = require('./lib/management/push');
 const _config = require('./lib/Config').config;
 
 process.env.REPORT_TOKEN = process.env.REPORT_TOKEN
