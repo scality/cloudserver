@@ -9,27 +9,19 @@ process.env.REPORT_TOKEN = process.env.REPORT_TOKEN
                            || _config.reportToken
                            || Uuid.v4();
 
-setTimeout(() => {
-    initManagement(logger.newRequestLogger());
-}, 5000);
-
-setTimeout(() => {
-    managementAgentWS();
-}, 6);
-
 function managementAgentWS() {
     const port = _config.managementAgent.port || 8010;
     const wss = new WebSocket.Server({
-        port: port,
+        port,
         clientTracking: true,
-        path: '/watch'
+        path: '/watch',
     });
 
-    wss.on('connection', ws => {
+    wss.on('connection', () => {
         logger.info('management agent: client connected to watch route');
     });
 
-    wss.on('listening', ws => {
+    wss.on('listening', () => {
         logger.info('management agent websocket server listening', { port });
     });
 
@@ -37,8 +29,8 @@ function managementAgentWS() {
         logger.error('management agent websocket server error', { error });
     });
 
-    addOverlayMessageListener((remoteOverlay) => {
-        wss.clients.forEach((client) => {
+    addOverlayMessageListener(remoteOverlay => {
+        wss.clients.forEach(client => {
             if (client.readyState !== client.OPEN) {
                 logger.warning('client socket not in ready state', { client });
                 return;
@@ -46,9 +38,9 @@ function managementAgentWS() {
             logger.info('NEW OVERLAY');
             const msg = {
                 messageType: 'NEW_OVERLAY_VERSION',
-                payload: remoteOverlay
+                payload: remoteOverlay,
             };
-            client.send(JSON.stringify(msg), (error) => {
+            client.send(JSON.stringify(msg), error => {
                 if (error) {
                     logger.error('failed to send remoteOverlay to management' +
                                  ' agent client', { error, client });
@@ -57,3 +49,11 @@ function managementAgentWS() {
         });
     });
 }
+
+setTimeout(() => {
+    initManagement(logger.newRequestLogger());
+}, 5000);
+
+setTimeout(() => {
+    managementAgentWS();
+}, 6);
