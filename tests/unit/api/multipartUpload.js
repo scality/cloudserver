@@ -1385,7 +1385,8 @@ describe('Multipart Upload API', () => {
     });
 
     it('should not leave orphans in data when overwriting an object with a MPU',
-    done => {
+    function test(done) {
+        this.retries(1);
         const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
         const partBody = Buffer.from('I am a part\n', 'utf8');
         async.waterfall([
