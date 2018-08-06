@@ -346,18 +346,27 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-        it("should update status to 'PENDING' and content to '['METADATA']' " +
-            'if putting object ACL', done =>
+        it('should not update metadata if putting object ACL', done => {
+            let completedReplicationInfo;
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                next => objectPutACL(authInfo, objectACLReq, log, next),
+                next => {
+                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                    // Update metadata to a status after replication
+                    // has occurred.
+                    objectMD.replicationInfo.status = 'COMPLETED';
+                    completedReplicationInfo = JSON.parse(
+                        JSON.stringify(objectMD.replicationInfo));
+                    objectPutACL(authInfo, objectACLReq, log, next);
+                },
             ], err => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                checkObjectReplicationInfo(keyA, completedReplicationInfo);
                 return done();
-            }));
+            });
+        });
 
         it('should update metadata if putting a delete marker', done =>
             async.series([
@@ -521,7 +530,7 @@ describe('Replication object MD without bucket replication config', () => {
                 };
 
                 // Expected for a metadata-only replication operation (for
-                // example, putting an object ACL).
+                // example, putting object tags).
                 const expectedReplicationInfoMD = Object.assign({},
                     expectedReplicationInfo, { content: ['METADATA'] });
 
@@ -568,19 +577,30 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a put object ACL request', done =>
+                it('should update on a put object ACL request', done => {
+                    let completedReplicationInfo;
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, next),
-                        next => objectPutACL(authInfo, objectACLReq, log, next),
+                        next => {
+                            const objectMD = metadata.keyMaps
+                                  .get(bucketName).get(keyA);
+                            // Update metadata to a status after replication
+                            // has occurred.
+                            objectMD.replicationInfo.status = 'COMPLETED';
+                            completedReplicationInfo = JSON.parse(
+                                JSON.stringify(objectMD.replicationInfo));
+                            objectPutACL(authInfo, objectACLReq, log, next);
+                        },
                     ], err => {
                         if (err) {
                             return done(err);
                         }
                         checkObjectReplicationInfo(keyA,
-                            expectedReplicationInfoMD);
+                                                   completedReplicationInfo);
                         return done();
-                    }));
+                    });
+                });
 
                 it('should update on a put object tagging request', done =>
                     async.series([
