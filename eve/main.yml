@@ -65,6 +65,7 @@ models:
       S3BACKEND: "mem"
       MPU_TESTING: "yes"
       S3METADATA: mongodb
+      REDIS_TEST: "true"
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
@@ -72,6 +73,7 @@ models:
       S3BACKEND: "file"
       S3VAULT: "mem"
       MPU_TESTING: "yes"
+      REDIS_TEST: "true"
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
