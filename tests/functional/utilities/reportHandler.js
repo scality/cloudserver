@@ -1,6 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const http = require('http');
+const Redis = require('ioredis');
 const { backbeat } = require('arsenal');
 const { RedisClient } = require('arsenal').metrics;
 
@@ -95,12 +96,14 @@ describe('reportHandler::_crrRequest', function testSuite() {
     });
 
     after(done => {
-        redisClient.clear(err => {
-            assert.ifError(err, `Expected success, but got error ${err}`);
-            redisClient._client.disconnect();
-            backbeatMetrics._redisClient._client.disconnect();
-            return done();
-        });
+        async.series({
+            clearRedis: next =>
+                redisClient.clear(next),
+            disconnectRedisPopulator: next =>
+                redisClient.disconnect(next),
+            disconnectBackcbeatMetrics: next =>
+                backbeatMetrics.disconnect(next),
+        }, done);
     });
 
     it('should retrieve CRR metrics for all sites', done => {
@@ -136,7 +139,32 @@ describe('reportHandler::getCRRStats', function testSuite() {
     this.timeout(20000);
     let redisClient;
 
-    before(done => {
+    function assertResults(res) {
+        const testRes = res;
+        delete testRes.clients;
+        assert.deepStrictEqual(testRes, {
+            completions: { count: 10000, size: 10000 },
+            failures: { count: 2000, size: 2000 },
+            backlog: { count: 10000, size: 10000 },
+            throughput: { count: 11, size: 11 },
+            byLocation: {
+                test: {
+                    completions: { count: 5000, size: 5000 },
+                    failures: { count: 1000, size: 1000 },
+                    backlog: { count: 5000, size: 5000 },
+                    throughput: { count: 5, size: 5 },
+                },
+                noshow: {
+                    completions: { count: 5000, size: 5000 },
+                    failures: { count: 1000, size: 1000 },
+                    backlog: { count: 5000, size: 5000 },
+                    throughput: { count: 5, size: 5 },
+                },
+            },
+        });
+    }
+
+    beforeEach(done => {
         redisClient = new RedisClient(config.redis, logger);
         async.series([
             next => redisClient.clear(next),
@@ -147,37 +175,59 @@ describe('reportHandler::getCRRStats', function testSuite() {
         });
     });
 
-    after(done => {
-        redisClient.clear(err => {
-            assert.ifError(err, `Expected success, but got error ${err}`);
-            redisClient._client.disconnect();
-            return done();
+    afterEach(done => {
+        async.series({
+            clearRedis: next =>
+                redisClient.clear(next),
+            disconnectRedisPopulator: next =>
+                redisClient.disconnect(next),
+        }, done);
+    });
+
+    it('should disconnect backbeat.metrics client on report completion',
+    done => {
+        const redisChecker = new Redis({ host: 'localhost', port: 6379 });
+        redisChecker.once('error', err => {
+            redisClient.disconnect();
+            done(err);
         });
+        let preCheckCount;
+        async.series({
+            preCheck: next => {
+                redisChecker.client('list', (err, res) => {
+                    assert.ifError(err, `Expect success, but got ${err}`);
+                    const clients = res.split('\n').filter(c => !!c);
+                    preCheckCount = clients.length;
+                    next();
+                });
+            },
+            checkResults: next => {
+                getCRRStats(logger, (err, res) => {
+                    assert.ifError(err,
+                        `Expected success, but got error ${err}`);
+                    assert(res.clients);
+                    const clients = res.clients.split('\n').filter(c => !!c);
+                    assert.strictEqual(clients.length, preCheckCount + 1);
+                    assertResults(res);
+                    next();
+                }, config);
+            },
+            postCheck: next => {
+                redisChecker.client('list', (err, res) => {
+                    assert.ifError(err, `Expect success, but got ${err}`);
+                    const clients = res.split('\n').filter(c => !!c);
+                    assert.strictEqual(clients.length, preCheckCount);
+                    next();
+                });
+            },
+            disconnectTestClient: next => redisChecker.quit(next),
+        }, done);
     });
 
     it('should retrieve CRR metrics', done => {
         getCRRStats(logger, (err, res) => {
             assert.ifError(err, `Expected success, but got error ${err}`);
-            assert.deepStrictEqual(res, {
-                completions: { count: 10000, size: 10000 },
-                failures: { count: 2000, size: 2000 },
-                backlog: { count: 10000, size: 10000 },
-                throughput: { count: 11, size: 11 },
-                byLocation: {
-                    test: {
-                        completions: { count: 5000, size: 5000 },
-                        failures: { count: 1000, size: 1000 },
-                        backlog: { count: 5000, size: 5000 },
-                        throughput: { count: 5, size: 5 },
-                    },
-                    noshow: {
-                        completions: { count: 5000, size: 5000 },
-                        failures: { count: 1000, size: 1000 },
-                        backlog: { count: 5000, size: 5000 },
-                        throughput: { count: 5, size: 5 },
-                    },
-                },
-            });
+            assertResults(res);
             return done();
         }, config);
     });
