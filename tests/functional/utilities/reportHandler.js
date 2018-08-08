@@ -126,7 +126,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
                 redisClient.clear(next),
             disconnectRedisPopulator: next =>
                 redisClient.disconnect(next),
-            disconnectBackcbeatMetrics: next =>
+            disconnectBackbeatMetrics: next =>
                 backbeatMetrics.disconnect(next),
         }, done);
     });
