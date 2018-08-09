@@ -1,5 +1,5 @@
 Getting Started
-=================
+===============
 
 .. figure:: ../res/scality-cloudserver-logo.png
    :alt: Zenko CloudServer logo
@@ -19,7 +19,7 @@ npm v3 . Up-to-date versions can be found at
 Clone source code
 ~~~~~~~~~~~~~~~~~
 
-.. code:: shell
+.. code-block:: shell
 
     git clone https://github.com/scality/S3.git
 
@@ -28,14 +28,14 @@ Install js dependencies
 
 Go to the ./S3 folder,
 
-.. code:: shell
+.. code-block:: shell
 
     npm install
 
 Run it with a file backend
 --------------------------
 
-.. code:: shell
+.. code-block:: shell
 
     npm start
 
@@ -53,7 +53,7 @@ pre-created within the repository. If you would like to save the data or
 metadata in different locations of your choice, you must specify them
 with absolute paths. So, when starting the server:
 
-.. code:: shell
+.. code-block:: shell
 
     mkdir -m 700 $(pwd)/myFavoriteDataPath
     mkdir -m 700 $(pwd)/myFavoriteMetadataPath
@@ -64,7 +64,7 @@ with absolute paths. So, when starting the server:
 Run it with multiple data backends
 ----------------------------------
 
-.. code:: shell
+.. code-block:: shell
 
     export S3DATA='multiple'
     npm start
@@ -76,7 +76,7 @@ With multiple backends, you have the ability to choose where each object
 will be saved by setting the following header with a locationConstraint
 on a PUT request:
 
-.. code:: shell
+.. code-block:: shell
 
     'x-amz-meta-scal-location-constraint':'myLocationConstraint'
 
@@ -91,7 +91,7 @@ constraints.
 Run it with an in-memory backend
 --------------------------------
 
-.. code:: shell
+.. code-block:: shell
 
     npm run mem_backend
 
@@ -108,19 +108,20 @@ Testing
 
 You can run the unit tests with the following command:
 
-.. code:: shell
+.. code-block:: shell
 
     npm test
 
 You can run the multiple backend unit tests with:
 
-.. code:: shell
+.. code-block:: shell
+
     CI=true S3DATA=multiple npm start
     npm run multiple_backend_test
 
 You can run the linter with:
 
-.. code:: shell
+.. code-block:: shell
 
     npm run lint
 
@@ -152,13 +153,13 @@ instance port (``6379`` by default)
 
 -  Add the following to the etc/hosts file on your machine:
 
-.. code:: shell
+.. code-block:: shell
 
     127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com
 
 -  Start the Zenko CloudServer in memory and run the functional tests:
 
-.. code:: shell
+.. code-block:: shell
 
     CI=true npm run mem_backend
     CI=true npm run ft_test
@@ -263,7 +264,7 @@ These variables specify authentication credentials for an account named
 
 Note: Anything in the ``authdata.json`` file will be ignored.
 
-.. code:: shell
+.. code-block:: shell
 
     SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey npm start
 
@@ -275,7 +276,7 @@ If you wish to use https with your local Zenko CloudServer, you need to set up
 SSL certificates. Here is a simple guide of how to do it.
 
 Deploying Zenko CloudServer
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, you need to deploy **Zenko CloudServer**. This can be done very easily
 via `our **DockerHub**
@@ -287,7 +288,7 @@ with a file backend).
     distribution <https://docs.docker.com/engine/installation/>`__*
 
 Updating your Zenko CloudServer container's config
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You're going to add your certificates to your container. In order to do
 so, you need to exec inside your Zenko CloudServer container. Run a
@@ -295,7 +296,7 @@ so, you need to exec inside your Zenko CloudServer container. Run a
 name should be ``scality/s3server``. Copy the corresponding container id
 (here we'll use ``894aee038c5e``, and run:
 
-.. code:: sh
+.. code-block:: shell
 
     $> docker exec -it 894aee038c5e bash
 
@@ -307,7 +308,7 @@ Generate SSL key and certificates
 There are 5 steps to this generation. The paths where the different
 files are stored are defined after the ``-out`` option in each command
 
-.. code:: sh
+.. code-block:: shell
 
     # Generate a private key for your CSR
     $> openssl genrsa -out ca.key 2048
@@ -322,7 +323,7 @@ files are stored are defined after the ``-out`` option in each command
     $> openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 99999 -sha256
 
 Update Zenko CloudServer ``config.json``
-**********************************
+****************************************
 
 Add a ``certFilePaths`` section to ``./config.json`` with the
 appropriate paths:
@@ -336,7 +337,7 @@ appropriate paths:
         }
 
 Run your container with the new config
-****************************************
+**************************************
 
 First, you need to exit your container. Simply run ``$> exit``. Then,
 you need to restart your container. Normally, a simple
@@ -356,13 +357,13 @@ permissions), edit the line of localhost so it looks like this:
     127.0.0.1      localhost s3.scality.test
 
 Copy the local certificate authority from your container
-*********************************************************
+********************************************************
 
 In the above commands, it's the file named ``ca.crt``. Choose the path
 you want to save this file at (here we chose ``/root/ca.crt``), and run
 something like:
 
-.. code:: sh
+.. code-block:: shell
 
     $> docker cp 894aee038c5e:/usr/src/app/ca.crt /root/ca.crt
 

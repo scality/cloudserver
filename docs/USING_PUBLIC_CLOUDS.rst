@@ -1,3 +1,5 @@
+.. _use-public-cloud:
+
 Using Public Clouds as data backends
 ====================================
 

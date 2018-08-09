@@ -337,7 +337,7 @@ tutorial, we used an Ubuntu 14.04 host to deploy and use s3fs over
 Scality's Zenko CloudServer.
 
 Deploying Zenko CloudServer with SSL
-----------------------------
+------------------------------------
 
 First, you need to deploy **Zenko CloudServer**. This can be done very easily
 via `our DockerHub
@@ -401,7 +401,7 @@ s3fs expects you to provide it with a password file. Our file is
     $> chmod 600 /etc/passwd-s3fs
 
 Using Zenko CloudServer with s3fs
-------------------------
+---------------------------------
 
 First, you're going to need a mountpoint; we chose ``/mnt/tests3fs``:
 
@@ -634,7 +634,7 @@ backing up is a folder I modify permanently during my workday, so I want
 incremental backups every 5mn from 8AM to 9PM monday to friday. Here is
 the line I will paste in my crontab:
 
-.. code:: cron
+.. code:: sh
 
     */5 8-20 * * 1-5 /usr/local/sbin/backup.sh
 

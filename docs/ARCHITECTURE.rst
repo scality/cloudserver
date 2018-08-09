@@ -27,7 +27,7 @@ including null versions and delete markers, described in the above
 links.
 
 Implementation of Bucket Versioning in Zenko CloudServer
------------------------------------------
+--------------------------------------------------------
 
 Overview of Metadata and API Component Roles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,12 +179,13 @@ PUT
    the master version with this version.
 -  ``versionId: <versionId>`` create or update a specific version (for updating
    version's ACL or tags, or remote updates in geo-replication)
-   -  if the version identified by ``versionId`` happens to be the latest
+
+   *  if the version identified by ``versionId`` happens to be the latest
       version, the master version will be updated as well
-   -  if the master version is not as recent as the version identified by
+   *  if the master version is not as recent as the version identified by
       ``versionId``, as may happen with cross-region replication, the master
       will be updated as well
-   -  note that with ``versionId`` set to an empty string ``''``, it will
+   *  note that with ``versionId`` set to an empty string ``''``, it will
       overwrite the master version only (same as no options, but the master
       version will have a ``versionId`` property set in its metadata like
       any other version). The ``versionId`` will never be exposed to an
@@ -208,10 +209,13 @@ A deletion targeting the latest version of an object has to:
 -  delete the specified version identified by ``versionId``
 -  replace the master version with a version that is a placeholder for
    deletion
+
     -  this version contains a special keyword, 'isPHD', to indicate the
          master version was deleted and needs to be updated
+
 -  initiate a repair operation to update the value of the master
    version:
+
     -  involves listing the versions of the object and get the latest
        version to replace the placeholder delete version
     -  if no more versions exist, metadata deletes the master version,
@@ -755,16 +759,16 @@ command in the Zenko CloudServer directory:
 
 This will open two ports:
 
--  one is based on socket.io and is used for metadata transfers (9990 by
+- one is based on socket.io and is used for metadata transfers (9990 by
   default)
 
--  the other is a REST interface used for data transfers (9991 by
+- the other is a REST interface used for data transfers (9991 by
   default)
 
 Then, one or more instances of Zenko CloudServer without the dmd can be started
 elsewhere with:
 
-::
+.. code:: sh
 
    npm run start_s3server
 
@@ -792,10 +796,10 @@ access:
 
 To run a remote dmd, you have to do the following:
 
--  change both ``"host"`` attributes to the IP or host name where the
+- change both ``"host"`` attributes to the IP or host name where the
   dmd is run.
 
--  Modify the ``"bindAddress"`` attributes in ``"metadataDaemon"`` and
+- Modify the ``"bindAddress"`` attributes in ``"metadataDaemon"`` and
   ``"dataDaemon"`` sections where the dmd is run to accept remote
   connections (e.g. ``"::"``)
 
@@ -831,13 +835,13 @@ and ``createReadStream``. They more or less map the parameters accepted
 by the corresponding calls in the LevelUp implementation of LevelDB.
 They differ in the following:
 
--  The ``sync`` option is ignored (under the hood, puts are gathered
+- The ``sync`` option is ignored (under the hood, puts are gathered
   into batches which have their ``sync`` property enforced when they
   are committed to the storage)
 
--  Some additional versioning-specific options are supported
+- Some additional versioning-specific options are supported
 
--  ``createReadStream`` becomes asynchronous, takes an additional
+- ``createReadStream`` becomes asynchronous, takes an additional
   callback argument and returns the stream in the second callback
   parameter
 
@@ -847,10 +851,10 @@ with ``DEBUG='socket.io*'`` environment variable set.
 One parameter controls the timeout value after which RPC commands sent
 end with a timeout error, it can be changed either:
 
--  via the ``DEFAULT_CALL_TIMEOUT_MS`` option in
+- via the ``DEFAULT_CALL_TIMEOUT_MS`` option in
   ``lib/network/rpc/rpc.js``
 
--  or in the constructor call of the ``MetadataFileClient`` object (in
+- or in the constructor call of the ``MetadataFileClient`` object (in
   ``lib/metadata/bucketfile/backend.js`` as ``callTimeoutMs``.
 
 Default value is 30000.
@@ -864,10 +868,10 @@ can tune the behavior (for better throughput or getting it more robust
 on weak networks), they have to be set in ``mdserver.js`` file directly,
 as there is no support in ``config.json`` for now for those options:
 
--  ``streamMaxPendingAck``: max number of pending ack events not yet
+- ``streamMaxPendingAck``: max number of pending ack events not yet
   received (default is 5)
 
--  ``streamAckTimeoutMs``: timeout for receiving an ack after an output
+- ``streamAckTimeoutMs``: timeout for receiving an ack after an output
   stream packet is sent to the client (default is 5000)
 
 Data exchange through the REST data port
@@ -918,17 +922,17 @@ Listing Types
 We use three different types of metadata listing for various operations.
 Here are the scenarios we use each for:
 
--  'Delimiter' - when no versions are possible in the bucket since it is
+- 'Delimiter' - when no versions are possible in the bucket since it is
   an internally-used only bucket which is not exposed to a user.
   Namely,
 
 1. to list objects in the "user's bucket" to respond to a GET SERVICE
-  request and
+   request and
 2. to do internal listings on an MPU shadow bucket to complete multipart
-  upload operations.
+   upload operations.
 
--  'DelimiterVersion' - to list all versions in a bucket
--  'DelimiterMaster' - to list just the master versions of objects in a
+- 'DelimiterVersion' - to list all versions in a bucket
+- 'DelimiterMaster' - to list just the master versions of objects in a
   bucket
 
 Algorithms
