@@ -1,10 +1,12 @@
+===============
 Getting Started
-=================
+===============
 
 .. figure:: ../res/scality-cloudserver-logo.png
    :alt: Zenko CloudServer logo
 
 |CircleCI| |Scality CI|
+
 
 Installation
 ------------
@@ -13,110 +15,86 @@ Dependencies
 ~~~~~~~~~~~~
 
 Building and running the Scality Zenko CloudServer requires node.js 6.9.5 and
-npm v3 . Up-to-date versions can be found at
+npm v3. Up-to-date versions can be found at
 `Nodesource <https://github.com/nodesource/distributions>`__.
 
-Clone source code
-~~~~~~~~~~~~~~~~~
+
+Clone the Source Code
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: shell
 
     git clone https://github.com/scality/S3.git
 
-Install js dependencies
+Install js Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Go to the ./S3 folder,
+Go to the ./S3 folder and enter:
 
 .. code:: shell
 
     npm install
 
-Run it with a file backend
---------------------------
+
+Run CloudServer with a File Backend
+-----------------------------------
 
 .. code:: shell
 
     npm start
 
-This starts an Zenko CloudServer on port 8000. Two additional ports 9990 and
-9991 are also open locally for internal transfer of metadata and data,
+This starts a Zenko CloudServer on port 8000. Two additional ports, 9990 and
+9991, are also opened locally for internal transfer of metadata and data,
 respectively.
 
-The default access key is accessKey1 with a secret key of
-verySecretKey1.
+The default access key is accessKey1, with a secret key of verySecretKey1.
 
-By default the metadata files will be saved in the localMetadata
-directory and the data files will be saved in the localData directory
-within the ./S3 directory on your machine. These directories have been
-pre-created within the repository. If you would like to save the data or
-metadata in different locations of your choice, you must specify them
-with absolute paths. So, when starting the server:
+By default, metadata files are saved in the localMetadata directory and data
+files are saved in the localData directory in your machine's ./S3 directory.
+These directories are pre-created in the repository. To choose different
+locations to save data or metadata, specify them with absolute paths.
+Thus, when starting the server:
 
 .. code:: shell
 
-    mkdir -m 700 $(pwd)/myFavoriteDataPath
+   mkdir -m 700 $(pwd)/myFavoriteDataPath
     mkdir -m 700 $(pwd)/myFavoriteMetadataPath
     export S3DATAPATH="$(pwd)/myFavoriteDataPath"
     export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
     npm start
 
-Run it with multiple data backends
-----------------------------------
+Run CloudServer with an In-Memory Backend
+-----------------------------------------
 
-.. code:: shell
-
-    export S3DATA='multiple'
-    npm start
-
-This starts an Zenko CloudServer on port 8000. The default access key is
-accessKey1 with a secret key of verySecretKey1.
-
-With multiple backends, you have the ability to choose where each object
-will be saved by setting the following header with a locationConstraint
-on a PUT request:
-
-.. code:: shell
-
-    'x-amz-meta-scal-location-constraint':'myLocationConstraint'
-
-If no header is sent with a PUT object request, the location constraint
-of the bucket will determine where the data is saved. If the bucket has
-no location constraint, the endpoint of the PUT request will be used to
-determine location.
-
-See the Configuration section below to learn how to set location
-constraints.
-
-Run it with an in-memory backend
---------------------------------
+Entering the command:
 
 .. code:: shell
 
     npm run mem_backend
 
-This starts an Zenko CloudServer on port 8000. The default access key is
-accessKey1 with a secret key of verySecretKey1.
+starts a Zenko CloudServer on port 8000. The default access key is
+accessKey1, with a secret key of verySecretKey1.
 
-Run it for continuous integration testing or in production with Docker
-----------------------------------------------------------------------
+Run CloudServer for Continuous Integration Testing or in Production with Docker
+-------------------------------------------------------------------------------
 
 `DOCKER <../DOCKER/>`__
 
 Testing
 -------
 
-You can run the unit tests with the following command:
+You can run unit tests with the following command:
 
 .. code:: shell
 
     npm test
 
-You can run the multiple backend unit tests with:
+You can run multiple backend unit tests with:
 
 .. code:: shell
-    CI=true S3DATA=multiple npm start
-    npm run multiple_backend_test
+
+  CI=true S3DATA=multiple npm start
+   npm run multiple_backend_test
 
 You can run the linter with:
 
@@ -126,39 +104,40 @@ You can run the linter with:
 
 Running functional tests locally:
 
-For the AWS backend and Azure backend tests to pass locally,
-you must modify tests/locationConfigTests.json so that awsbackend
-specifies a bucketname of a bucket you have access to based on
-your credentials profile and modify "azurebackend" with details
-for your Azure account.
+For the AWS and Azure backend tests to pass locally, modify
+tests/locationConfigTests.json so that awsbackend specifies the bucket name of
+a bucket to which you have access (based on your credentials profile) and modify
+"azurebackend" with details for your Azure account.
 
-The test suite requires additional tools, **s3cmd** and **Redis**
-installed in the environment the tests are running in.
+The test suite requires additional tools, **s3cmd** and **Redis**, installed in
+the environment in which the tests are running.
 
--  Install `s3cmd <http://s3tools.org/download>`__
--  Install `redis <https://redis.io/download>`__ and start Redis.
--  Add localCache section to your ``config.json``:
+To install these tools:
 
-::
+1.  Install `s3cmd <http://s3tools.org/download>`__
+2.  Install `redis <https://redis.io/download>`__ and start Redis.
+3.  Add localCache section to your ``config.json``:
+
+  .. code:: json
 
     "localCache": {
         "host": REDIS_HOST,
         "port": REDIS_PORT
     }
 
-where ``REDIS_HOST`` is your Redis instance IP address (``"127.0.0.1"``
-if your Redis is running locally) and ``REDIS_PORT`` is your Redis
-instance port (``6379`` by default)
+  where ``REDIS_HOST`` is your Redis instance IP address (``"127.0.0.1"``
+  if your Redis is running locally) and ``REDIS_PORT`` is your Redis
+  instance port (``6379`` by default).
 
--  Add the following to the etc/hosts file on your machine:
+4.  Add the following to your machine's etc/hosts file:
 
-.. code:: shell
+  .. code:: shell
 
     127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com
 
--  Start the Zenko CloudServer in memory and run the functional tests:
+5. Start the Zenko CloudServer in memory and run the functional tests:
 
-.. code:: shell
+  .. code:: shell
 
     CI=true npm run mem_backend
     CI=true npm run ft_test
@@ -168,13 +147,9 @@ Configuration
 
 There are three configuration files for your Scality Zenko CloudServer:
 
-1. ``conf/authdata.json``, described above for authentication
-
-2. ``locationConfig.json``, to set up configuration options for
-
-   where data will be saved
-
-3. ``config.json``, for general configuration options
+-  ``conf/authdata.json``, described above, for authentication.
+-  ``locationConfig.json``, to set up configuration options for where data will be saved.
+-  ``config.json``, for general configuration options.
 
 Location Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -182,15 +157,15 @@ Location Configuration
 You must specify at least one locationConstraint in your
 locationConfig.json (or leave as pre-configured).
 
-You must also specify 'us-east-1' as a locationConstraint so if you only
-define one locationConstraint, that would be it. If you put a bucket to
-an unknown endpoint and do not specify a locationConstraint in the put
-bucket call, us-east-1 will be used.
+You must also specify 'us-east-1' as a locationConstraint, so if you define
+only one locationConstraint, make sure it's this one. If you put a bucket to
+an unknown endpoint and do not specify a locationConstraint in the PUT
+bucket call, us-east-1 is used.
 
 For instance, the following locationConstraint will save data sent to
 ``myLocationConstraint`` to the file backend:
 
-.. code:: json
+ .. code:: json
 
     "myLocationConstraint": {
         "type": "file",
@@ -198,136 +173,148 @@ For instance, the following locationConstraint will save data sent to
         "details": {}
     },
 
-Each locationConstraint must include the ``type``,
-``legacyAwsBehavior``, and ``details`` keys. ``type`` indicates which
-backend will be used for that region. Currently, mem, file, and scality
-are the supported backends. ``legacyAwsBehavior`` indicates whether the
-region will have the same behavior as the AWS S3 'us-east-1' region. If
-the locationConstraint type is scality, ``details`` should contain
-connector information for sproxyd. If the locationConstraint type is mem
-or file, ``details`` should be empty.
+Each locationConstraint must include the ``type``, ``legacyAwsBehavior``,
+and ``details`` keys. ``type`` indicates which backend will be used for
+that region. Currently, mem, file, and scality are the supported
+backends. ``legacyAwsBehavior`` indicates whether the region will have
+the same behavior as the AWS S3 'us-east-1' region. If the
+locationConstraint type is scality, ``details`` should contain connector
+information for sproxyd. If the locationConstraint type is mem or file,
+``details`` should be empty.
 
-Once you have your locationConstraints in your locationConfig.json, you
-can specify a default locationConstraint for each of your endpoints.
+Once you have locationConstraints in locationConfig.json, you can specify
+a default locationConstraint for each endpoint.
 
 For instance, the following sets the ``localhost`` endpoint to the
 ``myLocationConstraint`` data backend defined above:
 
-.. code:: json
+  .. code:: json
 
     "restEndpoints": {
          "localhost": "myLocationConstraint"
     },
 
-If you would like to use an endpoint other than localhost for your
-Scality Zenko CloudServer, that endpoint MUST be listed in your
-``restEndpoints``. Otherwise if your server is running with a:
+To use an endpoint other than localhost for your Scality Zenko
+CloudServer, you **must** list that endpoint in ``restEndpoints``.
+Otherwise if your server is running with a:
 
--  **file backend**: your default location constraint will be ``file``
-
--  **memory backend**: your default location constraint will be ``mem``
+-  **file backend**: Your default location constraint will be ``file``
+-  **memory backend**: Your default location constraint will be ``mem``
 
 Endpoints
 ~~~~~~~~~
 
-Note that our Zenko CloudServer supports both:
+Zenko CloudServer supports both:
 
 -  path-style: http://myhostname.com/mybucket
 -  hosted-style: http://mybucket.myhostname.com
 
-However, hosted-style requests will not hit the server if you are using
-an ip address for your host. So, make sure you are using path-style
-requests in that case. For instance, if you are using the AWS SDK for
-JavaScript, you would instantiate your client like this:
+However, if you use an IP address for your host, hosted-style requests
+will not hit the server. Make sure to use path-style requests in that
+case. For example, if you are using the AWS SDK for JavaScript,
+instantiate your client like this:
 
-.. code:: js
+  .. code:: js
 
     const s3 = new aws.S3({
        endpoint: 'http://127.0.0.1:8000',
        s3ForcePathStyle: true,
     });
 
-Setting your own access key and secret key pairs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Setting Your Own Access Key and Secret Key Pairs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can set credentials for many accounts by editing
-``conf/authdata.json`` but if you want to specify one set of your own
-credentials, you can use ``SCALITY_ACCESS_KEY_ID`` and
-``SCALITY_SECRET_ACCESS_KEY`` environment variables.
+``conf/authdata.json``, but to specify one set of your own credentials,
+use ``SCALITY_ACCESS_KEY_ID`` and ``SCALITY_SECRET_ACCESS_KEY``
+environment variables.
 
-SCALITY\_ACCESS\_KEY\_ID and SCALITY\_SECRET\_ACCESS\_KEY
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SCALITY_ACCESS_KEY_ID and SCALITY_SECRET_ACCESS_KEY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These variables specify authentication credentials for an account named
 "CustomAccount".
 
-Note: Anything in the ``authdata.json`` file will be ignored.
+**Note:** Anything in the ``authdata.json`` file is ignored.
 
-.. code:: shell
+  .. code:: shell
 
     SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey npm start
 
 
 Scality with SSL
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
-If you wish to use https with your local Zenko CloudServer, you need to set up
-SSL certificates. Here is a simple guide of how to do it.
+To use https with your local Zenko CloudServer, you must set up SSL certificates.
 
 Deploying Zenko CloudServer
-^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, you need to deploy **Zenko CloudServer**. This can be done very easily
-via `our **DockerHub**
-page <https://hub.docker.com/r/scality/s3server/>`__ (you want to run it
+First, deploy **Zenko CloudServer**. It is easiest to do this using
+`our DockerHub page <https://hub.docker.com/r/scality/s3server/>`__ (Run it
 with a file backend).
 
-    *Note:* *- If you don't have docker installed on your machine, here
-    are the `instructions to install it for your
-    distribution <https://docs.docker.com/engine/installation/>`__*
+    **Note:** If Docker is not installed on your machine, follow
+    `these instructions to install it for your distribution <https://docs.docker.com/engine/installation/>`__
 
-Updating your Zenko CloudServer container's config
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Updating the Zenko CloudServer Container's Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You're going to add your certificates to your container. In order to do
-so, you need to exec inside your Zenko CloudServer container. Run a
+Add your certificates to your container. To do this, you must exec inside the
+Zenko CloudServer container. Run a
 ``$> docker ps`` and find your container's id (the corresponding image
 name should be ``scality/s3server``. Copy the corresponding container id
-(here we'll use ``894aee038c5e``, and run:
+(``894aee038c5e`` in this example), and run:
 
-.. code:: sh
+  .. code:: sh
 
     $> docker exec -it 894aee038c5e bash
 
-You're now inside your container, using an interactive terminal :)
+This opens an interactive terminal session inside the container.
 
-Generate SSL key and certificates
-**********************************
+Generate an SSL Key and Certificates
+************************************
 
-There are 5 steps to this generation. The paths where the different
-files are stored are defined after the ``-out`` option in each command
+There are five steps to this generation. The paths where the different
+files are stored are defined after the ``-out`` option in each command.
 
-.. code:: sh
+1. Generate a private key for your CSR.
 
-    # Generate a private key for your CSR
-    $> openssl genrsa -out ca.key 2048
-    # Generate a self signed certificate for your local Certificate Authority
+  .. code:: sh
+
+   $> openssl genrsa -out ca.key 2048
+
+2. Generate a self-signed certificate for your local certificate authority.
+
+  .. code:: sh
+
     $> openssl req -new -x509 -extensions v3_ca -key ca.key -out ca.crt -days 99999  -subj "/C=US/ST=Country/L=City/O=Organization/CN=scality.test"
 
-    # Generate a key for Zenko CloudServer
+3. Generate a key for Zenko CloudServer.
+
+  .. code:: sh
+
     $> openssl genrsa -out test.key 2048
-    # Generate a Certificate Signing Request for S3 Server
+
+4. Generate a certificate signing request for S3 Server.
+
+  .. code:: sh
+
     $> openssl req -new -key test.key -out test.csr -subj "/C=US/ST=Country/L=City/O=Organization/CN=*.scality.test"
-    # Generate a local-CA-signed certificate for S3 Server
-    $> openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 99999 -sha256
+
+5. Generate a local-CA-signed certificate for S3 Server.
+
+  .. code:: sh
+
+   $> openssl x509 -req -in test.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out test.crt -days 99999 -sha256
 
 Update Zenko CloudServer ``config.json``
-**********************************
+****************************************
 
 Add a ``certFilePaths`` section to ``./config.json`` with the
 appropriate paths:
 
-.. code:: json
+  .. code:: json
 
         "certFilePaths": {
             "key": "./test.key",
@@ -335,46 +322,46 @@ appropriate paths:
             "ca": "./ca.crt"
         }
 
-Run your container with the new config
+Run Container with the New Config
 ****************************************
 
-First, you need to exit your container. Simply run ``$> exit``. Then,
-you need to restart your container. Normally, a simple
-``$> docker restart s3server`` should do the trick.
+Exit the container by running ``$> exit``. Then, restart the container.
+Normally, ``$> docker restart s3server`` does this.
 
-Update your host config
+Update Host Config
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Associates local IP addresses with hostname
+Associate Local IP Addresses with hostname
 *******************************************
 
-In your ``/etc/hosts`` file on Linux, OS X, or Unix (with root
-permissions), edit the line of localhost so it looks like this:
+Use root permissions to edit the ``/etc/hosts`` file (in Linux, OS X, or
+any other Unix) so that the localhost line looks like:
 
 ::
 
     127.0.0.1      localhost s3.scality.test
 
-Copy the local certificate authority from your container
+Copy the Local Certificate Authority from the Container
 *********************************************************
 
-In the above commands, it's the file named ``ca.crt``. Choose the path
-you want to save this file at (here we chose ``/root/ca.crt``), and run
-something like:
+In the above commands, the certificate authority is the file named ``ca.crt``.
+Choose the path to save this file (``/root/ca.crt`` in the following example),
+and run a command resembling:
 
 .. code:: sh
 
     $> docker cp 894aee038c5e:/usr/src/app/ca.crt /root/ca.crt
 
-Test your config
+Test the Config
 ^^^^^^^^^^^^^^^^^
 
-If you do not have aws-sdk installed, run ``$> npm install aws-sdk``. In
-a ``test.js`` file, paste the following script:
+If no aws-sdk is installed, run ``$> npm install aws-sdk``.
+
+Then, paste the following script into a ``test.js`` file:
 
 .. code:: js
 
-    const AWS = require('aws-sdk');
+   const AWS = require('aws-sdk');
     const fs = require('fs');
     const https = require('https');
 
@@ -410,8 +397,8 @@ a ``test.js`` file, paste the following script:
         });
     });
 
-Now run that script with ``$> nodejs test.js``. If all goes well, it
-should output ``SSL is cool!``. Enjoy that added security!
+Run this script with ``$> nodejs test.js``. If all goes well, it
+will output ``SSL is cool!``. Enjoy the added security!
 
 
 .. |CircleCI| image:: https://circleci.com/gh/scality/S3.svg?style=svg
