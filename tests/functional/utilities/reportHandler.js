@@ -55,6 +55,7 @@ const testCRRKeys = [
 ];
 
 const INTERVAL = 300;
+const EXPIRY = 86400;
 
 function _normalizeTimestamp(d) {
     const m = d.getMinutes();
@@ -114,7 +115,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             backbeatMetrics = new backbeat.Metrics({
                 redisConfig: config.redis,
                 validSites: sites,
-                internalStart: Date.now() - 900000,
+                internalStart: Date.now() - (EXPIRY * 1000),
             }, logger);
             return done();
         });
