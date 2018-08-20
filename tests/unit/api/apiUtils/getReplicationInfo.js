@@ -41,6 +41,20 @@ describe('getReplicationInfo helper', () => {
         });
     });
 
+    it('should not get replication info when rules are disabled', () => {
+        const replicationConfig = {
+            role: 'arn:aws:iam::root:role/s3-replication-role',
+            rules: [{
+                prefix: '',
+                enabled: false,
+                storageClass: 'awsbackend',
+            }],
+            destination: 'tosomewhere',
+        };
+        const replicationInfo = _getObjectReplicationInfo(replicationConfig);
+        assert.deepStrictEqual(replicationInfo, undefined);
+    });
+
     it('should get replication info with multiple cloud targets', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',
