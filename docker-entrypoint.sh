@@ -10,7 +10,7 @@ JQ_FILTERS_CONFIG="."
 # for multiple endpoint locations
 if [[ "$ENDPOINT" ]]; then
     IFS="," read -ra HOST_NAMES <<< "$ENDPOINT"
-    for host in "${HOST_NAMES[@]}"; do 
+    for host in "${HOST_NAMES[@]}"; do
         JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .restEndpoints[\"$host\"]=\"us-east-1\""
     done
     echo "Host name has been modified to ${HOST_NAMES[@]}"
@@ -110,6 +110,20 @@ fi
 
 if [[ "$REDIS_HA_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
+fi
+
+if [[ "$REDIS_SENTINEL_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"sentinels\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"sentinels\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].port=26379"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=26379"
+fi
+
+if [[ "$REDIS_SENTINEL_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].port=$REDIS_SENTINEL_PORT"
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=$REDIS_SENTINEL_PORT"
 fi
 
 if [[ "$RECORDLOG_ENABLED" ]]; then
