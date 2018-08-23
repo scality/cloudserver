@@ -94,36 +94,34 @@ if [[ "$MONGODB_DATABASE" ]]; then
    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
 fi
 
-if [[ "$REDIS_HOST" ]]; then
+if [[ "$REDIS_SENTINEL_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"sentinels\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=26379"
+elif [[ "$REDIS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
 fi
 
-if [[ "$REDIS_PORT" ]]; then
+if [[ "$REDIS_SENTINEL_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=$REDIS_SENTINEL_PORT"
+elif [[ "$REDIS_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=$REDIS_PORT"
-fi
-
-if [[ "$REDIS_HA_HOST" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HA_HOST\""
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
-fi
-
-if [[ "$REDIS_HA_PORT" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
 fi
 
 if [[ "$REDIS_SENTINEL_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"sentinels\""
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"sentinels\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].port=26379"
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=26379"
+elif [[ "$REDIS_HA_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HA_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
 fi
 
 if [[ "$REDIS_SENTINEL_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].port=$REDIS_SENTINEL_PORT"
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=$REDIS_SENTINEL_PORT"
+elif [[ "$REDIS_HA_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
 fi
 
 if [[ "$RECORDLOG_ENABLED" ]]; then
