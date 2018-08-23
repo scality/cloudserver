@@ -1,9 +1,5 @@
 const assert = require('assert');
-const async = require('async');
 const http = require('http');
-const Redis = require('ioredis');
-const { backbeat } = require('arsenal');
-const { RedisClient } = require('arsenal').metrics;
 
 const { ConfigObject } = require('../../../lib/Config');
 const config = new ConfigObject();
@@ -13,11 +9,11 @@ const { DummyRequestLogger } = require('../../unit/helpers');
 const logger = new DummyRequestLogger();
 
 const testLocationConstraints = {
-    test: { type: 'aws_s3' },
-    noshow: { type: 'aws_s3' },
+    site1: { type: 'aws_s3' },
+    site2: { type: 'aws_s3' },
 };
 config.setReplicationEndpoints(testLocationConstraints);
-config.redis = { host: 'localhost', port: 6379 };
+config.backbeat = { host: 'localhost', port: 4242 };
 
 const {
     _crrRequest,
@@ -25,230 +21,77 @@ const {
     getReplicationStates,
 } = require('../../../lib/utilities/reportHandler');
 
-
-const sites = ['test', 'noshow'];
-const testDetails = {
-    httpMethod: 'GET',
-    category: 'metrics',
-    type: 'all',
-    extensions: { crr: [...sites, 'all'] },
-    method: 'getAllMetrics',
-    dataPoints: ['bb:crr:ops', 'bb:crr:opsdone', 'bb:crr:opsfail',
-        'bb:crr:bytes', 'bb:crr:bytesdone', 'bb:crr:bytesfail'],
+const expectedResultsRef = {
+    completions: { count: 10000, size: 10000 },
+    failures: { count: 2000, size: 2000 },
+    backlog: { count: 10000, size: 10000 },
+    throughput: { count: 11, size: 11 },
+    byLocation: {
+        site1: {
+            completions: { count: 5000, size: 5000 },
+            failures: { count: 1000, size: 1000 },
+            backlog: { count: 5000, size: 5000 },
+            throughput: { count: 5, size: 5 },
+        },
+        site2: {
+            completions: { count: 5000, size: 5000 },
+            failures: { count: 1000, size: 1000 },
+            backlog: { count: 5000, size: 5000 },
+            throughput: { count: 5, size: 5 },
+        },
+    },
 };
 
-const testCRRKeys = [
-    ['noshow:bb:crr:ops', 10000],
-    ['noshow:bb:crr:bytes', 10000],
-    ['noshow:bb:crr:opsdone', 5000],
-    ['noshow:bb:crr:bytesdone', 5000],
-    ['noshow:bb:crr:opsfail', 1000],
-    ['noshow:bb:crr:bytesfail', 1000],
-    ['noshow:bb:crr:failed', 0],
-    ['test:bb:crr:ops', 10000],
-    ['test:bb:crr:bytes', 10000],
-    ['test:bb:crr:opsdone', 5000],
-    ['test:bb:crr:bytesdone', 5000],
-    ['test:bb:crr:opsfail', 1000],
-    ['test:bb:crr:bytesfail', 1000],
-    ['test:bb:crr:failed', 0],
-];
+const requestResults = {
+    all: {
+        completions: { results: { count: 10000, size: 10000 } },
+        failures: { results: { count: 2000, size: 2000 } },
+        backlog: { results: { count: 10000, size: 10000 } },
+        throughput: { results: { count: 11, size: 11 } },
+    },
+    site1: {
+        completions: { results: { count: 5000, size: 5000 } },
+        failures: { results: { count: 1000, size: 1000 } },
+        backlog: { results: { count: 5000, size: 5000 } },
+        throughput: { results: { count: 5, size: 5 } },
+    },
+    site2: {
+        completions: { results: { count: 5000, size: 5000 } },
+        failures: { results: { count: 1000, size: 1000 } },
+        backlog: { results: { count: 5000, size: 5000 } },
+        throughput: { results: { count: 5, size: 5 } },
+    },
+};
 
-const INTERVAL = 300;
-const CRR_METRIC_EXPIRY = 86400;
+const expectedStatusResults = {
+    location1: 'enabled',
+    location2: 'disabled',
+};
 
-function _normalizeTimestamp(d) {
-    const m = d.getMinutes();
-    return d.setMinutes(m - m % (Math.floor(INTERVAL / 60)), 0, 0);
-}
+const expectedScheduleResults = {
+    location1: 'none',
+    location2: new Date(),
+};
 
-function _buildKey(name, d) {
-    return `${name}:${_normalizeTimestamp(d)}`;
-}
-
-function populateRedis(redisClient, cb) {
-    const cmdKeys = testCRRKeys.map(entry => {
-        const [id, val] = entry;
-        const key = _buildKey(`${id}:requests`, new Date());
-        return ['set', key, val];
-    });
-    return redisClient.batch(cmdKeys, cb);
-}
-
-function assertResults(res) {
-    const testRes = res;
-    delete testRes.clients;
-    assert.deepStrictEqual(testRes, {
-        completions: { count: 10000, size: 10000 },
-        failures: { count: 2000, size: 2000 },
-        backlog: { count: 10000, size: 10000 },
-        throughput: { count: 11, size: 11 },
-        byLocation: {
-            test: {
-                completions: { count: 5000, size: 5000 },
-                failures: { count: 1000, size: 1000 },
-                backlog: { count: 5000, size: 5000 },
-                throughput: { count: 5, size: 5 },
-            },
-            noshow: {
-                completions: { count: 5000, size: 5000 },
-                failures: { count: 1000, size: 1000 },
-                backlog: { count: 5000, size: 5000 },
-                throughput: { count: 5, size: 5 },
-            },
-        },
-    });
-}
-
-describe('reportHandler::_crrRequest', function testSuite() {
-    this.timeout(20000);
-    let redisClient;
-    let backbeatMetrics;
-
-    before(done => {
-        redisClient = new RedisClient(config.redis, logger);
-        async.series([
-            next => redisClient.clear(next),
-            next => populateRedis(redisClient, next),
-        ], err => {
-            assert.ifError(err);
-            backbeatMetrics = new backbeat.Metrics({
-                redisConfig: config.redis,
-                validSites: sites,
-                internalStart: Date.now() - (CRR_METRIC_EXPIRY * 1000),
-            }, logger);
-            return done();
-        });
-    });
-
-    after(done => {
-        async.series({
-            clearRedis: next =>
-                redisClient.clear(next),
-            disconnectRedisPopulator: next =>
-                redisClient.disconnect(next),
-            disconnectBackbeatMetrics: next =>
-                backbeatMetrics.disconnect(next),
-        }, done);
-    });
-
-    it('should retrieve CRR metrics for all sites', done => {
-        _crrRequest(backbeatMetrics, testDetails, 'all', logger,
-        (err, res) => {
-            assert.ifError(err);
-            assert.deepStrictEqual(res, {
-                completions: { count: 10000, size: 10000 },
-                failures: { count: 2000, size: 2000 },
-                backlog: { count: 10000, size: 10000 },
-                throughput: { count: 11, size: 11 },
-            });
-            return done();
-        });
-    });
-
-    it('should retrieve CRR metrics for specific site', done => {
-        _crrRequest(backbeatMetrics, testDetails, 'test', logger,
-        (err, res) => {
-            assert.ifError(err);
-            assert.deepStrictEqual(res, {
-                completions: { count: 5000, size: 5000 },
-                failures: { count: 1000, size: 1000 },
-                backlog: { count: 5000, size: 5000 },
-                throughput: { count: 5, size: 5 },
-            });
-            done();
-        });
-    });
-});
-
-describe('reportHandler::getCRRStats', function testSuite() {
-    this.timeout(20000);
-    let redisClient;
-
-    beforeEach(done => {
-        redisClient = new RedisClient(config.redis, logger);
-        async.series([
-            next => redisClient.clear(next),
-            next => populateRedis(redisClient, next),
-        ], err => {
-            assert.ifError(err);
-            return done();
-        });
-    });
-
-    afterEach(done => {
-        async.series({
-            clearRedis: next =>
-                redisClient.clear(next),
-            disconnectRedisPopulator: next =>
-                redisClient.disconnect(next),
-        }, done);
-    });
-
-    it('should disconnect backbeat.metrics client on report completion',
-    done => {
-        const redisChecker = new Redis({ host: 'localhost', port: 6379 });
-        redisChecker.once('error', err => {
-            redisClient.disconnect();
-            done(err);
-        });
-        let preCheckCount;
-        async.series({
-            preCheck: next => {
-                redisChecker.client('list', (err, res) => {
-                    assert.ifError(err);
-                    const clients = res.split('\n').filter(c => !!c);
-                    preCheckCount = clients.length;
-                    next();
-                });
-            },
-            checkResults: next => {
-                getCRRStats(logger, (err, res) => {
-                    assert.ifError(err);
-                    assert(res.clients);
-                    const clients = res.clients.split('\n').filter(c => !!c);
-                    assert.strictEqual(clients.length, preCheckCount + 1);
-                    assertResults(res);
-                    next();
-                }, config);
-            },
-            postCheck: next => {
-                redisChecker.client('list', (err, res) => {
-                    assert.ifError(err);
-                    const clients = res.split('\n').filter(c => !!c);
-                    assert.strictEqual(clients.length, preCheckCount);
-                    next();
-                });
-            },
-            disconnectTestClient: next => redisChecker.quit(next),
-        }, done);
-    });
-
-    it('should retrieve CRR metrics', done => {
-        getCRRStats(logger, (err, res) => {
-            assert.ifError(err);
-            assertResults(res);
-            return done();
-        }, config);
-    });
-});
-
-describe('reportHandler::getReplicationStates', function testSuite() {
-    this.timeout(20000);
-    const testPort = '4242';
-    let httpServer;
-
-    const expectedStatusResults = {
-        location1: 'enabled',
-        location2: 'disabled',
+function requestFailHandler(req, res) {
+    const testError = {
+        code: 404,
+        description: 'reportHandler test error',
     };
+    // eslint-disable-next-line no-param-reassign
+    res.statusCode = 404;
+    res.write(JSON.stringify(testError));
+    res.end();
+}
 
-    const expectedScheduleResults = {
-        location1: 'none',
-        location2: new Date(),
-    };
-
-    function requestHandler(req, res) {
+function requestHandler(req, res) {
+    const { url } = req;
+    if (url.startsWith('/_/metrics/crr/')) {
+        const site = url.split('/_/metrics/crr/')[1] || '';
+        if (requestResults[site]) {
+            res.write(JSON.stringify(requestResults[site]));
+        }
+    } else {
         switch (req.url) {
         case '/_/crr/status':
             res.write(JSON.stringify(expectedStatusResults));
@@ -259,20 +102,109 @@ describe('reportHandler::getReplicationStates', function testSuite() {
         default:
             break;
         }
-        res.end();
     }
+    res.end();
+}
+
+describe('reportHandler::_crrRequest', function testSuite() {
+    this.timeout(20000);
+    const testPort = '4242';
+    let httpServer;
+
+    describe('Test Request Failure Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestFailHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return empty object if a request error occurs', done => {
+            const endpoint = 'http://nonexists:4242';
+            _crrRequest(endpoint, 'all', logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(res, {});
+                done();
+            });
+        });
+
+        it('should return empty object if response status code is >= 400',
+        done => {
+            const endpoint = 'http://localhost:4242';
+            _crrRequest(endpoint, 'all', logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(res, {});
+                done();
+            });
+        });
+    });
+
+    describe('Test Request Success Cases', () => {
+        const endpoint = 'http://localhost:4242';
+        before(done => {
+            httpServer = http.createServer(requestHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return correct location metrics', done => {
+            _crrRequest(endpoint, 'site1', logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(
+                    res, expectedResultsRef.byLocation.site1);
+                done();
+            });
+        });
+    });
+});
+
+describe('reportHandler::getCRRStats', function testSuite() {
+    this.timeout(20000);
+    const testPort = '4242';
+    let httpServer;
+
+    describe('Test Request Success Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return correct results', done => {
+            getCRRStats(logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(res, expectedResultsRef);
+                done();
+            }, config);
+        });
+    });
+});
 
 
-    function requestFailHandler(req, res) {
-        const testError = {
-            code: 404,
-            description: 'reportHandler test error',
-        };
-        // eslint-disable-next-line no-param-reassign
-        res.statusCode = 404;
-        res.write(JSON.stringify(testError));
-        res.end();
-    }
+describe('reportHandler::getReplicationStates', function testSuite() {
+    this.timeout(20000);
+    const testPort = '4242';
+    let httpServer;
 
     describe('Test Request Failure Cases', () => {
         before(done => {
