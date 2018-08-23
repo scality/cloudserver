@@ -94,8 +94,12 @@ if [[ "$MONGODB_DATABASE" ]]; then
    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
 fi
 
+if [ -z "$REDIS_HA_NAME" ]; then
+    REDIS_HA_NAME='mymaster'
+fi
+
 if [[ "$REDIS_SENTINEL_HOST" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"sentinels\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"$REDIS_HA_NAME\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels[0].port=26379"
 elif [[ "$REDIS_HOST" ]]; then
@@ -110,7 +114,7 @@ elif [[ "$REDIS_PORT" ]]; then
 fi
 
 if [[ "$REDIS_SENTINEL_HOST" ]]; then
-    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"sentinels\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"$REDIS_HA_NAME\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].host=\"$REDIS_SENTINEL_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels[0].port=26379"
 elif [[ "$REDIS_HA_HOST" ]]; then
