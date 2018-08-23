@@ -163,7 +163,7 @@ function listAndAbort(uploadId, calculatedHash2, objectName, done) {
 
 describeSkipIfE2E('objectPutPart API with multiple backends',
 function testSuite() {
-    this.timeout(5000);
+    this.timeout(50000);
 
     beforeEach(() => {
         cleanup();
