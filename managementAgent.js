@@ -38,7 +38,8 @@ class ManagementAgentServer {
           || _config.reportToken
           || Uuid.v4();
 
-        initManagement(logger.newRequestLogger(), overlay => {
+        /* The initManegement function retries when it fails. */
+        return initManagement(logger.newRequestLogger(), overlay => {
             let error = null;
 
             if (overlay) {
