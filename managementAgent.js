@@ -1,6 +1,5 @@
 const Uuid = require('uuid');
 const WebSocket = require('ws');
-const metadata = require('./lib/metadata/wrapper');
 
 const logger = require('./lib/utilities/logger');
 const { initManagement } = require('./lib/management');
@@ -37,22 +36,17 @@ class ManagementAgentServer {
           || _config.reportToken
           || Uuid.v4();
 
-        metadata.setup(error => {
-            if (error) {
-                logger.error('failed to setup metadata', { error });
-                return cb(error);
-            }
-            return initManagement(logger.newRequestLogger(), overlay => {
-                let error = null;
+        /* The initManegement function retries when it fails. */
+        return initManagement(logger.newRequestLogger(), overlay => {
+            let error = null;
 
-                if (overlay) {
-                    this.loadedOverlay = overlay;
-                    this.startServer();
-                } else {
-                    error = new Error('failed to init management');
-                }
-                return cb(error);
-            });
+            if (overlay) {
+                this.loadedOverlay = overlay;
+                this.startServer();
+            } else {
+                error = new Error('failed to init management');
+            }
+            return cb(error);
         });
     }
 
