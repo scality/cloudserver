@@ -227,6 +227,33 @@ stages:
             <<: *global-env
       - Upload: *upload-artifacts
 
+  management-agent-tests:
+    worker: &s3-pod
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1664Mi"
+
+    steps:
+      - Git: *clone
+      - ShellCommand: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand:
+          command: |
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_test
+          <<: *follow-s3-log
+          env:
+            <<: *mongo-vars
+            <<: *global-env
+      - Upload: *upload-artifacts
+
+
   file-ft-tests:
     worker:
       type: kube_pod
