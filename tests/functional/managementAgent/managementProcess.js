@@ -10,6 +10,11 @@ const {
 const {
     patchConfiguration,
 } = require('../../../lib/management/configuration');
+const {
+    CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS,
+    WS_STATUS_IDDLE,
+} = require('../../../lib/management/constants');
+
 const metadata = require('../../../lib/metadata/wrapper.js');
 
 function createWs(path) {
@@ -89,6 +94,30 @@ describe('Management process', function testSuite() {
             assert(msg.payload);
 
             patchConfiguration(msg.payload, logger.newRequestLogger(), done);
+        });
+    });
+
+    it('should terminate the connection when a client does not answer ping',
+       done => {
+        this.timeout(2 * CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS);
+
+        const ws = createWs();
+
+        ws.on('close', (code, reason) => {
+            assert.strictEqual(code, WS_STATUS_IDDLE.code);
+            assert.strictEqual(reason, WS_STATUS_IDDLE.reason);
+            done();
+        });
+        ws.on('error', error => {
+            done(new Error('unexpected event'));
+        });
+        ws.on('message', data => {
+            /* Ugly eventTarget internal fields hacking to avoid this web
+             * socket to answer to ping messages. It will make the management
+             * agent to close the connection after a timeout.
+             * Defining an onPing event does not help, this internal function
+             * is still called. */
+            ws._receiver._events.ping = function noop() {};
         });
     });
 });
