@@ -11,6 +11,7 @@ class LocationConstraint {
             awsEndpoint: 's3.amazonaws.com',
             bucketName: 'tester',
             credentialsProfile: 'default',
+            region: 'us-west-1',
         }, details || {});
     }
 }
@@ -117,6 +118,20 @@ describe('locationConstraintAssert', () => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
         },
         /bad config: credentialsProfile must be a string/);
+    });
+    it('should throw error if region is not a string', () => {
+        const locationConstraint = new LocationConstraint(
+            'scality', 'locId', false,
+            {
+                awsEndpoint: 's3.amazonaws.com',
+                bucketName: 'premadebucket',
+                credentialsProfile: 'zenko',
+                region: 42,
+            });
+        assert.throws(() => {
+            locationConstraintAssert({ 'scality-east': locationConstraint });
+        },
+        /bad config: region must be a string/);
     });
     it('should throw error if us-east-1 not specified', () => {
         const locationConstraint = new LocationConstraint();
