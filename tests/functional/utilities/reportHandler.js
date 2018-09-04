@@ -25,21 +25,18 @@ const expectedResultsRef = {
     completions: { count: 10000, size: 10000 },
     failures: { count: 2000, size: 2000 },
     pending: { count: 8000, size: 8000 },
-    backlog: { count: 10000, size: 10000 },
     throughput: { count: 11, size: 11 },
     byLocation: {
         site1: {
             completions: { count: 5000, size: 5000 },
             failures: { count: 1000, size: 1000 },
             pending: { count: 4000, size: 4000 },
-            backlog: { count: 5000, size: 5000 },
             throughput: { count: 5, size: 5 },
         },
         site2: {
             completions: { count: 5000, size: 5000 },
             failures: { count: 1000, size: 1000 },
             pending: { count: 4000, size: 4000 },
-            backlog: { count: 5000, size: 5000 },
             throughput: { count: 5, size: 5 },
         },
     },
@@ -50,21 +47,18 @@ const requestResults = {
         completions: { results: { count: 10000, size: 10000 } },
         failures: { results: { count: 2000, size: 2000 } },
         pending: { results: { count: 8000, size: 8000 } },
-        backlog: { results: { count: 10000, size: 10000 } },
         throughput: { results: { count: 11, size: 11 } },
     },
     site1: {
         completions: { results: { count: 5000, size: 5000 } },
         failures: { results: { count: 1000, size: 1000 } },
         pending: { results: { count: 4000, size: 4000 } },
-        backlog: { results: { count: 5000, size: 5000 } },
         throughput: { results: { count: 5, size: 5 } },
     },
     site2: {
         completions: { results: { count: 5000, size: 5000 } },
         failures: { results: { count: 1000, size: 1000 } },
         pending: { results: { count: 4000, size: 4000 } },
-        backlog: { results: { count: 5000, size: 5000 } },
         throughput: { results: { count: 5, size: 5 } },
     },
 };
