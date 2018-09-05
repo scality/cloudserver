@@ -5,208 +5,109 @@ const Promise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const bucketSchema = require('../../schema/bucket');
+const bucketSchemaV2 = require('../../schema/bucketV2');
+const { generateToken, decryptToken } =
+    require('../../../../../lib/api/apiUtils/object/continueToken');
 
-function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
-}
-
-describe('GET Bucket - AWS.S3.listObjects', () => {
-    describe('When user is unauthorized', () => {
-        let bucketUtil;
-        let bucketName;
-
-        before(done => {
-            bucketUtil = new BucketUtility();
-            bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
-        });
-
-        after(done => {
-            bucketUtil.deleteOne(bucketName)
-                      .then(() => done())
-                      .catch(done);
-        });
-
-        it('should return 403 and AccessDenied on a private bucket', done => {
-            const params = { Bucket: bucketName };
-            bucketUtil.s3
-                .makeUnauthenticatedRequest('listObjects', params, error => {
-                    assert(error);
-                    assert.strictEqual(error.statusCode, 403);
-                    assert.strictEqual(error.code, 'AccessDenied');
-                    done();
-                });
-        });
-    });
-
-    withV4(sigCfg => {
-        let bucketUtil;
-        let bucketName;
-
-        before(done => {
-            bucketUtil = new BucketUtility('default', sigCfg);
-            bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
-        });
-
-        after(done => {
-            bucketUtil.deleteOne(bucketName).then(() => done()).catch(done);
-        });
-
-        afterEach(done => {
-            bucketUtil.empty(bucketName).catch(done).done(() => done());
-        });
-
-        it('should return created objects in alphabetical order', done => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [
+const tests = [
+    {
+        name: 'return created objects in alphabetical order',
+        objectPutParams: Bucket =>
+            [
                 { Bucket, Key: 'testB/' },
                 { Bucket, Key: 'testB/test.json', Body: '{}' },
                 { Bucket, Key: 'testA/' },
                 { Bucket, Key: 'testA/test.json', Body: '{}' },
                 { Bucket, Key: 'testA/test/test.json', Body: '{}' },
-            ];
-
-            Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket }))
-                .then(data => {
-                    const isValidResponse = tv4.validate(data, bucketSchema);
-                    if (!isValidResponse) {
-                        throw new Error(tv4.error);
-                    }
-                    return data;
-                }).then(data => {
-                    const keys = data.Contents.map(object => object.Key);
-                    assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-                    assert.deepEqual(keys, [
-                        'testA/',
-                        'testA/test.json',
-                        'testA/test/test.json',
-                        'testB/',
-                        'testB/test.json',
-                    ], 'Bucket content mismatch');
-                    // ETag should include quotes around value
-                    const emptyObjectHash =
-                        '"d41d8cd98f00b204e9800998ecf8427e"';
-                    assert.deepStrictEqual(data.Contents[0].ETag,
-                        emptyObjectHash, 'Object hash mismatch');
-                    done();
-                })
-                .catch(done);
-        });
-
-        it('should return multiple common prefixes', done => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [
+            ],
+        listObjectParams: Bucket => ({ Bucket }),
+        assertions: (data, Bucket) => {
+            const keys = data.Contents.map(object => object.Key);
+            // ETag should include quotes around value
+            const emptyObjectHash =
+                '"d41d8cd98f00b204e9800998ecf8427e"';
+            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
+            assert.deepEqual(keys, [
+                'testA/',
+                'testA/test.json',
+                'testA/test/test.json',
+                'testB/',
+                'testB/test.json',
+            ], 'Bucket content mismatch');
+            assert.deepStrictEqual(data.Contents[0].ETag,
+                emptyObjectHash, 'Object hash mismatch');
+        },
+    },
+    {
+        name: 'return multiple common prefixes',
+        objectPutParams: Bucket =>
+            [
                 { Bucket, Key: 'testB/' },
                 { Bucket, Key: 'testB/test.json', Body: '{}' },
                 { Bucket, Key: 'testA/' },
                 { Bucket, Key: 'testA/test.json', Body: '{}' },
                 { Bucket, Key: 'testA/test/test.json', Body: '{}' },
-            ];
-
-            Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket, Delimiter: '/' }))
-                .then(data => {
-                    const isValidResponse = tv4.validate(data, bucketSchema);
-                    if (!isValidResponse) {
-                        throw new Error(tv4.error);
-                    }
-                    return data;
-                }).then(data => {
-                    const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
-                    assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-                    assert.deepEqual(prefixes, [
-                        'testA/',
-                        'testB/',
-                    ], 'Bucket content mismatch');
-                    done();
-                })
-                .catch(done);
-        });
-
-        it('should list objects with percentage delimiter', () => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [
+            ],
+        listObjectParams: Bucket => ({ Bucket, Delimiter: '/' }),
+        assertions: (data, Bucket) => {
+            const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
+            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
+            assert.deepEqual(prefixes, [
+                'testA/',
+                'testB/',
+            ], 'Bucket content mismatch');
+        },
+    },
+    {
+        name: 'list objects with percentage delimiter',
+        objectPutParams: Bucket =>
+            [
                 { Bucket, Key: 'testB%' },
                 { Bucket, Key: 'testC%test.json', Body: '{}' },
                 { Bucket, Key: 'testA%' },
-            ];
-
-            return Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket, Delimiter: '%' }))
-                .then(data => {
-                    const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
-                    assert.deepEqual(prefixes, [
-                        'testA%',
-                        'testB%',
-                        'testC%',
-                    ], 'Bucket content mismatch');
-                })
-                .catch(err => {
-                    checkNoError(err);
-                });
-        });
-
-        it('should list object titles with white spaces', done => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [
+            ],
+        listObjectParams: Bucket => ({ Bucket, Delimiter: '%' }),
+        assertions: data => {
+            const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
+            assert.deepEqual(prefixes, [
+                'testA%',
+                'testB%',
+                'testC%',
+            ], 'Bucket content mismatch');
+        },
+    },
+    {
+        name: 'list object titles with white spaces',
+        objectPutParams: Bucket =>
+            [
                 { Bucket, Key: 'whiteSpace/' },
                 { Bucket, Key: 'whiteSpace/one whiteSpace', Body: '{}' },
                 { Bucket, Key: 'whiteSpace/two white spaces', Body: '{}' },
                 { Bucket, Key: 'white space/' },
                 { Bucket, Key: 'white space/one whiteSpace', Body: '{}' },
                 { Bucket, Key: 'white space/two white spaces', Body: '{}' },
-            ];
-
-            Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket }))
-                .then(data => {
-                    const isValidResponse = tv4.validate(data, bucketSchema);
-                    if (!isValidResponse) {
-                        throw new Error(tv4.error);
-                    }
-                    return data;
-                }).then(data => {
-                    const keys = data.Contents.map(object => object.Key);
-                    assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-                    assert.deepEqual(keys, [
-                        /* These object names are intentionally listed in a
-                        different order than they were created to additionally
-                        test that they are listed alphabetically. */
-                        'white space/',
-                        'white space/one whiteSpace',
-                        'white space/two white spaces',
-                        'whiteSpace/',
-                        'whiteSpace/one whiteSpace',
-                        'whiteSpace/two white spaces',
-                    ], 'Bucket content mismatch');
-                    done();
-                })
-                .catch(done);
-        });
-
-        it('should list object titles that contain special chars', done => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [
+            ],
+        listObjectParams: Bucket => ({ Bucket }),
+        assertions: (data, Bucket) => {
+            const keys = data.Contents.map(object => object.Key);
+            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
+            assert.deepEqual(keys, [
+                /* These object names are intentionally listed in a
+                different order than they were created to additionally
+                test that they are listed alphabetically. */
+                'white space/',
+                'white space/one whiteSpace',
+                'white space/two white spaces',
+                'whiteSpace/',
+                'whiteSpace/one whiteSpace',
+                'whiteSpace/two white spaces',
+            ], 'Bucket content mismatch');
+        },
+    },
+    {
+        name: 'list object titles that contain special chars',
+        objectPutParams: Bucket =>
+            [
                 { Bucket, Key: 'foo&<>\'"' },
                 { Bucket, Key: '*asterixObjTitle/' },
                 { Bucket, Key: '*asterixObjTitle/objTitleA', Body: '{}' },
@@ -297,86 +198,197 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 { Bucket,
                     Key: 'éeacuteLowerCaseObjTitle/éeacuteLowerCaseObjTitle',
                     Body: '{}' },
-            ];
+            ],
+        listObjectParams: Bucket => ({ Bucket }),
+        assertions: (data, Bucket) => {
+            const keys = data.Contents.map(object => object.Key);
+            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
+            assert.deepEqual(keys, [
+                /* These object names are intentionally listed in a
+                different order than they were created to additionally
+                test that they are listed alphabetically. */
+                '!exclamationPointObjTitle/',
+                '!exclamationPointObjTitle/!exclamationPointObjTitle',
+                '!exclamationPointObjTitle/objTitleA',
+                "'apostropheObjTitle/",
+                "'apostropheObjTitle/'apostropheObjTitle",
+                "'apostropheObjTitle/objTitleA",
+                '(openParenObjTitle/',
+                '(openParenObjTitle/(openParenObjTitle',
+                '(openParenObjTitle/objTitleA',
+                ')closeParenObjTitle/',
+                ')closeParenObjTitle/)closeParenObjTitle',
+                ')closeParenObjTitle/objTitleA',
+                '*asterixObjTitle/',
+                '*asterixObjTitle/*asterixObjTitle',
+                '*asterixObjTitle/objTitleA',
+                '-dashObjTitle/',
+                '-dashObjTitle/-dashObjTitle',
+                '-dashObjTitle/objTitleA',
+                '.dotObjTitle/',
+                '.dotObjTitle/.dotObjTitle',
+                '.dotObjTitle/objTitleA',
+                '_underscoreObjTitle/',
+                '_underscoreObjTitle/_underscoreObjTitle',
+                '_underscoreObjTitle/objTitleA',
+                'foo&<>\'"',
+                'ÀaGraveUpperCaseObjTitle',
+                'ÀaGraveUpperCaseObjTitle/objTitleA',
+                'ÀaGraveUpperCaseObjTitle/ÀaGraveUpperCaseObjTitle',
+                'ßscharfesSObjTitle',
+                'ßscharfesSObjTitle/objTitleA',
+                'ßscharfesSObjTitle/ßscharfesSObjTitle',
+                'àaGraveLowerCaseObjTitle',
+                'àaGraveLowerCaseObjTitle/objTitleA',
+                'àaGraveLowerCaseObjTitle/àaGraveLowerCaseObjTitle',
+                'çcedilleObjTitle',
+                'çcedilleObjTitle/objTitleA',
+                'çcedilleObjTitle/çcedilleObjTitle',
+                'éeacuteLowerCaseObjTitle',
+                'éeacuteLowerCaseObjTitle/objTitleA',
+                'éeacuteLowerCaseObjTitle/éeacuteLowerCaseObjTitle',
+                'ñenyeObjTitle',
+                'ñenyeObjTitle/objTitleA',
+                'ñenyeObjTitle/ñenyeObjTitle',
+                'дcyrillicDObjTitle',
+                'дcyrillicDObjTitle/objTitleA',
+                'дcyrillicDObjTitle/дcyrillicDObjTitle',
+                'بbaArabicObjTitle',
+                'بbaArabicObjTitle/objTitleA',
+                'بbaArabicObjTitle/بbaArabicObjTitle',
+                'अadevanagariHindiObjTitle',
+                'अadevanagariHindiObjTitle/objTitleA',
+                'अadevanagariHindiObjTitle/अadevanagariHindiObjTitle',
+                '山chineseMountainObjTitle',
+                '山chineseMountainObjTitle/objTitleA',
+                '山chineseMountainObjTitle/山chineseMountainObjTitle',
+                '日japaneseMountainObjTitle',
+                '日japaneseMountainObjTitle/objTitleA',
+                '日japaneseMountainObjTitle/日japaneseMountainObjTitle',
+            ], 'Bucket content mismatch');
+        },
+    },
+    {
+        name: 'list objects with special chars in CommonPrefixes',
+        objectPutParams: Bucket =>
+            [
+                { Bucket, Key: '&amp#' },
+                { Bucket, Key: '"quot#' }, { Bucket, Key: '\'apos#' },
+                { Bucket, Key: '<lt#' }, { Bucket, Key: '<gt#' },
+            ],
+        listObjectParams: Bucket => ({ Bucket, Delimiter: '#' }),
+        assertions: data => {
+            assert.deepStrictEqual(data.CommonPrefixes, [
+                { Prefix: '"quot#' }, { Prefix: '&amp#' },
+                { Prefix: '\'apos#' }, { Prefix: '<gt#' },
+                { Prefix: '<lt#' }]);
+        },
+    },
+];
 
-            Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket }))
-                .then(data => {
-                    const isValidResponse = tv4.validate(data, bucketSchema);
-                    if (!isValidResponse) {
-                        throw new Error(tv4.error);
-                    }
-                    return data;
-                }).then(data => {
-                    const keys = data.Contents.map(object => object.Key);
-                    assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-                    assert.deepEqual(keys, [
-                        /* These object names are intentionally listed in a
-                        different order than they were created to additionally
-                        test that they are listed alphabetically. */
-                        '!exclamationPointObjTitle/',
-                        '!exclamationPointObjTitle/!exclamationPointObjTitle',
-                        '!exclamationPointObjTitle/objTitleA',
-                        "'apostropheObjTitle/",
-                        "'apostropheObjTitle/'apostropheObjTitle",
-                        "'apostropheObjTitle/objTitleA",
-                        '(openParenObjTitle/',
-                        '(openParenObjTitle/(openParenObjTitle',
-                        '(openParenObjTitle/objTitleA',
-                        ')closeParenObjTitle/',
-                        ')closeParenObjTitle/)closeParenObjTitle',
-                        ')closeParenObjTitle/objTitleA',
-                        '*asterixObjTitle/',
-                        '*asterixObjTitle/*asterixObjTitle',
-                        '*asterixObjTitle/objTitleA',
-                        '-dashObjTitle/',
-                        '-dashObjTitle/-dashObjTitle',
-                        '-dashObjTitle/objTitleA',
-                        '.dotObjTitle/',
-                        '.dotObjTitle/.dotObjTitle',
-                        '.dotObjTitle/objTitleA',
-                        '_underscoreObjTitle/',
-                        '_underscoreObjTitle/_underscoreObjTitle',
-                        '_underscoreObjTitle/objTitleA',
-                        'foo&<>\'"',
-                        'ÀaGraveUpperCaseObjTitle',
-                        'ÀaGraveUpperCaseObjTitle/objTitleA',
-                        'ÀaGraveUpperCaseObjTitle/ÀaGraveUpperCaseObjTitle',
-                        'ßscharfesSObjTitle',
-                        'ßscharfesSObjTitle/objTitleA',
-                        'ßscharfesSObjTitle/ßscharfesSObjTitle',
-                        'àaGraveLowerCaseObjTitle',
-                        'àaGraveLowerCaseObjTitle/objTitleA',
-                        'àaGraveLowerCaseObjTitle/àaGraveLowerCaseObjTitle',
-                        'çcedilleObjTitle',
-                        'çcedilleObjTitle/objTitleA',
-                        'çcedilleObjTitle/çcedilleObjTitle',
-                        'éeacuteLowerCaseObjTitle',
-                        'éeacuteLowerCaseObjTitle/objTitleA',
-                        'éeacuteLowerCaseObjTitle/éeacuteLowerCaseObjTitle',
-                        'ñenyeObjTitle',
-                        'ñenyeObjTitle/objTitleA',
-                        'ñenyeObjTitle/ñenyeObjTitle',
-                        'дcyrillicDObjTitle',
-                        'дcyrillicDObjTitle/objTitleA',
-                        'дcyrillicDObjTitle/дcyrillicDObjTitle',
-                        'بbaArabicObjTitle',
-                        'بbaArabicObjTitle/objTitleA',
-                        'بbaArabicObjTitle/بbaArabicObjTitle',
-                        'अadevanagariHindiObjTitle',
-                        'अadevanagariHindiObjTitle/objTitleA',
-                        'अadevanagariHindiObjTitle/अadevanagariHindiObjTitle',
-                        '山chineseMountainObjTitle',
-                        '山chineseMountainObjTitle/objTitleA',
-                        '山chineseMountainObjTitle/山chineseMountainObjTitle',
-                        '日japaneseMountainObjTitle',
-                        '日japaneseMountainObjTitle/objTitleA',
-                        '日japaneseMountainObjTitle/日japaneseMountainObjTitle',
-                    ], 'Bucket content mismatch');
+describe('GET Bucket - AWS.S3.listObjects', () => {
+    describe('When user is unauthorized', () => {
+        let bucketUtil;
+        let bucketName;
+
+        before(done => {
+            bucketUtil = new BucketUtility();
+            bucketUtil.createRandom(1)
+                      .then(created => {
+                          bucketName = created;
+                          done();
+                      })
+                      .catch(done);
+        });
+
+        after(done => {
+            bucketUtil.deleteOne(bucketName)
+                      .then(() => done())
+                      .catch(done);
+        });
+
+        it('should return 403 and AccessDenied on a private bucket', done => {
+            const params = { Bucket: bucketName };
+            bucketUtil.s3
+                .makeUnauthenticatedRequest('listObjects', params, error => {
+                    assert(error);
+                    assert.strictEqual(error.statusCode, 403);
+                    assert.strictEqual(error.code, 'AccessDenied');
                     done();
-                })
-                .catch(done);
+                });
+        });
+    });
+
+    withV4(sigCfg => {
+        let bucketUtil;
+        let bucketName;
+
+        before(done => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            bucketUtil.createRandom(1)
+                      .then(created => {
+                          bucketName = created;
+                          done();
+                      })
+                      .catch(done);
+        });
+
+        after(done => {
+            bucketUtil.deleteOne(bucketName).then(() => done()).catch(done);
+        });
+
+        afterEach(done => {
+            bucketUtil.empty(bucketName).catch(done).done(() => done());
+        });
+
+        tests.forEach(test => {
+            it(`should ${test.name}`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+
+                Promise
+                    .mapSeries(test.objectPutParams(Bucket),
+                        param => s3.putObjectAsync(param))
+                    .then(() =>
+                        s3.listObjectsAsync(test.listObjectParams(Bucket)))
+                    .then(data => {
+                        const isValidResponse =
+                            tv4.validate(data, bucketSchema);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        test.assertions(data, Bucket);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        tests.forEach(test => {
+            it(`v2 should ${test.name}`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+
+                Promise
+                    .mapSeries(test.objectPutParams(Bucket),
+                        param => s3.putObjectAsync(param))
+                    .then(() =>
+                        s3.listObjectsV2Async(test.listObjectParams(Bucket)))
+                    .then(data => {
+                        const isValidResponse =
+                            tv4.validate(data, bucketSchemaV2);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        test.assertions(data, Bucket);
+                        done();
+                    })
+                    .catch(done);
+            });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
@@ -452,31 +464,82 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
             });
         });
 
-        it('should list objects with special chars in CommonPrefixes', done => {
-            const s3 = bucketUtil.s3;
-            const Bucket = bucketName;
-            const objects = [{ Bucket, Key: '&amp#' },
-            { Bucket, Key: '"quot#' }, { Bucket, Key: '\'apos#' },
-            { Bucket, Key: '<lt#' }, { Bucket, Key: '<gt#' }];
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as StartAfter`, done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }];
 
-            Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.listObjectsAsync({ Bucket, Delimiter: '#' }))
-                .then(data => {
-                    const isValidResponse = tv4.validate(data,
-                        bucketSchema);
-                    if (!isValidResponse) {
-                        throw new Error(tv4.error);
-                    }
-                    return data;
-                }).then(data => {
-                    assert.deepStrictEqual(data.CommonPrefixes, [
-                        { Prefix: '"quot#' }, { Prefix: '&amp#' },
-                        { Prefix: '\'apos#' }, { Prefix: '<gt#' },
-                        { Prefix: '<lt#' }]);
-                    done();
-                })
-                .catch(done);
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsV2Async(
+                        { Bucket, StartAfter: k }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchemaV2);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.deepStrictEqual(data.StartAfter, k);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as ContinuationToken`,
+            done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }];
+
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsV2Async(
+                        { Bucket, ContinuationToken: generateToken(k) }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchemaV2);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.deepStrictEqual(
+                            decryptToken(data.ContinuationToken), k);
+                        done();
+                    })
+                    .catch(done);
+            });
+        });
+
+        ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
+            it(`should list objects with key ${k} as NextContinuationToken`,
+            done => {
+                const s3 = bucketUtil.s3;
+                const Bucket = bucketName;
+                const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
+                Promise
+                    .mapSeries(objects, param => s3.putObjectAsync(param))
+                    .then(() => s3.listObjectsV2Async({ Bucket, MaxKeys: 1,
+                        Delimiter: 'foo' }))
+                    .then(data => {
+                        const isValidResponse = tv4.validate(data,
+                            bucketSchemaV2);
+                        if (!isValidResponse) {
+                            throw new Error(tv4.error);
+                        }
+                        return data;
+                    }).then(data => {
+                        assert.strictEqual(
+                            decryptToken(data.NextContinuationToken), k);
+                        done();
+                    })
+                    .catch(done);
+            });
         });
     });
 });
