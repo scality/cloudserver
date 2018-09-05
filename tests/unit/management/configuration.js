@@ -122,6 +122,7 @@ describe('patchConfiguration', () => {
                         accessKey: 'awsaccesskey',
                         secretKey,
                         bucketName: 'awsbucketname',
+                        region: 'us-west-1',
                     },
                 },
                 'gcpbackendtest': {
@@ -233,6 +234,7 @@ describe('patchConfiguration', () => {
                             },
                             https: true,
                             pathStyle: false,
+                            region: 'us-west-1',
                             serverSideEncryption: false,
                             supportsVersioning: true,
                         },
