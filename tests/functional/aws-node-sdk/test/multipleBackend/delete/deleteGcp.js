@@ -102,5 +102,12 @@ describeSkipIfNotMultiple('Multiple backend delete', function testSuite() {
                 });
             }));
         });
+
+        it('should return success if the object does not exist',
+            done => s3.deleteObject({ Bucket: bucket, Key: 'noop' }, err => {
+                assert.strictEqual(err, null,
+                    `Expected success, got error ${JSON.stringify(err)}`);
+                done();
+            }));
     });
 });
