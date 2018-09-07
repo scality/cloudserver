@@ -83,14 +83,13 @@ describe('GCP: DELETE Object', function testSuite() {
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404 and NoSuchKey', done => {
+        it('should return 204', done => {
             gcpClient.deleteObject({
                 Bucket: bucketName,
                 Key: badObjectKey,
             }, err => {
                 assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                assert.strictEqual(err.statusCode, 204);
                 return done();
             });
         });
