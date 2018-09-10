@@ -1,4 +1,5 @@
 const assert = require('assert');
+const AWS = require('aws-sdk');
 const async = require('async');
 const crypto = require('crypto');
 const { versioning } = require('arsenal');
@@ -6,6 +7,13 @@ const versionIdUtils = versioning.VersionID;
 
 const { makeRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { describeSkipIfNotMultiple, awsLocation } =
+    require('../../../aws-node-sdk/test/multipleBackend/utils');
+const { getRealAwsConfig } =
+    require('../../../aws-node-sdk/test/support/awsConfig');
+
+const config = getRealAwsConfig(awsLocation);
+const awsClient = new AWS.S3(config);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
@@ -101,6 +109,55 @@ function makeBackbeatRequest(params, callback) {
     };
     makeRequest(options, callback);
 }
+
+describeSkipIfNotMultiple('backbeat DELETE routes', () => {
+    it('abort MPU', done => {
+        const awsBucket = 'multitester555';
+        const awsKey = 'backbeat-mpu-test';
+        async.waterfall([
+            next =>
+                awsClient.createMultipartUpload({
+                    Bucket: awsBucket,
+                    Key: awsKey,
+                }, next),
+            (response, next) => {
+                const { UploadId } = response;
+                makeBackbeatRequest({
+                    method: 'DELETE',
+                    bucket: awsBucket,
+                    objectKey: awsKey,
+                    resourceType: 'multiplebackenddata',
+                    queryObj: { operation: 'abortmpu' },
+                    headers: {
+                        'x-scal-upload-id': UploadId,
+                        'x-scal-storage-type': 'aws_s3',
+                        'x-scal-storage-class': awsLocation,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    assert.deepStrictEqual(JSON.parse(response.body), {});
+                    return next(null, UploadId);
+                });
+            }, (UploadId, next) =>
+                awsClient.listMultipartUploads({
+                    Bucket: awsBucket,
+                    Key: awsKey,
+                    UploadId,
+                }, (err, response) => {
+                    assert.ifError(err);
+                    const hasOngoingUpload =
+                        response.Uploads.some(upload => (upload === UploadId));
+                    assert(!hasOngoingUpload);
+                    return next();
+                }),
+        ], err => {
+            assert.ifError(err);
+            done();
+        });
+    });
+});
 
 describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
