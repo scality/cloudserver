@@ -15,7 +15,7 @@ const repMatchFailed = { backends:
     [{ site: 'spoofbackend', status: 'FAILED', dataVersionId: '' }] };
 const repMatch = { backends: [{
     site: 'spoofbackend',
-    status: 'COMPLETE',
+    status: 'COMPLETED',
     dataStoreVersionId: 'spoofid' }],
 };
 const expDataLocator = [{
@@ -32,22 +32,25 @@ describe('Replication Backend Compare', () => {
             getReplicationBackendDataLocator(locCheckResult, repNoMatch);
         assert(repBackendResult.error.InvalidLocationConstraint);
     });
-    it('should return error if backend status is PENDING', () => {
+    it('should return a status and reason if backend status is PENDING', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repMatchPending);
-        assert(repBackendResult.error.NoSuchKey);
+        assert.strictEqual(repBackendResult.dataLocator, undefined);
         assert.strictEqual(repBackendResult.status, 'PENDING');
+        assert.notStrictEqual(repBackendResult.reason, undefined);
     });
-    it('should return error if backend status is FAILED', () => {
+    it('should return a status and reason if backend status is FAILED', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repMatchFailed);
-        assert(repBackendResult.error.NoSuchKey);
+        assert.strictEqual(repBackendResult.dataLocator, undefined);
         assert.strictEqual(repBackendResult.status, 'FAILED');
+        assert.notStrictEqual(repBackendResult.reason, undefined);
     });
-    it('should return dataLocator obj if backend matches and rep is complete',
+    it('should return dataLocator obj if backend matches and rep is COMPLETED',
     () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repMatch);
+        assert.strictEqual(repBackendResult.status, 'COMPLETED');
         assert.deepStrictEqual(repBackendResult.dataLocator, expDataLocator);
     });
 });
