@@ -18,7 +18,7 @@ const {
 
 class ManagementAgentServer {
     constructor() {
-        this.port = _config.managementAgent.port || 8010;
+        this.port = _config.managementAgent.port || 9753;
         this.wss = null;
         this.loadedOverlay = null;
 

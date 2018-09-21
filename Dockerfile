@@ -26,3 +26,4 @@ ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "npm", "start" ]
 
 EXPOSE 8000
+EXPOSE 9753

@@ -40,12 +40,13 @@ spec:
           readOnly: false
           mountPath: /root/.aws
         - name: artifacts
-          readOnly: true
+          readOnly: false
           mountPath: /artifacts
       command:
         - bash
         - -lc
         - |
+          echo "export INITIAL_INSTANCE_ID=$(od -x /dev/urandom | head -1 | awk '{OFS="-"; print $2$3,$4,$5,$6,$7$8$9}')" > /artifacts/management_test_instance_id
           buildbot-worker create-worker . $BUILDMASTER:$BUILDMASTER_PORT $WORKERNAME $WORKERPASS
           buildbot-worker start --nodaemon
       env:
@@ -61,6 +62,7 @@ spec:
         - name: {{ key }}
           value: "{{ value }}"
         {% endfor %}
+    {% if vars.managementProcess is not defined or vars.managementProcess != "enabled" -%}
     - name: s3
       image: {{ images.s3 }}
       imagePullPolicy: IfNotPresent
@@ -114,6 +116,64 @@ spec:
         - name: {{ key }}
           value: "{{ value }}"
         {% endfor %}
+    {%- endif %}
+    {% if vars.managementProcess is defined and vars.managementProcess == "enabled" -%}
+    - name: management
+      image: {{ images.management_agent }}
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1Gi
+        limits:
+          cpu: 200m
+          memory: 1Gi
+      volumeMounts:
+        - name: creds
+          readOnly: false
+          mountPath: /root/.aws
+        - name: certs
+          readOnly: true
+          mountPath: /tmp
+        - name: artifacts
+          readOnly: false
+          mountPath: /artifacts
+      command:
+        - bash
+        - -ec
+        - |
+          sleep 10 # wait for mongo
+          source /artifacts/management_test_instance_id
+          /usr/src/app/docker-entrypoint.sh npm run management_agent | tee -a /artifacts/management.log
+      env:
+        {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" -%}
+        - name: S3_LOCATION_FILE
+          value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
+        {%- endif %}
+        - name: CI
+          value: "true"
+        - name: ENABLE_LOCAL_CACHE
+          value: "true"
+        - name: MONGODB_HOSTS
+          value: "localhost:27018"
+        - name: MONGODB_RS
+          value: "rs0"
+        - name: REDIS_HOST
+          value: "localhost"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REPORT_TOKEN
+          value: "report-token-1"
+        - name: REMOTE_MANAGEMENT_DISABLE
+          value: "0"
+        - name: HEALTHCHECKS_ALLOWFROM
+          value: "0.0.0.0/0"
+        {% for key, value in vars.env.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
+    {%- endif %}
+
     {% if vars.redis is defined and vars.redis == "enabled" -%}
     - name: redis
       image: redis:alpine
