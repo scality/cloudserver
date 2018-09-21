@@ -7,12 +7,14 @@ const _config = require('./lib/Config').config;
 const { managementAgentMessageType } = require('./lib/management/agentClient');
 const { addOverlayMessageListener } = require('./lib/management/push');
 const { saveConfigurationVersion } = require('./lib/management/configuration');
+const {
+    CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS,
+    WS_STATUS_IDDLE,
+} = require('./lib/management/constants');
 
 
 // TODO: auth?
 // TODO: werelogs with a specific name.
-
-const CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS = 15000;
 
 
 class ManagementAgentServer {
@@ -167,7 +169,7 @@ class ManagementAgentServer {
                 logger.info('close broken connection', {
                     client: client._socket._peername,
                 });
-                client.terminate();
+                client.close(WS_STATUS_IDDLE.code, WS_STATUS_IDDLE.reason);
                 return;
             }
             client.isAlive = false;
