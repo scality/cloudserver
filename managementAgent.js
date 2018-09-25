@@ -6,9 +6,11 @@ const { initManagement } = require('./lib/management');
 const _config = require('./lib/Config').config;
 const { managementAgentMessageType } = require('./lib/management/agentClient');
 const { addOverlayMessageListener } = require('./lib/management/push');
+const { saveConfigurationVersion } = require('./lib/management/configuration');
 
 
 // TODO: auth?
+// TODO: werelogs with a specific name.
 
 const CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS = 15000;
 
@@ -120,30 +122,42 @@ class ManagementAgentServer {
         logger.error('websocket server error', { error });
     }
 
-    onNewOverlay(remoteOverlay) {
-        this.loadedOverlay = JSON.parse(remoteOverlay);
-        this.wss.clients.forEach(client => {
-            if (client.readyState !== client.OPEN) {
-                logger.error('client socket not in ready state', {
-                    state: client.readyState,
-                    client: client._socket._peername,
-                });
-                return;
-            }
-            const msg = {
-                messageType: managementAgentMessageType.NEW_OVERLAY,
-                payload: this.loadedOverlay,
-            };
-            client.send(JSON.stringify(msg), error => {
-                if (error) {
-                    logger.error('failed to send remoteOverlay to management' +
-                                 ' agent client', {
-                                     error,
-                                     client: client._socket._peername,
-                                 });
-                }
+    _sendNewOverlayToClient(client) {
+        if (client.readyState !== client.OPEN) {
+            logger.error('client socket not in ready state', {
+                state: client.readyState,
+                client: client._socket._peername,
             });
+            return;
+        }
+
+        const msg = {
+            messageType: managementAgentMessageType.NEW_OVERLAY,
+            payload: this.loadedOverlay,
+        };
+        client.send(JSON.stringify(msg), error => {
+            if (error) {
+                logger.error(
+                  'failed to send remoteOverlay to management agent client', {
+                      error, client: client._socket._peername,
+                  });
+            }
         });
+    }
+
+    onNewOverlay(remoteOverlay) {
+        const remoteOverlayObj = JSON.parse(remoteOverlay);
+        saveConfigurationVersion(
+            this.loadedOverlay, remoteOverlayObj, logger, err => {
+                if (err) {
+                    logger.error('failed to save remote overlay', { err });
+                    return;
+                }
+                this.loadedOverlay = remoteOverlayObj;
+                this.wss.clients.forEach(
+                    this._sendNewOverlayToClient.bind(this)
+                );
+            });
     }
 
     checkBrokenConnections() {
