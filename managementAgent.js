@@ -50,11 +50,14 @@ class ManagementAgentServer {
     }
 
     stop() {
-        if (this.wss) {
-            this.wss.close(() => {
-                logger.info('server shutdown');
-            });
+        if (!this.wss) {
+            process.exit(0);
+            return;
         }
+        this.wss.close(() => {
+            logger.info('server shutdown');
+            process.exit(0);
+        });
     }
 
     startServer() {
