@@ -121,7 +121,7 @@ class ManagementAgentServer {
     }
 
     onNewOverlay(remoteOverlay) {
-        this.loadedOverlay = remoteOverlay;
+        this.loadedOverlay = JSON.parse(remoteOverlay);
         this.wss.clients.forEach(client => {
             if (client.readyState !== client.OPEN) {
                 logger.error('client socket not in ready state', {
@@ -132,7 +132,7 @@ class ManagementAgentServer {
             }
             const msg = {
                 messageType: managementAgentMessageType.NEW_OVERLAY,
-                payload: remoteOverlay,
+                payload: this.loadedOverlay,
             };
             client.send(JSON.stringify(msg), error => {
                 if (error) {
