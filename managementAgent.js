@@ -5,7 +5,6 @@ const logger = require('./lib/utilities/logger');
 const { initManagement } = require('./lib/management');
 const _config = require('./lib/Config').config;
 const { managementAgentMessageType } = require('./lib/management/agentClient');
-const { addOverlayMessageListener } = require('./lib/management/push');
 const { saveConfigurationVersion } = require('./lib/management/configuration');
 const {
     CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS,
@@ -41,7 +40,8 @@ class ManagementAgentServer {
           || Uuid.v4();
 
         /* The initManegement function retries when it fails. */
-        return initManagement(logger.newRequestLogger(), overlay => {
+        const log = logger.newRequestLogger();
+        return initManagement(log, this.onNewOverlay.bind(this), overlay => {
             let error = null;
 
             if (overlay) {
@@ -78,8 +78,6 @@ class ManagementAgentServer {
 
         setInterval(this.checkBrokenConnections.bind(this),
                     CHECK_BROKEN_CONNECTIONS_FREQUENCY_MS);
-
-        addOverlayMessageListener(this.onNewOverlay.bind(this));
     }
 
     onConnection(socket, request) {
