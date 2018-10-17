@@ -95,7 +95,6 @@ const constants = {
         'accelerate',
         'analytics',
         'inventory',
-        'list-type',
         'logging',
         'metrics',
         'notification',
