@@ -117,3 +117,15 @@ this._isNFS = isNFS || null;
 ### Usage
 
 Used to determine whether the bucket may be accessed through NFS
+
+## Model version 10
+
+### Properties Added
+
+```javascript
+this._ingestion = ingestionConfig || null;
+```
+
+### Usage
+
+Used to store the ingestion status of a bucket

@@ -28,6 +28,11 @@ const testBuckets = [
         bucketName: `version-bucket-${genUniqID()}`,
         versioning: true,
     },
+    {
+        bucketName: `ingestion-bucket-${genUniqID()}`,
+        versioning: false,
+        ingestion: 'ingest',
+    },
 ];
 
 function populateDB(s3Client, cb) {
@@ -41,10 +46,12 @@ function populateDB(s3Client, cb) {
     };
 
     async.eachLimit(testBuckets, 1, (b, next) => {
-        const { bucketName, versioning } = b;
+        const { bucketName, versioning, ingestion } = b;
         async.series({
             createBucket: done =>
-                s3Client.createBucket({ Bucket: bucketName }, done),
+                s3Client.createBucket({ Bucket: bucketName,
+                    CreateBucketConfiguration: { LocationConstraint:
+                    `us-east-1:${ingestion}` } }, done),
             putBucketVersioning: done => {
                 if (!versioning) {
                     return done();
@@ -83,20 +90,23 @@ const ownerCanonicalId =
     '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
 
 const refResults = {
-    objects: 2 * objCnt,
+    objects: testBuckets.length * objCnt,
     versions: objCnt,
-    buckets: 2,
+    buckets: testBuckets.length,
     bucketList: testBuckets.map(b => ({
         name: b.bucketName,
         location: 'us-east-1',
         isVersioned: b.versioning,
         ownerCanonicalId,
+        ingestion: b.ingestion ? b.ingestion === 'ingest' : false,
     })),
     dataManaged: {
-        total: { curr: 2 * objCnt * bodySize, prev: objCnt * bodySize },
+        total: { curr: testBuckets.length * objCnt * bodySize,
+            prev: objCnt * bodySize },
         byLocation: {
             'us-east-1':
-                { curr: 2 * objCnt * bodySize, prev: objCnt * bodySize },
+                { curr: testBuckets.length * objCnt * bodySize,
+                    prev: objCnt * bodySize },
         },
     },
 };
@@ -174,13 +184,14 @@ runIfMongo('reportHandler::countItems', function testSuite() {
                 next => metadata.setup(next),
                 next => metadata.countItems(logger, (err, res) => {
                     const expResults = JSON.parse(JSON.stringify(refResults));
-                    expResults.buckets = 2 + outBucketCnt;
+                    expResults.buckets += outBucketCnt;
                     outBuckets.forEach(b => {
                         expResults.bucketList.push({
                             name: b,
                             location: 'us-east-1',
                             isVersioned: false,
                             ownerCanonicalId,
+                            ingestion: false,
                         });
                     });
                     assertResults(res, expResults);

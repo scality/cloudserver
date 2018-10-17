@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const { S3 } = require('aws-sdk');
 
 const BucketUtility = require('../../lib/utility/bucket-util');
@@ -222,6 +223,34 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     assert.strictEqual(err.statusCode, 400);
                     done();
                 });
+            });
+        });
+
+        describe('bucket creation with ingestion location', () => {
+            after(done =>
+                bucketUtil.s3.deleteBucket({ Bucket: bucketName }, done));
+            it('should create bucket with location and ingestion', done => {
+                async.waterfall([
+                    next => bucketUtil.s3.createBucketAsync(
+                        {
+                            Bucket: bucketName,
+                            CreateBucketConfiguration: {
+                                LocationConstraint: 'us-east-2:ingest',
+                            },
+                        }, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.Location, `/${bucketName}`);
+                        return next();
+                    }),
+                    next => bucketUtil.s3.getBucketLocation(
+                        {
+                            Bucket: bucketName,
+                        }, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.LocationConstraint, 'us-east-2');
+                        return next();
+                    }),
+                ], done);
             });
         });
     });

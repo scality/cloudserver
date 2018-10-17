@@ -138,6 +138,8 @@ const constants = {
     base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' +
         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
+    // location constraint delimiter
+    zenkoSeparator: ':',
 };
 
 module.exports = constants;
