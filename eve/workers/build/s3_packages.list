@@ -7,5 +7,5 @@ maven
 netcat
 redis-server
 ruby-full
-yarn=1.7.0-1
+yarn
 zlib1g-dev

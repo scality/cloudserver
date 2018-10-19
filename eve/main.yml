@@ -83,9 +83,9 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: True
       env: *global-env
-  - ShellCommand: &npm-install
+  - ShellCommand: &yarn
       name: install modules
-      command: npm install
+      command: yarn 
       haltOnFailure: True
   - Upload: &upload-artifacts
       source: /artifacts
@@ -132,21 +132,21 @@ stages:
         - '/home/eve/workspace'
     steps:
       - Git: *clone
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn
       - ShellCommand: *add-hostname
       - ShellCommand:
           name: Linting
           command: |
-            npm run --silent lint -- --max-warnings 0
-            npm run --silent lint_md
+            yarn run --silent lint -- --max-warnings 0
+            yarn run --silent lint_md
             flake8 $(git ls-files "*.py")
             yamllint $(git ls-files "*.yml")
       - ShellCommand:
           name: Unit Coverage
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run unit_coverage
-            npm run unit_coverage_legacy_location
+            yarn unit_coverage
+            yarn unit_coverage_legacy_location
           env: &shared-vars
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
@@ -171,14 +171,14 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn
       - ShellCommand:
           command: |
             bash -c "
             source /root/.aws/exports &> /dev/null
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run multiple_backend_test"
+            yarn multiple_backend_test"
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
@@ -215,12 +215,12 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn
       - ShellCommand:
           command: |
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run ft_test
+            yarn ft_test
           <<: *follow-s3-log
           env:
             <<: *mongo-vars
@@ -244,12 +244,12 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn
       - ShellCommand:
           command: |
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run ft_test
+            yarn ft_test
           <<: *follow-s3-log
           env:
             <<: *file-mem-mpu
