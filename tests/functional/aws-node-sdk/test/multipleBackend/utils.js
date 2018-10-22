@@ -31,6 +31,7 @@ const versioningSuspended = { Status: 'Suspended' };
 const awsFirstTimeout = 10000;
 const awsSecondTimeout = 30000;
 let describeSkipIfNotMultiple = describe.skip;
+let describeSkipIfNotMultipleOrCeph = describe.skip;
 let awsS3;
 let awsBucket;
 
@@ -38,8 +39,12 @@ let gcpClient;
 let gcpBucket;
 let gcpBucketMPU;
 
+const isCEPH = process.env.CI_CEPH !== undefined;
+const itSkipCeph = isCEPH ? it.skip : it;
+
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
+    describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe;
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
@@ -50,6 +55,7 @@ if (config.backends.data === 'multiple') {
     gcpBucketMPU =
         config.locationConstraints[gcpLocation].details.mpuBucketName;
 }
+
 
 function _assertErrorResult(err, expectedError, desc) {
     if (!expectedError) {
@@ -63,6 +69,7 @@ function _assertErrorResult(err, expectedError, desc) {
 
 const utils = {
     describeSkipIfNotMultiple,
+    describeSkipIfNotMultipleOrCeph,
     awsS3,
     awsBucket,
     gcpClient,
@@ -81,6 +88,8 @@ const utils = {
     gcpLocation,
     gcpLocation2,
     gcpLocationMismatch,
+    isCEPH,
+    itSkipCeph,
 };
 
 utils.genUniqID = () => uuid().replace(/-/g, '');
@@ -193,7 +202,10 @@ utils.expectedETag = (body, getStringified = true) => {
 utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
     s3.putObject({ Bucket: bucket, Key: key, Body: body,
     Metadata: { 'scal-location-constraint': awsLocation } },
-        (err, result) => cb(err, result.VersionId));
+        (err, result) => {
+            cb(err, result.VersionId);
+        }
+    );
 };
 
 utils.enableVersioning = (s3, bucket, cb) => {

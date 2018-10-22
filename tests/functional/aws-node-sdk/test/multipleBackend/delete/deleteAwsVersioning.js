@@ -20,6 +20,7 @@ const {
     awsGetLatestVerId,
     getAwsRetry,
     genUniqID,
+    isCEPH,
 } = require('../utils');
 
 const someBody = 'testbody';
@@ -151,8 +152,11 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                            versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 
@@ -184,8 +188,11 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                        versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 
@@ -200,8 +207,11 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 (s3VerId, awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: s3VerId, resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                        versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 
@@ -451,8 +461,11 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     err => next(err, awsVid)),
                 (awsVid, next) => _getAssertDeleted(s3, { key,
                     errorCode: 'NoSuchKey' }, () => next(null, awsVid)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                            versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 

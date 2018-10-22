@@ -4,7 +4,7 @@ const async = require('async');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultiple,
+    describeSkipIfNotMultipleOrCeph,
     uniqName,
     getAzureClient,
     getAzureContainerName,
@@ -46,7 +46,7 @@ function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function
+describeSkipIfNotMultipleOrCeph('MultipleBackend put object to AZURE', function
 describeF() {
     this.timeout(250000);
     withV4(sigCfg => {

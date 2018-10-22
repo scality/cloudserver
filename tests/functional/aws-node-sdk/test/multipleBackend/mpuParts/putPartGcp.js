@@ -3,7 +3,7 @@ const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, gcpClient, gcpBucket, gcpBucketMPU,
+const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucket, gcpBucketMPU,
     gcpLocation, gcpLocationMismatch, uniqName, genUniqID }
     = require('../utils');
 const { createMpuKey } =
@@ -37,7 +37,7 @@ function checkMPUResult(bucket, key, uploadId, objCount, expected, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBacked put part to GCP', function
+describeSkipIfNotMultipleOrCeph('MultipleBacked put part to GCP', function
 describeFn() {
     this.timeout(180000);
     withV4(sigCfg => {
@@ -255,8 +255,8 @@ describeFn() {
     });
 });
 
-describeSkipIfNotMultiple('MultipleBackend put part to GCP location with ' +
-'bucketMatch sets to false', function
+describeSkipIfNotMultipleOrCeph('MultipleBackend put part to GCP location ' +
+'with bucketMatch sets to false', function
 describeF() {
     this.timeout(80000);
     withV4(sigCfg => {

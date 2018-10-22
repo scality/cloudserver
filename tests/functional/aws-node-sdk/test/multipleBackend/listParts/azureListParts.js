@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, azureLocation, getAzureContainerName,
+const { describeSkipIfNotMultipleOrCeph, azureLocation, getAzureContainerName,
     genUniqID } = require('../utils');
 
 const azureContainerName = getAzureContainerName(azureLocation);
@@ -14,7 +14,8 @@ const bodySecondPart = Buffer.alloc(secondPartSize);
 let bucketUtil;
 let s3;
 
-describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
+describeSkipIfNotMultipleOrCeph('List parts of MPU on Azure data backend',
+() => {
     withV4(sigCfg => {
         beforeEach(function beforeEachFn() {
             this.currentTest.key = `somekey-${genUniqID()}`;

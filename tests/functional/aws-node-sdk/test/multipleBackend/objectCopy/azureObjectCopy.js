@@ -5,7 +5,7 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
 const {
-    describeSkipIfNotMultiple,
+    describeSkipIfNotMultipleOrCeph,
     getAzureClient,
     getAzureContainerName,
     convertMD5,
@@ -112,7 +112,7 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend object copy: Azure',
+describeSkipIfNotMultipleOrCeph('MultipleBackend object copy: Azure',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {

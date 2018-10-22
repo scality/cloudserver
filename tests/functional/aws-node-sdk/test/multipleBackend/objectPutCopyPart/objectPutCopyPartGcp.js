@@ -4,7 +4,7 @@ const assert = require('assert');
 const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, uniqName, gcpBucketMPU,
+const { describeSkipIfNotMultipleOrCeph, uniqName, gcpBucketMPU,
     gcpClient, gcpLocation, gcpLocationMismatch, memLocation,
     awsLocation, awsS3, getOwnerInfo, genUniqID } = require('../utils');
 
@@ -87,7 +87,7 @@ function assertCopyPart(infos, cb) {
     ], cb);
 }
 
-describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
+describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP', function describeFn() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(done => {
@@ -561,7 +561,7 @@ describeSkipIfNotMultiple('Put Copy Part to GCP', function describeFn() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to GCP with complete MPU',
+describeSkipIfNotMultipleOrCeph('Put Copy Part to GCP with complete MPU',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {

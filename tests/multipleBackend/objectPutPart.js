@@ -139,8 +139,8 @@ errorDescription) {
     });
 }
 
-function listAndAbort(uploadId, calculatedHash2, objectName, done) {
-    const awsBucket = config.locationConstraints[awsLocation].
+function listAndAbort(uploadId, calculatedHash2, objectName, location, done) {
+    const awsBucket = config.locationConstraints[location].
         details.bucketName;
     const params = {
         Bucket: awsBucket,
@@ -190,7 +190,7 @@ function testSuite() {
         putPart(fileLocation, awsLocation, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
-            listAndAbort(uploadId, null, objectName, done);
+            listAndAbort(uploadId, null, objectName, awsLocation, done);
         });
     });
 
@@ -213,7 +213,8 @@ function testSuite() {
             const partReq = new DummyRequest(partReqParams, body2);
             objectPutPart(authInfo, partReq, undefined, log, err => {
                 assert.equal(err, null, `Error putting second part: ${err}`);
-                listAndAbort(uploadId, calculatedHash2, objectName, done);
+                listAndAbort(uploadId, calculatedHash2,
+                                objectName, awsLocation, done);
             });
         });
     });
@@ -244,7 +245,7 @@ function testSuite() {
         putPart(awsLocation, null, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
-            listAndAbort(uploadId, null, objectName, done);
+            listAndAbort(uploadId, null, objectName, awsLocation, done);
         });
     });
 
@@ -253,7 +254,7 @@ function testSuite() {
         putPart(null, awsLocation, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
-            listAndAbort(uploadId, null, objectName, done);
+            listAndAbort(uploadId, null, objectName, awsLocation, done);
         });
     });
 
@@ -262,7 +263,8 @@ function testSuite() {
         putPart(null, awsLocationMismatch, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
-            listAndAbort(uploadId, null, `${bucketName}/${objectName}`, done);
+            listAndAbort(uploadId, null, `${bucketName}/${objectName}`,
+                            awsLocationMismatch, done);
         });
     });
 

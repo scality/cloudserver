@@ -96,6 +96,14 @@ models:
         s3:
           filename: /artifacts/s3.log
           follow: true
+  - ShellCommand: &follow-s3-ceph-logs
+      logfiles:
+        ceph:
+          filename: /artifacts/ceph.log
+          follow: true
+        s3:
+          filename: /artifacts/s3.log
+          follow: true
   - ShellCommand: &add-hostname
       name: add hostname
       command: |
@@ -104,6 +112,8 @@ models:
         "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
         >> /etc/hosts
       haltOnFailure: True
+
+
 stages:
   pre-merge:
     worker:
@@ -121,6 +131,7 @@ stages:
             - file-ft-tests
             - multiple-backend-test
             - mongo-ft-tests
+            - ceph-backend-tests
           waitForFinish: True
           haltOnFailure: True
 
@@ -196,6 +207,65 @@ stages:
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
+      - Upload: *upload-artifacts
+
+  ceph-backend-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+        ceph: eve/workers/ceph
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "2Gi"
+        redis: enabled
+        env:
+          <<: *multiple-backend-vars
+          <<: *global-env
+          CI_CEPH: enabled
+          MPU_TESTING: "yes"
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigCeph.json
+    steps:
+      - Git: *clone
+      - ShellCommand: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand:
+          command: |
+            bash -c "
+            source /root/.aws/exports &> /dev/null
+            set -ex
+            bash eve/workers/ceph/wait_for_ceph.sh
+            bash wait_for_local_port.bash 8000 40
+            npm run multiple_backend_test"
+          env:
+            <<: *multiple-backend-vars
+            <<: *global-env
+          <<: *follow-s3-ceph-logs
+      - ShellCommand:
+          command: mvn test
+          workdir: build/tests/functional/jaws
+          <<: *follow-s3-ceph-logs
+          env:
+            <<: *multiple-backend-vars
+      - ShellCommand:
+          command: rspec tests.rb
+          workdir: build/tests/functional/fog
+          <<: *follow-s3-ceph-logs
+          env:
+            <<: *multiple-backend-vars
+      - ShellCommand:
+          command: |
+            npm run ft_awssdk ||
+            npm run ft_s3cmd ||
+            npm run ft_s3curl
+          env:
+            <<: *file-mem-mpu
+            <<: *global-env
+            S3_LOCATION_FILE: "/kube_pod-prod-cloudserver-backend-0/\
+              build/tests/locationConfig/locationConfigCeph.json"
+          <<: *follow-s3-ceph-logs
       - Upload: *upload-artifacts
 
   mongo-ft-tests:
