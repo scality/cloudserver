@@ -149,6 +149,14 @@ class ManagementAgentServer {
                     return;
                 }
                 this.loadedOverlay = remoteOverlayObj;
+                if (this.loadedOverlay.browserAccess) {
+                    if (Boolean(_config.browserAccessEnabled) !==
+                        Boolean(this.loadedOverlay.browserAccess.enabled)) {
+                        _config.browserAccessEnabled =
+                          Boolean(this.loadedOverlay.browserAccess.enabled);
+                        _config.emit('browser-access-enabled-change');
+                    }
+                }
                 this.wss.clients.forEach(
                     this._sendNewOverlayToClient.bind(this)
                 );
