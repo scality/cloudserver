@@ -30,9 +30,7 @@ class ManagementAgentServer {
         process.on('SIGPIPE', () => {});
     }
 
-    start(_cb) {
-        const cb = _cb || function noop() {};
-
+    start() {
         /* Define REPORT_TOKEN env variable needed by the management
          * module. */
         process.env.REPORT_TOKEN = process.env.REPORT_TOKEN
@@ -41,16 +39,12 @@ class ManagementAgentServer {
 
         /* The initManegement function retries when it fails. */
         const log = logger.newRequestLogger();
-        return initManagement(log, this.onNewOverlay.bind(this), overlay => {
-            let error = null;
-
-            if (overlay) {
-                this.loadedOverlay = overlay;
-                this.startServer();
-            } else {
-                error = new Error('failed to init management');
+        initManagement(log, this.onNewOverlay.bind(this), (err, overlay) => {
+            if (err) {
+                process.exit(0);
             }
-            return cb(error);
+            this.loadedOverlay = overlay;
+            this.startServer();
         });
     }
 
