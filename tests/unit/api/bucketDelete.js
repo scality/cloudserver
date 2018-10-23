@@ -23,6 +23,60 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const usersBucket = constants.usersBucket;
+const objectName = 'objectName';
+const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
+
+function createMPU(testRequest, initiateRequest, deleteOverviewMPUObj, cb) {
+    async.waterfall([
+        next => bucketPut(authInfo, testRequest, log, next),
+        (corsHeaders, next) => initiateMultipartUpload(authInfo,
+            initiateRequest, log, next),
+        (result, corsHeaders, next) => {
+            parseString(result, next);
+        },
+        (json, next) => {
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody = Buffer.from(postBody);
+            md5Hash.update(bufferBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                objectKey: objectName,
+                namespace,
+                url: `/${objectName}?partNumber=1&uploadId=${testUploadId}`,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, postBody);
+            objectPutPart(authInfo, partRequest, undefined, log, err => {
+                if (err) {
+                    return next(err);
+                }
+                return next(null, testUploadId);
+            });
+        },
+    ], (err, testUploadId) => {
+        assert.strictEqual(err, null);
+        const mpuBucketKeyMap =
+            metadataMem.metadata.keyMaps.get(mpuBucket);
+        assert.strictEqual(mpuBucketKeyMap.size, 2);
+        if (deleteOverviewMPUObj) {
+            const overviewKey = `overview${constants.splitter}` +
+            `${objectName}${constants.splitter}${testUploadId}`;
+            // remove overview key from in mem mpu bucket
+            mpuBucketKeyMap.delete(overviewKey);
+            assert.strictEqual(mpuBucketKeyMap.size, 1);
+        }
+        bucketDelete(authInfo, testRequest, log, err => {
+            assert.strictEqual(err, null);
+            cb();
+        });
+    });
+}
 
 describe('bucketDelete API', () => {
     beforeEach(() => {
@@ -36,7 +90,6 @@ describe('bucketDelete API', () => {
         url: `/${bucketName}`,
     };
 
-    const objectName = 'objectName';
     const initiateRequest = {
         bucketName,
         namespace,
@@ -75,59 +128,12 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should return an error if the bucket has an initiated mpu', done => {
+    it('should not return an error if the bucket has an initiated mpu',
+    done => {
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                 assert.strictEqual(err, null);
-                bucketDelete(authInfo, testRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.MPUinProgress);
-                    done();
-                });
-            });
-        });
-    });
-
-    it('should delete a bucket if only part object (and no overview ' +
-        'objects) is in mpu shadow bucket', done => {
-        const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
-        const postBody = Buffer.from('I am a body', 'utf8');
-        async.waterfall([
-            next => bucketPut(authInfo, testRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                initiateRequest, log, next),
-            (result, corsHeaders, next) => {
-                parseString(result, next);
-            },
-        ],
-        (err, json) => {
-            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-            const md5Hash = crypto.createHash('md5');
-            const bufferBody = Buffer.from(postBody);
-            md5Hash.update(bufferBody);
-            const calculatedHash = md5Hash.digest('hex');
-            const partRequest = new DummyRequest({
-                bucketName,
-                objectKey: objectName,
-                namespace,
-                url: `/${objectName}?partNumber=1&uploadId=${testUploadId}`,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
-                query: {
-                    partNumber: '1',
-                    uploadId: testUploadId,
-                },
-                calculatedHash,
-            }, postBody);
-            objectPutPart(authInfo, partRequest, undefined, log, err => {
-                assert.strictEqual(err, null);
-                const mpuBucketKeyMap =
-                    metadataMem.metadata.keyMaps.get(mpuBucket);
-                assert.strictEqual(mpuBucketKeyMap.size, 2);
-                const overviewKey = `overview${constants.splitter}` +
-                    `${objectName}${constants.splitter}${testUploadId}`;
-                // remove overview key from in mem mpu bucket
-                mpuBucketKeyMap.delete(overviewKey);
-                assert.strictEqual(mpuBucketKeyMap.size, 1);
                 bucketDelete(authInfo, testRequest, log, err => {
                     assert.strictEqual(err, null);
                     done();
@@ -151,6 +157,14 @@ describe('bucketDelete API', () => {
             });
         });
     });
+
+    it('should delete a bucket even if the bucket has ongoing mpu',
+        done => createMPU(testRequest, initiateRequest, false, done));
+
+    // if only part object (and no overview objects) is in mpu shadow bucket
+    it('should delete a bucket even if the bucket has an orphan part',
+        done => createMPU(testRequest, initiateRequest, true, done));
+
 
     it('should prevent anonymous user delete bucket API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
