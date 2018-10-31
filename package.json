@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "aws-sdk": "2.28.0",
-    "arsenal": "scality/Arsenal#0117b39",
+    "arsenal": "scality/Arsenal#9fe16c6",
     "async": "~2.5.0",
     "azure-storage": "^2.1.0",
     "backo": "^1.1.0",
@@ -67,7 +67,7 @@
     "cdmiclient": "scality/cdmiclient#8f0c2e6"
   },
   "scripts": {
-    "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
+    "cloudserver": "npm-run-all --parallel start_dataserver start_s3server",
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
     "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha test/bucket",
