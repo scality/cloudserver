@@ -94,5 +94,13 @@
         "objectId": "sa-east-1",
         "legacyAwsBehavior": false,
         "details": {}
+    },
+    "fs1": {
+        "type": "fs",
+        "objectId": "fs",
+        "legacyAwsBehavior": false,
+        "details": {
+            "mountPath": "/home/vr/local-fs"
+        }
     }
 }

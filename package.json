@@ -67,7 +67,7 @@
     "cdmiclient": "scality/cdmiclient#8f0c2e6"
   },
   "scripts": {
-    "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
+    "cloudserver": "npm-run-all --parallel start_dataserver start_s3server",
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha test/",
     "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha test/bucket",
