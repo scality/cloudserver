@@ -71,6 +71,7 @@ fi
 if [[ "$LISTEN_ADDR" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .metadataDaemon.bindAddress=\"$LISTEN_ADDR\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .dataDaemon.bindAddress=\"$LISTEN_ADDR\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .pfsDaemon.bindAddress=\"$LISTEN_ADDR\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .listenOn=[\"$LISTEN_ADDR:8000\"]"
 fi
 
@@ -80,6 +81,10 @@ fi
 
 if [[ "$METADATA_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .metadataClient.host=\"$METADATA_HOST\""
+fi
+
+if [[ "$PFSD_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .pfsClient.host=\"$PFSD_HOST\""
 fi
 
 if [[ "$MONGODB_HOSTS" ]]; then

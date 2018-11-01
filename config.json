@@ -76,6 +76,11 @@
         "bindAddress": "localhost",
         "port": 9991
     },
+    "fsDataDaemon": {
+        "bindAddress": "localhost",
+        "port": 9992,
+        "isFs": true
+    },
     "recordLog": {
         "enabled": true,
         "recordLogName": "s3-recordlog"
