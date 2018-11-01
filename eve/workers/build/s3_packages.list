@@ -9,3 +9,4 @@ redis-server
 ruby-full
 yarn=1.7.0-1
 zlib1g-dev
+uuid-runtime
