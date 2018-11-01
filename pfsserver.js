@@ -4,23 +4,23 @@ const arsenal = require('arsenal');
 const { config } = require('./lib/Config.js');
 const logger = require('./lib/utilities/logger');
 
-const fsDataServer = new arsenal.network.rest.RESTServer({
-    bindAddress: config.fsDataDaemon.bindAddress,
-    port: config.fsDataDaemon.port,
+const pfsServer = new arsenal.network.rest.RESTServer({
+    bindAddress: config.pfsDaemon.bindAddress,
+    port: config.pfsDaemon.port,
     dataStore: new arsenal.storage.data.file.DataFileStore({
-        dataPath: config.fsDataDaemon.dataPath,
+        dataPath: config.pfsDaemon.dataPath,
         log: config.log,
-        isFs: true,
+        isPassthrough: true,
     }),
     log: config.log,
 });
 
-fsDataServer.setup(err => {
+pfsServer.setup(err => {
     if (err) {
-        logger.error('Error initializing REST fs data server', {
+        logger.error('Error initializing REST pfsServer', {
             error: err,
         });
         return;
     }
-    fsDataServer.start();
+    pfsServer.start();
 });

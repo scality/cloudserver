@@ -68,6 +68,10 @@
         "host": "localhost",
         "port": 9991
     },
+    "pfsClient": {
+        "host": "localhost",
+        "port": 9992
+    },
     "metadataDaemon": {
         "bindAddress": "localhost",
         "port": 9990
@@ -76,10 +80,9 @@
         "bindAddress": "localhost",
         "port": 9991
     },
-    "fsDataDaemon": {
+    "pfsDaemon": {
         "bindAddress": "localhost",
-        "port": 9992,
-        "isFs": true
+        "port": 9992
     },
     "recordLog": {
         "enabled": true,
