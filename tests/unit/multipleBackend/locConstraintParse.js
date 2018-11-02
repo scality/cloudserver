@@ -28,7 +28,7 @@ describe('locationConstraintParser', () => {
         assert.strictEqual(client._s3Params.sslEnabled, true);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
             'https:');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, true);
+        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
 
@@ -39,7 +39,7 @@ describe('locationConstraintParser', () => {
         assert.strictEqual(client._s3Params.sslEnabled, false);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
             'http:');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, true);
+        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
     });
 });
