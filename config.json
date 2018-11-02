@@ -90,7 +90,7 @@
     "externalBackends": {
         "aws_s3": {
             "httpAgent": {
-                "keepAlive": true,
+                "keepAlive": false,
                 "keepAliveMsecs": 1000,
                 "maxFreeSockets": 256,
                 "maxSockets": null
