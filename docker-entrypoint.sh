@@ -150,6 +150,41 @@ fi
 if test -v INITIAL_INSTANCE_ID && test -v S3METADATAPATH && ! test -f ${S3METADATAPATH}/uuid ; then
     echo -n ${INITIAL_INSTANCE_ID} > ${S3METADATAPATH}/uuid
 fi
+# external backends http(s) agent config
+
+# AWS
+if [[ "$AWS_S3_HTTPAGENT_KEEPALIVE"]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.aws.httpAgent.keepAlive=$AWS_S3_HTTPAGENT_KEEPALIVE"
+fi
+
+if [[ "$AWS_S3_HTTPAGENT_KEEPALIVE_MS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.aws.httpAgent.keepAliveMsecs=$AWS_S3_HTTPAGENT_KEEPALIVE_MS"
+fi
+
+if [[ "$AWS_S3_HTTPAGENT_KEEPALIVE_MAX_SOCKETS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.aws.httpAgent.maxSockets=$AWS_S3_HTTPAGENT_KEEPALIVE_MAX_SOCKETS"
+fi
+
+if [[ "$AWS_S3_HTTPAGENT_KEEPALIVE_MAX_SOCKETS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.aws.httpAgent.maxFreeSockets=$AWS_S3_HTTPAGENT_KEEPALIVE_MAX_SOCKETS"
+fi
+
+#GCP
+if [[ "$GCP_HTTPAGENT_KEEPALIVE"]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.keepAlive=$GCP_HTTPAGENT_KEEPALIVE"
+fi
+
+if [[ "$GCP_HTTPAGENT_KEEPALIVE_MS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.keepAliveMsecs=$GCP_HTTPAGENT_KEEPALIVE_MS"
+fi
+
+if [[ "$GCP_HTTPAGENT_KEEPALIVE_MAX_SOCKETS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.maxSockets=$GCP_HTTPAGENT_KEEPALIVE_MAX_SOCKETS"
+fi
+
+if [[ "$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS" ]]
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.maxFreeSockets=$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS"
+fi
 
 # s3 secret credentials for Zenko
 if [ -r /run/secrets/s3-credentials ] ; then

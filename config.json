@@ -86,5 +86,23 @@
        "replicaSet": "rs0",
        "readPreference": "primary",
        "database": "metadata"
+    },
+    "externalBackends": {
+        "aws_s3": {
+            "httpAgent": {
+                "keepAlive": false,
+                "keepAliveMsecs": 1000,
+                "maxFreeSockets": 256,
+                "maxSockets": null
+            }
+        },
+        "gcp": {
+            "httpAgent": {
+                "keepAlive": true,
+                "keepAliveMsecs": 1000,
+                "maxFreeSockets": 256,
+                "maxSockets": null
+            }
+        }
     }
 }
