@@ -145,8 +145,8 @@ stages:
           name: Unit Coverage
           command: |
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run unit_coverage
-            npm run unit_coverage_legacy_location
+            npm run test
+            npm run test_legacy_location
           env: &shared-vars
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
