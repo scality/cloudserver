@@ -13,6 +13,7 @@ const initiateMultipartUpload
 const objectPutPart = require('../../lib/api/objectPutPart');
 const DummyRequest = require('../unit/DummyRequest');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const mdWrapper = require('../../lib/metadata/wrapper');
 const constants = require('../../constants');
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');
@@ -40,6 +41,10 @@ const calculatedHash1 = md5Hash1.update(body1).digest('hex');
 const calculatedHash2 = md5Hash2.update(body2).digest('hex');
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+
+function _getOverviewKey(objectKey, uploadId) {
+    return `overview${splitter}${objectKey}${splitter}${uploadId}`;
+}
 
 function putPart(bucketLoc, mpuLoc, requestHost, cb,
 errorDescription) {
@@ -270,6 +275,51 @@ function testSuite() {
         putPart(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
+        });
+    });
+
+    it('should store a part even if the MPU was initiated on legacy version',
+    done => {
+        putPart('scality-internal-mem', null, 'localhost',
+        (objectKey, uploadId) => {
+            const mputOverviewKey = _getOverviewKey(objectKey, uploadId);
+            mdWrapper.getObjectMD(mpuBucket, mputOverviewKey, {}, log,
+            (err, res) => {
+                // remove location constraint to mimic legacy behvior
+                // eslint-disable-next-line no-param-reassign
+                res.controllingLocationConstraint = undefined;
+                const md5Hash = crypto.createHash('md5');
+                const bufferBody = Buffer.from(body1);
+                const calculatedHash = md5Hash.update(bufferBody).digest('hex');
+                const partRequest = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                    query: { partNumber: '1', uploadId },
+                    calculatedHash,
+                }, body1);
+                objectPutPart(authInfo, partRequest, undefined, log, err => {
+                    assert.strictEqual(err, null);
+                    const keysInMPUkeyMap = [];
+                    metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
+                        keysInMPUkeyMap.push(key);
+                    });
+                    const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                        if (a.slice(0, 8) === 'overview') {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                    const partKey = sortedKeyMap[1];
+                    const partETag = metadata.keyMaps.get(mpuBucket)
+                        .get(partKey)['content-md5'];
+                    assert.strictEqual(keysInMPUkeyMap.length, 2);
+                    assert.strictEqual(partETag, calculatedHash);
+                    done();
+                });
+            });
         });
     });
 });
