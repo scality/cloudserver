@@ -129,6 +129,7 @@ stages:
       - ShellCommand:
           name: Linting
           command: |
+            set -ex
             npm run --silent lint -- --max-warnings 0
             npm run --silent lint_md
             flake8 $(git ls-files "*.py")
@@ -136,6 +137,7 @@ stages:
       - ShellCommand:
           name: Unit Coverage
           command: |
+            set -ex
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run test
             npm run test_legacy_location
