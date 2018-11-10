@@ -126,6 +126,7 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *npm-install
+      - ShellCommand: *credentials
       - ShellCommand:
           name: Linting
           command: |
@@ -139,9 +140,11 @@ stages:
           command: |
             set -ex
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run test
-            npm run test_legacy_location
+            npm run unit_coverage
+            npm run unit_coverage_legacy_location
           env: &shared-vars
+            <<: *global-env
+            S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
             CI_REPORTS: /tmp
