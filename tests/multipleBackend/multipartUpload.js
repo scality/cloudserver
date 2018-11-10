@@ -11,6 +11,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const mdWrapper = require('../../lib/metadata/wrapper');
 
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
@@ -24,7 +25,9 @@ const completeMultipartUpload =
     require('../../lib/api/completeMultipartUpload');
 const listParts = require('../../lib/api/listParts');
 const listMultipartUploads = require('../../lib/api/listMultipartUploads');
+const constants = require('../../constants');
 
+const splitter = constants.splitter;
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
@@ -38,6 +41,7 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
+const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
@@ -80,6 +84,10 @@ function getPartParams(objectKey, uploadId, partNumber) {
         url: `/${objectKey}?partNumber=${partNumber}&uploadId=${uploadId}`,
         query: { partNumber, uploadId },
     }, basicParams);
+}
+
+function _getOverviewKey(objectKey, uploadId) {
+    return `overview${splitter}${objectKey}${splitter}${uploadId}`;
 }
 
 const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -700,6 +708,29 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                             uploadId: uploadIds[2] },
                     ];
                     abortMultipleMpus(backendsInfo, done);
+                });
+            });
+        });
+    });
+
+    it('should complete a multipart upload initiated on legacy version',
+    done => {
+        const objectKey = `testkey-${Date.now()}`;
+        mpuSetup('scality-internal-mem', objectKey, uploadId => {
+            const mputOverviewKey =
+            _getOverviewKey(objectKey, uploadId);
+            mdWrapper.getObjectMD(mpuBucket, mputOverviewKey, {}, log,
+            (err, res) => {
+                // remove location constraint to mimic legacy behvior
+                // eslint-disable-next-line no-param-reassign
+                res.controllingLocationConstraint = undefined;
+                const compParams = getCompleteParams(objectKey, uploadId);
+                completeMultipartUpload(authInfo, compParams, log,
+                (err, result) => {
+                    assert.equal(err, null, 'Error completing mpu on file ' +
+                    `${err}`);
+                    assertMpuCompleteResults(result, objectKey);
+                    done();
                 });
             });
         });
