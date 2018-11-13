@@ -24,9 +24,7 @@ const expectedLifecycleConfig = {
         {
             ruleID: 'test-id1',
             ruleStatus: 'Enabled',
-            filter: {
-                rulePrefix: 'test-prefix',
-            },
+            prefix: 'test-prefix',
             actions: [
                 {
                     actionName: 'AbortIncompleteMultipartUpload',
@@ -61,7 +59,6 @@ const expectedLifecycleConfig = {
             ruleID: 'test-id3',
             ruleStatus: 'Disabled',
             filter: {
-                rulePrefix: '',
                 tags: [
                     {
                         key: 'test-key1',
