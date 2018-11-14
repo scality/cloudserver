@@ -1,0 +1,260 @@
+{
+    "us-east-1": {
+        "type": "file",
+        "objectId": "us-east-1",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
+    "us-east-2": {
+        "type": "file",
+        "objectId": "us-east-2",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
+    "scality-internal-file": {
+        "type": "file",
+        "objectId": "scality-internal-file",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "dataFile": {
+        "type": "file",
+        "objectId": "dataFile",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-internal-mem": {
+        "type": "mem",
+        "objectId": "scality-internal-mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "scality-us-west-1": {
+        "type": "mem",
+        "objectId": "scality-us-west-1",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
+    "awsbackendencryption": {
+        "type": "aws_s3",
+        "objectId": "awsbackendencryption",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true,
+            "serverSideEncryption": true
+        }
+    },
+    "awsbackend": {
+        "type": "aws_s3",
+        "objectId": "awsbackend",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true
+        }
+    },
+    "awsbackendhttp": {
+        "type": "aws_s3",
+        "objectId": "awsbackendhttp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true
+        }
+    },
+    "awsbackendmismatch": {
+        "type": "aws_s3",
+        "objectId": "awsbackendmismatch",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": false,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true
+        }
+    },
+    "awsbackend2": {
+        "type": "aws_s3",
+        "objectId": "awsbackend2",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket2",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true
+        }
+    },
+    "awsbackendPathStyle": {
+        "type": "aws_s3",
+        "objectId": "awsbackendPathStyle",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": true,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true
+        }
+    },
+    "azurebackend": {
+        "type": "azure",
+        "objectId": "azurebackend",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key001",
+            "bucketMatch": true,
+            "azureContainerName": "s3test"
+        }
+    },
+    "azurebackend2": {
+        "type": "azure",
+        "objectId": "azurebackend2",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname2.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname2",
+            "azureStorageAccessKey": "Fake00Key002",
+            "bucketMatch": true,
+            "azureContainerName": "s3test2"
+        }
+    },
+    "azurebackendmismatch": {
+        "type": "azure",
+        "objectId": "azurebackendmismatch",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key001",
+            "bucketMatch": false,
+            "azureContainerName": "s3test"
+        }
+    },
+    "azurenonexistcontainer": {
+        "type": "azure",
+        "objectId": "azurenonexistcontainer",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageAccountName": "fakeaccountname",
+            "azureStorageAccessKey": "Fake00Key123",
+            "bucketMatch": true,
+            "azureContainerName": "s3createbucketonfly"
+        }
+    },
+    "gcpbackend": {
+        "type": "gcp",
+        "objectId": "gcpbackend",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": true,
+            "credentialsProfile": "google"
+        }
+    },
+    "gcpbackend2": {
+        "type": "gcp",
+        "objectId": "gcpbackend2",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket-2",
+            "mpuBucketName": "zenko-gcp-mpu-2",
+            "bucketMatch": true,
+            "credentialsProfile": "google_2"
+        }
+    },
+    "gcpbackendmismatch": {
+        "type": "gcp",
+        "objectId": "gcpbackendmismatch",
+        "legacyAwsBehavior": true,
+        "details": {
+            "gcpEndpoint": "storage.googleapis.com",
+            "bucketName": "zenko-gcp-bucket",
+            "mpuBucketName": "zenko-gcp-mpu",
+            "bucketMatch": false,
+            "credentialsProfile": "google"
+        }
+    },
+    "withversioning": {
+        "type": "aws_s3",
+        "objectId": "withversioning",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": false,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true,
+            "supportsVersioning": true
+        }
+    },
+    "withoutversioning": {
+        "type": "aws_s3",
+        "objectId": "withoutversioning",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "127.0.0.1:8001",
+            "https": false,
+            "bucketName": "cephbucket",
+            "bucketMatch": false,
+            "credentials": {
+                "accessKey": "accessKey1",
+                "secretKey": "verySecretKey1"
+            },
+            "pathStyle": true,
+            "supportsVersioning": false
+        }
+    },
+    "transientfile": {
+        "type": "file",
+        "objectId": "transientfile",
+        "legacyAwsBehavior": false,
+        "details": {},
+        "isTransient": true
+    }
+}

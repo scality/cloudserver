@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, gcpClient, gcpBucket,
+const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucket,
     gcpLocation, fileLocation, genUniqID } = require('../utils');
 
 const bucket = `putgcp${genUniqID()}`;
@@ -71,7 +71,7 @@ function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend put object to GCP', function
+describeSkipIfNotMultipleOrCeph('MultipleBackend put object to GCP', function
 describeFn() {
     this.timeout(250000);
     withV4(sigCfg => {
@@ -220,8 +220,8 @@ describeFn() {
     });
 });
 
-describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
-() => {
+describeSkipIfNotMultipleOrCeph('MultipleBackend put object' +
+                                'based on bucket location', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);

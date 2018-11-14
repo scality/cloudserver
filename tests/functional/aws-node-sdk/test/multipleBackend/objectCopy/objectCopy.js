@@ -10,7 +10,7 @@ const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
 const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
     azureLocation, awsLocation2, awsLocationMismatch, awsLocationEncryption,
-    genUniqID } = require('../utils');
+    genUniqID, itSkipCeph } = require('../utils');
 
 const bucket = `objectcopybucket${genUniqID()}`;
 const bucketAws = `objectcopyaws${genUniqID()}`;
@@ -283,8 +283,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS with aws server side ' +
-        'encryption', done => {
+        itSkipCeph('should copy an object from mem to AWS with aws server ' +
+        'side encryption', done => {
             putSourceObj(memLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -308,8 +308,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from AWS to mem with encryption with ' +
-        'REPLACE directive but no location constraint', done => {
+        itSkipCeph('should copy an object from AWS to mem with encryption ' +
+        'with REPLACE directive but no location constraint', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -331,8 +331,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS with aws server side encryption',
-        done => {
+        itSkipCeph('should copy an object on AWS with aws server side' +
+        'encryption', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -356,7 +356,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS with aws server side ' +
+        itSkipCeph('should copy an object on AWS with aws server side ' +
         'encrypted bucket', done => {
             putSourceObj(awsLocation, false, awsServerSideEncryptionbucket,
             key => {
@@ -381,8 +381,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS with encryption with ' +
-        'REPLACE directive but no location constraint', done => {
+        itSkipCeph('should copy an object from mem to AWS with encryption ' +
+        'with REPLACE directive but no location constraint', done => {
             putSourceObj(null, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -430,7 +430,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS', done => {
+        itSkipCeph('should copy an object on AWS', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -453,8 +453,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS location with bucketMatch equals ' +
-        'false to a different AWS location with bucketMatch equals true',
+        itSkipCeph('should copy an object on AWS location with bucketMatch ' +
+        'equals false to a different AWS location with bucketMatch equals true',
         done => {
             putSourceObj(awsLocationMismatch, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
@@ -479,7 +479,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS to a different AWS location ' +
+        itSkipCeph('should copy an object on AWS to a different AWS location ' +
         'with source object READ access',
         done => {
             const awsConfig2 = getRealAwsConfig(awsLocation2);
@@ -519,8 +519,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return error AccessDenied copying an object on AWS to a ' +
-        'different AWS account without source object READ access',
+        itSkipCeph('should return error AccessDenied copying an object on ' +
+        'AWS to a different AWS account without source object READ access',
         done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
@@ -540,7 +540,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS with REPLACE', done => {
+        itSkipCeph('should copy an object on AWS with REPLACE', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -588,7 +588,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 0-byte object on AWS', done => {
+        itSkipCeph('should copy a 0-byte object on AWS', done => {
             putSourceObj(awsLocation, true, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {

@@ -3,9 +3,9 @@ const async = require('async');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, fileLocation, awsS3, awsLocation, awsBucket,
-    gcpClient, gcpBucket, gcpLocation, gcpLocationMismatch, genUniqID } =
-    require('../utils');
+const { describeSkipIfNotMultipleOrCeph, fileLocation, awsS3, awsLocation,
+    awsBucket, gcpClient, gcpBucket, gcpLocation, gcpLocationMismatch,
+    genUniqID } = require('../utils');
 
 const bucket = `completempugcp${genUniqID()}`;
 const smallBody = Buffer.from('I am a body', 'utf8');
@@ -86,7 +86,7 @@ function mpuSetup(key, location, cb) {
     });
 }
 
-describeSkipIfNotMultiple('Complete MPU API for GCP data backend',
+describeSkipIfNotMultipleOrCeph('Complete MPU API for GCP data backend',
 function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {

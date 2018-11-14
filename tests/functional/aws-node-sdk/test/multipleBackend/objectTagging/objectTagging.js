@@ -4,7 +4,8 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, awsS3, awsBucket, getAwsRetry,
     getAzureClient, getAzureContainerName, convertMD5, memLocation,
-    fileLocation, awsLocation, azureLocation, genUniqID } = require('../utils');
+    fileLocation, awsLocation, azureLocation, genUniqID,
+    isCEPH } = require('../utils');
 
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
@@ -20,7 +21,12 @@ let bucketUtil;
 let s3;
 
 const putParams = { Bucket: bucket, Body: body };
-const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
+
+const testBackends = [memLocation, fileLocation, awsLocation];
+if (!isCEPH) {
+    testBackends.push(azureLocation);
+}
+
 const tagString = 'key1=value1&key2=value2';
 const putTags = {
     TagSet: [
@@ -189,7 +195,8 @@ function testSuite() {
 
         describe('putObject with tags and putObjectTagging', () => {
             testBackends.forEach(backend => {
-                const itSkipIfAzure = backend === 'azurebackend' ? it.skip : it;
+                const itSkipIfAzureOrCeph = backend === 'azurebackend' ||
+                                            isCEPH ? it.skip : it;
                 it(`should put an object with tags to ${backend} backend`,
                 done => {
                     const key = `somekey-${genUniqID()}`;
@@ -258,8 +265,8 @@ function testSuite() {
                     });
                 });
 
-                itSkipIfAzure('should put tags to completed MPU object in ' +
-                `${backend}`, done => {
+                itSkipIfAzureOrCeph('should put tags to completed MPU ' +
+                `object in ${backend}`, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,

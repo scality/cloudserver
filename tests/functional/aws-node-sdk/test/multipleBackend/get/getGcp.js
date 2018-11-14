@@ -2,7 +2,7 @@ const assert = require('assert');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultiple,
+    describeSkipIfNotMultipleOrCeph,
     gcpLocation,
     gcpLocationMismatch,
     genUniqID,
@@ -50,7 +50,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultiple('with objects in GCP', () => {
+        describeSkipIfNotMultipleOrCeph('with objects in GCP', () => {
             before(() => {
                 process.stdout.write('Putting object to GCP\n');
                 return s3.putObjectAsync({ Bucket: bucket, Key: gcpObject,
@@ -124,7 +124,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        describeSkipIfNotMultiple('with bucketMatch set to false', () => {
+        describeSkipIfNotMultipleOrCeph('with bucketMatch set to false', () => {
             beforeEach(done => {
                 s3.putObject({ Bucket: bucket, Key: mismatchObject, Body: body,
                 Metadata: { 'scal-location-constraint': gcpLocationMismatch } },

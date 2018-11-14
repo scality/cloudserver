@@ -10,7 +10,7 @@ const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
   memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID }
   = require('../utils');
 
-const describeSkipIfNotMultiple = config.backends.data !== 'multiple'
+const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple'
     ? describe.skip : describe;
 
 let azureContainerName;
@@ -111,7 +111,7 @@ function assertCopyPart(infos, cb) {
     ], cb);
 }
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -583,7 +583,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE with large object',
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with large object',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
@@ -678,7 +678,7 @@ function describeF() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE with complete MPU',
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with complete MPU',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
