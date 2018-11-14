@@ -360,12 +360,12 @@ stages:
           command: >-
             docker build --no-cache
             -t %(prop:docker_image_name)s
-            -t zenko/cloudserver:latest-%(prop:product_version)s
+            -t zenko/cloudserver:latest-8.1
             -t zenko/cloudserver:latest
-            .
+            . ; docker images | grep cloudserver
       - ShellCommand:
           name: Push image
           command: |
             docker push %(prop:docker_image_name)s
-            docker push zenko/cloudserver:latest-%(prop:product_version)s
+            docker push zenko/cloudserver:latest-8.1
             docker push zenko/cloudserver:latest
