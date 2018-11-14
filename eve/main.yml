@@ -291,9 +291,11 @@ stages:
             docker build
             -t %(prop:docker_image_name)s
             -t zenko/cloudserver:latest-%(prop:product_version)s
+            -t zenko/cloudserver:latest
             .
       - ShellCommand:
           name: Push image
           command: |
             docker push %(prop:docker_image_name)s
             docker push zenko/cloudserver:latest-%(prop:product_version)s
+            docker push zenko/cloudserver:latest
