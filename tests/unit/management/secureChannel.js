@@ -10,6 +10,7 @@ describe('report handler', () => {
         assert.strictEqual(c.locationTypeDigitalOcean, true);
         assert.strictEqual(c.locationTypeS3Custom, true);
         assert.strictEqual(c.locationTypeSproxyd, true);
+        assert.strictEqual(c.locationTypeHyperdrive, true);
         assert.strictEqual(c.preferredReadLocation, true);
         assert.strictEqual(c.managedLifecycle, true);
         assert.strictEqual(c.secureChannelOptimizedPath, true);
