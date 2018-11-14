@@ -358,7 +358,7 @@ stages:
       - ShellCommand:
           name: Build docker image
           command: >-
-            docker build
+            docker build --no-cache
             -t %(prop:docker_image_name)s
             -t zenko/cloudserver:latest-%(prop:product_version)s
             -t zenko/cloudserver:latest
