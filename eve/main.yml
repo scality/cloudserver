@@ -145,9 +145,11 @@ stages:
       - Git: *clone
       - ShellCommand: *npm-install
       - ShellCommand: *add-hostname
+      - ShellCommand: *credentials
       - ShellCommand:
           name: Linting
           command: |
+            set -ex
             npm run --silent lint -- --max-warnings 0
             npm run --silent lint_md
             flake8 $(git ls-files "*.py")
@@ -155,10 +157,13 @@ stages:
       - ShellCommand:
           name: Unit Coverage
           command: |
+            set -ex
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run test
-            npm run test_legacy_location
+            npm run unit_coverage
+            npm run unit_coverage_legacy_location
           env: &shared-vars
+            <<: *global-env
+            S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
             CIRCLE_TEST_REPORTS: /tmp
             CIRCLE_ARTIFACTS: /tmp
             CI_REPORTS: /tmp
@@ -338,6 +343,12 @@ stages:
             -u '%(secret:private_registry_username)s'
             -p '%(secret:private_registry_password)s'
             '%(secret:private_registry_url)s'
+      - ShellCommand:
+          name: Dockerhub Login
+          command: >
+            docker login
+            -u '%(secret:dockerhub_ro_user)s'
+            -p '%(secret:dockerhub_ro_password)s'
       - SetProperty: &docker_image_name
           name: Set docker image name property
           property: docker_image_name
@@ -347,7 +358,14 @@ stages:
       - ShellCommand:
           name: Build docker image
           command: >-
-            docker build --no-cache -t %(prop:docker_image_name)s .
+            docker build
+            -t %(prop:docker_image_name)s
+            -t zenko/cloudserver:latest-%(prop:product_version)s
+            -t zenko/cloudserver:latest
+            .
       - ShellCommand:
           name: Push image
-          command: docker push %(prop:docker_image_name)s
+          command: |
+            docker push %(prop:docker_image_name)s
+            docker push zenko/cloudserver:latest-%(prop:product_version)s
+            docker push zenko/cloudserver:latest

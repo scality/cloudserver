@@ -51,7 +51,7 @@ the v1 response. See the `Request` section for including it.
 
 ### Continuation Token
 
-An example continuation token: 
+An example continuation token:
 
 ```
 NextContinuationToken: '1bunC4s+crlZNAAbKUGBLyajJUQKp22TOdUR6/01snxD2cZtjJD0ugA=='
