@@ -359,9 +359,9 @@ stages:
           name: Build docker image
           command: >-
             docker build --no-cache
-            -t '%(prop:docker_image_name)s'
-            -t 'zenko/cloudserver:latest-8.1'
-            -t 'zenko/cloudserver:latest'
+            -t "%(prop:docker_image_name)s"
+            -t "zenko/cloudserver:latest-8.1"
+            -t "zenko/cloudserver:latest"
             .
       - ShellCommand:
           name: Push image
