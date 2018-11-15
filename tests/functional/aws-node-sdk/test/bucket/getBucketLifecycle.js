@@ -14,6 +14,14 @@ const lifecycleConfig = {
         Expiration: {
             Days: 1,
         },
+        NoncurrentVersionTransitions: [{
+            NoncurrentDays: 0,
+            StorageClass: 'us-east-2',
+        }],
+        Transitions: [{
+            Days: 0,
+            StorageClass: 'us-east-2',
+        }],
     }],
 };
 const expectedConfig = {
@@ -21,8 +29,14 @@ const expectedConfig = {
     ID: 'test-id',
     Filter: {},
     Status: 'Enabled',
-    Transitions: [],
-    NoncurrentVersionTransitions: [],
+    NoncurrentVersionTransitions: [{
+        NoncurrentDays: 0,
+        StorageClass: 'us-east-2',
+    }],
+    Transitions: [{
+        Days: 0,
+        StorageClass: 'us-east-2',
+    }],
 };
 
 // Check for the expected error response code and status code.
