@@ -233,6 +233,7 @@ class MetadataMock {
         } else if (mockLogURLRegex.test(req.url)) {
             return res.end(JSON.stringify(mockLogs));
         }
+        res.writeHead(404);
         return res.end(JSON.stringify({
             error: 'invalid path',
         }));
