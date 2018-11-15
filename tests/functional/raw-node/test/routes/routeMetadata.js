@@ -4,7 +4,7 @@ const http = require('http');
 const { makeRequest } = require('../../utils/makeRequest');
 const MetadataMock = require('../../utils/MetadataMock');
 
-const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const ipAddress = process.env.IP ? process.env.IP : 'localhost';
 const metadataMock = new MetadataMock();
 
 const metadataAuthCredentials = {
@@ -43,7 +43,7 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/listbuckets/1',
+            path: '/_/metadata/admin/raft_sessions/1/bucket',
         }, (err, res) => {
             assert.ifError(err);
             assert.strictEqual(res.statusCode, 200);
@@ -57,7 +57,8 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/listobjects/bucket1',
+            path: '/_/metadata/default/bucket/bucket1',
+            queryObj: { listingType: 'Delimiter' },
         }, (err, res) => {
             assert.ifError(err);
             assert.strictEqual(res.statusCode, 200);
@@ -71,7 +72,7 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/getbucket/bucket1',
+            path: '/_/metadata/default/attributes/bucket1',
         }, (err, res) => {
             assert.ifError(err);
             assert.strictEqual(res.statusCode, 200);
@@ -84,7 +85,7 @@ describe('metadata routes with metadata mock backend', () => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
-            path: '/_/metadata/getobject/bucket1/testobject1',
+            path: '/_/metadata/default/bucket/bucket1/testobject1',
         }, (err, res) => {
             assert.ifError(err);
             assert(res.body);
