@@ -168,6 +168,19 @@ describe('patchConfiguration', () => {
                     sizeLimitGB: 0,
                     details: {},
                 },
+                'hyperdrivebackendtest': {
+                    name: 'hyperdrivebackendtest',
+                    objectId: 'hyperdrivebackendtest',
+                    locationType: 'location-scality-hdclient-v1',
+                    details: {
+                        nDataParts: 3,
+                        nCodingParts: 0,
+                        bootstraplist: ['hd1,fakehyperdrive:8444,enbled',
+                                        'hd2,localhost:7777,disabled',
+                                        'hd3,localhost:4244,enabled',
+                                        'hd4,localhost:4245,enabled'],
+                    },
+                },
             },
             browserAccess: {
                 enabled: true,
