@@ -19,6 +19,7 @@ const {
     _crrRequest,
     getCRRStats,
     getReplicationStates,
+    getIngestionStates,
 } = require('../../../lib/utilities/reportHandler');
 
 const expectedResultsRef = {
@@ -79,6 +80,12 @@ const expectedScheduleResults = {
     location2: new Date(),
 };
 
+const expectedIngestionStatusResults = {
+    location1: 'disabled',
+    location2: 'enabled',
+    location3: null,
+};
+
 function requestFailHandler(req, res) {
     const testError = {
         code: 404,
@@ -104,6 +111,9 @@ function requestHandler(req, res) {
             break;
         case '/_/crr/resume/all':
             res.write(JSON.stringify(expectedScheduleResults));
+            break;
+        case '/_/ingestion/status':
+            res.write(JSON.stringify(expectedIngestionStatusResults));
             break;
         default:
             break;
@@ -267,6 +277,74 @@ describe('reportHandler::getReplicationStates', function testSuite() {
                     },
                     schedules: {
                         location2: expectedScheduleResults.location2,
+                    },
+                };
+                assert.ifError(err);
+                assert.deepStrictEqual(res, expectedResults);
+                done();
+            }, { host: 'localhost', port: testPort });
+        });
+    });
+});
+
+describe.only('reportHandler::getIngestionStates', function testSuite() {
+    this.timeout(20000);
+    const testPort = '4242';
+    let httpServer;
+
+    describe('Test Request Failure Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestFailHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return empty object if a request error occurs', done => {
+            getIngestionStates(logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(res, {});
+                done();
+            }, { host: 'nonexisthost', port: testPort });
+        });
+
+        it('should return empty object if response status code is >= 400',
+        done => {
+            getIngestionStates(logger, (err, res) => {
+                assert.ifError(err);
+                assert.deepStrictEqual(res, {});
+                done();
+            });
+        });
+    });
+
+    describe('Test Request Success  Cases', () => {
+        before(done => {
+            httpServer = http.createServer(requestHandler).listen(testPort);
+            httpServer.on('listening', done);
+            httpServer.on('error', err => {
+                process.stdout.write(`https server: ${err.stack}\n`);
+                process.exit(1);
+            });
+        });
+
+        after('Terminating Server', () => {
+            httpServer.close();
+        });
+
+        it('should return correct results', done => {
+            getIngestionStates(logger, (err, res) => {
+                const expectedResults = {
+                    states: {
+                        location1: 'disabled',
+                        location2: 'enabled',
+                        location3: null,
                     },
                 };
                 assert.ifError(err);
