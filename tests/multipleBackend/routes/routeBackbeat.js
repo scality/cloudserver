@@ -5,15 +5,18 @@ const crypto = require('crypto');
 const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
 
-const { makeRequest } = require('../../utils/makeRequest');
-const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
+const { makeid } = require('../../unit/helpers');
+const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
+const BucketUtility =
+      require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, awsLocation } =
-    require('../../../aws-node-sdk/test/multipleBackend/utils');
+    require('../../functional/aws-node-sdk/test/multipleBackend/utils');
 const { getRealAwsConfig } =
-    require('../../../aws-node-sdk/test/support/awsConfig');
+      require('../../functional/aws-node-sdk/test/support/awsConfig');
+const { config } = require('../../../lib/Config');
 
-const config = getRealAwsConfig(awsLocation);
-const awsClient = new AWS.S3(config);
+const awsConfig = getRealAwsConfig(awsLocation);
+const awsClient = new AWS.S3(awsConfig);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
@@ -112,7 +115,8 @@ function makeBackbeatRequest(params, callback) {
 
 describeSkipIfNotMultiple('backbeat DELETE routes', () => {
     it('abort MPU', done => {
-        const awsBucket = 'multitester555';
+        const awsBucket =
+              config.locationConstraints[awsLocation].details.bucketName;
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([
             next =>
@@ -143,8 +147,6 @@ describeSkipIfNotMultiple('backbeat DELETE routes', () => {
             }, (UploadId, next) =>
                 awsClient.listMultipartUploads({
                     Bucket: awsBucket,
-                    Key: awsKey,
-                    UploadId,
                 }, (err, response) => {
                     assert.ifError(err);
                     const hasOngoingUpload =
@@ -167,7 +169,7 @@ describeSkipIfAWS('backbeat routes', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        return s3.createBucketAsync({ Bucket: TEST_BUCKET })
+        s3.createBucketAsync({ Bucket: TEST_BUCKET })
             .then(() => s3.putBucketVersioningAsync(
                 {
                     Bucket: TEST_BUCKET,
@@ -548,29 +550,25 @@ describeSkipIfAWS('backbeat routes', () => {
         });
     });
     describe('Batch Delete Route', () => {
-        it('should batch delete a location', done => {
+        it('should batch delete a local location', done => {
             let versionId;
             let location;
+            const testKey = 'batch-delete-test-key';
 
             async.series([
                 done => s3.putObject({
                     Bucket: TEST_BUCKET,
-                    Key: 'batch-delete-test-key',
+                    Key: testKey,
                     Body: new Buffer('hello'),
-                }, done),
-                done => s3.getObject({
-                    Bucket: TEST_BUCKET,
-                    Key: 'batch-delete-test-key',
                 }, (err, data) => {
                     assert.ifError(err);
-                    assert.strictEqual(data.Body.toString(), 'hello');
                     versionId = data.VersionId;
                     done();
                 }),
                 done => {
                     makeBackbeatRequest({
                         method: 'GET', bucket: TEST_BUCKET,
-                        objectKey: 'batch-delete-test-key',
+                        objectKey: testKey,
                         resourceType: 'metadata',
                         authCredentials: backbeatAuthCredentials,
                         queryObj: {
@@ -600,7 +598,52 @@ describeSkipIfAWS('backbeat routes', () => {
                 },
                 done => s3.getObject({
                     Bucket: TEST_BUCKET,
-                    Key: 'batch-delete-test-key',
+                    Key: testKey,
+                }, err => {
+                    // should error out as location shall no longer exist
+                    assert(err);
+                    done();
+                }),
+            ], done);
+        });
+        it('should batch delete a versioned AWS location', done => {
+            let versionId;
+            const awsBucket =
+                  config.locationConstraints[awsLocation].details.bucketName;
+            const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
+
+            async.series([
+                done => awsClient.putObject({
+                    Bucket: awsBucket,
+                    Key: awsKey,
+                    Body: new Buffer('hello'),
+                }, (err, data) => {
+                    assert.ifError(err);
+                    versionId = data.VersionId;
+                    done();
+                }),
+                done => {
+                    const location = [{
+                        key: awsKey,
+                        size: 5,
+                        dataStoreName: awsLocation,
+                        dataStoreVersionId: versionId,
+                    }];
+                    const reqBody = `{"Locations":${JSON.stringify(location)}}`;
+                    const options = {
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        requestBody: reqBody,
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, done);
+                },
+                done => awsClient.getObject({
+                    Bucket: awsBucket,
+                    Key: awsKey,
                 }, err => {
                     // should error out as location shall no longer exist
                     assert(err);
