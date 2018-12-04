@@ -1,5 +1,7 @@
 # Zenko CloudServer
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/scality/cloudserver.svg)](https://greenkeeper.io/)
+
 ![Zenko CloudServer logo](res/scality-cloudserver-logo.png)
 
 [![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
