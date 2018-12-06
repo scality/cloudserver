@@ -66,7 +66,7 @@ The second section, `"Implementation of Bucket Versioning in
 API" <#implementation-of-bucket-versioning-in-api>`__, describes the way
 the metadata options are used in the API within S3 actions to create new
 versions, update their metadata, and delete them. The management of null
-versions and creation of delete markers are also described in this
+versions and creation of delete markers is also described in this
 section.
 
 Implementation of Bucket Versioning in Metadata
