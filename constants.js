@@ -140,6 +140,7 @@ const constants = {
     productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
     // location constraint delimiter
     zenkoSeparator: ':',
+    mdSearchVirtualBucket: '_all',
 };
 
 module.exports = constants;
