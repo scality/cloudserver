@@ -2,7 +2,7 @@
 
 ![Zenko CloudServer logo](res/scality-cloudserver-logo.png)
 
-[![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
+[![CircleCI][badgepub]](https://circleci.com/gh/scality/cloudserver)
 [![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
 [![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
 [![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
@@ -46,7 +46,7 @@ Building and running the Zenko CloudServer requires node.js 6.9.5 and npm v3
 ### Clone source code
 
 ```shell
-git clone https://github.com/scality/S3.git
+git clone https://github.com/scality/cloudserver.git
 ```
 
 ### Install js dependencies
@@ -122,7 +122,7 @@ constraint, the endpoint of the PUT request will be
 used to determine location.
 
 See the Configuration section in our documentation
-[here](http://s3-server.readthedocs.io/en/latest/GETTING_STARTED/#configuration)
+[here](https://s3-server.readthedocs.io/en/latest/GETTING_STARTED.html#configuration)
 to learn how to set location constraints.
 
 ## Run it with an in-memory backend
@@ -137,5 +137,5 @@ a secret key of verySecretKey1.
 
 [badgetwitter]: https://img.shields.io/twitter/follow/zenko.svg?style=social&label=Follow
 [badgedocker]: https://img.shields.io/docker/pulls/scality/s3server.svg
-[badgepub]: https://circleci.com/gh/scality/S3.svg?style=svg
+[badgepub]: https://circleci.com/gh/scality/cloudserver.svg?style=svg
 [badgepriv]: http://ci.ironmann.io/gh/scality/S3.svg?style=svg&circle-token=1f105b7518b53853b5b7cf72302a3f75d8c598ae
