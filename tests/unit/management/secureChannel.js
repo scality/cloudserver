@@ -13,5 +13,6 @@ describe('report handler', () => {
         assert.strictEqual(c.preferredReadLocation, true);
         assert.strictEqual(c.managedLifecycle, true);
         assert.strictEqual(c.secureChannelOptimizedPath, true);
+        assert.strictEqual(c.s3cIngestLocation, true);
     });
 });
