@@ -1,8 +1,10 @@
 const assert = require('assert');
+const async = require('async');
 
 const { errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+const bucketPutReplication = require('../../../lib/api/bucketPutReplication');
 
 const { cleanup,
     DummyRequestLogger,
@@ -29,6 +31,19 @@ const locConstraintNonVersioned =
 '<LocationConstraint>withoutversioning</LocationConstraint>' +
 '</CreateBucketConfiguration>';
 
+const xmlReplicationConfiguration =
+'<ReplicationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<Role>arn:aws:iam::account-id:role/src-resource</Role>' +
+    '<Rule>' +
+        '<Prefix></Prefix>' +
+        '<Status>Enabled</Status>' +
+        '<Destination>' +
+            '<Bucket>arn:aws:s3:::destination-bucket</Bucket>' +
+            '<StorageClass>us-east-2</StorageClass>' +
+        '</Destination>' +
+    '</Rule>' +
+'</ReplicationConfiguration>';
+
 const externalVersioningErrorMessage = 'We do not currently support putting ' +
 'a versioned object to a location-constraint of type Azure or GCP.';
 
@@ -41,6 +56,16 @@ function _getPutBucketRequest(xml) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+    };
+    request.post = xml;
+    return request;
+}
+
+function _putReplicationRequest(xml) {
+    const request = {
+        bucketName,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: '/?replication',
     };
     request.post = xml;
     return request;
@@ -95,6 +120,30 @@ describe('bucketPutVersioning API', () => {
                 });
             });
         }));
+
+        it('should not suspend versioning on bucket with replication', done => {
+            async.series([
+                // Enable versioning to allow putting a replication config.
+                next => {
+                    const request = _putVersioningRequest(xmlEnableVersioning);
+                    bucketPutVersioning(authInfo, request, log, next);
+                },
+                // Put the replication config on the bucket.
+                next => {
+                    const request =
+                        _putReplicationRequest(xmlReplicationConfiguration);
+                    bucketPutReplication(authInfo, request, log, next);
+                },
+                // Attempt to suspend versioning.
+                next => {
+                    const request = _putVersioningRequest(xmlSuspendVersioning);
+                    bucketPutVersioning(authInfo, request, log, err => {
+                        assert(err.InvalidBucketState);
+                        next();
+                    });
+                },
+            ], done);
+        });
     });
 
     describe('with version disabled location constraint', () => {

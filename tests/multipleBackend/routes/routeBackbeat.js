@@ -302,35 +302,6 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
-        it('should refuse PUT data if bucket is not versioned',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: NONVERSIONED_BUCKET,
-            objectKey: testKey, resourceType: 'data',
-            headers: {
-                'content-length': testData.length,
-                'content-md5': testDataMd5,
-                'x-scal-canonical-id': testArn,
-            },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: testData,
-        },
-        err => {
-            assert.strictEqual(err.code, 'InvalidBucketState');
-            done();
-        }));
-
-        it('should refuse PUT metadata if bucket is not versioned',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: NONVERSIONED_BUCKET,
-            objectKey: testKey, resourceType: 'metadata',
-            authCredentials: backbeatAuthCredentials,
-            requestBody: JSON.stringify(testMd),
-        },
-        err => {
-            assert.strictEqual(err.code, 'InvalidBucketState');
-            done();
-        }));
-
         it('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided', done => makeBackbeatRequest({
                method: 'PUT', bucket: TEST_BUCKET,
