@@ -11,6 +11,7 @@ const pfsServer = new arsenal.network.rest.RESTServer({
         dataPath: config.pfsDaemon.dataPath,
         log: config.log,
         isPassthrough: true,
+        isReadOnly: config.pfsDaemon.isReadOnly,
     }),
     log: config.log,
 });
