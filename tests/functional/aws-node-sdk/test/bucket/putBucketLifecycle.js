@@ -411,8 +411,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 });
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should allow Date', done => {
+            it('should allow Date', done => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
                     StorageClass: 'us-east-2',
@@ -424,9 +423,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 });
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value',
-            done => {
+            it('should not allow speficying both Days and Date value', done => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
                     Days: 1,
@@ -439,8 +436,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 });
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value ' +
+            it('should not allow speficying both Days and Date value ' +
             'across transitions', done => {
                 const transitions = [{
                     Date: '2016-01-01T00:00:00.000Z',
@@ -459,8 +455,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 });
             });
 
-            // TODO: Upgrade to aws-sdk >= 2.60.0 for correct Date field support
-            it.skip('should not allow speficying both Days and Date value ' +
+            it('should not allow speficying both Days and Date value ' +
             'across transitions and expiration', done => {
                 const transitions = [{
                     Days: 1,
