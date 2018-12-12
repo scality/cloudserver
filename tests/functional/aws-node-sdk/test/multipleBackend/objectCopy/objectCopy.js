@@ -8,9 +8,9 @@ const { config } = require('../../../../../../lib/Config');
 const { getRealAwsConfig } = require('../../support/awsConfig');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
-const { describeSkipIfNotMultiple, awsS3, memLocation, awsLocation,
+const { describeSkipIfNotMultiple, itSkipCeph, awsS3, memLocation, awsLocation,
     azureLocation, awsLocation2, awsLocationMismatch, awsLocationEncryption,
-    genUniqID, itSkipCeph } = require('../utils');
+    genUniqID } = require('../utils');
 
 const bucket = `objectcopybucket${genUniqID()}`;
 const bucketAws = `objectcopyaws${genUniqID()}`;
@@ -308,8 +308,8 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object from AWS to mem with encryption ' +
-        'with REPLACE directive but no location constraint', done => {
+        it('should copy an object from AWS to mem with encryption with ' +
+        'REPLACE directive but no location constraint', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -331,8 +331,9 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object on AWS with aws server side' +
-        'encryption', done => {
+        itSkipCeph('should copy an object on AWS with aws server side ' +
+        'encryption',
+        done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -381,8 +382,8 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object from mem to AWS with encryption ' +
-        'with REPLACE directive but no location constraint', done => {
+        it('should copy an object from mem to AWS with encryption with ' +
+        'REPLACE directive but no location constraint', done => {
             putSourceObj(null, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -430,7 +431,7 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object on AWS', done => {
+        it('should copy an object on AWS', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -453,8 +454,8 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object on AWS location with bucketMatch ' +
-        'equals false to a different AWS location with bucketMatch equals true',
+        it('should copy an object on AWS location with bucketMatch equals ' +
+        'false to a different AWS location with bucketMatch equals true',
         done => {
             putSourceObj(awsLocationMismatch, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
@@ -479,7 +480,7 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object on AWS to a different AWS location ' +
+        it('should copy an object on AWS to a different AWS location ' +
         'with source object READ access',
         done => {
             const awsConfig2 = getRealAwsConfig(awsLocation2);
@@ -540,7 +541,7 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy an object on AWS with REPLACE', done => {
+        it('should copy an object on AWS with REPLACE', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -588,7 +589,7 @@ function testSuite() {
             });
         });
 
-        itSkipCeph('should copy a 0-byte object on AWS', done => {
+        it('should copy a 0-byte object on AWS', done => {
             putSourceObj(awsLocation, true, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {

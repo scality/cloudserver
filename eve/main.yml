@@ -262,8 +262,8 @@ stages:
             <<: *multiple-backend-vars
       - ShellCommand:
           command: |
-            npm run ft_awssdk ||
-            npm run ft_s3cmd ||
+            npm run ft_awssdk &&
+            npm run ft_s3cmd &&
             npm run ft_s3curl
           env:
             <<: *file-mem-mpu
