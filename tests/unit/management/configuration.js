@@ -59,7 +59,7 @@ function checkNoError(err) {
         `but got error ${err}`);
 }
 
-describe('patchConfiguration', () => {
+describe.only('patchConfiguration', () => {
     before(done => initManagementDatabase(log, err => {
         if (err) {
             return done(err);
@@ -167,6 +167,19 @@ describe('patchConfiguration', () => {
                     locationType: 'location-file-v1',
                     sizeLimitGB: 0,
                     details: {},
+                },
+                'httpsawsbackendtest': {
+                    name: 'httpsawsbackendtest',
+                    objectId: 'httpsawsbackendtest',
+                    locationType: 'location-scality-ring-s3-v1',
+                    details: {
+                        bucketMatch: 'rings3bucketmatch',
+                        endpoint: 'https://secure.ring.end.point',
+                        accessKey: 'rings3accesskey',
+                        secretKey,
+                        bucketName: 'rings3bucketname',
+                        region: 'us-west-1',
+                    },
                 },
             },
             browserAccess: {
@@ -305,6 +318,27 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         details: { supportsVersioning: true },
+                    },
+                    'httpsawsbackendtest': {
+                        details: {
+                            awsEndpoint: 'secure.ring.end.point',
+                            bucketMatch: 'rings3bucketmatch',
+                            bucketName: 'rings3bucketname',
+                            credentials: {
+                                accessKey: 'rings3accesskey',
+                                secretKey: decryptedSecretKey,
+                            },
+                            https: true,
+                            pathStyle: true,
+                            region: 'us-west-1',
+                            serverSideEncryption: false,
+                            supportsVersioning: true,
+                        },
+                        legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
+                        type: 'aws_s3',
+                        objectId: 'httpsawsbackendtest',
                     },
                 },
             };
