@@ -359,10 +359,16 @@ stages:
           name: Build docker image
           command: >-
             docker build
+            --no-cache
             -t %(prop:docker_image_name)s
-            -t zenko/cloudserver:latest-%(prop:product_version)s
-            -t zenko/cloudserver:latest
             .
+      - ShellCommand:
+          name: Tag images
+          command: |
+            docker tag %(prop:docker_image_name)s zenko/cloudserver:$TAG
+            docker tag %(prop:docker_image_name)s zenko/cloudserver:latest
+          env:
+            TAG: "latest-%(prop:product_version)s"
       - ShellCommand:
           name: Push image
           command: |
