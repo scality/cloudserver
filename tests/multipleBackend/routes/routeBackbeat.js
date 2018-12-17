@@ -70,9 +70,49 @@ const testMd = {
     },
 };
 
-function checkObjectData(s3, objectKey, dataValue, done) {
+const nonVersionedTestMd = {
+    'owner-display-name': 'Bart',
+    'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
+                 'fd6e09d98eacf8f8d5218e7cd47ef2be'),
+    'content-length': testData.length,
+    'content-md5': testDataMd5,
+    'x-amz-version-id': 'null',
+    'x-amz-server-version-id': '',
+    'x-amz-storage-class': 'awsbackend',
+    'x-amz-server-side-encryption': '',
+    'x-amz-server-side-encryption-aws-kms-key-id': '',
+    'x-amz-server-side-encryption-customer-algorithm': '',
+    'acl': {
+        Canned: 'private',
+        FULL_CONTROL: [],
+        WRITE_ACP: [],
+        READ: [],
+        READ_ACP: [],
+    },
+    'location': null,
+    'isNull': '',
+    'nullVersionId': '',
+    'isDeleteMarker': false,
+    'tags': {},
+    'replicationInfo': {
+        status: '',
+        backends: [],
+        content: [],
+        destination: '',
+        storageClass: '',
+        role: '',
+        storageType: '',
+        dataStoreVersionId: '',
+        isNFS: null,
+    },
+    'dataStoreName': 'us-east-1',
+    'last-modified': '2018-12-18T01:22:15.986Z',
+    'md-model-version': 3,
+};
+
+function checkObjectData(s3, bucket, objectKey, dataValue, done) {
     s3.getObject({
-        Bucket: TEST_BUCKET,
+        Bucket: bucket,
         Key: objectKey,
     }, (err, data) => {
         assert.ifError(err);
@@ -185,6 +225,7 @@ describeSkipIfAWS('backbeat routes', () => {
     after(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucketAsync({ Bucket: TEST_BUCKET }))
+            .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
             .then(() => s3.deleteBucketAsync({ Bucket: NONVERSIONED_BUCKET }))
             .then(() => done());
     });
@@ -247,13 +288,64 @@ describeSkipIfAWS('backbeat routes', () => {
                         }, next);
                     }, (response, next) => {
                         assert.strictEqual(response.statusCode, 200);
-                        checkObjectData(s3, testCase.key, testData, next);
+                        checkObjectData(s3, TEST_BUCKET, testCase.key, testData,
+                            next);
                     }], err => {
                         assert.ifError(err);
                         done();
                     });
                 });
             });
+        });
+
+        it('should PUT metadata for a non-versioned bucket', done => {
+            const bucket = NONVERSIONED_BUCKET;
+            const objectKey = 'non-versioned-key';
+            async.waterfall([
+                next =>
+                    makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket,
+                        objectKey,
+                        resourceType: 'data',
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, (err, response) => {
+                        assert.ifError(err);
+                        const metadata = Object.assign({}, nonVersionedTestMd, {
+                            location: JSON.parse(response.body),
+                        });
+                        return next(null, metadata);
+                    }),
+                (metadata, next) =>
+                    makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket,
+                        objectKey,
+                        resourceType: 'metadata',
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: JSON.stringify(metadata),
+                    }, (err, response) => {
+                        assert.ifError(err);
+                        assert.strictEqual(response.statusCode, 200);
+                        next();
+                    }),
+                next =>
+                    s3.headObject({
+                        Bucket: bucket,
+                        Key: objectKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.strictEqual(data.StorageClass, 'awsbackend');
+                        next();
+                    }),
+                next => checkObjectData(s3, bucket, objectKey, testData, next),
+            ], done);
         });
 
         it('PUT metadata with "x-scal-replication-content: METADATA"' +
@@ -295,7 +387,8 @@ describeSkipIfAWS('backbeat routes', () => {
                 }, next);
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
-                checkObjectData(s3, 'test-updatemd-key', testData, next);
+                checkObjectData(s3, TEST_BUCKET, 'test-updatemd-key', testData,
+                    next);
             }], err => {
                 assert.ifError(err);
                 done();
