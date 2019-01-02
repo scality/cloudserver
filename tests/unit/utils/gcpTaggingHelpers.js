@@ -1,10 +1,10 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 const { gcpTaggingPrefix } = require('../../../constants');
 const { genPutTagObj } =
     require('../../../tests/functional/raw-node/utils/gcpUtils');
 const { processTagSet, stripTags, retrieveTags, getPutTagsMetadata } =
-    require('../../../lib/data/external/GCP').GcpUtils;
+    storage.data.external.GcpUtils;
 
 const maxTagSize = 10;
 const validTagSet = genPutTagObj(2);

@@ -1,7 +1,8 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 
-const AwsClient = require('../../../lib/data/external/AwsClient');
+const AwsClient = storage.data.external.AwsClient;
+const { config } = require('../../../lib/Config');
 const DummyService = require('../DummyService');
 const { DummyRequestLogger } = require('../helpers');
 
@@ -105,7 +106,8 @@ describe('AwsClient::copyObject', () => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
         testClient.copyObject(copyObjectRequest, null, key,
-        sourceLocationConstraint, null, log, err => test.callback(err, done));
+        sourceLocationConstraint, null, config, log,
+        err => test.callback(err, done));
     }));
 });
 

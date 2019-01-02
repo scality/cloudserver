@@ -1,6 +1,6 @@
 const assert = require('assert');
+const AwsClient = require('arsenal').storage.data.external.AwsClient;
 const parseLC = require('../../../lib/data/locationConstraintParser');
-const AwsClient = require('../../../lib/data/external/AwsClient');
 const inMemory = require('../../../lib/data/in_memory/backend').backend;
 const DataFileInterface = require('../../../lib/data/file/backend');
 

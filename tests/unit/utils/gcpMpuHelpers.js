@@ -1,7 +1,7 @@
 const assert = require('assert');
+const arsenal = require('arsenal');
 const uuid = require('uuid/v4');
-const { createMpuKey, createMpuList } =
-    require('../../../lib/data/external/GCP').GcpUtils;
+const { createMpuKey, createMpuList } = arsenal.storage.data.external.GcpUtils;
 
 const key = `somekey${Date.now()}`;
 const uploadId = uuid().replace(/-/g, '');
