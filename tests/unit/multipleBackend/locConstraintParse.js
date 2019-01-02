@@ -1,8 +1,9 @@
 const assert = require('assert');
+const { storage } = require('arsenal');
 const parseLC = require('../../../lib/data/locationConstraintParser');
-const AwsClient = require('../../../lib/data/external/AwsClient');
-const inMemory = require('../../../lib/data/in_memory/backend').backend;
-const DataFileInterface = require('../../../lib/data/file/backend');
+const AwsClient = storage.data.external.AwsClient;
+const DataFileInterface = storage.data.file.DataFileInterface;
+const inMemory = storage.data.inMemory.datastore.backend;
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';

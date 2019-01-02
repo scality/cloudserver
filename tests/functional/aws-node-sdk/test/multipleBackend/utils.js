@@ -1,13 +1,13 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 const AWS = require('aws-sdk');
 const uuid = require('uuid/v4');
 
 const async = require('async');
 const azure = require('azure-storage');
 
-const { GCP } = require('../../../../../lib/data/external/GCP');
+const { GCP } = storage.data.external;
 
 const { getRealAwsConfig } = require('../support/awsConfig');
 const { config } = require('../../../../../lib/Config');

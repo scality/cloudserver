@@ -1,7 +1,8 @@
 const assert = require('assert');
 const async = require('async');
+const arsenal = require('arsenal');
 const xml2js = require('xml2js');
-const { GCP } = require('../../../../../../lib/data/external/GCP');
+const { GCP } = arsenal.storage.data.external;
 const { makeGcpRequest } = require('../../../utils/makeRequest');
 const { gcpRequestRetry, genUniqID } = require('../../../utils/gcpUtils');
 const { getRealAwsConfig } =

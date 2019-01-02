@@ -1,5 +1,6 @@
 const assert = require('assert');
-const proxyCompareUrl = require('../../../lib/data/proxyCompareUrl');
+const arsenal = require('arsenal');
+const { proxyCompareUrl } = arsenal.storage.data.external.backendUtils;
 
 const testCases = [
     {

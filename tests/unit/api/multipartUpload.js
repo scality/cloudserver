@@ -1,4 +1,4 @@
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 
 const assert = require('assert');
 const crypto = require('crypto');
@@ -14,13 +14,14 @@ const completeMultipartUpload
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { ds } = storage.data.inMemory.datastore;
 
 const log = new DummyRequestLogger();
 

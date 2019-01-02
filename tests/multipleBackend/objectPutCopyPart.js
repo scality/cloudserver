@@ -2,18 +2,19 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
+const { storage } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const initiateMultipartUpload
     = require('../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const constants = require('../../constants');
+const { metadata } = storage.metadata.inMemory.metadata;
+const { ds } = storage.data.inMemory.datastore;
 
 const s3 = new AWS.S3();
 

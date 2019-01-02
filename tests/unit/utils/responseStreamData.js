@@ -1,12 +1,13 @@
 const assert = require('assert');
 const httpMocks = require('node-mocks-http');
 const { EventEmitter } = require('events');
-const { errors } = require('arsenal');
-const routesUtils = require('arsenal').s3routes.routesUtils;
+const { errors, storage, s3routes } = require('arsenal');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
 const data = require('../../../lib/data/wrapper');
+
+const routesUtils = s3routes.routesUtils;
+const { ds } = storage.data.inMemory.datastore;
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();

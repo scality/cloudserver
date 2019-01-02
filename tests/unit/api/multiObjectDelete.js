@@ -1,14 +1,15 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 
 const { getObjMetadataAndDelete }
     = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
-const { ds } = require('../../../lib/data/in_memory/backend');
 const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { ds } = storage.data.inMemory.datastore;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

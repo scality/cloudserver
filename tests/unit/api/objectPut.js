@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { errors, s3middleware } = require('arsenal');
+const { errors, s3middleware, storage } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
@@ -8,11 +8,12 @@ const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const DummyRequest = require('../DummyRequest');
 const { maximumAllowedUploadSize } = require('../../../constants');
+
+const { ds } = storage.data.inMemory.datastore;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

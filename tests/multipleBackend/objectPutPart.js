@@ -3,20 +3,23 @@ const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
+const { storage } = require('arsenal');
+
 const { config } = require('../../lib/Config');
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const initiateMultipartUpload
     = require('../../lib/api/initiateMultipartUpload');
 const objectPutPart = require('../../lib/api/objectPutPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const mdWrapper = require('../../lib/metadata/wrapper');
 const constants = require('../../constants');
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { ds } = storage.data.inMemory.datastore;
 
 const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';

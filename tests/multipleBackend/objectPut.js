@@ -1,11 +1,13 @@
 const assert = require('assert');
+const { storage } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
 const DummyRequest = require('../unit/DummyRequest');
+
+const { ds } = storage.data.inMemory.datastore;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
