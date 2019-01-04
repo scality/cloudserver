@@ -6,7 +6,7 @@ These backends abstract the complexity of multiple APIs to let users
 work on a single common namespace across multiple clouds.
 
 This documents aims at introducing you to the right files in
-Cloudserver (the Zenko stack's subcomponent in charge of API
+CloudServer (the Zenko stack's subcomponent in charge of API
 translation, among other things) to add support to your own backend of
 choice.
 

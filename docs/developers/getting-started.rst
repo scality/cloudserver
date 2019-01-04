@@ -1,8 +1,8 @@
 ============================================
-Add New Backend Storage To Zenko Cloudserver
+Add New Backend Storage To Zenko CloudServer
 ============================================
 
-This set of documents aims at bootstrapping developers with Zenko's Cloudserver
+This set of documents aims at bootstrapping developers with Zenko's CloudServer
 module, so they can then go on and contribute features.
 
 .. toctree::
@@ -43,7 +43,7 @@ Openstack Swift                               x
                and filling out the "Feature Request" section of our
                template.
 
-To add support for a new backend support to Cloudserver official
+To add support for a new backend support to CloudServer official
 repository, please follow these steps:
 
 - familiarize yourself with our `Contributing Guidelines`_

@@ -1,10 +1,10 @@
 ======================
-S3 compatible backends
+S3-Compatible Backends
 ======================
 
 
-Adding support in Zenko’s Cloudserver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding Support in CloudServer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is the easiest case for backend support integration: there is nothing to do
 but configuration!  Follow the steps described in our
@@ -33,7 +33,7 @@ definition for that backend will look something like:
     }
     },
 
-Adding support in Zenko Orbit
+Adding Support in Zenko Orbit
 #############################
 
 This can only be done by our core developpers' team. If that’s what you’re

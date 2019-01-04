@@ -2,16 +2,16 @@
 Add A New Backend
 =================
 
-Supporting all possible public cloud storage APIs is Cloudserver's
+Supporting all possible public cloud storage APIs is CloudServer's
 ultimate goal. As an open source project, contributions are welcome.
 
 The first step is to get familiar with building a custom Docker image
-for Cloudserver.
+for CloudServer.
 
 Build a Custom Docker Image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clone Zenko's Cloudserver, install all dependencies and start the
+Clone Zenko's CloudServer, install all dependencies and start the
 service:
 
 .. code-block:: shell
