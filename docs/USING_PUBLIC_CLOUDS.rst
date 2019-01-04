@@ -162,8 +162,8 @@ CloudServer.
    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
    -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
    -v ~/.aws/credentials:/root/.aws/credentials \
-   -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
-   -d scality/s3server
+   -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000 \
+   -d scality/cloudserver
 
 Testing: put an object to AWS S3 using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -324,7 +324,7 @@ CloudServer.
    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
    -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
    -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
-   -d scality/s3server
+   -d scality/cloudserver
 
 Testing: put an object to MS Azure using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
