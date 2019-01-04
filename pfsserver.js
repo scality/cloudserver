@@ -10,6 +10,8 @@ const pfsServer = new arsenal.network.rest.RESTServer({
     dataStore: new arsenal.storage.data.file.DataFileStore({
         dataPath: config.pfsDaemon.dataPath,
         log: config.log,
+        noSync: config.pfsDaemon.noSync,
+        noCache: config.pfsDaemon.noCache,
         isPassthrough: true,
         isReadOnly: config.pfsDaemon.isReadOnly,
     }),
