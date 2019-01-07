@@ -50,9 +50,10 @@
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
-    "eslint": "^2.4.0",
-    "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-scality": "scality/Guidelines#0a771c2",
+    "eslint": "^5.3.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-scality": "scality/Guidelines#1d6f287b",
+    "eslint-plugin-import": "^2.14.0",
     "ioredis": "2.4.0",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
