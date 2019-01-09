@@ -229,7 +229,7 @@ stages:
         env:
           <<: *multiple-backend-vars
           <<: *global-env
-          CI_CEPH: enabled
+          CI_CEPH: "true"
           MPU_TESTING: "yes"
           S3_LOCATION_FILE: tests/locationConfig/locationConfigCeph.json
     steps:

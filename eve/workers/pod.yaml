@@ -92,7 +92,7 @@ spec:
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
         {%- endif %}
-        {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" and vars.env.CI_CEPH is defined and vars.env.CI_CEPH == "enabled" -%}
+        {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" and vars.env.CI_CEPH is defined and vars.env.CI_CEPH == "true" -%}
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigCeph.json"
         {%- endif %}
@@ -157,7 +157,7 @@ spec:
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
-    {% if vars.env.CI_CEPH is defined and vars.env.CI_CEPH == "enabled" -%}
+    {% if vars.env.CI_CEPH is defined and vars.env.CI_CEPH == "true" -%}
     - name: ceph
       image: {{ images.ceph }}
       imagePullPolicy: IfNotPresent
