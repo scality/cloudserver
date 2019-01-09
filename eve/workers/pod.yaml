@@ -4,7 +4,6 @@ kind: Pod
 metadata:
   name: "proxy-ci-test-pod"
 spec:
-  activeDeadlineSeconds: 3600
   restartPolicy: Never
   terminationGracePeriodSeconds: 10
   hostAliases:
