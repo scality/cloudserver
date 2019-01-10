@@ -41,6 +41,7 @@ let gcpBucketMPU;
 
 const isCEPH = process.env.CI_CEPH !== undefined;
 const itSkipCeph = isCEPH ? it.skip : it;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
 
 if (config.backends.data === 'multiple') {
     describeSkipIfNotMultiple = describe;
@@ -70,6 +71,7 @@ function _assertErrorResult(err, expectedError, desc) {
 const utils = {
     describeSkipIfNotMultiple,
     describeSkipIfNotMultipleOrCeph,
+    describeSkipIfCeph,
     awsS3,
     awsBucket,
     gcpClient,

@@ -263,8 +263,7 @@ stages:
       - ShellCommand:
           command: |
             npm run ft_awssdk &&
-            npm run ft_s3cmd &&
-            npm run ft_s3curl
+            npm run ft_s3cmd
           env:
             <<: *file-mem-mpu
             <<: *global-env
