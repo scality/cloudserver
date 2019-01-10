@@ -108,7 +108,7 @@ callback) {
 
 describeSkipIfNotMultiple('MultipleBackend object copy: AWS',
 function testSuite() {
-    this.timeout(250000);
+    this.timeout(300000);
     withV4(sigCfg => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -142,8 +142,14 @@ function testSuite() {
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => bucketUtil.empty(bucketAws))
-            .then(() => bucketUtil.empty(awsServerSideEncryptionbucket))
+            .then(() => {
+                process.stdout.write('Emptying aws bucket\n');
+                bucketUtil.empty(bucketAws);
+            })
+            .then(() => {
+                process.stdout.write('Empty aws encryption bucket\n');
+                bucketUtil.empty(awsServerSideEncryptionbucket);
+            })
             .then(() => {
                 process.stdout.write(`Deleting bucket ${bucket}\n`);
                 return bucketUtil.deleteOne(bucket);
