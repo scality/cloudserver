@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "github:scality/arsenal#f199d52",
+    "arsenal": "github:scality/arsenal#8dabd00",
     "async": "~2.5.0",
     "aws-sdk": "2.28.0",
     "azure-storage": "^2.1.0",
@@ -82,7 +82,8 @@
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha -t 40000 *.js",
     "ft_s3curl": "cd tests/functional/s3curl && mocha -t 40000 *.js",
     "ft_util": "cd tests/functional/utilities && mocha -t 40000 *.js",
-    "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management ft_util",
+    "ft_metadata": "cd tests/functional/metadata && mocha -t 40000 *.js",
+    "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management ft_util ft_metadata",
     "ft_search": "cd tests/functional/aws-node-sdk && mocha -t 90000 test/mdSearch",
     "install_ft_deps": "npm install aws-sdk@2.28.0 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.11.1 tv4@1.2.7",
     "lint": "eslint $(git ls-files '*.js')",
