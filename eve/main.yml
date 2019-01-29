@@ -157,6 +157,12 @@ stages:
       - ShellCommand:
           name: Unit Coverage
           command: |
+            unset HTTP_PROXY
+            unset HTTPS_PROXY
+            unset http_proxy
+            unset https_proxy
+            unset NO_PROXY
+            unset no_proxy
             set -ex
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm test
