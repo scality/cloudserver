@@ -1,3 +1,8 @@
+delete process.env.HTTP_PROXY;
+delete process.env.HTTPS_PROXY;
+delete process.env.http_proxy;
+delete process.env.https_proxy;
+
 const assert = require('assert');
 const parseLC = require('../../../lib/data/locationConstraintParser');
 const AwsClient = require('../../../lib/data/external/AwsClient');
@@ -26,7 +31,7 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
-        if (client._s3Params.httpOptions.agent.protocol) {
+        if (client._s3Params.httpOptions.agent) {
             assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
                 'https:');
             assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
@@ -39,7 +44,7 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
-        if (client._s3Params.httpOptions.agent.protocol) {
+        if (client._s3Params.httpOptions.agent) {
 	    assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
                 'http:');
             assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
