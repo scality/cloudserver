@@ -26,7 +26,7 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
-        if (client._s3Params.httpOptions.agent) {
+        if (client._s3Params.httpOptions.agent.protocol) {
             assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
                 'https:');
             assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
@@ -39,7 +39,7 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
-        if (client._s3Params.httpOptions.agent) {
+        if (client._s3Params.httpOptions.agent.protocol) {
 	    assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
                 'http:');
             assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
