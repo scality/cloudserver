@@ -14,13 +14,12 @@ delete process.env.HTTPS_PROXY;
 delete process.env.http_proxy;
 delete process.env.https_proxy;
 
-const { ConfigObjectNoProxyFromEnv } = require('../../../../lib/Config');
-const configNoProxyFromEnv = new ConfigObjectNoProxyFromEnv();
+const { ConfigObject } = require('../../../../lib/Config');
+const config = new ConfigObject();
 
 process.env = originalEnv;
 
-const { ConfigObject } = require('../../../../lib/Config');
-const config = new ConfigObject();
+
 
 describe('Config with all possible options', () => {
     it('should include certFilePaths object', () => {
@@ -39,7 +38,7 @@ describe('Config with all possible options', () => {
     });
 
     it('should include outboundProxy object', () => {
-        const expectedObj1 = {
+        const expectedObj = {
             url: 'http://test:8001',
             certs: {
                 ca: fs.readFileSync(caPath, 'ascii'),
@@ -47,16 +46,11 @@ describe('Config with all possible options', () => {
                 cert: fs.readFileSync(certPath, 'ascii'),
             },
         };
-        assert.deepStrictEqual(expectedObj1,
-		               configNoProxyFromEnv.outboundProxy);
-	const expectedObj2 = {
-            url: originalEnv.HTTP_PROXY,
-            certs: {
-                ca: fs.readFileSync(caPath, 'ascii'),
-                key: fs.readFileSync(keyPath, 'ascii'),
-                cert: fs.readFileSync(certPath, 'ascii'),
-            },
-        };
-        assert.deepStrictEqual(expectedObj2, config.outboundProxy);
+        assert.deepStrictEqual(expectedObj, config.outboundProxy);
     });
+
+    it('env is correct', () => {
+        assert.deepStrictEqual(process.env.HTTP_PROXY, 'http://proxy-cache:3128');
+    });
+
 });
