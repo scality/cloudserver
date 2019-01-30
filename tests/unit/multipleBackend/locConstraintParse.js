@@ -45,7 +45,7 @@ describe('locationConstraintParser', () => {
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
             config.outboundProxy && config.outboundProxy.url ?
             undefined : 'http');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive
+        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive,
 	    config.outboundProxy && config.outboundProxy.url ?
             undefined : false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
