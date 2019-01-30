@@ -1,9 +1,3 @@
-const originalEnv = Object.assign({}, process.env);
-delete process.env.HTTP_PROXY;
-delete process.env.HTTPS_PROXY;
-delete process.env.http_proxy;
-delete process.env.https_proxy;
-
 const assert = require('assert');
 const parseLC = require('../../../lib/data/locationConstraintParser');
 const AwsClient = require('../../../lib/data/external/AwsClient');
@@ -32,10 +26,12 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
-        assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            'https:');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
-        assert.strictEqual(client._s3Params.signatureVersion, 'v4');
+        if (client._s3Params.httpOptions.agent) {
+            assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
+                'https:');
+            assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
+	}
+	assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
 
     it('should set correct options for http aws_s3 type location', () => {
@@ -43,13 +39,11 @@ describe('locationConstraintParser', () => {
         assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
-        assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            'http:');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
-        assert.strictEqual(client._s3Params.signatureVersion, 'v2');
-    });
-
-    after(() => {
-        process.env = originalEnv;
+        if (client._s3Params.httpOptions.agent) {
+	    assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
+                'http:');
+            assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
+	}
+	assert.strictEqual(client._s3Params.signatureVersion, 'v2');
     });
 });

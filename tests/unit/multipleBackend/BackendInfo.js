@@ -1,9 +1,3 @@
-const originalEnv = Object.assign({}, process.env);
-delete process.env.HTTP_PROXY;
-delete process.env.HTTPS_PROXY;
-delete process.env.http_proxy;
-delete process.env.https_proxy;
-
 const assert = require('assert');
 const { BackendInfo } = require('../../../lib/api/apiUtils/object/BackendInfo');
 const { DummyRequestLogger } = require('../helpers');
@@ -19,8 +13,6 @@ const dummyBackendInfo = new BackendInfo(memLocation, fileLocation,
     '127.0.0.1');
 const isLocationLegacy = process.env.S3_LOCATION_FILE ===
 'tests/locationConfig/locationConfigLegacy.json';
-
-process.env = originalEnv;
 
 describe('BackendInfo class', () => {
     describe('controllingBackendParam', () => {

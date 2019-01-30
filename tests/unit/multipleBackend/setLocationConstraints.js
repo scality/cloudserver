@@ -1,9 +1,3 @@
-const originalEnv = Object.assign({}, process.env);
-delete process.env.HTTP_PROXY;
-delete process.env.HTTPS_PROXY;
-delete process.env.http_proxy;
-delete process.env.https_proxy;
-
 const assert = require('assert');
 const { config } = require('../../../lib/Config');
 const parseLC = require('../../../lib/data/locationConstraintParser');
@@ -37,9 +31,5 @@ describe('Config::setLocationConstraints', () => {
         config.setLocationConstraints(expectedLCs);
         assert(parseLC(config)[newLCKey]);
         assert.strictEqual(parseLC(config)[newLCKey].clientType, 'aws_s3');
-    });
-
-    after(() => {
-        process.env = originalEnv;
     });
 });
