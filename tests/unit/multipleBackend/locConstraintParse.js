@@ -10,6 +10,8 @@ const awsLocation = 'awsbackend';
 const awsHttpLocation = 'awsbackendhttp';
 const clients = parseLC();
 
+const { config } = require('../../../lib/Config');
+
 describe('locationConstraintParser', () => {
     it('should return object containing mem object', () => {
         assert.notStrictEqual(clients[memLocation], undefined);
@@ -27,7 +29,7 @@ describe('locationConstraintParser', () => {
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            'https:');
+            config.outboundProxy ? undefined : 'https:');
         assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
@@ -38,7 +40,7 @@ describe('locationConstraintParser', () => {
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            'http:');
+            config.outboundProxy ? undefined : 'http:');
         assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
     });
