@@ -8,7 +8,7 @@ const certPath = `${basePath}/cert.txt`;
 
 process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
 
-const originalEnv = process.env;
+const originalEnv = Object.assign({}, process.env);
 delete process.env.HTTP_PROXY;
 delete process.env.HTTPS_PROXY;
 delete process.env.http_proxy;
@@ -18,8 +18,6 @@ const { ConfigObject } = require('../../../../lib/Config');
 const config = new ConfigObject();
 
 process.env = originalEnv;
-
-
 
 describe('Config with all possible options', () => {
     it('should include certFilePaths object', () => {
