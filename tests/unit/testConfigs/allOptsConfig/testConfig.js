@@ -7,17 +7,20 @@ const keyPath = `${basePath}/key.txt`;
 const certPath = `${basePath}/cert.txt`;
 
 process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
-const { ConfigObject } = require('../../../../lib/Config');
-const config = new ConfigObject();
 
 const originalEnv = process.env;
 delete process.env.HTTP_PROXY;
 delete process.env.HTTPS_PROXY;
 delete process.env.http_proxy;
 delete process.env.https_proxy;
-//const { ConfigObject2 } = require('../../../../lib/Config');
-const configNoProxyFromEnv = new ConfigObject();
+
+const { ConfigObjectNoProxyFromEnv } = require('../../../../lib/Config');
+const configNoProxyFromEnv = new ConfigObjectNoProxyFromEnv();
+
 process.env = originalEnv;
+
+const { ConfigObject } = require('../../../../lib/Config');
+const config = new ConfigObject();
 
 describe('Config with all possible options', () => {
     it('should include certFilePaths object', () => {
@@ -47,7 +50,7 @@ describe('Config with all possible options', () => {
         assert.deepStrictEqual(expectedObj1,
 		               configNoProxyFromEnv.outboundProxy);
 	const expectedObj2 = {
-            url: process.env.HTTP_PROXY,
+            url: originalEnv.HTTP_PROXY,
             certs: {
                 ca: fs.readFileSync(caPath, 'ascii'),
                 key: fs.readFileSync(keyPath, 'ascii'),
