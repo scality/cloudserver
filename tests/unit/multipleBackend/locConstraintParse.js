@@ -8,9 +8,16 @@ const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
 const awsHttpLocation = 'awsbackendhttp';
+
+const originalEnv = Object.assign({}, process.env);
+delete process.env.HTTP_PROXY;
+delete process.env.HTTPS_PROXY;
+delete process.env.http_proxy;
+delete process.env.https_proxy;
+
 const clients = parseLC();
 
-const { config } = require('../../../lib/Config');
+process.env = originalEnv;
 
 describe('locationConstraintParser', () => {
     it('should return object containing mem object', () => {
@@ -25,29 +32,27 @@ describe('locationConstraintParser', () => {
 
     it('should set correct options for https(default) aws_s3 type loc', () => {
         const client = clients[awsLocation];
-	assert.notStrictEqual(client, undefined);
+        assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
-	assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            config.outboundProxy && config.outboundProxy.url ?
-	    undefined : 'https');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive,
-            config.outboundProxy && config.outboundProxy.url ?
-            undefined : false);
+        assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
+            'https:');
+        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
 
     it('should set correct options for http aws_s3 type location', () => {
         const client = clients[awsHttpLocation];
-	assert.notStrictEqual(client, undefined);
+        assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            config.outboundProxy && config.outboundProxy.url ?
-            undefined : 'http');
-        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive,
-	    config.outboundProxy && config.outboundProxy.url ?
-            undefined : false);
+            'http:');
+        assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
+    });
+
+    it('env is correct (bis)', () => {
+        assert.deepStrictEqual(process.env.HTTP_PROXY, 'http://proxy-cache:3128');
     });
 });

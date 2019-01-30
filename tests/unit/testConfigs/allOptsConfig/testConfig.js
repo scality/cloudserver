@@ -7,6 +7,7 @@ const keyPath = `${basePath}/key.txt`;
 const certPath = `${basePath}/cert.txt`;
 
 process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
+const { ConfigObject } = require('../../../../lib/Config');
 
 const originalEnv = Object.assign({}, process.env);
 delete process.env.HTTP_PROXY;
@@ -14,7 +15,6 @@ delete process.env.HTTPS_PROXY;
 delete process.env.http_proxy;
 delete process.env.https_proxy;
 
-const { ConfigObject } = require('../../../../lib/Config');
 const config = new ConfigObject();
 
 process.env = originalEnv;
@@ -50,5 +50,4 @@ describe('Config with all possible options', () => {
     it('env is correct', () => {
         assert.deepStrictEqual(process.env.HTTP_PROXY, 'http://proxy-cache:3128');
     });
-
 });
