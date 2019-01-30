@@ -10,6 +10,14 @@ process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
 const { ConfigObject } = require('../../../../lib/Config');
 const config = new ConfigObject();
 
+var originalEnv = process.env
+delete process.env.HTTP_PROXY
+delete process.env.HTTPS_PROXY
+delete process.env.http_proxy
+delete process.env.https_proxy
+const config_no_proxy_from_env = new ConfigObject();
+process.env = originalEnv
+
 describe('Config with all possible options', () => {
     it('should include certFilePaths object', () => {
         const expectedObj1 = {
@@ -27,14 +35,23 @@ describe('Config with all possible options', () => {
     });
 
     it('should include outboundProxy object', () => {
-        const expectedObj = {
-            url: process.env.HTTP_PROXY ? process.env.HTTP_PROXY : 'http://test:8001',
+        const expectedObj1 = {
+            url: 'http://test:8001',
             certs: {
                 ca: fs.readFileSync(caPath, 'ascii'),
                 key: fs.readFileSync(keyPath, 'ascii'),
                 cert: fs.readFileSync(certPath, 'ascii'),
             },
         };
-        assert.deepStrictEqual(expectedObj, config.outboundProxy);
+        assert.deepStrictEqual(expectedObj1, config_no_proxy_from_env.outboundProxy);
+	const expectedObj2 = {
+            url: process.env.HTTP_PROXY,
+            certs: {
+                ca: fs.readFileSync(caPath, 'ascii'),
+                key: fs.readFileSync(keyPath, 'ascii'),
+                cert: fs.readFileSync(certPath, 'ascii'),
+            },
+        };
+        assert.deepStrictEqual(expectedObj2, config.outboundProxy);
     });
 });
