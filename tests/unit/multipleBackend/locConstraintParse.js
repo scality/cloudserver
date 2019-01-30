@@ -33,7 +33,7 @@ describe('locationConstraintParser', () => {
 	    undefined : 'https');
         assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive,
             config.outboundProxy && config.outboundProxy.url ?
-            undefined : 'false);
+            undefined : false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
 
