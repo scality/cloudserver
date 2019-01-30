@@ -13,6 +13,7 @@ const keyPath = `${basePath}/key.txt`;
 const certPath = `${basePath}/cert.txt`;
 
 process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
+originalEnv.S3_CONFIG_FILE = `${basePath}/config.json`;
 const { ConfigObject } = require('../../../../lib/Config');
 const config = new ConfigObject();
 
