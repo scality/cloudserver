@@ -28,7 +28,7 @@ describe('Config with all possible options', () => {
 
     it('should include outboundProxy object', () => {
         const expectedObj = {
-            url: 'http://test:8001',
+            url: process.env.HTTP_PROXY ? process.env.HTTP_PROXY : 'http://test:8001',
             certs: {
                 ca: fs.readFileSync(caPath, 'ascii'),
                 key: fs.readFileSync(keyPath, 'ascii'),
