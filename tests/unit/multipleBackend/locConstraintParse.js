@@ -25,22 +25,26 @@ describe('locationConstraintParser', () => {
 
     it('should set correct options for https(default) aws_s3 type loc', () => {
         const client = clients[awsLocation];
-        assert.notStrictEqual(client, undefined);
+        const proto = config.outboundProxy && config.outboundProxy.url ?
+            undefined : 'https';
+	assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, true);
-        assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            config.outboundProxy ? undefined : 'https:');
+	assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
+            proto);
         assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v4');
     });
 
     it('should set correct options for http aws_s3 type location', () => {
         const client = clients[awsHttpLocation];
-        assert.notStrictEqual(client, undefined);
+        const proto = config.outboundProxy && config.outboundProxy.url ?
+            undefined : 'http';
+	assert.notStrictEqual(client, undefined);
         assert(client instanceof AwsClient);
         assert.strictEqual(client._s3Params.sslEnabled, false);
         assert.strictEqual(client._s3Params.httpOptions.agent.protocol,
-            config.outboundProxy ? undefined : 'http:');
+            proto);
         assert.strictEqual(client._s3Params.httpOptions.agent.keepAlive, false);
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
     });
