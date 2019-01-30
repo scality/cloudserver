@@ -20,7 +20,7 @@ const dummyBackendInfo = new BackendInfo(memLocation, fileLocation,
 const isLocationLegacy = process.env.S3_LOCATION_FILE ===
 'tests/locationConfig/locationConfigLegacy.json';
 
-process.env = originalEnv
+process.env = originalEnv;
 
 describe('BackendInfo class', () => {
     describe('controllingBackendParam', () => {
