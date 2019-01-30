@@ -1,3 +1,9 @@
+const originalEnv = Object.assign({}, process.env);
+delete process.env.HTTP_PROXY;
+delete process.env.HTTPS_PROXY;
+delete process.env.http_proxy;
+delete process.env.https_proxy;
+
 const assert = require('assert');
 const parseLC = require('../../../lib/data/locationConstraintParser');
 const AwsClient = require('../../../lib/data/external/AwsClient');
@@ -8,16 +14,7 @@ const memLocation = 'scality-internal-mem';
 const fileLocation = 'scality-internal-file';
 const awsLocation = 'awsbackend';
 const awsHttpLocation = 'awsbackendhttp';
-
-const originalEnv = Object.assign({}, process.env);
-delete process.env.HTTP_PROXY;
-delete process.env.HTTPS_PROXY;
-delete process.env.http_proxy;
-delete process.env.https_proxy;
-
 const clients = parseLC();
-
-process.env = originalEnv;
 
 describe('locationConstraintParser', () => {
     it('should return object containing mem object', () => {
@@ -52,7 +49,7 @@ describe('locationConstraintParser', () => {
         assert.strictEqual(client._s3Params.signatureVersion, 'v2');
     });
 
-    it('env is correct (bis)', () => {
-        assert.deepStrictEqual(process.env.HTTP_PROXY, 'http://proxy-cache:3128');
+    after(() => {
+        process.env = originalEnv;
     });
 });

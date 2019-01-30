@@ -1,3 +1,9 @@
+const originalEnv = Object.assign({}, process.env);
+delete process.env.HTTP_PROXY;
+delete process.env.HTTPS_PROXY;
+delete process.env.http_proxy;
+delete process.env.https_proxy;
+
 const fs = require('fs');
 const assert = require('assert');
 
@@ -8,16 +14,7 @@ const certPath = `${basePath}/cert.txt`;
 
 process.env.S3_CONFIG_FILE = `${basePath}/config.json`;
 const { ConfigObject } = require('../../../../lib/Config');
-
-const originalEnv = Object.assign({}, process.env);
-delete process.env.HTTP_PROXY;
-delete process.env.HTTPS_PROXY;
-delete process.env.http_proxy;
-delete process.env.https_proxy;
-
 const config = new ConfigObject();
-
-process.env = originalEnv;
 
 describe('Config with all possible options', () => {
     it('should include certFilePaths object', () => {
@@ -47,7 +44,7 @@ describe('Config with all possible options', () => {
         assert.deepStrictEqual(expectedObj, config.outboundProxy);
     });
 
-    it('env is correct', () => {
-        assert.deepStrictEqual(process.env.HTTP_PROXY, 'http://proxy-cache:3128');
+    after(() => {
+        process.env = originalEnv;
     });
 });
