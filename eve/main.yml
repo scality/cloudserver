@@ -225,7 +225,7 @@ stages:
         s3: "."
         ceph: eve/workers/ceph
       vars:
-        aggressorMemLimit: "2Gi"
+        aggressorMemLimit: "2500Mi"
         s3MemLimit: "2Gi"
         redis: enabled
         env:
@@ -311,7 +311,7 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "1920Mi"
+        aggressorMemLimit: "3Gi"
         s3MemLimit: "2Gi"
         redis: enabled
         env:
