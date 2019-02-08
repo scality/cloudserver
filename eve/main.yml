@@ -147,6 +147,8 @@ stages:
           name: Unit Coverage
           command: |
             set -ex
+            unset HTTP_PROXY HTTPS_PROXY NO_PROXY
+            unset http_proxy https_proxy no_proxy
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             npm run unit_coverage
             npm run unit_coverage_legacy_location
