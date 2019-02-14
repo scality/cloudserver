@@ -14,7 +14,7 @@ spec:
   containers:
     {% if vars.env.S3METADATA is defined and vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
-      image: scality/ci-mongo:3.4
+      image: scality/ci-mongo:3.6.8
       imagePullPolicy: IfNotPresent
       resources:
         requests:
