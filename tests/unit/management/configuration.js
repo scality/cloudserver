@@ -181,6 +181,19 @@ describe('patchConfiguration', () => {
                         region: 'us-west-1',
                     },
                 },
+                'cephbackendtest': {
+                    name: 'cephbackendtest',
+                    objectId: 'cephbackendtest',
+                    locationType: 'location-ceph-radosgw-s3-v1',
+                    details: {
+                        bucketMatch: 'cephbucketmatch',
+                        endpoint: 'https://secure.ceph.end.point',
+                        accessKey: 'cephs3accesskey',
+                        secretKey,
+                        bucketName: 'cephbucketname',
+                        region: 'us-west-1',
+                    },
+                },
             },
             browserAccess: {
                 enabled: true,
@@ -339,6 +352,27 @@ describe('patchConfiguration', () => {
                         sizeLimitGB: null,
                         type: 'aws_s3',
                         objectId: 'httpsawsbackendtest',
+                    },
+                    'cephbackendtest': {
+                        details: {
+                            awsEndpoint: 'secure.ceph.end.point',
+                            bucketMatch: 'cephbackendtest',
+                            bucketName: 'cephbackendtest',
+                            credentials: {
+                                accessKey: 'cephs3accesskey',
+                                secretKey: decryptedSecretKey,
+                            },
+                            https: true,
+                            pathStyle: true,
+                            region: 'us-west-1',
+                            serverSideEncryption: false,
+                            supportsVersioning: true,
+                        },
+                        legacyAwsBehavior: false,
+                        isTransient: false,
+                        sizeLimitGB: null,
+                        type: 'aws_s3',
+                        objectId: 'cephbackendtest',
                     },
                 },
             };
