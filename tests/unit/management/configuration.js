@@ -356,8 +356,8 @@ describe('patchConfiguration', () => {
                     'cephbackendtest': {
                         details: {
                             awsEndpoint: 'secure.ceph.end.point',
-                            bucketMatch: 'cephbackendtest',
-                            bucketName: 'cephbackendtest',
+                            bucketMatch: 'cephbucketmatch',
+                            bucketName: 'cephbucketname',
                             credentials: {
                                 accessKey: 'cephs3accesskey',
                                 secretKey: decryptedSecretKey,
