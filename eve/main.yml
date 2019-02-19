@@ -181,8 +181,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "2Gi"
-        s3MemLimit: "2Gi"
+        aggressorMemLimit: "2560Mi"
+        s3MemLimit: "2560Mi"
         env:
           <<: *multiple-backend-vars
           <<: *global-env
