@@ -65,8 +65,8 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 200m
-          memory: 1Gi
+          cpu: "1"
+          memory: 2Gi
         limits:
           cpu: "2"
           memory: {{ vars.s3MemLimit }}
