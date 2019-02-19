@@ -54,23 +54,19 @@ function diff(putFile, receivedFile, done) {
 
 function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
-    proc.spawn('dd', ['if=/dev/urandom', `of=${name}`,
-        `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
-            assert.strictEqual(code, 0);
-            process.stdout.write(`chmod ugoa+rw ${name}\n`);
-            proc.spawn('chmod', ['ugo+rw', name], { stdio: 'inherit' })
-                .on('exit', code => {
-                    assert.strictEqual(code, 0);
-                    callback();
-                });
-        });
+    let ret = proc.spawnSync('dd', ['if=/dev/urandom', `of=${name}`,
+        `bs=${bytes}`, 'count=1'], { stdio: 'inherit' });
+    assert.strictEqual(ret.status, 0);
+    process.stdout.write(`chmod ugoa+rw ${name}\n`);
+    ret = proc.spawnSync('chmod', ['ugo+rw', name], { stdio: 'inherit' });
+    assert.strictEqual(ret.status, 0);
+    callback();
 }
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [file]).on('exit', () => {
-        callback();
-    });
+    proc.spawnSync('rm', [file]);
+    callback();
 }
 
 // Test whether the proper xml error response is received
