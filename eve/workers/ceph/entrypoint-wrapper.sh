@@ -4,7 +4,11 @@ touch /artifacts/ceph.log
 mkfifo /tmp/entrypoint_output
 # We run this in the background so that we can tail the RGW log after init,
 # because entrypoint.sh never returns
-bash entrypoint.sh > /tmp/entrypoint_output &
+
+# The next line will be needed when ceph builds 3.2.2 so I'll leave it here
+# bash /opt/ceph-container/bin/entrypoint.sh > /tmp/entrypoint_output &
+
+bash /entrypoint.sh > /tmp/entrypoint_output &
 entrypoint_pid="$!"
 while read -r line; do
     echo $line
