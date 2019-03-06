@@ -95,4 +95,15 @@ describe('metadata routes with metadata mock backend', () => {
             return done();
         });
     });
+
+    it('should get an error for accessing invalid routes', done => {
+        makeMetadataRequest({
+            method: 'GET',
+            authCredentials: metadataAuthCredentials,
+            path: '/_/metadata/admin/raft_sessions',
+        }, err => {
+            assert.strictEqual(err.code, 'NotImplemented');
+            return done();
+        });
+    });
 });
