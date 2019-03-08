@@ -36,7 +36,6 @@
     "npm-run-all": "~4.0.2",
     "prom-client": "^10.2.3",
     "request": "^2.81.0",
-    "sproxydclient": "scality/sproxydclient#45090b7",
     "sql-where-parser": "~2.2.1",
     "utapi": "scality/utapi#f2f1d0c",
     "utf-8-validate": "^4.0.2",
