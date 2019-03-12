@@ -990,5 +990,27 @@ describe('GET object', () => {
                         partTwoBody, done));
             });
         });
+
+        describe('absent x-amz-website-redirect-location header', () => {
+            before(done => {
+                const params = {
+                    Bucket: bucketName,
+                    Key: objectName,
+                };
+                s3.putObject(params, err => done(err));
+            });
+            it('should return website redirect header if specified in ' +
+                'objectPUT request', done => {
+                s3.getObject({ Bucket: bucketName, Key: objectName },
+                  (err, res) => {
+                      if (err) {
+                          return done(err);
+                      }
+                      assert.strictEqual(res.WebsiteRedirectLocation,
+                          undefined);
+                      return done();
+                });
+            });
+        });
     });
 });
