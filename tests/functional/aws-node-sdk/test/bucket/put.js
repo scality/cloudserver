@@ -250,6 +250,12 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                         assert.strictEqual(res.LocationConstraint, 'us-east-2');
                         return next();
                     }),
+                    next => bucketUtil.s3.getBucketVersioning(
+                        { Bucket: bucketName }, (err, res) => {
+                            assert.ifError(err);
+                            assert.strictEqual(res.Status, 'Enabled');
+                            return next();
+                    }),
                 ], done);
             });
         });

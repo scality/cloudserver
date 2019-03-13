@@ -53,7 +53,7 @@ function populateDB(s3Client, cb) {
                     CreateBucketConfiguration: { LocationConstraint:
                     `us-east-1:${ingestion}` } }, done),
             putBucketVersioning: done => {
-                if (!versioning) {
+                if (!versioning || ingestion) {
                     return done();
                 }
                 return s3Client.putBucketVersioning({
@@ -96,7 +96,7 @@ const refResults = {
     bucketList: testBuckets.map(b => ({
         name: b.bucketName,
         location: 'us-east-1',
-        isVersioned: b.versioning,
+        isVersioned: b.ingestion ? true : b.versioning,
         ownerCanonicalId,
         ingestion: b.ingestion ? b.ingestion === 'ingest' : false,
     })),
