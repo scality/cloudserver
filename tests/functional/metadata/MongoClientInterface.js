@@ -40,9 +40,7 @@ const objVal = {
     updated: false,
 };
 
-const updatedObjVal = {
-    updated: true,
-};
+const updatedObjVal = { updated: true };
 
 const runIfMongo =
     process.env.S3METADATA === 'mongodb' ? describe : describe.skip;
@@ -65,6 +63,27 @@ runIfMongo('MongoClientInterface', () => {
             }
             return cb();
         });
+    }
+
+    function checkNewPutObject(method, cb) {
+        const bucket = 'a';
+        const key = 'b';
+        const params = {};
+        async.series([
+            next => mongoClientInterface[method](
+                collection, bucket, key, updatedObjVal, params, log, next),
+            next => {
+                collection.findOne({ _id: key }, (err, result) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    assert.strictEqual(result._id, key);
+                    assert(result.tag);
+                    assert(result.value.updated);
+                    return next();
+                });
+            },
+        ], cb);
     }
 
     before(done => {
@@ -116,6 +135,9 @@ runIfMongo('MongoClientInterface', () => {
             ], cb);
         }
 
+        it('should put new metadata and return a new tag', done =>
+            checkNewPutObject('putObjectNoVer', done));
+
         it('should update metadata when no tag is provided', done =>
             testPutMetadata({
                 params: {},
@@ -160,6 +182,9 @@ runIfMongo('MongoClientInterface', () => {
                 next => checkTag({ shouldHaveUpdated }, next),
             ], cb);
         }
+
+        it('should put new metadata and return a new tag', done =>
+            checkNewPutObject('putObjectVerCase2', done));
 
         it('should update metadata when no tag is provided', done =>
             testPutMetadata({
@@ -247,6 +272,9 @@ runIfMongo('MongoClientInterface', () => {
                 ], next),
             ], cb);
         }
+
+        it('should put new metadata and return a new tag', done =>
+            checkNewPutObject('putObjectVerCase3', done));
 
         it('should update metadata when no tag is provided', done => {
             testPutMetadata({
