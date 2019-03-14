@@ -118,7 +118,7 @@ runIfMongo('MongoClientInterface', () => {
         it('should update metadata when matching tag is provided', done =>
             testPutMetadata({
                 params: {
-                    condPut: {
+                    cond: {
                         tag: TAG_1,
                     },
                 },
@@ -129,7 +129,7 @@ runIfMongo('MongoClientInterface', () => {
             done =>
                 testPutMetadata({
                     params: {
-                        condPut: {
+                        cond: {
                             tag: 'non-matching-tag',
                         },
                     },
@@ -163,7 +163,7 @@ runIfMongo('MongoClientInterface', () => {
         it('should update metadata when matching tag is provided', done =>
             testPutMetadata({
                 params: {
-                    condPut: {
+                    cond: {
                         tag: TAG_1,
                     },
                 },
@@ -174,7 +174,7 @@ runIfMongo('MongoClientInterface', () => {
             done =>
                 testPutMetadata({
                     params: {
-                        condPut: {
+                        cond: {
                             tag: 'non-matching-tag',
                         },
                     },
@@ -253,7 +253,7 @@ runIfMongo('MongoClientInterface', () => {
         it('should update metadata when matching tag is provided', done =>
             testPutMetadata({
                 params: {
-                    condPut: {
+                    cond: {
                         tag: TAG_2,
                     },
                     versionId: VERSION_ID,
@@ -265,7 +265,7 @@ runIfMongo('MongoClientInterface', () => {
             done =>
                 testPutMetadata({
                     params: {
-                        condPut: {
+                        cond: {
                             tag: 'non-matching-tag',
                         },
                         versionId: VERSION_ID,
