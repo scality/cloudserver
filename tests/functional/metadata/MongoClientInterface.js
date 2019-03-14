@@ -8,7 +8,7 @@ const {
 
 const log = require('./utils/fakeLogger');
 
-const replicaSetHosts = 'localhost:27018,localhost:27019,localhost:27020';
+const replicaSetHosts = 'localhost:27017,localhost:27018,localhost:27019';
 const writeConcern = 'majority';
 const replicaSet = 'rs0';
 const readPreference = 'primary';
@@ -67,21 +67,28 @@ runIfMongo('MongoClientInterface', () => {
         });
     }
 
-    beforeEach(done =>
+    before(done => {
         MongoClient.connect(mongoUrl, {}, (err, client) => {
             if (err) {
                 return done(err);
             }
             mongoClient = client;
-            const db = mongoClient.db(TEST_DB);
-            return db.createCollection(TEST_COLLECTION, (err, result) => {
-                if (err) {
-                    return done(err);
-                }
-                collection = result;
-                return done();
-            });
-        }));
+            return done();
+        });
+    });
+
+    beforeEach(done => {
+        const db = mongoClient.db(TEST_DB);
+        return db.createCollection(TEST_COLLECTION, (err, result) => {
+            if (err) {
+                return done(err);
+            }
+            collection = result;
+            return done();
+        });
+    });
+
+    after(done => mongoClient.close(true, done));
 
     afterEach(done => {
         const db = mongoClient.db(TEST_DB);
@@ -89,7 +96,7 @@ runIfMongo('MongoClientInterface', () => {
             if (err) {
                 return done(err);
             }
-            return mongoClient.close(true, done);
+            return done();
         });
     });
 
