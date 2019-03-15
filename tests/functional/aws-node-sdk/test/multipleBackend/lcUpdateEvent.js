@@ -3,8 +3,8 @@ const async = require('async');
 
 const { config } = require('../../../../../lib/Config');
 const { describeSkipIfMultiple, genUniqID } = require('./utils');
-const withV4 = require('../../support/withV4');
-const BucketUtility = require('../../../lib/utility/bucket-util');
+const withV4 = require('../support/withV4');
+const BucketUtility = require('../../lib/utility/bucket-util');
 
 const oldLocations = config.locationConstraints;
 const newLocations = {
@@ -26,7 +26,6 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
     withV4(sigCfg => {
         beforeEach(() => {
             config.setLocationConstraints(newLocations);
-            mpuKey = `somempukey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
@@ -91,7 +90,7 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
             const key = `somekey-${genUniqID()}`;
             s3.putObject({ Bucket: bucket, Key: key }, err => {
                 assert.ifError(err);
-                s3.deleteObject({ Bucket: bucket, Key: objectKey }, err => {
+                s3.deleteObject({ Bucket: bucket, Key: key }, err => {
                     assert.ifError(err);
                     done();
                 });
@@ -104,7 +103,7 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
             s3.createMultipartUpload({ Bucket: bucket, Key: key },
             (err, res) => {
                 assert.ifError(err);
-                uploadId = res.UploadId;
+                const uploadId = res.UploadId;
                 s3.abortMultipartUpload(
                 { Bucket: bucket, Key: key, UploadId: uploadId }, err => {
                     assert.ifError(err);
@@ -118,7 +117,7 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.createMultipartUpload(
-                    { Bucket: bucket, Key: key}, next),
+                    { Bucket: bucket, Key: key }, next),
                 (res, next) => s3.putPart({
                     Bucket: bucket,
                     Key: key,
@@ -126,9 +125,10 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
                     PartNumber: 1,
                 }, err => next(err, res.UploadId)),
                 (uploadId, next) => s3.abortMultipartUpload(
-                    { Bucket: bucket, Key: key, UploadId: uploadId}, next),
+                    { Bucket: bucket, Key: key, UploadId: uploadId }, next),
             ], err => {
                 assert.ifError(err);
+                done();
             });
         });
 
@@ -137,7 +137,7 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.createMultipartUpload(
-                    { Bucket: bucket, Key: key}, next),
+                    { Bucket: bucket, Key: key }, next),
                 (res, next) => s3.putPart({
                     Bucket: bucket,
                     Key: key,
@@ -145,9 +145,10 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
                     PartNumber: 1,
                 }, err => next(err, res.UploadId)),
                 (uploadId, next) => s3.completeMultipartUpload(
-                    { Bucket: bucket, Key: key, UploadId: uploadId}, next),
+                    { Bucket: bucket, Key: key, UploadId: uploadId }, next),
             ], err => {
                 assert.ifError(err);
+                done();
             });
         });
     });
