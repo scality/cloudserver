@@ -8,6 +8,12 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const oldLocations = config.locationConstraints;
 const newLocations = {
+    'us-east-1': {
+        'type': 'file',
+        'objectId': 'us-east-1',
+        'legacyAwsBehavior': true,
+        'details': {}
+    },
     'newlocation': {
         'type': 'file',
         'objectId': 'newlocation',
