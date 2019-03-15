@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 
 const { config } = require('../../../../../lib/Config');
-const { describeSkipIfMultiple, genUniqID } = require('./utils');
+const { describeSkipIfNotMultiple, genUniqID } = require('./utils');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -22,7 +22,8 @@ const bodyMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 let bucketUtil;
 let s3;
 
-describeSkipIfMultiple('APIs after location constraints update event', () => {
+describeSkipIfNotMultiple('APIs after location constraints update event',
+() => {
     withV4(sigCfg => {
         beforeEach(() => {
             config.setLocationConstraints(newLocations);
@@ -67,9 +68,9 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
                 assert.ifError(err);
                 s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
                     assert.ifError(err);
-                    assert.strictEqual(res.ETag, `"${bodyMD5}"`)
+                    assert.strictEqual(res.ETag, `"${bodyMD5}"`);
                     done();
-                });    
+                });
             });
         });
 
@@ -84,7 +85,7 @@ describeSkipIfMultiple('APIs after location constraints update event', () => {
                     done();
                 });
             });
-        })
+        });
 
         it('should delete an object from updated location constraint', done => {
             const key = `somekey-${genUniqID()}`;
