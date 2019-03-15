@@ -21,7 +21,7 @@ const newLocations = {
         'details': {}
     }
 };
-const testLocation = 'newLocation';
+const testLocation = 'newlocation';
 const bucket = `lcupdateevent${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bodyMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
