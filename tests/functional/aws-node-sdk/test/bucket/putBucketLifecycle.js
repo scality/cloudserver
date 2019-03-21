@@ -342,7 +342,8 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        describe('with NoncurrentVersionTransitions', () => {
+        // NoncurrentVersionTransitions not implemented
+        describe.skip('with NoncurrentVersionTransitions', () => {
             // Get lifecycle request params with NoncurrentVersionTransitions.
             function getParams(noncurrentVersionTransitions) {
                 const rule = {
@@ -593,7 +594,9 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        describe('with NoncurrentVersionTransitions and Transitions', () => {
+        // NoncurrentVersionTransitions not implemented
+        describe.skip('with NoncurrentVersionTransitions and Transitions',
+        () => {
             it('should allow config', done => {
                 const params = {
                     Bucket: bucket,
@@ -617,6 +620,29 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assert.ifError(err);
                     done();
                 });
+            });
+        });
+
+        it('should not allow config when specifying ' +
+        'NoncurrentVersionTransitions', done => {
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: {
+                    Rules: [{
+                        ID: 'test',
+                        Status: 'Enabled',
+                        Prefix: '',
+                        NoncurrentVersionTransitions: [{
+                            NoncurrentDays: 1,
+                            StorageClass: 'us-east-2',
+                        }],
+                    }],
+                },
+            };
+            s3.putBucketLifecycleConfiguration(params, err => {
+                assert.strictEqual(err.statusCode, 501);
+                assert.strictEqual(err.code, 'NotImplemented');
+                done();
             });
         });
     });
