@@ -75,6 +75,10 @@ if [[ "$LISTEN_ADDR" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .listenOn=[\"$LISTEN_ADDR:8000\"]"
 fi
 
+if [[ "$REPLICATION_GROUP_ID" ]] ; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .replicationGroupId=\"$REPLICATION_GROUP_ID\""
+fi
+
 if [[ "$DATA_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .dataClient.host=\"$DATA_HOST\""
 fi
