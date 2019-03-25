@@ -1,10 +1,10 @@
 const assert = require('assert');
 const async = require('async');
 
-const { config } = require('../../../../../lib/Config');
-const { describeSkipIfNotMultiple, genUniqID } = require('./utils');
-const withV4 = require('../support/withV4');
-const BucketUtility = require('../../lib/utility/bucket-util');
+const { config } = require('../../lib/Config');
+const { describeSkipIfNotMultiple, genUniqID } = require('../functional/aws-node-sdk/test/multipleBackend/utils');
+const withV4 = require('../functional/aws-node-sdk/test/support/withV4');
+const BucketUtility = require('../functional/aws-node-sdk/lib/utility/bucket-util');
 
 const oldLocations = config.locationConstraints;
 const newLocations = {
