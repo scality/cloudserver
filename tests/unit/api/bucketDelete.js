@@ -60,19 +60,19 @@ function createMPU(testRequest, initiateRequest, deleteOverviewMPUObj, cb) {
             });
         },
     ], (err, testUploadId) => {
-        assert.strictEqual(err, null);
+        expect(err).toBe(null);
         const mpuBucketKeyMap =
             metadataMem.metadata.keyMaps.get(mpuBucket);
-        assert.strictEqual(mpuBucketKeyMap.size, 2);
+        expect(mpuBucketKeyMap.size).toBe(2);
         if (deleteOverviewMPUObj) {
             const overviewKey = `overview${constants.splitter}` +
             `${objectName}${constants.splitter}${testUploadId}`;
             // remove overview key from in mem mpu bucket
             mpuBucketKeyMap.delete(overviewKey);
-            assert.strictEqual(mpuBucketKeyMap.size, 1);
+            expect(mpuBucketKeyMap.size).toBe(1);
         }
         bucketDelete(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             cb();
         });
     });
@@ -98,7 +98,7 @@ describe('bucketDelete API', () => {
         url: `/${objectName}?uploads`,
     };
 
-    it('should return an error if the bucket is not empty', done => {
+    test('should return an error if the bucket is not empty', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             headers: {},
@@ -108,18 +108,17 @@ describe('bucketDelete API', () => {
         }, postBody);
 
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 bucketDelete(authInfo, testRequest, log, err => {
                     assert.deepStrictEqual(err, errors.BucketNotEmpty);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.getName(), bucketName);
+                        expect(md.getName()).toBe(bucketName);
                         metadata.listObject(usersBucket,
                             { prefix: authInfo.getCanonicalID() },
                             log, (err, listResponse) => {
-                                assert.strictEqual(listResponse.Contents.length,
-                                                   1);
+                                expect(listResponse.Contents.length).toBe(1);
                                 done();
                             });
                     });
@@ -128,29 +127,28 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should not return an error if the bucket has an initiated mpu',
-    done => {
+    test('should not return an error if the bucket has an initiated mpu', done => {
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 bucketDelete(authInfo, testRequest, log, err => {
-                    assert.strictEqual(err, null);
+                    expect(err).toBe(null);
                     done();
                 });
             });
         });
     });
 
-    it('should delete a bucket', done => {
+    test('should delete a bucket', done => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
                     assert.deepStrictEqual(err, errors.NoSuchBucket);
-                    assert.strictEqual(md, undefined);
+                    expect(md).toBe(undefined);
                     metadata.listObject(usersBucket, { prefix: canonicalID },
                         log, (err, listResponse) => {
-                            assert.strictEqual(listResponse.Contents.length, 0);
+                            expect(listResponse.Contents.length).toBe(0);
                             done();
                         });
                 });
@@ -158,15 +156,19 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should delete a bucket even if the bucket has ongoing mpu',
-        done => createMPU(testRequest, initiateRequest, false, done));
+    test(
+        'should delete a bucket even if the bucket has ongoing mpu',
+        done => createMPU(testRequest, initiateRequest, false, done)
+    );
 
     // if only part object (and no overview objects) is in mpu shadow bucket
-    it('should delete a bucket even if the bucket has an orphan part',
-        done => createMPU(testRequest, initiateRequest, true, done));
+    test(
+        'should delete a bucket even if the bucket has an orphan part',
+        done => createMPU(testRequest, initiateRequest, true, done)
+    );
 
 
-    it('should prevent anonymous user delete bucket API access', done => {
+    test('should prevent anonymous user delete bucket API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketDelete(publicAuthInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);

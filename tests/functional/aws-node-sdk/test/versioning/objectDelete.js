@@ -19,7 +19,7 @@ const nonExistingId = process.env.AWS_ON_AIR ?
     '3939393939393939393936493939393939393939756e6437';
 
 function _assertNoError(err, desc) {
-    assert.strictEqual(err, null, `Unexpected err ${desc || ''}: ${err}`);
+    expect(err).toBe(null);
 }
 
 describe('delete marker creation in bucket with null version', () => {
@@ -47,14 +47,13 @@ describe('delete marker creation in bucket with null version', () => {
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
+                    expect(err).toBe(null);
                     return done();
                 });
             });
         });
 
-        it('should keep the null version if versioning enabled', done => {
+        test('should keep the null version if versioning enabled', done => {
             async.waterfall([
                 callback => s3.putBucketVersioning({
                     Bucket: bucket,
@@ -63,33 +62,29 @@ describe('delete marker creation in bucket with null version', () => {
                 callback =>
                     s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
                         _assertNoError(err, 'listing object versions');
-                        assert.strictEqual(data.Versions.length, 1);
-                        assert.strictEqual(data.Versions[0].VersionId,
-                            'null');
+                        expect(data.Versions.length).toBe(1);
+                        expect(data.Versions[0].VersionId).toBe('null');
                         return callback();
                     }),
                 callback => s3.deleteObject({ Bucket: bucket, Key: key },
                     (err, data) => {
                         _assertNoError(err, 'creating delete marker');
-                        assert.strictEqual(data.DeleteMarker, 'true');
-                        assert(data.VersionId);
+                        expect(data.DeleteMarker).toBe('true');
+                        expect(data.VersionId).toBeTruthy();
                         return callback(null, data.VersionId);
                     }),
                 (deleteMarkerVerId, callback) =>
                     s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
                         _assertNoError(err, 'listing object versions');
-                        assert.strictEqual(data.Versions.length, 1);
-                        assert.strictEqual(data.Versions[0].VersionId,
-                            'null');
-                        assert.strictEqual(data.DeleteMarkers[0].VersionId,
-                            deleteMarkerVerId);
+                        expect(data.Versions.length).toBe(1);
+                        expect(data.Versions[0].VersionId).toBe('null');
+                        expect(data.DeleteMarkers[0].VersionId).toBe(deleteMarkerVerId);
                         return callback();
                     }),
             ], done);
         });
 
-        it('delete marker overwrites null version if versioning suspended',
-        done => {
+        test('delete marker overwrites null version if versioning suspended', done => {
             async.waterfall([
                 callback => s3.putBucketVersioning({
                     Bucket: bucket,
@@ -98,24 +93,22 @@ describe('delete marker creation in bucket with null version', () => {
                 callback =>
                     s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
                         _assertNoError(err, 'listing object versions');
-                        assert.strictEqual(data.Versions.length, 1);
-                        assert.strictEqual(data.Versions[0].VersionId,
-                            'null');
+                        expect(data.Versions.length).toBe(1);
+                        expect(data.Versions[0].VersionId).toBe('null');
                         return callback();
                     }),
                 callback => s3.deleteObject({ Bucket: bucket, Key: key },
                     (err, data) => {
                         _assertNoError(err, 'creating delete marker');
-                        assert.strictEqual(data.DeleteMarker, 'true');
-                        assert.strictEqual(data.VersionId, 'null');
+                        expect(data.DeleteMarker).toBe('true');
+                        expect(data.VersionId).toBe('null');
                         return callback(null, data.VersionId);
                     }),
                 (deleteMarkerVerId, callback) =>
                     s3.listObjectVersions({ Bucket: bucket }, (err, data) => {
                         _assertNoError(err, 'listing object versions');
-                        assert.strictEqual(data.Versions.length, 0);
-                        assert.strictEqual(data.DeleteMarkers[0].VersionId,
-                            deleteMarkerVerId);
+                        expect(data.Versions.length).toBe(0);
+                        expect(data.DeleteMarkers[0].VersionId).toBe(deleteMarkerVerId);
                         return callback();
                     }),
             ], done);
@@ -130,13 +123,13 @@ describe('aws-node-sdk test delete object', () => {
         let versionIds;
 
         // setup test
-        before(done => {
+        beforeAll(done => {
             versionIds = [];
             s3.createBucket({ Bucket: bucket }, done);
         });
 
         // delete bucket after testing
-        after(done => {
+        afterAll(done => {
             removeAllVersions({ Bucket: bucket }, err => {
                 if (err.code === 'NoSuchBucket') {
                     return done();
@@ -144,15 +137,13 @@ describe('aws-node-sdk test delete object', () => {
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
+                    expect(err).toBe(null);
                     return done();
                 });
             });
         });
 
-        it('delete non existent object should not create a delete marker',
-        done => {
+        test('delete non existent object should not create a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: `${key}000`,
@@ -160,13 +151,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, undefined);
-                assert.strictEqual(res.VersionId, undefined);
+                expect(res.DeleteMarker).toBe(undefined);
+                expect(res.VersionId).toBe(undefined);
                 return done();
             });
         });
 
-        it('creating non-versioned object', done => {
+        test('creating non-versioned object', done => {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
@@ -174,36 +165,38 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.equal(res.VersionId, undefined);
+                expect(res.VersionId).toEqual(undefined);
                 return done();
             });
         });
 
-        it('delete in non-versioned bucket should not create delete marker',
-        done => {
-            s3.putObject({
-                Bucket: bucket,
-                Key: key,
-            }, (err, res) => {
-                if (err) {
-                    return done(err);
-                }
-                assert.equal(res.VersionId, undefined);
-                return s3.deleteObject({
+        test(
+            'delete in non-versioned bucket should not create delete marker',
+            done => {
+                s3.putObject({
                     Bucket: bucket,
-                    Key: `${key}2`,
+                    Key: key,
                 }, (err, res) => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res.DeleteMarker, undefined);
-                    assert.strictEqual(res.VersionId, undefined);
-                    return done();
+                    expect(res.VersionId).toEqual(undefined);
+                    return s3.deleteObject({
+                        Bucket: bucket,
+                        Key: `${key}2`,
+                    }, (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        expect(res.DeleteMarker).toBe(undefined);
+                        expect(res.VersionId).toBe(undefined);
+                        return done();
+                    });
                 });
-            });
-        });
+            }
+        );
 
-        it('enable versioning', done => {
+        test('enable versioning', done => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -213,7 +206,8 @@ describe('aws-node-sdk test delete object', () => {
             s3.putBucketVersioning(params, done);
         });
 
-        it('should not send back error for non-existing key (specific version)',
+        test(
+            'should not send back error for non-existing key (specific version)',
             done => {
                 s3.deleteObject({
                     Bucket: bucket,
@@ -225,9 +219,10 @@ describe('aws-node-sdk test delete object', () => {
                     }
                     return done();
                 });
-            });
+            }
+        );
 
-        it('delete non existent object should create a delete marker', done => {
+        test('delete non existent object should create a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: `${key}2`,
@@ -235,8 +230,8 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
-                assert.notEqual(res.VersionId, undefined);
+                expect(res.DeleteMarker).toBe('true');
+                expect(res.VersionId).not.toEqual(undefined);
                 return s3.deleteObject({
                     Bucket: bucket,
                     Key: `${key}2`,
@@ -244,8 +239,8 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res2.DeleteMarker, 'true');
-                    assert.notEqual(res2.VersionId, res.VersionId);
+                    expect(res2.DeleteMarker).toBe('true');
+                    expect(res2.VersionId).not.toEqual(res.VersionId);
                     return s3.deleteObject({
                         Bucket: bucket,
                         Key: `${key}2`,
@@ -264,8 +259,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('delete non existent version should not create delete marker',
-        done => {
+        test('delete non existent version should not create delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -274,18 +268,18 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, nonExistingId);
+                expect(res.VersionId).toBe(nonExistingId);
                 return s3.listObjectVersions({ Bucket: bucket }, (err, res) => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res.DeleteMarkers.length, 0);
+                    expect(res.DeleteMarkers.length).toBe(0);
                     return done();
                 });
             });
         });
 
-        it('put a version to the object', done => {
+        test('put a version to the object', done => {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
@@ -296,12 +290,12 @@ describe('aws-node-sdk test delete object', () => {
                 }
                 versionIds.push('null');
                 versionIds.push(res.VersionId);
-                assert.notEqual(res.VersionId, undefined);
+                expect(res.VersionId).not.toEqual(undefined);
                 return done();
             });
         });
 
-        it('should create a delete marker', done => {
+        test('should create a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -309,16 +303,14 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
-                assert.strictEqual(
-                    versionIds.find(item => item === res.VersionId),
-                    undefined);
+                expect(res.DeleteMarker).toBe('true');
+                expect(versionIds.find(item => item === res.VersionId)).toBe(undefined);
                 versionIds.push(res.VersionId);
                 return done();
             });
         });
 
-        it('should return 404 with a delete marker', done => {
+        test('should return 404 with a delete marker', done => {
             s3.getObject({
                 Bucket: bucket,
                 Key: key,
@@ -327,12 +319,12 @@ describe('aws-node-sdk test delete object', () => {
                     return done(new Error('should return 404'));
                 }
                 const headers = this.httpResponse.headers;
-                assert.strictEqual(headers['x-amz-delete-marker'], 'true');
+                expect(headers['x-amz-delete-marker']).toBe('true');
                 return done();
             });
         });
 
-        it('should delete the null version', done => {
+        test('should delete the null version', done => {
             const version = versionIds.shift();
             s3.deleteObject({
                 Bucket: bucket,
@@ -342,13 +334,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, version);
-                assert.equal(res.DeleteMarker, undefined);
+                expect(res.VersionId).toBe(version);
+                expect(res.DeleteMarker).toEqual(undefined);
                 return done();
             });
         });
 
-        it('should delete the versionned object', done => {
+        test('should delete the versionned object', done => {
             const version = versionIds.shift();
             s3.deleteObject({
                 Bucket: bucket,
@@ -358,13 +350,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, version);
-                assert.equal(res.DeleteMarker, undefined);
+                expect(res.VersionId).toBe(version);
+                expect(res.DeleteMarker).toEqual(undefined);
                 return done();
             });
         });
 
-        it('should delete the delete-marker version', done => {
+        test('should delete the delete-marker version', done => {
             const version = versionIds.shift();
             s3.deleteObject({
                 Bucket: bucket,
@@ -374,13 +366,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, version);
-                assert.equal(res.DeleteMarker, 'true');
+                expect(res.VersionId).toBe(version);
+                expect(res.DeleteMarker).toEqual('true');
                 return done();
             });
         });
 
-        it('put a new version', done => {
+        test('put a new version', done => {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
@@ -390,12 +382,12 @@ describe('aws-node-sdk test delete object', () => {
                     return done(err);
                 }
                 versionIds.push(res.VersionId);
-                assert.notEqual(res.VersionId, undefined);
+                expect(res.VersionId).not.toEqual(undefined);
                 return done();
             });
         });
 
-        it('get the null version', done => {
+        test('get the null version', done => {
             s3.getObject({
                 Bucket: bucket,
                 Key: key,
@@ -408,7 +400,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('suspending versioning', done => {
+        test('suspending versioning', done => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -418,7 +410,7 @@ describe('aws-node-sdk test delete object', () => {
             s3.putBucketVersioning(params, done);
         });
 
-        it('delete non existent object should create a delete marker', done => {
+        test('delete non existent object should create a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: `${key}2`,
@@ -426,8 +418,8 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
-                assert.notEqual(res.VersionId, undefined);
+                expect(res.DeleteMarker).toBe('true');
+                expect(res.VersionId).not.toEqual(undefined);
                 return s3.deleteObject({
                     Bucket: bucket,
                     Key: `${key}2`,
@@ -435,8 +427,8 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res2.DeleteMarker, 'true');
-                    assert.strictEqual(res2.VersionId, res.VersionId);
+                    expect(res2.DeleteMarker).toBe('true');
+                    expect(res2.VersionId).toBe(res.VersionId);
                     return s3.deleteObject({
                         Bucket: bucket,
                         Key: `${key}2`,
@@ -446,7 +438,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('should put a new delete marker', done => {
+        test('should put a new delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -454,13 +446,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
-                assert.strictEqual(res.VersionId, 'null');
+                expect(res.DeleteMarker).toBe('true');
+                expect(res.VersionId).toBe('null');
                 return done();
             });
         });
 
-        it('enabling versioning', done => {
+        test('enabling versioning', done => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -470,15 +462,15 @@ describe('aws-node-sdk test delete object', () => {
             s3.putBucketVersioning(params, done);
         });
 
-        it('should get the null version', done => {
+        test('should get the null version', done => {
             s3.getObject({
                 Bucket: bucket,
                 Key: key,
                 VersionId: 'null',
             }, function test(err) {
                 const headers = this.httpResponse.headers;
-                assert.strictEqual(headers['x-amz-delete-marker'], 'true');
-                assert.strictEqual(headers['x-amz-version-id'], 'null');
+                expect(headers['x-amz-delete-marker']).toBe('true');
+                expect(headers['x-amz-version-id']).toBe('null');
                 if (err && err.code !== 'MethodNotAllowed') {
                     return done(err);
                 } else if (err) {
@@ -488,7 +480,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('put a new version to store the null version', done => {
+        test('put a new version to store the null version', done => {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
@@ -502,7 +494,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('suspending versioning', done => {
+        test('suspending versioning', done => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -512,7 +504,7 @@ describe('aws-node-sdk test delete object', () => {
             s3.putBucketVersioning(params, done);
         });
 
-        it('put null version', done => {
+        test('put null version', done => {
             s3.putObject({
                 Bucket: bucket,
                 Key: key,
@@ -521,12 +513,12 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, undefined);
+                expect(res.VersionId).toBe(undefined);
                 return done();
             });
         });
 
-        it('enabling versioning', done => {
+        test('enabling versioning', done => {
             const params = {
                 Bucket: bucket,
                 VersioningConfiguration: {
@@ -536,7 +528,7 @@ describe('aws-node-sdk test delete object', () => {
             s3.putBucketVersioning(params, done);
         });
 
-        it('should get the null version', done => {
+        test('should get the null version', done => {
             s3.getObject({
                 Bucket: bucket,
                 Key: key,
@@ -544,12 +536,12 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.Body.toString(), 'test-null-version');
+                expect(res.Body.toString()).toBe('test-null-version');
                 return done();
             });
         });
 
-        it('should add a delete marker', done => {
+        test('should add a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -557,13 +549,13 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                expect(res.DeleteMarker).toBe('true');
                 versionIds.push(res.VersionId);
                 return done();
             });
         });
 
-        it('should get the null version', done => {
+        test('should get the null version', done => {
             s3.getObject({
                 Bucket: bucket,
                 Key: key,
@@ -572,12 +564,12 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.Body.toString(), 'test-null-version');
+                expect(res.Body.toString()).toBe('test-null-version');
                 return done();
             });
         });
 
-        it('should add a delete marker', done => {
+        test('should add a delete marker', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -585,16 +577,14 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
-                assert.strictEqual(
-                    versionIds.find(item => item === res.VersionId),
-                    undefined);
+                expect(res.DeleteMarker).toBe('true');
+                expect(versionIds.find(item => item === res.VersionId)).toBe(undefined);
                 versionIds.push(res.VersionId);
                 return done();
             });
         });
 
-        it('should set the null version as master', done => {
+        test('should set the null version as master', done => {
             let version = versionIds.pop();
             s3.deleteObject({
                 Bucket: bucket,
@@ -604,8 +594,8 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, version);
-                assert.strictEqual(res.DeleteMarker, 'true');
+                expect(res.VersionId).toBe(version);
+                expect(res.DeleteMarker).toBe('true');
                 version = versionIds.pop();
                 return s3.deleteObject({
                     Bucket: bucket,
@@ -615,8 +605,8 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res.VersionId, version);
-                    assert.strictEqual(res.DeleteMarker, 'true');
+                    expect(res.VersionId).toBe(version);
+                    expect(res.DeleteMarker).toBe('true');
                     return s3.getObject({
                         Bucket: bucket,
                         Key: key,
@@ -624,15 +614,14 @@ describe('aws-node-sdk test delete object', () => {
                         if (err) {
                             return done(err);
                         }
-                        assert.strictEqual(res.Body.toString(),
-                            'test-null-version');
+                        expect(res.Body.toString()).toBe('test-null-version');
                         return done();
                     });
                 });
             });
         });
 
-        it('should delete null version', done => {
+        test('should delete null version', done => {
             s3.deleteObject({
                 Bucket: bucket,
                 Key: key,
@@ -641,7 +630,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.VersionId, 'null');
+                expect(res.VersionId).toBe('null');
                 return s3.getObject({
                     Bucket: bucket,
                     Key: key,
@@ -649,14 +638,13 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res.VersionId,
-                        versionIds[versionIds.length - 1]);
+                    expect(res.VersionId).toBe(versionIds[versionIds.length - 1]);
                     return done();
                 });
             });
         });
 
-        it('should be able to delete the bucket', done => {
+        test('should be able to delete the bucket', done => {
             async.eachSeries(versionIds, (id, next) => {
                 s3.deleteObject({
                     Bucket: bucket,
@@ -666,7 +654,7 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return next(err);
                     }
-                    assert.strictEqual(res.VersionId, id);
+                    expect(res.VersionId).toBe(id);
                     return next();
                 });
             }, err => {

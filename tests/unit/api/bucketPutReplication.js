@@ -13,10 +13,9 @@ const log = new DummyRequestLogger();
 function checkError(xml, expectedErr, cb) {
     getReplicationConfiguration(xml, log, err => {
         if (expectedErr === null) {
-            assert.strictEqual(err, null, `expected no error but got '${err}'`);
+            expect(err).toBe(null);
         } else {
-            assert(err[expectedErr], 'incorrect error response: should be ' +
-                `'Error: ${expectedErr}' but got '${err}'`);
+            expect(err[expectedErr]).toBeTruthy();
         }
         return cb();
     });
@@ -29,10 +28,8 @@ function checkGeneratedID(xml, cb) {
             return cb(err);
         }
         const id = res.rules[0].id;
-        assert.strictEqual(typeof id, 'string', 'expected rule ID to be ' +
-            `string but got ${typeof id}`);
-        assert.strictEqual(id.length, 48, 'expected rule ID to be a length ' +
-            `of 48 but got ${id.length}`);
+        expect(typeof id).toBe('string');
+        expect(id.length).toBe(48);
         return cb();
     });
 }
@@ -66,10 +63,10 @@ function createReplicationXML(missingTag, tagValue) {
 }
 
 describe('\'getReplicationConfiguration\' function', () => {
-    it('should not return error when putting valid XML', done =>
+    test('should not return error when putting valid XML', done =>
         checkError(createReplicationXML(), null, done));
 
-    it('should not accept empty replication configuration', done =>
+    test('should not accept empty replication configuration', done =>
         checkError(createReplicationXML(null), 'MalformedXML', done));
 
     replicationUtils.requiredConfigProperties.forEach(prop => {
@@ -77,16 +74,20 @@ describe('\'getReplicationConfiguration\' function', () => {
         const xmlTag = prop === 'Rules' ? 'Rule' : prop;
         const xml = createReplicationXML(xmlTag);
 
-        it(`should not accept replication configuration without '${prop}'`,
-            done => checkError(xml, 'MalformedXML', done));
+        test(
+            `should not accept replication configuration without '${prop}'`,
+            done => checkError(xml, 'MalformedXML', done)
+        );
     });
 
     replicationUtils.optionalConfigProperties.forEach(prop => {
-        it(`should accept replication configuration without '${prop}'`,
-            done => checkError(createReplicationXML(prop), null, done));
+        test(
+            `should accept replication configuration without '${prop}'`,
+            done => checkError(createReplicationXML(prop), null, done)
+        );
     });
 
-    it(`should accept replication configuration without 'Bucket' when there
+    test(`should accept replication configuration without 'Bucket' when there
     is no Scality destination in the Storage Class`, done => {
         const xml = createReplicationXML('Bucket', {
             StorageClass: 'us-east-2',
@@ -95,13 +96,13 @@ describe('\'getReplicationConfiguration\' function', () => {
         checkError(xml, null, done);
     });
 
-    it("should create a rule 'ID' if omitted from the replication " +
+    test("should create a rule 'ID' if omitted from the replication " +
     'configuration', done => {
         const xml = createReplicationXML('ID');
         return checkGeneratedID(xml, done);
     });
 
-    it('should create an \'ID\' if rule ID is \'\'', done => {
+    test('should create an \'ID\' if rule ID is \'\'', done => {
         const xml = createReplicationXML(undefined, { ID: '' });
         return checkGeneratedID(xml, done);
     });
@@ -115,7 +116,7 @@ describe('\'validateReplicationConfig\' function', () => {
         getLocationConstraint: () => 'transientfile',
     };
 
-    it('should validate configuration when bucket location is ' +
+    test('should validate configuration when bucket location is ' +
     'not transient and preferred read location is not specified', () => {
         const withoutPreferredRead = {
             role: 'arn:aws:iam::account-id:role/src-resource,' +
@@ -130,10 +131,10 @@ describe('\'validateReplicationConfig\' function', () => {
         };
         const result = validateReplicationConfig(withoutPreferredRead,
                                                  nonTransientBucket);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
-    it('should validate configuration when bucket location is transient ' +
+    test('should validate configuration when bucket location is transient ' +
     'and preferred read location is specified', () => {
         const withPreferredRead = {
             role: 'arn:aws:iam::account-id:role/src-resource,' +
@@ -148,10 +149,10 @@ describe('\'validateReplicationConfig\' function', () => {
         };
         const result = validateReplicationConfig(withPreferredRead,
                                                  transientBucket);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
-    it('should not validate configuration when bucket location is ' +
+    test('should not validate configuration when bucket location is ' +
     'transient and preferred read location is not specified', () => {
         const withoutPreferredRead = {
             role: 'arn:aws:iam::account-id:role/src-resource,' +
@@ -166,6 +167,6 @@ describe('\'validateReplicationConfig\' function', () => {
         };
         const result = validateReplicationConfig(withoutPreferredRead,
                                                  transientBucket);
-        assert.strictEqual(result, false);
+        expect(result).toBe(false);
     });
 });

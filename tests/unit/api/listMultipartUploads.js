@@ -55,7 +55,7 @@ describe('listMultipartUploads API', () => {
         url: `/${bucketName}/${objectName3}?uploads`,
     };
 
-    it('should return the name of the common prefix ' +
+    test('should return the name of the common prefix ' +
        'of common prefix object keys for multipart uploads if delimiter ' +
        'and prefix specified', done => {
         const commonPrefix = `${prefix}${delimiter}`;
@@ -79,14 +79,13 @@ describe('listMultipartUploads API', () => {
                 parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .CommonPrefixes[0].Prefix[0],
-                commonPrefix);
+            expect(result.ListMultipartUploadsResult
+                .CommonPrefixes[0].Prefix[0]).toBe(commonPrefix);
             done();
         });
     });
 
-    it('should return list of all multipart uploads if ' +
+    test('should return list of all multipart uploads if ' +
        'no delimiter specified', done => {
         const testListRequest = {
             bucketName,
@@ -109,17 +108,17 @@ describe('listMultipartUploads API', () => {
                 parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName1);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1].Key[0], objectName2);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .IsTruncated[0], 'false');
+            expect(result.ListMultipartUploadsResult
+                .Upload[0].Key[0]).toBe(objectName1);
+            expect(result.ListMultipartUploadsResult
+                .Upload[1].Key[0]).toBe(objectName2);
+            expect(result.ListMultipartUploadsResult
+                .IsTruncated[0]).toBe('false');
             done();
         });
     });
 
-    it('should return no more keys than ' +
+    test('should return no more keys than ' +
        'max-uploads specified', done => {
         const testListRequest = {
             bucketName,
@@ -141,21 +140,21 @@ describe('listMultipartUploads API', () => {
                 parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName1);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1], undefined);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .IsTruncated[0], 'true');
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .NextKeyMarker[0], objectName1);
-            assert(result.ListMultipartUploadsResult
-                .NextUploadIdMarker[0].length > 5);
+            expect(result.ListMultipartUploadsResult
+                .Upload[0].Key[0]).toBe(objectName1);
+            expect(result.ListMultipartUploadsResult
+                .Upload[1]).toBe(undefined);
+            expect(result.ListMultipartUploadsResult
+                .IsTruncated[0]).toBe('true');
+            expect(result.ListMultipartUploadsResult
+                .NextKeyMarker[0]).toBe(objectName1);
+            expect(result.ListMultipartUploadsResult
+                .NextUploadIdMarker[0].length > 5).toBeTruthy();
             done();
         });
     });
 
-    it('should url encode object key name ' +
+    test('should url encode object key name ' +
        'if requested', done => {
         const testListRequest = {
             bucketName,
@@ -179,15 +178,15 @@ describe('listMultipartUploads API', () => {
                 parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], querystring.escape(objectName3));
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1].Key[0], querystring.escape(objectName1));
+            expect(result.ListMultipartUploadsResult
+                .Upload[0].Key[0]).toBe(querystring.escape(objectName3));
+            expect(result.ListMultipartUploadsResult
+                .Upload[1].Key[0]).toBe(querystring.escape(objectName1));
             done();
         });
     });
 
-    it('should return key following specified ' +
+    test('should return key following specified ' +
     'key-marker', done => {
         const testListRequest = {
             bucketName,
@@ -211,10 +210,10 @@ describe('listMultipartUploads API', () => {
                 parseString(result, corsHeaders, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[0].Key[0], objectName2);
-            assert.strictEqual(result.ListMultipartUploadsResult
-                .Upload[1], undefined);
+            expect(result.ListMultipartUploadsResult
+                .Upload[0].Key[0]).toBe(objectName2);
+            expect(result.ListMultipartUploadsResult
+                .Upload[1]).toBe(undefined);
             done();
         });
     });

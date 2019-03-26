@@ -117,35 +117,34 @@ describe('delete marker creation', () => {
         };
         return metadata.getObjectMD(bucketName, objectName, options, log,
             (err, deleteMarkerMD) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 const mdVersionId = deleteMarkerMD.versionId;
-                assert.strictEqual(deleteMarkerMD.isDeleteMarker, true);
-                assert.strictEqual(versionIdUtils.encode(mdVersionId),
-                    deleteResultVersionId);
-                assert.strictEqual(deleteMarkerMD['content-length'], 0);
-                assert.strictEqual(deleteMarkerMD.location, null);
+                expect(deleteMarkerMD.isDeleteMarker).toBe(true);
+                expect(versionIdUtils.encode(mdVersionId)).toBe(deleteResultVersionId);
+                expect(deleteMarkerMD['content-length']).toBe(0);
+                expect(deleteMarkerMD.location).toBe(null);
                 assert.deepStrictEqual(deleteMarkerMD.acl, expectedAcl);
                 undefHeadersExpected.forEach(header => {
-                    assert.strictEqual(deleteMarkerMD[header], undefined);
+                    expect(deleteMarkerMD[header]).toBe(undefined);
                 });
                 return callback();
             });
     }
 
-    it('should create a delete marker if versioning enabled and deleting ' +
+    test('should create a delete marker if versioning enabled and deleting ' +
     'object without specifying version id', done => {
         objectDelete(authInfo, testDeleteRequest, log, (err, delResHeaders) => {
             if (err) {
                 return done(err);
             }
-            assert.strictEqual(delResHeaders['x-amz-delete-marker'], true);
-            assert(delResHeaders['x-amz-version-id']);
+            expect(delResHeaders['x-amz-delete-marker']).toBe(true);
+            expect(delResHeaders['x-amz-version-id']).toBeTruthy();
             return _assertDeleteMarkerMd(delResHeaders['x-amz-version-id'],
                 true, done);
         });
     });
 
-    it('multi-object delete should create delete markers if versioning ' +
+    test('multi-object delete should create delete markers if versioning ' +
     'enabled and items do not have version id specified', done => {
         const testMultiObjectDeleteRequest =
             _createMultiObjectDeleteRequest(3);
@@ -160,9 +159,9 @@ describe('delete marker creation', () => {
                     }
                     const results = parsedResult.DeleteResult.Deleted;
                     return async.forEach(results, (result, cb) => {
-                        assert.strictEqual(result.Key[0], objectName);
-                        assert.strictEqual(result.DeleteMarker[0], 'true');
-                        assert(result.DeleteMarkerVersionId[0]);
+                        expect(result.Key[0]).toBe(objectName);
+                        expect(result.DeleteMarker[0]).toBe('true');
+                        expect(result.DeleteMarkerVersionId[0]).toBeTruthy();
                         _assertDeleteMarkerMd(result.DeleteMarkerVersionId[0],
                             false, cb);
                     }, err => done(err));

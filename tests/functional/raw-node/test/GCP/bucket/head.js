@@ -8,50 +8,56 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 
 describe('GCP: HEAD Bucket', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
     describe('without existing bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.bucketName = `somebucket-${genUniqID()}`;
             return done();
         });
 
-        it('should return 404', function testFn(done) {
+        test('should return 404', done => {
             gcpClient.headBucket({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
             }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
                 return done();
             });
         });
     });
 
     describe('with existing bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.bucketName = `somebucket-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.bucketName = `somebucket-${genUniqID()}`;
             process.stdout
-                .write(`Creating test bucket ${this.currentTest.bucketName}\n`);
+                .write(`Creating test bucket ${testContext.currentTest.bucketName}\n`);
             gcpRequestRetry({
                 method: 'PUT',
-                bucket: this.currentTest.bucketName,
+                bucket: testContext.currentTest.bucketName,
                 authCredentials: config.credentials,
             }, 0, (err, res) => {
                 if (err) {
                     return done(err);
                 }
-                this.currentTest.bucketObj = {
+                testContext.currentTest.bucketObj = {
                     MetaVersionId: res.headers['x-goog-metageneration'],
                 };
                 return done();
             });
         });
 
-        afterEach(function afterFn(done) {
+        afterEach(done => {
             gcpRequestRetry({
                 method: 'DELETE',
-                bucket: this.currentTest.bucketName,
+                bucket: testContext.currentTest.bucketName,
                 authCredentials: config.credentials,
             }, 0, err => {
                 if (err) {
@@ -62,12 +68,12 @@ describe('GCP: HEAD Bucket', () => {
             });
         });
 
-        it('should get bucket information', function testFn(done) {
+        test('should get bucket information', done => {
             gcpClient.headBucket({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
             }, (err, res) => {
-                assert.equal(err, null, `Expected success, but got ${err}`);
-                assert.deepStrictEqual(this.test.bucketObj, res);
+                expect(err).toEqual(null);
+                assert.deepStrictEqual(testContext.test.bucketObj, res);
                 return done();
             });
         });

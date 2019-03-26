@@ -20,14 +20,14 @@ describe('bucketHead API', () => {
         cleanup();
     });
 
-    it('should return an error if the bucket does not exist', done => {
+    test('should return an error if the bucket does not exist', done => {
         bucketHead(authInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
     });
 
-    it('should return an error if user is not authorized', done => {
+    test('should return an error if user is not authorized', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(otherAuthInfo, testRequest, log, () => {
             bucketHead(authInfo, testRequest, log, err => {
@@ -37,13 +37,15 @@ describe('bucketHead API', () => {
         });
     });
 
-    it('should return no error if bucket exists and user is authorized',
-    done => {
-        bucketPut(authInfo, testRequest, log, () => {
-            bucketHead(authInfo, testRequest, log, err => {
-                assert.strictEqual(err, null);
-                done();
+    test(
+        'should return no error if bucket exists and user is authorized',
+        done => {
+            bucketPut(authInfo, testRequest, log, () => {
+                bucketHead(authInfo, testRequest, log, err => {
+                    expect(err).toBe(null);
+                    done();
+                });
             });
-        });
-    });
+        }
+    );
 });

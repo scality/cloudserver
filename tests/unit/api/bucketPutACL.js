@@ -25,11 +25,11 @@ const canonicalIDforSample2 =
     '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
 describe('putBucketACL API', () => {
-    before(() => cleanup());
+    beforeAll(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should parse a grantheader', () => {
+    test('should parse a grantheader', () => {
         const grantRead =
             `uri=${constants.logId}, ` +
             'emailAddress="test@testing.com", ' +
@@ -37,20 +37,20 @@ describe('putBucketACL API', () => {
             'id="sdfsdfsfwwiieohefs"';
         const grantReadHeader = aclUtils.parseGrant(grantRead, 'read');
         const firstIdentifier = grantReadHeader[0].identifier;
-        assert.strictEqual(firstIdentifier, constants.logId);
+        expect(firstIdentifier).toBe(constants.logId);
         const secondIdentifier = grantReadHeader[1].identifier;
-        assert.strictEqual(secondIdentifier, 'test@testing.com');
+        expect(secondIdentifier).toBe('test@testing.com');
         const thirdIdentifier = grantReadHeader[2].identifier;
-        assert.strictEqual(thirdIdentifier, 'test2@testly.com');
+        expect(thirdIdentifier).toBe('test2@testly.com');
         const fourthIdentifier = grantReadHeader[3].identifier;
-        assert.strictEqual(fourthIdentifier, 'sdfsdfsfwwiieohefs');
+        expect(fourthIdentifier).toBe('sdfsdfsfwwiieohefs');
         const fourthType = grantReadHeader[3].userIDType;
-        assert.strictEqual(fourthType, 'id');
+        expect(fourthType).toBe('id');
         const grantType = grantReadHeader[3].grantType;
-        assert.strictEqual(grantType, 'read');
+        expect(grantType).toBe('read');
     });
 
-    it('should return an error if invalid canned ACL provided', done => {
+    test('should return an error if invalid canned ACL provided', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -68,7 +68,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned public-read-write ACL', done => {
+    test('should set a canned public-read-write ACL', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -80,15 +80,15 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().Canned, 'public-read-write');
+                expect(md.getAcl().Canned).toBe('public-read-write');
                 done();
             });
         });
     });
 
-    it('should set a canned public-read ACL followed by '
+    test('should set a canned public-read ACL followed by '
         + 'a canned authenticated-read ACL', done => {
         const testACLRequest = {
             bucketName,
@@ -111,14 +111,13 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().Canned, 'public-read');
+                expect(md.getAcl().Canned).toBe('public-read');
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
-                    assert.strictEqual(err, undefined);
+                    expect(err).toBe(undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.getAcl().Canned,
-                                           'authenticated-read');
+                        expect(md.getAcl().Canned).toBe('authenticated-read');
                         done();
                     });
                 });
@@ -126,7 +125,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set a canned private ACL ' +
+    test('should set a canned private ACL ' +
         'followed by a log-delivery-write ACL', done => {
         const testACLRequest = {
             bucketName,
@@ -150,14 +149,13 @@ describe('putBucketACL API', () => {
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().Canned, 'private');
+                expect(md.getAcl().Canned).toBe('private');
                 bucketPutACL(authInfo, testACLRequest2, log, err => {
-                    assert.strictEqual(err, undefined);
+                    expect(err).toBe(undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
-                        assert.strictEqual(md.getAcl().Canned,
-                                           'log-delivery-write');
+                        expect(md.getAcl().Canned).toBe('log-delivery-write');
                         done();
                     });
                 });
@@ -165,7 +163,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set ACLs provided in request headers', done => {
+    test('should set ACLs provided in request headers', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -187,23 +185,23 @@ describe('putBucketACL API', () => {
             query: { acl: '' },
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
-                assert(md.getAcl().FULL_CONTROL
-                    .indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl().FULL_CONTROL
-                    .indexOf(canonicalIDforSample2) > -1);
-                assert(md.getAcl().READ_ACP
-                    .indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl().WRITE_ACP
-                    .indexOf(canonicalIDforSample2) > -1);
+                expect(md.getAcl().WRITE[0]).toBe(constants.publicId);
+                expect(md.getAcl().FULL_CONTROL
+                    .indexOf(canonicalIDforSample1) > -1).toBeTruthy();
+                expect(md.getAcl().FULL_CONTROL
+                    .indexOf(canonicalIDforSample2) > -1).toBeTruthy();
+                expect(md.getAcl().READ_ACP
+                    .indexOf(canonicalIDforSample1) > -1).toBeTruthy();
+                expect(md.getAcl().WRITE_ACP
+                    .indexOf(canonicalIDforSample2) > -1).toBeTruthy();
                 done();
             });
         });
     });
 
-    it('should return an error if invalid grantee user ID ' +
+    test('should return an error if invalid grantee user ID ' +
     'provided in ACL header request', done => {
         // Canonical ID should be a 64-digit hex string
         const invalidCanonicalID = 'id="invalid_id"';
@@ -224,7 +222,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' +
+    test('should return an error if invalid email ' +
         'provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,
@@ -245,7 +243,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should set ACLs provided in request body', done => {
+    test('should set ACLs provided in request body', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -299,23 +297,20 @@ describe('putBucketACL API', () => {
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().Canned, '');
-                assert.strictEqual(md.getAcl().FULL_CONTROL[0],
-                    canonicalIDforSample1);
-                assert.strictEqual(md.getAcl().READ[0], constants.publicId);
-                assert.strictEqual(md.getAcl().WRITE[0], constants.logId);
-                assert.strictEqual(md.getAcl().WRITE_ACP[0],
-                                   canonicalIDforSample1);
-                assert.strictEqual(md.getAcl().READ_ACP[0],
-                    canonicalIDforSample2);
+                expect(md.getAcl().Canned).toBe('');
+                expect(md.getAcl().FULL_CONTROL[0]).toBe(canonicalIDforSample1);
+                expect(md.getAcl().READ[0]).toBe(constants.publicId);
+                expect(md.getAcl().WRITE[0]).toBe(constants.logId);
+                expect(md.getAcl().WRITE_ACP[0]).toBe(canonicalIDforSample1);
+                expect(md.getAcl().READ_ACP[0]).toBe(canonicalIDforSample2);
                 done();
             });
         });
     });
 
-    it('should set ACLs with an empty AccessControlList section', done => {
+    test('should set ACLs with an empty AccessControlList section', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -334,44 +329,46 @@ describe('putBucketACL API', () => {
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().Canned, '');
-                assert.strictEqual(md.getAcl().FULL_CONTROL.length, 0);
-                assert.strictEqual(md.getAcl().READ.length, 0);
-                assert.strictEqual(md.getAcl().WRITE.length, 0);
-                assert.strictEqual(md.getAcl().WRITE_ACP.length, 0);
-                assert.strictEqual(md.getAcl().READ_ACP.length, 0);
+                expect(md.getAcl().Canned).toBe('');
+                expect(md.getAcl().FULL_CONTROL.length).toBe(0);
+                expect(md.getAcl().READ.length).toBe(0);
+                expect(md.getAcl().WRITE.length).toBe(0);
+                expect(md.getAcl().WRITE_ACP.length).toBe(0);
+                expect(md.getAcl().READ_ACP.length).toBe(0);
                 done();
             });
         });
     });
 
-    it('should not be able to set ACLs without AccessControlList section',
-    done => {
-        const testACLRequest = {
-            bucketName,
-            namespace,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                '</AccessControlPolicy>',
-            url: '/?acl',
-            query: { acl: '' },
-        };
+    test(
+        'should not be able to set ACLs without AccessControlList section',
+        done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: '<AccessControlPolicy xmlns=' +
+                        '"http://s3.amazonaws.com/doc/2006-03-01/">' +
+                      '<Owner>' +
+                        '<ID>79a59df900b949e55d96a1e698fbaced' +
+                        'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
+                        '<DisplayName>OwnerDisplayName</DisplayName>' +
+                      '</Owner>' +
+                    '</AccessControlPolicy>',
+                url: '/?acl',
+                query: { acl: '' },
+            };
 
-        bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.deepStrictEqual(err, errors.MalformedACLError);
-            done();
-        });
-    });
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.deepStrictEqual(err, errors.MalformedACLError);
+                done();
+            });
+        }
+    );
 
-    it('should return an error if multiple AccessControlList section', done => {
+    test('should return an error if multiple AccessControlList section', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -414,7 +411,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid grantee user ID ' +
+    test('should return an error if invalid grantee user ID ' +
     'provided in ACL request body', done => {
         const testACLRequest = {
             bucketName,
@@ -446,7 +443,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' +
+    test('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
@@ -477,7 +474,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if xml provided does not match s3 '
+    test('should return an error if xml provided does not match s3 '
        + 'scheme for setting ACLs', done => {
         const testACLRequest = {
             bucketName,
@@ -514,7 +511,7 @@ describe('putBucketACL API', () => {
     });
 
 
-    it('should return an error if xml provided does not match s3 '
+    test('should return an error if xml provided does not match s3 '
        + 'scheme for setting ACLs using multiple Grant section', done => {
         const testACLRequest = {
             bucketName,
@@ -558,7 +555,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if malformed xml provided', done => {
+    test('should return an error if malformed xml provided', done => {
         const testACLRequest = {
             bucketName,
             namespace,
@@ -593,7 +590,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' +
+    test('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', done => {
         const testACLRequest = {
             bucketName,
@@ -627,7 +624,7 @@ describe('putBucketACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri' +
+    test('should return an error if invalid group uri' +
         'provided in ACL header request', done => {
         const testACLRequest = {
             bucketName,

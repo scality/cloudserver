@@ -9,12 +9,18 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
 
-describe('GCP: PUT Object', function testSuite() {
+describe('GCP: PUT Object', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(30000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
+    beforeAll(done => {
         gcpRequestRetry({
             method: 'PUT',
             bucket: bucketName,
@@ -27,7 +33,7 @@ describe('GCP: PUT Object', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -40,11 +46,11 @@ describe('GCP: PUT Object', function testSuite() {
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         makeGcpRequest({
             method: 'DELETE',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
         }, err => {
             if (err) {
@@ -55,56 +61,54 @@ describe('GCP: PUT Object', function testSuite() {
     });
 
     describe('with existing object in bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpRequestRetry({
                 method: 'PUT',
                 bucket: bucketName,
-                objectKey: this.currentTest.key,
+                objectKey: testContext.currentTest.key,
                 authCredentials: config.credentials,
             }, 0, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in putting object ${err}\n`);
                     return done(err);
                 }
-                this.currentTest.uploadId =
+                testContext.currentTest.uploadId =
                     res.headers['x-goog-generation'];
                 return done();
             });
         });
 
-        it('should overwrite object', function testFn(done) {
+        test('should overwrite object', done => {
             gcpClient.putObject({
                 Bucket: bucketName,
-                Key: this.test.key,
+                Key: testContext.test.key,
             }, (err, res) => {
-                assert.notStrictEqual(res.VersionId, this.test.uploadId);
+                expect(res.VersionId).not.toBe(testContext.test.uploadId);
                 return done();
             });
         });
     });
 
     describe('without existing object in bucket', () => {
-        it('should successfully put object', function testFn(done) {
-            this.test.key = `somekey-${genUniqID()}`;
+        test('should successfully put object', done => {
+            testContext.test.key = `somekey-${genUniqID()}`;
             gcpClient.putObject({
                 Bucket: bucketName,
-                Key: this.test.key,
+                Key: testContext.test.key,
             }, (err, putRes) => {
-                assert.equal(err, null,
-                    `Expected success, got error ${err}`);
+                expect(err).toEqual(null);
                 makeGcpRequest({
                     method: 'GET',
                     bucket: bucketName,
-                    objectKey: this.test.key,
+                    objectKey: testContext.test.key,
                     authCredentials: config.credentials,
                 }, (err, getRes) => {
                     if (err) {
                         process.stdout.write(`err in getting bucket ${err}\n`);
                         return done(err);
                     }
-                    assert.strictEqual(getRes.headers['x-goog-generation'],
-                        putRes.VersionId);
+                    expect(getRes.headers['x-goog-generation']).toBe(putRes.VersionId);
                     return done();
                 });
             });

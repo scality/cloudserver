@@ -64,7 +64,7 @@ describe('objectCopyPart', () => {
     const testPutObjectRequest =
         versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey,
             objData);
-    before(done => {
+    beforeAll(done => {
         cleanup();
         async.waterfall([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
@@ -86,20 +86,22 @@ describe('objectCopyPart', () => {
         });
     });
 
-    after(() => cleanup());
+    afterAll(() => cleanup());
 
-    it('should copy part even if legacy metadata without dataStoreName',
-    done => {
-        // force metadata for dataStoreName to be undefined
-        metadata.keyMaps.get(sourceBucketName)
-            .get(objectKey).dataStoreName = undefined;
-        const testObjectCopyRequest =
-            _createObjectCopyPartRequest(destBucketName, uploadId);
-        objectPutCopyPart(authInfo, testObjectCopyRequest,
-            sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert.ifError(err, `Unexpected err: ${err}`);
-                done();
-            });
-    });
+    test(
+        'should copy part even if legacy metadata without dataStoreName',
+        done => {
+            // force metadata for dataStoreName to be undefined
+            metadata.keyMaps.get(sourceBucketName)
+                .get(objectKey).dataStoreName = undefined;
+            const testObjectCopyRequest =
+                _createObjectCopyPartRequest(destBucketName, uploadId);
+            objectPutCopyPart(authInfo, testObjectCopyRequest,
+                sourceBucketName, objectKey,
+                undefined, log, err => {
+                    assert.ifError(err, `Unexpected err: ${err}`);
+                    done();
+                });
+        }
+    );
 });

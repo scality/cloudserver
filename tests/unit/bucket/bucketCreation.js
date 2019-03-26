@@ -16,7 +16,7 @@ const normalBehaviorLocationConstraint = 'file';
 const specialBehaviorLocationConstraint = 'us-east-1';
 
 describe('bucket creation', () => {
-    it('should create a bucket', done => {
+    test('should create a bucket', done => {
         createBucket(authInfo, bucketName, headers,
             normalBehaviorLocationConstraint, log, err => {
                 assert.ifError(err);
@@ -34,7 +34,7 @@ describe('bucket creation', () => {
                 });
         });
 
-        it('should return 200 if try to recreate in us-east-1', done => {
+        test('should return 200 if try to recreate in us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
             specialBehaviorLocationConstraint, log, err => {
                 assert.ifError(err);
@@ -42,10 +42,10 @@ describe('bucket creation', () => {
             });
         });
 
-        it('should return 409 if try to recreate in non-us-east-1', done => {
+        test('should return 409 if try to recreate in non-us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
             normalBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err, errors.BucketAlreadyOwnedByYou);
+                expect(err).toBe(errors.BucketAlreadyOwnedByYou);
                 done();
             });
         });
@@ -61,10 +61,10 @@ describe('bucket creation', () => {
                 });
         });
 
-        it('should return 409 if try to recreate in us-east-1', done => {
+        test('should return 409 if try to recreate in us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
             specialBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err, errors.BucketAlreadyOwnedByYou);
+                expect(err).toBe(errors.BucketAlreadyOwnedByYou);
                 done();
             });
         });

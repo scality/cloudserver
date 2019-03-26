@@ -360,10 +360,10 @@ const versioningTestUtils = {
         return request;
     },
     assertDataStoreValues: (ds, expectedValues) => {
-        assert.strictEqual(ds.length, expectedValues.length + 1);
+        expect(ds.length).toBe(expectedValues.length + 1);
         for (let i = 0, j = 1; i < expectedValues.length; i++, j++) {
             if (expectedValues[i] === undefined) {
-                assert.strictEqual(ds[j], expectedValues[i]);
+                expect(ds[j]).toBe(expectedValues[i]);
             } else {
                 assert.deepStrictEqual(ds[j].value, expectedValues[i]);
             }

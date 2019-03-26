@@ -19,7 +19,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         // a UNIX timestamp for Expires header
         const expires = new Date();
 
-        before(() => {
+        beforeAll(() => {
             const params = {
                 Bucket: bucketName,
                 Key: objectName,
@@ -58,7 +58,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 throw err;
             });
         });
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucketName)
             .then(() => {
@@ -70,9 +70,8 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 throw err;
             });
         });
-        it('should return additional headers when get request is performed ' +
-        'on MPU, when they are specified in creation of MPU',
-        () => {
+        test('should return additional headers when get request is performed ' +
+        'on MPU, when they are specified in creation of MPU', () => {
             const params = { Bucket: bucketName, Key: 'key', PartNumber: 1,
                 UploadId: uploadId };
             return s3.uploadPartAsync(params)
@@ -108,10 +107,10 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 throw err;
             })
             .then(res => {
-                assert.strictEqual(res.CacheControl, cacheControl);
-                assert.strictEqual(res.ContentDisposition, contentDisposition);
-                assert.strictEqual(res.ContentEncoding, 'gzip');
-                assert.strictEqual(res.Expires, expires.toGMTString());
+                expect(res.CacheControl).toBe(cacheControl);
+                expect(res.ContentDisposition).toBe(contentDisposition);
+                expect(res.ContentEncoding).toBe('gzip');
+                expect(res.Expires).toBe(expires.toGMTString());
             });
         });
     });

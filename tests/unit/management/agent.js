@@ -9,68 +9,68 @@ const logger = { info: () => {} };
 
 function testVariableSet(httpProxy, httpsProxy, allProxy, noProxy) {
     return () => {
-        it(`should use ${httpProxy} environment variable`, () => {
+        test(`should use ${httpProxy} environment variable`, () => {
             let agent = createWSAgent('https://pushserver', {
                 [httpProxy]: 'http://proxy:3128',
             }, logger);
-            assert.equal(agent, null);
+            expect(agent).toEqual(null);
 
             agent = createWSAgent('http://pushserver', {
                 [httpProxy]: proxy,
             }, logger);
-            assert.equal(agent.proxy.href, proxy);
+            expect(agent.proxy.href).toEqual(proxy);
         });
 
-        it(`should use ${httpsProxy} environment variable`, () => {
+        test(`should use ${httpsProxy} environment variable`, () => {
             let agent = createWSAgent('http://pushserver', {
                 [httpsProxy]: proxy,
             }, logger);
-            assert.equal(agent, null);
+            expect(agent).toEqual(null);
 
             agent = createWSAgent('https://pushserver', {
                 [httpsProxy]: proxy,
             }, logger);
-            assert.equal(agent.proxy.href, proxy);
+            expect(agent.proxy.href).toEqual(proxy);
         });
 
-        it(`should use ${allProxy} environment variable`, () => {
+        test(`should use ${allProxy} environment variable`, () => {
             let agent = createWSAgent('http://pushserver', {
                 [allProxy]: proxy,
             }, logger);
-            assert.equal(agent.proxy.href, proxy);
+            expect(agent.proxy.href).toEqual(proxy);
 
             agent = createWSAgent('https://pushserver', {
                 [allProxy]: proxy,
             }, logger);
-            assert.equal(agent.proxy.href, proxy);
+            expect(agent.proxy.href).toEqual(proxy);
         });
 
-        it(`should use ${noProxy} environment variable`, () => {
+        test(`should use ${noProxy} environment variable`, () => {
             let agent = createWSAgent('http://pushserver', {
                 [noProxy]: 'pushserver',
             }, logger);
-            assert.equal(agent, null);
+            expect(agent).toEqual(null);
 
             agent = createWSAgent('http://pushserver', {
                 [noProxy]: 'pushserver',
                 [httpProxy]: proxy,
             }, logger);
-            assert.equal(agent, null);
+            expect(agent).toEqual(null);
 
             agent = createWSAgent('http://pushserver', {
                 [noProxy]: 'pushserver2',
                 [httpProxy]: proxy,
             }, logger);
-            assert.equal(agent.proxy.href, proxy);
+            expect(agent.proxy.href).toEqual(proxy);
         });
     };
 }
 
 describe('Websocket connection agent', () => {
     describe('with no proxy env', () => {
-        it('should handle empty proxy environment', () => {
+        test('should handle empty proxy environment', () => {
             const agent = createWSAgent('https://pushserver', {}, logger);
-            assert.equal(agent, null);
+            expect(agent).toEqual(null);
         });
     });
 

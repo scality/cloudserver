@@ -26,14 +26,14 @@ const tests = [
             // ETag should include quotes around value
             const emptyObjectHash =
                 '"d41d8cd98f00b204e9800998ecf8427e"';
-            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-            assert.deepEqual(keys, [
+            expect(data.Name).toEqual(Bucket);
+            expect(keys).toEqual([
                 'testA/',
                 'testA/test.json',
                 'testA/test/test.json',
                 'testB/',
                 'testB/test.json',
-            ], 'Bucket content mismatch');
+            ]);
             assert.deepStrictEqual(data.Contents[0].ETag,
                 emptyObjectHash, 'Object hash mismatch');
         },
@@ -51,11 +51,11 @@ const tests = [
         listObjectParams: Bucket => ({ Bucket, Delimiter: '/' }),
         assertions: (data, Bucket) => {
             const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
-            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-            assert.deepEqual(prefixes, [
+            expect(data.Name).toEqual(Bucket);
+            expect(prefixes).toEqual([
                 'testA/',
                 'testB/',
-            ], 'Bucket content mismatch');
+            ]);
         },
     },
     {
@@ -69,11 +69,11 @@ const tests = [
         listObjectParams: Bucket => ({ Bucket, Delimiter: '%' }),
         assertions: data => {
             const prefixes = data.CommonPrefixes.map(cp => cp.Prefix);
-            assert.deepEqual(prefixes, [
+            expect(prefixes).toEqual([
                 'testA%',
                 'testB%',
                 'testC%',
-            ], 'Bucket content mismatch');
+            ]);
         },
     },
     {
@@ -90,8 +90,8 @@ const tests = [
         listObjectParams: Bucket => ({ Bucket }),
         assertions: (data, Bucket) => {
             const keys = data.Contents.map(object => object.Key);
-            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-            assert.deepEqual(keys, [
+            expect(data.Name).toEqual(Bucket);
+            expect(keys).toEqual([
                 /* These object names are intentionally listed in a
                 different order than they were created to additionally
                 test that they are listed alphabetically. */
@@ -101,7 +101,7 @@ const tests = [
                 'whiteSpace/',
                 'whiteSpace/one whiteSpace',
                 'whiteSpace/two white spaces',
-            ], 'Bucket content mismatch');
+            ]);
         },
     },
     {
@@ -202,8 +202,8 @@ const tests = [
         listObjectParams: Bucket => ({ Bucket }),
         assertions: (data, Bucket) => {
             const keys = data.Contents.map(object => object.Key);
-            assert.equal(data.Name, Bucket, 'Bucket name mismatch');
-            assert.deepEqual(keys, [
+            expect(data.Name).toEqual(Bucket);
+            expect(keys).toEqual([
                 /* These object names are intentionally listed in a
                 different order than they were created to additionally
                 test that they are listed alphabetically. */
@@ -265,7 +265,7 @@ const tests = [
                 '日japaneseMountainObjTitle',
                 '日japaneseMountainObjTitle/objTitleA',
                 '日japaneseMountainObjTitle/日japaneseMountainObjTitle',
-            ], 'Bucket content mismatch');
+            ]);
         },
     },
     {
@@ -291,7 +291,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         let bucketUtil;
         let bucketName;
 
-        before(done => {
+        beforeAll(done => {
             bucketUtil = new BucketUtility();
             bucketUtil.createRandom(1)
                       .then(created => {
@@ -301,19 +301,19 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                       .catch(done);
         });
 
-        after(done => {
+        afterAll(done => {
             bucketUtil.deleteOne(bucketName)
                       .then(() => done())
                       .catch(done);
         });
 
-        it('should return 403 and AccessDenied on a private bucket', done => {
+        test('should return 403 and AccessDenied on a private bucket', done => {
             const params = { Bucket: bucketName };
             bucketUtil.s3
                 .makeUnauthenticatedRequest('listObjects', params, error => {
-                    assert(error);
-                    assert.strictEqual(error.statusCode, 403);
-                    assert.strictEqual(error.code, 'AccessDenied');
+                    expect(error).toBeTruthy();
+                    expect(error.statusCode).toBe(403);
+                    expect(error.code).toBe('AccessDenied');
                     done();
                 });
         });
@@ -323,7 +323,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         let bucketUtil;
         let bucketName;
 
-        before(done => {
+        beforeAll(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             bucketUtil.createRandom(1)
                       .then(created => {
@@ -333,7 +333,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                       .catch(done);
         });
 
-        after(done => {
+        afterAll(done => {
             bucketUtil.deleteOne(bucketName).then(() => done()).catch(done);
         });
 
@@ -342,7 +342,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         tests.forEach(test => {
-            it(`should ${test.name}`, done => {
+            test(`should ${test.name}`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
@@ -367,7 +367,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         tests.forEach(test => {
-            it(`v2 should ${test.name}`, done => {
+            test(`v2 should ${test.name}`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
 
@@ -392,7 +392,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as Prefix`, done => {
+            test(`should list objects with key ${k} as Prefix`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
@@ -416,7 +416,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as Marker`, done => {
+            test(`should list objects with key ${k} as Marker`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
@@ -440,7 +440,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as NextMarker`, done => {
+            test(`should list objects with key ${k} as NextMarker`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
@@ -457,7 +457,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         }
                         return data;
                     }).then(data => {
-                        assert.strictEqual(data.NextMarker, k);
+                        expect(data.NextMarker).toBe(k);
                         done();
                     })
                     .catch(done);
@@ -465,7 +465,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as StartAfter`, done => {
+            test(`should list objects with key ${k} as StartAfter`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
@@ -490,8 +490,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as ContinuationToken`,
-            done => {
+            test(`should list objects with key ${k} as ContinuationToken`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }];
@@ -517,8 +516,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
-            it(`should list objects with key ${k} as NextContinuationToken`,
-            done => {
+            test(`should list objects with key ${k} as NextContinuationToken`, done => {
                 const s3 = bucketUtil.s3;
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
@@ -534,8 +532,7 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                         }
                         return data;
                     }).then(data => {
-                        assert.strictEqual(
-                            decryptToken(data.NextContinuationToken), k);
+                        expect(decryptToken(data.NextContinuationToken)).toBe(k);
                         done();
                     })
                     .catch(done);

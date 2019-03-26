@@ -24,14 +24,14 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             s3 = new S3(config);
         });
 
-        it('should return 403 and AccessDenied', done => {
+        test('should return 403 and AccessDenied', done => {
             const params = { Bucket: 'mybucket' };
 
             s3.makeUnauthenticatedRequest('createBucket', params, error => {
-                assert(error);
+                expect(error).toBeTruthy();
 
-                assert.strictEqual(error.statusCode, 403);
-                assert.strictEqual(error.code, 'AccessDenied');
+                expect(error.statusCode).toBe(403);
+                expect(error.code).toBe('AccessDenied');
 
                 done();
             });
@@ -41,7 +41,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
     withV4(sigCfg => {
         let bucketUtil;
 
-        before(() => {
+        beforeAll(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
         });
 
@@ -62,7 +62,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             'provided.', done => {
                 bucketUtil.s3.createBucket({ Bucket: bucketName }, done);
             });
-            it('should return a 200 if us-east behavior', done => {
+            test('should return a 200 if us-east behavior', done => {
                 bucketUtil.s3.createBucket({
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
@@ -70,17 +70,16 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     },
                 }, done);
             });
-            it('should return a 409 if us-west behavior', done => {
+            test('should return a 409 if us-west behavior', done => {
                 bucketUtil.s3.createBucket({
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
                         LocationConstraint: 'scality-us-west-1',
                     },
                 }, error => {
-                    assert.notEqual(error, null,
-                      'Expected failure but got success');
-                    assert.strictEqual(error.code, 'BucketAlreadyOwnedByYou');
-                    assert.strictEqual(error.statusCode, 409);
+                    expect(error).not.toEqual(null);
+                    expect(error.code).toBe('BucketAlreadyOwnedByYou');
+                    expect(error.statusCode).toBe(409);
                     done();
                 });
             });
@@ -89,7 +88,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         describe('bucket naming restriction', () => {
             let testFn;
 
-            before(() => {
+            beforeAll(() => {
                 testFn = (bucketName, done, errStatus, errCode) => {
                     const expectedStatus = errStatus || 400;
                     const expectedCode = errCode || 'InvalidBucketName';
@@ -102,9 +101,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             return done(e);
                         })
                         .catch(error => {
-                            assert.strictEqual(error.code, expectedCode);
-                            assert.strictEqual(error.statusCode,
-                                expectedStatus);
+                            expect(error.code).toBe(expectedCode);
+                            expect(error.statusCode).toBe(expectedStatus);
                             done();
                         });
                 };
@@ -115,23 +113,22 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             // Hence it skips some of test suites.
             const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
-            it('should return 405 if empty name', done => {
+            test('should return 405 if empty name', done => {
                 const shortName = '';
 
                 testFn(shortName, done, 405, 'MethodNotAllowed');
             });
 
-            it('should return 400 if name is shorter than 3 chars', done => {
+            test('should return 400 if name is shorter than 3 chars', done => {
                 const shortName = 'as';
 
                 testFn(shortName, done);
             });
 
-            it('should return 403 if name is reserved (e.g., METADATA)',
-                done => {
-                    const reservedName = 'METADATA';
-                    testFn(reservedName, done, 403, 'AccessDenied');
-                });
+            test('should return 403 if name is reserved (e.g., METADATA)', done => {
+                const reservedName = 'METADATA';
+                testFn(reservedName, done, 403, 'AccessDenied');
+            });
 
             itSkipIfAWS('should return 400 if name is longer than 63 chars',
                 done => {
@@ -154,7 +151,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 }
             );
 
-            it('should return 400 if name ends with period', done => {
+            test('should return 400 if name ends with period', done => {
                 const invalidName = 'myawsbucket.';
                 testFn(invalidName, done);
             });
@@ -167,7 +164,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 }
             );
 
-            it('should return 400 if name has special chars', done => {
+            test('should return 400 if name has special chars', done => {
                 const invalidName = 'my.#s3bucket';
                 testFn(invalidName, done);
             });
@@ -177,27 +174,31 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             function _test(name, done) {
                 bucketUtil.s3.createBucket({ Bucket: name }, (err, res) => {
                     assert.ifError(err);
-                    assert(res.Location, 'No Location in response');
+                    expect(res.Location).toBeTruthy();
                     assert.deepStrictEqual(res.Location, `/${name}`,
                       'Wrong Location header');
                     bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
-            it('should create bucket if name is valid', done =>
+            test('should create bucket if name is valid', done =>
                 _test('scality-very-valid-bucket-name', done));
 
-            it('should create bucket if name is some prefix and an IP address',
-                done => _test('prefix-192.168.5.4', done));
+            test(
+                'should create bucket if name is some prefix and an IP address',
+                done => _test('prefix-192.168.5.4', done)
+            );
 
-            it('should create bucket if name is an IP address with some suffix',
-                done => _test('192.168.5.4-suffix', done));
+            test(
+                'should create bucket if name is an IP address with some suffix',
+                done => _test('192.168.5.4-suffix', done)
+            );
         });
         Object.keys(locationConstraints).forEach(
         location => {
             describeSkipAWS(`bucket creation with location: ${location}`,
             () => {
-                after(() => bucketUtil.deleteOne(bucketName));
-                it(`should create bucket with location: ${location}`, done => {
+                afterAll(() => bucketUtil.deleteOne(bucketName));
+                test(`should create bucket with location: ${location}`, done => {
                     bucketUtil.s3.createBucketAsync(
                         {
                             Bucket: bucketName,
@@ -210,7 +211,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         });
 
         describe('bucket creation with invalid location', () => {
-            it('should return errors InvalidLocationConstraint', done => {
+            test('should return errors InvalidLocationConstraint', done => {
                 bucketUtil.s3.createBucketAsync(
                     {
                         Bucket: bucketName,
@@ -218,18 +219,17 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             LocationConstraint: 'coco',
                         },
                     }, err => {
-                    assert.strictEqual(err.code,
-                    'InvalidLocationConstraint');
-                    assert.strictEqual(err.statusCode, 400);
+                    expect(err.code).toBe('InvalidLocationConstraint');
+                    expect(err.statusCode).toBe(400);
                     done();
                 });
             });
         });
 
         describe('bucket creation with ingestion location', () => {
-            after(done =>
+            afterAll(done =>
                 bucketUtil.s3.deleteBucket({ Bucket: bucketName }, done));
-            it('should create bucket with location and ingestion', done => {
+            test('should create bucket with location and ingestion', done => {
                 async.waterfall([
                     next => bucketUtil.s3.createBucketAsync(
                         {
@@ -239,7 +239,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             },
                         }, (err, res) => {
                         assert.ifError(err);
-                        assert.strictEqual(res.Location, `/${bucketName}`);
+                        expect(res.Location).toBe(`/${bucketName}`);
                         return next();
                     }),
                     next => bucketUtil.s3.getBucketLocation(
@@ -247,13 +247,13 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             Bucket: bucketName,
                         }, (err, res) => {
                         assert.ifError(err);
-                        assert.strictEqual(res.LocationConstraint, 'us-east-2');
+                        expect(res.LocationConstraint).toBe('us-east-2');
                         return next();
                     }),
                     next => bucketUtil.s3.getBucketVersioning(
                         { Bucket: bucketName }, (err, res) => {
                             assert.ifError(err);
-                            assert.strictEqual(res.Status, 'Enabled');
+                            expect(res.Status).toBe('Enabled');
                             return next();
                     }),
                 ], done);

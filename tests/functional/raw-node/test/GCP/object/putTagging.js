@@ -14,10 +14,16 @@ const bucketName = `somebucket-${genUniqID()}`;
 const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 
 describe('GCP: PUT Object Tagging', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         gcpRequestRetry({
@@ -32,29 +38,29 @@ describe('GCP: PUT Object Tagging', () => {
         });
     });
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.key = `somekey-${genUniqID()}`;
-        this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
+    beforeEach(done => {
+        testContext.currentTest.key = `somekey-${genUniqID()}`;
+        testContext.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         makeGcpRequest({
             method: 'PUT',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
         }, (err, res) => {
             if (err) {
                 process.stdout.write(`err in creating object ${err}`);
                 return done(err);
             }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
+            testContext.currentTest.versionId = res.headers['x-goog-generation'];
             return done();
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         makeGcpRequest({
             method: 'DELETE',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
         }, err => {
             if (err) {
@@ -64,7 +70,7 @@ describe('GCP: PUT Object Tagging', () => {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -77,32 +83,31 @@ describe('GCP: PUT Object Tagging', () => {
         });
     });
 
-    it('should successfully put object tags', function testFn(done) {
+    test('should successfully put object tags', done => {
         async.waterfall([
             next => gcpClient.putObjectTagging({
                 Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
+                Key: testContext.test.key,
+                VersionId: testContext.test.versionId,
                 Tagging: {
                     TagSet: [
                         {
-                            Key: this.test.specialKey,
-                            Value: this.test.specialKey,
+                            Key: testContext.test.specialKey,
+                            Value: testContext.test.specialKey,
                         },
                     ],
                 },
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, got error ${err}`);
+                expect(err).toEqual(null);
                 return next();
             }),
             next => makeGcpRequest({
                 method: 'HEAD',
                 bucket: bucketName,
-                objectKey: this.test.key,
+                objectKey: testContext.test.key,
                 authCredentials: config.credentials,
                 headers: {
-                    'x-goog-generation': this.test.versionId,
+                    'x-goog-generation': testContext.test.versionId,
                 },
             }, (err, res) => {
                 if (err) {
@@ -110,84 +115,90 @@ describe('GCP: PUT Object Tagging', () => {
                     return next(err);
                 }
                 const toCompare =
-                    res.headers[`${gcpTagPrefix}${this.test.specialKey}`];
-                assert.strictEqual(toCompare, this.test.specialKey);
+                    res.headers[`${gcpTagPrefix}${testContext.test.specialKey}`];
+                expect(toCompare).toBe(testContext.test.specialKey);
                 return next();
             }),
         ], done);
     });
 
     describe('when tagging parameter is incorrect', () => {
-        it('should return 400 and BadRequest if more than ' +
-        '10 tags are given', function testFun(done) {
+        test('should return 400 and BadRequest if more than ' +
+        '10 tags are given', done => {
             return gcpClient.putObjectTagging({
                 Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
+                Key: testContext.test.key,
+                VersionId: testContext.test.versionId,
                 Tagging: {
                     TagSet: genPutTagObj(11),
                 },
             }, err => {
-                assert(err);
-                assert.strictEqual(err.code, 400);
-                assert.strictEqual(err.message, 'BadRequest');
+                expect(err).toBeTruthy();
+                expect(err.code).toBe(400);
+                expect(err.message).toBe('BadRequest');
                 return done();
             });
         });
 
-        it('should return 400 and InvalidTag if given duplicate keys',
-        function testFn(done) {
-            return gcpClient.putObjectTagging({
-                Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
-                Tagging: {
-                    TagSet: genPutTagObj(10, true),
-                },
-            }, err => {
-                assert(err);
-                assert.strictEqual(err.code, 400);
-                assert.strictEqual(err.message, 'InvalidTag');
-                return done();
-            });
-        });
+        test(
+            'should return 400 and InvalidTag if given duplicate keys',
+            done => {
+                return gcpClient.putObjectTagging({
+                    Bucket: bucketName,
+                    Key: testContext.test.key,
+                    VersionId: testContext.test.versionId,
+                    Tagging: {
+                        TagSet: genPutTagObj(10, true),
+                    },
+                }, err => {
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe(400);
+                    expect(err.message).toBe('InvalidTag');
+                    return done();
+                });
+            }
+        );
 
-        it('should return 400 and InvalidTag if given invalid key',
-        function testFn(done) {
-            return gcpClient.putObjectTagging({
-                Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
-                Tagging: {
-                    TagSet: [
-                        { Key: Buffer.alloc(129, 'a'), Value: 'bad tag' },
-                    ],
-                },
-            }, err => {
-                assert(err);
-                assert.strictEqual(err.code, 400);
-                assert.strictEqual(err.message, 'InvalidTag');
-                return done();
-            });
-        });
+        test(
+            'should return 400 and InvalidTag if given invalid key',
+            done => {
+                return gcpClient.putObjectTagging({
+                    Bucket: bucketName,
+                    Key: testContext.test.key,
+                    VersionId: testContext.test.versionId,
+                    Tagging: {
+                        TagSet: [
+                            { Key: Buffer.alloc(129, 'a'), Value: 'bad tag' },
+                        ],
+                    },
+                }, err => {
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe(400);
+                    expect(err.message).toBe('InvalidTag');
+                    return done();
+                });
+            }
+        );
 
-        it('should return 400 and InvalidTag if given invalid value',
-        function testFn(done) {
-            return gcpClient.putObjectTagging({
-                Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
-                Tagging: {
-                    TagSet: [
-                        { Key: 'badtag', Value: Buffer.alloc(257, 'a') },
-                    ],
-                },
-            }, err => {
-                assert(err);
-                assert.strictEqual(err.code, 400);
-                assert.strictEqual(err.message, 'InvalidTag');
-                return done();
-            });
-        });
+        test(
+            'should return 400 and InvalidTag if given invalid value',
+            done => {
+                return gcpClient.putObjectTagging({
+                    Bucket: bucketName,
+                    Key: testContext.test.key,
+                    VersionId: testContext.test.versionId,
+                    Tagging: {
+                        TagSet: [
+                            { Key: 'badtag', Value: Buffer.alloc(257, 'a') },
+                        ],
+                    },
+                }, err => {
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe(400);
+                    expect(err.message).toBe('InvalidTag');
+                    return done();
+                });
+            }
+        );
     });
 });

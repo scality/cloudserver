@@ -42,8 +42,7 @@ function gcpMpuSetup(params, callback) {
             Bucket: bucketNames.mpu.Name,
             Key: key,
         }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, but got error ${err}`);
+            expect(err).toEqual(null);
             return next(null, res.UploadId);
         }),
         (uploadId, next) => {

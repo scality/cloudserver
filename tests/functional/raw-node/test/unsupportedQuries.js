@@ -16,8 +16,8 @@ describe('unsupported query requests:', () => {
         done => {
             makeS3Request({ method: 'GET', queryObj, bucket, objectKey },
             err => {
-                assert.strictEqual(err.code, 'NotImplemented');
-                assert.strictEqual(err.statusCode, 501);
+                expect(err.code).toBe('NotImplemented');
+                expect(err.statusCode).toBe(501);
                 done();
             });
         });

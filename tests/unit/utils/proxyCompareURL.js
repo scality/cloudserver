@@ -43,14 +43,14 @@ const testCases = [
 
 describe('proxyCompareURL util function', () => {
     testCases.forEach(test => {
-        it(`should return ${test.expRes} if ${test.desc}`, () => {
+        test(`should return ${test.expRes} if ${test.desc}`, () => {
             process.env.NO_PROXY = test.noProxy;
             const proxyMatch = proxyCompareUrl(test.endpoint);
-            assert.strictEqual(test.expRes, proxyMatch);
+            expect(test.expRes).toBe(proxyMatch);
         });
     });
 
-    after(() => {
+    afterAll(() => {
         process.env.NO_PROXY = '';
     });
 });

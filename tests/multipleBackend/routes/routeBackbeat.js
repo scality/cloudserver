@@ -116,7 +116,7 @@ function checkObjectData(s3, bucket, objectKey, dataValue, done) {
         Key: objectKey,
     }, (err, data) => {
         assert.ifError(err);
-        assert.strictEqual(data.Body.toString(), dataValue);
+        expect(data.Body.toString()).toBe(dataValue);
         done();
     });
 }
@@ -154,7 +154,7 @@ function makeBackbeatRequest(params, callback) {
 }
 
 describeSkipIfNotMultiple('backbeat DELETE routes', () => {
-    it('abort MPU', done => {
+    test('abort MPU', done => {
         const awsBucket =
               config.locationConstraints[awsLocation].details.bucketName;
         const awsKey = 'backbeat-mpu-test';
@@ -180,7 +180,7 @@ describeSkipIfNotMultiple('backbeat DELETE routes', () => {
                     authCredentials: backbeatAuthCredentials,
                 }, (err, response) => {
                     assert.ifError(err);
-                    assert.strictEqual(response.statusCode, 200);
+                    expect(response.statusCode).toBe(200);
                     assert.deepStrictEqual(JSON.parse(response.body), {});
                     return next(null, UploadId);
                 });
@@ -191,7 +191,7 @@ describeSkipIfNotMultiple('backbeat DELETE routes', () => {
                     assert.ifError(err);
                     const hasOngoingUpload =
                         response.Uploads.some(upload => (upload === UploadId));
-                    assert(!hasOngoingUpload);
+                    expect(!hasOngoingUpload).toBeTruthy();
                     return next();
                 }),
         ], err => {
@@ -205,7 +205,7 @@ describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
     let s3;
 
-    before(done => {
+    beforeAll(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
@@ -222,7 +222,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 throw err;
             });
     });
-    after(done => {
+    afterAll(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucketAsync({ Bucket: TEST_BUCKET }))
             .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
@@ -262,7 +262,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 caption: `with key ${key}`,
             })))
             .forEach(testCase => {
-                it(testCase.caption, done => {
+                test(testCase.caption, done => {
                     async.waterfall([next => {
                         makeBackbeatRequest({
                             method: 'PUT', bucket: TEST_BUCKET,
@@ -276,7 +276,7 @@ describeSkipIfAWS('backbeat routes', () => {
                             authCredentials: backbeatAuthCredentials,
                             requestBody: testData }, next);
                     }, (response, next) => {
-                        assert.strictEqual(response.statusCode, 200);
+                        expect(response.statusCode).toBe(200);
                         const newMd = Object.assign({}, testMd);
                         newMd.location = JSON.parse(response.body);
                         makeBackbeatRequest({
@@ -287,7 +287,7 @@ describeSkipIfAWS('backbeat routes', () => {
                             requestBody: JSON.stringify(newMd),
                         }, next);
                     }, (response, next) => {
-                        assert.strictEqual(response.statusCode, 200);
+                        expect(response.statusCode).toBe(200);
                         checkObjectData(s3, TEST_BUCKET, testCase.key, testData,
                             next);
                     }], err => {
@@ -298,7 +298,7 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
-        it('should PUT metadata for a non-versioned bucket', done => {
+        test('should PUT metadata for a non-versioned bucket', done => {
             const bucket = NONVERSIONED_BUCKET;
             const objectKey = 'non-versioned-key';
             async.waterfall([
@@ -332,7 +332,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         requestBody: JSON.stringify(metadata),
                     }, (err, response) => {
                         assert.ifError(err);
-                        assert.strictEqual(response.statusCode, 200);
+                        expect(response.statusCode).toBe(200);
                         next();
                     }),
                 next =>
@@ -341,14 +341,14 @@ describeSkipIfAWS('backbeat routes', () => {
                         Key: objectKey,
                     }, (err, data) => {
                         assert.ifError(err);
-                        assert.strictEqual(data.StorageClass, 'awsbackend');
+                        expect(data.StorageClass).toBe('awsbackend');
                         next();
                     }),
                 next => checkObjectData(s3, bucket, objectKey, testData, next),
             ], done);
         });
 
-        it('PUT metadata with "x-scal-replication-content: METADATA"' +
+        test('PUT metadata with "x-scal-replication-content: METADATA"' +
         'header should replicate metadata only', done => {
             async.waterfall([next => {
                 makeBackbeatRequest({
@@ -364,7 +364,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     requestBody: testData,
                 }, next);
             }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
+                expect(response.statusCode).toBe(200);
                 const newMd = Object.assign({}, testMd);
                 newMd.location = JSON.parse(response.body);
                 makeBackbeatRequest({
@@ -375,7 +375,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     requestBody: JSON.stringify(newMd),
                 }, next);
             }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
+                expect(response.statusCode).toBe(200);
                 const newMd = Object.assign({}, testMd);
                 makeBackbeatRequest({
                     method: 'PUT', bucket: TEST_BUCKET,
@@ -386,7 +386,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     requestBody: JSON.stringify(newMd),
                 }, next);
             }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
+                expect(response.statusCode).toBe(200);
                 checkObjectData(s3, TEST_BUCKET, 'test-updatemd-key', testData,
                     next);
             }], err => {
@@ -395,7 +395,7 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
-        it('should refuse PUT data if no x-scal-canonical-id header ' +
+        test('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided', done => makeBackbeatRequest({
                method: 'PUT', bucket: TEST_BUCKET,
                objectKey: testKey, resourceType: 'data',
@@ -407,155 +407,153 @@ describeSkipIfAWS('backbeat routes', () => {
                requestBody: testData,
            },
            err => {
-               assert.strictEqual(err.code, 'BadRequest');
+               expect(err.code).toBe('BadRequest');
                done();
            }));
 
-        it('should refuse PUT data if no content-md5 header is provided',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: TEST_BUCKET,
-            objectKey: testKey, resourceType: 'data',
-            headers: {
-                'content-length': testData.length,
-                'x-scal-canonical-id': testArn,
+        test(
+            'should refuse PUT data if no content-md5 header is provided',
+            done => makeBackbeatRequest({
+                method: 'PUT', bucket: TEST_BUCKET,
+                objectKey: testKey, resourceType: 'data',
+                headers: {
+                    'content-length': testData.length,
+                    'x-scal-canonical-id': testArn,
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: testData,
             },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: testData,
-        },
-        err => {
-            assert.strictEqual(err.code, 'BadRequest');
-            done();
-        }));
-
-        it('should refuse PUT in metadata-only mode if object does not exist',
-        done => {
-            async.waterfall([next => {
-                const newMd = Object.assign({}, testMd);
-                makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
-                    objectKey: 'does-not-exist',
-                    resourceType: 'metadata',
-                    headers: { 'x-scal-replication-content': 'METADATA' },
-                    authCredentials: backbeatAuthCredentials,
-                    requestBody: JSON.stringify(newMd),
-                }, next);
-            }], err => {
-                assert.strictEqual(err.statusCode, 404);
+            err => {
+                expect(err.code).toBe('BadRequest');
                 done();
-            });
-        });
+            })
+        );
+
+        test(
+            'should refuse PUT in metadata-only mode if object does not exist',
+            done => {
+                async.waterfall([next => {
+                    const newMd = Object.assign({}, testMd);
+                    makeBackbeatRequest({
+                        method: 'PUT', bucket: TEST_BUCKET,
+                        objectKey: 'does-not-exist',
+                        resourceType: 'metadata',
+                        headers: { 'x-scal-replication-content': 'METADATA' },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: JSON.stringify(newMd),
+                    }, next);
+                }], err => {
+                    expect(err.statusCode).toBe(404);
+                    done();
+                });
+            }
+        );
     });
     describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
-             it(`${test.method} ${test.resourceType} should respond with ` +
-             '403 Forbidden if no credentials are provided',
-             done => {
+             test(`${test.method} ${test.resourceType} should respond with ` +
+             '403 Forbidden if no credentials are provided', done => {
                  makeBackbeatRequest({
                      method: test.method, bucket: TEST_BUCKET,
                      objectKey: TEST_KEY, resourceType: test.resourceType,
                  },
                  err => {
-                     assert(err);
-                     assert.strictEqual(err.statusCode, 403);
-                     assert.strictEqual(err.code, 'AccessDenied');
+                     expect(err).toBeTruthy();
+                     expect(err.statusCode).toBe(403);
+                     expect(err.code).toBe('AccessDenied');
                      done();
                  });
              });
-             it(`${test.method} ${test.resourceType} should respond with ` +
-                '403 Forbidden if wrong credentials are provided',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        authCredentials: {
-                            accessKey: 'wrong',
-                            secretKey: 'still wrong',
-                        },
-                    },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'InvalidAccessKeyId');
-                        done();
-                    });
-                });
-             it(`${test.method} ${test.resourceType} should respond with ` +
+             test(`${test.method} ${test.resourceType} should respond with ` +
+                '403 Forbidden if wrong credentials are provided', done => {
+                 makeBackbeatRequest({
+                     method: test.method, bucket: TEST_BUCKET,
+                     objectKey: TEST_KEY, resourceType: test.resourceType,
+                     authCredentials: {
+                         accessKey: 'wrong',
+                         secretKey: 'still wrong',
+                     },
+                 },
+                 err => {
+                     expect(err).toBeTruthy();
+                     expect(err.statusCode).toBe(403);
+                     expect(err.code).toBe('InvalidAccessKeyId');
+                     done();
+                 });
+             });
+             test(`${test.method} ${test.resourceType} should respond with ` +
                 '403 Forbidden if the account does not match the ' +
-                'backbeat user',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
-                        },
-                    },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'AccessDenied');
-                        done();
-                    });
-                });
-             it(`${test.method} ${test.resourceType} should respond with ` +
-                '403 Forbidden if backbeat user has wrong secret key',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        authCredentials: {
-                            accessKey: backbeatAuthCredentials.accessKey,
-                            secretKey: 'hastalavista',
-                        },
-                    },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'SignatureDoesNotMatch');
-                        done();
-                    });
-                });
+                'backbeat user', done => {
+                 makeBackbeatRequest({
+                     method: test.method, bucket: TEST_BUCKET,
+                     objectKey: TEST_KEY, resourceType: test.resourceType,
+                     authCredentials: {
+                         accessKey: 'accessKey2',
+                         secretKey: 'verySecretKey2',
+                     },
+                 },
+                 err => {
+                     expect(err).toBeTruthy();
+                     expect(err.statusCode).toBe(403);
+                     expect(err.code).toBe('AccessDenied');
+                     done();
+                 });
+             });
+             test(`${test.method} ${test.resourceType} should respond with ` +
+                '403 Forbidden if backbeat user has wrong secret key', done => {
+                 makeBackbeatRequest({
+                     method: test.method, bucket: TEST_BUCKET,
+                     objectKey: TEST_KEY, resourceType: test.resourceType,
+                     authCredentials: {
+                         accessKey: backbeatAuthCredentials.accessKey,
+                         secretKey: 'hastalavista',
+                     },
+                 },
+                 err => {
+                     expect(err).toBeTruthy();
+                     expect(err.statusCode).toBe(403);
+                     expect(err.code).toBe('SignatureDoesNotMatch');
+                     done();
+                 });
+             });
          });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '503 on authenticated requests (API server down)',
-           done => {
-               const options = {
-                   authCredentials: {
-                       accessKey: 'accessKey2',
-                       secretKey: 'verySecretKey2',
-                   },
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 503);
-                   assert.strictEqual(err.code, 'ServiceUnavailable');
-                   done();
-               });
-           });
-        it('GET  /_/backbeat/api/... should respond with ' +
-           '403 Forbidden if the request is unauthenticated',
-           done => {
-               const options = {
-                   hostname: ipAddress,
-                   port: 8000,
-                   method: 'GET',
-                   path: '/_/backbeat/api/crr/failed',
-                   jsonResponse: true,
-               };
-               makeRequest(options, err => {
-                   assert(err);
-                   assert.strictEqual(err.statusCode, 403);
-                   assert.strictEqual(err.code, 'AccessDenied');
-                   done();
-               });
-           });
+        test('GET  /_/backbeat/api/... should respond with ' +
+           '503 on authenticated requests (API server down)', done => {
+            const options = {
+                authCredentials: {
+                    accessKey: 'accessKey2',
+                    secretKey: 'verySecretKey2',
+                },
+                hostname: ipAddress,
+                port: 8000,
+                method: 'GET',
+                path: '/_/backbeat/api/crr/failed',
+                jsonResponse: true,
+            };
+            makeRequest(options, err => {
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(503);
+                expect(err.code).toBe('ServiceUnavailable');
+                done();
+            });
+        });
+        test('GET  /_/backbeat/api/... should respond with ' +
+           '403 Forbidden if the request is unauthenticated', done => {
+            const options = {
+                hostname: ipAddress,
+                port: 8000,
+                method: 'GET',
+                path: '/_/backbeat/api/crr/failed',
+                jsonResponse: true,
+            };
+            makeRequest(options, err => {
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(403);
+                expect(err.code).toBe('AccessDenied');
+                done();
+            });
+        });
     });
 
     describe('GET Metadata route', () => {
@@ -567,7 +565,7 @@ describeSkipIfAWS('backbeat routes', () => {
             requestBody: JSON.stringify(testMd),
         }, done));
 
-        it('should return metadata blob for a versionId', done => {
+        test('should return metadata blob for a versionId', done => {
             makeBackbeatRequest({
                 method: 'GET', bucket: TEST_BUCKET,
                 objectKey: TEST_KEY, resourceType: 'metadata',
@@ -577,13 +575,13 @@ describeSkipIfAWS('backbeat routes', () => {
                 },
             }, (err, data) => {
                 const parsedBody = JSON.parse(JSON.parse(data.body).Body);
-                assert.strictEqual(data.statusCode, 200);
+                expect(data.statusCode).toBe(200);
                 assert.deepStrictEqual(parsedBody, testMd);
                 done();
             });
         });
 
-        it('should return error if bucket does not exist', done => {
+        test('should return error if bucket does not exist', done => {
             makeBackbeatRequest({
                 method: 'GET', bucket: 'blah',
                 objectKey: TEST_KEY, resourceType: 'metadata',
@@ -592,13 +590,13 @@ describeSkipIfAWS('backbeat routes', () => {
                     versionId: versionIdUtils.encode(testMd.versionId),
                 },
             }, (err, data) => {
-                assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'NoSuchBucket');
+                expect(data.statusCode).toBe(404);
+                expect(JSON.parse(data.body).code).toBe('NoSuchBucket');
                 done();
             });
         });
 
-        it('should return error if object does not exist', done => {
+        test('should return error if object does not exist', done => {
             makeBackbeatRequest({
                 method: 'GET', bucket: TEST_BUCKET,
                 objectKey: 'blah', resourceType: 'metadata',
@@ -607,14 +605,14 @@ describeSkipIfAWS('backbeat routes', () => {
                     versionId: versionIdUtils.encode(testMd.versionId),
                 },
             }, (err, data) => {
-                assert.strictEqual(data.statusCode, 404);
-                assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
+                expect(data.statusCode).toBe(404);
+                expect(JSON.parse(data.body).code).toBe('ObjNotFound');
                 done();
             });
         });
     });
     describe('Batch Delete Route', () => {
-        it('should batch delete a local location', done => {
+        test('should batch delete a local location', done => {
             let versionId;
             let location;
             const testKey = 'batch-delete-test-key';
@@ -640,7 +638,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         },
                     }, (err, data) => {
                         assert.ifError(err);
-                        assert.strictEqual(data.statusCode, 200);
+                        expect(data.statusCode).toBe(200);
                         const metadata = JSON.parse(
                             JSON.parse(data.body).Body);
                         location = metadata.location;
@@ -665,12 +663,12 @@ describeSkipIfAWS('backbeat routes', () => {
                     Key: testKey,
                 }, err => {
                     // should error out as location shall no longer exist
-                    assert(err);
+                    expect(err).toBeTruthy();
                     done();
                 }),
             ], done);
         });
-        it('should batch delete a versioned AWS location', done => {
+        test('should batch delete a versioned AWS location', done => {
             let versionId;
             const awsBucket =
                   config.locationConstraints[awsLocation].details.bucketName;
@@ -710,12 +708,12 @@ describeSkipIfAWS('backbeat routes', () => {
                     Key: awsKey,
                 }, err => {
                     // should error out as location shall no longer exist
-                    assert(err);
+                    expect(err).toBeTruthy();
                     done();
                 }),
             ], done);
         });
-        it('should fail with error if given malformed JSON', done => {
+        test('should fail with error if given malformed JSON', done => {
             async.series([
                 done => {
                     const options = {
@@ -730,11 +728,11 @@ describeSkipIfAWS('backbeat routes', () => {
                     makeRequest(options, done);
                 },
             ], err => {
-                assert(err);
+                expect(err).toBeTruthy();
                 done();
             });
         });
-        it('should skip batch delete of a non-existent location', done => {
+        test('should skip batch delete of a non-existent location', done => {
             async.series([
                 done => {
                     const options = {

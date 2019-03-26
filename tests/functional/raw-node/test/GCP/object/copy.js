@@ -10,12 +10,18 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
 
-describe('GCP: COPY Object', function testSuite() {
+describe('GCP: COPY Object', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(180000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
+    beforeAll(done => {
         gcpRequestRetry({
             method: 'PUT',
             bucket: bucketName,
@@ -28,7 +34,7 @@ describe('GCP: COPY Object', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -42,7 +48,7 @@ describe('GCP: COPY Object', function testSuite() {
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404 and \'NoSuchKey\'', done => {
+        test('should return 404 and \'NoSuchKey\'', done => {
             const missingObject = `nonexistingkey-${genUniqID()}`;
             const someKey = `somekey-${genUniqID()}`;
             gcpClient.copyObject({
@@ -50,42 +56,42 @@ describe('GCP: COPY Object', function testSuite() {
                 Key: someKey,
                 CopySource: `/${bucketName}/${missingObject}`,
             }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
+                expect(err.code).toBe('NoSuchKey');
                 return done();
             });
         });
     });
 
     describe('with existing object in bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
-            this.currentTest.copyKey = `copykey-${genUniqID()}`;
-            this.currentTest.initValue = `${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
+            testContext.currentTest.copyKey = `copykey-${genUniqID()}`;
+            testContext.currentTest.initValue = `${genUniqID()}`;
             makeGcpRequest({
                 method: 'PUT',
                 bucket: bucketName,
-                objectKey: this.currentTest.copyKey,
+                objectKey: testContext.currentTest.copyKey,
                 headers: {
-                    'x-goog-meta-value': this.currentTest.initValue,
+                    'x-goog-meta-value': testContext.currentTest.initValue,
                 },
                 authCredentials: config.credentials,
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in creating object ${err}\n`);
                 }
-                this.currentTest.contentHash = res.headers['x-goog-hash'];
+                testContext.currentTest.contentHash = res.headers['x-goog-hash'];
                 return done(err);
             });
         });
 
-        afterEach(function afterFn(done) {
+        afterEach(done => {
             async.parallel([
                 next => makeGcpRequest({
                     method: 'DELETE',
                     bucket: bucketName,
-                    objectKey: this.currentTest.key,
+                    objectKey: testContext.currentTest.key,
                     authCredentials: config.credentials,
                 }, err => {
                     if (err) {
@@ -96,7 +102,7 @@ describe('GCP: COPY Object', function testSuite() {
                 next => makeGcpRequest({
                     method: 'DELETE',
                     bucket: bucketName,
-                    objectKey: this.currentTest.copyKey,
+                    objectKey: testContext.currentTest.copyKey,
                     authCredentials: config.credentials,
                 }, err => {
                     if (err) {
@@ -108,27 +114,25 @@ describe('GCP: COPY Object', function testSuite() {
             ], done);
         });
 
-        it('should successfully copy with REPLACE directive',
-        function testFn(done) {
+        test('should successfully copy with REPLACE directive', done => {
             const newValue = `${genUniqID()}`;
             async.waterfall([
                 next => gcpClient.copyObject({
                     Bucket: bucketName,
-                    Key: this.test.key,
-                    CopySource: `/${bucketName}/${this.test.copyKey}`,
+                    Key: testContext.test.key,
+                    CopySource: `/${bucketName}/${testContext.test.copyKey}`,
                     MetadataDirective: 'REPLACE',
                     Metadata: {
                         value: newValue,
                     },
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
+                    expect(err).toEqual(null);
                     return next();
                 }),
                 next => makeGcpRequest({
                     method: 'HEAD',
                     bucket: bucketName,
-                    objectKey: this.test.key,
+                    objectKey: testContext.test.key,
                     authCredentials: config.credentials,
                 }, (err, res) => {
                     if (err) {
@@ -136,32 +140,28 @@ describe('GCP: COPY Object', function testSuite() {
                             .write(`err in retrieving object ${err}\n`);
                         return next(err);
                     }
-                    assert.strictEqual(this.test.contentHash,
-                        res.headers['x-goog-hash']);
-                    assert.notStrictEqual(res.headers['x-goog-meta-value'],
-                        this.test.initValue);
+                    expect(testContext.test.contentHash).toBe(res.headers['x-goog-hash']);
+                    expect(res.headers['x-goog-meta-value']).not.toBe(testContext.test.initValue);
                     return next();
                 }),
             ], done);
         });
 
-        it('should successfully copy with COPY directive',
-        function testFn(done) {
+        test('should successfully copy with COPY directive', done => {
             async.waterfall([
                 next => gcpClient.copyObject({
                     Bucket: bucketName,
-                    Key: this.test.key,
-                    CopySource: `/${bucketName}/${this.test.copyKey}`,
+                    Key: testContext.test.key,
+                    CopySource: `/${bucketName}/${testContext.test.copyKey}`,
                     MetadataDirective: 'COPY',
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
+                    expect(err).toEqual(null);
                     return next();
                 }),
                 next => makeGcpRequest({
                     method: 'HEAD',
                     bucket: bucketName,
-                    objectKey: this.test.key,
+                    objectKey: testContext.test.key,
                     authCredentials: config.credentials,
                 }, (err, res) => {
                     if (err) {
@@ -169,10 +169,8 @@ describe('GCP: COPY Object', function testSuite() {
                             .write(`err in retrieving object ${err}\n`);
                         return next(err);
                     }
-                    assert.strictEqual(this.test.contentHash,
-                        res.headers['x-goog-hash']);
-                    assert.strictEqual(res.headers['x-goog-meta-value'],
-                        this.test.initValue);
+                    expect(testContext.test.contentHash).toBe(res.headers['x-goog-hash']);
+                    expect(res.headers['x-goog-meta-value']).toBe(testContext.test.initValue);
                     return next();
                 }),
             ], done);

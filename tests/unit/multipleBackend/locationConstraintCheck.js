@@ -34,32 +34,27 @@ function createTestRequest(locationConstraint) {
 }
 
 describe('Location Constraint Check', () => {
-    it('should return error if controlling location constraint is ' +
+    test('should return error if controlling location constraint is ' +
     'not valid', done => {
         const backendInfoObj = locationConstraintCheck(
             createTestRequest('fail-region'), null, testBucket, log);
-        assert.strictEqual(backendInfoObj.err.code, 400,
-            'Expected "Invalid Argument" code error');
-        assert(backendInfoObj.err.InvalidArgument, 'Expected "Invalid ' +
-        'Argument" error');
+        expect(backendInfoObj.err.code).toBe(400);
+        expect(backendInfoObj.err.InvalidArgument).toBeTruthy();
         done();
     });
 
-    it('should return instance of BackendInfo with correct ' +
+    test('should return instance of BackendInfo with correct ' +
     'locationConstraints', done => {
         const backendInfoObj = locationConstraintCheck(
             createTestRequest(memLocation), null, testBucket, log);
-        assert.strictEqual(backendInfoObj.err, null, 'Expected success ' +
-            `but got error ${backendInfoObj.err}`);
-        assert.strictEqual(typeof backendInfoObj.controllingLC, 'string');
-        assert.equal(backendInfoObj.backendInfo instanceof BackendInfo,
-            true);
-        assert.strictEqual(backendInfoObj.
-            backendInfo.getObjectLocationConstraint(), memLocation);
-        assert.strictEqual(backendInfoObj.
-            backendInfo.getBucketLocationConstraint(), fileLocation);
-        assert.strictEqual(backendInfoObj.backendInfo.getRequestEndpoint(),
-            'localhost');
+        expect(backendInfoObj.err).toBe(null);
+        expect(typeof backendInfoObj.controllingLC).toBe('string');
+        expect(backendInfoObj.backendInfo instanceof BackendInfo).toEqual(true);
+        expect(backendInfoObj.
+            backendInfo.getObjectLocationConstraint()).toBe(memLocation);
+        expect(backendInfoObj.
+            backendInfo.getBucketLocationConstraint()).toBe(fileLocation);
+        expect(backendInfoObj.backendInfo.getRequestEndpoint()).toBe('localhost');
         done();
     });
 });

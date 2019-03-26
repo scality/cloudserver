@@ -20,9 +20,9 @@ const taggingConfig = { TagSet: [
 ] };
 
 function _checkError(err, code, statusCode) {
-    assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.statusCode, statusCode);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(code);
+    expect(err.statusCode).toBe(statusCode);
 }
 
 describe('DELETE object taggings', () => {
@@ -52,7 +52,7 @@ describe('DELETE object taggings', () => {
             });
         });
 
-        it('should delete tag set', done => {
+        test('should delete tag set', done => {
             s3.putObjectTagging({
                 Bucket: bucketName,
                 Key: objectName,
@@ -62,32 +62,34 @@ describe('DELETE object taggings', () => {
                 s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
                 (err, data) => {
                     assert.ifError(err, `Found unexpected err ${err}`);
-                    assert.strictEqual(Object.keys(data).length, 0);
+                    expect(Object.keys(data).length).toBe(0);
                     done();
                 });
             });
         });
 
-        it('should delete a non-existing tag set', done => {
+        test('should delete a non-existing tag set', done => {
             s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
             (err, data) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(Object.keys(data).length, 0);
+                expect(Object.keys(data).length).toBe(0);
                 done();
             });
         });
 
-        it('should return NoSuchKey deleting tag set to a non-existing object',
-        done => {
-            s3.deleteObjectTagging({
-                Bucket: bucketName,
-                Key: 'nonexisting',
-            }, err => {
-                _checkError(err, 'NoSuchKey', 404);
-                done();
-            });
-        });
-        it('should return 403 AccessDenied deleting tag set with another ' +
+        test(
+            'should return NoSuchKey deleting tag set to a non-existing object',
+            done => {
+                s3.deleteObjectTagging({
+                    Bucket: bucketName,
+                    Key: 'nonexisting',
+                }, err => {
+                    _checkError(err, 'NoSuchKey', 404);
+                    done();
+                });
+            }
+        );
+        test('should return 403 AccessDenied deleting tag set with another ' +
         'account', done => {
             otherAccountS3.deleteObjectTagging({ Bucket: bucketName, Key:
               objectName }, err => {
@@ -96,9 +98,8 @@ describe('DELETE object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied deleting tag set with a different ' +
-        'account to an object with ACL "public-read-write"',
-        done => {
+        test('should return 403 AccessDenied deleting tag set with a different ' +
+        'account to an object with ACL "public-read-write"', done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
                 ACL: 'public-read-write' }, err => {
                 if (err) {
@@ -112,9 +113,8 @@ describe('DELETE object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied deleting tag set to an object' +
-        ' in a bucket created with a different account',
-        done => {
+        test('should return 403 AccessDenied deleting tag set to an object' +
+        ' in a bucket created with a different account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:
                   'public-read-write' }, err => next(err)),
@@ -128,7 +128,7 @@ describe('DELETE object taggings', () => {
             });
         });
 
-        it('should delete tag set to an object in a bucket created with same ' +
+        test('should delete tag set to an object in a bucket created with same ' +
         'account even though object put by other account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:

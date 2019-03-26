@@ -4,8 +4,8 @@ const { cosParse } = require('../../../lib/Config');
 const dummyChordCos = '2';
 
 describe('cosParse', () => {
-    it('should return the single digit of the string as an integer', () => {
+    test('should return the single digit of the string as an integer', () => {
         const parsed = cosParse(dummyChordCos);
-        assert.strictEqual(parsed, 2);
+        expect(parsed).toBe(2);
     });
 });

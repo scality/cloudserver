@@ -44,7 +44,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
 }
 
 describe('User visits bucket website endpoint', () => {
-    it('should return 404 when no such bucket', done => {
+    test('should return 404 when no such bucket', done => {
         WebsiteConfigTester.checkHTML({
             method: 'GET',
             url: endpoint,
@@ -57,7 +57,7 @@ describe('User visits bucket website endpoint', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return 404 when no website configuration', done => {
+        test('should return 404 when no website configuration', done => {
             WebsiteConfigTester.checkHTML({
                 method: 'GET',
                 url: endpoint,
@@ -70,15 +70,14 @@ describe('User visits bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket, Key: 'index.html',
                         ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/index.html')),
                         ContentType: 'text/html' },
                         err => {
-                            assert.strictEqual(err, null);
+                            expect(err).toBe(null);
                             done();
                         });
                 });
@@ -89,30 +88,29 @@ describe('User visits bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should return 405 when user requests method other than get ' +
+            test('should return 405 when user requests method other than get ' +
             'or head', done => {
                 makeRequest({
                     hostname,
                     port,
                     method: 'POST',
                 }, (err, res) => {
-                    assert.strictEqual(err, null,
-                        `Err with request ${err}`);
-                    assert.strictEqual(res.statusCode, 405);
-                    assert(res.body.indexOf('<head><title>405 ' +
-                        'Method Not Allowed</title></head>') > -1);
+                    expect(err).toBe(null);
+                    expect(res.statusCode).toBe(405);
+                    expect(res.body.indexOf('<head><title>405 ' +
+                        'Method Not Allowed</title></head>') > -1).toBeTruthy();
                     return done();
                 });
             });
 
-            it('should serve indexDocument if no key requested', done => {
+            test('should serve indexDocument if no key requested', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
                     responseType: 'index-user',
                 }, done);
             });
-            it('should serve indexDocument if key requested', done => {
+            test('should serve indexDocument if key requested', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/index.html`,
@@ -125,8 +123,7 @@ describe('User visits bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'pathprefix/index.html',
                         ACL: 'public-read',
@@ -142,8 +139,7 @@ describe('User visits bucket website endpoint', () => {
                 done);
             });
 
-            it('should serve indexDocument if path request without key',
-            done => {
+            test('should serve indexDocument if path request without key', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/pathprefix/`,
@@ -151,8 +147,7 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
 
-            it('should serve indexDocument if path request with key',
-            done => {
+            test('should serve indexDocument if path request with key', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/pathprefix/index.html`,
@@ -166,8 +161,7 @@ describe('User visits bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'index.html',
                         ACL: 'private',
@@ -181,7 +175,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, done);
             });
 
-            it('should return 403 if key is private', done => {
+            test('should return 403 if key is private', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -197,7 +191,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should return 403 if nonexisting index document key', done => {
+            test('should return 403 if nonexisting index document key', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -217,7 +211,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}`, done => {
+            test(`should redirect to ${redirectEndpoint}`, done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -226,7 +220,7 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}/about`, done => {
+            test(`should redirect to ${redirectEndpoint}/about`, done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/about`,
@@ -252,7 +246,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://google.com/', done => {
+            test('should redirect to https://google.com/', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -261,7 +255,7 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
 
-            it('should redirect to https://google.com/about', done => {
+            test('should redirect to https://google.com/about', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/about`,
@@ -277,8 +271,7 @@ describe('User visits bucket website endpoint', () => {
                 'error.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'error.html',
                         ACL: 'public-read',
@@ -292,8 +285,7 @@ describe('User visits bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'error.html' }, done);
             });
 
-            it('should serve custom error document if an error occurred',
-            done => {
+            test('should serve custom error document if an error occurred', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -310,7 +302,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should serve s3 error file if unfound custom error document ' +
+            test('should serve s3 error file if unfound custom error document ' +
             'and an error occurred', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -334,7 +326,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint} if error 403` +
+            test(`should redirect to ${redirectEndpoint} if error 403` +
             ' occured', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -359,7 +351,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}/about/ if ` +
+            test(`should redirect to ${redirectEndpoint}/about/ if ` +
             'key prefix is equal to "about"', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -386,7 +378,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint} if ` +
+            test(`should redirect to ${redirectEndpoint} if ` +
             'key prefix is equal to "about" AND error code 403', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -415,7 +407,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to the first one', done => {
+            test('should redirect to the first one', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/about/`,
@@ -441,7 +433,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://www.google.com/about if ' +
+            test('should redirect to https://www.google.com/about if ' +
             'https protocols', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -469,8 +461,7 @@ describe('User visits bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should serve redirect file if error 403 error occured',
-            done => {
+            test('should serve redirect file if error 403 error occured', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,
@@ -495,7 +486,7 @@ describe('User visits bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}/about/ if ` +
+            test(`should redirect to ${redirectEndpoint}/about/ if ` +
             'ReplaceKeyPrefixWith equals "about/"', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
@@ -524,8 +515,7 @@ describe('User visits bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should serve redirect file if key prefix is equal to "about"',
-            done => {
+            test('should serve redirect file if key prefix is equal to "about"', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/about/`,
@@ -554,9 +544,8 @@ describe('User visits bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should serve redirect file if key prefix is equal to ' +
-            '"about" and error 403',
-            done => {
+            test('should serve redirect file if key prefix is equal to ' +
+            '"about" and error 403', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/about/`,

@@ -69,7 +69,7 @@ function _assertResponseHtml(response, elemtag, content) {
         const startingTag = '<ul>';
         const startIndex = response.indexOf(startingTag);
         const endIndex = response.indexOf('</ul>');
-        assert(startIndex > -1 && endIndex > -1, 'Did not find ul element');
+        expect(startIndex > -1 && endIndex > -1).toBeTruthy();
         const ulElem = response.slice(startIndex + startingTag.length,
             endIndex);
         content.forEach(item => {
@@ -77,36 +77,29 @@ function _assertResponseHtml(response, elemtag, content) {
         });
     } else {
         const elem = `<${elemtag}>${content}</${elemtag}>`;
-        assert(response.includes(elem),
-            `Expected but did not find '${elem}' in html`);
+        expect(response.includes(elem)).toBeTruthy();
     }
 }
 
 function _assertContainsHtml(responseBody) {
-    assert(responseBody.startsWith('<html>') &&
-        responseBody.includes('</html>'), 'Did not find html tags');
+    expect(responseBody.startsWith('<html>') &&
+        responseBody.includes('</html>')).toBeTruthy();
 }
 
 function _assertResponseHtml404(method, response, type) {
-    assert.strictEqual(response.statusCode, 404);
+    expect(response.statusCode).toBe(404);
     if (method === 'HEAD') {
         if (type === '404-no-such-bucket') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchBucket');
+            expect(response.headers['x-amz-error-code']).toBe('NoSuchBucket');
             // Need arsenal fixed to remove period at the end
             // so compatible with aws
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not exist.');
+            expect(response.headers['x-amz-error-message']).toBe('The specified bucket does not exist.');
         } else if (type === '404-no-such-website-configuration') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchWebsiteConfiguration');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not have a website configuration');
+            expect(response.headers['x-amz-error-code']).toBe('NoSuchWebsiteConfiguration');
+            expect(response.headers['x-amz-error-message']).toBe('The specified bucket does not have a website configuration');
         } else if (type === '404-not-found') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchKey');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified key does not exist.');
+            expect(response.headers['x-amz-error-code']).toBe('NoSuchKey');
+            expect(response.headers['x-amz-error-message']).toBe('The specified key does not exist.');
         } else {
             throw new Error(`'${type}' is not a recognized 404 ` +
             'error checked in the WebsiteConfigTester.checkHTML function');
@@ -142,13 +135,11 @@ function _assertResponseHtml404(method, response, type) {
 }
 
 function _assertResponseHtml403(method, response, type) {
-    assert.strictEqual(response.statusCode, 403);
+    expect(response.statusCode).toBe(403);
     if (method === 'HEAD') {
         if (type === '403-access-denied') {
-            assert.strictEqual(response.headers['x-amz-error-code'],
-            'AccessDenied');
-            assert.strictEqual(response.headers['x-amz-error-message'],
-            'Access Denied');
+            expect(response.headers['x-amz-error-code']).toBe('AccessDenied');
+            expect(response.headers['x-amz-error-message']).toBe('Access Denied');
         } else if (type !== '403-retrieve-error-document') {
             throw new Error(`'${type}' is not a recognized 403 ` +
             'error checked in the WebsiteConfigTester.checkHTML function');
@@ -183,9 +174,9 @@ function _assertResponseHtml403(method, response, type) {
 
 function _assertResponseHtmlErrorUser(response, type) {
     if (type === 'error-user') {
-        assert.strictEqual(response.statusCode, 403);
+        expect(response.statusCode).toBe(403);
     } else if (type === 'error-user-404') {
-        assert.strictEqual(response.statusCode, 404);
+        expect(response.statusCode).toBe(404);
     }
     _assertResponseHtml(response.body, 'title',
         'Error!!');
@@ -194,7 +185,7 @@ function _assertResponseHtmlErrorUser(response, type) {
 }
 
 function _assertResponseHtmlIndexUser(response) {
-    assert.strictEqual(response.statusCode, 200);
+    expect(response.statusCode).toBe(200);
     _assertResponseHtml(response.body, 'title',
         'Best testing website ever');
     _assertResponseHtml(response.body, 'h1', 'Welcome to my ' +
@@ -203,11 +194,11 @@ function _assertResponseHtmlIndexUser(response) {
 
 function _assertResponseHtmlRedirect(response, type, redirectUrl, method) {
     if (type === 'redirect' || type === 'redirect-user') {
-        assert.strictEqual(response.statusCode, 301);
-        assert.strictEqual(response.body, '');
-        assert.strictEqual(response.headers.location, redirectUrl);
+        expect(response.statusCode).toBe(301);
+        expect(response.body).toBe('');
+        expect(response.headers.location).toBe(redirectUrl);
     } else if (type === 'redirected-user') {
-        assert.strictEqual(response.statusCode, 200);
+        expect(response.statusCode).toBe(200);
         if (method === 'HEAD') {
             return;
             // no need to check HTML
@@ -270,7 +261,7 @@ class WebsiteConfigTester {
     static checkHTML(params, callback) {
         const { method, responseType, auth, url, redirectUrl } = params;
         _makeWebsiteRequest(auth, method, url, (err, res) => {
-            assert.strictEqual(err, null, `Unexpected request err ${err}`);
+            expect(err).toBe(null);
             if (responseType) {
                 if (responseType.startsWith('404')) {
                     _assertResponseHtml404(method, res, responseType);
@@ -315,11 +306,10 @@ class WebsiteConfigTester {
         _makeWebsiteRequest(auth, 'HEAD', url, (err, res) => {
             // body should be empty
             assert.deepStrictEqual(res.body, '');
-            assert.strictEqual(res.statusCode, expectedStatusCode);
+            expect(res.statusCode).toBe(expectedStatusCode);
             const headers = Object.keys(expectedHeaders);
             headers.forEach(header => {
-                assert.strictEqual(res.headers[header],
-                    expectedHeaders[header]);
+                expect(res.headers[header]).toBe(expectedHeaders[header]);
             });
             return cb();
         });

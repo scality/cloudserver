@@ -43,7 +43,7 @@ function handler(req, res) {
 }
 
 describe('BucketFileInteraface::listMultipartUploads', () => {
-    before('Creating Server', done => {
+    beforeAll(done => {
         bucketclient = new BucketClientInterface({
             bucketdBootstrap: ['localhost'],
             bucketdLog: null,
@@ -58,32 +58,30 @@ describe('BucketFileInteraface::listMultipartUploads', () => {
         });
     });
 
-    after('Terminating Server', () => {
+    afterAll(() => {
         server.close();
     });
 
-    it('Error handling - Error Case', done => {
+    test('Error handling - Error Case', done => {
         bucketclient.listMultipartUploads(
             invalidBucket,
             params,
             logger,
             (err, data) => {
-                assert.strictEqual(err.description, 'unexpected error',
-                    'Expected an error, but got success');
-                assert.strictEqual(data, undefined, 'Data should be undefined');
+                expect(err.description).toBe('unexpected error');
+                expect(data).toBe(undefined);
                 done();
             }
         );
     });
 
-    it('Error handling - Success Case', done => {
+    test('Error handling - Success Case', done => {
         bucketclient.listMultipartUploads(
             bucketName,
             params,
             logger,
             (err, data) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                expect(err).toEqual(null);
                 assert.deepStrictEqual(data, dataJSON,
                     'Expected some data, but got empty');
                 done();

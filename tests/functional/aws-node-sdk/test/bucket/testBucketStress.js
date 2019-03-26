@@ -22,20 +22,19 @@ function deleteObjects(s3, loopId, cb) {
     }, cb);
 }
 
-describe('aws-node-sdk stress test bucket', function testSuite() {
+describe('aws-node-sdk stress test bucket', () => {
     this.timeout(120000);
     let s3;
-    before(() => {
+    beforeAll(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
     });
 
-    it('createBucket-putObject-deleteObject-deleteBucket loop', done =>
+    test('createBucket-putObject-deleteObject-deleteBucket loop', done =>
         timesSeries(loopCount, (loopId, next) => waterfall([
             next => s3.createBucket({ Bucket: bucket }, err => next(err)),
             next => putObjects(s3, loopId, err => next(err)),
             next => deleteObjects(s3, loopId, err => next(err)),
             next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
-        ], err => next(err)), done)
-    );
+        ], err => next(err)), done));
 });

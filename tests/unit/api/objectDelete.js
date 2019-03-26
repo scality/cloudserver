@@ -26,11 +26,11 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             objectPut(bucketOwner, objPutReq, undefined, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 objectDelete(authUser, objDelReq, log, err => {
-                    assert.strictEqual(err, null);
+                    expect(err).toBe(null);
                     cb();
                 });
             });
@@ -73,12 +73,12 @@ describe('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
-    it('should delete an object', done => {
+    test('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest,
                 undefined, log, () => {
                     objectDelete(authInfo, testDeleteRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
                                 assert.deepStrictEqual(err,
@@ -90,7 +90,7 @@ describe('objectDelete API', () => {
         });
     });
 
-    it('should delete a 0 bytes object', done => {
+    test('should delete a 0 bytes object', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -102,7 +102,7 @@ describe('objectDelete API', () => {
             objectPut(authInfo, testPutObjectRequest,
                 undefined, log, () => {
                     objectDelete(authInfo, testDeleteRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
                                 const expected =
@@ -116,7 +116,7 @@ describe('objectDelete API', () => {
         });
     });
 
-    it('should prevent anonymous user deleteObject API access', done => {
+    test('should prevent anonymous user deleteObject API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);
@@ -124,7 +124,7 @@ describe('objectDelete API', () => {
         });
     });
 
-    it('should del object if user has FULL_CONTROL grant on bucket', done => {
+    test('should del object if user has FULL_CONTROL grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-full-control'] =
@@ -133,7 +133,7 @@ describe('objectDelete API', () => {
             testPutObjectRequest, testDeleteRequest, log, done);
     });
 
-    it('should del object if user has WRITE grant on bucket', done => {
+    test('should del object if user has WRITE grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-grant-write'] =
@@ -142,7 +142,7 @@ describe('objectDelete API', () => {
             testPutObjectRequest, testDeleteRequest, log, done);
     });
 
-    it('should del object in bucket with public-read-write acl', done => {
+    test('should del object in bucket with public-read-write acl', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testBucketPutRequest.headers['x-amz-acl'] = 'public-read-write';
@@ -157,7 +157,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it('should return error if request includes \'if-unmodified-since\' ' +
+        test('should return error if request includes \'if-unmodified-since\' ' +
         'header and object has been modified', done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
@@ -172,8 +172,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it('should delete an object with \'if-unmodified-since\' header',
-        done => {
+        test('should delete an object with \'if-unmodified-since\' header', done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
                 namespace,
@@ -182,7 +181,7 @@ describe('objectDelete API', () => {
                 url: `/${bucketName}/${objectKey}`,
             });
             objectDelete(authInfo, testDeleteRequest, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 objectGet(authInfo, testGetObjectRequest, false, log,
                 err => {
                     assert.deepStrictEqual(err, errors.NoSuchKey);
@@ -191,7 +190,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it('should return error if request includes \'if-modified-since\' ' +
+        test('should return error if request includes \'if-modified-since\' ' +
         'header and object has not been modified', done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
@@ -206,8 +205,7 @@ describe('objectDelete API', () => {
             });
         });
 
-        it('should delete an object with \'if-modified-since\' header',
-        done => {
+        test('should delete an object with \'if-modified-since\' header', done => {
             const testDeleteRequest = new DummyRequest({
                 bucketName,
                 namespace,
@@ -216,7 +214,7 @@ describe('objectDelete API', () => {
                 url: `/${bucketName}/${objectKey}`,
             });
             objectDelete(authInfo, testDeleteRequest, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 objectGet(authInfo, testGetObjectRequest, false, log,
                 err => {
                     assert.deepStrictEqual(err, errors.NoSuchKey);

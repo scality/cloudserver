@@ -34,7 +34,7 @@ describe('deleteBucketCors API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should delete a bucket\'s cors configuration in metadata', done => {
+    test('should delete a bucket\'s cors configuration in metadata', done => {
         bucketDeleteCors(authInfo, testBucketDeleteCorsRequest, log,
         err => {
             if (err) {
@@ -46,7 +46,7 @@ describe('deleteBucketCors API', () => {
                     process.stdout.write(`Err retrieving bucket MD ${err}`);
                     return done(err);
                 }
-                assert.strictEqual(bucket.getCors(), null);
+                expect(bucket.getCors()).toBe(null);
                 return done();
             });
         });

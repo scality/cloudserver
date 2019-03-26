@@ -24,14 +24,20 @@ function resParseAndAssert(xml, compareObj, callback) {
 }
 
 describe('GCP: PUT Bucket Versioning', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
+    beforeEach(done => {
+        testContext.currentTest.bucketName = `somebucket-${genUniqID()}`;
         gcpRequestRetry({
             method: 'PUT',
-            bucket: this.currentTest.bucketName,
+            bucket: testContext.currentTest.bucketName,
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
@@ -41,10 +47,10 @@ describe('GCP: PUT Bucket Versioning', () => {
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         gcpRequestRetry({
             method: 'DELETE',
-            bucket: this.currentTest.bucketName,
+            bucket: testContext.currentTest.bucketName,
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
@@ -54,21 +60,20 @@ describe('GCP: PUT Bucket Versioning', () => {
         });
     });
 
-    it('should enable bucket versioning', function testFn(done) {
+    test('should enable bucket versioning', done => {
         return async.waterfall([
             next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
                 VersioningConfiguration: {
                     Status: 'Enabled',
                 },
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 return next();
             }),
             next => makeGcpRequest({
                 method: 'GET',
-                bucket: this.test.bucketName,
+                bucket: testContext.test.bucketName,
                 authCredentials: config.credentials,
                 queryObj: { versioning: {} },
             }, (err, res) => {
@@ -81,21 +86,20 @@ describe('GCP: PUT Bucket Versioning', () => {
         ], err => done(err));
     });
 
-    it('should disable bucket versioning', function testFn(done) {
+    test('should disable bucket versioning', done => {
         return async.waterfall([
             next => gcpClient.putBucketVersioning({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
                 VersioningConfiguration: {
                     Status: 'Suspended',
                 },
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 return next();
             }),
             next => makeGcpRequest({
                 method: 'GET',
-                bucket: this.test.bucketName,
+                bucket: testContext.test.bucketName,
                 authCredentials: config.credentials,
                 queryObj: { versioning: {} },
             }, (err, res) => {

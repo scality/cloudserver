@@ -12,7 +12,7 @@ runIfMongo('Search in version enabled bucket', () => {
         MFADelete: 'Disabled',
         Status: 'Enabled',
     };
-    before(done => {
+    beforeAll(done => {
         s3Client.createBucket({ Bucket: bucketName }, err => {
             if (err) {
                 return done(err);
@@ -28,7 +28,7 @@ runIfMongo('Search in version enabled bucket', () => {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         removeAllVersions(s3Client, bucketName,
             err => {
                 if (err) {
@@ -38,7 +38,7 @@ runIfMongo('Search in version enabled bucket', () => {
             });
     });
 
-    it('should list just master object with searched for metadata', done => {
+    test('should list just master object with searched for metadata', done => {
         const encodedSearch =
         encodeURIComponent(`x-amz-meta-food="${userMetadata.food}"`);
         return runAndCheckSearch(s3Client, bucketName,
@@ -46,12 +46,12 @@ runIfMongo('Search in version enabled bucket', () => {
     });
 
     describe('New version overwrite', () => {
-        before(done => {
+        beforeAll(done => {
             s3Client.putObject({ Bucket: bucketName,
                 Key: masterKey, Metadata: updatedMetadata }, done);
         });
 
-        it('should list just master object with updated metadata', done => {
+        test('should list just master object with updated metadata', done => {
             const encodedSearch =
             encodeURIComponent(`x-amz-meta-food="${updatedMetadata.food}"`);
             return runAndCheckSearch(s3Client, bucketName,

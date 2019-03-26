@@ -48,7 +48,7 @@ class ContinueRequestHandler {
         const options = this.getRequestOptions();
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options, res => {
-            assert.strictEqual(res.statusCode, statusCode);
+            expect(res.statusCode).toBe(statusCode);
             return cb();
         });
         // Send the body either on the continue event, or immediately.
@@ -64,18 +64,18 @@ class ContinueRequestHandler {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options);
         // At this point we have only sent the header.
-        assert(req.output.length === 1);
+        expect(req.output.length === 1).toBeTruthy();
         const headerLen = req.output[0].length;
         req.on('continue', () => {
             // Has only the header been sent?
-            assert.strictEqual(req.socket.bytesWritten, headerLen);
+            expect(req.socket.bytesWritten).toBe(headerLen);
             // Send the body since the continue event has been emitted.
             return req.end(body);
         });
         req.on('close', () => {
             const expected = body.length + headerLen;
             // Has the entire body been sent?
-            assert.strictEqual(req.socket.bytesWritten, expected);
+            expect(req.socket.bytesWritten).toBe(expected);
             return cb();
         });
         req.on('error', err => cb(err));
@@ -106,25 +106,25 @@ describe('PUT public object with 100-continue header', () => {
             bucketUtil.empty(bucket)
             .then(() => bucketUtil.deleteOne(bucket)));
 
-        it('should return 200 status code', done =>
+        test('should return 200 status code', done =>
             continueRequest.hasStatusCode(200, done));
 
-        it('should return 200 status code with upper case value', done =>
+        test('should return 200 status code with upper case value', done =>
             continueRequest.setExpectHeader('100-CONTINUE')
                 .hasStatusCode(200, done));
 
-        it('should return 200 status code if incorrect value', done =>
+        test('should return 200 status code if incorrect value', done =>
             continueRequest.setExpectHeader('101-continue')
                 .hasStatusCode(200, done));
 
-        it('should return 403 status code if cannot authenticate', done =>
+        test('should return 403 status code if cannot authenticate', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .hasStatusCode(403, done));
 
-        it('should wait for continue event before sending body', done =>
+        test('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it('should continue if a public user', done =>
+        test('should continue if a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .sendsBodyOnContinue(done));
     });

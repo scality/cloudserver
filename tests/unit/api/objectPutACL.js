@@ -48,7 +48,7 @@ describe('putObjectACL API', () => {
         }, postBody);
     });
 
-    it('should return an error if invalid canned ACL provided', done => {
+    test('should return an error if invalid canned ACL provided', done => {
         const testObjACLRequest = {
             bucketName,
             namespace,
@@ -61,7 +61,7 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
                         assert
                             .deepStrictEqual(err, errors.InvalidArgument);
@@ -71,7 +71,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should set a canned public-read-write ACL', done => {
+    test('should set a canned public-read-write ACL', done => {
         const testObjACLRequest = {
             bucketName,
             namespace,
@@ -84,13 +84,12 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         metadata.getObjectMD(bucketName, objectName, {},
                         log, (err, md) => {
-                            assert.strictEqual(md.acl.Canned,
-                            'public-read-write');
+                            expect(md.acl.Canned).toBe('public-read-write');
                             done();
                         });
                     });
@@ -98,7 +97,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should set a canned public-read ACL followed by'
+    test('should set a canned public-read ACL followed by'
         + ' a canned authenticated-read ACL', done => {
         const testObjACLRequest1 = {
             bucketName,
@@ -121,21 +120,19 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest1, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         metadata.getObjectMD(bucketName, objectName, {},
                         log, (err, md) => {
-                            assert.strictEqual(md.acl.Canned,
-                            'public-read');
+                            expect(md.acl.Canned).toBe('public-read');
                             objectPutACL(authInfo, testObjACLRequest2, log,
                                 err => {
-                                    assert.strictEqual(err, null);
+                                    expect(err).toBe(null);
                                     metadata.getObjectMD(bucketName,
                                         objectName, {}, log, (err, md) => {
-                                            assert.strictEqual(md
-                                                   .acl.Canned,
-                                                   'authenticated-read');
+                                            expect(md
+                                                   .acl.Canned).toBe('authenticated-read');
                                             done();
                                         });
                                 });
@@ -145,7 +142,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should set ACLs provided in request headers', done => {
+    test('should set ACLs provided in request headers', done => {
         const testObjACLRequest = {
             bucketName,
             namespace,
@@ -164,23 +161,22 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         metadata.getObjectMD(bucketName, objectName, {},
                             log, (err, md) => {
-                                assert.strictEqual(err, null);
+                                expect(err).toBe(null);
                                 const acls = md.acl;
-                                assert.strictEqual(acls.READ[0],
-                                    constants.logId);
-                                assert(acls.FULL_CONTROL[0]
-                                    .indexOf(ownerID) > -1);
-                                assert(acls.FULL_CONTROL[1]
-                                    .indexOf(anotherID) > -1);
-                                assert(acls.READ_ACP[0]
-                                    .indexOf(ownerID) > -1);
-                                assert(acls.WRITE_ACP[0]
-                                    .indexOf(anotherID) > -1);
+                                expect(acls.READ[0]).toBe(constants.logId);
+                                expect(acls.FULL_CONTROL[0]
+                                    .indexOf(ownerID) > -1).toBeTruthy();
+                                expect(acls.FULL_CONTROL[1]
+                                    .indexOf(anotherID) > -1).toBeTruthy();
+                                expect(acls.READ_ACP[0]
+                                    .indexOf(ownerID) > -1).toBeTruthy();
+                                expect(acls.WRITE_ACP[0]
+                                    .indexOf(anotherID) > -1).toBeTruthy();
                                 done();
                             });
                     });
@@ -188,7 +184,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' +
+    test('should return an error if invalid email ' +
         'provided in ACL header request', done => {
         const testObjACLRequest = {
             bucketName,
@@ -206,17 +202,16 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        expect(err).toBe(errors.UnresolvableGrantByEmailAddress);
                         done();
                     });
                 });
         });
     });
 
-    it('should set ACLs provided in request body', done => {
+    test('should set ACLs provided in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL',
             'OwnerDisplayName');
@@ -237,19 +232,19 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined,
                 log, (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         metadata.getObjectMD(bucketName, objectName, {},
                         log, (err, md) => {
-                            assert.strictEqual(md
-                                .acl.FULL_CONTROL[0], ownerID);
-                            assert.strictEqual(md
-                                .acl.READ[0], constants.publicId);
-                            assert.strictEqual(md
-                                .acl.WRITE_ACP[0], ownerID);
-                            assert.strictEqual(md
-                                .acl.READ_ACP[0], anotherID);
+                            expect(md
+                                .acl.FULL_CONTROL[0]).toBe(ownerID);
+                            expect(md
+                                .acl.READ[0]).toBe(constants.publicId);
+                            expect(md
+                                .acl.WRITE_ACP[0]).toBe(ownerID);
+                            expect(md
+                                .acl.READ_ACP[0]).toBe(anotherID);
                             done();
                         });
                     });
@@ -257,7 +252,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if wrong owner ID ' +
+    test('should return an error if wrong owner ID ' +
     'provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy({ ownerID: anotherID });
         const testObjACLRequest = {
@@ -282,7 +277,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should ignore if WRITE ACL permission is ' +
+    test('should ignore if WRITE ACL permission is ' +
         'provided in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('CanonicalUser', ownerID, 'FULL_CONTROL',
@@ -301,20 +296,17 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         metadata.getObjectMD(bucketName, objectName, {},
                         log, (err, md) => {
-                            assert.strictEqual(md.acl.Canned, '');
-                            assert.strictEqual(md.acl.FULL_CONTROL[0],
-                                ownerID);
-                            assert.strictEqual(md.acl.WRITE, undefined);
-                            assert.strictEqual(md.acl.READ[0], undefined);
-                            assert.strictEqual(md.acl.WRITE_ACP[0],
-                                undefined);
-                            assert.strictEqual(md.acl.READ_ACP[0],
-                                undefined);
+                            expect(md.acl.Canned).toBe('');
+                            expect(md.acl.FULL_CONTROL[0]).toBe(ownerID);
+                            expect(md.acl.WRITE).toBe(undefined);
+                            expect(md.acl.READ[0]).toBe(undefined);
+                            expect(md.acl.WRITE_ACP[0]).toBe(undefined);
+                            expect(md.acl.READ_ACP[0]).toBe(undefined);
                             done();
                         });
                     });
@@ -322,7 +314,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid email ' +
+    test('should return an error if invalid email ' +
     'address provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
@@ -340,17 +332,16 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        expect(err).toBe(errors.UnresolvableGrantByEmailAddress);
                         done();
                     });
                 });
         });
     });
 
-    it('should return an error if xml provided does not match s3 ' +
+    test('should return an error if xml provided does not match s3 ' +
     'scheme for setting ACLs', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', 'WRITE_ACP');
@@ -369,7 +360,7 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
                         assert.deepStrictEqual(err,
                             errors.MalformedACLError);
@@ -379,7 +370,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if malformed xml provided', done => {
+    test('should return an error if malformed xml provided', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('AmazonCustomerByEmail', 'xyz@amazon.com', '');
         const originalXml = acp.getXml();
@@ -398,7 +389,7 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
                         assert.deepStrictEqual(err, errors.MalformedXML);
                         done();
@@ -407,7 +398,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid group ' +
+    test('should return an error if invalid group ' +
     'uri provided in ACLs set out in request body', done => {
         const acp = new AccessControlPolicy(defaultAcpParams);
         acp.addGrantee('Group', 'http://acs.amazonaws.com/groups/' +
@@ -425,7 +416,7 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
                         assert.deepStrictEqual(err, errors.InvalidArgument);
                         done();
@@ -434,7 +425,7 @@ describe('putObjectACL API', () => {
         });
     });
 
-    it('should return an error if invalid group uri ' +
+    test('should return an error if invalid group uri ' +
         'provided in ACL header request', done => {
         const testObjACLRequest = {
             bucketName,
@@ -453,7 +444,7 @@ describe('putObjectACL API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
                         assert.deepStrictEqual(err, errors.InvalidArgument);
                         done();

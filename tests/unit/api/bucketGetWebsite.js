@@ -47,8 +47,8 @@ function _comparePutGetXml(sampleXml, done) {
         }
         return bucketGetWebsite(authInfo, testGetWebsiteRequest, log,
         (err, res) => {
-            assert.strictEqual(err, null, `Unexpected err ${err}`);
-            assert.strictEqual(res, fullXml);
+            expect(err).toBe(null);
+            expect(res).toBe(fullXml);
             done();
         });
     });
@@ -61,18 +61,18 @@ describe('getBucketWebsite API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should return same IndexDocument XML as uploaded', done => {
+    test('should return same IndexDocument XML as uploaded', done => {
         const sampleXml =
             '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>';
         _comparePutGetXml(sampleXml, done);
     });
-    it('should return same ErrorDocument XML as uploaded', done => {
+    test('should return same ErrorDocument XML as uploaded', done => {
         const sampleXml =
             '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
             '<ErrorDocument><Key>error.html</Key></ErrorDocument>';
         _comparePutGetXml(sampleXml, done);
     });
-    it('should return same RedirectAllRequestsTo as uploaded', done => {
+    test('should return same RedirectAllRequestsTo as uploaded', done => {
         const sampleXml =
             '<RedirectAllRequestsTo>' +
             '<HostName>test</HostName>' +
@@ -80,7 +80,7 @@ describe('getBucketWebsite API', () => {
             '</RedirectAllRequestsTo>';
         _comparePutGetXml(sampleXml, done);
     });
-    it('should return same RoutingRules as uploaded', done => {
+    test('should return same RoutingRules as uploaded', done => {
         const sampleXml =
             '<IndexDocument><Suffix>index.html</Suffix></IndexDocument>' +
             '<RoutingRules><RoutingRule>' +

@@ -46,7 +46,7 @@ describe('PUT Object ACL', () => {
         const s3 = bucketUtil.s3;
         const Key = 'aclTest';
 
-        before(done => {
+        beforeAll(done => {
             bucketUtil.createRandom(1)
                       .then(created => {
                           bucketName = created;
@@ -60,12 +60,12 @@ describe('PUT Object ACL', () => {
             return bucketUtil.empty(bucketName);
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('deleting bucket');
             return bucketUtil.deleteOne(bucketName);
         });
 
-        it('should put object ACLs', done => {
+        test('should put object ACLs', done => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
             const objects = [
@@ -77,13 +77,13 @@ describe('PUT Object ACL', () => {
                 .then(() => s3.putObjectAclAsync({ Bucket, Key,
                     ACL: 'public-read' }))
                 .then(data => {
-                    assert(data);
+                    expect(data).toBeTruthy();
                     done();
                 })
                 .catch(done);
         });
 
-        it('should return NoSuchKey if try to put object ACLs ' +
+        test('should return NoSuchKey if try to put object ACLs ' +
             'for nonexistent object', done => {
             const s3 = bucketUtil.s3;
             const Bucket = bucketName;
@@ -92,16 +92,16 @@ describe('PUT Object ACL', () => {
                 Bucket,
                 Key,
                 ACL: 'public-read' }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
+                expect(err.code).toBe('NoSuchKey');
                 done();
             });
         });
 
         describe('on an object', () => {
-            before(done => s3.putObject({ Bucket: bucketName, Key }, done));
-            after(() => {
+            beforeAll(done => s3.putObject({ Bucket: bucketName, Key }, done));
+            afterAll(() => {
                 process.stdout.write('deleting bucket');
                 return bucketUtil.empty(bucketName);
             });
@@ -118,9 +118,9 @@ describe('PUT Object ACL', () => {
                     AccessControlPolicy: acp,
                 };
                 s3.putObjectAcl(putAclParams, err => {
-                    assert(err);
-                    assert.strictEqual(err.statusCode, 403);
-                    assert.strictEqual(err.code, 'AccessDenied');
+                    expect(err).toBeTruthy();
+                    expect(err.statusCode).toBe(403);
+                    expect(err.code).toBe('AccessDenied');
                     done();
                 });
             });

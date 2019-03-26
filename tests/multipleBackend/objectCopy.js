@@ -73,13 +73,13 @@ function copySetup(params, cb) {
 }
 
 describe('ObjectCopy API with multiple backends', () => {
-    before(() => {
+    beforeAll(() => {
         cleanup();
     });
 
-    after(() => cleanup());
+    afterAll(() => cleanup());
 
-    it('object metadata for newly stored object should have dataStoreName ' +
+    test('object metadata for newly stored object should have dataStoreName ' +
     'if copying to mem based on bucket location', done => {
         const params = {
             sourceBucket: sourceBucketName,
@@ -93,13 +93,13 @@ describe('ObjectCopy API with multiple backends', () => {
         const testObjectCopyRequest =
             _createObjectCopyRequest(destBucketName, destKey);
         copySetup(params, err => {
-            assert.strictEqual(err, null, `Error setting up copy: ${err}`);
+            expect(err).toBe(null);
             objectCopy(authInfo, testObjectCopyRequest, sourceBucketName,
                 params.sourceKey, undefined, log, err => {
-                    assert.strictEqual(err, null, `Error copying: ${err}`);
+                    expect(err).toBe(null);
                     const bucket = metadata.keyMaps.get(params.destBucket);
                     const objMd = bucket.get(destKey);
-                    assert.strictEqual(objMd.dataStoreName, memLocation);
+                    expect(objMd.dataStoreName).toBe(memLocation);
                     done();
                 });
         });

@@ -11,8 +11,8 @@ const key = 'anObject';
 
 
 function checkError(err, code) {
-    assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    expect(err).not.toEqual(null);
+    expect(err.code).toBe(code);
 }
 
 function checkNoError(err) {
@@ -50,15 +50,14 @@ describe('aws-node-sdk test delete bucket', () => {
             });
         });
 
-        it('should be able to delete empty bucket with version enabled',
-        done => {
+        test('should be able to delete empty bucket with version enabled', done => {
             s3.deleteBucket({ Bucket: bucketName }, err => {
                 checkNoError(err);
                 return done();
             });
         });
 
-        it('should return error 409 BucketNotEmpty if trying to delete bucket' +
+        test('should return error 409 BucketNotEmpty if trying to delete bucket' +
         ' containing delete marker', done => {
             s3.deleteObject({ Bucket: bucketName, Key: key }, err => {
                 if (err) {
@@ -71,7 +70,7 @@ describe('aws-node-sdk test delete bucket', () => {
             });
         });
 
-        it('should return error 409 BucketNotEmpty if trying to delete bucket' +
+        test('should return error 409 BucketNotEmpty if trying to delete bucket' +
         ' containing version and delete marker', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: key },

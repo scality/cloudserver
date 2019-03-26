@@ -37,10 +37,9 @@ let s3;
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
     azureClient.getBlobProperties(azureContainerName, objectKey,
     (err, res) => {
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-        `on call to Azure: ${err}`);
+        expect(err).toBe(null);
         const resMD5 = convertMD5(res.contentSettings.contentMD5);
-        assert.strictEqual(resMD5, azureMD5);
+        expect(resMD5).toBe(azureMD5);
         assert.deepStrictEqual(res.metadata, azureMetadata);
         return cb();
     });
@@ -50,7 +49,7 @@ describeSkipIfNotMultipleOrCeph('MultipleBackend put object to AZURE', function
 describeF() {
     this.timeout(250000);
     withV4(sigCfg => {
-        beforeEach(function beforeEachF() {
+        beforeEach(() => {
             this.currentTest.keyName = uniqName(keyObject);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -69,6 +68,12 @@ describeF() {
             });
         });
         describe('with bucket location header', () => {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
             beforeEach(done =>
                 s3.createBucket({ Bucket: azureContainerName,
                     CreateBucketConfiguration: {
@@ -76,7 +81,7 @@ describeF() {
                     },
                 }, done));
 
-            it('should return a NotImplemented error if try to put ' +
+            test('should return a NotImplemented error if try to put ' +
             'versioning to bucket with Azure location', done => {
                 const params = {
                     Bucket: azureContainerName,
@@ -85,28 +90,34 @@ describeF() {
                     },
                 };
                 s3.putBucketVersioning(params, err => {
-                    assert.strictEqual(err.code, 'NotImplemented');
+                    expect(err.code).toBe('NotImplemented');
                     done();
                 });
             });
 
-            it('should put an object to Azure, with no object location ' +
-            'header, based on bucket location', function it(done) {
+            test('should put an object to Azure, with no object location ' +
+            'header, based on bucket location', done => {
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.test.keyName,
+                    Key: testContext.test.keyName,
                     Body: normalBody,
                 };
                 async.waterfall([
                     next => s3.putObject(params, err => setTimeout(() =>
                       next(err), azureTimeout)),
-                    next => azureGetCheck(this.test.keyName, normalMD5, {},
+                    next => azureGetCheck(testContext.test.keyName, normalMD5, {},
                       next),
                 ], done);
             });
         });
 
         describe('with no bucket location header', () => {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
             beforeEach(() =>
               s3.createBucketAsync({ Bucket: azureContainerName })
                 .catch(err => {
@@ -115,51 +126,50 @@ describeF() {
                 }));
 
             keys.forEach(key => {
-                it(`should put a ${key.describe} object to Azure`,
-                function itF(done) {
+                test(`should put a ${key.describe} object to Azure`, done => {
                     const params = {
                         Bucket: azureContainerName,
-                        Key: this.test.keyName,
+                        Key: testContext.test.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
                         Body: key.body,
                     };
                     s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                        expect(err).toEqual(null);
                         setTimeout(() =>
-                            azureGetCheck(this.test.keyName,
+                            azureGetCheck(testContext.test.keyName,
                               key.MD5, azureMetadata,
                             () => done()), azureTimeout);
                     });
                 });
             });
 
-            it('should put a object to Azure location with bucketMatch=false',
-            function itF(done) {
-                const params = {
-                    Bucket: azureContainerName,
-                    Key: this.test.keyName,
-                    Metadata: { 'scal-location-constraint':
-                    azureLocationMismatch },
-                    Body: normalBody,
-                };
-                const azureMetadataMismatch = {
-                    /* eslint-disable camelcase */
-                    scal_location_constraint: azureLocationMismatch,
-                    /* eslint-enable camelcase */
-                };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${err}`);
-                    setTimeout(() =>
-                        azureGetCheck(
-                          `${azureContainerName}/${this.test.keyName}`,
-                          normalMD5, azureMetadataMismatch,
-                        () => done()), azureTimeout);
-                });
-            });
+            test(
+                'should put a object to Azure location with bucketMatch=false',
+                done => {
+                    const params = {
+                        Bucket: azureContainerName,
+                        Key: testContext.test.keyName,
+                        Metadata: { 'scal-location-constraint':
+                        azureLocationMismatch },
+                        Body: normalBody,
+                    };
+                    const azureMetadataMismatch = {
+                        /* eslint-disable camelcase */
+                        scal_location_constraint: azureLocationMismatch,
+                        /* eslint-enable camelcase */
+                    };
+                    s3.putObject(params, err => {
+                        expect(err).toEqual(null);
+                        setTimeout(() =>
+                            azureGetCheck(
+                              `${azureContainerName}/${testContext.test.keyName}`,
+                              normalMD5, azureMetadataMismatch,
+                            () => done()), azureTimeout);
+                    });
+                }
+            );
 
-            it('should return error ServiceUnavailable putting an invalid ' +
+            test('should return error ServiceUnavailable putting an invalid ' +
             'key name to Azure', done => {
                 const params = {
                     Bucket: azureContainerName,
@@ -168,36 +178,35 @@ describeF() {
                     Body: normalBody,
                 };
                 s3.putObject(params, err => {
-                    assert.strictEqual(err.code, 'ServiceUnavailable');
+                    expect(err.code).toBe('ServiceUnavailable');
                     done();
                 });
             });
 
-            it('should return error NotImplemented putting a ' +
-            'version to Azure', function itF(done) {
+            test('should return error NotImplemented putting a ' +
+            'version to Azure', done => {
                 s3.putBucketVersioning({
                     Bucket: azureContainerName,
                     VersioningConfiguration: versioningEnabled,
                 }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                    expect(err).toEqual(null);
                     const params = { Bucket: azureContainerName,
-                        Key: this.test.keyName,
+                        Key: testContext.test.keyName,
                         Body: normalBody,
                         Metadata: { 'scal-location-constraint':
                         azureLocation } };
                     s3.putObject(params, err => {
-                        assert.strictEqual(err.code, 'NotImplemented');
+                        expect(err.code).toBe('NotImplemented');
                         done();
                     });
                 });
             });
 
-            it('should put two objects to Azure with same ' +
-            'key, and newest object should be returned', function itF(done) {
+            test('should put two objects to Azure with same ' +
+            'key, and newest object should be returned', done => {
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.test.keyName,
+                    Key: testContext.test.keyName,
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 async.waterfall([
@@ -209,19 +218,18 @@ describeF() {
                     },
                     next => {
                         setTimeout(() => {
-                            azureGetCheck(this.test.keyName, normalMD5,
+                            azureGetCheck(testContext.test.keyName, normalMD5,
                               azureMetadata, next);
                         }, azureTimeout);
                     },
                 ], done);
             });
 
-            it('should put objects with same key to Azure ' +
-            'then file, and object should only be present in file', function
-            itF(done) {
+            test('should put objects with same key to Azure ' +
+            'then file, and object should only be present in file', done => {
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.test.keyName,
+                    Key: testContext.test.keyName,
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': azureLocation } };
                 async.waterfall([
@@ -234,28 +242,24 @@ describeF() {
                     },
                     next => s3.getObject({
                         Bucket: azureContainerName,
-                        Key: this.test.keyName,
+                        Key: testContext.test.keyName,
                     }, (err, res) => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
-                        assert.strictEqual(
-                            res.Metadata['scal-location-constraint'],
-                            fileLocation);
+                        expect(err).toEqual(null);
+                        expect(res.Metadata['scal-location-constraint']).toBe(fileLocation);
                         next();
                     }),
                     next => azureClient.getBlobProperties(azureContainerName,
-                    this.test.keyName, err => {
-                        assert.strictEqual(err.code, 'NotFound');
+                    testContext.test.keyName, err => {
+                        expect(err.code).toBe('NotFound');
                         next();
                     }),
                 ], done);
             });
 
-            it('should put objects with same key to file ' +
-            'then Azure, and object should only be present on Azure',
-            function itF(done) {
+            test('should put objects with same key to file ' +
+            'then Azure, and object should only be present on Azure', done => {
                 const params = { Bucket: azureContainerName, Key:
-                    this.test.keyName,
+                    testContext.test.keyName,
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': fileLocation } };
                 async.waterfall([
@@ -267,42 +271,42 @@ describeF() {
                         s3.putObject(params, err => setTimeout(() =>
                           next(err), azureTimeout));
                     },
-                    next => azureGetCheck(this.test.keyName, normalMD5,
+                    next => azureGetCheck(testContext.test.keyName, normalMD5,
                       azureMetadata, next),
                 ], done);
             });
 
             describe('with ongoing MPU with same key name', () => {
-                beforeEach(function beFn(done) {
+                beforeEach(done => {
                     s3.createMultipartUpload({
                         Bucket: azureContainerName,
-                        Key: this.currentTest.keyName,
+                        Key: testContext.currentTest.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     }, (err, res) => {
-                        assert.equal(err, null, `Err creating MPU: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
+                        expect(err).toEqual(null);
+                        testContext.currentTest.uploadId = res.UploadId;
                         done();
                     });
                 });
 
-                afterEach(function afFn(done) {
+                afterEach(done => {
                     s3.abortMultipartUpload({
                         Bucket: azureContainerName,
-                        Key: this.currentTest.keyName,
-                        UploadId: this.currentTest.uploadId,
+                        Key: testContext.currentTest.keyName,
+                        UploadId: testContext.currentTest.uploadId,
                     }, err => {
-                        assert.equal(err, null, `Err aborting MPU: ${err}`);
+                        expect(err).toEqual(null);
                         done();
                     });
                 });
 
-                it('should return ServiceUnavailable', function itFn(done) {
+                test('should return ServiceUnavailable', done => {
                     s3.putObject({
                         Bucket: azureContainerName,
-                        Key: this.test.keyName,
+                        Key: testContext.test.keyName,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     }, err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
+                        expect(err.code).toBe('ServiceUnavailable');
                         done();
                     });
                 });

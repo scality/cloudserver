@@ -55,10 +55,10 @@ function removeObjects(createdObjects, callback) {
     });
 }
 
-describe('GCP: GET Bucket', function testSuite() {
+describe('GCP: GET Bucket', () => {
     this.timeout(180000);
 
-    before(done => {
+    beforeAll(done => {
         gcpRequestRetry({
             method: 'PUT',
             bucket: bucketName,
@@ -71,7 +71,7 @@ describe('GCP: GET Bucket', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -85,14 +85,14 @@ describe('GCP: GET Bucket', function testSuite() {
     });
 
     describe('without existing bucket', () => {
-        it('should return 404 and NoSuchBucket', done => {
+        test('should return 404 and NoSuchBucket', done => {
             const badBucketName = `nonexistingbucket-${genUniqID()}`;
             gcpClient.getBucket({
                 Bucket: badBucketName,
             }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchBucket');
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
+                expect(err.code).toBe('NoSuchBucket');
                 return done();
             });
         });
@@ -103,29 +103,28 @@ describe('GCP: GET Bucket', function testSuite() {
             const createdObjects = Array.from(
                 Array(smallSize).keys()).map(i => `someObject-${i}`);
 
-            before(done => populateBucket(createdObjects, done));
+            beforeAll(done => populateBucket(createdObjects, done));
 
-            after(done => removeObjects(createdObjects, done));
+            afterAll(done => removeObjects(createdObjects, done));
 
-            it(`should list all ${smallSize} created objects`, done => {
+            test(`should list all ${smallSize} created objects`, done => {
                 gcpClient.listObjects({
                     Bucket: bucketName,
                 }, (err, res) => {
-                    assert.equal(err, null, `Expected success, but got ${err}`);
-                    assert.strictEqual(res.Contents.length, smallSize);
+                    expect(err).toEqual(null);
+                    expect(res.Contents.length).toBe(smallSize);
                     return done();
                 });
             });
 
             describe('with MaxKeys at 10', () => {
-                it('should list MaxKeys number of objects', done => {
+                test('should list MaxKeys number of objects', done => {
                     gcpClient.listObjects({
                         Bucket: bucketName,
                         MaxKeys: 10,
                     }, (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success, but got ${err}`);
-                        assert.strictEqual(res.Contents.length, 10);
+                        expect(err).toEqual(null);
+                        expect(res.Contents.length).toBe(10);
                         return done();
                     });
                 });
@@ -136,31 +135,28 @@ describe('GCP: GET Bucket', function testSuite() {
             const createdObjects = Array.from(
                 Array(bigSize).keys()).map(i => `someObject-${i}`);
 
-            before(done => populateBucket(createdObjects, done));
+            beforeAll(done => populateBucket(createdObjects, done));
 
-            after(done => removeObjects(createdObjects, done));
+            afterAll(done => removeObjects(createdObjects, done));
 
-            it('should list at max 1000 of objects created', done => {
+            test('should list at max 1000 of objects created', done => {
                 gcpClient.listObjects({
                     Bucket: bucketName,
                 }, (err, res) => {
-                    assert.equal(err, null, `Expected success, but got ${err}`);
-                    assert.strictEqual(res.Contents.length,
-                        listingHardLimit);
+                    expect(err).toEqual(null);
+                    expect(res.Contents.length).toBe(listingHardLimit);
                     return done();
                 });
             });
 
             describe('with MaxKeys at 1001', () => {
-                it('should list at max 1000, ignoring MaxKeys', done => {
+                test('should list at max 1000, ignoring MaxKeys', done => {
                     gcpClient.listObjects({
                         Bucket: bucketName,
                         MaxKeys: 1001,
                     }, (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success, but got ${err}`);
-                        assert.strictEqual(res.Contents.length,
-                            listingHardLimit);
+                        expect(err).toEqual(null);
+                        expect(res.Contents.length).toBe(listingHardLimit);
                         return done();
                     });
                 });

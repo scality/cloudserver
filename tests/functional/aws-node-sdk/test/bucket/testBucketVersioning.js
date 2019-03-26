@@ -8,29 +8,28 @@ const config = getConfig('default', { signatureVersion: 'v4' });
 const configReplication = getConfig('replication',
     { signatureVersion: 'v4' });
 const s3 = new S3(config);
-describe('aws-node-sdk test bucket versioning', function testSuite() {
+describe('aws-node-sdk test bucket versioning', () => {
     this.timeout(60000);
     let replicationAccountS3;
 
     // setup test
-    before(done => {
+    beforeAll(done => {
         replicationAccountS3 = new S3(configReplication);
         s3.createBucket({ Bucket: bucket }, done);
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterAll(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should not accept empty versioning configuration', done => {
+    test('should not accept empty versioning configuration', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {},
         };
         s3.putBucketVersioning(params, error => {
             if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'IllegalVersioningConfigurationException');
+                expect(error.statusCode).toBe(400);
+                expect(error.code).toBe('IllegalVersioningConfigurationException');
                 done();
             } else {
                 done('accepted empty versioning configuration');
@@ -38,16 +37,16 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should retrieve an empty versioning configuration', done => {
+    test('should retrieve an empty versioning configuration', done => {
         const params = { Bucket: bucket };
         s3.getBucketVersioning(params, (error, data) => {
-            assert.strictEqual(error, null);
+            expect(error).toBe(null);
             assert.deepStrictEqual(data, {});
             done();
         });
     });
 
-    it('should not accept versioning configuration w/o "Status"', done => {
+    test('should not accept versioning configuration w/o "Status"', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -56,9 +55,8 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         };
         s3.putBucketVersioning(params, error => {
             if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'IllegalVersioningConfigurationException');
+                expect(error.statusCode).toBe(400);
+                expect(error.code).toBe('IllegalVersioningConfigurationException');
                 done();
             } else {
                 done('accepted empty versioning configuration');
@@ -66,16 +64,16 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should retrieve an empty versioning configuration', done => {
+    test('should retrieve an empty versioning configuration', done => {
         const params = { Bucket: bucket };
         s3.getBucketVersioning(params, (error, data) => {
-            assert.strictEqual(error, null);
+            expect(error).toBe(null);
             assert.deepStrictEqual(data, {});
             done();
         });
     });
 
-    it('should not accept versioning configuration w/ invalid value', done => {
+    test('should not accept versioning configuration w/ invalid value', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -85,9 +83,8 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         };
         s3.putBucketVersioning(params, error => {
             if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'IllegalVersioningConfigurationException');
+                expect(error.statusCode).toBe(400);
+                expect(error.code).toBe('IllegalVersioningConfigurationException');
                 done();
             } else {
                 done('accepted empty versioning configuration');
@@ -95,7 +92,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         });
     });
 
-    it('should not accept versioning with MFA Delete enabled', done => {
+    test('should not accept versioning with MFA Delete enabled', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -104,14 +101,14 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             },
         };
         s3.putBucketVersioning(params, error => {
-            assert.notEqual(error, null, 'Expected failure but got success');
-            assert.strictEqual(error.statusCode, 501);
-            assert.strictEqual(error.code, 'NotImplemented');
+            expect(error).not.toEqual(null);
+            expect(error.statusCode).toBe(501);
+            expect(error.code).toBe('NotImplemented');
             done();
         });
     });
 
-    it('should accept versioning with MFA Delete disabled', done => {
+    test('should accept versioning with MFA Delete disabled', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -120,23 +117,23 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             },
         };
         s3.putBucketVersioning(params, error => {
-            assert.equal(error, null, 'Expected success but got failure');
+            expect(error).toEqual(null);
             done();
         });
     });
 
-    it('should retrieve the valid versioning configuration', done => {
+    test('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
         // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
-            assert.strictEqual(error, null);
+            expect(error).toBe(null);
             assert.deepStrictEqual(data, { MFADelete: 'Disabled',
                 Status: 'Enabled' });
             done();
         });
     });
 
-    it('should accept valid versioning configuration', done => {
+    test('should accept valid versioning configuration', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -146,7 +143,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         s3.putBucketVersioning(params, done);
     });
 
-    it('should accept valid versioning configuration if user is a ' +
+    test('should accept valid versioning configuration if user is a ' +
     'replication user', done => {
         const params = {
             Bucket: bucket,
@@ -157,11 +154,11 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
         replicationAccountS3.putBucketVersioning(params, done);
     });
 
-    it('should retrieve the valid versioning configuration', done => {
+    test('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
         // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
-            assert.strictEqual(error, null);
+            expect(error).toBe(null);
             assert.deepStrictEqual(data, { Status: 'Enabled' });
             done();
         });
@@ -171,21 +168,21 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
 
 describe('bucket versioning for ingestion buckets', () => {
     const Bucket = `ingestion-bucket-${Date.now()}`;
-    before(done => s3.createBucket({
+    beforeAll(done => s3.createBucket({
             Bucket,
             CreateBucketConfiguration: {
                 LocationConstraint: 'us-east-2:ingest',
             },
         }, done));
 
-    after(done => s3.deleteBucket({ Bucket }, done));
+    afterAll(done => s3.deleteBucket({ Bucket }, done));
 
-    it('should not allow suspending versioning for ingestion buckets', done => {
+    test('should not allow suspending versioning for ingestion buckets', done => {
         s3.putBucketVersioning({ Bucket, VersioningConfiguration: {
             Status: 'Suspended'
         } }, err => {
-            assert(err, 'Expected error but got success');
-            assert.strictEqual(err.code, 'InvalidBucketState');
+            expect(err).toBeTruthy();
+            expect(err.code).toBe('InvalidBucketState');
             done();
         });
     });

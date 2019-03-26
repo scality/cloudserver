@@ -23,7 +23,7 @@ const testBucketPutRequest = {
 
 function _testPutBucketCors(authInfo, request, log, errCode, cb) {
     bucketPutCors(authInfo, request, log, err => {
-        assert(err, 'Expected err but found none');
+        expect(err).toBeTruthy();
         assert.deepStrictEqual(err, errors[errCode]);
         cb();
     });
@@ -48,7 +48,7 @@ describe('putBucketCORS API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should update a bucket\'s metadata with cors resource', done => {
+    test('should update a bucket\'s metadata with cors resource', done => {
         const corsUtil = new CorsConfigTester();
         const testBucketPutCorsRequest = corsUtil
             .createBucketCorsRequest('PUT', bucketName);
@@ -69,7 +69,7 @@ describe('putBucketCORS API', () => {
         });
     });
 
-    it('should return BadDigest if md5 is omitted', done => {
+    test('should return BadDigest if md5 is omitted', done => {
         const corsUtil = new CorsConfigTester();
         const testBucketPutCorsRequest = corsUtil
             .createBucketCorsRequest('PUT', bucketName);
@@ -78,7 +78,7 @@ describe('putBucketCORS API', () => {
             log, 'BadDigest', done);
     });
 
-    it('should return MalformedXML if body greater than 64KB', done => {
+    test('should return MalformedXML if body greater than 64KB', done => {
         const corsUtil = new CorsConfigTester();
         const body = Buffer.alloc(65537); // 64 * 1024 = 65536 bytes
         const testBucketPutCorsRequest = corsUtil
@@ -87,7 +87,7 @@ describe('putBucketCORS API', () => {
             log, 'MalformedXML', done);
     });
 
-    it('should return InvalidRequest if more than one MaxAgeSeconds', done => {
+    test('should return InvalidRequest if more than one MaxAgeSeconds', done => {
         const corsUtil = new CorsConfigTester({ maxAgeSeconds: [60, 6000] });
         const testBucketPutCorsRequest = corsUtil
             .createBucketCorsRequest('PUT', bucketName);
@@ -98,104 +98,104 @@ describe('putBucketCORS API', () => {
 
 describe('PUT bucket cors :: helper validation functions ', () => {
     describe('validateNumberWildcards ', () => {
-        it('should return expected values for test strings', done => {
+        test('should return expected values for test strings', done => {
             const testStrings = ['test', 'tes*t', 'tes**t'];
             const expectedResults = [true, true, false];
 
             for (let i = 0; i < testStrings.length; i++) {
                 const result = _validator
                     .validateNumberWildcards(testStrings[i]);
-                assert.strictEqual(result, expectedResults[i]);
+                expect(result).toBe(expectedResults[i]);
             }
             done();
         });
     });
 
     describe('validateID ', () => {
-        it('should validate successfully for valid ID', done => {
+        test('should validate successfully for valid ID', done => {
             const testValue = 'testid';
             const xml = _generateSampleXml(`<ID>${testValue}</ID>`);
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(typeof result[0].id, 'string');
-                assert.strictEqual(result[0].id, testValue);
+                expect(err).toBe(null);
+                expect(typeof result[0].id).toBe('string');
+                expect(result[0].id).toBe(testValue);
                 return done();
             });
         });
 
-        it('should return MalformedXML if more than one ID per rule', done => {
+        test('should return MalformedXML if more than one ID per rule', done => {
             const testValue = 'testid';
             const xml = _generateSampleXml(`<ID>${testValue}</ID>` +
             `<ID>${testValue}</ID>`);
             parseCorsXml(xml, log, err => {
-                assert(err, 'Expected error but found none');
+                expect(err).toBeTruthy();
                 assert.deepStrictEqual(err, errors.MalformedXML);
                 return done();
             });
         });
 
-        it('should validate & return undefined if empty value for ID', done => {
+        test('should validate & return undefined if empty value for ID', done => {
             const testValue = '';
             const xml = _generateSampleXml(`<ID>${testValue}</ID>`);
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(result[0].id, undefined);
+                expect(err).toBe(null);
+                expect(result[0].id).toBe(undefined);
                 return done();
             });
         });
 
-        it('should validate & return undefined if no ID element', done => {
+        test('should validate & return undefined if no ID element', done => {
             const xml = _generateSampleXml('');
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(result[0].id, undefined);
+                expect(err).toBe(null);
+                expect(result[0].id).toBe(undefined);
                 return done();
             });
         });
     });
 
     describe('validateMaxAgeSeconds ', () => {
-        it('should validate successfully for valid value', done => {
+        test('should validate successfully for valid value', done => {
             const testValue = 60;
             const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` +
                 '</MaxAgeSeconds>');
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(typeof result[0].maxAgeSeconds, 'number');
-                assert.strictEqual(result[0].maxAgeSeconds, testValue);
+                expect(err).toBe(null);
+                expect(typeof result[0].maxAgeSeconds).toBe('number');
+                expect(result[0].maxAgeSeconds).toBe(testValue);
                 return done();
             });
         });
 
-        it('should return MalformedXML if more than one MaxAgeSeconds ' +
+        test('should return MalformedXML if more than one MaxAgeSeconds ' +
         'per rule', done => {
             const testValue = '60';
             const xml = _generateSampleXml(
                 `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>` +
                 `<MaxAgeSeconds>${testValue}</MaxAgeSeconds>`);
             parseCorsXml(xml, log, err => {
-                assert(err, 'Expected error but found none');
+                expect(err).toBeTruthy();
                 assert.deepStrictEqual(err, errors.MalformedXML);
                 return done();
             });
         });
 
-        it('should validate & return undefined if empty value', done => {
+        test('should validate & return undefined if empty value', done => {
             const testValue = '';
             const xml = _generateSampleXml(`<MaxAgeSeconds>${testValue}` +
                 '</MaxAgeSeconds>');
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(result[0].MaxAgeSeconds, undefined);
+                expect(err).toBe(null);
+                expect(result[0].MaxAgeSeconds).toBe(undefined);
                 return done();
             });
         });
 
-        it('should validate & return undefined if no MaxAgeSeconds', done => {
+        test('should validate & return undefined if no MaxAgeSeconds', done => {
             const xml = _generateSampleXml('');
             parseCorsXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(result[0].id, undefined);
+                expect(err).toBe(null);
+                expect(result[0].id).toBe(undefined);
                 return done();
             });
         });

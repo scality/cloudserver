@@ -9,19 +9,19 @@ const { getReplicationConfigurationXML } =
 function checkXML(parsedXML, config) {
     const { Rule, Role } = parsedXML.ReplicationConfiguration;
     const { role, destination } = config;
-    assert.strictEqual(Role[0], role);
-    assert.strictEqual(Array.isArray(Rule), true);
+    expect(Role[0]).toBe(role);
+    expect(Array.isArray(Rule)).toBe(true);
     for (let i = 0; i < Rule.length; i++) {
         const { ID, Prefix, Status, Destination } = Rule[i];
         const { Bucket, StorageClass } = Destination[0];
         const { id, prefix, enabled, storageClass } = config.rules[i];
-        assert.strictEqual(ID[0], id);
-        assert.strictEqual(Prefix[0], prefix);
-        assert.strictEqual(Status[0], enabled ? 'Enabled' : 'Disabled');
+        expect(ID[0]).toBe(id);
+        expect(Prefix[0]).toBe(prefix);
+        expect(Status[0]).toBe(enabled ? 'Enabled' : 'Disabled');
         if (storageClass !== undefined) {
-            assert.strictEqual(StorageClass[0], storageClass);
+            expect(StorageClass[0]).toBe(storageClass);
         }
-        assert.strictEqual(Bucket[0], destination);
+        expect(Bucket[0]).toBe(destination);
     }
 }
 
@@ -55,31 +55,31 @@ function getReplicationConfig() {
 }
 
 describe("'getReplicationConfigurationXML' function", () => {
-    it('should return XML from the bucket replication configuration', done =>
+    test('should return XML from the bucket replication configuration', done =>
         getAndCheckXML(getReplicationConfig(), done));
 
-    it('should not return XML with StorageClass tag if `storageClass` ' +
+    test('should not return XML with StorageClass tag if `storageClass` ' +
     'property is omitted', done => {
         const config = getReplicationConfig();
         delete config.rules[0].storageClass;
         return getAndCheckXML(config, done);
     });
 
-    it("should return XML with StorageClass tag set to 'Disabled' if " +
+    test("should return XML with StorageClass tag set to 'Disabled' if " +
         '`enabled` property is false', done => {
         const config = getReplicationConfig();
         config.rules[0].enabled = false;
         return getAndCheckXML(config, done);
     });
 
-    it('should return XML with a self-closing Prefix tag if `prefix` ' +
+    test('should return XML with a self-closing Prefix tag if `prefix` ' +
     "property is ''", done => {
         const config = getReplicationConfig();
         config.rules[0].prefix = '';
         return getAndCheckXML(config, done);
     });
 
-    it('should return XML from the bucket replication configuration with ' +
+    test('should return XML from the bucket replication configuration with ' +
     'multiple rules', done => {
         const config = getReplicationConfig();
         config.rules.push({

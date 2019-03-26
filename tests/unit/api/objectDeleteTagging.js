@@ -46,7 +46,7 @@ describe('deleteObjectTagging API', () => {
 
     afterEach(() => cleanup());
 
-    it('should delete tag set', done => {
+    test('should delete tag set', done => {
         const taggingUtil = new TaggingConfigTester();
         const testObjectPutTaggingRequest = taggingUtil
             .createObjectTaggingRequest('PUT', bucketName, objectName);

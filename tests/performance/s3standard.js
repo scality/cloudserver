@@ -57,77 +57,77 @@ const params = {
 };
 
 /* Find lowest latency */
-describe('Single bucket, lowest latency', function fn() {
+describe('Single bucket, lowest latency', () => {
     this.timeout(0);
 
-    before(() => {
+    beforeAll(() => {
         params.statsFolder = 'lowestLatency';
         params.forksNb = 1;
         params.paralReqs = [1];
     });
 
-    it('Put, get, then delete', done => {
+    test('Put, get, then delete', done => {
         params.output = 'lowestLatency';
         process.nextTick(runS3Blaster.start, params, done);
     });
 });
 
 /* Find max #operations/s */
-describe('Single bucket, max ops/s', function fn() {
+describe('Single bucket, max ops/s', () => {
     this.timeout(0);
 
-    before(() => {
+    beforeAll(() => {
         params.statsFolder = 'maxOps';
         params.forksNb = numWorkers;
         params.paralReqs = paralReqs;
     });
 
-    it('Put, get, then delete', done => {
+    test('Put, get, then delete', done => {
         params.output = 'singleBucket_maxOps';
         process.nextTick(runS3Blaster.start, params, done);
     });
 });
 
-describe('Multiple buckets, max ops/s', function fn() {
+describe('Multiple buckets, max ops/s', () => {
     this.timeout(0);
 
-    before(() => {
+    beforeAll(() => {
         params.statsFolder = 'maxOps';
         params.bucketsNb = maxBktsNb;
     });
 
-    it('Put, get, then delete', done => {
+    test('Put, get, then delete', done => {
         params.output = `bkt${params.bucketsNb}_maxOps`;
         process.nextTick(runS3Blaster.start, params, done);
     });
 });
 
 /* Find throughput */
-describe('Single bucket, throughput', function fn() {
+describe('Single bucket, throughput', () => {
     this.timeout(0);
 
-    before(() => {
+    beforeAll(() => {
         params.statsFolder = 'throughput';
         params.sizes = [1];
         params.unit = 'MB';
         params.bucketsNb = 1;
     });
 
-    it('Put, then get', done => {
+    test('Put, then get', done => {
         params.output = 'singleBucket_throughput';
         process.nextTick(runS3Blaster.start, params, done);
     });
 });
 
-describe('Multiple buckets, throughput', function fn() {
+describe('Multiple buckets, throughput', () => {
     this.timeout(0);
 
-    before(() => {
+    beforeAll(() => {
         params.statsFolder = 'throughput';
         params.bucketsNb = maxBktsNb;
     });
 
-    it('Put, get, then delete', done => {
+    test('Put, get, then delete', done => {
         params.output = `bkt${params.bucketsNb}_throughput`;
         process.nextTick(runS3Blaster.start, params, done);
     });

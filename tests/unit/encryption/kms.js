@@ -10,7 +10,7 @@ describe('KMS unit tests', () => {
         cleanup();
     });
 
-    it('should construct a sse info object on AES256', done => {
+    test('should construct a sse info object on AES256', done => {
         const algorithm = 'AES256';
         const headers = {
             'x-amz-scal-server-side-encryption': algorithm,
@@ -18,17 +18,17 @@ describe('KMS unit tests', () => {
         KMS.bucketLevelEncryption(
             'dummyBucket', headers, log,
             (err, sseInfo) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(sseInfo.cryptoScheme, 1);
-                assert.strictEqual(sseInfo.mandatory, true);
-                assert.strictEqual(sseInfo.algorithm, algorithm);
-                assert.notEqual(sseInfo.masterKeyId, undefined);
-                assert.notEqual(sseInfo.masterKeyId, null);
+                expect(err).toBe(null);
+                expect(sseInfo.cryptoScheme).toBe(1);
+                expect(sseInfo.mandatory).toBe(true);
+                expect(sseInfo.algorithm).toBe(algorithm);
+                expect(sseInfo.masterKeyId).not.toEqual(undefined);
+                expect(sseInfo.masterKeyId).not.toEqual(null);
                 done();
             });
     });
 
-    it('should construct a sse info object on aws:kms', done => {
+    test('should construct a sse info object on aws:kms', done => {
         const algorithm = 'aws:kms';
         const masterKeyId = 'foobarbaz';
         const headers = {
@@ -38,16 +38,16 @@ describe('KMS unit tests', () => {
         KMS.bucketLevelEncryption(
             'dummyBucket', headers, log,
             (err, sseInfo) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(sseInfo.cryptoScheme, 1);
-                assert.strictEqual(sseInfo.mandatory, true);
-                assert.strictEqual(sseInfo.algorithm, 'aws:kms');
-                assert.strictEqual(sseInfo.masterKeyId, masterKeyId);
+                expect(err).toBe(null);
+                expect(sseInfo.cryptoScheme).toBe(1);
+                expect(sseInfo.mandatory).toBe(true);
+                expect(sseInfo.algorithm).toBe('aws:kms');
+                expect(sseInfo.masterKeyId).toBe(masterKeyId);
                 done();
             });
     });
 
-    it('should not construct a sse info object if ' +
+    test('should not construct a sse info object if ' +
         'x-amz-scal-server-side-encryption header contains invalid ' +
         'algorithm option', done => {
         const algorithm = 'garbage';
@@ -59,25 +59,24 @@ describe('KMS unit tests', () => {
         KMS.bucketLevelEncryption(
             'dummyBucket', headers, log,
             (err, sseInfo) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(sseInfo, null);
+                expect(err).toBe(null);
+                expect(sseInfo).toBe(null);
                 done();
             });
     });
 
-    it('should not construct a sse info object if no ' +
-        'x-amz-scal-server-side-encryption header included with request',
-        done => {
-            KMS.bucketLevelEncryption(
-                'dummyBucket', {}, log,
-                (err, sseInfo) => {
-                    assert.strictEqual(err, null);
-                    assert.strictEqual(sseInfo, null);
-                    done();
-                });
-        });
+    test('should not construct a sse info object if no ' +
+        'x-amz-scal-server-side-encryption header included with request', done => {
+        KMS.bucketLevelEncryption(
+            'dummyBucket', {}, log,
+            (err, sseInfo) => {
+                expect(err).toBe(null);
+                expect(sseInfo).toBe(null);
+                done();
+            });
+    });
 
-    it('should create a cipher bundle for AES256', done => {
+    test('should create a cipher bundle for AES256', done => {
         const algorithm = 'AES256';
         const headers = {
             'x-amz-scal-server-side-encryption': algorithm,
@@ -87,20 +86,17 @@ describe('KMS unit tests', () => {
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
-                        assert.strictEqual(cipherBundle.algorithm,
-                                           sseInfo.algorithm);
-                        assert.strictEqual(cipherBundle.masterKeyId,
-                                           sseInfo.masterKeyId);
-                        assert.strictEqual(cipherBundle.cryptoScheme,
-                                           sseInfo.cryptoScheme);
-                        assert.notEqual(cipherBundle.cipheredDataKey, null);
-                        assert.notEqual(cipherBundle.cipher, null);
+                        expect(cipherBundle.algorithm).toBe(sseInfo.algorithm);
+                        expect(cipherBundle.masterKeyId).toBe(sseInfo.masterKeyId);
+                        expect(cipherBundle.cryptoScheme).toBe(sseInfo.cryptoScheme);
+                        expect(cipherBundle.cipheredDataKey).not.toEqual(null);
+                        expect(cipherBundle.cipher).not.toEqual(null);
                         done();
                     });
             });
     });
 
-    it('should create a cipher bundle for aws:kms', done => {
+    test('should create a cipher bundle for aws:kms', done => {
         const headers = {
             'x-amz-scal-server-side-encryption': 'AES256',
         };
@@ -108,7 +104,7 @@ describe('KMS unit tests', () => {
         KMS.bucketLevelEncryption(
             'dummyBucket', headers, log,
             (err, sseInfo) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 masterKeyId = sseInfo.bucketKeyId;
             });
 
@@ -120,14 +116,11 @@ describe('KMS unit tests', () => {
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
-                        assert.strictEqual(cipherBundle.algorithm,
-                                           sseInfo.algorithm);
-                        assert.strictEqual(cipherBundle.masterKeyId,
-                                           sseInfo.masterKeyId);
-                        assert.strictEqual(cipherBundle.cryptoScheme,
-                                           sseInfo.cryptoScheme);
-                        assert.notEqual(cipherBundle.cipheredDataKey, null);
-                        assert.notEqual(cipherBundle.cipher, null);
+                        expect(cipherBundle.algorithm).toBe(sseInfo.algorithm);
+                        expect(cipherBundle.masterKeyId).toBe(sseInfo.masterKeyId);
+                        expect(cipherBundle.cryptoScheme).toBe(sseInfo.cryptoScheme);
+                        expect(cipherBundle.cipheredDataKey).not.toEqual(null);
+                        expect(cipherBundle.cipher).not.toEqual(null);
                         done();
                     });
             });
@@ -161,20 +154,18 @@ describe('KMS unit tests', () => {
                                     cb(err);
                                     return;
                                 }
-                                assert.strictEqual(typeof decipherBundle,
-                                                   'object');
-                                assert.strictEqual(decipherBundle.cryptoScheme,
-                                                   cipherBundle.cryptoScheme);
-                                assert.notEqual(decipherBundle.decipher, null);
+                                expect(typeof decipherBundle).toBe('object');
+                                expect(decipherBundle.cryptoScheme).toBe(cipherBundle.cryptoScheme);
+                                expect(decipherBundle.decipher).not.toEqual(null);
                                 cb(null, cipherBundle, decipherBundle);
                             });
                     });
             });
     }
 
-    it('should cipher and decipher a datastream', done => {
+    test('should cipher and decipher a datastream', done => {
         _utestCreateBundlePair(log, (err, cipherBundle, decipherBundle) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             cipherBundle.cipher.pipe(decipherBundle.decipher);
             // note that node stream high water mark is 16kb
             // so this data will be written into and read from stream buffer
@@ -182,12 +173,12 @@ describe('KMS unit tests', () => {
             const target = Buffer.alloc(10000, 'e');
             cipherBundle.cipher.write(target);
             const result = decipherBundle.decipher.read();
-            assert.deepEqual(result, target);
+            expect(result).toEqual(target);
             done();
         });
     });
 
-    it('should increment the IV by modifying the last two positions of ' +
+    test('should increment the IV by modifying the last two positions of ' +
         'the buffer', () => {
         const derivedIV = Buffer.from('aaaaaaff', 'hex');
         const counter = 6;
@@ -196,7 +187,7 @@ describe('KMS unit tests', () => {
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
-    it('should increment the IV by incrementing the last position of the ' +
+    test('should increment the IV by incrementing the last position of the ' +
         'buffer', () => {
         const derivedIV = Buffer.from('aaaaaaf0', 'hex');
         const counter = 6;
@@ -205,7 +196,7 @@ describe('KMS unit tests', () => {
         assert.deepStrictEqual(incrementedIV, expected);
     });
 
-    it('should increment the IV by shifting each position in the ' +
+    test('should increment the IV by shifting each position in the ' +
         'buffer', () => {
         const derivedIV = Buffer.from('ffffffff', 'hex');
         const counter = 1;

@@ -107,7 +107,7 @@ describe('List Parts API', () => {
             });
     });
 
-    it('should list all parts of a multipart upload', done => {
+    test('should list all parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -118,39 +118,30 @@ describe('List Parts API', () => {
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.Bucket[0], bucketName);
-                assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
-                assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-                assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '1');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[4].PartNumber[0],
-                                   '5');
-                assert.strictEqual(json.ListPartsResult.Part[4].ETag[0],
-                                   lastPieceETag);
-                assert.strictEqual(json.ListPartsResult.Part[4].Size[0], '18');
-                assert.strictEqual(json.ListPartsResult.Part.length, 5);
+                expect(err).toBe(null);
+                expect(json.ListPartsResult.Bucket[0]).toBe(bucketName);
+                expect(json.ListPartsResult.Key[0]).toBe(uploadKey);
+                expect(json.ListPartsResult.UploadId[0]).toBe(uploadId);
+                expect(json.ListPartsResult.MaxParts[0]).toBe('1000');
+                expect(json.ListPartsResult.Initiator[0].ID[0]).toBe(authInfo.getCanonicalID());
+                expect(json.ListPartsResult.IsTruncated[0]).toBe('false');
+                expect(json.ListPartsResult.PartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.NextPartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.Part[0].PartNumber[0]).toBe('1');
+                expect(json.ListPartsResult.Part[0].ETag[0]).toBe(sixMBObjectETag);
+                expect(json.ListPartsResult.Part[0].Size[0]).toBe('6000000');
+                expect(json.ListPartsResult.Part[4].PartNumber[0]).toBe('5');
+                expect(json.ListPartsResult.Part[4].ETag[0]).toBe(lastPieceETag);
+                expect(json.ListPartsResult.Part[4].Size[0]).toBe('18');
+                expect(json.ListPartsResult.Part.length).toBe(5);
                 done();
             });
         });
     });
 
-    it('should return xml with objectKey url encoded if requested', done => {
+    test('should return xml with objectKey url encoded if requested', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -165,16 +156,15 @@ describe('List Parts API', () => {
         const urlEncodedObjectKey = '%24makememulti';
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(json.ListPartsResult.Key[0],
-                                   urlEncodedObjectKey);
+                expect(json.ListPartsResult.Key[0]).toBe(urlEncodedObjectKey);
                 done();
             });
         });
     });
 
-    it('should list only up to requested number ' +
+    test('should list only up to requested number ' +
     'of max parts of a multipart upload', done => {
         const listRequest = {
             bucketName,
@@ -189,33 +179,27 @@ describe('List Parts API', () => {
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.Bucket[0], bucketName);
-                assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
-                assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-                assert.strictEqual(json.ListPartsResult.MaxParts[0], '4');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part.length, 4);
+                expect(err).toBe(null);
+                expect(json.ListPartsResult.Bucket[0]).toBe(bucketName);
+                expect(json.ListPartsResult.Key[0]).toBe(uploadKey);
+                expect(json.ListPartsResult.UploadId[0]).toBe(uploadId);
+                expect(json.ListPartsResult.MaxParts[0]).toBe('4');
+                expect(json.ListPartsResult.Initiator[0].ID[0]).toBe(authInfo.getCanonicalID());
+                expect(json.ListPartsResult.IsTruncated[0]).toBe('true');
+                expect(json.ListPartsResult.PartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.NextPartNumberMarker[0]).toBe('4');
+                expect(json.ListPartsResult.Part[2].PartNumber[0]).toBe('3');
+                expect(json.ListPartsResult.Part[2].ETag[0]).toBe(sixMBObjectETag);
+                expect(json.ListPartsResult.Part[2].Size[0]).toBe('6000000');
+                expect(json.ListPartsResult.Part.length).toBe(4);
                 done();
             });
         });
     });
 
-    it('should list all parts if requested max-parts ' +
+    test('should list all parts if requested max-parts ' +
     'is greater than total number of parts', done => {
         const listRequest = {
             bucketName,
@@ -230,34 +214,27 @@ describe('List Parts API', () => {
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.Bucket[0], bucketName);
-                assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
-                assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-                assert.strictEqual(json.ListPartsResult.MaxParts[0], '6');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part.length, 5);
+                expect(err).toBe(null);
+                expect(json.ListPartsResult.Bucket[0]).toBe(bucketName);
+                expect(json.ListPartsResult.Key[0]).toBe(uploadKey);
+                expect(json.ListPartsResult.UploadId[0]).toBe(uploadId);
+                expect(json.ListPartsResult.MaxParts[0]).toBe('6');
+                expect(json.ListPartsResult.Initiator[0].ID[0]).toBe(authInfo.getCanonicalID());
+                expect(json.ListPartsResult.IsTruncated[0]).toBe('false');
+                expect(json.ListPartsResult.PartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.NextPartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.Part[2].PartNumber[0]).toBe('3');
+                expect(json.ListPartsResult.Part[2].ETag[0]).toBe(sixMBObjectETag);
+                expect(json.ListPartsResult.Part[2].Size[0]).toBe('6000000');
+                expect(json.ListPartsResult.Part.length).toBe(5);
                 done();
             });
         });
     });
 
-    it('should only list parts after PartNumberMarker', done => {
+    test('should only list parts after PartNumberMarker', done => {
         const listRequest = {
             bucketName,
             namespace,
@@ -271,36 +248,28 @@ describe('List Parts API', () => {
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.Bucket[0], bucketName);
-                assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
-                assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-                assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0],
-                    'false');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '5');
-                assert.strictEqual(json.ListPartsResult.Part.length, 3);
+                expect(err).toBe(null);
+                expect(json.ListPartsResult.Bucket[0]).toBe(bucketName);
+                expect(json.ListPartsResult.Key[0]).toBe(uploadKey);
+                expect(json.ListPartsResult.UploadId[0]).toBe(uploadId);
+                expect(json.ListPartsResult.MaxParts[0]).toBe('1000');
+                expect(json.ListPartsResult.Initiator[0].ID[0]).toBe(authInfo.getCanonicalID());
+                expect(json.ListPartsResult.IsTruncated[0]).toBe('false');
+                expect(json.ListPartsResult.PartNumberMarker[0]).toBe('2');
+                expect(json.ListPartsResult.NextPartNumberMarker).toBe(undefined);
+                expect(json.ListPartsResult.Part[0].PartNumber[0]).toBe('3');
+                expect(json.ListPartsResult.Part[0].ETag[0]).toBe(sixMBObjectETag);
+                expect(json.ListPartsResult.Part[0].Size[0]).toBe('6000000');
+                expect(json.ListPartsResult.Part[2].PartNumber[0]).toBe('5');
+                expect(json.ListPartsResult.Part.length).toBe(3);
                 done();
             });
         });
     });
 
-    it('should handle a part-number-marker specified ' +
+    test('should handle a part-number-marker specified ' +
     'and a max-parts specified', done => {
         const listRequest = {
             bucketName,
@@ -316,29 +285,22 @@ describe('List Parts API', () => {
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             parseString(xml, (err, json) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(json.ListPartsResult.Bucket[0], bucketName);
-                assert.strictEqual(json.ListPartsResult.Key[0], uploadKey);
-                assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
-                assert.strictEqual(json.ListPartsResult.MaxParts[0], '2');
-                assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
-                assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
-                assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
-                assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
-                assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
-                assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
-                assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
-                assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0],
-                                   '4');
-                assert.strictEqual(json.ListPartsResult.Part.length, 2);
+                expect(err).toBe(null);
+                expect(json.ListPartsResult.Bucket[0]).toBe(bucketName);
+                expect(json.ListPartsResult.Key[0]).toBe(uploadKey);
+                expect(json.ListPartsResult.UploadId[0]).toBe(uploadId);
+                expect(json.ListPartsResult.MaxParts[0]).toBe('2');
+                expect(json.ListPartsResult.Initiator[0].ID[0]).toBe(authInfo.getCanonicalID());
+                expect(json.ListPartsResult.IsTruncated[0]).toBe('true');
+                expect(json.ListPartsResult.PartNumberMarker[0]).toBe('2');
+                expect(json.ListPartsResult.NextPartNumberMarker[0]).toBe('4');
+                expect(json.ListPartsResult.Part[0].PartNumber[0]).toBe('3');
+                expect(json.ListPartsResult.Part[0].ETag[0]).toBe(sixMBObjectETag);
+                expect(json.ListPartsResult.Part[0].Size[0]).toBe('6000000');
+                expect(json.ListPartsResult.Part[1].PartNumber[0]).toBe('4');
+                expect(json.ListPartsResult.Part.length).toBe(2);
                 done();
             });
         });

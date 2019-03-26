@@ -41,7 +41,7 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
 
     function deleteReplicationAndCheckResponse(bucket, cb) {
         return s3.deleteBucketReplication({ Bucket: bucket }, (err, data) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             assert.deepStrictEqual(data, {});
             return cb();
         });
@@ -55,17 +55,17 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should return empty object if bucket has no replication config', done =>
+    test('should return empty object if bucket has no replication config', done =>
         deleteReplicationAndCheckResponse(bucket, done));
 
-    it('should delete a bucket replication config when it has one', done =>
+    test('should delete a bucket replication config when it has one', done =>
         series([
             next => putVersioningOnBucket(bucket, next),
             next => putReplicationOnBucket(bucket, next),
             next => deleteReplicationAndCheckResponse(bucket, next),
         ], done));
 
-    it('should return ReplicationConfigurationNotFoundError if getting ' +
+    test('should return ReplicationConfigurationNotFoundError if getting ' +
     'replication config after it has been deleted', done =>
         series([
             next => putVersioningOnBucket(bucket, next),
@@ -81,16 +81,16 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
             }),
             next => deleteReplicationAndCheckResponse(bucket, next),
             next => s3.getBucketReplication({ Bucket: bucket }, err => {
-                assert(errors.ReplicationConfigurationNotFoundError[err.code]);
+                expect(errors.ReplicationConfigurationNotFoundError[err.code]).toBeTruthy();
                 return next();
             }),
         ], done));
 
-    it('should return AccessDenied if user is not bucket owner', done =>
+    test('should return AccessDenied if user is not bucket owner', done =>
         otherAccountS3.deleteBucketReplication({ Bucket: bucket }, err => {
-            assert(err);
-            assert.strictEqual(err.code, 'AccessDenied');
-            assert.strictEqual(err.statusCode, 403);
+            expect(err).toBeTruthy();
+            expect(err.code).toBe('AccessDenied');
+            expect(err.statusCode).toBe(403);
             return done();
         }));
 });

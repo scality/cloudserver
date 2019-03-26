@@ -87,9 +87,9 @@ function createHashedFile(bytes) {
 }
 
 describeSkipIfCeph('aws-node-sdk range tests', () => {
-    before(() => execFileAsync('gcc', ['-o', 'getRangeExec',
+    beforeAll(() => execFileAsync('gcc', ['-o', 'getRangeExec',
         'lib/utility/getRange.c']));
-    after(() => execAsync('rm getRangeExec'));
+    afterAll(() => execAsync('rm getRangeExec'));
 
     describe('aws-node-sdk range test for object put by MPU', () =>
         withV4(sigCfg => {
@@ -125,8 +125,7 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
                             },
                         ],
                     },
-                }))
-            );
+                })));
 
             afterEach(() => bucketUtil.empty(bucket)
                 .then(() => s3.abortMultipartUploadAsync({
@@ -141,19 +140,18 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
                     resolve();
                 }))
                 .then(() => bucketUtil.deleteOne(bucket))
-                .then(() => execAsync(`rm hashedFile.${fileSize}*`))
-            );
+                .then(() => execAsync(`rm hashedFile.${fileSize}*`)));
 
-            it('should get a range from the first part of an object', () =>
+            test('should get a range from the first part of an object', () =>
                 checkRanges('0-9', fileSize));
 
-            it('should get a range from the second part of an object', () =>
+            test('should get a range from the second part of an object', () =>
                 checkRanges('5242880-5242889', fileSize));
 
-            it('should get a range that spans both parts of an object', () =>
+            test('should get a range that spans both parts of an object', () =>
                 checkRanges('5242875-5242884', fileSize));
 
-            it('should get a range from the second part of an object and ' +
+            test('should get a range from the second part of an object and ' +
                 'include the end if the range requested goes beyond the ' +
                 'actual object end', () =>
                 checkRanges('10485750-10485790', fileSize));
@@ -210,7 +208,7 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
             ];
 
             putRangeTests.forEach(range => {
-                it(`should get a range of ${range} bytes using a ${fileSize} ` +
+                test(`should get a range of ${range} bytes using a ${fileSize} ` +
                     'byte sized object', () =>
                     checkRanges(range, fileSize));
             });
@@ -236,11 +234,11 @@ describeSkipIfCeph('aws-node-sdk range tests', () => {
                 .then(() => bucketUtil.deleteOne(bucket))
                 .then(() => execAsync(`rm hashedFile.${fileSize}*`)));
 
-            it('should get the final 90 bytes of a 2890 byte object for a ' +
+            test('should get the final 90 bytes of a 2890 byte object for a ' +
                 'byte range of 2800-', () =>
                 checkRanges('2800-', fileSize));
 
-            it('should get the final 90 bytes of a 2890 byte object for a ' +
+            test('should get the final 90 bytes of a 2890 byte object for a ' +
                 'byte range of 2800-Number.MAX_SAFE_INTEGER', () =>
                 checkRanges(`2800-${Number.MAX_SAFE_INTEGER}`, fileSize));
         });

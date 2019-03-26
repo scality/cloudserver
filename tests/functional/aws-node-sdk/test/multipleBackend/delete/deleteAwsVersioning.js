@@ -47,17 +47,16 @@ function _assertDeleteResult(result, resultType, requestVersionId) {
     const [expectVersionId, matchReqVersionId, expectDeleteMarker] =
         _deleteResultSchema[resultType];
     if (expectVersionId && matchReqVersionId) {
-        assert.strictEqual(result.VersionId, requestVersionId);
+        expect(result.VersionId).toBe(requestVersionId);
     } else if (expectVersionId) {
-        assert(result.VersionId, 'expected version id in result');
+        expect(result.VersionId).toBeTruthy();
     } else {
-        assert.strictEqual(result.VersionId, undefined,
-            `did not expect version id in result, got "${result.VersionId}"`);
+        expect(result.VersionId).toBe(undefined);
     }
     if (expectDeleteMarker) {
-        assert.strictEqual(result.DeleteMarker, 'true');
+        expect(result.DeleteMarker).toBe('true');
     } else {
-        assert.strictEqual(result.DeleteMarker, undefined);
+        expect(result.DeleteMarker).toBe(undefined);
     }
 }
 
@@ -66,13 +65,12 @@ function delAndAssertResult(s3, params, cb) {
     return s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
         versionId }, (err, result) => {
         if (resultError) {
-            assert(err, `expected ${resultError} but found no error`);
-            assert.strictEqual(err.code, resultError);
-            assert.strictEqual(err.statusCode, errors[resultError].code);
+            expect(err).toBeTruthy();
+            expect(err.code).toBe(resultError);
+            expect(err.statusCode).toBe(errors[resultError].code);
             return cb(null);
         }
-        assert.strictEqual(err, null, 'Expected success ' +
-            `deleting object, got error ${err}`);
+        expect(err).toBe(null);
         _assertDeleteResult(result, resultType, versionId);
         return cb(null, result.VersionId);
     });
@@ -96,8 +94,8 @@ function _getAssertDeleted(s3, params, cb) {
     const { key, versionId, errorCode } = params;
     return s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
         err => {
-            assert.strictEqual(err.code, errorCode);
-            assert.strictEqual(err.statusCode, 404);
+            expect(err.code).toBe(errorCode);
+            expect(err.statusCode).toBe(404);
             return cb();
         });
 }
@@ -105,8 +103,8 @@ function _getAssertDeleted(s3, params, cb) {
 function _awsGetAssertDeleted(params, cb) {
     const { key, versionId, errorCode } = params;
     return getAwsRetry({ key, versionId }, 0, err => {
-        assert.strictEqual(err.code, errorCode);
-        assert.strictEqual(err.statusCode, 404);
+        expect(err.code).toBe(errorCode);
+        expect(err.statusCode).toBe(404);
         return cb();
     });
 }
@@ -142,7 +140,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             });
         });
 
-        it('versioning not configured: if specifying "null" version, should ' +
+        test('versioning not configured: if specifying "null" version, should ' +
         'delete specific version in AWS backend', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -160,7 +158,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning not configured: specifying any version id other ' +
+        test('versioning not configured: specifying any version id other ' +
         'than null should not result in its deletion in AWS backend', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -172,13 +170,13 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     'InvalidArgument' }, err => next(err, awsVerId)),
                 (awsVerId, next) => awsGetLatestVerId(key, someBody,
                     (err, resultVid) => {
-                        assert.strictEqual(resultVid, awsVerId);
+                        expect(resultVid).toBe(awsVerId);
                         next();
                     }),
             ], done);
         });
 
-        it('versioning suspended: should delete a specific version in AWS ' +
+        test('versioning suspended: should delete a specific version in AWS ' +
         'backend successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -196,7 +194,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning enabled: should delete a specific version in AWS ' +
+        test('versioning enabled: should delete a specific version in AWS ' +
         'backend successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -215,7 +213,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning not configured: deleting existing object should ' +
+        test('versioning not configured: deleting existing object should ' +
         'not return version id or x-amz-delete-marker: true but should ' +
         'create a delete marker in aws ', done => {
             const key = `somekey-${genUniqID()}`;
@@ -231,7 +229,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning suspended: should create a delete marker in s3 ' +
+        test('versioning suspended: should create a delete marker in s3 ' +
         'and aws successfully when deleting existing object', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -249,10 +247,9 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         // NOTE: Normal deletes when versioning is suspended create a
         // delete marker with the version id "null", which overwrites an
         // existing null version in s3 metadata.
-        it('versioning suspended: creating a delete marker will overwrite an ' +
+        test('versioning suspended: creating a delete marker will overwrite an ' +
         'existing null version that is the latest version in s3 metadata,' +
-        ' but the data of the first null version will remain in AWS',
-        function itF(done) {
+        ' but the data of the first null version will remain in AWS', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [someBody],
@@ -275,7 +272,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // get directly to aws however will give us first null version
                 next => awsGetLatestVerId(key, someBody, next),
                 (awsLatestVid, next) => {
-                    assert.strictEqual(awsLatestVid, this.test.awsNullVid);
+                    expect(awsLatestVid).toBe(this.test.awsNullVid);
                     next();
                 },
             ], done);
@@ -284,10 +281,9 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
         // NOTE: Normal deletes when versioning is suspended create a
         // delete marker with the version id "null" which is supposed to
         // overwrite any existing null version.
-        it('versioning suspended: creating a delete marker will overwrite an ' +
+        test('versioning suspended: creating a delete marker will overwrite an ' +
         'existing null version that is not the latest version in s3 metadata,' +
-        ' but the data of the first null version will remain in AWS',
-        function itF(done) {
+        ' but the data of the first null version will remain in AWS', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [undefined, 'data1'];
             async.waterfall([
@@ -329,13 +325,13 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // when getting the latest version in AWS now
                 next => awsGetLatestVerId(key, '', next),
                 (awsLatestVid, next) => {
-                    assert.strictEqual(awsLatestVid, this.test.awsNullVid);
+                    expect(awsLatestVid).toBe(this.test.awsNullVid);
                     next();
                 },
             ], done);
         });
 
-        it('versioning enabled: should create a delete marker in s3 and ' +
+        test('versioning enabled: should create a delete marker in s3 and ' +
         'aws successfully when deleting existing object', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -350,7 +346,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning enabled: should delete a delete marker in s3 and ' +
+        test('versioning enabled: should delete a delete marker in s3 and ' +
         'aws successfully', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -372,7 +368,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('multiple delete markers: should be able to get pre-existing ' +
+        test('multiple delete markers: should be able to get pre-existing ' +
         'versions after creating and deleting several delete markers', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -390,7 +386,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('multiple delete markers: should get NoSuchObject if only ' +
+        test('multiple delete markers: should get NoSuchObject if only ' +
         'one of the delete markers is deleted', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -408,7 +404,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('should get the new latest version after deleting the latest' +
+        test('should get the new latest version after deleting the latest' +
         'specific version', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [...Array(4).keys()].map(i => i.toString());
@@ -441,7 +437,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('should delete the correct version even if other versions or ' +
+        test('should delete the correct version even if other versions or ' +
         'delete markers put directly on aws', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -469,7 +465,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('should not return an error deleting a version that was already ' +
+        test('should not return an error deleting a version that was already ' +
         'deleted directly from AWS backend', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -528,7 +524,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             });
         });
 
-        it('versioning not configured: deleting non-existing object should ' +
+        test('versioning not configured: deleting non-existing object should ' +
         'not return version id or x-amz-delete-marker: true nor create a ' +
         'delete marker in aws ', done => {
             const key = `somekey-${genUniqID()}`;
@@ -542,7 +538,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning suspended: should create a delete marker in s3 ' +
+        test('versioning suspended: should create a delete marker in s3 ' +
         'and aws successfully when deleting non-existing object', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -556,7 +552,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             ], done);
         });
 
-        it('versioning enabled: should create a delete marker in s3 and ' +
+        test('versioning enabled: should create a delete marker in s3 and ' +
         'aws successfully when deleting non-existing object', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([

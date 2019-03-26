@@ -26,44 +26,46 @@ describe('Initiate MPU', () => {
 
         afterEach(() => bucketUtil.deleteOne(bucket));
 
-        it('should return InvalidRedirectLocation if initiate MPU ' +
+        test('should return InvalidRedirectLocation if initiate MPU ' +
         'with x-amz-website-redirect-location header that does not start ' +
         'with \'http://\', \'https://\' or \'/\'', done => {
             const params = { Bucket: bucket, Key: key,
                 WebsiteRedirectLocation: 'google.com' };
             s3.createMultipartUpload(params, err => {
-                assert.strictEqual(err.code, 'InvalidRedirectLocation');
-                assert.strictEqual(err.statusCode, 400);
+                expect(err.code).toBe('InvalidRedirectLocation');
+                expect(err.statusCode).toBe(400);
                 done();
             });
         });
 
-        it('should return error if initiating MPU w/ > 2KB user-defined md',
-        done => {
-            const metadata = genMaxSizeMetaHeaders();
-            const params = { Bucket: bucket, Key: key, Metadata: metadata };
-            async.waterfall([
-                next => s3.createMultipartUpload(params, (err, data) => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    next(null, data.UploadId);
-                }),
-                (uploadId, next) => s3.abortMultipartUpload({
-                    Bucket: bucket,
-                    Key: key,
-                    UploadId: uploadId,
-                }, err => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    // add one more byte to push over limit for next call
-                    metadata.header0 = `${metadata.header0}${'0'}`;
-                    next();
-                }),
-                next => s3.createMultipartUpload(params, next),
-            ], err => {
-                assert(err, 'Expected err but did not find one');
-                assert.strictEqual(err.code, 'MetadataTooLarge');
-                assert.strictEqual(err.statusCode, 400);
-                done();
-            });
-        });
+        test(
+            'should return error if initiating MPU w/ > 2KB user-defined md',
+            done => {
+                const metadata = genMaxSizeMetaHeaders();
+                const params = { Bucket: bucket, Key: key, Metadata: metadata };
+                async.waterfall([
+                    next => s3.createMultipartUpload(params, (err, data) => {
+                        expect(err).toBe(null);
+                        next(null, data.UploadId);
+                    }),
+                    (uploadId, next) => s3.abortMultipartUpload({
+                        Bucket: bucket,
+                        Key: key,
+                        UploadId: uploadId,
+                    }, err => {
+                        expect(err).toBe(null);
+                        // add one more byte to push over limit for next call
+                        metadata.header0 = `${metadata.header0}${'0'}`;
+                        next();
+                    }),
+                    next => s3.createMultipartUpload(params, next),
+                ], err => {
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('MetadataTooLarge');
+                    expect(err.statusCode).toBe(400);
+                    done();
+                });
+            }
+        );
     });
 });

@@ -13,9 +13,9 @@ function withV4(testFn) {
         }
 
         describe(`With ${version} signature`, (cfg =>
-            function tcWrap() {
+            (function tcWrap() {
                 testFn.call(this, cfg);
-            }
+            })
         )(config));
     });
 }

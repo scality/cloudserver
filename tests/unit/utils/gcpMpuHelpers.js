@@ -37,10 +37,10 @@ describe('GcpUtils MPU Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 const { partNumber, phase } = test.input;
-                assert.strictEqual(createMpuKey(
-                    key, uploadId, partNumber, phase), test.output);
+                expect(createMpuKey(
+                    key, uploadId, partNumber, phase)).toBe(test.output);
             });
         });
     });
@@ -54,7 +54,7 @@ describe('GcpUtils MPU Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 const { phase, size } = test.input;
                 assert.deepStrictEqual(createMpuList(
                     { Key: key, UploadId: uploadId }, phase, size),

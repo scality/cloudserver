@@ -14,7 +14,7 @@ function _getObjectReplicationInfo(replicationConfig) {
 }
 
 describe('getReplicationInfo helper', () => {
-    it('should get replication info when rules are enabled', () => {
+    test('should get replication info when rules are enabled', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',
             rules: [{
@@ -41,7 +41,7 @@ describe('getReplicationInfo helper', () => {
         });
     });
 
-    it('should not get replication info when rules are disabled', () => {
+    test('should not get replication info when rules are disabled', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',
             rules: [{
@@ -55,7 +55,7 @@ describe('getReplicationInfo helper', () => {
         assert.deepStrictEqual(replicationInfo, undefined);
     });
 
-    it('should get replication info with single cloud target', () => {
+    test('should get replication info with single cloud target', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',
             rules: [{
@@ -82,7 +82,7 @@ describe('getReplicationInfo helper', () => {
         });
     });
 
-    it('should get replication info with multiple cloud targets', () => {
+    test('should get replication info with multiple cloud targets', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',
             rules: [{
@@ -113,7 +113,7 @@ describe('getReplicationInfo helper', () => {
         });
     });
 
-    it('should get replication info with multiple cloud targets and ' +
+    test('should get replication info with multiple cloud targets and ' +
     'preferred read location', () => {
         const replicationConfig = {
             role: 'arn:aws:iam::root:role/s3-replication-role',

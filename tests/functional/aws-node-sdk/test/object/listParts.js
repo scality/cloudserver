@@ -9,8 +9,7 @@ const bodyFirstPart = Buffer.allocUnsafe(10).fill(0);
 const bodySecondPart = Buffer.allocUnsafe(20).fill(0);
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 describe('List parts', () => {
@@ -58,7 +57,7 @@ describe('List parts', () => {
             });
         });
 
-        it('should only list the second part', done => {
+        test('should only list the second part', done => {
             s3.listParts({
                 Bucket: bucket,
                 Key: key,
@@ -66,9 +65,9 @@ describe('List parts', () => {
                 UploadId: uploadId },
             (err, data) => {
                 checkNoError(err);
-                assert.strictEqual(data.Parts[0].PartNumber, 2);
-                assert.strictEqual(data.Parts[0].Size, 20);
-                assert.strictEqual(`${data.Parts[0].ETag}`, secondEtag);
+                expect(data.Parts[0].PartNumber).toBe(2);
+                expect(data.Parts[0].Size).toBe(20);
+                expect(`${data.Parts[0].ETag}`).toBe(secondEtag);
                 done();
             });
         });
@@ -111,7 +110,7 @@ function test(s3, bucket, key, uploadId, cb) {
         UploadId: uploadId },
     (err, data) => {
         checkNoError(err);
-        assert.strictEqual(data.Key, key);
+        expect(data.Key).toBe(key);
         cb();
     });
 }
@@ -128,13 +127,14 @@ describe('List parts - object keys with special characters: `&`', () => {
             .then(res => {
                 uploadId = res;
                 return Promise.resolve();
-            })
-        );
+            }));
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
-        it('should list parts of an object with `&` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+        test(
+            'should list parts of an object with `&` in its key',
+            done => test(s3, bucket, key, uploadId, done)
+        );
     });
 });
 
@@ -150,13 +150,14 @@ describe('List parts - object keys with special characters: `"`', () => {
             .then(res => {
                 uploadId = res;
                 return Promise.resolve();
-            })
-        );
+            }));
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
-        it('should list parts of an object with `"` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+        test(
+            'should list parts of an object with `"` in its key',
+            done => test(s3, bucket, key, uploadId, done)
+        );
     });
 });
 
@@ -172,13 +173,14 @@ describe('List parts - object keys with special characters: `\'`', () => {
             .then(res => {
                 uploadId = res;
                 return Promise.resolve();
-            })
-        );
+            }));
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
-        it('should list parts of an object with `\'` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+        test(
+            'should list parts of an object with `\'` in its key',
+            done => test(s3, bucket, key, uploadId, done)
+        );
     });
 });
 
@@ -194,13 +196,14 @@ describe('List parts - object keys with special characters: `<`', () => {
             .then(res => {
                 uploadId = res;
                 return Promise.resolve();
-            })
-        );
+            }));
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
-        it('should list parts of an object with `<` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+        test(
+            'should list parts of an object with `<` in its key',
+            done => test(s3, bucket, key, uploadId, done)
+        );
     });
 });
 
@@ -216,12 +219,13 @@ describe('List parts - object keys with special characters: `>`', () => {
             .then(res => {
                 uploadId = res;
                 return Promise.resolve();
-            })
-        );
+            }));
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
 
-        it('should list parts of an object with `>` in its key',
-            done => test(s3, bucket, key, uploadId, done));
+        test(
+            'should list parts of an object with `>` in its key',
+            done => test(s3, bucket, key, uploadId, done)
+        );
     });
 });

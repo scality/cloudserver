@@ -13,7 +13,7 @@ describe('DELETE object', () => {
         const s3 = bucketUtil.s3;
         const testfile = Buffer.alloc(1024 * 1024 * 54, 0);
 
-        before(() => {
+        beforeAll(() => {
             process.stdout.write('creating bucket\n');
             return s3.createBucketAsync({ Bucket: bucketName })
             .then(() => {
@@ -59,7 +59,7 @@ describe('DELETE object', () => {
             });
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucketName)
             .then(() => {
@@ -72,10 +72,9 @@ describe('DELETE object', () => {
             });
         });
 
-        it('should delete a object uploaded in parts successfully', done => {
+        test('should delete a object uploaded in parts successfully', done => {
             s3.deleteObject({ Bucket: bucketName, Key: objectName }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 done();
             });
         });

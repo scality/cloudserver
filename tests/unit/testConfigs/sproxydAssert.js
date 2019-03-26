@@ -18,65 +18,64 @@ function makeSproxydConf(bootstrap, chordCos, sproxydPath) {
 }
 
 describe('sproxydAssert', () => {
-    it('should throw an error if bootstrap list is not an array', () => {
-        assert.throws(() => {
+    test('should throw an error if bootstrap list is not an array', () => {
+        expect(() => {
             sproxydAssert(makeSproxydConf('localhost:8181'));
-        },
-        /bad config: sproxyd.bootstrap must be an array of strings/);
+        }).toThrow();
     });
-    it('should throw an error if bootstrap array does not contain strings',
-    () => {
-        assert.throws(() => {
-            sproxydAssert(makeSproxydConf([8181]));
-        },
-        /bad config: sproxyd.bootstrap must be an array of strings/);
-    });
-    it('should throw an error if chordCos is not a string', () => {
-        assert.throws(() => {
+    test(
+        'should throw an error if bootstrap array does not contain strings',
+        () => {
+            expect(() => {
+                sproxydAssert(makeSproxydConf([8181]));
+            }).toThrow();
+        }
+    );
+    test('should throw an error if chordCos is not a string', () => {
+        expect(() => {
             sproxydAssert(makeSproxydConf(null, 20));
-        },
-        /bad config: sproxyd.chordCos must be a string/);
+        }).toThrow();
     });
-    it('should throw an error if chordCos is more than 1 digit', () => {
-        assert.throws(() => {
+    test('should throw an error if chordCos is more than 1 digit', () => {
+        expect(() => {
             sproxydAssert(makeSproxydConf(null, '200'));
-        },
-        /bad config: sproxyd.chordCos must be a digit smaller than 7/);
+        }).toThrow();
     });
-    it('should throw an error if chordCos bigger than 7', () => {
-        assert.throws(() => {
+    test('should throw an error if chordCos bigger than 7', () => {
+        expect(() => {
             sproxydAssert(makeSproxydConf(null, '7'));
-        },
-        /bad config: sproxyd.chordCos must be a digit smaller than 7/);
+        }).toThrow();
     });
-    it('should throw an error if path is not a string', () => {
-        assert.throws(() => {
+    test('should throw an error if path is not a string', () => {
+        expect(() => {
             sproxydAssert(makeSproxydConf(null, null, 20));
-        }, /bad config: sproxyd.path must be a string/);
+        }).toThrow();
     });
 
-    it('should return array containing "bootstrap" if config ' +
+    test('should return array containing "bootstrap" if config ' +
         'contains bootstrap', () => {
         const sproxydArray = sproxydAssert(makeSproxydConf(['localhost:8181']));
-        assert.strictEqual(sproxydArray.indexOf('bootstrap'), 0);
+        expect(sproxydArray.indexOf('bootstrap')).toBe(0);
     });
-    it('should return array containing "chordCos" if config contains chordCos',
+    test(
+        'should return array containing "chordCos" if config contains chordCos',
         () => {
             const sproxydArray = sproxydAssert(makeSproxydConf(null, '2'));
-            assert.strictEqual(sproxydArray.indexOf('chordCos'), 0);
-        });
-    it('should return array containing "path" if config contains path', () => {
+            expect(sproxydArray.indexOf('chordCos')).toBe(0);
+        }
+    );
+    test('should return array containing "path" if config contains path', () => {
         const sproxydArray = sproxydAssert(
             makeSproxydConf(null, null, '/proxy/arc'));
-        assert.strictEqual(sproxydArray.indexOf('path'), 0);
+        expect(sproxydArray.indexOf('path')).toBe(0);
     });
-    it('should return array of "bootstrap", "chordCos", and "path" if config ' +
+    test('should return array of "bootstrap", "chordCos", and "path" if config ' +
         'contains all fields', () => {
         const sproxydArray = sproxydAssert(
             makeSproxydConf(['localhost:8181'], '2', '/proxy/arc'));
-        assert.strictEqual(sproxydArray.length, 3);
-        assert.strictEqual(sproxydArray.indexOf('bootstrap') > -1, true);
-        assert.strictEqual(sproxydArray.indexOf('chordCos') > -1, true);
-        assert.strictEqual(sproxydArray.indexOf('path') > -1, true);
+        expect(sproxydArray.length).toBe(3);
+        expect(sproxydArray.indexOf('bootstrap') > -1).toBe(true);
+        expect(sproxydArray.indexOf('chordCos') > -1).toBe(true);
+        expect(sproxydArray.indexOf('path') > -1).toBe(true);
     });
 });

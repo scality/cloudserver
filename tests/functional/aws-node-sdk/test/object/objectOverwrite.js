@@ -21,7 +21,7 @@ describe('Put object with same key as prior object', () => {
         let s3;
         let bucketName;
 
-        before(done => {
+        beforeAll(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             bucketUtil.createRandom(1)
@@ -45,9 +45,10 @@ describe('Put object with same key as prior object', () => {
 
         afterEach(() => bucketUtil.empty(bucketName));
 
-        after(() => bucketUtil.deleteOne(bucketName));
+        afterAll(() => bucketUtil.deleteOne(bucketName));
 
-        it('should overwrite all user metadata and data on overwrite put',
+        test(
+            'should overwrite all user metadata and data on overwrite put',
             () => s3.putObjectAsync({
                 Bucket: bucketName,
                 Key: objectName,
@@ -59,6 +60,7 @@ describe('Put object with same key as prior object', () => {
                 assert.deepStrictEqual(res.Metadata, secondPutMetadata);
                 assert.deepStrictEqual(res.Body.toString(),
                     'Much different');
-            }));
+            })
+        );
     });
 });

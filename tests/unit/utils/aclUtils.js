@@ -91,10 +91,10 @@ describe('checkGrantHeaderValidity for acls', () => {
     ];
 
     tests.forEach(test => {
-        it(test.it, () => {
+        test(test.it, () => {
             const actualResult =
                 aclUtils.checkGrantHeaderValidity(test.headers);
-            assert.strictEqual(actualResult, test.result);
+            expect(actualResult).toBe(test.result);
         });
     });
 });

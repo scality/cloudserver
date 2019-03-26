@@ -72,12 +72,9 @@ const tests = [
         name: 'list of all objects if no delimiter specified',
         request: Object.assign({ query: {}, url: baseUrl }, baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
-                objectName1);
-            assert.strictEqual(result.ListBucketResult.Contents[2].Key[0],
-                objectName2);
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
+            expect(result.ListBucketResult.Contents[1].Key[0]).toBe(objectName1);
+            expect(result.ListBucketResult.Contents[2].Key[0]).toBe(objectName2);
+            expect(result.ListBucketResult.Contents[0].Key[0]).toBe(objectName3);
         },
     },
     {
@@ -88,24 +85,23 @@ const tests = [
             query: { delimiter, prefix },
         }, baseGetRequest),
         assertion: result =>
-            assert.strictEqual(result.ListBucketResult
-                .CommonPrefixes[0].Prefix[0], `${prefix}${delimiter}`),
+            expect(result.ListBucketResult
+                .CommonPrefixes[0].Prefix[0]).toBe(`${prefix}${delimiter}`),
     },
     {
         name: 'return empty list when max-keys is set to 0',
         request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
             baseGetRequest),
         assertion: result =>
-            assert.strictEqual(result.ListBucketResult.Contents, undefined),
+            expect(result.ListBucketResult.Contents).toBe(undefined),
     },
     {
         name: 'return no more keys than max-keys specified',
         request: Object.assign({ query: { 'max-keys': '1' }, url: baseUrl },
             baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                objectName3);
-            assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+            expect(result.ListBucketResult.Contents[0].Key[0]).toBe(objectName3);
+            expect(result.ListBucketResult.Contents[1]).toBe(undefined);
         },
     },
     {
@@ -114,7 +110,7 @@ const tests = [
         request: Object.assign({ query: { 'max-keys': '99999' }, url: baseUrl },
             baseGetRequest),
         assertion: result =>
-            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '99999'),
+            expect(result.ListBucketResult.MaxKeys[0]).toBe('99999'),
     },
     {
         name: 'url encode object key name if requested',
@@ -122,10 +118,8 @@ const tests = [
             { query: { 'encoding-type': 'url' }, url: baseUrl },
             baseGetRequest),
         assertion: result => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                querystring.escape(objectName3));
-            assert.strictEqual(result.ListBucketResult.Contents[1].Key[0],
-                querystring.escape(objectName1));
+            expect(result.ListBucketResult.Contents[0].Key[0]).toBe(querystring.escape(objectName3));
+            expect(result.ListBucketResult.Contents[1].Key[0]).toBe(querystring.escape(objectName1));
         },
     },
 ];
@@ -136,7 +130,7 @@ describe('bucketGet API', () => {
     });
 
     tests.forEach(test => {
-        it(`should ${test.name}`, done => {
+        test(`should ${test.name}`, done => {
             const testGetRequest = test.request;
 
             async.waterfall([
@@ -158,7 +152,7 @@ describe('bucketGet API', () => {
         });
     });
 
-    it('should return an InvalidArgument error if max-keys == -1', done => {
+    test('should return an InvalidArgument error if max-keys == -1', done => {
         const testGetRequest = Object.assign({ query: { 'max-keys': '-1' } },
             baseGetRequest);
         bucketGet(authInfo, testGetRequest, log, err => {
@@ -167,7 +161,7 @@ describe('bucketGet API', () => {
         });
     });
 
-    it('should escape invalid xml characters in object key names', done => {
+    test('should escape invalid xml characters in object key names', done => {
         const testGetRequest = Object.assign({ query: {}, url: baseUrl },
             baseGetRequest);
 
@@ -180,13 +174,12 @@ describe('bucketGet API', () => {
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                              testPutObjectRequest4.objectKey);
+            expect(result.ListBucketResult.Contents[0].Key[0]).toBe(testPutObjectRequest4.objectKey);
             done();
         });
     });
 
-    it('should return xml that refers to the s3 docs for xml specs', done => {
+    test('should return xml that refers to the s3 docs for xml specs', done => {
         const testGetRequest = Object.assign({ query: {}, url: baseUrl },
             baseGetRequest);
 
@@ -197,8 +190,7 @@ describe('bucketGet API', () => {
             (result, corsHeaders, next) => parseString(result, next),
         ],
         (err, result) => {
-            assert.strictEqual(result.ListBucketResult.$.xmlns,
-                'http://s3.amazonaws.com/doc/2006-03-01/');
+            expect(result.ListBucketResult.$.xmlns).toBe('http://s3.amazonaws.com/doc/2006-03-01/');
             done();
         });
     });
@@ -217,7 +209,7 @@ describe('bucketGet API V2', () => {
             `${test.request.url}?list-type=2`;
         /* eslint-enable no-param-reassign */
 
-        it(`should return ${test.name}`, done => {
+        test(`should return ${test.name}`, done => {
             const testGetRequest = test.request;
 
             async.waterfall([

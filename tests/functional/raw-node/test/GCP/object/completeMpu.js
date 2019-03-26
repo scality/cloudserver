@@ -34,12 +34,18 @@ function gcpMpuSetupWrapper(params, callback) {
     });
 }
 
-describe('GCP: Complete MPU', function testSuite() {
+describe('GCP: Complete MPU', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(600000);
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         async.eachSeries(bucketNames,
@@ -57,13 +63,12 @@ describe('GCP: Complete MPU', function testSuite() {
         done);
     });
 
-    after(done => {
+    afterAll(done => {
         async.eachSeries(bucketNames,
             (bucket, next) => gcpClient.listObjects({
                 Bucket: bucket.Name,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                expect(err).toEqual(null);
                 async.map(res.Contents, (object, moveOn) => {
                     const deleteParams = {
                         Bucket: bucket.Name,
@@ -72,8 +77,7 @@ describe('GCP: Complete MPU', function testSuite() {
                     gcpClient.deleteObject(
                         deleteParams, err => moveOn(err));
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
+                    expect(err).toEqual(null);
                     gcpRequestRetry({
                         method: 'DELETE',
                         bucket: bucket.Name,
@@ -91,104 +95,102 @@ describe('GCP: Complete MPU', function testSuite() {
     });
 
     describe('when MPU has 0 parts', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
-                key: this.currentTest.key,
+                key: testContext.currentTest.key,
                 partCount: 0, partSize,
             }, done);
         });
 
-        it('should return error if 0 parts are given in MPU complete',
-        function testFn(done) {
-            const params = {
-                Bucket: bucketNames.main.Name,
-                MPU: bucketNames.mpu.Name,
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
-                MultipartUpload: { Parts: [] },
-            };
-            gcpClient.completeMultipartUpload(params, err => {
-                assert(err);
-                assert.strictEqual(err.code, 400);
-                return done();
-            });
-        });
+        test(
+            'should return error if 0 parts are given in MPU complete',
+            done => {
+                const params = {
+                    Bucket: bucketNames.main.Name,
+                    MPU: bucketNames.mpu.Name,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
+                    MultipartUpload: { Parts: [] },
+                };
+                gcpClient.completeMultipartUpload(params, err => {
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe(400);
+                    return done();
+                });
+            }
+        );
     });
 
     describe('when MPU has 1 uploaded part', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
-                key: this.currentTest.key,
+                key: testContext.currentTest.key,
                 partCount: 1, partSize,
             }, done);
         });
 
-        it('should successfully complete MPU',
-        function testFn(done) {
+        test('should successfully complete MPU', done => {
             const parts = GcpUtils.createMpuList({
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
+                Key: testContext.test.key,
+                UploadId: testContext.test.uploadId,
             }, 'parts', 1).map(item => {
                 Object.assign(item, {
-                    ETag: this.test.etagList[item.PartNumber - 1],
+                    ETag: testContext.test.etagList[item.PartNumber - 1],
                 });
                 return item;
             });
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
+                Key: testContext.test.key,
+                UploadId: testContext.test.uploadId,
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                assert.strictEqual(res.ETag, `"${smallMD5}"`);
+                expect(err).toEqual(null);
+                expect(res.ETag).toBe(`"${smallMD5}"`);
                 return done();
             });
         });
     });
 
     describe('when MPU has 1024 uploaded parts', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
-                key: this.currentTest.key,
+                key: testContext.currentTest.key,
                 partCount: numParts, partSize,
             }, done);
         });
 
-        it('should successfully complete MPU',
-        function testFn(done) {
+        test('should successfully complete MPU', done => {
             const parts = GcpUtils.createMpuList({
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
+                Key: testContext.test.key,
+                UploadId: testContext.test.uploadId,
             }, 'parts', numParts).map(item => {
                 Object.assign(item, {
-                    ETag: this.test.etagList[item.PartNumber - 1],
+                    ETag: testContext.test.etagList[item.PartNumber - 1],
                 });
                 return item;
             });
             const params = {
                 Bucket: bucketNames.main.Name,
                 MPU: bucketNames.mpu.Name,
-                Key: this.test.key,
-                UploadId: this.test.uploadId,
+                Key: testContext.test.key,
+                UploadId: testContext.test.uploadId,
                 MultipartUpload: { Parts: parts },
             };
             gcpClient.completeMultipartUpload(params, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
-                assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                expect(err).toEqual(null);
+                expect(res.ETag).toBe(`"${bigMD5}"`);
                 return done();
             });
         });

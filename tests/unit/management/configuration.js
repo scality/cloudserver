@@ -50,17 +50,16 @@ function resetConfig() {
 
 function assertConfig(actualConf, expectedConf) {
     Object.keys(expectedConf).forEach(key => {
-        assert.deepEqual(actualConf[key], expectedConf[key]);
+        expect(actualConf[key]).toEqual(expectedConf[key]);
     });
 }
 
 function checkNoError(err) {
-    assert.strictEqual(err, null, 'Expected success ' +
-        `but got error ${err}`);
+    expect(err).toBe(null);
 }
 
 describe('patchConfiguration', () => {
-    before(done => initManagementDatabase(log, err => {
+    beforeAll(done => initManagementDatabase(log, err => {
         if (err) {
             return done(err);
         }
@@ -69,7 +68,7 @@ describe('patchConfiguration', () => {
     beforeEach(() => {
         resetConfig();
     });
-    it('should modify config using the new config', done => {
+    test('should modify config using the new config', done => {
         const newConf = {
             version: 1,
             users: [
@@ -383,7 +382,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should apply second configuration if version (2) is grater than ' +
+    test('should apply second configuration if version (2) is grater than ' +
     'overlayVersion (1)', done => {
         const newConf1 = {
             version: 1,
@@ -409,7 +408,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should not apply the second configuration if version equals ' +
+    test('should not apply the second configuration if version equals ' +
     'overlayVersion', done => {
         const newConf1 = {
             version: 1,
@@ -437,7 +436,7 @@ describe('patchConfiguration', () => {
 });
 
 describe('remoteOverlayIsNewer', () => {
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' +
+    test('should return remoteOverlayIsNewer equals false if remote overlay ' +
     'is less than the cached', () => {
         const cachedOverlay = {
             version: 2,
@@ -447,9 +446,9 @@ describe('remoteOverlayIsNewer', () => {
         };
         const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
             remoteOverlay);
-        assert.equal(isRemoteOverlayNewer, false);
+        expect(isRemoteOverlayNewer).toEqual(false);
     });
-    it('should return remoteOverlayIsNewer equals false if remote overlay ' +
+    test('should return remoteOverlayIsNewer equals false if remote overlay ' +
     'and the cached one are equal', () => {
         const cachedOverlay = {
             version: 1,
@@ -459,9 +458,9 @@ describe('remoteOverlayIsNewer', () => {
         };
         const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
             remoteOverlay);
-        assert.equal(isRemoteOverlayNewer, false);
+        expect(isRemoteOverlayNewer).toEqual(false);
     });
-    it('should return remoteOverlayIsNewer equals true if remote overlay ' +
+    test('should return remoteOverlayIsNewer equals true if remote overlay ' +
     'version is greater than the cached one ', () => {
         const cachedOverlay = {
             version: 0,
@@ -471,6 +470,6 @@ describe('remoteOverlayIsNewer', () => {
         };
         const isRemoteOverlayNewer = remoteOverlayIsNewer(cachedOverlay,
             remoteOverlay);
-        assert.equal(isRemoteOverlayNewer, true);
+        expect(isRemoteOverlayNewer).toEqual(true);
     });
 });

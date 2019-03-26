@@ -12,8 +12,7 @@ const bucket = `completempu${date}`;
 const key = 'key';
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 
@@ -34,9 +33,9 @@ describe('Complete MPU', () => {
                 checkNoError(err);
                 const versionId = data.VersionId;
                 if (expectedVid) {
-                    assert.notEqual(versionId, undefined);
+                    expect(versionId).not.toEqual(undefined);
                 } else {
-                    assert.strictEqual(versionId, expectedVid);
+                    expect(versionId).toBe(expectedVid);
                 }
                 return s3.getObject({
                     Bucket: bucket,
@@ -45,7 +44,7 @@ describe('Complete MPU', () => {
                 (err, data) => {
                     checkNoError(err);
                     if (versionId) {
-                        assert.strictEqual(data.VersionId, versionId);
+                        expect(data.VersionId).toBe(versionId);
                     }
                     cb();
                 });
@@ -92,10 +91,9 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
-            );
+                }));
 
-            it('should complete an MPU with fewer parts than were ' +
+            test('should complete an MPU with fewer parts than were ' +
                 'originally put without returning a version id', done => {
                 _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
             });
@@ -111,10 +109,9 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
-            );
+                }));
 
-            it('should complete an MPU with fewer parts than were ' +
+            test('should complete an MPU with fewer parts than were ' +
                 'originally put and return a version id', done => {
                 _completeMpuAndCheckVid(uploadId, eTag, true, done);
             });
@@ -130,10 +127,9 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
-            );
+                }));
 
-            it('should complete an MPU with fewer parts than were ' +
+            test('should complete an MPU with fewer parts than were ' +
                 'originally put and should not return a version id', done => {
                 _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
             });

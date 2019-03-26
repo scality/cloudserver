@@ -32,81 +32,65 @@ function getAzureDetails(replaceParams) {
 // 'joi' for config parsing.
 
 describe('locationConstraintAssert', () => {
-    it('should throw error if locationConstraints is not an object', () => {
-        assert.throws(() => {
+    test('should throw error if locationConstraints is not an object', () => {
+        expect(() => {
             locationConstraintAssert('');
-        },
-        /bad config: locationConstraints must be an object/);
+        }).toThrow();
     });
-    it('should throw error if any location constraint is not an object', () => {
-        assert.throws(() => {
+    test('should throw error if any location constraint is not an object', () => {
+        expect(() => {
             locationConstraintAssert({ notObject: '' });
-        },
-        err => {
-            assert.strictEqual(err.message, 'bad config: ' +
-                'locationConstraints[region] must be an object');
-            return true;
-        });
+        }).toThrow();
     });
-    it('should throw error if type is not a string', () => {
+    test('should throw error if type is not a string', () => {
         const locationConstraint = new LocationConstraint(42, 'locId');
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: locationConstraints[region].type is mandatory/ +
-            /and must be a string/);
+        }).toThrow();
     });
-    it('should throw error if type is not mem/file/scality', () => {
+    test('should throw error if type is not mem/file/scality', () => {
         const locationConstraint = new LocationConstraint(
             'notSupportedType', 'locId');
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: locationConstraints[region].type must be/ +
-            /one of mem,file,scality/);
+        }).toThrow();
     });
-    it('should throw error if legacyAwsBehavior is not a boolean', () => {
+    test('should throw error if legacyAwsBehavior is not a boolean', () => {
         const locationConstraint = new LocationConstraint(
             'scality', 'locId', 42);
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: locationConstraints[region].legacyAwsBehavior / +
-            /is mandatory and must be a boolean/);
+        }).toThrow();
     });
-    it('should throw error if details is not an object', () => {
+    test('should throw error if details is not an object', () => {
         const locationConstraint =
               new LocationConstraint('scality', 'locId', false, 42);
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: locationConstraints[region].details is / +
-            /mandatory and must be an object/);
+        }).toThrow();
     });
-    it('should throw error if awsEndpoint is not a string', () => {
+    test('should throw error if awsEndpoint is not a string', () => {
         const locationConstraint = new LocationConstraint(
             'scality', 'locId', false,
             {
                 awsEndpoint: 42,
             });
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: awsEndpoint must be a string/);
+        }).toThrow();
     });
-    it('should throw error if bucketName is not a string', () => {
+    test('should throw error if bucketName is not a string', () => {
         const locationConstraint = new LocationConstraint(
             'scality', 'locId', false,
             {
                 awsEndpoint: 's3.amazonaws.com',
                 bucketName: 42,
             });
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: bucketName must be a string/);
+        }).toThrow();
     });
-    it('should throw error if credentialsProfile is not a string', () => {
+    test('should throw error if credentialsProfile is not a string', () => {
         const locationConstraint = new LocationConstraint(
             'scality', 'locId', false,
             {
@@ -114,12 +98,11 @@ describe('locationConstraintAssert', () => {
                 bucketName: 'premadebucket',
                 credentialsProfile: 42,
             });
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: credentialsProfile must be a string/);
+        }).toThrow();
     });
-    it('should throw error if region is not a string', () => {
+    test('should throw error if region is not a string', () => {
         const locationConstraint = new LocationConstraint(
             'scality', 'locId', false,
             {
@@ -128,238 +111,205 @@ describe('locationConstraintAssert', () => {
                 credentialsProfile: 'zenko',
                 region: 42,
             });
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
-        },
-        /bad config: region must be a string/);
+        }).toThrow();
     });
-    it('should throw error if us-east-1 not specified', () => {
+    test('should throw error if us-east-1 not specified', () => {
         const locationConstraint = new LocationConstraint();
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'not-us-east-1': locationConstraint });
-        },
-        '/bad locationConfig: must ' +
-        'include us-east-1 as a locationConstraint/');
+        }).toThrow();
     });
-    it('should not throw error for a valid azure location constraint', () => {
+    test('should not throw error for a valid azure location constraint', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails());
-        assert.doesNotThrow(() => {
+        expect(() => {
             locationConstraintAssert({ 'azurefaketest': locationConstraint,
             'us-east-1': usEast1 });
-        },
-        '/should not throw for a valid azure location constraint/');
+        }).not.toThrow();
     });
-    it('should throw error if type is azure and azureContainerName is ' +
+    test('should throw error if type is azure and azureContainerName is ' +
     'not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureContainerName: undefined }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: ' +
-        '"azurefaketest" azureContainerName must be defined/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureContainerName is ' +
+    test('should throw error if type is azure and azureContainerName is ' +
     'invalid value', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureContainerName: '.' }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureContainerName is an invalid container name/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureStorageEndpoint ' +
+    test('should throw error if type is azure and azureStorageEndpoint ' +
     'is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureStorageEndpoint: undefined }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureStorageEndpoint must be set in locationConfig ' +
-        'or environment variable/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureStorageAccountName ' +
+    test('should throw error if type is azure and azureStorageAccountName ' +
     'is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureStorageAccountName: undefined }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureStorageAccountName must be set in locationConfig ' +
-        'or environment variable/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureStorageAccountName ' +
+    test('should throw error if type is azure and azureStorageAccountName ' +
     'is invalid value', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureStorageAccountName: 'invalid!!!' }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureStorageAccountName "invalid!!!" is an invalid value/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureStorageAccessKey ' +
+    test('should throw error if type is azure and azureStorageAccessKey ' +
     'is not specified', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureStorageAccessKey: undefined }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureStorageAccessKey must be set in locationConfig ' +
-        'or environment variable/');
+        }).toThrow();
     });
-    it('should throw error if type is azure and azureStorageAccessKey ' +
+    test('should throw error if type is azure and azureStorageAccessKey ' +
     'is not a valid base64 string', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId2', true,
             getAzureDetails({ azureStorageAccessKey: 'invalid!!!' }));
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'azurefaketest': locationConstraint,
             });
-        },
-        '/bad location constraint: "azurefaketest" ' +
-        'azureStorageAccessKey is not a valid base64 string/');
+        }).toThrow();
     });
 
-    it('should set https to true by default', () => {
+    test('should set https to true by default', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'aws_s3', 'locId2', true);
-        assert.doesNotThrow(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awshttpsDefault': locationConstraint,
             });
-        }, '/bad location constraint awshttpsDefault,' +
-        'incorrect default config for https');
-        assert.strictEqual(locationConstraint.details.https, true,
-            'https config should be true');
+        }).not.toThrow();
+        expect(locationConstraint.details.https).toBe(true);
     });
 
-    it('should override default if https is set to false', () => {
+    test('should override default if https is set to false', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'aws_s3', 'locId2', true, {
                 https: false,
             });
-        assert.doesNotThrow(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awshttpsFalse': locationConstraint,
             });
-        }, '/bad location constraint awshttpsFalse,' +
-        'incorrect config for https');
-        assert.strictEqual(locationConstraint.details.https, false,
-            'https config should be false');
+        }).not.toThrow();
+        expect(locationConstraint.details.https).toBe(false);
     });
 
-    it('should set pathStyle config option to false by default', () => {
+    test('should set pathStyle config option to false by default', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'aws_s3', 'locId2', true);
-        assert.doesNotThrow(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awsdefaultstyle': locationConstraint,
             });
-        }, '/bad location constraint, unable to set default config');
-        assert.strictEqual(locationConstraint.details.pathStyle, false,
-            'pathstyle config should be false');
+        }).not.toThrow();
+        expect(locationConstraint.details.pathStyle).toBe(false);
     });
 
-    it('should override default if pathStyle is set to true', () => {
+    test('should override default if pathStyle is set to true', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'aws_s3', 'locId2', true,
         { pathStyle: true });
-        assert.doesNotThrow(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awspathstyle': locationConstraint,
             });
-        }, '/bad location constraint, unable to set pathSytle config');
-        assert.strictEqual(locationConstraint.details.pathStyle, true,
-            'pathstyle config should be true');
+        }).not.toThrow();
+        expect(locationConstraint.details.pathStyle).toBe(true);
     });
 
-    it('should throw error if sizeLimitGB is not a number', () => {
+    test('should throw error if sizeLimitGB is not a number', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'aws_s3', 'locId2', true,
             null, true);
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({
                 'us-east-1': usEast1,
                 'awsstoragesizelimit': locationConstraint,
             });
-        },
-        '/bad config: locationConstraints[region].sizeLimitGB ' +
-        'must be a number (in gigabytes)');
+        }).toThrow();
     });
 
-    it('should throw error if objectId is not set', () => {
+    test('should throw error if objectId is not set', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', undefined, true,
             getAzureDetails());
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'azurefaketest': locationConstraint,
             'us-east-1': usEast1 });
-        },
-        '/bad config: locationConstraints[region].objectId is mandatory ' +
-        'and must be a unique string across locations');
+        }).toThrow();
     });
 
-    it('should throw error if objectId is duplicated', () => {
+    test('should throw error if objectId is duplicated', () => {
         const usEast1 = new LocationConstraint(undefined, 'locId1');
         const locationConstraint = new LocationConstraint(
             'azure', 'locId1', true,
             getAzureDetails());
-        assert.throws(() => {
+        expect(() => {
             locationConstraintAssert({ 'azurefaketest': locationConstraint,
             'us-east-1': usEast1 });
-        },
-        '/bad config: location constraint objectId "locId1" is not unique ' +
-        'across configured locations');
+        }).toThrow();
     });
 });

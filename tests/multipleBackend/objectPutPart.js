@@ -93,17 +93,17 @@ errorDescription) {
         },
         (result, corsHeaders, next) => {
             const mpuKeys = metadata.keyMaps.get(mpuBucket);
-            assert.strictEqual(mpuKeys.size, 1);
-            assert(mpuKeys.keys().next().value
-                .startsWith(`overview${splitter}${objectName}`));
+            expect(mpuKeys.size).toBe(1);
+            expect(mpuKeys.keys().next().value
+                .startsWith(`overview${splitter}${objectName}`)).toBeTruthy();
             parseString(result, next);
         },
     ],
     (err, json) => {
         if (errorDescription) {
-            assert.strictEqual(err.code, 400);
-            assert(err.InvalidArgument);
-            assert(err.description.indexOf(errorDescription) > -1);
+            expect(err.code).toBe(400);
+            expect(err.InvalidArgument).toBeTruthy();
+            expect(err.description.indexOf(errorDescription) > -1).toBeTruthy();
             return cb();
         }
         // Need to build request in here since do not have uploadId
@@ -122,7 +122,7 @@ errorDescription) {
         };
         const partReq = new DummyRequest(partReqParams, body1);
         return objectPutPart(authInfo, partReq, undefined, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             if (bucketLoc !== awsLocation && mpuLoc !== awsLocation &&
             bucketLoc !== awsLocationMismatch &&
             mpuLoc !== awsLocationMismatch) {
@@ -139,8 +139,8 @@ errorDescription) {
                 const partKey = sortedKeyMap[1];
                 const partETag = metadata.keyMaps.get(mpuBucket)
                                 .get(partKey)['content-md5'];
-                assert.strictEqual(keysInMPUkeyMap.length, 2);
-                assert.strictEqual(partETag, calculatedHash1);
+                expect(keysInMPUkeyMap.length).toBe(2);
+                expect(partETag).toBe(calculatedHash1);
             }
             cb(objectName, testUploadId);
         });
@@ -156,14 +156,13 @@ function listAndAbort(uploadId, calculatedHash2, objectName, location, done) {
         UploadId: uploadId,
     };
     s3.listParts(params, (err, data) => {
-        assert.equal(err, null, `Error listing parts: ${err}`);
-        assert.strictEqual(data.Parts.length, 1);
+        expect(err).toEqual(null);
+        expect(data.Parts.length).toBe(1);
         if (calculatedHash2) {
-            assert.strictEqual(`"${calculatedHash2}"`, data.Parts[0].ETag);
+            expect(`"${calculatedHash2}"`).toBe(data.Parts[0].ETag);
         }
         s3.abortMultipartUpload(params, err => {
-            assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-            `You must abort MPU with upload ID ${uploadId} manually.`);
+            expect(err).toEqual(null);
             done();
         });
     });
@@ -177,7 +176,7 @@ function testSuite() {
         cleanup();
     });
 
-    it('should upload a part to file based on mpu location', done => {
+    test('should upload a part to file based on mpu location', done => {
         putPart(memLocation, fileLocation, 'localhost', () => {
             // if ds is empty, the object is not in mem, which means it
             // must be in file because those are the only possibilities
@@ -187,14 +186,14 @@ function testSuite() {
         });
     });
 
-    it('should put a part to mem based on mpu location', done => {
+    test('should put a part to mem based on mpu location', done => {
         putPart(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
         });
     });
 
-    it('should put a part to AWS based on mpu location', done => {
+    test('should put a part to AWS based on mpu location', done => {
         putPart(fileLocation, awsLocation, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
@@ -202,32 +201,34 @@ function testSuite() {
         });
     });
 
-    it('should replace part if two parts uploaded with same part number to AWS',
-    done => {
-        putPart(fileLocation, awsLocation, 'localhost',
-        (objectName, uploadId) => {
-            assert.deepStrictEqual(ds, []);
-            const partReqParams = {
-                bucketName,
-                namespace,
-                objectKey: objectName,
-                headers: { 'host': `${bucketName}.s3.amazonaws.com`,
-                    'x-amz-meta-scal-location-constraint': awsLocation },
-                url: `/${objectName}?partNumber=1&uploadId=${uploadId}`,
-                query: {
-                    partNumber: '1', uploadId,
-                },
-            };
-            const partReq = new DummyRequest(partReqParams, body2);
-            objectPutPart(authInfo, partReq, undefined, log, err => {
-                assert.equal(err, null, `Error putting second part: ${err}`);
-                listAndAbort(uploadId, calculatedHash2,
-                                objectName, awsLocation, done);
+    test(
+        'should replace part if two parts uploaded with same part number to AWS',
+        done => {
+            putPart(fileLocation, awsLocation, 'localhost',
+            (objectName, uploadId) => {
+                assert.deepStrictEqual(ds, []);
+                const partReqParams = {
+                    bucketName,
+                    namespace,
+                    objectKey: objectName,
+                    headers: { 'host': `${bucketName}.s3.amazonaws.com`,
+                        'x-amz-meta-scal-location-constraint': awsLocation },
+                    url: `/${objectName}?partNumber=1&uploadId=${uploadId}`,
+                    query: {
+                        partNumber: '1', uploadId,
+                    },
+                };
+                const partReq = new DummyRequest(partReqParams, body2);
+                objectPutPart(authInfo, partReq, undefined, log, err => {
+                    expect(err).toEqual(null);
+                    listAndAbort(uploadId, calculatedHash2,
+                                    objectName, awsLocation, done);
+                });
             });
-        });
-    });
+        }
+    );
 
-    it('should upload part based on mpu location even if part ' +
+    test('should upload part based on mpu location even if part ' +
         'location constraint is specified ', done => {
         putPart(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
@@ -235,21 +236,21 @@ function testSuite() {
         });
     });
 
-    it('should put a part to file based on bucket location', done => {
+    test('should put a part to file based on bucket location', done => {
         putPart(fileLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put a part to mem based on bucket location', done => {
+    test('should put a part to mem based on bucket location', done => {
         putPart(memLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body1);
             done();
         });
     });
 
-    it('should put a part to AWS based on bucket location', done => {
+    test('should put a part to AWS based on bucket location', done => {
         putPart(awsLocation, null, 'localhost',
         (objectName, uploadId) => {
             assert.deepStrictEqual(ds, []);
@@ -257,7 +258,7 @@ function testSuite() {
         });
     });
 
-    it('should put a part to AWS based on bucket location with bucketMatch ' +
+    test('should put a part to AWS based on bucket location with bucketMatch ' +
     'set to true', done => {
         putPart(null, awsLocation, 'localhost',
         (objectName, uploadId) => {
@@ -266,7 +267,7 @@ function testSuite() {
         });
     });
 
-    it('should put a part to AWS based on bucket location with bucketMatch ' +
+    test('should put a part to AWS based on bucket location with bucketMatch ' +
     'set to false', done => {
         putPart(null, awsLocationMismatch, 'localhost',
         (objectName, uploadId) => {
@@ -276,55 +277,57 @@ function testSuite() {
         });
     });
 
-    it('should put a part to file based on request endpoint', done => {
+    test('should put a part to file based on request endpoint', done => {
         putPart(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should store a part even if the MPU was initiated on legacy version',
-    done => {
-        putPart('scality-internal-mem', null, 'localhost',
-        (objectKey, uploadId) => {
-            const mputOverviewKey = _getOverviewKey(objectKey, uploadId);
-            mdWrapper.getObjectMD(mpuBucket, mputOverviewKey, {}, log,
-            (err, res) => {
-                // remove location constraint to mimic legacy behvior
-                // eslint-disable-next-line no-param-reassign
-                res.controllingLocationConstraint = undefined;
-                const md5Hash = crypto.createHash('md5');
-                const bufferBody = Buffer.from(body1);
-                const calculatedHash = md5Hash.update(bufferBody).digest('hex');
-                const partRequest = new DummyRequest({
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
-                    query: { partNumber: '1', uploadId },
-                    calculatedHash,
-                }, body1);
-                objectPutPart(authInfo, partRequest, undefined, log, err => {
-                    assert.strictEqual(err, null);
-                    const keysInMPUkeyMap = [];
-                    metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
-                        keysInMPUkeyMap.push(key);
+    test(
+        'should store a part even if the MPU was initiated on legacy version',
+        done => {
+            putPart('scality-internal-mem', null, 'localhost',
+            (objectKey, uploadId) => {
+                const mputOverviewKey = _getOverviewKey(objectKey, uploadId);
+                mdWrapper.getObjectMD(mpuBucket, mputOverviewKey, {}, log,
+                (err, res) => {
+                    // remove location constraint to mimic legacy behvior
+                    // eslint-disable-next-line no-param-reassign
+                    res.controllingLocationConstraint = undefined;
+                    const md5Hash = crypto.createHash('md5');
+                    const bufferBody = Buffer.from(body1);
+                    const calculatedHash = md5Hash.update(bufferBody).digest('hex');
+                    const partRequest = new DummyRequest({
+                        bucketName,
+                        namespace,
+                        objectKey,
+                        headers: { host: `${bucketName}.s3.amazonaws.com` },
+                        url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                        query: { partNumber: '1', uploadId },
+                        calculatedHash,
+                    }, body1);
+                    objectPutPart(authInfo, partRequest, undefined, log, err => {
+                        expect(err).toBe(null);
+                        const keysInMPUkeyMap = [];
+                        metadata.keyMaps.get(mpuBucket).forEach((val, key) => {
+                            keysInMPUkeyMap.push(key);
+                        });
+                        const sortedKeyMap = keysInMPUkeyMap.sort(a => {
+                            if (a.slice(0, 8) === 'overview') {
+                                return -1;
+                            }
+                            return 0;
+                        });
+                        const partKey = sortedKeyMap[1];
+                        const partETag = metadata.keyMaps.get(mpuBucket)
+                            .get(partKey)['content-md5'];
+                        expect(keysInMPUkeyMap.length).toBe(2);
+                        expect(partETag).toBe(calculatedHash);
+                        done();
                     });
-                    const sortedKeyMap = keysInMPUkeyMap.sort(a => {
-                        if (a.slice(0, 8) === 'overview') {
-                            return -1;
-                        }
-                        return 0;
-                    });
-                    const partKey = sortedKeyMap[1];
-                    const partETag = metadata.keyMaps.get(mpuBucket)
-                        .get(partKey)['content-md5'];
-                    assert.strictEqual(keysInMPUkeyMap.length, 2);
-                    assert.strictEqual(partETag, calculatedHash);
-                    done();
                 });
             });
-        });
-    });
+        }
+    );
 });

@@ -34,60 +34,66 @@ describeSkipIfNotMultipleOrCeph('Initiate MPU to GCP', () => {
             });
         });
         describe('Basic test: ', () => {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
             beforeEach(done =>
               s3.createBucket({ Bucket: bucket,
                   CreateBucketConfiguration: {
                       LocationConstraint: gcpLocation,
                   },
               }, done));
-            afterEach(function afterEachF(done) {
+            afterEach(done => {
                 const params = {
                     Bucket: bucket,
                     Key: keyName,
-                    UploadId: this.currentTest.uploadId,
+                    UploadId: testContext.currentTest.uploadId,
                 };
                 s3.abortMultipartUpload(params, done);
             });
-            it('should create MPU and list in-progress multipart uploads',
-            function ifF(done) {
-                const params = {
-                    Bucket: bucket,
-                    Key: keyName,
-                    Metadata: { 'scal-location-constraint': gcpLocation },
-                };
-                async.waterfall([
-                    next => s3.createMultipartUpload(params, (err, res) => {
-                        this.test.uploadId = res.UploadId;
-                        assert(this.test.uploadId);
-                        assert.strictEqual(res.Bucket, bucket);
-                        assert.strictEqual(res.Key, keyName);
-                        next(err);
-                    }),
-                    next => s3.listMultipartUploads(
-                      { Bucket: bucket }, (err, res) => {
-                          assert.strictEqual(res.NextKeyMarker, keyName);
-                          assert.strictEqual(res.NextUploadIdMarker,
-                            this.test.uploadId);
-                          assert.strictEqual(res.Uploads[0].Key, keyName);
-                          assert.strictEqual(res.Uploads[0].UploadId,
-                            this.test.uploadId);
-                          next(err);
-                      }),
-                    next => {
-                        const mpuKey =
-                            createMpuKey(keyName, this.test.uploadId, 'init');
-                        const params = {
-                            Bucket: gcpBucketMPU,
-                            Key: mpuKey,
-                        };
-                        gcpClient.getObject(params, err => {
-                            assert.ifError(err,
-                                `Expected success, but got err ${err}`);
-                            next();
-                        });
-                    },
-                ], done);
-            });
+            test(
+                'should create MPU and list in-progress multipart uploads',
+                done => {
+                    const params = {
+                        Bucket: bucket,
+                        Key: keyName,
+                        Metadata: { 'scal-location-constraint': gcpLocation },
+                    };
+                    async.waterfall([
+                        next => s3.createMultipartUpload(params, (err, res) => {
+                            testContext.test.uploadId = res.UploadId;
+                            expect(testContext.test.uploadId).toBeTruthy();
+                            expect(res.Bucket).toBe(bucket);
+                            expect(res.Key).toBe(keyName);
+                            next(err);
+                        }),
+                        next => s3.listMultipartUploads(
+                          { Bucket: bucket }, (err, res) => {
+                              expect(res.NextKeyMarker).toBe(keyName);
+                              expect(res.NextUploadIdMarker).toBe(testContext.test.uploadId);
+                              expect(res.Uploads[0].Key).toBe(keyName);
+                              expect(res.Uploads[0].UploadId).toBe(testContext.test.uploadId);
+                              next(err);
+                          }),
+                        next => {
+                            const mpuKey =
+                                createMpuKey(keyName, testContext.test.uploadId, 'init');
+                            const params = {
+                                Bucket: gcpBucketMPU,
+                                Key: mpuKey,
+                            };
+                            gcpClient.getObject(params, err => {
+                                assert.ifError(err,
+                                    `Expected success, but got err ${err}`);
+                                next();
+                            });
+                        },
+                    ], done);
+                }
+            );
         });
     });
 });

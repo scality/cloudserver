@@ -16,7 +16,7 @@ const itSkipAWS = process.env.AWS_ON_AIR
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     cp.spawn('diff', [putFile, receivedFile]).on('exit', code => {
-        assert.strictEqual(code, 0);
+        expect(code).toBe(0);
         done();
     });
 }
@@ -28,11 +28,11 @@ function deleteFile(file, callback) {
     });
 }
 
-describe('aws-node-sdk v2auth query tests', function testSuite() {
+describe('aws-node-sdk v2auth query tests', () => {
     this.timeout(60000);
     let s3;
 
-    before(() => {
+    beforeAll(() => {
         const config = getConfig('default');
 
         s3 = new S3(config);
@@ -46,96 +46,97 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
         const params = { Bucket: bucket, Expires: 604810 };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
-            assert.strictEqual(httpCode, '403 FORBIDDEN');
+            expect(httpCode).toBe('403 FORBIDDEN');
             done();
         });
     });
 
-    it('should return an error code if request occurs after expiry',
-        done => {
-            const params = { Bucket: bucket, Expires: 1 };
-            const url = s3.getSignedUrl('createBucket', params);
-            setTimeout(() => {
-                provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
-                    assert.strictEqual(httpCode, '403 FORBIDDEN');
-                    done();
-                });
-            }, 1500);
-        });
+    test('should return an error code if request occurs after expiry', done => {
+        const params = { Bucket: bucket, Expires: 1 };
+        const url = s3.getSignedUrl('createBucket', params);
+        setTimeout(() => {
+            provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
+                expect(httpCode).toBe('403 FORBIDDEN');
+                done();
+            });
+        }, 1500);
+    });
 
-    it('should create a bucket', done => {
+    test('should create a bucket', done => {
         const params = { Bucket: bucket, Expires: almostOutsideTime };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
-            assert.strictEqual(httpCode, '200 OK');
+            expect(httpCode).toBe('200 OK');
             done();
         });
     });
 
 
-    it('should put an object', done => {
+    test('should put an object', done => {
         const params = { Bucket: bucket, Key: 'key', Expires:
         almostOutsideTime };
         const url = s3.getSignedUrl('putObject', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url,
             '--upload-file', 'uploadFile'], httpCode => {
-            assert.strictEqual(httpCode, '200 OK');
+            expect(httpCode).toBe('200 OK');
             done();
         });
     });
 
-    it('should put an object with an acl setting and a storage class setting',
-         done => {
-             // This will test that upper case query parameters and lowercase
-             // query parameters (i.e., 'x-amz-acl') are being sorted properly.
-             // This will also test that query params that contain "x-amz-"
-             // are being added to the canonical headers list in our string
-             // to sign.
-             const params = { Bucket: bucket, Key: 'key',
-                 ACL: 'public-read', StorageClass: 'STANDARD' };
-             const url = s3.getSignedUrl('putObject', params);
-             provideRawOutput(['-verbose', '-X', 'PUT', url,
-                 '--upload-file', 'uploadFile'], httpCode => {
-                 assert.strictEqual(httpCode, '200 OK');
-                 done();
-             });
-         });
+    test(
+        'should put an object with an acl setting and a storage class setting',
+        done => {
+            // This will test that upper case query parameters and lowercase
+            // query parameters (i.e., 'x-amz-acl') are being sorted properly.
+            // This will also test that query params that contain "x-amz-"
+            // are being added to the canonical headers list in our string
+            // to sign.
+            const params = { Bucket: bucket, Key: 'key',
+                ACL: 'public-read', StorageClass: 'STANDARD' };
+            const url = s3.getSignedUrl('putObject', params);
+            provideRawOutput(['-verbose', '-X', 'PUT', url,
+                '--upload-file', 'uploadFile'], httpCode => {
+                expect(httpCode).toBe('200 OK');
+                done();
+            });
+        }
+    );
 
 
-    it('should get an object', done => {
+    test('should get an object', done => {
         const params = { Bucket: bucket, Key: 'key', Expires:
         almostOutsideTime };
         const url = s3.getSignedUrl('getObject', params);
         provideRawOutput(['-verbose', '-o', 'download', url], httpCode => {
-            assert.strictEqual(httpCode, '200 OK');
+            expect(httpCode).toBe('200 OK');
             done();
         });
     });
 
-    it('downloaded file should equal file that was put', done => {
+    test('downloaded file should equal file that was put', done => {
         diff('uploadFile', 'download', () => {
             deleteFile('download', done);
         });
     });
 
-    it('should delete an object', done => {
+    test('should delete an object', done => {
         const params = { Bucket: bucket, Key: 'key', Expires:
         almostOutsideTime };
         const url = s3.getSignedUrl('deleteObject', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
+                expect(httpCode).toBe('204 NO CONTENT');
                 done();
             });
     });
 
 
-    it('should delete a bucket', done => {
+    test('should delete a bucket', done => {
         const params = { Bucket: bucket, Expires: almostOutsideTime };
         const url = s3.getSignedUrl('deleteBucket', params);
         provideRawOutput(['-verbose', '-X', 'DELETE', url],
             httpCode => {
-                assert.strictEqual(httpCode, '204 NO CONTENT');
+                expect(httpCode).toBe('204 NO CONTENT');
                 done();
             });
     });

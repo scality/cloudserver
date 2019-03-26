@@ -127,9 +127,9 @@ errorPutCopyPart) {
         },
         (result, corsHeaders, next) => {
             const mpuKeys = metadata.keyMaps.get(mpuBucket);
-            assert.strictEqual(mpuKeys.size, 1);
-            assert(mpuKeys.keys().next().value
-                .startsWith(`overview${splitter}${destObjName}`));
+            expect(mpuKeys.size).toBe(1);
+            expect(mpuKeys.keys().next().value
+                .startsWith(`overview${splitter}${destObjName}`)).toBeTruthy();
             parseString(result, next);
         },
     ],
@@ -154,16 +154,15 @@ errorPutCopyPart) {
         return objectPutCopyPart(authInfo, copyPartReq,
             bucketName, sourceObjName, undefined, log, (err, copyResult) => {
                 if (errorPutCopyPart) {
-                    assert.strictEqual(err.code, errorPutCopyPart.statusCode);
-                    assert(err[errorPutCopyPart.code]);
+                    expect(err.code).toBe(errorPutCopyPart.statusCode);
+                    expect(err[errorPutCopyPart.code]).toBeTruthy();
                     return cb();
                 }
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 return parseString(copyResult, (err, json) => {
-                    assert.equal(err, null, `Error parsing copy result ${err}`);
-                    assert.strictEqual(json.CopyPartResult.ETag[0],
-                        `"${partETag}"`);
-                    assert(json.CopyPartResult.LastModified);
+                    expect(err).toEqual(null);
+                    expect(json.CopyPartResult.ETag[0]).toBe(`"${partETag}"`);
+                    expect(json.CopyPartResult.LastModified).toBeTruthy();
                     return cb(keys, testUploadId);
                 });
             });
@@ -171,11 +170,11 @@ errorPutCopyPart) {
 }
 
 function assertPartList(partList, uploadId) {
-    assert.strictEqual(partList.UploadId, uploadId);
-    assert.strictEqual(partList.Parts.length, 1);
-    assert.strictEqual(partList.Parts[0].ETag, `"${partETag}"`);
-    assert.strictEqual(partList.Parts[0].PartNumber, 1);
-    assert.strictEqual(partList.Parts[0].Size, 11);
+    expect(partList.UploadId).toBe(uploadId);
+    expect(partList.Parts.length).toBe(1);
+    expect(partList.Parts[0].ETag).toBe(`"${partETag}"`);
+    expect(partList.Parts[0].PartNumber).toBe(1);
+    expect(partList.Parts[0].Size).toBe(11);
 }
 
 describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
@@ -186,20 +185,20 @@ function testSuite() {
         cleanup();
     });
 
-    it('should copy part to mem based on mpu location', done => {
+    test('should copy part to mem based on mpu location', done => {
         copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
             // object info is stored in ds beginning at index one,
             // so an array length of two means only one object
             // was stored in mem
-            assert.strictEqual(ds.length, 2);
+            expect(ds.length).toBe(2);
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
-    it('should copy part to file based on mpu location', done => {
+    test('should copy part to file based on mpu location', done => {
         copyPutPart(memLocation, fileLocation, null, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
+            expect(ds.length).toBe(2);
             done();
         });
     });
@@ -207,38 +206,37 @@ function testSuite() {
     itSkipCeph('should copy part to AWS based on mpu location', done => {
         copyPutPart(memLocation, awsLocation, null, 'localhost',
         (keys, uploadId) => {
-            assert.strictEqual(ds.length, 2);
+            expect(ds.length).toBe(2);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
             s3.listParts(awsReq, (err, partList) => {
                 assertPartList(partList, uploadId);
                 s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
         });
     });
 
-    it('should copy part to mem from AWS based on mpu location', done => {
+    test('should copy part to mem from AWS based on mpu location', done => {
         copyPutPart(awsLocation, memLocation, null, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
+            expect(ds.length).toBe(2);
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
-    it('should copy part to mem based on bucket location', done => {
+    test('should copy part to mem based on bucket location', done => {
         copyPutPart(memLocation, null, null, 'localhost', () => {
             // ds length should be three because both source
             // and copied objects should be in mem
-            assert.strictEqual(ds.length, 3);
+            expect(ds.length).toBe(3);
             assert.deepStrictEqual(ds[2].value, body);
             done();
         });
     });
 
-    it('should copy part to file based on bucket location', done => {
+    test('should copy part to file based on bucket location', done => {
         copyPutPart(fileLocation, null, null, 'localhost', () => {
             // ds should be empty because both source and
             // coped objects should be in file
@@ -254,8 +252,7 @@ function testSuite() {
             s3.listParts(awsReq, (err, partList) => {
                 assertPartList(partList, uploadId);
                 s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
@@ -271,8 +268,7 @@ function testSuite() {
             s3.listParts(awsReq, (err, partList) => {
                 assertPartList(partList, uploadId);
                 s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
@@ -289,8 +285,7 @@ function testSuite() {
             s3.listParts(awsReq, (err, partList) => {
                 assertPartList(partList, uploadId);
                 s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
@@ -306,9 +301,9 @@ function testSuite() {
     });
 
 
-    it('should copy part to file based on request endpoint', done => {
+    test('should copy part to file based on request endpoint', done => {
         copyPutPart(null, null, memLocation, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
+            expect(ds.length).toBe(2);
             done();
         });
     });

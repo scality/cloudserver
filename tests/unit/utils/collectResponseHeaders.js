@@ -3,7 +3,7 @@ const collectResponseHeaders =
     require('../../../lib/utilities/collectResponseHeaders');
 
 describe('Middleware: Collect Response Headers', () => {
-    it('should be able to set replication status when config is set', () => {
+    test('should be able to set replication status when config is set', () => {
         const objectMD = { replicationInfo: { status: 'REPLICA' } };
         const headers = collectResponseHeaders(objectMD);
         assert.deepStrictEqual(headers['x-amz-replication-status'], 'REPLICA');
@@ -13,30 +13,28 @@ describe('Middleware: Collect Response Headers', () => {
         { md: { replicationInfo: null }, test: 'when config is not set' },
         { md: {}, test: 'for older objects' },
     ].forEach(item => {
-        it(`should skip replication header ${item.test}`, () => {
+        test(`should skip replication header ${item.test}`, () => {
             const headers = collectResponseHeaders(item.md);
             assert.deepStrictEqual(headers['x-amz-replication-status'],
                 undefined);
         });
     });
 
-    it('should add the Accept-Ranges header', () => {
+    test('should add the Accept-Ranges header', () => {
         const headers = collectResponseHeaders({});
-        assert.strictEqual(headers['Accept-Ranges'], 'bytes');
+        expect(headers['Accept-Ranges']).toBe('bytes');
     });
 
-    it('should return an undefined value when x-amz-website-redirect-location' +
+    test('should return an undefined value when x-amz-website-redirect-location' +
        ' is empty', () => {
         const objectMD = { 'x-amz-website-redirect-location': '' };
         const headers = collectResponseHeaders(objectMD);
-        assert.strictEqual(headers['x-amz-website-redirect-location'],
-            undefined);
+        expect(headers['x-amz-website-redirect-location']).toBe(undefined);
     });
 
-    it('should return the (nonempty) value of WebsiteRedirectLocation', () => {
+    test('should return the (nonempty) value of WebsiteRedirectLocation', () => {
         const obj = { 'x-amz-website-redirect-location': 'google.com' };
         const headers = collectResponseHeaders(obj);
-        assert.strictEqual(headers['x-amz-website-redirect-location'],
-            'google.com');
+        expect(headers['x-amz-website-redirect-location']).toBe('google.com');
     });
 });

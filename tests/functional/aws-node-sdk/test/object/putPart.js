@@ -44,21 +44,21 @@ describe('PUT object', () => {
             });
         });
 
-        it('should return Not Implemented error for obj. encryption using ' +
+        test('should return Not Implemented error for obj. encryption using ' +
             'customer-provided encryption keys', done => {
             const params = { Bucket: bucket, Key: 'key', PartNumber: 0,
                 UploadId: uploadId, SSECustomerAlgorithm: 'AES256' };
             s3.uploadPart(params, err => {
-                assert.strictEqual(err.code, 'NotImplemented');
+                expect(err.code).toBe('NotImplemented');
                 done();
             });
         });
 
-        it('should return InvalidArgument if negative PartNumber', done => {
+        test('should return InvalidArgument if negative PartNumber', done => {
             const params = { Bucket: bucket, Key: 'key', PartNumber: -1,
                 UploadId: uploadId };
             s3.uploadPart(params, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
+                expect(err.code).toBe('InvalidArgument');
                 done();
             });
         });

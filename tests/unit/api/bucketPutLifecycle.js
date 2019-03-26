@@ -77,11 +77,11 @@ const expectedLifecycleConfig = {
 };
 
 describe('putBucketLifecycle API', () => {
-    before(() => cleanup());
+    beforeAll(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should update a bucket\'s metadata with lifecycle config obj', done => {
+    test('should update a bucket\'s metadata with lifecycle config obj', done => {
         const testPutLifecycleRequest = getLifecycleRequest(bucketName,
             getLifecycleXml());
         bucketPutLifecycle(authInfo, testPutLifecycleRequest, log, err => {

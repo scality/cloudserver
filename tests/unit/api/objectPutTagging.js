@@ -36,9 +36,9 @@ const testPutObjectRequest = new DummyRequest({
 }, postBody);
 
 function _checkError(err, code, errorName) {
-    assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert(err[errorName]);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(code);
+    expect(err[errorName]).toBeTruthy();
 }
 
 function _generateSampleXml(key, value) {
@@ -68,7 +68,7 @@ describe('putObjectTagging API', () => {
 
     afterEach(() => cleanup());
 
-    it('should update an object\'s metadata with tags resource', done => {
+    test('should update an object\'s metadata with tags resource', done => {
         const taggingUtil = new TaggingConfigTester();
         const testObjectPutTaggingRequest = taggingUtil
             .createObjectTaggingRequest('PUT', bucketName, objectName);
@@ -93,37 +93,39 @@ describe('putObjectTagging API', () => {
 
 describe('PUT object tagging :: helper validation functions ', () => {
     describe('validateTagStructure ', () => {
-        it('should return expected true if tag is valid false/undefined if not',
-        done => {
-            const tags = [
-                { tagTest: { Key: ['foo'], Value: ['bar'] }, isValid: true },
-                { tagTest: { Key: ['foo'] }, isValid: false },
-                { tagTest: { Value: ['bar'] }, isValid: false },
-                { tagTest: { Keys: ['foo'], Value: ['bar'] }, isValid: false },
-                { tagTest: { Key: ['foo', 'boo'], Value: ['bar'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo'], Value: ['bar', 'boo'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo', 'boo'], Value: ['bar', 'boo'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo'], Values: ['bar'] }, isValid: false },
-                { tagTest: { Keys: ['foo'], Values: ['bar'] }, isValid: false },
-            ];
+        test(
+            'should return expected true if tag is valid false/undefined if not',
+            done => {
+                const tags = [
+                    { tagTest: { Key: ['foo'], Value: ['bar'] }, isValid: true },
+                    { tagTest: { Key: ['foo'] }, isValid: false },
+                    { tagTest: { Value: ['bar'] }, isValid: false },
+                    { tagTest: { Keys: ['foo'], Value: ['bar'] }, isValid: false },
+                    { tagTest: { Key: ['foo', 'boo'], Value: ['bar'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo'], Value: ['bar', 'boo'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo', 'boo'], Value: ['bar', 'boo'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo'], Values: ['bar'] }, isValid: false },
+                    { tagTest: { Keys: ['foo'], Values: ['bar'] }, isValid: false },
+                ];
 
-            for (let i = 0; i < tags.length; i++) {
-                const tag = tags[i];
-                const result = _validator.validateTagStructure(tag.tagTest);
-                if (tag.isValid) {
-                    assert(result);
-                } else {
-                    assert(!result);
+                for (let i = 0; i < tags.length; i++) {
+                    const tag = tags[i];
+                    const result = _validator.validateTagStructure(tag.tagTest);
+                    if (tag.isValid) {
+                        expect(result).toBeTruthy();
+                    } else {
+                        expect(!result).toBeTruthy();
+                    }
                 }
+                done();
             }
-            done();
-        });
+        );
 
         describe('validateXMLStructure ', () => {
-            it('should return expected true if tag is valid false/undefined ' +
+            test('should return expected true if tag is valid false/undefined ' +
             'if not', done => {
                 const tags = [
                     { tagging: { Tagging: { TagSet: [{ Tag: [] }] } }, isValid:
@@ -149,9 +151,9 @@ describe('PUT object tagging :: helper validation functions ', () => {
                     const tag = tags[i];
                     const result = _validator.validateXMLStructure(tag.tagging);
                     if (tag.isValid) {
-                        assert(result);
+                        expect(result).toBeTruthy();
                     } else {
-                        assert(!result);
+                        expect(!result).toBeTruthy();
                     }
                 }
                 done();
@@ -160,17 +162,17 @@ describe('PUT object tagging :: helper validation functions ', () => {
     });
 
     describe('parseTagXml', () => {
-        it('should parse a correct xml', done => {
+        test('should parse a correct xml', done => {
             const xml = _generateSampleXml('foo', 'bar');
             parseTagXml(xml, log, (err, result) => {
-                assert.strictEqual(err, null, `Found unexpected err ${err}`);
-                assert.strictEqual(result.foo, 'bar');
+                expect(err).toBe(null);
+                expect(result.foo).toBe('bar');
                 return done();
             });
         });
 
         taggingTests.forEach(taggingTest => {
-            it(taggingTest.it, done => {
+            test(taggingTest.it, done => {
                 const key = taggingTest.tag.key;
                 const value = taggingTest.tag.value;
                 const xml = _generateSampleXml(key, value);

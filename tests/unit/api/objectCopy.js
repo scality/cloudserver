@@ -57,7 +57,7 @@ describe('objectCopy with versioning', () => {
     testPutObjectRequests.push(versioningTestUtils
         .createPutObjectRequest(sourceBucketName, objectKey, objData[2]));
 
-    before(done => {
+    beforeAll(done => {
         cleanup();
         async.series([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
@@ -87,9 +87,9 @@ describe('objectCopy with versioning', () => {
         });
     });
 
-    after(() => cleanup());
+    afterAll(() => cleanup());
 
-    it('should delete null version when creating new null version, ' +
+    test('should delete null version when creating new null version, ' +
     'even when null version is not the latest version', done => {
         // will have another copy of last object in datastore after objectCopy
         const expectedValues = [undefined, objData[1], objData[2], objData[2]];

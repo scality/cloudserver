@@ -103,36 +103,34 @@ describe('Multipart Delete API', () => {
         cleanup();
     });
 
-    it('should not return error if mpu exists with uploadId and at least ' +
+    test('should not return error if mpu exists with uploadId and at least ' +
     'one part', done => {
         _createAndAbortMpu(true, false, eastLocation, err => {
-            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            expect(err).toBe(null);
             done(err);
         });
     });
 
-    it('should still not return error if uploadId does not exist on ' +
+    test('should still not return error if uploadId does not exist on ' +
     'multipart abort call, in region other than us-east-1', done => {
         _createAndAbortMpu(true, true, westLocation, err => {
-            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            expect(err).toBe(null);
             done(err);
         });
     });
 
-    it('bucket created in us-east-1: should return 404 if uploadId does not ' +
-    'exist and legacyAwsBehavior set to true',
-    done => {
+    test('bucket created in us-east-1: should return 404 if uploadId does not ' +
+    'exist and legacyAwsBehavior set to true', done => {
         _createAndAbortMpu(true, true, eastLocation, err => {
-            assert.strictEqual(err, errors.NoSuchUpload,
-                `Expected NoSuchUpload, got ${err}`);
+            expect(err).toBe(errors.NoSuchUpload);
             done();
         });
     });
 
-    it('bucket created in us-east-1: should return no error ' +
+    test('bucket created in us-east-1: should return no error ' +
     'if uploadId does not exist and legacyAwsBehavior set to false', done => {
         _createAndAbortMpu(false, true, eastLocation, err => {
-            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            expect(err).toBe(null);
             done();
         });
     });

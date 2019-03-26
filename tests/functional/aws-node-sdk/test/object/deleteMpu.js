@@ -27,25 +27,21 @@ describe('DELETE multipart', () => {
                 UploadId: uploadId }, err => {
                 const statusCode =
                 request.response.httpResponse.statusCode;
-                assert.strictEqual(statusCode, statusCodeExpected,
-                    `Found unexpected statusCode ${statusCode}`);
+                expect(statusCode).toBe(statusCodeExpected);
                 if (statusCode === 204) {
-                    assert.strictEqual(err, null,
-                        `Expected no err but found ${err}`);
+                    expect(err).toBe(null);
                     return callback(err);
                 }
                 return callback();
             });
         }
 
-        it('on bucket that does not exist: should return NoSuchBucket',
-        done => {
+        test('on bucket that does not exist: should return NoSuchBucket', done => {
             const uploadId = 'nonexistinguploadid';
             s3.abortMultipartUpload({ Bucket: bucket, Key: key,
                 UploadId: uploadId }, err => {
-                assert.notEqual(err, null,
-                    'Expected NoSuchBucket but found no err');
-                assert.strictEqual(err.code, 'NoSuchBucket');
+                expect(err).not.toEqual(null);
+                expect(err.code).toBe('NoSuchBucket');
                 done();
             });
         });
@@ -61,8 +57,7 @@ describe('DELETE multipart', () => {
                     .catch(err => {
                         process.stdout.write(`Error in beforeEach: ${err}\n`);
                         throw err;
-                    })
-                );
+                    }));
 
                 afterEach(() => {
                     process.stdout.write('Emptying bucket\n');
@@ -101,10 +96,9 @@ describe('DELETE multipart', () => {
                                 PartNumber: 1,
                                 UploadId: uploadId,
                             });
-                        })
-                    );
+                        }));
 
-                    it('should return 204 for abortMultipartUpload', done => {
+                    test('should return 204 for abortMultipartUpload', done => {
                         _assertStatusCode(uploadId, 204,
                           done);
                     });

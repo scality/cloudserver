@@ -27,30 +27,32 @@ const expDataLocator = [{
 
 
 describe('Replication Backend Compare', () => {
-    it('should return error if no match in replication backends', () => {
+    test('should return error if no match in replication backends', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repNoMatch);
-        assert(repBackendResult.error.InvalidLocationConstraint);
+        expect(repBackendResult.error.InvalidLocationConstraint).toBeTruthy();
     });
-    it('should return a status and reason if backend status is PENDING', () => {
+    test('should return a status and reason if backend status is PENDING', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repMatchPending);
-        assert.strictEqual(repBackendResult.dataLocator, undefined);
-        assert.strictEqual(repBackendResult.status, 'PENDING');
-        assert.notStrictEqual(repBackendResult.reason, undefined);
+        expect(repBackendResult.dataLocator).toBe(undefined);
+        expect(repBackendResult.status).toBe('PENDING');
+        expect(repBackendResult.reason).not.toBe(undefined);
     });
-    it('should return a status and reason if backend status is FAILED', () => {
+    test('should return a status and reason if backend status is FAILED', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repMatchFailed);
-        assert.strictEqual(repBackendResult.dataLocator, undefined);
-        assert.strictEqual(repBackendResult.status, 'FAILED');
-        assert.notStrictEqual(repBackendResult.reason, undefined);
+        expect(repBackendResult.dataLocator).toBe(undefined);
+        expect(repBackendResult.status).toBe('FAILED');
+        expect(repBackendResult.reason).not.toBe(undefined);
     });
-    it('should return dataLocator obj if backend matches and rep is COMPLETED',
-    () => {
-        const repBackendResult =
-            getReplicationBackendDataLocator(locCheckResult, repMatch);
-        assert.strictEqual(repBackendResult.status, 'COMPLETED');
-        assert.deepStrictEqual(repBackendResult.dataLocator, expDataLocator);
-    });
+    test(
+        'should return dataLocator obj if backend matches and rep is COMPLETED',
+        () => {
+            const repBackendResult =
+                getReplicationBackendDataLocator(locCheckResult, repMatch);
+            expect(repBackendResult.status).toBe('COMPLETED');
+            assert.deepStrictEqual(repBackendResult.dataLocator, expDataLocator);
+        }
+    );
 });

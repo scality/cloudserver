@@ -142,7 +142,7 @@ describe('User visits bucket website endpoint with ACL', () => {
                     });
                 });
 
-                it(`${test.it} with no auth credentials sent`, done => {
+                test(`${test.it} with no auth credentials sent`, done => {
                     WebsiteConfigTester.checkHTML({
                         method: 'GET',
                         url: endpoint,
@@ -150,7 +150,7 @@ describe('User visits bucket website endpoint with ACL', () => {
                     }, done);
                 });
 
-                it(`${test.it} even with invalid auth credentials`, done => {
+                test(`${test.it} even with invalid auth credentials`, done => {
                     WebsiteConfigTester.checkHTML({
                         auth: 'invalid credentials',
                         method: 'GET',
@@ -159,7 +159,7 @@ describe('User visits bucket website endpoint with ACL', () => {
                     }, done);
                 });
 
-                it(`${test.it} even with valid auth credentials`, done => {
+                test(`${test.it} even with valid auth credentials`, done => {
                     WebsiteConfigTester.checkHTML({
                         auth: 'valid credentials',
                         method: 'GET',

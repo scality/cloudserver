@@ -23,15 +23,13 @@ function checkGcp(key, gcpMD5, location, callback) {
         Bucket: gcpBucket,
         Key: key,
     }, (err, res) => {
-        assert.equal(err, null, `Expected success, got error ${err}`);
+        expect(err).toEqual(null);
         if (res.Metadata && res.Metadata['scal-etag']) {
-            assert.strictEqual(res.Metadata['scal-etag'], gcpMD5);
+            expect(res.Metadata['scal-etag']).toBe(gcpMD5);
         } else {
-            assert.strictEqual(
-                res.ETag.substring(1, res.ETag.length - 1), gcpMD5);
+            expect(res.ETag.substring(1, res.ETag.length - 1)).toBe(gcpMD5);
         }
-        assert.strictEqual(res.Metadata['scal-location-constraint'],
-            location);
+        expect(res.Metadata['scal-location-constraint']).toBe(location);
         callback(res);
     });
 }
@@ -42,10 +40,8 @@ function checkGcpError(key, expectedError, callback) {
             Bucket: gcpBucket,
             Key: key,
         }, err => {
-            assert.notStrictEqual(err, undefined,
-                'Expected error but did not find one');
-            assert.strictEqual(err.code, expectedError,
-                `Expected error code ${expectedError} but got ${err.code}`);
+            expect(err).not.toBe(undefined);
+            expect(err.code).toBe(expectedError);
             callback();
         });
     }, 1000);
@@ -61,11 +57,9 @@ function gcpGetCheck(objectKey, s3MD5, gcpMD5, location, callback) {
                 s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
             }, retryTimeout);
         }
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-        `on call to GCP through S3: ${err}`);
-        assert.strictEqual(res.ETag, `"${s3MD5}"`);
-        assert.strictEqual(res.Metadata['scal-location-constraint'],
-            location);
+        expect(err).toBe(null);
+        expect(res.ETag).toBe(`"${s3MD5}"`);
+        expect(res.Metadata['scal-location-constraint']).toBe(location);
         process.stdout.write('Getting object from GCP\n');
         return checkGcp(objectKey, gcpMD5, location, callback);
     });
@@ -99,7 +93,7 @@ describeFn() {
         });
 
         describe('with set location from "x-amz-meta-scal-' +
-            'location-constraint" header', function describe() {
+            'location-constraint" header', () => {
             if (!process.env.S3_END_TO_END) {
                 this.retries(2);
             }
@@ -124,14 +118,13 @@ describeFn() {
             putTests.forEach(test => {
                 const { location, Body } = test.input;
                 const { s3MD5, gcpMD5 } = test.output;
-                it(test.msg, done => {
+                test(test.msg, done => {
                     const key = `somekey-${genUniqID()}`;
                     const params = { Bucket: bucket, Key: key, Body,
                         Metadata: { 'scal-location-constraint': location },
                     };
                     return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                        expect(err).toEqual(null);
                         return gcpGetCheck(key, s3MD5, gcpMD5, location,
                             () => done());
                     });
@@ -139,32 +132,27 @@ describeFn() {
             });
         });
 
-        describe('with object rewrites', function describe() {
+        describe('with object rewrites', () => {
             if (!process.env.S3_END_TO_END) {
                 this.retries(2);
             }
 
-            it('should put objects with same key to GCP ' +
+            test('should put objects with same key to GCP ' +
             'then file, and object should only be present in file', done => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
                 return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                    expect(err).toEqual(null);
                     params.Metadata =
                         { 'scal-location-constraint': fileLocation };
                     return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
+                        expect(err).toEqual(null);
                         return s3.getObject({ Bucket: bucket, Key: key },
                         (err, res) => {
-                            assert.equal(err, null, 'Expected success, ' +
-                                `got error ${err}`);
-                            assert.strictEqual(
-                                res.Metadata['scal-location-constraint'],
-                                fileLocation);
+                            expect(err).toEqual(null);
+                            expect(res.Metadata['scal-location-constraint']).toBe(fileLocation);
                             return checkGcpError(key, 'NoSuchKey',
                                 () => done());
                         });
@@ -172,27 +160,25 @@ describeFn() {
                 });
             });
 
-            it('should put objects with same key to file ' +
+            test('should put objects with same key to file ' +
             'then GCP, and object should only be present on GCP', done => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
                     Body: body,
                     Metadata: { 'scal-location-constraint': fileLocation } };
                 return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                    expect(err).toEqual(null);
                     params.Metadata = {
                         'scal-location-constraint': gcpLocation };
                     return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
+                        expect(err).toEqual(null);
                         return gcpGetCheck(key, correctMD5, correctMD5,
                             gcpLocation, () => done());
                     });
                 });
             });
 
-            it('should put two objects to GCP with same ' +
+            test('should put two objects to GCP with same ' +
             'key, and newest object should be returned', done => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
@@ -200,17 +186,15 @@ describeFn() {
                     Metadata: { 'scal-location-constraint': gcpLocation,
                         'unique-header': 'first object' } };
                 return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                    expect(err).toEqual(null);
                     params.Metadata = { 'scal-location-constraint': gcpLocation,
                         'unique-header': 'second object' };
                     return s3.putObject(params, err => {
-                        assert.equal(err, null, 'Expected success, ' +
-                            `got error ${err}`);
+                        expect(err).toEqual(null);
                         return gcpGetCheck(key, correctMD5, correctMD5,
                             gcpLocation, result => {
-                                assert.strictEqual(result.Metadata
-                                    ['unique-header'], 'second object');
+                                expect(result.Metadata
+                                    ['unique-header']).toBe('second object');
                                 done();
                             });
                     });
@@ -241,20 +225,19 @@ describeSkipIfNotMultipleOrCeph('MultipleBackend put object' +
             });
         });
 
-        it('should put an object to GCP with no location header', done => {
+        test('should put an object to GCP with no location header', done => {
             process.stdout.write('Creating bucket\n');
             return s3.createBucket({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: gcpLocation,
                 },
             }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
+                expect(err).toEqual(null);
                 process.stdout.write('Putting object\n');
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key, Body: body };
                 return s3.putObject(params, err => {
-                    assert.equal(err, null,
-                        `Expected success, got error ${err}`);
+                    expect(err).toEqual(null);
                     return gcpGetCheck(key, correctMD5, correctMD5, undefined,
                         () => done());
                 });

@@ -18,7 +18,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
         // a UNIX timestamp for Expires header
         const expires = new Date();
 
-        before(() => {
+        beforeAll(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return bucketUtil.empty(bucketName).then(() =>
@@ -48,29 +48,25 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
             });
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('deleting bucket');
             return bucketUtil.empty(bucketName).then(() =>
             bucketUtil.deleteOne(bucketName));
         });
 
-        it('should return additional headers if specified in objectPUT ' +
+        test('should return additional headers if specified in objectPUT ' +
           'request', done => {
             s3.headObject({ Bucket: bucketName, Key: objectName },
               (err, res) => {
                   if (err) {
                       return done(err);
                   }
-                  assert.strictEqual(res.CacheControl,
-                    cacheControl);
-                  assert.strictEqual(res.ContentDisposition,
-                    contentDisposition);
+                  expect(res.CacheControl).toBe(cacheControl);
+                  expect(res.ContentDisposition).toBe(contentDisposition);
                   // Should remove V4 streaming value 'aws-chunked'
                   // to be compatible with AWS behavior
-                  assert.strictEqual(res.ContentEncoding,
-                    'gzip,');
-                  assert.strictEqual(res.Expires,
-                      expires.toUTCString());
+                  expect(res.ContentEncoding).toBe('gzip,');
+                  expect(res.Expires).toBe(expires.toUTCString());
                   return done();
               });
         });

@@ -44,7 +44,7 @@ const isScality = process.env.CI ? ['-c', `${__dirname}/${configCfg}`] : null;
 function diff(putFile, receivedFile, done) {
     process.stdout.write(`diff ${putFile} ${receivedFile}\n`);
     proc.spawn('diff', [putFile, receivedFile]).on('exit', code => {
-        assert.strictEqual(code, 0);
+        expect(code).toBe(0);
         done();
     });
 }
@@ -53,14 +53,14 @@ function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
     const ret = proc.spawnSync('dd', ['if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' });
-    assert.strictEqual(ret.status, 0);
+    expect(ret.status).toBe(0);
     callback();
 }
 
 function createEmptyFile(name, callback) {
     process.stdout.write(`touch ${name}\n`);
     const ret = proc.spawnSync('touch', [name], { stdio: 'inherit' });
-    assert.strictEqual(ret.status, 0);
+    expect(ret.status).toBe(0);
     callback();
 }
 
@@ -81,8 +81,7 @@ function exec(args, done, exitCode) {
     }
     process.stdout.write(`${program} ${av}\n`);
     const ret = proc.spawnSync(program, av, { stdio: 'inherit' });
-    assert.strictEqual(ret.status, exit,
-                        's3cmd did not yield expected exit status.');
+    expect(ret.status).toBe(exit);
     done();
 }
 
@@ -246,7 +245,7 @@ function createEncryptedBucket(name, cb) {
 }
 
 describe('s3cmd putBucket', () => {
-    it('should put a valid bucket', done => {
+    test('should put a valid bucket', done => {
         exec(['mb', `s3://${bucket}`], done);
     });
 
@@ -254,246 +253,244 @@ describe('s3cmd putBucket', () => {
     // in test location config and in end to end so this test should
     // pass by returning error. If legacyAWSBehvior, request
     // would return a 200
-    it('put the same bucket, should fail', done => {
+    test('put the same bucket, should fail', done => {
         exec([
             'mb', `s3://${bucket}`,
             '--bucket-location=scality-us-west-1',
         ], done, 13);
     });
 
-    it('put an invalid bucket, should fail', done => {
+    test('put an invalid bucket, should fail', done => {
         exec(['mb', `s3://${invalidName}`], done, 11);
     });
 
-    it('should put a valid bucket with region', done => {
+    test('should put a valid bucket with region', done => {
         exec(['mb', 's3://regioned', '--region=us-east-1'], done);
     });
 
-    it('should delete bucket put with region', done => {
+    test('should delete bucket put with region', done => {
         exec(['rb', 's3://regioned', '--region=us-east-1'], done);
     });
 
     if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-        it('creates a valid bucket with server side encryption',
-           function f(done) {
-               this.timeout(5000);
-               exec(['rb', `s3://${bucket}`], err => {
-                   if (err) {
-                       return done(err);
-                   }
-                   return createEncryptedBucket(bucket, done);
-               });
-           });
+        test('creates a valid bucket with server side encryption', done => {
+            this.timeout(5000);
+            exec(['rb', `s3://${bucket}`], err => {
+                if (err) {
+                    return done(err);
+                }
+                return createEncryptedBucket(bucket, done);
+            });
+        });
     }
 });
 
-describe('s3cmd put and get bucket ACLs', function aclBuck() {
+describe('s3cmd put and get bucket ACLs', () => {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
     // get and a put
-    it('should set a canned ACL', done => {
+    test('should set a canned ACL', done => {
         exec(['setacl', `s3://${bucket}`, '--acl-public'], done);
     });
 
-    it('should get canned ACL that was set', done => {
+    test('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
         'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it('should set a specific ACL', done => {
+    test('should set a specific ACL', done => {
         exec([
             'setacl', `s3://${bucket}`,
             `--acl-grant=write:${emailAccount}`,
         ], done);
     });
 
-    it('should get specific ACL that was set', done => {
+    test('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
         `${lowerCaseEmail}: WRITE`, 'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 });
 
 describe('s3cmd getBucket', () => {
-    it('should list existing bucket', done => {
+    test('should list existing bucket', done => {
         exec(['ls', `s3://${bucket}`], done);
     });
 
-    it('list non existing bucket, should fail', done => {
+    test('list non existing bucket, should fail', done => {
         exec(['ls', `s3://${nonexist}`], done, 12);
     });
 });
 
 describe('s3cmd getService', () => {
-    it("should get a list of a user's buckets", done => {
+    test("should get a list of a user's buckets", done => {
         checkRawOutput(['ls'], 's3://', `${bucket}`, 'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it("should have response headers matching AWS's response headers",
-        done => {
-            provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
-            parsedObject => {
-                assert(parsedObject.headers['x-amz-id-2']);
-                assert(parsedObject.headers['transfer-encoding']);
-                assert(parsedObject.headers['x-amz-request-id']);
-                const gmtDate = new Date(parsedObject.headers.date)
-                    .toUTCString();
-                assert.strictEqual(parsedObject.headers.date, gmtDate);
-                assert.strictEqual(parsedObject
-                    .headers['content-type'], 'application/xml');
-                assert.strictEqual(parsedObject
-                    .headers['set-cookie'], undefined);
-                done();
-            });
+    test("should have response headers matching AWS's response headers", done => {
+        provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
+        parsedObject => {
+            expect(parsedObject.headers['x-amz-id-2']).toBeTruthy();
+            expect(parsedObject.headers['transfer-encoding']).toBeTruthy();
+            expect(parsedObject.headers['x-amz-request-id']).toBeTruthy();
+            const gmtDate = new Date(parsedObject.headers.date)
+                .toUTCString();
+            expect(parsedObject.headers.date).toBe(gmtDate);
+            expect(parsedObject
+                .headers['content-type']).toBe('application/xml');
+            expect(parsedObject
+                .headers['set-cookie']).toBe(undefined);
+            done();
         });
+    });
 });
 
-describe('s3cmd putObject', function toto() {
+describe('s3cmd putObject', () => {
     this.timeout(15000);
-    before('create file to put', done => {
+    beforeAll(done => {
         createFile(upload, 1048576, done);
     });
 
-    it('should put file in existing bucket', done => {
+    test('should put file in existing bucket', done => {
         exec(['put', upload, `s3://${bucket}`], done);
     });
 
-    it('should put file with the same name in existing bucket', done => {
+    test('should put file with the same name in existing bucket', done => {
         exec(['put', upload, `s3://${bucket}`], done);
     });
 
-    it('put file in non existing bucket, should fail', done => {
+    test('put file in non existing bucket, should fail', done => {
         exec(['put', upload, `s3://${nonexist}`], done, 12);
     });
 });
 
-describe('s3cmd getObject', function toto() {
+describe('s3cmd getObject', () => {
     this.timeout(0);
-    after('delete downloaded file', done => {
+    afterAll(done => {
         deleteFile(download, done);
     });
 
-    it('should get existing file in existing bucket', done => {
+    test('should get existing file in existing bucket', done => {
         exec(['get', `s3://${bucket}/${upload}`, download], done);
     });
 
-    it('downloaded file should equal uploaded file', done => {
+    test('downloaded file should equal uploaded file', done => {
         diff(upload, download, done);
     });
 
-    it('get non existing file in existing bucket, should fail', done => {
+    test('get non existing file in existing bucket, should fail', done => {
         exec(['get', `s3://${bucket}/${nonexist}`, 'fail'], done, 12);
     });
 
-    it('get file in non existing bucket, should fail', done => {
+    test('get file in non existing bucket, should fail', done => {
         exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2'], done, 12);
     });
 });
 
-describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
+describe('s3cmd copyObject without MPU to same bucket', () => {
     this.timeout(40000);
 
-    after('delete downloaded copy file', done => {
+    afterAll(done => {
         deleteFile(downloadCopy, done);
     });
 
-    it('should copy an object to the same bucket', done => {
+    test('should copy an object to the same bucket', done => {
         exec([
             'cp', `s3://${bucket}/${upload}`,
             `s3://${bucket}/${upload}copy`,
         ], done);
     });
 
-    it('should get an object that was copied', done => {
+    test('should get an object that was copied', done => {
         exec(['get', `s3://${bucket}/${upload}copy`, downloadCopy], done);
     });
 
-    it('downloaded copy file should equal original uploaded file', done => {
+    test('downloaded copy file should equal original uploaded file', done => {
         diff(upload, downloadCopy, done);
     });
 
-    it('should delete copy of object', done => {
+    test('should delete copy of object', done => {
         exec(['rm', `s3://${bucket}/${upload}copy`], done);
     });
 });
 
 describe('s3cmd copyObject without MPU to different bucket ' +
     '(always unencrypted)',
-    function copyStuff() {
+    () => {
         const copyBucket = 'receiverbucket';
         this.timeout(40000);
 
-        before('create receiver bucket', done => {
+        beforeAll(done => {
             exec(['mb', `s3://${copyBucket}`], done);
         });
 
-        after('delete downloaded file and receiver bucket' +
+        afterAll('delete downloaded file and receiver bucket' +
             'copied', done => {
             deleteFile(downloadCopy, () => {
                 exec(['rb', `s3://${copyBucket}`], done);
             });
         });
 
-        it('should copy an object to the new bucket', done => {
+        test('should copy an object to the new bucket', done => {
             exec([
                 'cp', `s3://${bucket}/${upload}`,
                 `s3://${copyBucket}/${upload}`,
             ], done);
         });
 
-        it('should get an object that was copied', done => {
+        test('should get an object that was copied', done => {
             exec(['get', `s3://${copyBucket}/${upload}`, downloadCopy], done);
         });
 
-        it('downloaded copy file should equal original uploaded file', done => {
+        test('downloaded copy file should equal original uploaded file', done => {
             diff(upload, downloadCopy, done);
         });
 
-        it('should delete copy of object', done => {
+        test('should delete copy of object', done => {
             exec(['rm', `s3://${copyBucket}/${upload}`], done);
         });
     });
 
-describe('s3cmd put and get object ACLs', function aclObj() {
+describe('s3cmd put and get object ACLs', () => {
     this.timeout(60000);
     // Note that s3cmd first gets the current ACL and then
     // sets the new one so by running setacl you are running a
     // get and a put
-    it('should set a canned ACL', done => {
+    test('should set a canned ACL', done => {
         exec(['setacl', `s3://${bucket}/${upload}`, '--acl-public'], done);
     });
 
-    it('should get canned ACL that was set', done => {
+    test('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         '*anon*: READ', 'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it('should set a specific ACL', done => {
+    test('should set a specific ACL', done => {
         exec(['setacl', `s3://${bucket}/${upload}`,
             `--acl-grant=read:${emailAccount}`], done);
     });
 
-    it('should get specific ACL that was set', done => {
+    test('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
         `${lowerCaseEmail}: READ`, 'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it('should return error if set acl for ' +
+    test('should return error if set acl for ' +
         'nonexistent object', done => {
         exec(['setacl', `s3://${bucket}/${nonexist}`,
             '--acl-public'], done, 12);
@@ -501,37 +498,37 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 });
 
 describe('s3cmd delObject', () => {
-    it('should delete existing object', done => {
+    test('should delete existing object', done => {
         exec(['rm', `s3://${bucket}/${upload}`], done);
     });
 
-    it('delete an already deleted object, should return a 204', done => {
+    test('delete an already deleted object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${upload}`, '--debug'],
         'DEBUG: Response: {', parsedObject => {
-            assert.strictEqual(parsedObject.status, 204);
+            expect(parsedObject.status).toBe(204);
             done();
         });
     });
 
-    it('delete non-existing object, should return a 204', done => {
+    test('delete non-existing object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${nonexist}`, '--debug'],
         'DEBUG: Response: {', parsedObject => {
-            assert.strictEqual(parsedObject.status, 204);
+            expect(parsedObject.status).toBe(204);
             done();
         });
     });
 
-    it('try to get the deleted object, should fail', done => {
+    test('try to get the deleted object, should fail', done => {
         exec(['get', `s3://${bucket}/${upload}`, download], done, 12);
     });
 });
 
-describe('connector edge cases', function tata() {
+describe('connector edge cases', () => {
     this.timeout(0);
-    before('create file to put', done => {
+    beforeAll(done => {
         createEmptyFile(emptyUpload, done);
     });
-    after('delete uploaded and downloaded file', done => {
+    afterAll(done => {
         deleteFile(upload, () => {
             deleteFile(download, () => {
                 deleteFile(emptyUpload, () => {
@@ -541,35 +538,35 @@ describe('connector edge cases', function tata() {
         });
     });
 
-    it('should put previous file in existing bucket', done => {
+    test('should put previous file in existing bucket', done => {
         exec(['put', upload, `s3://${bucket}`], done);
     });
 
-    it('should get existing file in existing bucket', done => {
+    test('should get existing file in existing bucket', done => {
         exec(['get', `s3://${bucket}/${upload}`, download], done);
     });
 
-    it('should put a 0 Bytes file', done => {
+    test('should put a 0 Bytes file', done => {
         exec(['put', emptyUpload, `s3://${bucket}`], done);
     });
 
-    it('should get a 0 Bytes file', done => {
+    test('should get a 0 Bytes file', done => {
         exec(['get', `s3://${bucket}/${emptyUpload}`, emptyDownload], done);
     });
 
-    it('should delete a 0 Bytes file', done => {
+    test('should delete a 0 Bytes file', done => {
         exec(['del', `s3://${bucket}/${emptyUpload}`], done);
     });
 });
 
-describe('s3cmd multipart upload', function titi() {
+describe('s3cmd multipart upload', () => {
     this.timeout(0);
-    before('create the multipart file', done => {
+    beforeAll(done => {
         this.timeout(60000);
         createFile(MPUpload, 62914560, done);
     });
 
-    after('delete the multipart and the downloaded file', done => {
+    afterAll(done => {
         deleteFile(MPUpload, () => {
             deleteFile(MPDownload, () => {
                 deleteFile(MPDownloadCopy, done);
@@ -577,85 +574,85 @@ describe('s3cmd multipart upload', function titi() {
         });
     });
 
-    it('should put an object via a multipart upload', done => {
+    test('should put an object via a multipart upload', done => {
         exec(['put', MPUpload, `s3://${bucket}`], done);
     });
 
-    it('should list multipart uploads', done => {
+    test('should list multipart uploads', done => {
         exec(['multipart', `s3://${bucket}`], done);
     });
 
-    it('should get an object that was put via multipart upload', done => {
+    test('should get an object that was put via multipart upload', done => {
         exec(['get', `s3://${bucket}/${MPUpload}`, MPDownload], done);
     });
 
-    it('downloaded file should equal uploaded file', done => {
+    test('downloaded file should equal uploaded file', done => {
         diff(MPUpload, MPDownload, done);
     });
 
-    it('should copy an object that was put via multipart upload', done => {
+    test('should copy an object that was put via multipart upload', done => {
         exec([
             'cp', `s3://${bucket}/${MPUpload}`,
             `s3://${bucket}/${MPUpload}copy`,
         ], done);
     });
 
-    it('should get an object that was copied', done => {
+    test('should get an object that was copied', done => {
         exec(['get', `s3://${bucket}/${MPUpload}copy`, MPDownloadCopy], done);
     });
 
-    it('downloaded copy file should equal original uploaded file', done => {
+    test('downloaded copy file should equal original uploaded file', done => {
         diff(MPUpload, MPDownloadCopy, done);
     });
 
-    it('should delete multipart uploaded object', done => {
+    test('should delete multipart uploaded object', done => {
         exec(['rm', `s3://${bucket}/${MPUpload}`], done);
     });
 
-    it('should delete copy of multipart uploaded object', done => {
+    test('should delete copy of multipart uploaded object', done => {
         exec(['rm', `s3://${bucket}/${MPUpload}copy`], done);
     });
 
-    it('should not be able to get deleted object', done => {
+    test('should not be able to get deleted object', done => {
         exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 12);
     });
 });
 
 MPUploadSplitter.forEach(file => {
-    describe('s3cmd multipart upload with splitter in name', function titi() {
+    describe('s3cmd multipart upload with splitter in name', () => {
         this.timeout(0);
-        before('create the multipart file', done => {
+        beforeAll(done => {
             this.timeout(60000);
             createFile(file, 16777216, done);
         });
 
-        after('delete the multipart and the downloaded file', done => {
+        afterAll(done => {
             deleteFile(file, () => {
                 deleteFile(MPDownload, done);
             });
         });
 
-        it('should put an object via a multipart upload', done => {
+        test('should put an object via a multipart upload', done => {
             exec(['put', file, `s3://${bucket}`], done);
         });
 
-        it('should list multipart uploads', done => {
+        test('should list multipart uploads', done => {
             exec(['multipart', `s3://${bucket}`], done);
         });
 
-        it('should get an object that was put via multipart upload', done => {
+        test('should get an object that was put via multipart upload', done => {
             exec(['get', `s3://${bucket}/${file}`, MPDownload], done);
         });
 
-        it('downloaded file should equal uploaded file', done => {
+        test('downloaded file should equal uploaded file', done => {
             diff(file, MPDownload, done);
         });
 
-        it('should delete multipart uploaded object', done => {
+        test('should delete multipart uploaded object', done => {
             exec(['rm', `s3://${bucket}/${file}`], done);
         });
 
-        it('should not be able to get deleted object', done => {
+        test('should not be able to get deleted object', done => {
             exec(['get', `s3://${bucket}/${file}`, download], done, 12);
         });
     });
@@ -663,13 +660,13 @@ MPUploadSplitter.forEach(file => {
 
 
 describe('s3cmd put, get and delete object with spaces ' +
-    'in object key names', function test() {
+    'in object key names', () => {
     this.timeout(0);
     const keyWithSpacesAndPluses = 'key with spaces and + pluses +';
-    before('create file to put', done => {
+    beforeAll(done => {
         createFile(upload, 1000, done);
     });
-    after('delete uploaded and downloaded file', done => {
+    afterAll(done => {
         deleteFile(upload, () => {
             deleteFile(download, done);
         });
@@ -677,36 +674,36 @@ describe('s3cmd put, get and delete object with spaces ' +
 
     const bucket = 'freshbucket';
 
-    it('should put a valid bucket', done => {
+    test('should put a valid bucket', done => {
         exec(['mb', `s3://${bucket}`], done);
     });
 
-    it('should put file with spaces in key in existing bucket', done => {
+    test('should put file with spaces in key in existing bucket', done => {
         exec(['put', upload, `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
     });
 
-    it('should get file with spaces', done => {
+    test('should get file with spaces', done => {
         exec(['get', `s3://${bucket}/${keyWithSpacesAndPluses}`, download],
              done);
     });
 
-    it('should list bucket showing file with spaces', done => {
+    test('should list bucket showing file with spaces', done => {
         checkRawOutput(['ls', `s3://${bucket}`], `s3://${bucket}`,
         keyWithSpacesAndPluses, 'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it('downloaded file should equal uploaded file', done => {
+    test('downloaded file should equal uploaded file', done => {
         diff(upload, download, done);
     });
 
-    it('should delete file with spaces', done => {
+    test('should delete file with spaces', done => {
         exec(['del', `s3://${bucket}/${keyWithSpacesAndPluses}`], done);
     });
 
-    it('should delete empty bucket', done => {
+    test('should delete empty bucket', done => {
         exec(['rb', `s3://${bucket}`], done);
     });
 });
@@ -723,18 +720,18 @@ describe('s3cmd info', () => {
     });
 
     // test that POLICY and CORS are returned as 'none'
-    it('should find that policy has a value of none', done => {
+    test('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
         'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
 
-    it('should find that cors has a value of none', done => {
+    test('should find that cors has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none',
         'stdout', foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });
@@ -757,10 +754,10 @@ describe('s3cmd info', () => {
             deleteFile(filename, done);
         });
 
-        it('should find that cors has a value', done => {
+        test('should find that cors has a value', done => {
             checkRawOutput(['info', `s3://${bucket}`], 'cors', corsConfig,
             'stdout', foundIt => {
-                assert(foundIt, 'Did not find value for cors');
+                expect(foundIt).toBeTruthy();
                 done();
             });
         });
@@ -768,26 +765,26 @@ describe('s3cmd info', () => {
 });
 
 describe('s3cmd delBucket', () => {
-    it('delete non-empty bucket, should fail', done => {
+    test('delete non-empty bucket, should fail', done => {
         exec(['rb', `s3://${bucket}`], done, 13);
     });
 
-    it('should delete remaining object', done => {
+    test('should delete remaining object', done => {
         exec(['rm', `s3://${bucket}/${upload}`], done);
     });
 
-    it('should delete empty bucket', done => {
+    test('should delete empty bucket', done => {
         exec(['rb', `s3://${bucket}`], done);
     });
 
-    it('try to get the deleted bucket, should fail', done => {
+    test('try to get the deleted bucket, should fail', done => {
         exec(['ls', `s3://${bucket}`], done, 12);
     });
 });
 
 describe('s3cmd recursive delete with objects put by MPU', () => {
     const upload16MB = 'test16MB';
-    before('create file, put bucket and objects', function setup(done) {
+    beforeAll(function setup(done) {
         this.timeout(120000);
         exec(['mb', `s3://${bucket}`], () => {
             createFile(upload16MB, 16777216, () => {
@@ -801,11 +798,11 @@ describe('s3cmd recursive delete with objects put by MPU', () => {
         });
     });
 
-    it('should delete all the objects and the bucket', done => {
+    test('should delete all the objects and the bucket', done => {
         exec(['rb', '-r', `s3://${bucket}`, '--debug'], done);
     });
 
-    after('delete the downloaded file', done => {
+    afterAll(done => {
         deleteFile(upload16MB, done);
     });
 });
@@ -819,11 +816,11 @@ describeSkipIfE2E('If no location is sent with the request', () => {
     });
     // WARNING: change "us-east-1" to another locationConstraint depending
     // on the restEndpoints (./config.json)
-    it('endpoint should be used to determine the locationConstraint', done => {
+    test('endpoint should be used to determine the locationConstraint', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'Location', 'us-east-1',
         'stdout',
         foundIt => {
-            assert(foundIt);
+            expect(foundIt).toBeTruthy();
             done();
         });
     });

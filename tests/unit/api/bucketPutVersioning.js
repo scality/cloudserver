@@ -83,7 +83,7 @@ function _putVersioningRequest(xml) {
 }
 
 describe('bucketPutVersioning API', () => {
-    before(() => cleanup());
+    beforeAll(() => cleanup());
     afterEach(() => cleanup());
 
     describe('with version enabled location constraint', () => {
@@ -106,7 +106,7 @@ describe('bucketPutVersioning API', () => {
                 output: { Status: 'Suspended' },
             },
         ];
-        tests.forEach(test => it(test.msg, done => {
+        tests.forEach(test => test(test.msg, done => {
             const request = _putVersioningRequest(test.input);
             bucketPutVersioning(authInfo, request, log, err => {
                 assert.ifError(err,
@@ -121,7 +121,7 @@ describe('bucketPutVersioning API', () => {
             });
         }));
 
-        it('should not suspend versioning on bucket with replication', done => {
+        test('should not suspend versioning on bucket with replication', done => {
             async.series([
                 // Enable versioning to allow putting a replication config.
                 next => {
@@ -138,7 +138,7 @@ describe('bucketPutVersioning API', () => {
                 next => {
                     const request = _putVersioningRequest(xmlSuspendVersioning);
                     bucketPutVersioning(authInfo, request, log, err => {
-                        assert(err.InvalidBucketState);
+                        expect(err.InvalidBucketState).toBeTruthy();
                         next();
                     });
                 },
@@ -168,7 +168,7 @@ describe('bucketPutVersioning API', () => {
                     externalVersioningErrorMessage) },
             },
         ];
-        tests.forEach(test => it(test.msg, done => {
+        tests.forEach(test => test(test.msg, done => {
             const putBucketVersioningRequest =
                 _putVersioningRequest(test.input);
             bucketPutVersioning(authInfo, putBucketVersioningRequest, log,

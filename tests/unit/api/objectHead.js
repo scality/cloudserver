@@ -43,7 +43,7 @@ describe('objectHead API', () => {
         }, postBody);
     });
 
-    it('should return NotModified if request header ' +
+    test('should return NotModified if request header ' +
        'includes "if-modified-since" and object ' +
        'not modified since specified time', done => {
         const testGetRequest = {
@@ -57,7 +57,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err, errors.NotModified);
                         done();
@@ -66,7 +66,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should return PreconditionFailed if request header ' +
+    test('should return PreconditionFailed if request header ' +
        'includes "if-unmodified-since" and object has ' +
        'been modified since specified time', done => {
         const testGetRequest = {
@@ -80,7 +80,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
                             errors.PreconditionFailed);
@@ -90,7 +90,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should return PreconditionFailed if request header ' +
+    test('should return PreconditionFailed if request header ' +
        'includes "if-match" and ETag of object ' +
        'does not match specified ETag', done => {
         const testGetRequest = {
@@ -104,7 +104,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
                             errors.PreconditionFailed);
@@ -114,7 +114,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should return NotModified if request header ' +
+    test('should return NotModified if request header ' +
        'includes "if-none-match" and ETag of object does ' +
        'match specified ETag', done => {
         const testGetRequest = {
@@ -128,7 +128,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err, errors.NotModified);
                         done();
@@ -137,7 +137,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should get the object metadata', done => {
+    test('should get the object metadata', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -149,12 +149,10 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, (err, res) => {
-                        assert.strictEqual(res[userMetadataKey],
-                            userMetadataValue);
-                        assert
-                        .strictEqual(res.ETag, `"${correctMD5}"`);
+                        expect(res[userMetadataKey]).toBe(userMetadataValue);
+                        expect(res.ETag).toBe(`"${correctMD5}"`);
                         done();
                     });
                 });

@@ -22,7 +22,7 @@ describe("Head object 'ReplicationStatus' value", () => {
                     if (err) {
                         return next(err);
                     }
-                    assert.strictEqual(res.ReplicationStatus, expectedStatus);
+                    expect(res.ReplicationStatus).toBe(expectedStatus);
                     return next();
                 }),
             ], cb);
@@ -41,8 +41,10 @@ describe("Head object 'ReplicationStatus' value", () => {
             next => s3.deleteBucket({ Bucket: sourceBucket }, next),
         ], done));
 
-        it('should be `undefined` when there is no bucket replication config',
-            done => checkHeadObj(`${keyPrefix}-foobar`, undefined, done));
+        test(
+            'should be `undefined` when there is no bucket replication config',
+            done => checkHeadObj(`${keyPrefix}-foobar`, undefined, done)
+        );
 
         describe('With bucket replication config', () => {
             beforeEach(done => s3.putBucketReplication({
@@ -60,11 +62,15 @@ describe("Head object 'ReplicationStatus' value", () => {
                 },
             }, done));
 
-            it("should be 'PENDING' when object key prefix applies",
-                done => checkHeadObj(`${keyPrefix}-foobar`, 'PENDING', done));
+            test(
+                "should be 'PENDING' when object key prefix applies",
+                done => checkHeadObj(`${keyPrefix}-foobar`, 'PENDING', done)
+            );
 
-            it('should be `undefined` when object key prefix does not apply',
-                done => checkHeadObj(`foobar-${keyPrefix}`, undefined, done));
+            test(
+                'should be `undefined` when object key prefix does not apply',
+                done => checkHeadObj(`foobar-${keyPrefix}`, undefined, done)
+            );
         });
     });
 });

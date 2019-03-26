@@ -13,7 +13,7 @@ let s3;
 
 describe('Requests to ip endpoint not in config', () => {
     withV4(sigCfg => {
-        before(() => {
+        beforeAll(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             // change endpoint to endpoint with ip address
             // not in config
@@ -21,7 +21,7 @@ describe('Requests to ip endpoint not in config', () => {
             s3 = bucketUtil.s3;
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
             .then(() => {
@@ -34,15 +34,14 @@ describe('Requests to ip endpoint not in config', () => {
             });
         });
 
-        it('should accept put bucket request ' +
+        test('should accept put bucket request ' +
             'to IP address endpoint that is not in config using ' +
-            'path style',
-            done => {
-                s3.createBucket({ Bucket: bucket }, err => {
-                    assert.ifError(err);
-                    done();
-                });
+            'path style', done => {
+            s3.createBucket({ Bucket: bucket }, err => {
+                assert.ifError(err);
+                done();
             });
+        });
 
         const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
         // skipping in E2E since in E2E 127.0.0.3 resolving to
@@ -56,37 +55,35 @@ describe('Requests to ip endpoint not in config', () => {
                     (err, res) => {
                         assert.ifError(err);
                         // us-east-1 is returned as empty string
-                        assert.strictEqual(res
-                            .LocationConstraint, '');
+                        expect(res
+                            .LocationConstraint).toBe('');
                         done();
                     });
             });
 
-        it('should accept put object request ' +
+        test('should accept put object request ' +
             'to IP address endpoint that is not in config using ' +
-            'path style and use the bucket location for the object',
-            done => {
-                s3.putObject({ Bucket: bucket, Key: key, Body: body },
-                    err => {
-                        assert.ifError(err);
-                        return s3.headObject({ Bucket: bucket, Key: key },
-                            err => {
-                                assert.ifError(err);
-                                done();
-                            });
-                    });
-            });
+            'path style and use the bucket location for the object', done => {
+            s3.putObject({ Bucket: bucket, Key: key, Body: body },
+                err => {
+                    assert.ifError(err);
+                    return s3.headObject({ Bucket: bucket, Key: key },
+                        err => {
+                            assert.ifError(err);
+                            done();
+                        });
+                });
+        });
 
-        it('should accept get object request ' +
+        test('should accept get object request ' +
             'to IP address endpoint that is not in config using ' +
-            'path style',
-            done => {
-                s3.getObject({ Bucket: bucket, Key: key },
-                    (err, res) => {
-                        assert.ifError(err);
-                        assert.strictEqual(res.ETag, expectedETag);
-                        done();
-                    });
-            });
+            'path style', done => {
+            s3.getObject({ Bucket: bucket, Key: key },
+                (err, res) => {
+                    assert.ifError(err);
+                    expect(res.ETag).toBe(expectedETag);
+                    done();
+                });
+        });
     });
 });

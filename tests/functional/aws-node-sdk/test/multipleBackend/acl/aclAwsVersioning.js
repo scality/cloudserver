@@ -58,8 +58,7 @@ testAcp.addGrantee('Group', constants.publicId, 'READ');
 function putObjectAcl(s3, key, versionId, acp, cb) {
     s3.putObjectAcl({ Bucket: bucket, Key: key, AccessControlPolicy: acp,
         VersionId: versionId }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object acl, got error ${err}`);
+        expect(err).toBe(null);
         cb();
     });
 }
@@ -67,8 +66,7 @@ function putObjectAcl(s3, key, versionId, acp, cb) {
 function putObjectAndAcl(s3, key, body, acp, cb) {
     s3.putObject({ Bucket: bucket, Key: key, Body: body },
     (err, putData) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object, got error ${err}`);
+        expect(err).toBe(null);
         putObjectAcl(s3, key, putData.VersionId, acp, () =>
             cb(null, putData.VersionId));
     });
@@ -91,8 +89,7 @@ function putVersionsWithAclToAws(s3, key, data, acps, cb) {
         async.timesLimit(data.length, 1, (i, next) => {
             putObjectAndAcl(s3, key, data[i], acps[i], next);
         }, (err, results) => {
-            assert.strictEqual(err, null, 'Expected success ' +
-                `putting versions with acl, got error ${err}`);
+            expect(err).toBe(null);
             cb(null, results);
         });
     });
@@ -105,9 +102,8 @@ function getObjectAndAssertAcl(s3, params, cb) {
         () => {
             s3.getObjectAcl({ Bucket: bucket, Key: key, VersionId: versionId },
                 (err, data) => {
-                    assert.strictEqual(err, null, 'Expected success ' +
-                        `getting object acl, got error ${err}`);
-                    assert.deepEqual(data, expectedResult);
+                    expect(err).toBe(null);
+                    expect(data).toEqual(expectedResult);
                     cb();
                 });
         });
@@ -133,8 +129,7 @@ function getObjectsAndAssertAcls(s3, key, versionIds, expectedData,
         getObjectAndAssertAcl(s3, { bucket, key, versionId, body,
             expectedResult, expectedVersionId: versionId }, next);
     }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object acls, got error ${err}`);
+        expect(err).toBe(null);
         cb();
     });
 }
@@ -175,19 +170,18 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: should put/get acl successfully when ' +
+        test('versioning not configured: should put/get acl successfully when ' +
         'versioning not configured', done => {
             const key = `somekey-${genUniqID()}`;
             putObjectAndAcl(s3, key, someBody, testAcp, (err, versionId) => {
-                assert.strictEqual(versionId, undefined);
+                expect(versionId).toBe(undefined);
                 getObjectAndAssertAcl(s3, { bucket, key, body: someBody,
                     expectedResult: testAcp }, done);
             });
         });
 
-        it('versioning suspended then enabled: should put/get acl on null ' +
-        'version successfully even when latest version is not null version',
-        done => {
+        test('versioning suspended then enabled: should put/get acl on null ' +
+        'version successfully even when latest version is not null version', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putNullVersionsToAws(s3, bucket, key, [undefined],
@@ -201,8 +195,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning enabled: should get correct acl using version IDs',
-        done => {
+        test('versioning enabled: should get correct acl using version IDs', done => {
             const key = `somekey-${genUniqID()}`;
             const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']
             .map(perm => {
@@ -226,7 +219,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning enabled: should get correct acl when getting ' +
+        test('versioning enabled: should get correct acl when getting ' +
         'without version ID', done => {
             const key = `somekey-${genUniqID()}`;
             const acps = ['READ', 'FULL_CONTROL', 'READ_ACP', 'WRITE_ACP']

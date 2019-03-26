@@ -9,12 +9,18 @@ const { getRealAwsConfig } =
 const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
 
-describe('GCP: GET Object', function testSuite() {
+describe('GCP: GET Object', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(30000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
+    beforeAll(done => {
         gcpRequestRetry({
             method: 'PUT',
             bucket: bucketName,
@@ -27,7 +33,7 @@ describe('GCP: GET Object', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -41,30 +47,30 @@ describe('GCP: GET Object', function testSuite() {
     });
 
     describe('with existing object in bucket', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             makeGcpRequest({
                 method: 'PUT',
                 bucket: bucketName,
-                objectKey: this.currentTest.key,
+                objectKey: testContext.currentTest.key,
                 authCredentials: config.credentials,
             }, (err, res) => {
                 if (err) {
                     process.stdout.write(`err in creating object ${err}\n`);
                     return done(err);
                 }
-                this.currentTest.uploadId =
+                testContext.currentTest.uploadId =
                     res.headers['x-goog-generation'];
-                this.currentTest.ETag = res.headers.etag;
+                testContext.currentTest.ETag = res.headers.etag;
                 return done();
             });
         });
 
-        afterEach(function afterFn(done) {
+        afterEach(done => {
             makeGcpRequest({
                 method: 'DELETE',
                 bucket: bucketName,
-                objectKey: this.currentTest.key,
+                objectKey: testContext.currentTest.key,
                 authCredentials: config.credentials,
             }, err => {
                 if (err) {
@@ -74,30 +80,29 @@ describe('GCP: GET Object', function testSuite() {
             });
         });
 
-        it('should successfully retrieve object', function testFn(done) {
+        test('should successfully retrieve object', done => {
             gcpClient.getObject({
                 Bucket: bucketName,
-                Key: this.test.key,
+                Key: testContext.test.key,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, got error ${err}`);
-                assert.strictEqual(res.ETag, this.test.ETag);
-                assert.strictEqual(res.VersionId, this.test.uploadId);
+                expect(err).toEqual(null);
+                expect(res.ETag).toBe(testContext.test.ETag);
+                expect(res.VersionId).toBe(testContext.test.uploadId);
                 return done();
             });
         });
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404 and NoSuchKey', done => {
+        test('should return 404 and NoSuchKey', done => {
             const badObjectKey = `nonexistingkey-${genUniqID()}`;
             gcpClient.getObject({
                 Bucket: bucketName,
                 Key: badObjectKey,
             }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
+                expect(err.code).toBe('NoSuchKey');
                 return done();
             });
         });

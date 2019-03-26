@@ -148,10 +148,10 @@ runIfMongo('reportHandler::countItems', function testSuite() {
     this.timeout(200000);
     const bucketUtil = new BucketUtility('default', {});
 
-    before(done => populateDB(bucketUtil.s3, done));
-    after(done => cleanDB(bucketUtil, done));
+    beforeAll(done => populateDB(bucketUtil.s3, done));
+    afterAll(done => cleanDB(bucketUtil, done));
 
-    it('should return correct countItems report', done => {
+    test('should return correct countItems report', done => {
         async.series([
             next => metadata.setup(next),
             next => metadata.countItems(logger, (err, res) => {
@@ -165,21 +165,21 @@ runIfMongo('reportHandler::countItems', function testSuite() {
         const outBuckets = Array.from(Array(outBucketCnt).keys()).map(
             () => `out-of-band-bucket${genUniqID()}`);
 
-        before(done => {
+        beforeAll(done => {
             async.series([
                 next => mongoClient.connectClient(next),
                 next => createOutBuckets(outBuckets, next),
             ], done);
         });
 
-        after(done => {
+        afterAll(done => {
             async.series([
                 next => deleteOutBuckets(outBuckets, next),
                 next => mongoClient.disconnectClient(next),
             ], done);
         });
 
-        it('should retrieve update bucket list', done => {
+        test('should retrieve update bucket list', done => {
             async.series([
                 next => metadata.setup(next),
                 next => metadata.countItems(logger, (err, res) => {

@@ -37,10 +37,10 @@ function uploadPart(n, uploadId, s3, next) {
 // NOTE: This test has a history of failing in end-to-end Integration tests.
 // See Integration#449 for more details. A possible cause for its flakiness
 // could be poor system resources.
-describe('large mpu', function tester() {
+describe('large mpu', () => {
     this.timeout(600000);
     let s3;
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         // disable node sdk retries and timeout to prevent InvalidPart
@@ -53,7 +53,7 @@ describe('large mpu', function tester() {
         s3.createBucket({ Bucket: bucket }, done);
     });
 
-    after(done => {
+    afterAll(done => {
         s3.deleteObject({ Bucket: bucket, Key: key }, err => {
             if (err) {
                 process.stdout.write('err deleting object in after: ', err);
@@ -118,8 +118,7 @@ describe('large mpu', function tester() {
                         if (err) {
                             return next(err);
                         }
-                        assert.strictEqual(data.ETag,
-                                `"${finalETag}-${partCount}"`);
+                        expect(data.ETag).toBe(`"${finalETag}-${partCount}"`);
                         return next();
                     });
             },

@@ -151,21 +151,21 @@ describe('Head request on bucket website endpoint with ACL', () => {
                       test.objects, done);
                 });
 
-                it(`${test.it} with no auth credentials sent`, done => {
+                test(`${test.it} with no auth credentials sent`, done => {
                     const result = test.result;
                     WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
                         headersACL[result].status,
                         headersACL[result].expectedHeaders, done);
                 });
 
-                it(`${test.it} even with invalid auth credentials`, done => {
+                test(`${test.it} even with invalid auth credentials`, done => {
                     const result = test.result;
                     WebsiteConfigTester.makeHeadRequest('invalid credentials',
                         endpoint, headersACL[result].status,
                         headersACL[result].expectedHeaders, done);
                 });
 
-                it(`${test.it} even with valid auth credentials`, done => {
+                test(`${test.it} even with valid auth credentials`, done => {
                     const result = test.result;
                     WebsiteConfigTester.makeHeadRequest('valid credentials',
                         endpoint, headersACL[result].status,

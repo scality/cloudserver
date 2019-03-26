@@ -16,19 +16,19 @@ function getFirstAndOnlyAccount(authdata) {
 }
 
 describe('buildAuthDataAccount function', () => {
-    it('should return authdata with the default user name if no user ' +
+    test('should return authdata with the default user name if no user ' +
     'name provided', () => {
         const authdata = buildAuthDataAccount(fakeAccessKey, fakeSecretKey,
             fakeCanonicalId, fakeServiceName);
         const firstAccount = getFirstAndOnlyAccount(authdata);
-        assert.strictEqual(firstAccount.name, defaultUserName);
+        expect(firstAccount.name).toBe(defaultUserName);
     });
 
-    it('should return authdata with the user name that has been ' +
+    test('should return authdata with the user name that has been ' +
     'provided', () => {
         const authdata = buildAuthDataAccount(fakeAccessKey, fakeSecretKey,
             fakeCanonicalId, fakeServiceName, fakeUserName);
         const firstAccount = getFirstAndOnlyAccount(authdata);
-        assert.strictEqual(firstAccount.name, fakeUserName);
+        expect(firstAccount.name).toBe(fakeUserName);
     });
 });

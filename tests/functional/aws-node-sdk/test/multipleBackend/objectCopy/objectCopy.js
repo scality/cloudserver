@@ -38,11 +38,11 @@ function putSourceObj(location, isEmptyObj, bucket, cb) {
     }
     process.stdout.write('Putting source object\n');
     s3.putObject(sourceParams, (err, result) => {
-        assert.equal(err, null, `Error putting source object: ${err}`);
+        expect(err).toEqual(null);
         if (isEmptyObj) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+            expect(result.ETag).toBe(`"${emptyMD5}"`);
         } else {
-            assert.strictEqual(result.ETag, `"${correctMD5}"`);
+            expect(result.ETag).toBe(`"${correctMD5}"`);
         }
         cb(key);
     });
@@ -61,47 +61,45 @@ callback) {
         cb => s3.getObject(destGetParams, cb),
         cb => awsS3.getObject(awsParams, cb),
     ], (err, results) => {
-        assert.equal(err, null, `Error in assertGetObjects: ${err}`);
+        expect(err).toEqual(null);
         const [sourceRes, destRes, awsRes] = results;
         if (isEmptyObj) {
-            assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(awsRes.ETag, `"${emptyMD5}"`);
+            expect(sourceRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(destRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(awsRes.ETag).toBe(`"${emptyMD5}"`);
         } else if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-            assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
-            assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
+            expect(sourceRes.ServerSideEncryption).toBe('AES256');
+            expect(destRes.ServerSideEncryption).toBe('AES256');
         } else {
-            assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
+            expect(sourceRes.ETag).toBe(`"${correctMD5}"`);
+            expect(destRes.ETag).toBe(`"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, destRes.Body);
-            assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
+            expect(awsRes.ETag).toBe(`"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
         }
         if (destLoc === awsLocationEncryption) {
-            assert.strictEqual(awsRes.ServerSideEncryption, 'AES256');
+            expect(awsRes.ServerSideEncryption).toBe('AES256');
         } else {
-            assert.strictEqual(awsRes.ServerSideEncryption, undefined);
+            expect(awsRes.ServerSideEncryption).toBe(undefined);
         }
         if (mdDirective === 'COPY') {
             assert.deepStrictEqual(sourceRes.Metadata['test-header'],
                 destRes.Metadata['test-header']);
         } else if (mdDirective === 'REPLACE') {
-            assert.strictEqual(destRes.Metadata['test-header'],
-              undefined);
+            expect(destRes.Metadata['test-header']).toBe(undefined);
         }
         if (destLoc === awsLocation) {
-            assert.strictEqual(awsRes.Metadata[locMetaHeader], destLoc);
+            expect(awsRes.Metadata[locMetaHeader]).toBe(destLoc);
             if (mdDirective === 'COPY') {
                 assert.deepStrictEqual(sourceRes.Metadata['test-header'],
                     awsRes.Metadata['test-header']);
             } else if (mdDirective === 'REPLACE') {
-                assert.strictEqual(awsRes.Metadata['test-header'],
-                  undefined);
+                expect(awsRes.Metadata['test-header']).toBe(undefined);
             }
         }
-        assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
-        assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
-        assert.strictEqual(destRes.Metadata[locMetaHeader], destLoc);
+        expect(sourceRes.ContentLength).toBe(destRes.ContentLength);
+        expect(sourceRes.Metadata[locMetaHeader]).toBe(sourceLoc);
+        expect(destRes.Metadata[locMetaHeader]).toBe(destLoc);
         callback();
     });
 }
@@ -163,9 +161,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS relying on ' +
-        'destination bucket location',
-        done => {
+        test('should copy an object from mem to AWS relying on ' +
+        'destination bucket location', done => {
             putSourceObj(memLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -176,10 +173,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, memLocation, copyKey,
                         bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
                         awsLocation, done);
@@ -187,9 +182,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from Azure to AWS relying on ' +
-        'destination bucket location',
-        done => {
+        test('should copy an object from Azure to AWS relying on ' +
+        'destination bucket location', done => {
             putSourceObj(azureLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -200,10 +194,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, azureLocation, copyKey,
                         bucketAws, awsLocation, copyKey, 'COPY', false, awsS3,
                         awsLocation, done);
@@ -211,9 +203,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object without location contraint from mem ' +
-        'to AWS relying on destination bucket location',
-        done => {
+        test('should copy an object without location contraint from mem ' +
+        'to AWS relying on destination bucket location', done => {
             putSourceObj(null, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -224,10 +215,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, undefined, copyKey,
                         bucketAws, undefined, copyKey, 'COPY', false, awsS3,
                         awsLocation, done);
@@ -235,9 +224,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from AWS to mem relying on destination ' +
-        'bucket location',
-        done => {
+        test('should copy an object from AWS to mem relying on destination ' +
+        'bucket location', done => {
             putSourceObj(awsLocation, false, bucketAws, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -248,10 +236,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucketAws, awsLocation, copyKey,
                       bucket, memLocation, key, 'COPY', false, awsS3,
                         awsLocation, done);
@@ -259,7 +245,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS', done => {
+        test('should copy an object from mem to AWS', done => {
             putSourceObj(memLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -272,10 +258,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, memLocation, copyKey, bucket,
                         awsLocation, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
@@ -297,10 +281,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, memLocation, copyKey, bucket,
                         awsLocationEncryption, copyKey, 'REPLACE', false,
                         awsS3, awsLocation, done);
@@ -308,7 +290,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from AWS to mem with encryption with ' +
+        test('should copy an object from AWS to mem with encryption with ' +
         'REPLACE directive but no location constraint', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
@@ -320,10 +302,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         undefined, key, 'REPLACE', false,
                         awsS3, awsLocation, done);
@@ -346,10 +326,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocationEncryption, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
@@ -370,10 +348,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, awsServerSideEncryptionbucket,
                         awsLocation, copyKey, awsServerSideEncryptionbucket,
                         awsLocationEncryption, copyKey, 'COPY',
@@ -382,7 +358,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to AWS with encryption with ' +
+        test('should copy an object from mem to AWS with encryption with ' +
         'REPLACE directive but no location constraint', done => {
             putSourceObj(null, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
@@ -394,10 +370,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, undefined, copyKey,
                         bucketAws, undefined, copyKey, 'REPLACE', false,
                         awsS3, awsLocation, done);
@@ -405,9 +379,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from AWS to mem with "COPY" ' +
-        'directive and aws location metadata',
-        done => {
+        test('should copy an object from AWS to mem with "COPY" ' +
+        'directive and aws location metadata', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -420,10 +393,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         memLocation, key, 'COPY', false, awsS3,
                         awsLocation, done);
@@ -431,7 +402,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS', done => {
+        test('should copy an object on AWS', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -443,10 +414,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocation, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
@@ -454,9 +423,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS location with bucketMatch equals ' +
-        'false to a different AWS location with bucketMatch equals true',
-        done => {
+        test('should copy an object on AWS location with bucketMatch equals ' +
+        'false to a different AWS location with bucketMatch equals true', done => {
             putSourceObj(awsLocationMismatch, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -469,10 +437,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocationMismatch, copyKey,
                         bucket, awsLocation, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
@@ -480,9 +446,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on AWS to a different AWS location ' +
-        'with source object READ access',
-        done => {
+        test('should copy an object on AWS to a different AWS location ' +
+        'with source object READ access', done => {
             const awsConfig2 = getRealAwsConfig(awsLocation2);
             const awsS3Two = new AWS.S3(awsConfig2);
             const copyKey = `copyKey-${genUniqID()}`;
@@ -506,10 +471,8 @@ function testSuite() {
                     };
                     process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, (err, result) => {
-                        assert.equal(err, null, 'Expected success ' +
-                        `but got error: ${err}`);
-                        assert.strictEqual(result.CopyObjectResult.ETag,
-                            `"${correctMD5}"`);
+                        expect(err).toEqual(null);
+                        expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                         next(err, key);
                     });
                 },
@@ -535,13 +498,13 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, err => {
-                    assert.strictEqual(err.code, 'AccessDenied');
+                    expect(err.code).toBe('AccessDenied');
                     done();
                 });
             });
         });
 
-        it('should copy an object on AWS with REPLACE', done => {
+        test('should copy an object on AWS with REPLACE', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -554,10 +517,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${correctMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocation, copyKey, 'REPLACE', false, awsS3,
                         awsLocation, done);
@@ -565,7 +526,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 0-byte object from mem to AWS', done => {
+        test('should copy a 0-byte object from mem to AWS', done => {
             putSourceObj(memLocation, true, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -578,10 +539,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${emptyMD5}"`);
                     assertGetObjects(key, bucket, memLocation, copyKey, bucket,
                         awsLocation, copyKey, 'REPLACE', true, awsS3,
                         awsLocation, done);
@@ -589,7 +548,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 0-byte object on AWS', done => {
+        test('should copy a 0-byte object on AWS', done => {
             putSourceObj(awsLocation, true, bucket, key => {
                 const copyKey = `copyKey-${genUniqID()}`;
                 const copyParams = {
@@ -601,10 +560,8 @@ function testSuite() {
                 };
                 process.stdout.write('Copying object\n');
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${emptyMD5}"`);
                     assertGetObjects(key, bucket, awsLocation, copyKey, bucket,
                         awsLocation, copyKey, 'REPLACE', true, awsS3,
                         awsLocation, done);
@@ -612,14 +569,13 @@ function testSuite() {
             });
         });
 
-        it('should return error if AWS source object has ' +
+        test('should return error if AWS source object has ' +
         'been deleted', done => {
             putSourceObj(awsLocation, false, bucket, key => {
                 const awsBucket =
                     config.locationConstraints[awsLocation].details.bucketName;
                 awsS3.deleteObject({ Bucket: awsBucket, Key: key }, err => {
-                    assert.equal(err, null, 'Error deleting object from AWS: ' +
-                        `${err}`);
+                    expect(err).toEqual(null);
                     const copyKey = `copyKey-${genUniqID()}`;
                     const copyParams = { Bucket: bucket, Key: copyKey,
                         CopySource: `/${bucket}/${key}`,
@@ -628,7 +584,7 @@ function testSuite() {
                     };
                     process.stdout.write('Copying object\n');
                     s3.copyObject(copyParams, err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
+                        expect(err.code).toBe('ServiceUnavailable');
                         done();
                     });
                 });

@@ -64,12 +64,11 @@ function putSourceObj(testParams, cb) {
         sourceParams.Body = someBody;
     }
     s3.putObject(sourceParams, (err, result) => {
-        assert.strictEqual(err, null,
-            `Error putting source object: ${err}`);
+        expect(err).toBe(null);
         if (isEmptyObj) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+            expect(result.ETag).toBe(`"${emptyMD5}"`);
         } else {
-            assert.strictEqual(result.ETag, `"${correctMD5}"`);
+            expect(result.ETag).toBe(`"${correctMD5}"`);
         }
         Object.assign(testParams, {
             sourceKey,
@@ -98,12 +97,11 @@ function copyObject(testParams, cb) {
             `${copyParams.CopySource}?versionId=null`;
     }
     s3.copyObject(copyParams, (err, data) => {
-        assert.strictEqual(err, null,
-            `Error copying object to destination: ${err}`);
+        expect(err).toBe(null);
         if (destVersioningState === 'Enabled') {
-            assert.notEqual(data.VersionId, undefined);
+            expect(data.VersionId).not.toEqual(undefined);
         } else {
-            assert.strictEqual(data.VersionId, undefined);
+            expect(data.VersionId).toBe(undefined);
         }
         const expectedBody = isEmptyObj ? '' : someBody;
         return awsGetLatestVerId(destKey, expectedBody, (err, awsVersionId) => {
@@ -145,17 +143,17 @@ function assertGetObjects(testParams, cb) {
         cb => s3.getObject(destGetParams, cb),
         cb => awsS3.getObject(awsParams, cb),
     ], (err, results) => {
-        assert.strictEqual(err, null, `Error in assertGetObjects: ${err}`);
+        expect(err).toBe(null);
         const [sourceRes, destRes, awsRes] = results;
         if (isEmptyObj) {
-            assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(awsRes.ETag, `"${emptyMD5}"`);
+            expect(sourceRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(destRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(awsRes.ETag).toBe(`"${emptyMD5}"`);
         } else {
-            assert.strictEqual(sourceRes.ETag, `"${correctMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${correctMD5}"`);
+            expect(sourceRes.ETag).toBe(`"${correctMD5}"`);
+            expect(destRes.ETag).toBe(`"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, destRes.Body);
-            assert.strictEqual(awsRes.ETag, `"${correctMD5}"`);
+            expect(awsRes.ETag).toBe(`"${correctMD5}"`);
             assert.deepStrictEqual(sourceRes.Body, awsRes.Body);
         }
         if (directive === 'COPY') {
@@ -166,7 +164,7 @@ function assertGetObjects(testParams, cb) {
             assert.deepStrictEqual(destRes.Metadata, {});
             assert.deepStrictEqual(awsRes.Metadata, {});
         }
-        assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
+        expect(sourceRes.ContentLength).toBe(destRes.ContentLength);
         cb();
     });
 }
@@ -198,8 +196,7 @@ function testSuite() {
                     `in afterEach: ${err}\n`);
                     throw err;
                 }
-            })
-        );
+            }));
 
         [{
             directive: 'REPLACE',
@@ -357,7 +354,7 @@ function testSuite() {
                     expectedError: 'NoSuchKey' }, next),
                 next => awsGetLatestVerId(testParams.destKey, someBody, next),
                 (awsVerId, next) => {
-                    assert.strictEqual(awsVerId, this.test.awsVerId);
+                    expect(awsVerId).toBe(this.test.awsVerId);
                     next();
                 },
             ], done);
@@ -389,7 +386,7 @@ function testSuite() {
             });
             const { sourceLocation, directive, isEmptyObj } = testParams;
 
-            it(`should copy ${isEmptyObj ? 'empty ' : ''}object from ` +
+            test(`should copy ${isEmptyObj ? 'empty ' : ''}object from ` +
             `${sourceLocation} to bucket on AWS backend with ` +
             `versioning with ${directive}`, done => {
                 async.waterfall([
@@ -401,7 +398,7 @@ function testSuite() {
                 ], done);
             });
 
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version from ` +
+            test(`should copy ${isEmptyObj ? 'an empty ' : ''}version from ` +
             `${sourceLocation} to bucket on AWS backend with ` +
             `versioning with ${directive} directive`, done => {
                 async.waterfall([

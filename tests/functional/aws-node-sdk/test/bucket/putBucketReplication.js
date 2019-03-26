@@ -13,13 +13,10 @@ const destinationBucket = 'destination-bucket';
 // Check for the expected error response code and status code.
 function assertError(err, expectedErr) {
     if (expectedErr === null) {
-        assert.strictEqual(err, null, `expected no error but got '${err}'`);
+        expect(err).toBe(null);
     } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
+        expect(err.code).toBe(expectedErr);
+        expect(err.statusCode).toBe(errors[expectedErr].code);
     }
 }
 
@@ -83,7 +80,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
         });
     }
 
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
@@ -91,7 +88,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
         return done();
     });
 
-    it('should return \'NoSuchBucket\' error if bucket does not exist', done =>
+    test('should return \'NoSuchBucket\' error if bucket does not exist', done =>
         s3.putBucketReplication(replicationParams, err => {
             assertError(err, 'NoSuchBucket');
             return done();
@@ -102,29 +99,29 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: sourceBucket }, done));
 
-        it('should return AccessDenied if user is not bucket owner', done =>
+        test('should return AccessDenied if user is not bucket owner', done =>
             otherAccountS3.putBucketReplication(replicationParams,
             err => {
-                assert(err);
-                assert.strictEqual(err.code, 'AccessDenied');
-                assert.strictEqual(err.statusCode, 403);
+                expect(err).toBeTruthy();
+                expect(err.code).toBe('AccessDenied');
+                expect(err.statusCode).toBe(403);
                 return done();
             }));
 
-        it('should not put configuration on bucket without versioning', done =>
+        test('should not put configuration on bucket without versioning', done =>
             s3.putBucketReplication(replicationParams, err => {
                 assertError(err, 'InvalidRequest');
                 return done();
             }));
 
-        it('should not put configuration on bucket with \'Suspended\'' +
+        test('should not put configuration on bucket with \'Suspended\'' +
             'versioning', done =>
             checkVersioningError(s3, 'Suspended', 'InvalidRequest', done));
 
-        it('should put configuration on a bucket with versioning', done =>
+        test('should put configuration on a bucket with versioning', done =>
             checkVersioningError(s3, 'Enabled', null, done));
 
-        it('should put configuration on a bucket with versioning if ' +
+        test('should put configuration on a bucket with versioning if ' +
         'user is a replication user', done =>
             checkVersioningError(replicationAccountS3, 'Enabled', null, done));
     });
@@ -157,21 +154,20 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         const Role = ARN === '' || ARN === ',' ? ARN : `${ARN},${ARN}`;
         const config = Object.assign({}, replicationConfig, { Role });
 
-        it('should not accept configuration when \'Role\' is not a ' +
+        test('should not accept configuration when \'Role\' is not a ' +
             'comma-separated list of two valid Amazon Resource Names: ' +
             `'${Role}'`, done =>
             checkError(config, 'InvalidArgument', done));
     });
 
-    it('should not accept configuration when \'Role\' is a comma-separated ' +
-        'list of more than two valid Amazon Resource Names',
-        done => {
-            const Role = 'arn:aws:iam::account-id:role/resource-1,' +
-                'arn:aws:iam::account-id:role/resource-2,' +
-                'arn:aws:iam::account-id:role/resource-3';
-            const config = Object.assign({}, replicationConfig, { Role });
-            checkError(config, 'InvalidArgument', done);
-        });
+    test('should not accept configuration when \'Role\' is a comma-separated ' +
+        'list of more than two valid Amazon Resource Names', done => {
+        const Role = 'arn:aws:iam::account-id:role/resource-1,' +
+            'arn:aws:iam::account-id:role/resource-2,' +
+            'arn:aws:iam::account-id:role/resource-3';
+        const config = Object.assign({}, replicationConfig, { Role });
+        checkError(config, 'InvalidArgument', done);
+    });
 
     replicationUtils.validRoleARNs.forEach(ARN => {
         const config = setConfigRules({
@@ -182,13 +178,13 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         });
         config.Role = ARN;
 
-        it('should accept configuration if \'Role\' is a single valid ' +
+        test('should accept configuration if \'Role\' is a single valid ' +
             `Amazon Resource Name: '${ARN}', and a rule storageClass defines ` +
             'an external location', done =>
             checkError(config, null, done));
     });
 
-    it('should allow a combination of storageClasses across rules', done => {
+    test('should allow a combination of storageClasses across rules', done => {
         const config = setConfigRules([replicationConfig.Rules[0], {
             Destination: {
                 Bucket: `arn:aws:s3:::${destinationBucket}`,
@@ -202,7 +198,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         checkError(config, null, done);
     });
 
-    it('should not allow a comma separated list of roles when a rule ' +
+    test('should not allow a comma separated list of roles when a rule ' +
         'storageClass defines an external location', done => {
         const config = {
             Role: 'arn:aws:iam::account-id:role/src-resource,' +
@@ -225,7 +221,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         const Role = `${ARN},${ARN}`;
         const config = Object.assign({}, replicationConfig, { Role });
 
-        it('should accept configuration when \'Role\' is a comma-separated ' +
+        test('should accept configuration when \'Role\' is a comma-separated ' +
             `list of two valid Amazon Resource Names: '${Role}'`, done =>
             checkError(config, null, done));
     });
@@ -233,17 +229,17 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     replicationUtils.invalidBucketARNs.forEach(ARN => {
         const config = setConfigRules({ Destination: { Bucket: ARN } });
 
-        it('should not accept configuration when \'Bucket\' is not a ' +
+        test('should not accept configuration when \'Bucket\' is not a ' +
             `valid Amazon Resource Name format: '${ARN}'`, done =>
             checkError(config, 'InvalidArgument', done));
     });
 
-    it('should not accept configuration when \'Rules\' is empty ', done => {
+    test('should not accept configuration when \'Rules\' is empty ', done => {
         const config = Object.assign({}, replicationConfig, { Rules: [] });
         return checkError(config, 'MalformedXML', done);
     });
 
-    it('should not accept configuration when \'Rules\' is > 1000', done => {
+    test('should not accept configuration when \'Rules\' is > 1000', done => {
         const arr = [];
         for (let i = 0; i < 1001; i++) {
             arr.push({
@@ -256,13 +252,13 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest', done);
     });
 
-    it('should not accept configuration when \'ID\' length is > 255', done => {
+    test('should not accept configuration when \'ID\' length is > 255', done => {
         // Set ID to a string of length 256.
         const config = setConfigRules({ ID: new Array(257).join('x') });
         return checkError(config, 'InvalidArgument', done);
     });
 
-    it('should not accept configuration when \'ID\' is not unique', done => {
+    test('should not accept configuration when \'ID\' is not unique', done => {
         const rule1 = replicationConfig.Rules[0];
         // Prefix is unique, but not the ID.
         const rule2 = Object.assign({}, rule1, { Prefix: 'bar' });
@@ -270,7 +266,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest', done);
     });
 
-    it('should accept configuration when \'ID\' is not provided for multiple ' +
+    test('should accept configuration when \'ID\' is not provided for multiple ' +
         'rules', done => {
         const replicationConfigWithoutID = Object.assign({}, replicationConfig);
         const rule1 = replicationConfigWithoutID.Rules[0];
@@ -283,32 +279,33 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
     replicationUtils.validStatuses.forEach(status => {
         const config = setConfigRules({ Status: status });
 
-        it(`should accept configuration when 'Role' is ${status}`, done =>
+        test(`should accept configuration when 'Role' is ${status}`, done =>
             checkError(config, null, done));
     });
 
-    it('should not accept configuration when \'Status\' is invalid', done => {
+    test('should not accept configuration when \'Status\' is invalid', done => {
         // Status must either be 'Enabled' or 'Disabled'.
         const config = setConfigRules({ Status: 'Invalid' });
         return checkError(config, 'MalformedXML', done);
     });
 
-    it('should accept configuration when \'Prefix\' is \'\'',
-        done => {
-            const config = setConfigRules({ Prefix: '' });
-            return checkError(config, null, done);
-        });
+    test('should accept configuration when \'Prefix\' is \'\'', done => {
+        const config = setConfigRules({ Prefix: '' });
+        return checkError(config, null, done);
+    });
 
-    it('should not accept configuration when \'Prefix\' length is > 1024',
+    test(
+        'should not accept configuration when \'Prefix\' length is > 1024',
         done => {
             // Set Prefix to a string of length of 1025.
             const config = setConfigRules({
                 Prefix: new Array(1026).join('x'),
             });
             return checkError(config, 'InvalidArgument', done);
-        });
+        }
+    );
 
-    it('should not accept configuration when rules contain overlapping ' +
+    test('should not accept configuration when rules contain overlapping ' +
         '\'Prefix\' values: new prefix starts with used prefix', done => {
         const config = setConfigRules([replicationConfig.Rules[0], {
             Destination: { Bucket: `arn:aws:s3:::${destinationBucket}` },
@@ -318,7 +315,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest', done);
     });
 
-    it('should not accept configuration when rules contain overlapping ' +
+    test('should not accept configuration when rules contain overlapping ' +
         '\'Prefix\' values: used prefix starts with new prefix', done => {
         const config = setConfigRules([replicationConfig.Rules[0], {
             Destination: { Bucket: `arn:aws:s3:::${destinationBucket}` },
@@ -328,7 +325,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         return checkError(config, 'InvalidRequest', done);
     });
 
-    it('should not accept configuration when \'Destination\' properties of ' +
+    test('should not accept configuration when \'Destination\' properties of ' +
         'two or more rules specify different buckets', done => {
         const config = setConfigRules([replicationConfig.Rules[0], {
             Destination: { Bucket: `arn:aws:s3:::${destinationBucket}-1` },
@@ -346,7 +343,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
 
-        it('should accept configuration when \'StorageClass\' is ' +
+        test('should accept configuration when \'StorageClass\' is ' +
             `${storageClass}`, done => checkError(config, null, done));
     });
 
@@ -359,11 +356,12 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
 
-        it('should accept configuration when \'StorageClass\' is ' +
+        test('should accept configuration when \'StorageClass\' is ' +
             `${storageClass}`, done => checkError(config, null, done));
     });
 
-    it('should not accept configuration when \'StorageClass\' is invalid',
+    test(
+        'should not accept configuration when \'StorageClass\' is invalid',
         done => {
             const config = setConfigRules({
                 Destination: {
@@ -372,5 +370,6 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
                 },
             });
             return checkError(config, 'MalformedXML', done);
-        });
+        }
+    );
 });

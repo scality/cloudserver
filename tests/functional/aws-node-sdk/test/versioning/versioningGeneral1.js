@@ -23,23 +23,23 @@ function comp(v1, v2) {
 }
 
 
-describe('aws-node-sdk test bucket versioning listing', function testSuite() {
+describe('aws-node-sdk test bucket versioning listing', () => {
     this.timeout(600000);
     let s3;
     const masterVersions = [];
     const allVersions = [];
 
     // setup test
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         s3.createBucket({ Bucket: bucket }, done);
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterAll(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should accept valid versioning configuration', done => {
+    test('should accept valid versioning configuration', done => {
         const params = {
             Bucket: bucket,
             VersioningConfiguration: {
@@ -49,7 +49,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         s3.putBucketVersioning(params, done);
     });
 
-    it('should create a bunch of objects and their versions', done => {
+    test('should create a bunch of objects and their versions', done => {
         const keycount = 20;
         const versioncount = 20;
         const value = '{"foo":"bar"}';
@@ -59,19 +59,19 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
             const params = { Bucket: bucket, Key: key, Body: value };
             async.times(versioncount, (j, next2) =>
                 s3.putObject(params, (err, data) => {
-                    assert.strictEqual(err, null);
-                    assert(data.VersionId, 'invalid versionId');
+                    expect(err).toBe(null);
+                    expect(data.VersionId).toBeTruthy();
                     allVersions.push({ Key: key, VersionId: data.VersionId });
                     next2();
                 }), next1);
         }, err => {
-            assert.strictEqual(err, null);
-            assert.strictEqual(allVersions.length, keycount * versioncount);
+            expect(err).toBe(null);
+            expect(allVersions.length).toBe(keycount * versioncount);
             done();
         });
     });
 
-    it('should list all latest versions', done => {
+    test('should list all latest versions', done => {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         s3.listObjects(params, (err, data) => {
             const keys = data.Contents.map(entry => entry.Key);
@@ -81,21 +81,21 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         });
     });
 
-    it('should create some delete markers', done => {
+    test('should create some delete markers', done => {
         const keycount = 15;
         async.times(keycount, (i, next) => {
             const key = masterVersions[i];
             const params = { Bucket: bucket, Key: key };
             s3.deleteObject(params, (err, data) => {
-                assert.strictEqual(err, null);
-                assert(data.VersionId, 'invalid versionId');
+                expect(err).toBe(null);
+                expect(data.VersionId).toBeTruthy();
                 allVersions.push({ Key: key, VersionId: data.VersionId });
                 next();
             });
         }, done);
     });
 
-    it('should list all latest versions', done => {
+    test('should list all latest versions', done => {
         const params = { Bucket: bucket, MaxKeys: 1000, Delimiter: '/' };
         s3.listObjects(params, (err, data) => {
             const keys = data.Contents.map(entry => entry.Key);
@@ -105,7 +105,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         });
     });
 
-    it('should list all versions', done => {
+    test('should list all versions', done => {
         const versions = [];
         const params = { Bucket: bucket, MaxKeys: 15, Delimiter: '/' };
         async.retry(100, done => s3.listObjectVersions(params, (err, data) => {

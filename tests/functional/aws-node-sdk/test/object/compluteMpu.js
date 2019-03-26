@@ -21,14 +21,14 @@ describe('aws-node-sdk test bucket complete mpu', () => {
     let s3;
 
     // setup test
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         s3.createBucket({ Bucket: bucket }, done);
     });
 
     // delete bucket after testing
-    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+    afterAll(done => s3.deleteBucket({ Bucket: bucket }, done));
 
     const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
     itSkipIfAWS('should not accept xml body larger than 1 MB', done => {
@@ -42,9 +42,8 @@ describe('aws-node-sdk test bucket complete mpu', () => {
         };
         s3.completeMultipartUpload(params, error => {
             if (error) {
-                assert.strictEqual(error.statusCode, 400);
-                assert.strictEqual(
-                    error.code, 'InvalidRequest');
+                expect(error.statusCode).toBe(400);
+                expect(error.code).toBe('InvalidRequest');
                 done();
             } else {
                 done('accepted xml body larger than 1 MB');

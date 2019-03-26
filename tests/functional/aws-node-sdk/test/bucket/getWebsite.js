@@ -30,17 +30,16 @@ describe('GET bucket website', () => {
         afterEach(() => bucketUtil.deleteOne(bucketName));
 
         describe('with existing bucket configuration', () => {
-            before(() =>
+            beforeAll(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
                 .then(() => s3.putBucketWebsiteAsync({
                     Bucket: bucketName,
                     WebsiteConfiguration: config,
                 })));
 
-            it('should return bucket website xml successfully', done => {
+            test('should return bucket website xml successfully', done => {
                 s3.getBucketWebsite({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     const configObject = Object.assign({}, config);
                     assert.deepStrictEqual(data, configObject);
                     return done();
@@ -49,7 +48,7 @@ describe('GET bucket website', () => {
         });
 
         describe('on bucket without website configuration', () => {
-            before(done => {
+            beforeAll(done => {
                 process.stdout.write('about to create bucket\n');
                 s3.createBucket({ Bucket: bucketName }, err => {
                     if (err) {
@@ -60,11 +59,11 @@ describe('GET bucket website', () => {
                 });
             });
 
-            it('should return NoSuchWebsiteConfiguration', done => {
+            test('should return NoSuchWebsiteConfiguration', done => {
                 s3.getBucketWebsite({ Bucket: bucketName }, err => {
-                    assert(err);
-                    assert.strictEqual(err.code, 'NoSuchWebsiteConfiguration');
-                    assert.strictEqual(err.statusCode, 404);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('NoSuchWebsiteConfiguration');
+                    expect(err.statusCode).toBe(404);
                     return done();
                 });
             });

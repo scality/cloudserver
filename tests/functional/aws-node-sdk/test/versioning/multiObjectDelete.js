@@ -14,8 +14,7 @@ const nonExistingId = process.env.AWS_ON_AIR ?
     '3939393939393939393936493939393939393939756e6437';
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 function sortList(list) {
@@ -31,7 +30,7 @@ function sortList(list) {
 }
 
 
-describe('Multi-Object Versioning Delete Success', function success() {
+describe('Multi-Object Versioning Delete Success', () => {
     this.timeout(360000);
 
     withV4(sigCfg => {
@@ -84,14 +83,13 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucketName }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
+                    expect(err).toBe(null);
                     return done();
                 });
             });
         });
 
-        it('should batch delete 1000 objects quietly', () => {
+        test('should batch delete 1000 objects quietly', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             return s3.deleteObjectsAsync({
@@ -101,14 +99,14 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     Quiet: true,
                 },
             }).then(res => {
-                assert.strictEqual(res.Deleted.length, 0);
-                assert.strictEqual(res.Errors.length, 0);
+                expect(res.Deleted.length).toBe(0);
+                expect(res.Errors.length).toBe(0);
             }).catch(err => {
                 checkNoError(err);
             });
         });
 
-        it('should batch delete 1000 objects', () => {
+        test('should batch delete 1000 objects', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             return s3.deleteObjectsAsync({
@@ -118,17 +116,17 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     Quiet: false,
                 },
             }).then(res => {
-                assert.strictEqual(res.Deleted.length, 1000);
+                expect(res.Deleted.length).toBe(1000);
                 // order of returned objects not sorted
                 assert.deepStrictEqual(sortList(res.Deleted),
                     sortList(objects));
-                assert.strictEqual(res.Errors.length, 0);
+                expect(res.Errors.length).toBe(0);
             }).catch(err => {
                 checkNoError(err);
             });
         });
 
-        it('should return NoSuchVersion in errors if one versionId is ' +
+        test('should return NoSuchVersion in errors if one versionId is ' +
         'invalid', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
@@ -139,16 +137,16 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     Objects: objects,
                 },
             }).then(res => {
-                assert.strictEqual(res.Deleted.length, 999);
-                assert.strictEqual(res.Errors.length, 1);
-                assert.strictEqual(res.Errors[0].Code, 'NoSuchVersion');
+                expect(res.Deleted.length).toBe(999);
+                expect(res.Errors.length).toBe(1);
+                expect(res.Errors[0].Code).toBe('NoSuchVersion');
             })
             .catch(err => {
                 checkNoError(err);
             });
         });
 
-        it('should not send back any error if a versionId does not exist ' +
+        test('should not send back any error if a versionId does not exist ' +
         'and should not create a new delete marker', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
@@ -159,12 +157,12 @@ describe('Multi-Object Versioning Delete Success', function success() {
                     Objects: objects,
                 },
             }).then(res => {
-                assert.strictEqual(res.Deleted.length, 1000);
-                assert.strictEqual(res.Errors.length, 0);
+                expect(res.Deleted.length).toBe(1000);
+                expect(res.Errors.length).toBe(0);
                 const foundVersionId = res.Deleted.find(entry =>
                     entry.VersionId === nonExistingId);
-                assert(foundVersionId);
-                assert.strictEqual(foundVersionId.DeleteMarker, undefined);
+                expect(foundVersionId).toBeTruthy();
+                expect(foundVersionId.DeleteMarker).toBe(undefined);
             })
             .catch(err => {
                 checkNoError(err);
@@ -197,14 +195,13 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucketName }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
+                    expect(err).toBe(null);
                     return done();
                 });
             });
         });
 
-        it('should send back VersionId and DeleteMarkerVersionId both equal ' +
+        test('should send back VersionId and DeleteMarkerVersionId both equal ' +
         'to deleteVersionId', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: key },
@@ -224,19 +221,16 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                             },
                         ],
                     } }, (err, data) => {
-                    assert.strictEqual(data.Deleted[0].DeleteMarker, true);
-                    assert.strictEqual(data.Deleted[0].VersionId,
-                      deleteVersionId);
-                    assert.strictEqual(data.Deleted[0].DeleteMarkerVersionId,
-                      deleteVersionId);
+                    expect(data.Deleted[0].DeleteMarker).toBe(true);
+                    expect(data.Deleted[0].VersionId).toBe(deleteVersionId);
+                    expect(data.Deleted[0].DeleteMarkerVersionId).toBe(deleteVersionId);
                     next(err);
                 }),
             ], err => done(err));
         });
 
-        it('should send back a DeleteMarkerVersionId matching the versionId ' +
-      'stored for the object if trying to delete an object that does not exist',
-        done => {
+        test('should send back a DeleteMarkerVersionId matching the versionId ' +
+      'stored for the object if trying to delete an object that does not exist', done => {
             s3.deleteObjects({ Bucket: bucketName,
                 Delete: {
                     Objects: [
@@ -250,7 +244,7 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                 }
                 const versionIdFromDeleteObjects =
                   data.Deleted[0].DeleteMarkerVersionId;
-                assert.strictEqual(data.Deleted[0].DeleteMarker, true);
+                expect(data.Deleted[0].DeleteMarker).toBe(true);
                 return s3.listObjectVersions({ Bucket: bucketName },
                   (err, data) => {
                       if (err) {
@@ -258,16 +252,14 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                       }
                       const versionIdFromListObjectVersions =
                         data.DeleteMarkers[0].VersionId;
-                      assert.strictEqual(versionIdFromDeleteObjects,
-                        versionIdFromListObjectVersions);
+                      expect(versionIdFromDeleteObjects).toBe(versionIdFromListObjectVersions);
                       return done();
                   });
             });
         });
 
-        it('should send back a DeleteMarkerVersionId matching the versionId ' +
-        'stored for the object if object exists but no version was specified',
-        done => {
+        test('should send back a DeleteMarkerVersionId matching the versionId ' +
+        'stored for the object if object exists but no version was specified', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: key },
                   (err, data) => {
@@ -286,10 +278,10 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                     if (err) {
                         return next(err);
                     }
-                    assert.strictEqual(data.Deleted[0].DeleteMarker, true);
+                    expect(data.Deleted[0].DeleteMarker).toBe(true);
                     const deleteVersionId = data.Deleted[0].
                     DeleteMarkerVersionId;
-                    assert.notEqual(deleteVersionId, versionId);
+                    expect(deleteVersionId).not.toEqual(versionId);
                     return next(err, deleteVersionId, versionId);
                 }),
                 (deleteVersionId, versionId, next) => s3.listObjectVersions(
@@ -297,10 +289,8 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
                     if (err) {
                         return next(err);
                     }
-                    assert.strictEqual(deleteVersionId,
-                      data.DeleteMarkers[0].VersionId);
-                    assert.strictEqual(versionId,
-                      data.Versions[0].VersionId);
+                    expect(deleteVersionId).toBe(data.DeleteMarkers[0].VersionId);
+                    expect(versionId).toBe(data.Versions[0].VersionId);
                     return next();
                 }),
             ], err => done(err));

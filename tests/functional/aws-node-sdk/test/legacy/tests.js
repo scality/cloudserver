@@ -26,36 +26,36 @@ const objectKey = 'toAbort&<>"\'';
 // same uploadId
 const multipartUploadData = {};
 
-describe('aws-node-sdk test suite as registered user', function testSuite() {
+describe('aws-node-sdk test suite as registered user', () => {
     this.timeout(60000);
     let s3;
 
     // setup test
-    before(() => {
+    beforeAll(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
 
         s3 = new S3(config);
     });
 
     // bucketListing test
-    it('should do bucket listing', done => {
+    test('should do bucket listing', done => {
         s3.listBuckets((err, data) => {
             if (err) {
                 return done(new Error(`error listing buckets: ${err}`));
             }
 
-            assert(data.Buckets, 'No buckets Info sent back');
-            assert(data.Owner, 'No owner Info sent back');
-            assert(data.Owner.ID, 'Owner ID not sent back');
-            assert(data.Owner.DisplayName, 'DisplayName not sent back');
+            expect(data.Buckets).toBeTruthy();
+            expect(data.Owner).toBeTruthy();
+            expect(data.Owner.ID).toBeTruthy();
+            expect(data.Owner.DisplayName).toBeTruthy();
             const owner = Object.keys(data.Owner);
-            assert.strictEqual(owner.length, 2, 'Too much fields in owner');
+            expect(owner.length).toBe(2);
             return done();
         });
     });
 
     // createbucket test
-    it('should create a bucket', done => {
+    test('should create a bucket', done => {
         s3.createBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error creating bucket: ${err}`));
@@ -65,22 +65,23 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     });
 
     // createMPU test
-    it('should create a multipart upload', done => {
+    test('should create a multipart upload', done => {
         s3.createMultipartUpload({ Bucket: bucket, Key: objectKey },
             (err, data) => {
                 if (err) {
                     return done(new Error(
                         `error initiating multipart upload: ${err}`));
                 }
-                assert.strictEqual(data.Bucket, bucket);
-                assert.strictEqual(data.Key, objectKey);
-                assert.ok(data.UploadId);
+                expect(data.Bucket).toBe(bucket);
+                expect(data.Key).toBe(objectKey);
+                expect(data.UploadId).toBeTruthy();
                 multipartUploadData.firstUploadId = data.UploadId;
                 return done();
             });
     });
 
-    it('should upload a part of a multipart upload to be aborted',
+    test(
+        'should upload a part of a multipart upload to be aborted',
         // uploadpart test
         done => {
             const params = {
@@ -94,13 +95,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 if (err) {
                     return done(new Error(`error uploading a part: ${err}`));
                 }
-                assert.strictEqual(data.ETag, `"${calculatedFirstPartHash}"`);
+                expect(data.ETag).toBe(`"${calculatedFirstPartHash}"`);
                 return done();
             });
-        });
+        }
+    );
 
     // abortMPU test
-    it('should abort a multipart upload', done => {
+    test('should abort a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: objectKey,
@@ -111,13 +113,13 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 return done(new Error(
                     `error aborting multipart upload: ${err}`));
             }
-            assert.ok(data);
+            expect(data).toBeTruthy();
             return done();
         });
     });
 
     // createMPU test
-    it('should upload a part of a multipart upload', done => {
+    test('should upload a part of a multipart upload', done => {
         s3.createMultipartUpload({ Bucket: bucket, Key: 'toComplete' },
             (err, data) => {
                 if (err) {
@@ -138,35 +140,33 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                         return done(
                             new Error(`error uploading a part: ${err}`));
                     }
-                    assert.strictEqual(data.ETag,
-                        `"${calculatedFirstPartHash}"`);
+                    expect(data.ETag).toBe(`"${calculatedFirstPartHash}"`);
                     return done();
                 });
                 return undefined;
             });
     });
 
-    it('should upload a second part of a multipart upload',
-        // createMPU test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'toComplete',
-                PartNumber: 2,
-                UploadId: multipartUploadData.secondUploadId,
-                Body: secondBufferBody,
-            };
-            s3.uploadPart(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error uploading a part: ${err}`));
-                }
-                assert.strictEqual(data.ETag, `"${calculatedSecondPartHash}"`);
-                return done();
-            });
+    test('should upload a second part of a multipart upload', // createMPU test
+    done => {
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+            PartNumber: 2,
+            UploadId: multipartUploadData.secondUploadId,
+            Body: secondBufferBody,
+        };
+        s3.uploadPart(params, (err, data) => {
+            if (err) {
+                return done(new Error(`error uploading a part: ${err}`));
+            }
+            expect(data.ETag).toBe(`"${calculatedSecondPartHash}"`);
+            return done();
         });
+    });
 
     // listparts test
-    it('should list the parts of a multipart upload', done => {
+    test('should list the parts of a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -176,19 +176,17 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             if (err) {
                 return done(new Error(`error listing parts: ${err}`));
             }
-            assert.strictEqual(data.Bucket, bucket);
-            assert.strictEqual(data.Key, 'toComplete');
-            assert.strictEqual(data.UploadId, multipartUploadData
+            expect(data.Bucket).toBe(bucket);
+            expect(data.Key).toBe('toComplete');
+            expect(data.UploadId).toBe(multipartUploadData
                 .secondUploadId);
-            assert.strictEqual(data.IsTruncated, false);
-            assert.strictEqual(data.Parts[0].PartNumber, 1);
-            assert.strictEqual(data.Parts[0].ETag,
-              `"${calculatedFirstPartHash}"`);
-            assert.strictEqual(data.Parts[0].Size, 5242880);
-            assert.strictEqual(data.Parts[1].PartNumber, 2);
-            assert.strictEqual(data.Parts[1].ETag,
-              `"${calculatedSecondPartHash}"`);
-            assert.strictEqual(data.Parts[1].Size, 5242880);
+            expect(data.IsTruncated).toBe(false);
+            expect(data.Parts[0].PartNumber).toBe(1);
+            expect(data.Parts[0].ETag).toBe(`"${calculatedFirstPartHash}"`);
+            expect(data.Parts[0].Size).toBe(5242880);
+            expect(data.Parts[1].PartNumber).toBe(2);
+            expect(data.Parts[1].ETag).toBe(`"${calculatedSecondPartHash}"`);
+            expect(data.Parts[1].Size).toBe(5242880);
             // Must disable for now when running with Vault
             // since will need to pull actual ARN and canonicalId
             // assert.strictEqual(data.Initiator.ID, accessKey1ARN);
@@ -197,13 +195,13 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // call works.  For real implementation with vault,
             // will need the canonicalId.
             // assert.strictEqual(data.Owner.ID, config.accessKeyId);
-            assert.strictEqual(data.StorageClass, 'STANDARD');
+            expect(data.StorageClass).toBe('STANDARD');
             return {};
         });
         return done();
     });
 
-    it('should return an error if do not provide correct ' +
+    test('should return an error if do not provide correct ' +
         // completempu test
         'xml when completing a multipart upload', done => {
         const params = {
@@ -212,13 +210,13 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             UploadId: multipartUploadData.secondUploadId,
         };
         s3.completeMultipartUpload(params, err => {
-            assert.strictEqual(err.code, 'MalformedXML');
+            expect(err.code).toBe('MalformedXML');
             return done();
         });
     });
 
     // completempu test
-    it('should complete a multipart upload', done => {
+    test('should complete a multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -240,14 +238,14 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             if (err) {
                 return done(new Error(`error completing mpu: ${err}`));
             }
-            assert.strictEqual(data.Bucket, bucket);
-            assert.strictEqual(data.Key, 'toComplete');
-            assert.strictEqual(data.ETag, combinedETag);
+            expect(data.Bucket).toBe(bucket);
+            expect(data.Key).toBe('toComplete');
+            expect(data.ETag).toBe(combinedETag);
             return done();
         });
     });
 
-    it('should get an object put by multipart upload', done => {
+    test('should get an object put by multipart upload', done => {
         const params = {
             Bucket: bucket,
             Key: 'toComplete',
@@ -257,8 +255,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 return done(new Error(
                     `error getting object put by mpu: ${err}`));
             }
-            assert.strictEqual(data.ETag,
-                combinedETag);
+            expect(data.ETag).toBe(combinedETag);
             const uploadedObj = Buffer.concat([firstBufferBody,
                 secondBufferBody]);
             assert.deepStrictEqual(data.Body, uploadedObj);
@@ -316,7 +313,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     ];
 
     mpuRangeGetTests.forEach(test => {
-        it(test.it, done => {
+        test(test.it, done => {
             const params = {
                 Bucket: bucket,
                 Key: 'toComplete',
@@ -327,34 +324,32 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(
                         `error getting object range put by mpu: ${err}`));
                 }
-                assert.strictEqual(data.ContentLength, test.contentLength);
-                assert.strictEqual(data.AcceptRanges, 'bytes');
-                assert.strictEqual(data.ContentRange, test.contentRange);
-                assert.strictEqual(data.ETag,
-                    combinedETag);
+                expect(data.ContentLength).toBe(test.contentLength);
+                expect(data.AcceptRanges).toBe('bytes');
+                expect(data.ContentRange).toBe(test.contentRange);
+                expect(data.ETag).toBe(combinedETag);
                 assert.deepStrictEqual(data.Body, test.expectedBuff);
                 return done();
             });
         });
     });
 
-    it('should delete object created by multipart upload',
-        // deleteObject test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'toComplete',
-            };
-            s3.deleteObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error deleting object: ${err}`));
-                }
-                assert.ok(data);
-                return done();
-            });
+    test('should delete object created by multipart upload', // deleteObject test
+    done => {
+        const params = {
+            Bucket: bucket,
+            Key: 'toComplete',
+        };
+        s3.deleteObject(params, (err, data) => {
+            if (err) {
+                return done(new Error(`error deleting object: ${err}`));
+            }
+            expect(data).toBeTruthy();
+            return done();
         });
+    });
 
-    it('should put an object regularly (non-MPU)', done => {
+    test('should put an object regularly (non-MPU)', done => {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
@@ -365,22 +360,21 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 return done(new Error(
                     `error putting object regularly: ${err}`));
             }
-            assert.ok(data);
+            expect(data).toBeTruthy();
             return done();
         });
     });
 
-    it('should return InvalidRange if the range of the resource does ' +
-    'not cover the byte range',
-    done => {
+    test('should return InvalidRange if the range of the resource does ' +
+    'not cover the byte range', done => {
         const params = {
             Bucket: bucket,
             Key: 'normalput',
             Range: 'bytes=200-200',
         };
         s3.getObject(params, err => {
-            assert.notEqual(err, null, 'Expected failure but got success');
-            assert.strictEqual(err.code, 'InvalidRange');
+            expect(err).not.toEqual(null);
+            expect(err.code).toBe('InvalidRange');
             return done();
         });
     });
@@ -420,9 +414,8 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         });
         testsRangeOnEmptyFile.forEach(test => {
             const validText = test.valid ? 'InvalidRange error' : 'empty file';
-            it(`should return ${validText} if get range ${test.range} on ` +
-            'empty object',
-            done => {
+            test(`should return ${validText} if get range ${test.range} on ` +
+            'empty object', done => {
                 const params = {
                     Bucket: bucketEmptyObj,
                     Key: 'emptyobj',
@@ -430,13 +423,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                 };
                 s3.getObject(params, (err, data) => {
                     if (test.valid) {
-                        assert.notEqual(err, null, 'Expected failure but ' +
-                        'got success');
-                        assert.strictEqual(err.code, 'InvalidRange');
+                        expect(err).not.toEqual(null);
+                        expect(err.code).toBe('InvalidRange');
                     } else {
-                        assert.equal(err, null, 'Expected success but ' +
-                        `got failure: ${err}`);
-                        assert.strictEqual(data.Body.toString(), '');
+                        expect(err).toEqual(null);
+                        expect(data.Body.toString()).toBe('');
                     }
                     return done();
                 });
@@ -477,7 +468,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     ];
 
     regularObjectRangeGetTests.forEach(test => {
-        it(test.it, done => {
+        test(test.it, done => {
             const params = {
                 Bucket: bucket,
                 Key: 'normalput',
@@ -488,33 +479,32 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
                     return done(new Error(
                         `error getting object range: ${err}`));
                 }
-                assert.strictEqual(data.AcceptRanges, 'bytes');
-                assert.strictEqual(data.ContentLength, test.contentLength);
-                assert.strictEqual(data.ContentRange, test.contentRange);
+                expect(data.AcceptRanges).toBe('bytes');
+                expect(data.ContentLength).toBe(test.contentLength);
+                expect(data.ContentRange).toBe(test.contentRange);
                 assert.deepStrictEqual(data.Body, test.expectedBuff);
                 return done();
             });
         });
     });
 
-    it('should delete an object put without MPU',
-        // deleteObject test
-        done => {
-            const params = {
-                Bucket: bucket,
-                Key: 'normalput',
-            };
-            s3.deleteObject(params, (err, data) => {
-                if (err) {
-                    return done(new Error(`error deleting object: ${err}`));
-                }
-                assert.ok(data);
-                return done();
-            });
+    test('should delete an object put without MPU', // deleteObject test
+    done => {
+        const params = {
+            Bucket: bucket,
+            Key: 'normalput',
+        };
+        s3.deleteObject(params, (err, data) => {
+            if (err) {
+                return done(new Error(`error deleting object: ${err}`));
+            }
+            expect(data).toBeTruthy();
+            return done();
         });
+    });
 
     // deletebucket test
-    it('should delete a bucket', done => {
+    test('should delete a bucket', done => {
         s3.deleteBucket({ Bucket: bucket }, err => {
             if (err) {
                 return done(new Error(`error deleting bucket: ${err}`));

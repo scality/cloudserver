@@ -13,9 +13,9 @@ const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
 
 function _checkError(err, code, statusCode) {
-    assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.statusCode, statusCode);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(code);
+    expect(err.statusCode).toBe(statusCode);
 }
 
 
@@ -33,7 +33,7 @@ describe('Get object tagging with versioning', () => {
             });
         });
 
-        it('should be able to get tag with versioning', done => {
+        test('should be able to get tag with versioning', done => {
             const taggingConfig = { TagSet: [
                 {
                     Key: 'key1',
@@ -58,13 +58,13 @@ describe('Get object tagging with versioning', () => {
                 }, (err, data) => next(err, data, versionId)),
             ], (err, data, versionId) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, versionId);
+                expect(data.VersionId).toBe(versionId);
                 assert.deepStrictEqual(data.TagSet, taggingConfig.TagSet);
                 done();
             });
         });
 
-        it('should be able to get tag with a version of id "null"', done => {
+        test('should be able to get tag with a version of id "null"', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
                 err => next(err)),
@@ -78,12 +78,12 @@ describe('Get object tagging with versioning', () => {
                 }, (err, data) => next(err, data)),
             ], (err, data) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(data.VersionId, 'null');
+                expect(data.VersionId).toBe('null');
                 done();
             });
         });
 
-        it('should return InvalidArgument getting tag with a non existing ' +
+        test('should return InvalidArgument getting tag with a non existing ' +
         'version id', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
@@ -102,7 +102,7 @@ describe('Get object tagging with versioning', () => {
             });
         });
 
-        it('should return 404 NoSuchKey getting tag without ' +
+        test('should return 404 NoSuchKey getting tag without ' +
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
@@ -122,7 +122,7 @@ describe('Get object tagging with versioning', () => {
             });
         });
 
-        it('should return 405 MethodNotAllowed getting tag with ' +
+        test('should return 405 MethodNotAllowed getting tag with ' +
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,

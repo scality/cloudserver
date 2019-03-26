@@ -26,11 +26,11 @@ describe('DELETE bucket cors', () => {
         const otherAccountS3 = otherAccountBucketUtility.s3;
 
         describe('without existing bucket', () => {
-            it('should return NoSuchBucket', done => {
+            test('should return NoSuchBucket', done => {
                 s3.deleteBucketCors({ Bucket: bucketName }, err => {
-                    assert(err);
-                    assert.strictEqual(err.code, 'NoSuchBucket');
-                    assert.strictEqual(err.statusCode, 404);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('NoSuchBucket');
+                    expect(err.statusCode).toBe(404);
                     return done();
                 });
             });
@@ -41,14 +41,12 @@ describe('DELETE bucket cors', () => {
             afterEach(() => bucketUtil.deleteOne(bucketName));
 
             describe('without existing cors configuration', () => {
-                it('should return a 204 response', done => {
+                test('should return a 204 response', done => {
                     s3.deleteBucketCors({ Bucket: bucketName },
                     function deleteBucketCors(err) {
                         const statusCode = this.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                        expect(statusCode).toBe(204);
+                        expect(err).toBe(null);
                         return done();
                     });
                 });
@@ -60,18 +58,15 @@ describe('DELETE bucket cors', () => {
                         CORSConfiguration: sampleCors }, done);
                 });
 
-                it('should delete bucket configuration successfully', done => {
+                test('should delete bucket configuration successfully', done => {
                     s3.deleteBucketCors({ Bucket: bucketName },
                     function deleteBucketCors(err) {
                         const statusCode = this.httpResponse.statusCode;
-                        assert.strictEqual(statusCode, 204,
-                            `Found unexpected statusCode ${statusCode}`);
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
+                        expect(statusCode).toBe(204);
+                        expect(err).toBe(null);
                         s3.getBucketCors({ Bucket: bucketName }, err => {
-                            assert.strictEqual(err.code,
-                                'NoSuchCORSConfiguration');
-                            assert.strictEqual(err.statusCode, 404);
+                            expect(err.code).toBe('NoSuchCORSConfiguration');
+                            expect(err.statusCode).toBe(404);
                             return done();
                         });
                     });
@@ -87,9 +82,9 @@ describe('DELETE bucket cors', () => {
                 'owner', done => {
                     otherAccountS3.deleteBucketCors({ Bucket: bucketName },
                     err => {
-                        assert(err);
-                        assert.strictEqual(err.code, 'AccessDenied');
-                        assert.strictEqual(err.statusCode, 403);
+                        expect(err).toBeTruthy();
+                        expect(err.code).toBe('AccessDenied');
+                        expect(err.statusCode).toBe(403);
                         return done();
                     });
                 });

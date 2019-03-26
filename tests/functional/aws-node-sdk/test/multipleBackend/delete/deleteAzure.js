@@ -32,7 +32,7 @@ function testSuite() {
         let bucketUtil;
         let s3;
 
-        before(() => {
+        beforeAll(() => {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -43,7 +43,7 @@ function testSuite() {
             });
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(azureContainerName)
             .then(() => {
@@ -59,7 +59,7 @@ function testSuite() {
         keys.forEach(key => {
             const keyName = uniqName(keyObject);
             describe(`${key.describe} size`, () => {
-                before(done => {
+                beforeAll(done => {
                     s3.putObject({
                         Bucket: azureContainerName,
                         Key: keyName,
@@ -70,19 +70,17 @@ function testSuite() {
                     }, done);
                 });
 
-                it(`should delete an ${key.describe} object from Azure`,
-                done => {
+                test(`should delete an ${key.describe} object from Azure`, done => {
                     s3.deleteObject({
                         Bucket: azureContainerName,
                         Key: keyName,
                     }, err => {
-                        assert.equal(err, null, 'Expected success ' +
-                            `but got error ${err}`);
+                        expect(err).toEqual(null);
                         setTimeout(() =>
                         azureClient.getBlobProperties(azureContainerName,
                         keyName, err => {
-                            assert.strictEqual(err.statusCode, 404);
-                            assert.strictEqual(err.code, 'NotFound');
+                            expect(err.statusCode).toBe(404);
+                            expect(err.code).toBe('NotFound');
                             return done();
                         }), azureTimeout);
                     });
@@ -92,11 +90,17 @@ function testSuite() {
 
         describe('delete from Azure location with bucketMatch set to false',
         () => {
-            beforeEach(function beforeF(done) {
-                this.currentTest.azureObject = uniqName(keyObject);
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
+                testContext.currentTest.azureObject = uniqName(keyObject);
                 s3.putObject({
                     Bucket: azureContainerName,
-                    Key: this.currentTest.azureObject,
+                    Key: testContext.currentTest.azureObject,
                     Body: normalBody,
                     Metadata: {
                         'scal-location-constraint': azureLocationMismatch,
@@ -104,19 +108,18 @@ function testSuite() {
                 }, done);
             });
 
-            it('should delete object', function itF(done) {
+            test('should delete object', done => {
                 s3.deleteObject({
                     Bucket: azureContainerName,
-                    Key: this.test.azureObject,
+                    Key: testContext.test.azureObject,
                 }, err => {
-                    assert.equal(err, null, 'Expected success ' +
-                        `but got error ${err}`);
+                    expect(err).toEqual(null);
                     setTimeout(() =>
                     azureClient.getBlobProperties(azureContainerName,
-                    `${azureContainerName}/${this.test.azureObject}`,
+                    `${azureContainerName}/${testContext.test.azureObject}`,
                     err => {
-                        assert.strictEqual(err.statusCode, 404);
-                        assert.strictEqual(err.code, 'NotFound');
+                        expect(err.statusCode).toBe(404);
+                        expect(err.code).toBe('NotFound');
                         return done();
                     }), azureTimeout);
                 });
@@ -124,46 +127,55 @@ function testSuite() {
         });
 
         describe('returning no error', () => {
-            beforeEach(function beF(done) {
-                this.currentTest.azureObject = uniqName(keyObject);
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
+                testContext.currentTest.azureObject = uniqName(keyObject);
                 s3.putObject({
                     Bucket: azureContainerName,
-                    Key: this.currentTest.azureObject,
+                    Key: testContext.currentTest.azureObject,
                     Body: normalBody,
                     Metadata: {
                         'scal-location-constraint': azureLocation,
                     },
                 }, err => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error ${err}`);
+                    expect(err).toEqual(null);
                     azureClient.deleteBlob(azureContainerName,
-                    this.currentTest.azureObject, err => {
-                        assert.equal(err, null, 'Expected success but got ' +
-                        `error ${err}`);
+                    testContext.currentTest.azureObject, err => {
+                        expect(err).toEqual(null);
                         done(err);
                     });
                 });
             });
 
-            it('should return no error on deleting an object deleted ' +
-            'from Azure', function itF(done) {
+            test('should return no error on deleting an object deleted ' +
+            'from Azure', done => {
                 s3.deleteObject({
                     Bucket: azureContainerName,
-                    Key: this.test.azureObject,
+                    Key: testContext.test.azureObject,
                 }, err => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error ${err}`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
         });
 
         describe('Versioning:: ', () => {
-            beforeEach(function beF(done) {
-                this.currentTest.azureObject = uniqName(keyObject);
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
+                testContext.currentTest.azureObject = uniqName(keyObject);
                 s3.putObject({
                     Bucket: azureContainerName,
-                    Key: this.currentTest.azureObject,
+                    Key: testContext.currentTest.azureObject,
                     Body: normalBody,
                     Metadata: {
                         'scal-location-constraint': azureLocation,
@@ -171,27 +183,25 @@ function testSuite() {
                 }, done);
             });
 
-            it('should not delete object when deleting a non-existing ' +
-            'version from Azure', function itF(done) {
+            test('should not delete object when deleting a non-existing ' +
+            'version from Azure', done => {
                 async.waterfall([
                     next => s3.deleteObject({
                         Bucket: azureContainerName,
-                        Key: this.test.azureObject,
+                        Key: testContext.test.azureObject,
                         VersionId: nonExistingId,
                     }, err => next(err)),
                     next => s3.getObject({
                         Bucket: azureContainerName,
-                        Key: this.test.azureObject,
+                        Key: testContext.test.azureObject,
                     }, (err, res) => {
-                        assert.equal(err, null, 'getObject: Expected success ' +
-                        `but got error ${err}`);
+                        expect(err).toEqual(null);
                         assert.deepStrictEqual(res.Body, normalBody);
                         return next(err);
                     }),
                     next => azureClient.getBlobToText(azureContainerName,
-                    this.test.azureObject, (err, res) => {
-                        assert.equal(err, null, 'getBlobToText: Expected ' +
-                        `successbut got error ${err}`);
+                    testContext.test.azureObject, (err, res) => {
+                        expect(err).toEqual(null);
                         assert.deepStrictEqual(Buffer.from(res, 'utf8'),
                         normalBody);
                         return next();
@@ -201,48 +211,52 @@ function testSuite() {
         });
 
         describe('with ongoing MPU: ', () => {
-            beforeEach(function beF(done) {
-                this.currentTest.key = uniqName(keyObject);
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
+                testContext.currentTest.key = uniqName(keyObject);
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.currentTest.key,
+                    Key: testContext.currentTest.key,
                     Body: normalBody,
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.putObject(params, err => {
-                    assert.equal(err, null, 'Err putting object to Azure: ' +
-                        `${err}`);
+                    expect(err).toEqual(null);
                     const params = {
                         Bucket: azureContainerName,
-                        Key: this.currentTest.key,
+                        Key: testContext.currentTest.key,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     };
                     s3.createMultipartUpload(params, (err, res) => {
-                        assert.equal(err, null, 'Err initiating MPU on ' +
-                            `Azure: ${err}`);
-                        this.currentTest.uploadId = res.UploadId;
+                        expect(err).toEqual(null);
+                        testContext.currentTest.uploadId = res.UploadId;
                         setTimeout(() => done(), azureTimeout);
                     });
                 });
             });
 
-            afterEach(function afF(done) {
+            afterEach(done => {
                 s3.abortMultipartUpload({
                     Bucket: azureContainerName,
-                    Key: this.currentTest.key,
-                    UploadId: this.currentTest.uploadId,
+                    Key: testContext.currentTest.key,
+                    UploadId: testContext.currentTest.uploadId,
                 }, err => {
-                    assert.equal(err, null, `Err aborting MPU: ${err}`);
+                    expect(err).toEqual(null);
                     setTimeout(() => done(), azureTimeout);
                 });
             });
 
-            it('should return InternalError', function itFn(done) {
+            test('should return InternalError', done => {
                 s3.deleteObject({
                     Bucket: azureContainerName,
-                    Key: this.test.key,
+                    Key: testContext.test.key,
                 }, err => {
-                    assert.strictEqual(err.code, 'MPUinProgress');
+                    expect(err.code).toBe('MPUinProgress');
                     done();
                 });
             });

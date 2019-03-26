@@ -108,15 +108,13 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
                 UploadId: data.uploadId,
             })
             .then(() => bucketUtil.empty(bucket))
-            .then(() => bucketUtil.deleteOne(bucket))
-        );
+            .then(() => bucketUtil.deleteOne(bucket)));
 
-        it('should list ongoing multipart uploads', () =>
+        test('should list ongoing multipart uploads', () =>
             s3.listMultipartUploadsAsync({ Bucket: bucket })
-            .then(res => checkValues(res, data))
-        );
+            .then(res => checkValues(res, data)));
 
-        it('should list ongoing multipart uploads with params', () => {
+        test('should list ongoing multipart uploads with params', () => {
             data.prefixVal = 'to';
             data.delimiter = 'test-delimiter';
             data.maxUploads = 1;
@@ -130,7 +128,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             .then(res => checkValues(res, data));
         });
 
-        it('should list 0 multipart uploads when MaxUploads is 0', () => {
+        test('should list 0 multipart uploads when MaxUploads is 0', () => {
             data.maxUploads = 0;
 
             return s3.listMultipartUploadsAsync({

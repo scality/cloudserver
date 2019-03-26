@@ -112,13 +112,13 @@ function requestHandler(req, res) {
     res.end();
 }
 
-describe('reportHandler::_crrRequest', function testSuite() {
+describe('reportHandler::_crrRequest', () => {
     this.timeout(20000);
     const testPort = '4242';
     let httpServer;
 
     describe('Test Request Failure Cases', () => {
-        before(done => {
+        beforeAll(done => {
             httpServer = http.createServer(requestFailHandler).listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
@@ -127,11 +127,11 @@ describe('reportHandler::_crrRequest', function testSuite() {
             });
         });
 
-        after('Terminating Server', () => {
+        afterAll(() => {
             httpServer.close();
         });
 
-        it('should return empty object if a request error occurs', done => {
+        test('should return empty object if a request error occurs', done => {
             const endpoint = 'http://nonexists:4242';
             _crrRequest(endpoint, 'all', logger, (err, res) => {
                 assert.ifError(err);
@@ -140,8 +140,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
             });
         });
 
-        it('should return empty object if response status code is >= 400',
-        done => {
+        test('should return empty object if response status code is >= 400', done => {
             const endpoint = 'http://localhost:4242';
             _crrRequest(endpoint, 'all', logger, (err, res) => {
                 assert.ifError(err);
@@ -153,7 +152,7 @@ describe('reportHandler::_crrRequest', function testSuite() {
 
     describe('Test Request Success Cases', () => {
         const endpoint = 'http://localhost:4242';
-        before(done => {
+        beforeAll(done => {
             httpServer = http.createServer(requestHandler).listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
@@ -162,11 +161,11 @@ describe('reportHandler::_crrRequest', function testSuite() {
             });
         });
 
-        after('Terminating Server', () => {
+        afterAll(() => {
             httpServer.close();
         });
 
-        it('should return correct location metrics', done => {
+        test('should return correct location metrics', done => {
             _crrRequest(endpoint, 'site1', logger, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(
@@ -177,13 +176,13 @@ describe('reportHandler::_crrRequest', function testSuite() {
     });
 });
 
-describe('reportHandler::getCRRStats', function testSuite() {
+describe('reportHandler::getCRRStats', () => {
     this.timeout(20000);
     const testPort = '4242';
     let httpServer;
 
     describe('Test Request Success Cases', () => {
-        before(done => {
+        beforeAll(done => {
             httpServer = http.createServer(requestHandler).listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
@@ -192,11 +191,11 @@ describe('reportHandler::getCRRStats', function testSuite() {
             });
         });
 
-        after('Terminating Server', () => {
+        afterAll(() => {
             httpServer.close();
         });
 
-        it('should return correct results', done => {
+        test('should return correct results', done => {
             getCRRStats(logger, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res, expectedResultsRef);
@@ -207,13 +206,13 @@ describe('reportHandler::getCRRStats', function testSuite() {
 });
 
 
-describe('reportHandler::getReplicationStates', function testSuite() {
+describe('reportHandler::getReplicationStates', () => {
     this.timeout(20000);
     const testPort = '4242';
     let httpServer;
 
     describe('Test Request Failure Cases', () => {
-        before(done => {
+        beforeAll(done => {
             httpServer = http.createServer(requestFailHandler).listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
@@ -222,11 +221,11 @@ describe('reportHandler::getReplicationStates', function testSuite() {
             });
         });
 
-        after('Terminating Server', () => {
+        afterAll(() => {
             httpServer.close();
         });
 
-        it('should return empty object if a request error occurs', done => {
+        test('should return empty object if a request error occurs', done => {
             getReplicationStates(logger, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res, {});
@@ -234,8 +233,7 @@ describe('reportHandler::getReplicationStates', function testSuite() {
             }, { host: 'nonexisthost', port: testPort });
         });
 
-        it('should return empty object if response status code is >= 400',
-        done => {
+        test('should return empty object if response status code is >= 400', done => {
             getReplicationStates(logger, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res, {});
@@ -245,7 +243,7 @@ describe('reportHandler::getReplicationStates', function testSuite() {
     });
 
     describe('Test Request Success Cases', () => {
-        before(done => {
+        beforeAll(done => {
             httpServer = http.createServer(requestHandler).listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
@@ -254,11 +252,11 @@ describe('reportHandler::getReplicationStates', function testSuite() {
             });
         });
 
-        after('Terminating Server', () => {
+        afterAll(() => {
             httpServer.close();
         });
 
-        it('should return correct results', done => {
+        test('should return correct results', done => {
             getReplicationStates(logger, (err, res) => {
                 const expectedResults = {
                     states: {

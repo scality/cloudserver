@@ -36,9 +36,9 @@ function generateTaggingConfig(key, value) {
 }
 
 function _checkError(err, code, statusCode) {
-    assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.statusCode, statusCode);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(code);
+    expect(err.statusCode).toBe(statusCode);
 }
 
 describe('PUT object taggings', () => {
@@ -69,7 +69,7 @@ describe('PUT object taggings', () => {
         });
 
         taggingTests.forEach(taggingTest => {
-            it(taggingTest.it, done => {
+            test(taggingTest.it, done => {
                 const taggingConfig = generateTaggingConfig(taggingTest.tag.key,
                   taggingTest.tag.value);
                 s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
@@ -78,14 +78,14 @@ describe('PUT object taggings', () => {
                         _checkError(err, taggingTest.error, 400);
                     } else {
                         assert.ifError(err, `Found unexpected err ${err}`);
-                        assert.strictEqual(Object.keys(data).length, 0);
+                        expect(Object.keys(data).length).toBe(0);
                     }
                     done();
                 });
             });
         });
 
-        it('should return BadRequest if putting more that 10 tags', done => {
+        test('should return BadRequest if putting more that 10 tags', done => {
             const taggingConfig = generateMultipleTagConfig(11);
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
                 Tagging: taggingConfig }, err => {
@@ -94,7 +94,7 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should return InvalidTag if using the same key twice', done => {
+        test('should return InvalidTag if using the same key twice', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
                 Tagging: { TagSet: [
                     {
@@ -112,7 +112,7 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should return InvalidTag if key is an empty string', done => {
+        test('should return InvalidTag if key is an empty string', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
                 Tagging: { TagSet: [
                     {
@@ -126,17 +126,17 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should be able to put an empty Tag set', done => {
+        test('should be able to put an empty Tag set', done => {
             s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
                 Tagging: { TagSet: [] },
             }, (err, data) => {
                 assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(Object.keys(data).length, 0);
+                expect(Object.keys(data).length).toBe(0);
                 done();
             });
         });
 
-        it('should return NoSuchKey put tag to a non-existing object', done => {
+        test('should return NoSuchKey put tag to a non-existing object', done => {
             s3.putObjectTagging({
                 Bucket: bucketName,
                 Key: 'nonexisting',
@@ -147,19 +147,20 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied putting tag with another account',
-        done => {
-            otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
-              objectName, Tagging: taggingConfig,
-            }, err => {
-                _checkError(err, 'AccessDenied', 403);
-                done();
-            });
-        });
+        test(
+            'should return 403 AccessDenied putting tag with another account',
+            done => {
+                otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
+                  objectName, Tagging: taggingConfig,
+                }, err => {
+                    _checkError(err, 'AccessDenied', 403);
+                    done();
+                });
+            }
+        );
 
-        it('should return 403 AccessDenied putting tag with a different ' +
-        'account to an object with ACL "public-read-write"',
-        done => {
+        test('should return 403 AccessDenied putting tag with a different ' +
+        'account to an object with ACL "public-read-write"', done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
                 ACL: 'public-read-write' }, err => {
                 if (err) {
@@ -174,9 +175,8 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied putting tag to an object ' +
-        'in a bucket created with a different account',
-        done => {
+        test('should return 403 AccessDenied putting tag to an object ' +
+        'in a bucket created with a different account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:
                   'public-read-write' }, err => next(err)),
@@ -191,7 +191,7 @@ describe('PUT object taggings', () => {
             });
         });
 
-        it('should put tag to an object in a bucket created with same ' +
+        test('should put tag to an object in a bucket created with same ' +
         'account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:

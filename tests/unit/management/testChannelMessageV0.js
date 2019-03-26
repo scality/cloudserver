@@ -18,55 +18,55 @@ const { TARGET_ANY } = TargetType;
 
 describe('ChannelMessageV0', () => {
     describe('codec', () => {
-        it('should roundtrip metrics report', () => {
+        test('should roundtrip metrics report', () => {
             const b = ChannelMessageV0.encodeMetricsReportMessage({ a: 1 });
             const m = new ChannelMessageV0(b);
 
-            assert.strictEqual(METRICS_REPORT_MESSAGE, m.getType());
-            assert.strictEqual(0, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
-            assert.strictEqual(m.getPayload().toString(), '{"a":1}');
+            expect(METRICS_REPORT_MESSAGE).toBe(m.getType());
+            expect(0).toBe(m.getChannelNumber());
+            expect(m.getTarget()).toBe(TARGET_ANY);
+            expect(m.getPayload().toString()).toBe('{"a":1}');
         });
 
-        it('should roundtrip channel data', () => {
+        test('should roundtrip channel data', () => {
             const data = new Buffer('dummydata');
             const b = ChannelMessageV0.encodeChannelDataMessage(50, data);
             const m = new ChannelMessageV0(b);
 
-            assert.strictEqual(CHANNEL_PAYLOAD_MESSAGE, m.getType());
-            assert.strictEqual(50, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
-            assert.strictEqual(m.getPayload().toString(), 'dummydata');
+            expect(CHANNEL_PAYLOAD_MESSAGE).toBe(m.getType());
+            expect(50).toBe(m.getChannelNumber());
+            expect(m.getTarget()).toBe(TARGET_ANY);
+            expect(m.getPayload().toString()).toBe('dummydata');
         });
 
-        it('should roundtrip channel close', () => {
+        test('should roundtrip channel close', () => {
             const b = ChannelMessageV0.encodeChannelCloseMessage(3);
             const m = new ChannelMessageV0(b);
 
-            assert.strictEqual(CHANNEL_CLOSE_MESSAGE, m.getType());
-            assert.strictEqual(3, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
+            expect(CHANNEL_CLOSE_MESSAGE).toBe(m.getType());
+            expect(3).toBe(m.getChannelNumber());
+            expect(m.getTarget()).toBe(TARGET_ANY);
         });
     });
 
     describe('decoder', () => {
-        it('should parse metrics request', () => {
+        test('should parse metrics request', () => {
             const b = new Buffer([METRICS_REQUEST_MESSAGE, 0, 0]);
             const m = new ChannelMessageV0(b);
 
-            assert.strictEqual(METRICS_REQUEST_MESSAGE, m.getType());
-            assert.strictEqual(0, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
+            expect(METRICS_REQUEST_MESSAGE).toBe(m.getType());
+            expect(0).toBe(m.getChannelNumber());
+            expect(m.getTarget()).toBe(TARGET_ANY);
         });
 
-        it('should parse overlay push', () => {
+        test('should parse overlay push', () => {
             const b = new Buffer([CONFIG_OVERLAY_MESSAGE, 0, 0, 34, 65, 34]);
             const m = new ChannelMessageV0(b);
 
-            assert.strictEqual(CONFIG_OVERLAY_MESSAGE, m.getType());
-            assert.strictEqual(0, m.getChannelNumber());
-            assert.strictEqual(m.getTarget(), TARGET_ANY);
-            assert.strictEqual(m.getPayload().toString(), '"A"');
+            expect(CONFIG_OVERLAY_MESSAGE).toBe(m.getType());
+            expect(0).toBe(m.getChannelNumber());
+            expect(m.getTarget()).toBe(TARGET_ANY);
+            expect(m.getPayload().toString()).toBe('"A"');
         });
     });
 });

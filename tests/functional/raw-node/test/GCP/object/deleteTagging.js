@@ -52,10 +52,16 @@ function assertObjectMetaTag(params, callback) {
     });
 }
 
-describe('GCP: DELETE Object Tagging', function testSuite() {
+describe('GCP: DELETE Object Tagging', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(30000);
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         gcpRequestRetry({
@@ -70,17 +76,17 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
         });
     });
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.key = `somekey-${genUniqID()}`;
-        this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
+    beforeEach(done => {
+        testContext.currentTest.key = `somekey-${genUniqID()}`;
+        testContext.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const { headers, expectedTagObj, expectedMetaObj } =
             genDelTagObj(10, gcpTagPrefix);
-        this.currentTest.expectedTagObj = expectedTagObj;
-        this.currentTest.expectedMetaObj = expectedMetaObj;
+        testContext.currentTest.expectedTagObj = expectedTagObj;
+        testContext.currentTest.expectedMetaObj = expectedMetaObj;
         makeGcpRequest({
             method: 'PUT',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
             headers,
         }, (err, res) => {
@@ -88,16 +94,16 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
                 process.stdout.write(`err in creating object ${err}`);
                 return done(err);
             }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
+            testContext.currentTest.versionId = res.headers['x-goog-generation'];
             return done();
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         makeGcpRequest({
             method: 'DELETE',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
         }, err => {
             if (err) {
@@ -107,7 +113,7 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -120,29 +126,28 @@ describe('GCP: DELETE Object Tagging', function testSuite() {
         });
     });
 
-    it('should successfully delete object tags', function testFn(done) {
+    test('should successfully delete object tags', done => {
         async.waterfall([
             next => assertObjectMetaTag({
                 bucket: bucketName,
-                key: this.test.key,
-                versionId: this.test.versionId,
-                meta: this.test.expectedMetaObj,
-                tag: this.test.expectedTagObj,
+                key: testContext.test.key,
+                versionId: testContext.test.versionId,
+                meta: testContext.test.expectedMetaObj,
+                tag: testContext.test.expectedTagObj,
             }, next),
             next => gcpClient.deleteObjectTagging({
                 Bucket: bucketName,
-                Key: this.test.key,
-                VersionId: this.test.versionId,
+                Key: testContext.test.key,
+                VersionId: testContext.test.versionId,
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, got error ${err}`);
+                expect(err).toEqual(null);
                 return next();
             }),
             next => assertObjectMetaTag({
                 bucket: bucketName,
-                key: this.test.key,
-                versionId: this.test.versionId,
-                meta: this.test.expectedMetaObj,
+                key: testContext.test.key,
+                versionId: testContext.test.versionId,
+                meta: testContext.test.expectedMetaObj,
                 tag: {},
             }, next),
         ], done);

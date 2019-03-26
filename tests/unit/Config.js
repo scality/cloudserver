@@ -1,10 +1,10 @@
 describe('Config', () => {
-    it('should load default config.json without errors', done => {
+    test('should load default config.json without errors', done => {
         require('../../lib/Config');
         done();
     });
 
-    it('should emit an event when auth data is updated', done => {
+    test('should emit an event when auth data is updated', done => {
         const { ConfigObject } = require('../../lib/Config');
         const config = new ConfigObject();
         let emitted = false;

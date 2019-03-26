@@ -35,7 +35,7 @@ const Bucket = `bucket-skip-scan-${Date.now()}`;
 
 describe('Skip scan cases tests', () => {
     let s3;
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new AWS.S3(config);
         s3.createBucket(
@@ -60,7 +60,7 @@ describe('Skip scan cases tests', () => {
                                  }, done);
             });
     });
-    after(done => {
+    afterAll(done => {
         s3.listObjects({ Bucket }, (err, data) => {
             async.each(data.Contents, (o, next) => {
                 s3.deleteObject({ Bucket, Key: o.Key }, next);
@@ -69,9 +69,9 @@ describe('Skip scan cases tests', () => {
             });
         });
     });
-    it('should find all common prefixes in one shot', done => {
+    test('should find all common prefixes in one shot', done => {
         s3.listObjects({ Bucket, Delimiter: '/' }, (err, data) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             cutAttributes(data);
             assert.deepStrictEqual(data, {
                 IsTruncated: false,

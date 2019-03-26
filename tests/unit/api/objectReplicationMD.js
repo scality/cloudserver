@@ -217,10 +217,10 @@ describe('Replication object MD without bucket replication config', () => {
 
     afterEach(() => cleanup());
 
-    it('should not update object metadata', done =>
+    test('should not update object metadata', done =>
         putObjectAndCheckMD(keyA, emptyReplicationMD, done));
 
-    it('should not update object metadata if putting object ACL', done =>
+    test('should not update object metadata if putting object ACL', done =>
         async.series([
             next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
             next => objectPutACL(authInfo, objectACLReq, log, next),
@@ -238,12 +238,12 @@ describe('Replication object MD without bucket replication config', () => {
             next => objectPutTagging(authInfo, taggingPutReq, log, next),
         ], err => done(err)));
 
-        it('should not update object metadata if putting tag', done => {
+        test('should not update object metadata if putting tag', done => {
             checkObjectReplicationInfo(keyA, emptyReplicationMD);
             return done();
         });
 
-        it('should not update object metadata if deleting tag', done =>
+        test('should not update object metadata if deleting tag', done =>
             async.series([
                 // Put a new version to update replication MD content array.
                 next => putObjectAndCheckMD(keyA, emptyReplicationMD, next),
@@ -257,7 +257,7 @@ describe('Replication object MD without bucket replication config', () => {
                 return done();
             }));
 
-        it('should not update object metadata if completing MPU', done =>
+        test('should not update object metadata if completing MPU', done =>
             putMPU(keyA, 'content', err => {
                 if (err) {
                     return done(err);
@@ -266,7 +266,7 @@ describe('Replication object MD without bucket replication config', () => {
                 return done();
             }));
 
-        it('should not update object metadata if copying object', done =>
+        test('should not update object metadata if copying object', done =>
             copyObject(keyB, keyA, true, err => {
                 if (err) {
                     return done(err);
@@ -308,23 +308,23 @@ describe('Replication object MD without bucket replication config', () => {
 
         afterEach(() => cleanup());
 
-        it('should update metadata when replication config prefix matches ' +
+        test('should update metadata when replication config prefix matches ' +
         'an object key', done =>
             putObjectAndCheckMD(keyA, newReplicationMD, done));
 
-        it('should update metadata when replication config prefix matches ' +
+        test('should update metadata when replication config prefix matches ' +
         'the start of an object key', done =>
             putObjectAndCheckMD(`${keyA}abc`, newReplicationMD, done));
 
-        it('should not update metadata when replication config prefix does ' +
+        test('should not update metadata when replication config prefix does ' +
         'not match the start of an object key', done =>
             putObjectAndCheckMD(`abc${keyA}`, emptyReplicationMD, done));
 
-        it('should not update metadata when replication config prefix does ' +
+        test('should not update metadata when replication config prefix does ' +
         'not apply', done =>
             putObjectAndCheckMD(keyB, emptyReplicationMD, done));
 
-        it("should update status to 'PENDING' if putting a new version", done =>
+        test("should update status to 'PENDING' if putting a new version", done =>
             putObjectAndCheckMD(keyA, newReplicationMD, err => {
                 if (err) {
                     return done(err);
@@ -335,7 +335,7 @@ describe('Replication object MD without bucket replication config', () => {
                 return putObjectAndCheckMD(keyA, newReplicationMD, done);
             }));
 
-        it("should update status to 'PENDING' and content to '['METADATA']' " +
+        test("should update status to 'PENDING' and content to '['METADATA']' " +
             'if putting 0 byte object', done =>
             objectPut(authInfo, getObjectPutReq(keyA, false), undefined, log,
                 err => {
@@ -346,7 +346,7 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-        it('should not update metadata if putting object ACL', done => {
+        test('should not update metadata if putting object ACL', done => {
             let completedReplicationInfo;
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, next),
@@ -368,7 +368,7 @@ describe('Replication object MD without bucket replication config', () => {
             });
         });
 
-        it('should update metadata if putting a delete marker', done =>
+        test('should update metadata if putting a delete marker', done =>
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, err => {
                     if (err) {
@@ -385,12 +385,12 @@ describe('Replication object MD without bucket replication config', () => {
                     return done(err);
                 }
                 const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                assert.strictEqual(objectMD.isDeleteMarker, true);
+                expect(objectMD.isDeleteMarker).toBe(true);
                 checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                 return done();
             }));
 
-        it('should not update metadata if putting a delete marker owned by ' +
+        test('should not update metadata if putting a delete marker owned by ' +
         'Lifecycle service account', done =>
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, next),
@@ -401,7 +401,7 @@ describe('Replication object MD without bucket replication config', () => {
                     return done(err);
                 }
                 const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
-                assert.strictEqual(objectMD.isDeleteMarker, true);
+                expect(objectMD.isDeleteMarker).toBe(true);
                 checkObjectReplicationInfo(keyA, emptyReplicationMD);
                 return done();
             }));
@@ -412,13 +412,13 @@ describe('Replication object MD without bucket replication config', () => {
                 next => objectPutTagging(authInfo, taggingPutReq, log, next),
             ], err => done(err)));
 
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['METADATA']'if putting tag", done => {
                 checkObjectReplicationInfo(keyA, replicateMetadataOnly);
                 return done();
             });
 
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['METADATA']' if deleting tag", done =>
                 async.series([
                     // Put a new version to update replication MD content array.
@@ -435,7 +435,7 @@ describe('Replication object MD without bucket replication config', () => {
         });
 
         describe('Complete MPU', () => {
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['DATA, METADATA']' if completing MPU", done =>
                 putMPU(keyA, 'content', err => {
                     if (err) {
@@ -445,7 +445,7 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['METADATA']' if completing MPU with 0 bytes", done =>
                 putMPU(keyA, '', err => {
                     if (err) {
@@ -455,18 +455,20 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-            it('should not update replicationInfo if key does not apply',
+            test(
+                'should not update replicationInfo if key does not apply',
                 done => putMPU(keyB, 'content', err => {
                     if (err) {
                         return done(err);
                     }
                     checkObjectReplicationInfo(keyB, emptyReplicationMD);
                     return done();
-                }));
+                })
+            );
         });
 
         describe('Object copy', () => {
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['DATA, METADATA']' if copying object", done =>
                 copyObject(keyB, keyA, true, err => {
                     if (err) {
@@ -476,7 +478,7 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-            it("should update status to 'PENDING' and content to " +
+            test("should update status to 'PENDING' and content to " +
                 "'['METADATA']' if copying object with 0 bytes", done =>
                 copyObject(keyB, keyA, false, err => {
                     if (err) {
@@ -486,17 +488,16 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-            it('should not update replicationInfo if key does not apply',
-                done => {
-                    const copyKey = `foo-${keyA}`;
-                    return copyObject(keyB, copyKey, true, err => {
-                        if (err) {
-                            return done(err);
-                        }
-                        checkObjectReplicationInfo(copyKey, emptyReplicationMD);
-                        return done();
-                    });
+            test('should not update replicationInfo if key does not apply', done => {
+                const copyKey = `foo-${keyA}`;
+                return copyObject(keyB, copyKey, true, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    checkObjectReplicationInfo(copyKey, emptyReplicationMD);
+                    return done();
                 });
+            });
         });
 
         ['awsbackend',
@@ -552,10 +553,10 @@ describe('Replication object MD without bucket replication config', () => {
                         },
                     }));
 
-                it('should update on a put object request', done =>
+                test('should update on a put object request', done =>
                     putObjectAndCheckMD(keyA, expectedReplicationInfo, done));
 
-                it('should update on a complete MPU object request', done =>
+                test('should update on a complete MPU object request', done =>
                     putMPU(keyA, 'content', err => {
                         if (err) {
                             return done(err);
@@ -567,7 +568,7 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a copy object request', done =>
+                test('should update on a copy object request', done =>
                     copyObject(keyB, keyA, true, err => {
                         if (err) {
                             return done(err);
@@ -577,7 +578,7 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a put object ACL request', done => {
+                test('should update on a put object ACL request', done => {
                     let completedReplicationInfo;
                     async.series([
                         next => putObjectAndCheckMD(keyA,
@@ -602,7 +603,7 @@ describe('Replication object MD without bucket replication config', () => {
                     });
                 });
 
-                it('should update on a put object tagging request', done =>
+                test('should update on a put object tagging request', done =>
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, next),
@@ -619,7 +620,7 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a delete tagging request', done =>
+                test('should update on a delete tagging request', done =>
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, next),
@@ -636,7 +637,7 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update when putting a delete marker', done =>
+                test('should update when putting a delete marker', done =>
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, err => {
@@ -659,11 +660,11 @@ describe('Replication object MD without bucket replication config', () => {
                             return done(err);
                         }
                         // Is it, in fact, a delete marker?
-                        assert(metadata
+                        expect(metadata
                             .keyMaps
                             .get(bucketName)
                             .get(keyA)
-                            .isDeleteMarker);
+                            .isDeleteMarker).toBeTruthy();
                         checkObjectReplicationInfo(keyA,
                             expectedReplicationInfoMD);
                         return done();

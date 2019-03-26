@@ -6,13 +6,13 @@ describe('S3 connect test', () => {
     const config = getConfig();
     const s3 = new S3(config);
 
-    it('should list buckets', done => {
+    test('should list buckets', done => {
         s3.listBuckets((err, data) => {
             if (err) {
                 done(err);
             }
 
-            assert.ok(data.Buckets, 'should contain Buckets');
+            expect(data.Buckets).toBeTruthy();
             done();
         });
     });

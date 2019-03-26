@@ -14,10 +14,16 @@ const gcpTagPrefix = `x-goog-meta-${gcpTaggingPrefix}`;
 const tagSize = 10;
 
 describe('GCP: GET Object Tagging', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         gcpRequestRetry({
@@ -32,16 +38,16 @@ describe('GCP: GET Object Tagging', () => {
         });
     });
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.key = `somekey-${genUniqID()}`;
-        this.currentTest.specialKey = `veryspecial-${genUniqID()}`;
+    beforeEach(done => {
+        testContext.currentTest.key = `somekey-${genUniqID()}`;
+        testContext.currentTest.specialKey = `veryspecial-${genUniqID()}`;
         const { tagHeader, expectedTagObj } =
             genGetTagObj(tagSize, gcpTagPrefix);
-        this.currentTest.tagObj = expectedTagObj;
+        testContext.currentTest.tagObj = expectedTagObj;
         makeGcpRequest({
             method: 'PUT',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
             headers: tagHeader,
         }, (err, res) => {
@@ -49,16 +55,16 @@ describe('GCP: GET Object Tagging', () => {
                 process.stdout.write(`err in creating object ${err}`);
                 return done(err);
             }
-            this.currentTest.versionId = res.headers['x-goog-generation'];
+            testContext.currentTest.versionId = res.headers['x-goog-generation'];
             return done();
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         makeGcpRequest({
             method: 'DELETE',
             bucket: bucketName,
-            objectKey: this.currentTest.key,
+            objectKey: testContext.currentTest.key,
             authCredentials: config.credentials,
         }, err => {
             if (err) {
@@ -68,7 +74,7 @@ describe('GCP: GET Object Tagging', () => {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -81,15 +87,14 @@ describe('GCP: GET Object Tagging', () => {
         });
     });
 
-    it('should successfully get object tags', function testFn(done) {
+    test('should successfully get object tags', done => {
         gcpClient.getObjectTagging({
             Bucket: bucketName,
-            Key: this.test.key,
-            VersionId: this.test.versionId,
+            Key: testContext.test.key,
+            VersionId: testContext.test.versionId,
         }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.deepStrictEqual(res.TagSet, this.test.tagObj);
+            expect(err).toEqual(null);
+            assert.deepStrictEqual(res.TagSet, testContext.test.tagObj);
             return done();
         });
     });

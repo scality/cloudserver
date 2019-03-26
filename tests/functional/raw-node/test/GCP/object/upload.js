@@ -24,12 +24,12 @@ const bigBody = Buffer.alloc(10485760);
 const smallMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const bigMD5 = 'a7d414b9133d6483d9a1c4e04e856e3b-2';
 
-describe('GCP: Upload Object', function testSuite() {
+describe('GCP: Upload Object', () => {
     this.timeout(600000);
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         async.eachSeries(bucketNames,
@@ -47,13 +47,12 @@ describe('GCP: Upload Object', function testSuite() {
         err => done(err));
     });
 
-    after(done => {
+    afterAll(done => {
         async.eachSeries(bucketNames,
             (bucket, next) => gcpClient.listObjects({
                 Bucket: bucket.Name,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                expect(err).toEqual(null);
                 async.map(res.Contents, (object, moveOn) => {
                     const deleteParams = {
                         Bucket: bucket.Name,
@@ -62,8 +61,7 @@ describe('GCP: Upload Object', function testSuite() {
                     gcpClient.deleteObject(
                         deleteParams, err => moveOn(err));
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
+                    expect(err).toEqual(null);
                     gcpRequestRetry({
                         method: 'DELETE',
                         bucket: bucket.Name,
@@ -80,7 +78,7 @@ describe('GCP: Upload Object', function testSuite() {
         err => done(err));
     });
 
-    it('should put an object to GCP', done => {
+    test('should put an object to GCP', done => {
         const key = `somekey-${genUniqID()}`;
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
@@ -88,14 +86,13 @@ describe('GCP: Upload Object', function testSuite() {
             Key: key,
             Body: body,
         }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${smallMD5}"`);
+            expect(err).toEqual(null);
+            expect(res.ETag).toBe(`"${smallMD5}"`);
             return done();
         });
     });
 
-    it('should put a large object to GCP', done => {
+    test('should put a large object to GCP', done => {
         const key = `somekey-${genUniqID()}`;
         gcpClient.upload({
             Bucket: bucketNames.main.Name,
@@ -103,9 +100,8 @@ describe('GCP: Upload Object', function testSuite() {
             Key: key,
             Body: bigBody,
         }, (err, res) => {
-            assert.equal(err, null,
-                `Expected success, got error ${err}`);
-            assert.strictEqual(res.ETag, `"${bigMD5}"`);
+            expect(err).toEqual(null);
+            expect(res.ETag).toBe(`"${bigMD5}"`);
             return done();
         });
     });

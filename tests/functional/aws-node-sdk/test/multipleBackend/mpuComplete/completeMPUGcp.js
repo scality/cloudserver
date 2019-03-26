@@ -21,16 +21,16 @@ function getCheck(key, bucketMatch, cb) {
     let gcpKey = key;
     s3.getObject({ Bucket: bucket, Key: gcpKey },
     (err, s3Res) => {
-        assert.equal(err, null, `Err getting object from S3: ${err}`);
-        assert.strictEqual(s3Res.ETag, `"${s3MD5}"`);
+        expect(err).toEqual(null);
+        expect(s3Res.ETag).toBe(`"${s3MD5}"`);
 
         if (!bucketMatch) {
             gcpKey = `${bucket}/${gcpKey}`;
         }
         const params = { Bucket: gcpBucket, Key: gcpKey };
         gcpClient.getObject(params, (err, gcpRes) => {
-            assert.equal(err, null, `Err getting object from GCP: ${err}`);
-            assert.strictEqual(expectedContentLength, gcpRes.ContentLength);
+            expect(err).toEqual(null);
+            expect(expectedContentLength).toBe(gcpRes.ContentLength);
             cb();
         });
     });
@@ -47,9 +47,9 @@ function mpuSetup(key, location, cb) {
             };
             s3.createMultipartUpload(params, (err, res) => {
                 const uploadId = res.UploadId;
-                assert(uploadId);
-                assert.strictEqual(res.Bucket, bucket);
-                assert.strictEqual(res.Key, key);
+                expect(uploadId).toBeTruthy();
+                expect(res.Bucket).toBe(bucket);
+                expect(res.Key).toBe(key);
                 next(err, uploadId);
             });
         },
@@ -81,7 +81,7 @@ function mpuSetup(key, location, cb) {
         },
     ], (err, uploadId) => {
         process.stdout.write('Created MPU and put two parts\n');
-        assert.equal(err, null, `Err setting up MPU: ${err}`);
+        expect(err).toEqual(null);
         cb(uploadId, partArray);
     });
 }
@@ -90,7 +90,7 @@ describeSkipIfNotMultipleOrCeph('Complete MPU API for GCP data backend',
 function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {
-        beforeEach(function beFn() {
+        beforeEach(() => {
             this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -115,7 +115,7 @@ function testSuite() {
             });
         });
 
-        it('should complete an MPU on GCP', function itFn(done) {
+        test('should complete an MPU on GCP', done => {
             mpuSetup(this.test.key, gcpLocation, (uploadId, partArray) => {
                 const params = {
                     Bucket: bucket,
@@ -125,36 +125,36 @@ function testSuite() {
                 };
                 setTimeout(() => {
                     s3.completeMultipartUpload(params, err => {
-                        assert.equal(err, null,
-                            `Err completing MPU: ${err}`);
+                        expect(err).toEqual(null);
                         getCheck(this.test.key, true, done);
                     });
                 }, gcpTimeout);
             });
         });
 
-        it('should complete an MPU on GCP with bucketMatch=false',
-        function itFn(done) {
-            mpuSetup(this.test.key, gcpLocationMismatch,
-            (uploadId, partArray) => {
-                const params = {
-                    Bucket: bucket,
-                    Key: this.test.key,
-                    UploadId: uploadId,
-                    MultipartUpload: { Parts: partArray },
-                };
-                setTimeout(() => {
-                    s3.completeMultipartUpload(params, err => {
-                        assert.equal(err, null,
-                            `Err completing MPU: ${err}`);
-                        getCheck(this.test.key, false, done);
-                    });
-                }, gcpTimeout);
-            });
-        });
+        test(
+            'should complete an MPU on GCP with bucketMatch=false',
+            done => {
+                mpuSetup(this.test.key, gcpLocationMismatch,
+                (uploadId, partArray) => {
+                    const params = {
+                        Bucket: bucket,
+                        Key: this.test.key,
+                        UploadId: uploadId,
+                        MultipartUpload: { Parts: partArray },
+                    };
+                    setTimeout(() => {
+                        s3.completeMultipartUpload(params, err => {
+                            expect(err).toEqual(null);
+                            getCheck(this.test.key, false, done);
+                        });
+                    }, gcpTimeout);
+                });
+            }
+        );
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to file', function itFn(done) {
+        test('should complete an MPU on GCP with same key as object put ' +
+        'to file', done => {
             const body = Buffer.from('I am a body', 'utf8');
             s3.putObject({
                 Bucket: bucket,
@@ -162,7 +162,7 @@ function testSuite() {
                 Body: body,
                 Metadata: { 'scal-location-constraint': fileLocation } },
             err => {
-                assert.equal(err, null, `Err putting object to file: ${err}`);
+                expect(err).toEqual(null);
                 mpuSetup(this.test.key, gcpLocation,
                 (uploadId, partArray) => {
                     const params = {
@@ -173,8 +173,7 @@ function testSuite() {
                     };
                     setTimeout(() => {
                         s3.completeMultipartUpload(params, err => {
-                            assert.equal(err, null,
-                                `Err completing MPU: ${err}`);
+                            expect(err).toEqual(null);
                             getCheck(this.test.key, true, done);
                         });
                     }, gcpTimeout);
@@ -182,8 +181,8 @@ function testSuite() {
             });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to GCP', function itFn(done) {
+        test('should complete an MPU on GCP with same key as object put ' +
+        'to GCP', done => {
             const body = Buffer.from('I am a body', 'utf8');
             s3.putObject({
                 Bucket: bucket,
@@ -191,7 +190,7 @@ function testSuite() {
                 Body: body,
                 Metadata: { 'scal-location-constraint': gcpLocation } },
             err => {
-                assert.equal(err, null, `Err putting object to GCP: ${err}`);
+                expect(err).toEqual(null);
                 mpuSetup(this.test.key, gcpLocation,
                 (uploadId, partArray) => {
                     const params = {
@@ -202,8 +201,7 @@ function testSuite() {
                     };
                     setTimeout(() => {
                         s3.completeMultipartUpload(params, err => {
-                            assert.equal(err, null,
-                                `Err completing MPU: ${err}`);
+                            expect(err).toEqual(null);
                             getCheck(this.test.key, true, done);
                         });
                     }, gcpTimeout);
@@ -211,8 +209,8 @@ function testSuite() {
             });
         });
 
-        it('should complete an MPU on GCP with same key as object put ' +
-        'to AWS', function itFn(done) {
+        test('should complete an MPU on GCP with same key as object put ' +
+        'to AWS', done => {
             const body = Buffer.from('I am a body', 'utf8');
             s3.putObject({
                 Bucket: bucket,
@@ -220,7 +218,7 @@ function testSuite() {
                 Body: body,
                 Metadata: { 'scal-location-constraint': awsLocation } },
             err => {
-                assert.equal(err, null, `Err putting object to AWS: ${err}`);
+                expect(err).toEqual(null);
                 mpuSetup(this.test.key, gcpLocation,
                 (uploadId, partArray) => {
                     const params = {
@@ -230,12 +228,12 @@ function testSuite() {
                         MultipartUpload: { Parts: partArray },
                     };
                     s3.completeMultipartUpload(params, err => {
-                        assert.equal(err, null, `Err completing MPU: ${err}`);
+                        expect(err).toEqual(null);
                         // make sure object is gone from AWS
                         setTimeout(() => {
                             this.test.awsClient.getObject({ Bucket: awsBucket,
                             Key: this.test.key }, err => {
-                                assert.strictEqual(err.code, 'NoSuchKey');
+                                expect(err.code).toBe('NoSuchKey');
                                 getCheck(this.test.key, true, done);
                             });
                         }, gcpTimeout);

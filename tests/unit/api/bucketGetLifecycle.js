@@ -20,15 +20,15 @@ const testBucketPutRequest = {
 };
 
 describe('getBucketLifecycle API', () => {
-    before(() => cleanup());
+    beforeAll(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
-    it('should return NoSuchLifecycleConfiguration error if ' +
+    test('should return NoSuchLifecycleConfiguration error if ' +
     'bucket has no lifecycle', done => {
         const lifecycleRequest = getLifecycleRequest(bucketName);
         bucketGetLifecycle(authInfo, lifecycleRequest, log, err => {
-            assert.strictEqual(err.NoSuchLifecycleConfiguration, true);
+            expect(err.NoSuchLifecycleConfiguration).toBe(true);
             done();
         });
     });
@@ -38,15 +38,15 @@ describe('getBucketLifecycle API', () => {
             const putRequest =
                 getLifecycleRequest(bucketName, getLifecycleXml());
             bucketPutLifecycle(authInfo, putRequest, log, err => {
-                assert.equal(err, null);
+                expect(err).toEqual(null);
                 done();
             });
         });
 
-        it('should return lifecycle XML', done => {
+        test('should return lifecycle XML', done => {
             const getRequest = getLifecycleRequest(bucketName);
             bucketGetLifecycle(authInfo, getRequest, log, (err, res) => {
-                assert.equal(err, null);
+                expect(err).toEqual(null);
                 const expectedXML = '<?xml version="1.0" encoding="UTF-8"?>' +
                     `${getLifecycleXml()}`;
                 assert.deepStrictEqual(expectedXML, res);

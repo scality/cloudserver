@@ -125,11 +125,11 @@ describe('validate search where clause', () => {
     ];
 
     tests.forEach(test => {
-        it(test.it, () => {
+        test(test.it, () => {
             const actualResult =
                   validateSearch(test.searchParams);
             if (test.result === undefined) {
-                assert(typeof actualResult.ast === 'object');
+                expect(typeof actualResult.ast === 'object').toBeTruthy();
             } else {
                 assert.deepStrictEqual(actualResult.error, test.result);
             }

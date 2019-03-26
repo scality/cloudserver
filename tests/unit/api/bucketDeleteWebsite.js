@@ -41,7 +41,7 @@ describe('deleteBucketWebsite API', () => {
     });
     afterEach(() => cleanup());
 
-    it('should delete a bucket\'s website configuration in metadata', done => {
+    test('should delete a bucket\'s website configuration in metadata', done => {
         bucketDeleteWebsite(authInfo, testBucketDeleteWebsiteRequest, log,
         err => {
             if (err) {
@@ -53,8 +53,7 @@ describe('deleteBucketWebsite API', () => {
                     process.stdout.write(`Err retrieving bucket MD ${err}`);
                     return done(err);
                 }
-                assert.strictEqual(bucket.getWebsiteConfiguration(),
-                    null);
+                expect(bucket.getWebsiteConfiguration()).toBe(null);
                 return done();
             });
         });

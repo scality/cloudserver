@@ -22,14 +22,20 @@ const xmlDisable =
     '</VersioningConfiguration>';
 
 describe('GCP: GET Bucket Versioning', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    beforeEach(function beforeFn(done) {
-        this.currentTest.bucketName = `somebucket-${genUniqID()}`;
+    beforeEach(done => {
+        testContext.currentTest.bucketName = `somebucket-${genUniqID()}`;
         gcpRequestRetry({
             method: 'PUT',
-            bucket: this.currentTest.bucketName,
+            bucket: testContext.currentTest.bucketName,
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
@@ -39,10 +45,10 @@ describe('GCP: GET Bucket Versioning', () => {
         });
     });
 
-    afterEach(function afterFn(done) {
+    afterEach(done => {
         gcpRequestRetry({
             method: 'DELETE',
-            bucket: this.currentTest.bucketName,
+            bucket: testContext.currentTest.bucketName,
             authCredentials: config.credentials,
         }, 0, err => {
             if (err) {
@@ -52,11 +58,11 @@ describe('GCP: GET Bucket Versioning', () => {
         });
     });
 
-    it('should verify bucket versioning is enabled', function testFn(done) {
+    test('should verify bucket versioning is enabled', done => {
         return async.waterfall([
             next => makeGcpRequest({
                 method: 'PUT',
-                bucket: this.test.bucketName,
+                bucket: testContext.test.bucketName,
                 authCredentials: config.credentials,
                 queryObj: { versioning: {} },
                 requestBody: xmlEnable,
@@ -67,21 +73,20 @@ describe('GCP: GET Bucket Versioning', () => {
                 return next(err);
             }),
             next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 assert.deepStrictEqual(res, verEnabledObj);
                 return next();
             }),
         ], err => done(err));
     });
 
-    it('should verify bucket versioning is disabled', function testFn(done) {
+    test('should verify bucket versioning is disabled', done => {
         return async.waterfall([
             next => makeGcpRequest({
                 method: 'PUT',
-                bucket: this.test.bucketName,
+                bucket: testContext.test.bucketName,
                 authCredentials: config.credentials,
                 queryObj: { versioning: {} },
                 requestBody: xmlDisable,
@@ -92,10 +97,9 @@ describe('GCP: GET Bucket Versioning', () => {
                 return next(err);
             }),
             next => gcpClient.getBucketVersioning({
-                Bucket: this.test.bucketName,
+                Bucket: testContext.test.bucketName,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 assert.deepStrictEqual(res, verDisabledObj);
                 return next();
             }),

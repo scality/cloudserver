@@ -28,11 +28,11 @@ function checkOneVersion(s3, bucket, versionId, callback) {
             if (err) {
                 callback(err);
             }
-            assert.strictEqual(data.Versions.length, 1);
+            expect(data.Versions.length).toBe(1);
             if (versionId) {
-                assert.strictEqual(data.Versions[0].VersionId, versionId);
+                expect(data.Versions[0].VersionId).toBe(versionId);
             }
-            assert.strictEqual(data.DeleteMarkers.length, 0);
+            expect(data.DeleteMarkers.length).toBe(0);
             callback();
         });
 }
@@ -100,9 +100,8 @@ function createDualNullVersion(s3, bucketName, keyName, cb) {
         // putting new version
         next => s3.putObject({ Bucket: bucketName, Key: keyName },
             (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err putting new version');
-                assert(data.VersionId);
+                expect(err).toBe(null);
+                expect(data.VersionId).toBeTruthy();
                 next(null, data.VersionId);
             }),
         // delete version we just created, master version should be updated
@@ -115,9 +114,8 @@ function createDualNullVersion(s3, bucketName, keyName, cb) {
         // getting object should return null version now
         next => s3.getObject({ Bucket: bucketName, Key: keyName },
             (err, data) => {
-                assert.strictEqual(err, null,
-                    'Unexpected err getting latest version');
-                assert.strictEqual(data.VersionId, 'null');
+                expect(err).toBe(null);
+                expect(data.VersionId).toBe('null');
                 next();
             }),
     ], err => cb(err));

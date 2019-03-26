@@ -20,12 +20,12 @@ const bucketNames = {
     },
 };
 
-describe('GCP: Initiate MPU', function testSuite() {
+describe('GCP: Initiate MPU', () => {
     this.timeout(180000);
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         async.eachSeries(bucketNames,
@@ -43,7 +43,7 @@ describe('GCP: Initiate MPU', function testSuite() {
         done);
     });
 
-    after(done => {
+    afterAll(done => {
         async.eachSeries(bucketNames,
             (bucket, next) => gcpRequestRetry({
                 method: 'DELETE',
@@ -58,7 +58,7 @@ describe('GCP: Initiate MPU', function testSuite() {
         done);
     });
 
-    it('Should create a multipart upload object', done => {
+    test('Should create a multipart upload object', done => {
         const keyName = `somekey-${genUniqID()}`;
         const specialKey = `special-${genUniqID()}`;
         async.waterfall([
@@ -69,8 +69,7 @@ describe('GCP: Initiate MPU', function testSuite() {
                     special: specialKey,
                 },
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 return next(null, res.UploadId);
             }),
             (uploadId, next) => {
@@ -86,8 +85,7 @@ describe('GCP: Initiate MPU', function testSuite() {
                             .write(`err in retrieving object ${err}`);
                         return next(err);
                     }
-                    assert.strictEqual(res.headers['x-goog-meta-special'],
-                        specialKey);
+                    expect(res.headers['x-goog-meta-special']).toBe(specialKey);
                     return next(null, uploadId);
                 });
             },
@@ -97,8 +95,7 @@ describe('GCP: Initiate MPU', function testSuite() {
                 UploadId: uploadId,
                 Key: keyName,
             }, err => {
-                assert.equal(err, null,
-                    `Expected success, but got err ${err}`);
+                expect(err).toEqual(null);
                 return next();
             }),
         ], done);

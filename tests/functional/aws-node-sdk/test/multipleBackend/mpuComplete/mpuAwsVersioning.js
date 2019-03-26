@@ -30,11 +30,11 @@ function mpuSetup(s3, key, location, cb) {
                 Metadata: { 'scal-location-constraint': location },
             };
             s3.createMultipartUpload(params, (err, res) => {
-                assert.strictEqual(err, null, `err creating mpu: ${err}`);
+                expect(err).toBe(null);
                 const uploadId = res.UploadId;
-                assert(uploadId);
-                assert.strictEqual(res.Bucket, bucket);
-                assert.strictEqual(res.Key, key);
+                expect(uploadId).toBeTruthy();
+                expect(res.Bucket).toBe(bucket);
+                expect(res.Key).toBe(key);
                 next(err, uploadId);
             });
         },
@@ -47,7 +47,7 @@ function mpuSetup(s3, key, location, cb) {
                 Body: data[0],
             };
             s3.uploadPart(partParams, (err, res) => {
-                assert.strictEqual(err, null, `err uploading part 1: ${err}`);
+                expect(err).toBe(null);
                 partArray.push({ ETag: res.ETag, PartNumber: 1 });
                 next(err, uploadId);
             });
@@ -61,7 +61,7 @@ function mpuSetup(s3, key, location, cb) {
                 Body: data[1],
             };
             s3.uploadPart(partParams, (err, res) => {
-                assert.strictEqual(err, null, `err uploading part 2: ${err}`);
+                expect(err).toBe(null);
                 partArray.push({ ETag: res.ETag, PartNumber: 2 });
                 next(err, uploadId);
             });
@@ -81,11 +81,11 @@ function completeAndAssertMpu(s3, params, cb) {
         UploadId: uploadId,
         MultipartUpload: { Parts: partArray },
     }, (err, data) => {
-        assert.strictEqual(err, null, `Err completing MPU: ${err}`);
+        expect(err).toBe(null);
         if (expectVersionId) {
-            assert.notEqual(data.VersionId, undefined);
+            expect(data.VersionId).not.toEqual(undefined);
         } else {
-            assert.strictEqual(data.VersionId, undefined);
+            expect(data.VersionId).toBe(undefined);
         }
         const expectedVersionId = expectedGetVersionId || data.VersionId;
         getAndAssertResult(s3, { bucket, key, body: concattedData,
@@ -114,7 +114,7 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: should not return version id ' +
+        test('versioning not configured: should not return version id ' +
         'completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
             mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
@@ -123,9 +123,9 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: if complete mpu on already-existing ' +
+        test('versioning not configured: if complete mpu on already-existing ' +
         'object, metadata should be overwritten but data of previous version' +
-        'in AWS should not be deleted', function itF(done) {
+        'in AWS should not be deleted', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
@@ -144,26 +144,27 @@ function testSuite() {
                     expectedError: 'NoSuchKey' }, next),
                 next => awsGetLatestVerId(key, '', next),
                 (awsVerId, next) => {
-                    assert.strictEqual(awsVerId, this.test.awsVerId);
+                    expect(awsVerId).toBe(this.test.awsVerId);
                     next();
                 },
             ], done);
         });
 
-        it('versioning suspended: should not return version id completing mpu',
-        done => {
-            const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => suspendVersioning(s3, bucket, next),
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId: false,
-                    expectedGetVersionId: 'null' }, next),
-            ], done);
-        });
+        test(
+            'versioning suspended: should not return version id completing mpu',
+            done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall([
+                    next => suspendVersioning(s3, bucket, next),
+                    next => mpuSetup(s3, key, awsLocation, next),
+                    (uploadId, partArray, next) => completeAndAssertMpu(s3,
+                        { bucket, key, uploadId, partArray, expectVersionId: false,
+                        expectedGetVersionId: 'null' }, next),
+                ], done);
+            }
+        );
 
-        it('versioning enabled: should return version id completing mpu',
-        done => {
+        test('versioning enabled: should return version id completing mpu', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),

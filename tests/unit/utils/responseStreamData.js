@@ -47,7 +47,7 @@ describe('responseStreamData:', () => {
         cleanup();
     });
 
-    it('should stream full requested object data for one part object', done => {
+    test('should stream full requested object data for one part object', done => {
         ds.push(null, dataStoreEntry);
         const dataLocations = [{
             key: 1,
@@ -58,14 +58,14 @@ describe('responseStreamData:', () => {
         });
         response.on('end', () => {
             const data = response._getData();
-            assert.strictEqual(data, postBody.toString());
+            expect(data).toBe(postBody.toString());
             done();
         });
         return responseStreamData(errCode, overrideHeaders, resHeaders,
             dataLocations, dataRetrievalParams, response, null, log);
     });
 
-    it('should stream full requested object data for two part object', done => {
+    test('should stream full requested object data for two part object', done => {
         ds.push(null, dataStoreEntry, dataStoreEntry);
         const dataLocations = [
             {
@@ -86,14 +86,14 @@ describe('responseStreamData:', () => {
         response.on('end', () => {
             const data = response._getData();
             const doublePostBody = postBody.toString().concat(postBody);
-            assert.strictEqual(data, doublePostBody);
+            expect(data).toBe(doublePostBody);
             done();
         });
         return responseStreamData(errCode, overrideHeaders, resHeaders,
             dataLocations, dataRetrievalParams, response, null, log);
     });
 
-    it('#334 non-regression test, destroy connection on error', done => {
+    test('#334 non-regression test, destroy connection on error', done => {
         const dataLocations = [{
             key: 1,
             dataStore: 'mem',

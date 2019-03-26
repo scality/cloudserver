@@ -32,8 +32,7 @@ class Reader extends EventEmitter {
             const i = this.index++;
             // extensions should take into account maxKeys
             // and should not filter more than the intended value
-            assert(i <= MAX_KEYS,
-                   `listed more than maxKeys ${MAX_KEYS} (${i})`);
+            expect(i <= MAX_KEYS).toBeTruthy();
             if (i === KEY_COUNT) {
                 return this.emit('end');
             }
@@ -80,7 +79,7 @@ describe('BucketFileInterface::internalListObject', alldone => {
     bucketfile.loadDBIfExists = (bucket, log, callback) => callback(null, db);
 
     Object.keys(extensions).forEach(listingType => {
-        it(`listing max ${MAX_KEYS} keys using ${listingType}`, done => {
+        test(`listing max ${MAX_KEYS} keys using ${listingType}`, done => {
             const params = { listingType, maxKeys: MAX_KEYS };
             // assertion to check if extensions work with maxKeys is in Reader
             bucketfile.internalListObject('foo', params, logger, done);

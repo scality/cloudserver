@@ -12,12 +12,12 @@ const bucketName = `somebucket-${genUniqID()}`;
 const objectKey = `somekey-${genUniqID()}`;
 const badObjectKey = `nonexistingkey-${genUniqID()}`;
 
-describe('GCP: DELETE Object', function testSuite() {
+describe('GCP: DELETE Object', () => {
     this.timeout(30000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
-    before(done => {
+    beforeAll(done => {
         gcpRequestRetry({
             method: 'PUT',
             bucket: bucketName,
@@ -30,7 +30,7 @@ describe('GCP: DELETE Object', function testSuite() {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         gcpRequestRetry({
             method: 'DELETE',
             bucket: bucketName,
@@ -58,14 +58,13 @@ describe('GCP: DELETE Object', function testSuite() {
             });
         });
 
-        it('should successfully delete object', done => {
+        test('should successfully delete object', done => {
             async.waterfall([
                 next => gcpClient.deleteObject({
                     Bucket: bucketName,
                     Key: objectKey,
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, got error ${err}`);
+                    expect(err).toEqual(null);
                     return next();
                 }),
                 next => makeGcpRequest({
@@ -74,9 +73,9 @@ describe('GCP: DELETE Object', function testSuite() {
                     objectKey,
                     authCredentials: config.credentials,
                 }, err => {
-                    assert(err);
-                    assert.strictEqual(err.statusCode, 404);
-                    assert.strictEqual(err.code, 'NoSuchKey');
+                    expect(err).toBeTruthy();
+                    expect(err.statusCode).toBe(404);
+                    expect(err.code).toBe('NoSuchKey');
                     return next();
                 }),
             ], err => done(err));
@@ -84,14 +83,14 @@ describe('GCP: DELETE Object', function testSuite() {
     });
 
     describe('without existing object in bucket', () => {
-        it('should return 404 and NoSuchKey', done => {
+        test('should return 404 and NoSuchKey', done => {
             gcpClient.deleteObject({
                 Bucket: bucketName,
                 Key: badObjectKey,
             }, err => {
-                assert(err);
-                assert.strictEqual(err.statusCode, 404);
-                assert.strictEqual(err.code, 'NoSuchKey');
+                expect(err).toBeTruthy();
+                expect(err.statusCode).toBe(404);
+                expect(err.code).toBe('NoSuchKey');
                 return done();
             });
         });

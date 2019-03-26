@@ -48,7 +48,7 @@ const objects = [
 
 describe('Listing corner cases tests', () => {
     let s3;
-    before(done => {
+    beforeAll(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new AWS.S3(config);
         s3.createBucket(
@@ -64,7 +64,7 @@ describe('Listing corner cases tests', () => {
                     }, done);
             });
     });
-    after(done => {
+    afterAll(done => {
         s3.listObjects({ Bucket }, (err, data) => {
             async.each(data.Contents, (o, next) => {
                 s3.deleteObject({ Bucket, Key: o.Key }, next);
@@ -73,9 +73,9 @@ describe('Listing corner cases tests', () => {
             });
         });
     });
-    it('should list everything', done => {
+    test('should list everything', done => {
         s3.listObjects({ Bucket }, (err, data) => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             cutAttributes(data);
             assert.deepStrictEqual(data, {
                 IsTruncated: false,
@@ -100,14 +100,14 @@ describe('Listing corner cases tests', () => {
             done();
         });
     });
-    it('should list with valid marker', done => {
+    test('should list with valid marker', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
                 Marker: 'notes/summer/1.txt',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     IsTruncated: false,
@@ -122,14 +122,14 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with unexpected marker', done => {
+    test('should list with unexpected marker', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
                 Marker: 'zzzz',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 assert.deepStrictEqual(data, {
                     IsTruncated: false,
                     Marker: 'zzzz',
@@ -143,7 +143,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with unexpected marker and prefix', done => {
+    test('should list with unexpected marker and prefix', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -151,7 +151,7 @@ describe('Listing corner cases tests', () => {
                 Prefix: 'notes/summer/',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 assert.deepStrictEqual(data, {
                     IsTruncated: false,
                     Marker: 'notes/summer0',
@@ -165,13 +165,13 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with MaxKeys', done => {
+    test('should list with MaxKeys', done => {
         s3.listObjects(
             { Bucket,
                 MaxKeys: 3,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: '',
@@ -188,13 +188,13 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with big MaxKeys', done => {
+    test('should list with big MaxKeys', done => {
         s3.listObjects(
             { Bucket,
                 MaxKeys: 15000,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: '',
@@ -218,13 +218,13 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with delimiter', done => {
+    test('should list with delimiter', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: '',
@@ -239,13 +239,13 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with long delimiter', done => {
+    test('should list with long delimiter', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: 'notes/summer',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: '',
@@ -267,14 +267,14 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with delimiter and prefix related to #147', done => {
+    test('should list with delimiter and prefix related to #147', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
                 Prefix: 'notes/',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: '',
@@ -296,7 +296,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with prefix and marker related to #147', done => {
+    test('should list with prefix and marker related to #147', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -304,7 +304,7 @@ describe('Listing corner cases tests', () => {
                 Marker: 'notes/year.txt',
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/year.txt',
@@ -319,7 +319,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with all parameters 1 of 5', done => {
+    test('should list with all parameters 1 of 5', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -328,7 +328,7 @@ describe('Listing corner cases tests', () => {
                 MaxKeys: 1,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/',
@@ -344,7 +344,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with all parameters 2 of 5', done => {
+    test('should list with all parameters 2 of 5', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -353,7 +353,7 @@ describe('Listing corner cases tests', () => {
                 MaxKeys: 1,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/spring/',
@@ -369,7 +369,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with all parameters 3 of 5', done => {
+    test('should list with all parameters 3 of 5', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -378,7 +378,7 @@ describe('Listing corner cases tests', () => {
                 MaxKeys: 1,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/summer/',
@@ -394,7 +394,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with all parameters 4 of 5', done => {
+    test('should list with all parameters 4 of 5', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -403,7 +403,7 @@ describe('Listing corner cases tests', () => {
                 MaxKeys: 1,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/year.txt',
@@ -419,7 +419,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should list with all parameters 5 of 5', done => {
+    test('should list with all parameters 5 of 5', done => {
         s3.listObjects(
             { Bucket,
                 Delimiter: '/',
@@ -428,7 +428,7 @@ describe('Listing corner cases tests', () => {
                 MaxKeys: 1,
             },
             (err, data) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/yore.rs',
@@ -443,7 +443,7 @@ describe('Listing corner cases tests', () => {
                 done();
             });
     });
-    it('should ends listing on last common prefix', done => {
+    test('should ends listing on last common prefix', done => {
         s3.putObject({
             Bucket,
             Key: 'notes/zaphod/TheFourth.txt',
@@ -458,7 +458,7 @@ describe('Listing corner cases tests', () => {
                         MaxKeys: 1,
                     },
                     (err, data) => {
-                        assert.strictEqual(err, null);
+                        expect(err).toBe(null);
                         cutAttributes(data);
                         assert.deepStrictEqual(data, {
                             IsTruncated: false,

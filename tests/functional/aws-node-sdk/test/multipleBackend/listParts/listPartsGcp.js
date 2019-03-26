@@ -16,7 +16,7 @@ let s3;
 
 describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
     withV4(sigCfg => {
-        beforeEach(function beforeEachFn() {
+        beforeEach(() => {
             this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -43,7 +43,7 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
             });
         });
 
-        afterEach(function afterEachFn() {
+        afterEach(() => {
             process.stdout.write('Emptying bucket');
             return s3.abortMultipartUploadAsync({
                 Bucket: bucket, Key: this.currentTest.key,
@@ -60,35 +60,35 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
             });
         });
 
-        it('should list both parts', function itFn(done) {
+        test('should list both parts', done => {
             s3.listParts({
                 Bucket: bucket,
                 Key: this.test.key,
                 UploadId: this.test.uploadId },
             (err, data) => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
-                assert.strictEqual(data.Parts.length, 2);
-                assert.strictEqual(data.Parts[0].PartNumber, 1);
-                assert.strictEqual(data.Parts[0].Size, firstPartSize);
-                assert.strictEqual(data.Parts[0].ETag, this.test.firstEtag);
-                assert.strictEqual(data.Parts[1].PartNumber, 2);
-                assert.strictEqual(data.Parts[1].Size, secondPartSize);
-                assert.strictEqual(data.Parts[1].ETag, this.test.secondEtag);
+                expect(err).toEqual(null);
+                expect(data.Parts.length).toBe(2);
+                expect(data.Parts[0].PartNumber).toBe(1);
+                expect(data.Parts[0].Size).toBe(firstPartSize);
+                expect(data.Parts[0].ETag).toBe(this.test.firstEtag);
+                expect(data.Parts[1].PartNumber).toBe(2);
+                expect(data.Parts[1].Size).toBe(secondPartSize);
+                expect(data.Parts[1].ETag).toBe(this.test.secondEtag);
                 done();
             });
         });
 
-        it('should only list the second part', function itFn(done) {
+        test('should only list the second part', done => {
             s3.listParts({
                 Bucket: bucket,
                 Key: this.test.key,
                 PartNumberMarker: 1,
                 UploadId: this.test.uploadId },
             (err, data) => {
-                assert.equal(err, null, `Err listing parts: ${err}`);
-                assert.strictEqual(data.Parts[0].PartNumber, 2);
-                assert.strictEqual(data.Parts[0].Size, secondPartSize);
-                assert.strictEqual(data.Parts[0].ETag, this.test.secondEtag);
+                expect(err).toEqual(null);
+                expect(data.Parts[0].PartNumber).toBe(2);
+                expect(data.Parts[0].Size).toBe(secondPartSize);
+                expect(data.Parts[0].ETag).toBe(this.test.secondEtag);
                 done();
             });
         });

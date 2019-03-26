@@ -25,12 +25,12 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             s3 = new S3(config);
         });
 
-        it('should return 403 and AccessDenied', done => {
+        test('should return 403 and AccessDenied', done => {
             s3.makeUnauthenticatedRequest('listBuckets', error => {
-                assert(error);
+                expect(error).toBeTruthy();
 
-                assert.strictEqual(error.statusCode, 403);
-                assert.strictEqual(error.code, 'AccessDenied');
+                expect(error.statusCode).toBe(403);
+                expect(error.code).toBe('AccessDenied');
 
                 done();
             });
@@ -41,21 +41,21 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
         describe('when user has invalid credential', () => {
             let testFn;
 
-            before(() => {
+            beforeAll(() => {
                 testFn = function testFn(config, code, statusCode, done) {
                     const s3 = new S3(config);
                     s3.listBuckets((err, data) => {
-                        assert(err);
+                        expect(err).toBeTruthy();
                         assert.ifError(data);
 
-                        assert.strictEqual(err.statusCode, statusCode);
-                        assert.strictEqual(err.code, code);
+                        expect(err.statusCode).toBe(statusCode);
+                        expect(err.code).toBe(code);
                         done();
                     });
                 };
             });
 
-            it('should return 403 and InvalidAccessKeyId ' +
+            test('should return 403 and InvalidAccessKeyId ' +
                 'if accessKeyId is invalid', done => {
                 const invalidAccess = getConfig('default',
                     Object.assign({},
@@ -73,7 +73,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 testFn(invalidAccess, expectedCode, expectedStatus, done);
             });
 
-            it('should return 403 and SignatureDoesNotMatch ' +
+            test('should return 403 and SignatureDoesNotMatch ' +
                 'if credential is polluted', done => {
                 const pollutedConfig = getConfig('default', sigCfg);
                 pollutedConfig.credentials.secretAccessKey = 'wrong';
@@ -94,7 +94,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             const createdBuckets = Array.from(Array(bucketsNumber).keys())
                 .map(i => `getservicebuckets-${i}`);
 
-            before(done => {
+            beforeAll(done => {
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
                 s3.config.update({ maxRetries: 0 });
@@ -117,7 +117,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 });
             });
 
-            after(done => {
+            afterAll(done => {
                 async.eachLimit(createdBuckets, 10, (bucketName, moveOn) => {
                     s3.deleteBucket({ Bucket: bucketName }, err => {
                         if (bucketName.endsWith('000')) {
@@ -136,12 +136,10 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 });
             });
 
-            it('should list buckets concurrently', done => {
+            test('should list buckets concurrently', done => {
                 async.times(20, (n, next) => {
                     s3.listBuckets((err, result) => {
-                        assert.equal(result.Buckets.length,
-                            createdBuckets.length,
-                            'Created buckets are missing in response');
+                        expect(result.Buckets.length).toEqual(createdBuckets.length);
                         next(err);
                     });
                 },
@@ -151,7 +149,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 });
             });
 
-            it('should list buckets', done => {
+            test('should list buckets', done => {
                 s3
                     .listBucketsAsync()
                     .then(data => {
@@ -159,7 +157,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                         if (!isValidResponse) {
                             throw new Error(tv4.error);
                         }
-                        assert.ok(data.Buckets[0].CreationDate instanceof Date);
+                        expect(data.Buckets[0].CreationDate instanceof Date).toBeTruthy();
 
                         return data;
                     })
@@ -168,8 +166,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                             createdBuckets.indexOf(bucket.Name) > -1
                         );
 
-                        assert.equal(buckets.length, createdBuckets.length,
-                            'Created buckets are missing in response');
+                        expect(buckets.length).toEqual(createdBuckets.length);
 
                         return buckets;
                     })
@@ -183,8 +180,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                                 prev && bucket.Name === createdBuckets[idx]
                             , true);
 
-                        assert.ok(isCorrectOrder,
-                            'Not returning created buckets by alphabetically');
+                        expect(isCorrectOrder).toBeTruthy();
                         done();
                     })
                     .catch(done);
@@ -195,11 +191,11 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
             describe('two accounts are given', () => {
                 let anotherS3;
 
-                before(() => {
+                beforeAll(() => {
                     anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')));
                 });
 
-                it('should not return other accounts bucket list', done => {
+                test('should not return other accounts bucket list', done => {
                     anotherS3
                         .listBucketsAsync()
                         .then(data => {
@@ -207,8 +203,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                                 .filter(filterFn)
                                 .length;
 
-                            assert.strictEqual(hasSameBuckets, 0,
-                                'It has other buddies bucket');
+                            expect(hasSameBuckets).toBe(0);
                             done();
                         })
                         .catch(done);

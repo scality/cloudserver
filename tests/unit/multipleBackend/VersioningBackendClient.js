@@ -82,11 +82,11 @@ const genTests = [
 describe('AwsClient::putObject', () => {
     let testClient;
 
-    before(() => {
+    beforeAll(() => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
-    genTests.forEach(test => it(test.msg, done => {
+    genTests.forEach(test => test(test.msg, done => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
         testClient.put('', 0, { bucketName: bucket, objectKey: key },
@@ -97,12 +97,12 @@ describe('AwsClient::putObject', () => {
 describe('AwsClient::copyObject', () => {
     let testClient;
 
-    before(() => {
+    beforeAll(() => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
 
-    genTests.forEach(test => it(test.msg, done => {
+    genTests.forEach(test => test(test.msg, done => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
         testClient.copyObject(copyObjectRequest, null, key,
@@ -114,11 +114,11 @@ describe('AwsClient::copyObject', () => {
 describe('AwsClient::completeMPU', () => {
     let testClient;
 
-    before(() => {
+    beforeAll(() => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
-    genTests.forEach(test => it(test.msg, done => {
+    genTests.forEach(test => test(test.msg, done => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
         const uploadId = 'externalBackendTestUploadId';
@@ -144,15 +144,15 @@ describe('AwsClient::healthcheck', () => {
         cb();
     }
     function assertFailure(resp, cb) {
-        assert.strictEqual(!resp.Status || resp.Status === 'Suspended', true);
+        expect(!resp.Status || resp.Status === 'Suspended').toBe(true);
         if (resp.Status) {
-            assert.strictEqual(resp.message, 'Versioning must be enabled');
+            expect(resp.message).toBe('Versioning must be enabled');
         }
-        assert.strictEqual(resp.external, true);
+        expect(resp.external).toBe(true);
         cb();
     }
 
-    before(() => {
+    beforeAll(() => {
         testClient = new AwsClient(s3Config);
         testClient._client = new DummyService({ versioning: true });
     });
@@ -183,7 +183,7 @@ describe('AwsClient::healthcheck', () => {
             callback: assertSuccessNonVersioned,
         },
     ];
-    tests.forEach(test => it(test.msg, done => {
+    tests.forEach(test => test(test.msg, done => {
         testClient._supportsVersioning = test.input.supportsVersioning;
         testClient._client.versioning = test.input.enableMockVersioning;
         testClient.healthcheck('backend',

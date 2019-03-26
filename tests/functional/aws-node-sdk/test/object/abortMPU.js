@@ -9,9 +9,9 @@ const key = 'key';
 const bodyFirstPart = Buffer.allocUnsafe(10).fill(0);
 
 function checkError(err, code, message) {
-    assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.message, message);
+    expect(err).not.toEqual(null);
+    expect(err.code).toBe(code);
+    expect(err.message).toBe(message);
 }
 
 describe('Abort MPU', () => {
@@ -44,11 +44,9 @@ describe('Abort MPU', () => {
                 UploadId: uploadId,
             })
             .then(() => bucketUtil.empty(bucket))
-            .then(() => bucketUtil.deleteOne(bucket))
-        );
+            .then(() => bucketUtil.deleteOne(bucket)));
 
-        it('should return InvalidRequest error if aborting without key',
-        done => {
+        test('should return InvalidRequest error if aborting without key', done => {
             s3.abortMultipartUpload({
                 Bucket: bucket,
                 Key: '',

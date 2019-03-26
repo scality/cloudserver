@@ -20,9 +20,9 @@ const taggingConfig = { TagSet: [
 ] };
 
 function _checkError(err, code, statusCode) {
-    assert(err, 'Expected error but found none');
-    assert.strictEqual(err.code, code);
-    assert.strictEqual(err.statusCode, statusCode);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(code);
+    expect(err.statusCode).toBe(statusCode);
 }
 
 describe('GET object taggings', () => {
@@ -54,7 +54,7 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return appropriate tags after putting tags', done => {
+        test('should return appropriate tags after putting tags', done => {
             s3.putObjectTagging({
                 Bucket: bucketName,
                 Key: objectName,
@@ -70,7 +70,7 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return no tag after putting and deleting tags', done => {
+        test('should return no tag after putting and deleting tags', done => {
             async.waterfall([
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
@@ -88,7 +88,7 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return empty array after putting no tag', done => {
+        test('should return empty array after putting no tag', done => {
             s3.getObjectTagging({ Bucket: bucketName, Key: objectName },
             (err, data) => {
                 assert.ifError(err, `getObjectTagging error: ${err}`);
@@ -97,8 +97,7 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return NoSuchKey getting tag to a non-existing object',
-        done => {
+        test('should return NoSuchKey getting tag to a non-existing object', done => {
             s3.getObjectTagging({
                 Bucket: bucketName,
                 Key: 'nonexisting',
@@ -108,18 +107,19 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied getting tag with another account',
-        done => {
-            otherAccountS3.getObjectTagging({ Bucket: bucketName, Key:
-              objectName }, err => {
-                _checkError(err, 'AccessDenied', 403);
-                done();
-            });
-        });
+        test(
+            'should return 403 AccessDenied getting tag with another account',
+            done => {
+                otherAccountS3.getObjectTagging({ Bucket: bucketName, Key:
+                  objectName }, err => {
+                    _checkError(err, 'AccessDenied', 403);
+                    done();
+                });
+            }
+        );
 
-        it('should return 403 AccessDenied getting tag with a different ' +
-        'account to an object with ACL "public-read-write"',
-        done => {
+        test('should return 403 AccessDenied getting tag with a different ' +
+        'account to an object with ACL "public-read-write"', done => {
             s3.putObjectAcl({ Bucket: bucketName, Key: objectName,
                 ACL: 'public-read-write' }, err => {
                 if (err) {
@@ -133,9 +133,8 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should return 403 AccessDenied getting tag to an object ' +
-        'in a bucket created with a different account',
-        done => {
+        test('should return 403 AccessDenied getting tag to an object ' +
+        'in a bucket created with a different account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:
                   'public-read-write' }, err => next(err)),
@@ -149,7 +148,7 @@ describe('GET object taggings', () => {
             });
         });
 
-        it('should get tag to an object in a bucket created with same ' +
+        test('should get tag to an object in a bucket created with same ' +
         'account', done => {
             async.waterfall([
                 next => s3.putBucketAcl({ Bucket: bucketName, ACL:

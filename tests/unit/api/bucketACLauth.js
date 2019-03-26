@@ -98,7 +98,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
     ];
 
     orders.forEach(value => {
-        it(value.it, done => {
+        test(value.it, done => {
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
@@ -124,10 +124,10 @@ describe('bucket authorization for bucketGetACL', () => {
         });
     });
 
-    it('should allow access to bucket owner', () => {
+    test('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketGetACL',
             ownerCanonicalId);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
     const orders = [
@@ -145,10 +145,10 @@ describe('bucket authorization for bucketGetACL', () => {
         },
     ];
     orders.forEach(value => {
-        it(`should allow access to ${value.it}`, done => {
+        test(`should allow access to ${value.it}`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketGetACL',
                                                     value.id);
-            assert.strictEqual(noAuthResult, false);
+            expect(noAuthResult).toBe(false);
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             } else if (value.canned) {
@@ -156,7 +156,7 @@ describe('bucket authorization for bucketGetACL', () => {
             }
             const authorizedResult = isBucketAuthorized(bucket, 'bucketGetACL',
                                                         value.id);
-            assert.strictEqual(authorizedResult, true);
+            expect(authorizedResult).toBe(true);
             done();
         });
     });
@@ -175,23 +175,23 @@ describe('bucket authorization for bucketPutACL', () => {
         });
     });
 
-    it('should allow access to bucket owner', () => {
+    test('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketPutACL',
             ownerCanonicalId);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
     const orders = ['FULL_CONTROL', 'WRITE_ACP'];
     orders.forEach(value => {
-        it('should allow access to account if ' +
+        test('should allow access to account if ' +
            `account was granted ${value} right`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketPutACL',
                 accountToVet);
-            assert.strictEqual(noAuthResult, false);
+            expect(noAuthResult).toBe(false);
             bucket.setSpecificAcl(accountToVet, value);
             const authorizedResult = isBucketAuthorized(bucket, 'bucketPutACL',
                 accountToVet);
-            assert.strictEqual(authorizedResult, true);
+            expect(authorizedResult).toBe(true);
             done();
         });
     });
@@ -210,10 +210,10 @@ describe('bucket authorization for bucketOwnerAction', () => {
         });
     });
 
-    it('should allow access to bucket owner', () => {
+    test('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
             ownerCanonicalId);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
     const orders = [
@@ -228,14 +228,14 @@ describe('bucket authorization for bucketOwnerAction', () => {
         },
     ];
     orders.forEach(value => {
-        it(`should not allow access to ${value.it}`, done => {
+        test(`should not allow access to ${value.it}`, done => {
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
             const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
                 value.id);
-            assert.strictEqual(result, false);
+            expect(result).toBe(false);
             done();
         });
     });
@@ -254,10 +254,10 @@ describe('bucket authorization for bucketDelete', () => {
         });
     });
 
-    it('should allow access to bucket owner', () => {
+    test('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketDelete',
             ownerCanonicalId);
-        assert.strictEqual(result, true);
+        expect(result).toBe(true);
     });
 
     const orders = [
@@ -272,13 +272,13 @@ describe('bucket authorization for bucketDelete', () => {
         },
     ];
     orders.forEach(value => {
-        it(`should not allow access to ${value.it}`, done => {
+        test(`should not allow access to ${value.it}`, done => {
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
             const result = isBucketAuthorized(bucket, 'bucketDelete', value.id);
-            assert.strictEqual(result, false);
+            expect(result).toBe(false);
             done();
         });
     });
@@ -299,13 +299,13 @@ describe('bucket authorization for objectDelete and objectPut', () => {
 
     const requestTypes = ['objectDelete', 'objectPut'];
 
-    it('should allow access to bucket owner', () => {
+    test('should allow access to bucket owner', () => {
         const results = requestTypes.map(type =>
             isBucketAuthorized(bucket, type, ownerCanonicalId));
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should allow access to lifecycle service account', () => {
+    test('should allow access to lifecycle service account', () => {
         // NOTE objectPut is not needed for lifecycle but still
         // allowed, we would want more fine-grained implementation of
         // ACLs for service accounts later.
@@ -314,7 +314,7 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         assert.deepStrictEqual(results, [true, true]);
     });
 
-    it('should deny access to unknown service account', () => {
+    test('should deny access to unknown service account', () => {
         const results = requestTypes.map(type =>
             isBucketAuthorized(bucket, type, unknownServiceAccountId));
         assert.deepStrictEqual(results, [false, false]);
@@ -338,7 +338,7 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         },
     ];
     orders.forEach(value => {
-        it(`should allow access to ${value.it}`, done => {
+        test(`should allow access to ${value.it}`, done => {
             bucket.setCannedAcl(value.canned);
             const noAuthResults = requestTypes.map(type =>
                 isBucketAuthorized(bucket, type, value.id));
@@ -355,7 +355,7 @@ describe('bucket authorization for objectDelete and objectPut', () => {
 });
 
 describe('bucket authorization for objectPutACL and objectGetACL', () => {
-    it('should allow access to anyone since checks ' +
+    test('should allow access to anyone since checks ' +
         'are done at object level', done => {
         const requestTypes = ['objectPutACL', 'objectGetACL'];
         const results = requestTypes.map(type =>

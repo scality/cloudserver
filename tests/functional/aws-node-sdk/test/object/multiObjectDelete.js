@@ -11,13 +11,12 @@ const bucketName = 'multi-object-delete-234-634';
 const key = 'key';
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 function checkError(err, code) {
-    assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    expect(err).not.toEqual(null);
+    expect(err.code).toBe(code);
 }
 
 function sortList(list) {
@@ -42,7 +41,7 @@ function createObjectsList(size) {
     return objects;
 }
 
-describe('Multi-Object Delete Success', function success() {
+describe('Multi-Object Delete Success', () => {
     this.timeout(360000);
     let bucketUtil;
     let s3;
@@ -85,7 +84,7 @@ describe('Multi-Object Delete Success', function success() {
 
     afterEach(() => s3.deleteBucketAsync({ Bucket: bucketName }));
 
-    it('should batch delete 1000 objects', () => {
+    test('should batch delete 1000 objects', () => {
         const objects = createObjectsList(1000);
         return s3.deleteObjectsAsync({
             Bucket: bucketName,
@@ -94,16 +93,16 @@ describe('Multi-Object Delete Success', function success() {
                 Quiet: false,
             },
         }).then(res => {
-            assert.strictEqual(res.Deleted.length, 1000);
+            expect(res.Deleted.length).toBe(1000);
             // order of returned objects not sorted
             assert.deepStrictEqual(sortList(res.Deleted), sortList(objects));
-            assert.strictEqual(res.Errors.length, 0);
+            expect(res.Errors.length).toBe(0);
         }).catch(err => {
             checkNoError(err);
         });
     });
 
-    it('should batch delete 1000 objects quietly', () => {
+    test('should batch delete 1000 objects quietly', () => {
         const objects = createObjectsList(1000);
         return s3.deleteObjectsAsync({
             Bucket: bucketName,
@@ -112,8 +111,8 @@ describe('Multi-Object Delete Success', function success() {
                 Quiet: true,
             },
         }).then(res => {
-            assert.strictEqual(res.Deleted.length, 0);
-            assert.strictEqual(res.Errors.length, 0);
+            expect(res.Deleted.length).toBe(0);
+            expect(res.Errors.length).toBe(0);
         }).catch(err => {
             checkNoError(err);
         });
@@ -137,7 +136,8 @@ describe('Multi-Object Delete Error Responses', () => {
 
         afterEach(() => s3.deleteBucketAsync({ Bucket: bucketName }));
 
-        it('should return error if request deletion of more than 1000 objects',
+        test(
+            'should return error if request deletion of more than 1000 objects',
             () => {
                 const objects = createObjectsList(1001);
                 return s3.deleteObjectsAsync({
@@ -148,38 +148,37 @@ describe('Multi-Object Delete Error Responses', () => {
                 }).catch(err => {
                     checkError(err, 'MalformedXML');
                 });
-            });
+            }
+        );
 
-        it('should return error if request deletion of 0 objects',
-            () => {
-                const objects = createObjectsList(0);
-                return s3.deleteObjectsAsync({
-                    Bucket: bucketName,
-                    Delete: {
-                        Objects: objects,
-                    },
-                }).catch(err => {
-                    checkError(err, 'MalformedXML');
-                });
+        test('should return error if request deletion of 0 objects', () => {
+            const objects = createObjectsList(0);
+            return s3.deleteObjectsAsync({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                },
+            }).catch(err => {
+                checkError(err, 'MalformedXML');
             });
+        });
 
-        it('should return no error if try to delete non-existent objects',
-            () => {
-                const objects = createObjectsList(1000);
-                return s3.deleteObjectsAsync({
-                    Bucket: bucketName,
-                    Delete: {
-                        Objects: objects,
-                    },
-                }).then(res => {
-                    assert.strictEqual(res.Deleted.length, 1000);
-                    assert.strictEqual(res.Errors.length, 0);
-                }).catch(err => {
-                    checkNoError(err);
-                });
+        test('should return no error if try to delete non-existent objects', () => {
+            const objects = createObjectsList(1000);
+            return s3.deleteObjectsAsync({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                },
+            }).then(res => {
+                expect(res.Deleted.length).toBe(1000);
+                expect(res.Errors.length).toBe(0);
+            }).catch(err => {
+                checkNoError(err);
             });
+        });
 
-        it('should return error if no such bucket', () => {
+        test('should return error if no such bucket', () => {
             const objects = createObjectsList(1);
             return s3.deleteObjectsAsync({
                 Bucket: 'nosuchbucket2323292093',
@@ -193,12 +192,12 @@ describe('Multi-Object Delete Error Responses', () => {
     });
 });
 
-describe('Multi-Object Delete Access', function access() {
+describe('Multi-Object Delete Access', () => {
     this.timeout(360000);
     let bucketUtil;
     let s3;
 
-    before(() => {
+    beforeAll(() => {
         const createObjects = [];
         bucketUtil = new BucketUtility('default', {
             signatureVersion: 'v4',
@@ -225,9 +224,9 @@ describe('Multi-Object Delete Access', function access() {
         });
     });
 
-    after(() => s3.deleteBucketAsync({ Bucket: bucketName }));
+    afterAll(() => s3.deleteBucketAsync({ Bucket: bucketName }));
 
-    it('should return access denied error for each object where no acl ' +
+    test('should return access denied error for each object where no acl ' +
         'permission', () => {
         const objects = createObjectsList(500);
         const errorList = createObjectsList(500);
@@ -243,16 +242,16 @@ describe('Multi-Object Delete Access', function access() {
                 Quiet: false,
             },
         }).then(res => {
-            assert.strictEqual(res.Deleted.length, 0);
+            expect(res.Deleted.length).toBe(0);
             assert.deepStrictEqual(sortList(res.Errors), sortList(errorList));
-            assert.strictEqual(res.Errors.length, 500);
+            expect(res.Errors.length).toBe(500);
         }).catch(err => {
             checkNoError(err);
         });
     });
 
 
-    it('should batch delete objects where requester has permission', () => {
+    test('should batch delete objects where requester has permission', () => {
         const objects = createObjectsList(500);
         return s3.deleteObjectsAsync({
             Bucket: bucketName,
@@ -261,8 +260,8 @@ describe('Multi-Object Delete Access', function access() {
                 Quiet: false,
             },
         }).then(res => {
-            assert.strictEqual(res.Deleted.length, 500);
-            assert.strictEqual(res.Errors.length, 0);
+            expect(res.Deleted.length).toBe(500);
+            expect(res.Errors.length).toBe(0);
         }).catch(err => {
             checkNoError(err);
         });

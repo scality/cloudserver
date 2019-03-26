@@ -25,17 +25,16 @@ describe('GET bucket cors', () => {
                     AllowedHeaders: ['*'],
                     MaxAgeSeconds: 3000 },
             ] };
-            before(() =>
+            beforeAll(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
                 .then(() => s3.putBucketCorsAsync({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));
 
-            it('should return cors configuration successfully', done => {
+            test('should return cors configuration successfully', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     assert.deepStrictEqual(data.CORSRules,
                         sampleCors.CORSRules);
                     return done();
@@ -50,18 +49,16 @@ describe('GET bucket cors', () => {
                     AllowedOrigins: ['http://www.example.com'],
                     AllowedHeaders: [testValue] },
             ] };
-            before(() =>
+            beforeAll(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
                 .then(() => s3.putBucketCorsAsync({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));
 
-            it('should be preserved when putting / getting cors resource',
-            done => {
+            test('should be preserved when putting / getting cors resource', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     assert.deepStrictEqual(data.CORSRules[0].AllowedHeaders,
                         sampleCors.CORSRules[0].AllowedHeaders);
                     return done();
@@ -74,18 +71,16 @@ describe('GET bucket cors', () => {
                 { AllowedMethods: ['PUT', 'POST', 'DELETE'],
                     AllowedOrigins: ['http://www.example.com'] },
             ] };
-            before(() =>
+            beforeAll(() =>
                 s3.createBucketAsync({ Bucket: bucketName })
                 .then(() => s3.putBucketCorsAsync({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));
 
-            it('should be preserved when retrieving cors resource',
-            done => {
+            test('should be preserved when retrieving cors resource', done => {
                 s3.getBucketCors({ Bucket: bucketName }, (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     assert.deepStrictEqual(data.CORSRules[0].AllowedMethods,
                         sampleCors.CORSRules[0].AllowedMethods);
                     return done();
@@ -94,7 +89,7 @@ describe('GET bucket cors', () => {
         });
 
         describe('on bucket without cors configuration', () => {
-            before(done => {
+            beforeAll(done => {
                 process.stdout.write('about to create bucket\n');
                 s3.createBucket({ Bucket: bucketName }, err => {
                     if (err) {
@@ -105,11 +100,11 @@ describe('GET bucket cors', () => {
                 });
             });
 
-            it('should return NoSuchCORSConfiguration', done => {
+            test('should return NoSuchCORSConfiguration', done => {
                 s3.getBucketCors({ Bucket: bucketName }, err => {
-                    assert(err);
-                    assert.strictEqual(err.code, 'NoSuchCORSConfiguration');
-                    assert.strictEqual(err.statusCode, 404);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('NoSuchCORSConfiguration');
+                    expect(err.statusCode).toBe(404);
                     return done();
                 });
             });

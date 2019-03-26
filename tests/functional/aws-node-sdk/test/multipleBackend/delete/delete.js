@@ -26,7 +26,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
         let bucketUtil;
         let s3;
 
-        before(() => {
+        beforeAll(() => {
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -78,7 +78,7 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 throw err;
             });
         });
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Deleting bucket\n');
             return bucketUtil.deleteOne(bucket)
             .catch(err => {
@@ -87,69 +87,57 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
             });
         });
 
-        it('should delete object from mem', done => {
+        test('should delete object from mem', done => {
             s3.deleteObject({ Bucket: bucket, Key: memObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 s3.getObject({ Bucket: bucket, Key: memObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });
         });
-        it('should delete object from file', done => {
+        test('should delete object from file', done => {
             s3.deleteObject({ Bucket: bucket, Key: fileObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 s3.getObject({ Bucket: bucket, Key: fileObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });
         });
-        it('should delete object from AWS', done => {
+        test('should delete object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: awsObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 s3.getObject({ Bucket: bucket, Key: awsObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });
         });
-        it('should delete 0-byte object from AWS', done => {
+        test('should delete 0-byte object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: emptyObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 s3.getObject({ Bucket: bucket, Key: emptyObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });
         });
-        it('should delete large object from AWS', done => {
+        test('should delete large object from AWS', done => {
             s3.deleteObject({ Bucket: bucket, Key: bigObject }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 s3.getObject({ Bucket: bucket, Key: bigObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });
         });
-        it('should delete object from AWS location with bucketMatch set to ' +
+        test('should delete object from AWS location with bucketMatch set to ' +
         'false', done => {
             s3.deleteObject({ Bucket: bucket, Key: mismatchObject }, err => {
-                assert.equal(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toEqual(null);
                 s3.getObject({ Bucket: bucket, Key: mismatchObject }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey',
-                        'Expected error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             });

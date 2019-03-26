@@ -32,28 +32,28 @@ function makeMetadataRequest(params, callback) {
 describe('metadata routes with metadata mock backend', () => {
     let httpServer;
 
-    before(done => {
+    beforeAll(done => {
         httpServer = http.createServer(
             (req, res) => metadataMock.onRequest(req, res)).listen(9000, done);
     });
 
-    after(() => httpServer.close());
+    afterAll(() => httpServer.close());
 
-    it('should retrieve list of buckets', done => {
+    test('should retrieve list of buckets', done => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
             path: '/_/metadata/admin/raft_sessions/1/bucket',
         }, (err, res) => {
             assert.ifError(err);
-            assert.strictEqual(res.statusCode, 200);
-            assert(res.body);
-            assert.strictEqual(res.body, '["bucket1","bucket2"]');
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toBeTruthy();
+            expect(res.body).toBe('["bucket1","bucket2"]');
             return done();
         });
     });
 
-    it('should retrieve list of objects from bucket', done => {
+    test('should retrieve list of objects from bucket', done => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
@@ -61,48 +61,48 @@ describe('metadata routes with metadata mock backend', () => {
             queryObj: { listingType: 'Delimiter' },
         }, (err, res) => {
             assert.ifError(err);
-            assert.strictEqual(res.statusCode, 200);
+            expect(res.statusCode).toBe(200);
             const body = JSON.parse(res.body);
-            assert.strictEqual(body.Contents[0].key, 'testobject1');
+            expect(body.Contents[0].key).toBe('testobject1');
             return done();
         });
     });
 
-    it('should retrieve metadata of bucket', done => {
+    test('should retrieve metadata of bucket', done => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
             path: '/_/metadata/default/attributes/bucket1',
         }, (err, res) => {
             assert.ifError(err);
-            assert.strictEqual(res.statusCode, 200);
-            assert(res.body);
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toBeTruthy();
             return done();
         });
     });
 
-    it('should retrieve metadata of object', done => {
+    test('should retrieve metadata of object', done => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
             path: '/_/metadata/default/bucket/bucket1/testobject1',
         }, (err, res) => {
             assert.ifError(err);
-            assert(res.body);
-            assert.strictEqual(res.statusCode, 200);
+            expect(res.body).toBeTruthy();
+            expect(res.statusCode).toBe(200);
             const body = JSON.parse(res.body);
-            assert.strictEqual(body.metadata, 'dogsAreGood');
+            expect(body.metadata).toBe('dogsAreGood');
             return done();
         });
     });
 
-    it('should get an error for accessing invalid routes', done => {
+    test('should get an error for accessing invalid routes', done => {
         makeMetadataRequest({
             method: 'GET',
             authCredentials: metadataAuthCredentials,
             path: '/_/metadata/admin/raft_sessions',
         }, err => {
-            assert.strictEqual(err.code, 'NotImplemented');
+            expect(err.code).toBe('NotImplemented');
             return done();
         });
     });

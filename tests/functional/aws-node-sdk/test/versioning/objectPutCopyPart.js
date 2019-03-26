@@ -17,7 +17,7 @@ const destKey = 'destobjectkey';
 const invalidId = 'invalidId';
 
 function _assertNoError(err, desc) {
-    assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);
+    expect(err).toBe(null);
 }
 
 
@@ -81,7 +81,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('should not return a version id when put part by copying ' +
+            test('should not return a version id when put part by copying ' +
             'without specifying version id', done => {
                 s3.uploadPartCopy({
                     Bucket: destBucket,
@@ -91,13 +91,13 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
-                    assert.strictEqual(data.CopySourceVersionId, undefined);
-                    assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
+                    expect(data.CopySourceVersionId).toBe(undefined);
+                    expect(data.CopyPartResult.ETag).toBe(eTags[0]);
                     done();
                 });
             });
 
-            it('should return NoSuchKey if copy source version id is invalid ' +
+            test('should return NoSuchKey if copy source version id is invalid ' +
             'id', done => {
                 s3.uploadPartCopy({
                     Bucket: destBucket,
@@ -107,14 +107,14 @@ describe('Object Part Copy with Versioning', () => {
                     PartNumber: 1,
                     UploadId: uploadId,
                 }, err => {
-                    assert(err, `Expected err but got ${err}`);
-                    assert.strictEqual(err.code, 'InvalidArgument');
-                    assert.strictEqual(err.statusCode, 400);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('InvalidArgument');
+                    expect(err.statusCode).toBe(400);
                     done();
                 });
             });
 
-            it('should allow specific version "null" for copy source ' +
+            test('should allow specific version "null" for copy source ' +
             'and return version id "null" in response headers', done => {
                 s3.uploadPartCopy({
                     Bucket: destBucket,
@@ -125,8 +125,8 @@ describe('Object Part Copy with Versioning', () => {
                 }, (err, data) => {
                     _assertNoError(err,
                         'using specific version "null" for copy source');
-                    assert.strictEqual(data.CopySourceVersionId, 'null');
-                    assert.strictEqual(data.ETag, eTags[0]);
+                    expect(data.CopySourceVersionId).toBe('null');
+                    expect(data.ETag).toBe(eTags[0]);
                     done();
                 });
             });
@@ -174,7 +174,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('copy part without specifying version should return data and ' +
+            test('copy part without specifying version should return data and ' +
             'version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
@@ -186,13 +186,13 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
-                    assert.strictEqual(data.CopySourceVersionId, lastVersion);
-                    assert.strictEqual(data.CopyPartResult.ETag, lastETag);
+                    expect(data.CopySourceVersionId).toBe(lastVersion);
+                    expect(data.CopyPartResult.ETag).toBe(lastETag);
                     done();
                 });
             });
 
-            it('copy part without specifying version should return NoSuchKey ' +
+            test('copy part without specifying version should return NoSuchKey ' +
             'if latest version has a delete marker', done => {
                 s3.deleteObject({ Bucket: sourceBucket, Key: sourceKey },
                     err => {
@@ -204,15 +204,15 @@ describe('Object Part Copy with Versioning', () => {
                             PartNumber: 1,
                             UploadId: uploadId,
                         }, err => {
-                            assert(err, 'Expected err but did not find one');
-                            assert.strictEqual(err.code, 'NoSuchKey');
-                            assert.strictEqual(err.statusCode, 404);
+                            expect(err).toBeTruthy();
+                            expect(err.code).toBe('NoSuchKey');
+                            expect(err.statusCode).toBe(404);
                             done();
                         });
                     });
             });
 
-            it('copy part with specific version id should return ' +
+            test('copy part with specific version id should return ' +
             'InvalidRequest if that id is a delete marker', done => {
                 async.waterfall([
                     next => s3.deleteObject({
@@ -233,20 +233,20 @@ describe('Object Part Copy with Versioning', () => {
                         }, next);
                     },
                 ], err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'InvalidRequest');
-                    assert.strictEqual(err.statusCode, 400);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('InvalidRequest');
+                    expect(err.statusCode).toBe(400);
                     done();
                 });
             });
 
-            it('copy part with specific version should return NoSuchVersion ' +
+            test('copy part with specific version should return NoSuchVersion ' +
             'if version does not exist', done => {
                 const versionId = versionIds[1];
                 s3.deleteObject({ Bucket: sourceBucket, Key: sourceKey,
                     VersionId: versionId }, (err, data) => {
                     _assertNoError(err, `deleting version ${versionId}`);
-                    assert.strictEqual(data.VersionId, versionId);
+                    expect(data.VersionId).toBe(versionId);
                     s3.uploadPartCopy({
                         Bucket: destBucket,
                         CopySource: `${sourceBucket}/${sourceKey}` +
@@ -255,15 +255,15 @@ describe('Object Part Copy with Versioning', () => {
                         PartNumber: 1,
                         UploadId: uploadId,
                     }, err => {
-                        assert(err, 'Expected err but did not find one');
-                        assert.strictEqual(err.code, 'NoSuchVersion');
-                        assert.strictEqual(err.statusCode, 404);
+                        expect(err).toBeTruthy();
+                        expect(err.code).toBe('NoSuchVersion');
+                        expect(err.statusCode).toBe(404);
                         done();
                     });
                 });
             });
 
-            it('copy part with specific version should return copy source ' +
+            test('copy part with specific version should return copy source ' +
             'version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.uploadPartCopy({
@@ -275,13 +275,13 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
-                    assert.strictEqual(data.CopySourceVersionId, versionId);
-                    assert.strictEqual(data.CopyPartResult.ETag, eTags[1]);
+                    expect(data.CopySourceVersionId).toBe(versionId);
+                    expect(data.CopyPartResult.ETag).toBe(eTags[1]);
                     done();
                 });
             });
 
-            it('copy part with specific version "null" should return copy ' +
+            test('copy part with specific version "null" should return copy ' +
             'source version id "null" if it exists', done => {
                 s3.uploadPartCopy({
                     Bucket: destBucket,
@@ -291,8 +291,8 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
-                    assert.strictEqual(data.CopySourceVersionId, 'null');
-                    assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
+                    expect(data.CopySourceVersionId).toBe('null');
+                    expect(data.CopyPartResult.ETag).toBe(eTags[0]);
                     done();
                 });
             });
@@ -346,7 +346,7 @@ describe('Object Part Copy with Versioning', () => {
                 done();
             });
 
-            it('copy part without specifying version should still return ' +
+            test('copy part without specifying version should still return ' +
             'version id of latest version', done => {
                 const lastVersion = versionIds[versionIds.length - 1];
                 const lastETag = eTags[eTags.length - 1];
@@ -358,13 +358,13 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'uploading part copy w/o version id');
-                    assert.strictEqual(data.CopySourceVersionId, lastVersion);
-                    assert.strictEqual(data.CopyPartResult.ETag, lastETag);
+                    expect(data.CopySourceVersionId).toBe(lastVersion);
+                    expect(data.CopyPartResult.ETag).toBe(lastETag);
                     done();
                 });
             });
 
-            it('copy part with specific version should still return copy ' +
+            test('copy part with specific version should still return copy ' +
             'source version id if it exists', done => {
                 const versionId = versionIds[1];
                 s3.uploadPartCopy({
@@ -376,13 +376,13 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
-                    assert.strictEqual(data.CopySourceVersionId, versionId);
-                    assert.strictEqual(data.CopyPartResult.ETag, eTags[1]);
+                    expect(data.CopySourceVersionId).toBe(versionId);
+                    expect(data.CopyPartResult.ETag).toBe(eTags[1]);
                     done();
                 });
             });
 
-            it('copy part with specific version "null" should still return ' +
+            test('copy part with specific version "null" should still return ' +
             'copy source version id "null" if it exists', done => {
                 s3.uploadPartCopy({
                     Bucket: destBucket,
@@ -392,8 +392,8 @@ describe('Object Part Copy with Versioning', () => {
                     UploadId: uploadId,
                 }, (err, data) => {
                     _assertNoError(err, 'copy part from specific version');
-                    assert.strictEqual(data.CopySourceVersionId, 'null');
-                    assert.strictEqual(data.CopyPartResult.ETag, eTags[0]);
+                    expect(data.CopySourceVersionId).toBe('null');
+                    expect(data.CopyPartResult.ETag).toBe(eTags[0]);
                     done();
                 });
             });

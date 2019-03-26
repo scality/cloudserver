@@ -8,13 +8,12 @@ const bucket = 'bucketlistparts';
 const object = 'toto';
 
 function checkError(err, statusCode, code) {
-    assert.strictEqual(err.statusCode, statusCode);
-    assert.strictEqual(err.code, code);
+    expect(err.statusCode).toBe(statusCode);
+    expect(err.code).toBe(code);
 }
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 const body = Buffer.alloc(1024 * 1024 * 5, 'a');
@@ -30,11 +29,17 @@ const testsOrder = [
 ];
 
 describe('More MPU tests', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
 
-        beforeEach(function beforeEachF(done) {
+        beforeEach(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             async.waterfall([
@@ -42,7 +47,7 @@ describe('More MPU tests', () => {
                 next => s3.createMultipartUpload({ Bucket: bucket,
                     Key: object }, (err, data) => {
                     checkNoError(err);
-                    this.currentTest.UploadId = data.UploadId;
+                    testContext.currentTest.UploadId = data.UploadId;
                     return next();
                 }),
                 next => s3.uploadPart({
@@ -50,9 +55,9 @@ describe('More MPU tests', () => {
                     Key: object,
                     PartNumber: 1000,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, (err, data) => {
+                    UploadId: testContext.currentTest.UploadId }, (err, data) => {
                     checkNoError(err);
-                    this.currentTest.Etag = data.ETag;
+                    testContext.currentTest.Etag = data.ETag;
                     return next();
                 }),
                 next => s3.uploadPart({
@@ -60,13 +65,13 @@ describe('More MPU tests', () => {
                     Key: object,
                     PartNumber: 3,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, err => next(err)),
+                    UploadId: testContext.currentTest.UploadId }, err => next(err)),
                 next => s3.uploadPart({
                     Bucket: bucket,
                     Key: object,
                     PartNumber: 8,
                     Body: body,
-                    UploadId: this.currentTest.UploadId }, err => next(err)),
+                    UploadId: testContext.currentTest.UploadId }, err => next(err)),
             ], done);
         });
 
@@ -78,8 +83,8 @@ describe('More MPU tests', () => {
             ], done);
         });
         testsOrder.forEach(testOrder => {
-            it('should complete MPU by concatenating the parts in ' +
-            `the following order: ${testOrder.values}`, function itF(done) {
+            test('should complete MPU by concatenating the parts in ' +
+            `the following order: ${testOrder.values}`, done => {
                 async.waterfall([
                     next => s3.completeMultipartUpload({
                         Bucket: bucket,
@@ -87,27 +92,27 @@ describe('More MPU tests', () => {
                         MultipartUpload: {
                             Parts: [
                                 {
-                                    ETag: this.test.Etag,
+                                    ETag: testContext.test.Etag,
                                     PartNumber: testOrder.values[0],
                                 },
                                 {
-                                    ETag: this.test.Etag,
+                                    ETag: testContext.test.Etag,
                                     PartNumber: testOrder.values[1],
                                 },
                                 {
-                                    ETag: this.test.Etag,
+                                    ETag: testContext.test.Etag,
                                     PartNumber: testOrder.values[2],
                                 },
                             ],
                         },
-                        UploadId: this.test.UploadId }, next),
+                        UploadId: testContext.test.UploadId }, next),
                 ], err => {
                     if (testOrder.err) {
                         checkError(err, 400, 'InvalidPartOrder');
                         return s3.abortMultipartUpload({
                             Bucket: bucket,
                             Key: object,
-                            UploadId: this.test.UploadId,
+                            UploadId: testContext.test.UploadId,
                         }, done);
                     }
                     checkNoError(err);

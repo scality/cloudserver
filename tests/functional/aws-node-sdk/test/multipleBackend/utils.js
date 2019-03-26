@@ -60,12 +60,12 @@ if (config.backends.data === 'multiple') {
 
 function _assertErrorResult(err, expectedError, desc) {
     if (!expectedError) {
-        assert.strictEqual(err, null, `got error for ${desc}: ${err}`);
+        expect(err).toBe(null);
         return;
     }
-    assert(err, `expected ${expectedError} but found no error`);
-    assert.strictEqual(err.code, expectedError);
-    assert.strictEqual(err.statusCode, errors[expectedError].code);
+    expect(err).toBeTruthy();
+    expect(err.code).toBe(expectedError);
+    expect(err.statusCode).toBe(errors[expectedError].code);
 }
 
 const utils = {
@@ -213,8 +213,7 @@ utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
 utils.enableVersioning = (s3, bucket, cb) => {
     s3.putBucketVersioning({ Bucket: bucket,
         VersioningConfiguration: versioningEnabled }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `enabling versioning, got error ${err}`);
+        expect(err).toBe(null);
         cb();
     });
 };
@@ -222,8 +221,7 @@ utils.enableVersioning = (s3, bucket, cb) => {
 utils.suspendVersioning = (s3, bucket, cb) => {
     s3.putBucketVersioning({ Bucket: bucket,
         VersioningConfiguration: versioningSuspended }, err => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `enabling versioning, got error ${err}`);
+        expect(err).toBe(null);
         cb();
     });
 };
@@ -232,8 +230,7 @@ utils.mapToAwsPuts = (s3, bucket, key, dataArray, cb) => {
     async.mapSeries(dataArray, (data, next) => {
         utils.putToAwsBackend(s3, bucket, key, data, next);
     }, (err, results) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `putting object, got error ${err}`);
+        expect(err).toBe(null);
         cb(null, results);
     });
 };
@@ -259,27 +256,23 @@ utils.getAndAssertResult = (s3, params, cb) => {
             if (expectedError) {
                 return cb();
             }
-            assert.strictEqual(err, null, 'Expected success ' +
-                `getting object, got error ${err}`);
+            expect(err).toBe(null);
             if (body) {
-                assert(data.Body, 'expected object body in response');
-                assert.equal(data.Body.length, data.ContentLength,
-                    `received data of length ${data.Body.length} does not ` +
-                    'equal expected based on ' +
-                    `content length header of ${data.ContentLength}`);
+                expect(data.Body).toBeTruthy();
+                expect(data.Body.length).toEqual(data.ContentLength);
                 const expectedMD5 = utils.expectedETag(body, false);
                 const resultMD5 = utils.expectedETag(data.Body, false);
-                assert.strictEqual(resultMD5, expectedMD5);
+                expect(resultMD5).toBe(expectedMD5);
             }
             if (!expectedVersionId) {
-                assert.strictEqual(data.VersionId, undefined);
+                expect(data.VersionId).toBe(undefined);
             } else {
-                assert.strictEqual(data.VersionId, expectedVersionId);
+                expect(data.VersionId).toBe(expectedVersionId);
             }
             if (expectedTagCount && expectedTagCount === '0') {
-                assert.strictEqual(data.TagCount, undefined);
+                expect(data.TagCount).toBe(undefined);
             } else if (expectedTagCount) {
-                assert.strictEqual(data.TagCount, expectedTagCount);
+                expect(data.TagCount).toBe(expectedTagCount);
             }
             return cb();
         });
@@ -314,11 +307,10 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
 
 utils.awsGetLatestVerId = (key, body, cb) =>
     utils.getAwsRetry({ key }, 0, (err, result) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object from AWS, got error ${err}`);
+        expect(err).toBe(null);
         const resultMD5 = utils.expectedETag(result.Body, false);
         const expectedMD5 = utils.expectedETag(body, false);
-        assert.strictEqual(resultMD5, expectedMD5, 'expected different body');
+        expect(resultMD5).toBe(expectedMD5);
         return cb(null, result.VersionId);
     });
 
@@ -346,11 +338,11 @@ utils.tagging.putTaggingAndAssert = (s3, params, cb) => {
         if (expectedError) {
             return cb();
         }
-        assert.strictEqual(err, null, `got error for putting tags: ${err}`);
+        expect(err).toBe(null);
         if (expectedVersionId) {
-            assert.strictEqual(data.VersionId, expectedVersionId);
+            expect(data.VersionId).toBe(expectedVersionId);
         } else {
-            assert.strictEqual(data.VersionId, undefined);
+            expect(data.VersionId).toBe(undefined);
         }
         return cb(null, data.VersionId);
     });
@@ -367,11 +359,11 @@ utils.tagging.getTaggingAndAssert = (s3, params, cb) => {
             }
             const expectedTagResult = _getTaggingConfig(expectedTags);
             const expectedTagCount = `${Object.keys(expectedTags).length}`;
-            assert.strictEqual(err, null, `got error for putting tags: ${err}`);
+            expect(err).toBe(null);
             if (expectedVersionId) {
-                assert.strictEqual(data.VersionId, expectedVersionId);
+                expect(data.VersionId).toBe(expectedVersionId);
             } else {
-                assert.strictEqual(data.VersionId, undefined);
+                expect(data.VersionId).toBe(undefined);
             }
             assert.deepStrictEqual(data.TagSet, expectedTagResult.TagSet);
             if (getObject === false) {
@@ -391,11 +383,11 @@ utils.tagging.delTaggingAndAssert = (s3, params, cb) => {
         if (expectedError) {
             return cb();
         }
-        assert.strictEqual(err, null, `got error for putting tags: ${err}`);
+        expect(err).toBe(null);
         if (expectedVersionId) {
-            assert.strictEqual(data.VersionId, expectedVersionId);
+            expect(data.VersionId).toBe(expectedVersionId);
         } else {
-            assert.strictEqual(data.VersionId, undefined);
+            expect(data.VersionId).toBe(undefined);
         }
         return utils.tagging.getTaggingAndAssert(s3, { bucket, key, versionId,
             expectedVersionId, expectedTags: {} }, () => cb());
@@ -407,8 +399,7 @@ utils.tagging.awsGetAssertTags = (params, cb) => {
     const expectedTagResult = _getTaggingConfig(expectedTags);
     awsS3.getObjectTagging({ Bucket: awsBucket, Key: key,
         VersionId: versionId }, (err, data) => {
-        assert.strictEqual(err, null, 'got unexpected error getting ' +
-            `tags directly from AWS: ${err}`);
+        expect(err).toBe(null);
         assert.deepStrictEqual(data.TagSet, expectedTagResult.TagSet);
         return cb();
     });

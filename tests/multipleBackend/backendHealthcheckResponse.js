@@ -16,37 +16,35 @@ const locConstraints = Object.keys(config.locationConstraints);
 const azureClient = getAzureClient();
 
 describe('Healthcheck response', () => {
-    it('should return result for every location constraint in ' +
+    test('should return result for every location constraint in ' +
     'locationConfig and every external locations with flightCheckOnStartUp ' +
     'set to true', done => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                assert(resultKeys.includes(constraint));
+                expect(resultKeys.includes(constraint)).toBeTruthy();
             });
             done();
         });
     });
-    it('should return no error with flightCheckOnStartUp set to false',
-    done => {
+    test('should return no error with flightCheckOnStartUp set to false', done => {
         clientCheck(false, log, err => {
-            assert.strictEqual(err, null,
-                `Expected success but got error ${err}`);
+            expect(err).toBe(null);
             done();
         });
     });
-    it('should return result for every location constraint in ' +
+    test('should return result for every location constraint in ' +
     'locationConfig and at least one of every external locations with ' +
     'flightCheckOnStartUp set to false', done => {
         clientCheck(false, log, (err, results) => {
-            assert.notStrictEqual(results.length, locConstraints.length);
+            expect(results.length).not.toBe(locConstraints.length);
             locConstraints.forEach(constraint => {
                 if (Object.keys(results).indexOf(constraint) === -1) {
                     const locationType = config
                         .locationConstraints[constraint].type;
-                    assert(Object.keys(results).some(result =>
+                    expect(Object.keys(results).some(result =>
                       config.locationConstraints[result].type
-                        === locationType));
+                        === locationType)).toBeTruthy();
                 }
             });
             done();
@@ -65,37 +63,33 @@ describe('Healthcheck response', () => {
             azureClient.deleteContainerIfExists(containerName, done);
         });
 
-        it('should create an azure location\'s container if it is missing ' +
+        test('should create an azure location\'s container if it is missing ' +
         'and the check is a flightCheckOnStartUp', done => {
             clientCheck(true, log, (err, results) => {
                 const azureLocationNonExistContainerError =
                     results[azureLocationNonExistContainer].error;
                 if (err) {
-                    assert.strictEqual(err, errors.InternalError,
-                        `got unexpected err in clientCheck: ${err}`);
-                    assert(azureLocationNonExistContainerError.startsWith(
-                        'The specified container is being deleted.'));
+                    expect(err).toBe(errors.InternalError);
+                    expect(azureLocationNonExistContainerError.startsWith(
+                        'The specified container is being deleted.')).toBeTruthy();
                     return done();
                 }
                 return azureClient.getContainerMetadata(containerName,
                     (err, azureResult) => {
-                        assert.strictEqual(err, null, 'got unexpected err ' +
-                            `heading azure container: ${err}`);
-                        assert.strictEqual(azureResult.name, containerName);
+                        expect(err).toBe(null);
+                        expect(azureResult.name).toBe(containerName);
                         return done();
                     });
             });
         });
 
-        it('should not create an azure location\'s container even if it is ' +
+        test('should not create an azure location\'s container even if it is ' +
         'missing if the check is not a flightCheckOnStartUp', done => {
             clientCheck(false, log, err => {
-                assert.strictEqual(err, null,
-                    `got unexpected err in clientCheck: ${err}`);
+                expect(err).toBe(null);
                 return azureClient.getContainerMetadata(containerName, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'NotFound',
-                        `got unexpected err code in clientCheck: ${err.code}`);
+                    expect(err).toBeTruthy();
+                    expect(err.code).toBe('NotFound');
                     return done();
                 });
             });

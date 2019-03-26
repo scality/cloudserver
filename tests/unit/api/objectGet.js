@@ -57,29 +57,26 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
     };
 
-    it('should get the object metadata', done => {
+    test('should get the object metadata', done => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined,
                 log, (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectGet(authInfo, testGetRequest, false,
                         log, (err, result, responseMetaHeaders) => {
-                            assert.strictEqual(
-                                responseMetaHeaders[userMetadataKey],
-                                userMetadataValue);
-                            assert.strictEqual(responseMetaHeaders.ETag,
-                                `"${correctMD5}"`);
+                            expect(responseMetaHeaders[userMetadataKey]).toBe(userMetadataValue);
+                            expect(responseMetaHeaders.ETag).toBe(`"${correctMD5}"`);
                             done();
                         });
                 });
         });
     });
 
-    it('should get the object data retrieval info', done => {
+    test('should get the object data retrieval info', done => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectGet(authInfo, testGetRequest, false, log,
                         (err, dataGetInfo) => {
                             assert.deepStrictEqual(dataGetInfo,
@@ -96,7 +93,8 @@ describe('objectGet API', () => {
         });
     });
 
-    it('should get the object data retrieval info for an object put by MPU',
+    test(
+        'should get the object data retrieval info for an object put by MPU',
         done => {
             const partBody = Buffer.from('I am a part\n', 'utf8');
             const initiateRequest = {
@@ -189,10 +187,10 @@ describe('objectGet API', () => {
                 },
             ],
             (err, calculatedHash) => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 objectGet(authInfo, testGetRequest, false, log,
                 (err, dataGetInfo) => {
-                    assert.strictEqual(err, null);
+                    expect(err).toBe(null);
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,
@@ -211,9 +209,10 @@ describe('objectGet API', () => {
                     done();
                 });
             });
-        });
+        }
+    );
 
-    it('should get a 0 bytes object', done => {
+    test('should get a 0 bytes object', done => {
         const postBody = '';
         const correctMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
         const testPutObjectRequest = new DummyRequest({
@@ -231,15 +230,12 @@ describe('objectGet API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     objectGet(authInfo, testGetRequest, false,
                     log, (err, result, responseMetaHeaders) => {
-                        assert.strictEqual(result, null);
-                        assert.strictEqual(
-                            responseMetaHeaders[userMetadataKey],
-                            userMetadataValue);
-                        assert.strictEqual(responseMetaHeaders.ETag,
-                            `"${correctMD5}"`);
+                        expect(result).toBe(null);
+                        expect(responseMetaHeaders[userMetadataKey]).toBe(userMetadataValue);
+                        expect(responseMetaHeaders.ETag).toBe(`"${correctMD5}"`);
                         done();
                     });
                 });

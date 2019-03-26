@@ -11,7 +11,7 @@ const { ConfigObject } = require('../../../../lib/Config');
 const config = new ConfigObject();
 
 describe('Config with all possible options', () => {
-    it('should include certFilePaths object', () => {
+    test('should include certFilePaths object', () => {
         const expectedObj1 = {
             ca: caPath,
             key: keyPath,
@@ -26,7 +26,7 @@ describe('Config with all possible options', () => {
         assert.deepStrictEqual(expectedObj2, config.https);
     });
 
-    it('should include outboundProxy object', () => {
+    test('should include outboundProxy object', () => {
         const expectedObj = {
             url: 'http://test:8001',
             certs: {

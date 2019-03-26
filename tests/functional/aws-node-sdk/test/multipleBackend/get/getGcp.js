@@ -20,12 +20,12 @@ const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const bigMD5 = 'f1c9645dbc14efddc7d8a322685f26eb';
 
-describe('Multiple backend get object', function testSuite() {
+describe('Multiple backend get object', () => {
     this.timeout(30000);
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
-        before(() => {
+        beforeAll(() => {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -36,7 +36,7 @@ describe('Multiple backend get object', function testSuite() {
             });
         });
 
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
             .then(() => {
@@ -51,7 +51,7 @@ describe('Multiple backend get object', function testSuite() {
         });
 
         describeSkipIfNotMultipleOrCeph('with objects in GCP', () => {
-            before(() => {
+            beforeAll(() => {
                 process.stdout.write('Putting object to GCP\n');
                 return s3.putObjectAsync({ Bucket: bucket, Key: gcpObject,
                     Body: body,
@@ -108,16 +108,15 @@ describe('Multiple backend get object', function testSuite() {
             getTests.forEach(test => {
                 const { Bucket, Key, range, size } = test.input;
                 const { MD5, contentRange } = test.output;
-                it(test.msg, done => {
+                test(test.msg, done => {
                     s3.getObject({ Bucket, Key, Range: range },
                     (err, res) => {
-                        assert.equal(err, null,
-                            `Expected success but got error ${err}`);
+                        expect(err).toEqual(null);
                         if (range) {
-                            assert.strictEqual(res.ContentLength, `${size}`);
-                            assert.strictEqual(res.ContentRange, contentRange);
+                            expect(res.ContentLength).toBe(`${size}`);
+                            expect(res.ContentRange).toBe(contentRange);
                         }
-                        assert.strictEqual(res.ETag, `"${MD5}"`);
+                        expect(res.ETag).toBe(`"${MD5}"`);
                         done();
                     });
                 });
@@ -129,16 +128,16 @@ describe('Multiple backend get object', function testSuite() {
                 s3.putObject({ Bucket: bucket, Key: mismatchObject, Body: body,
                 Metadata: { 'scal-location-constraint': gcpLocationMismatch } },
                 err => {
-                    assert.equal(err, null, `Err putting object: ${err}`);
+                    expect(err).toEqual(null);
                     done();
                 });
             });
 
-            it('should get an object from GCP', done => {
+            test('should get an object from GCP', done => {
                 s3.getObject({ Bucket: bucket, Key: mismatchObject },
                 (err, res) => {
-                    assert.equal(err, null, `Error getting object: ${err}`);
-                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(res.ETag).toBe(`"${correctMD5}"`);
                     done();
                 });
             });

@@ -77,7 +77,7 @@ const indexExpectedHeaders = {
 
 
 describe('Head request on bucket website endpoint', () => {
-    it('should return 404 when no such bucket', done => {
+    test('should return 404 when no such bucket', done => {
         const expectedHeaders = {
             'x-amz-error-code': 'NoSuchBucket',
             // Need arsenal fixed to remove period at the end
@@ -93,7 +93,7 @@ describe('Head request on bucket website endpoint', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return 404 when no website configuration', done => {
+        test('should return 404 when no website configuration', done => {
             const expectedHeaders = {
                 'x-amz-error-code': 'NoSuchWebsiteConfiguration',
                 'x-amz-error-message': 'The specified bucket does not ' +
@@ -108,8 +108,7 @@ describe('Head request on bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket, Key: 'index.html',
                         ACL: 'public-read',
                         Body: fs.readFileSync(path.join(__dirname,
@@ -120,7 +119,7 @@ describe('Head request on bucket website endpoint', () => {
                         },
                     },
                         err => {
-                            assert.strictEqual(err, null);
+                            expect(err).toBe(null);
                             done();
                         });
                 });
@@ -131,13 +130,13 @@ describe('Head request on bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should return indexDocument headers if no key ' +
+            test('should return indexDocument headers if no key ' +
                 'requested', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
                     200, indexExpectedHeaders, done);
             });
 
-            it('should return indexDocument headers if key requested', done => {
+            test('should return indexDocument headers if key requested', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined,
                     `${endpoint}/index.html`, 200, indexExpectedHeaders, done);
             });
@@ -148,8 +147,7 @@ describe('Head request on bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'pathprefix/index.html',
                         ACL: 'public-read',
@@ -169,14 +167,12 @@ describe('Head request on bucket website endpoint', () => {
                 done);
             });
 
-            it('should serve indexDocument if path request without key',
-            done => {
+            test('should serve indexDocument if path request without key', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined,
                     `${endpoint}/pathprefix/`, 200, indexExpectedHeaders, done);
             });
 
-            it('should serve indexDocument if path request with key',
-            done => {
+            test('should serve indexDocument if path request with key', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined,
                     `${endpoint}/pathprefix/index.html`, 200,
                     indexExpectedHeaders, done);
@@ -188,8 +184,7 @@ describe('Head request on bucket website endpoint', () => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'index.html',
                         ACL: 'private',
@@ -203,7 +198,7 @@ describe('Head request on bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' }, done);
             });
 
-            it('should return 403 if key is private', done => {
+            test('should return 403 if key is private', done => {
                 const expectedHeaders = {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
@@ -220,7 +215,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should return 403 if nonexisting index document key', done => {
+            test('should return 403 if nonexisting index document key', done => {
                 const expectedHeaders = {
                     'x-amz-error-code': 'AccessDenied',
                     'x-amz-error-message': 'Access Denied',
@@ -241,7 +236,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}`, done => {
+            test(`should redirect to ${redirectEndpoint}`, done => {
                 const expectedHeaders = {
                     location: redirectEndpoint,
                 };
@@ -249,7 +244,7 @@ describe('Head request on bucket website endpoint', () => {
                     endpoint, 301, expectedHeaders, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}about`, done => {
+            test(`should redirect to ${redirectEndpoint}about`, done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
@@ -274,7 +269,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://google.com', done => {
+            test('should redirect to https://google.com', done => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/',
                 };
@@ -282,7 +277,7 @@ describe('Head request on bucket website endpoint', () => {
                     301, expectedHeaders, done);
             });
 
-            it('should redirect to https://google.com/about', done => {
+            test('should redirect to https://google.com/about', done => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/about/',
                 };
@@ -297,8 +292,7 @@ describe('Head request on bucket website endpoint', () => {
                 'error.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
+                    expect(err).toBe(null);
                     s3.putObject({ Bucket: bucket,
                         Key: 'error.html',
                         ACL: 'public-read',
@@ -312,7 +306,7 @@ describe('Head request on bucket website endpoint', () => {
                 s3.deleteObject({ Bucket: bucket, Key: 'error.html' }, done);
             });
 
-            it('should return regular error headers regardless of whether ' +
+            test('should return regular error headers regardless of whether ' +
                 'custom error document', done => {
                 const expectedHeaders = {
                     'x-amz-error-code': 'AccessDenied',
@@ -337,7 +331,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint} if error 403` +
+            test(`should redirect to ${redirectEndpoint} if error 403` +
             ' occured', done => {
                 const expectedHeaders = {
                     location: redirectEndpoint,
@@ -361,7 +355,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}about if ` +
+            test(`should redirect to ${redirectEndpoint}about if ` +
             'key prefix is equal to "about"', done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
@@ -387,7 +381,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint} if ` +
+            test(`should redirect to ${redirectEndpoint} if ` +
             'key prefix is equal to "about" AND error code 403', done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
@@ -415,7 +409,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect based on first rule', done => {
+            test('should redirect based on first rule', done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about/`,
                 };
@@ -440,7 +434,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it('should redirect to https://www.google.com/about if ' +
+            test('should redirect to https://www.google.com/about if ' +
             'https protocol specified', done => {
                 const expectedHeaders = {
                     location: 'https://www.google.com/about/',
@@ -469,7 +463,7 @@ describe('Head request on bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should redirect to specified file if 403 error ' +
+            test('should redirect to specified file if 403 error ' +
                 'error occured', done => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect.html`,
@@ -494,7 +488,7 @@ describe('Head request on bucket website endpoint', () => {
                     WebsiteConfiguration: webConfig }, done);
             });
 
-            it(`should redirect to ${redirectEndpoint}about if ` +
+            test(`should redirect to ${redirectEndpoint}about if ` +
             'ReplaceKeyPrefixWith equals "about"', done => {
                 const expectedHeaders = {
                     location: `${redirectEndpoint}about`,
@@ -524,7 +518,7 @@ describe('Head request on bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should redirect to "redirect/" object if key prefix is equal ' +
+            test('should redirect to "redirect/" object if key prefix is equal ' +
                 'to "about/"', done => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect/`,
@@ -555,10 +549,9 @@ describe('Head request on bucket website endpoint', () => {
                 err => done(err));
             });
 
-            it('should redirect to "redirect" object if key prefix is equal ' +
+            test('should redirect to "redirect" object if key prefix is equal ' +
                 'to "about/" and there is a 403 error satisfying the ' +
-                'condition in the redirect rule',
-            done => {
+                'condition in the redirect rule', done => {
                 const expectedHeaders = {
                     location: `${endpoint}/redirect/`,
                 };

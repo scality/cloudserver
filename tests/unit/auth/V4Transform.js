@@ -29,9 +29,9 @@ class AuthMe extends Readable {
 }
 
 describe('V4Transform class', () => {
-    it('should authenticate successfully', done => {
+    test('should authenticate successfully', done => {
         const v4Transform = new V4Transform(streamingV4Params, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
         });
         const filler1 = '8;chunk-signature=51d2511f7c6887907dff20474d8db6' +
         '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
@@ -49,9 +49,9 @@ describe('V4Transform class', () => {
         });
     });
 
-    it('should ignore data sent after final chunk', done => {
+    test('should ignore data sent after final chunk', done => {
         const v4Transform = new V4Transform(streamingV4Params, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             done();
         });
         const filler1 = '8;chunk-signature=51d2511f7c6887907dff20474d8db6' +

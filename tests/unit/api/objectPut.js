@@ -48,11 +48,11 @@ function generateString(number) {
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
-            assert.strictEqual(err, undefined);
+            expect(err).toBe(undefined);
             objectPut(authUser, testPutObjectRequest, undefined,
                 log, (err, resHeaders) => {
-                    assert.strictEqual(err, null);
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(err).toBe(null);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     cb();
                 });
         });
@@ -78,11 +78,11 @@ describe('parseTagFromQuery', () => {
     ];
     tests.forEach(test => {
         const behavior = test.error ? 'fail' : 'pass';
-        it(`should ${behavior} if tag set: "${test.tagging}"`, done => {
+        test(`should ${behavior} if tag set: "${test.tagging}"`, done => {
             const result = parseTagFromQuery(test.tagging);
             if (test.error) {
-                assert(result[test.error.status]);
-                assert.strictEqual(result.code, test.error.statusCode);
+                expect(result[test.error.status]).toBeTruthy();
+                expect(result.code).toBe(test.error.statusCode);
             } else {
                 assert.deepStrictEqual(result, test.result);
             }
@@ -103,14 +103,14 @@ describe('objectPut API', () => {
         }, postBody);
     });
 
-    it('should return an error if the bucket does not exist', done => {
+    test('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
             done();
         });
     });
 
-    it('should return an error if user is not authorized', done => {
+    test('should return an error if user is not authorized', done => {
         const putAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(putAuthInfo, testPutBucketRequest,
             log, () => {
@@ -122,7 +122,7 @@ describe('objectPut API', () => {
             });
     });
 
-    it('should return error if the upload size exceeds the ' +
+    test('should return error if the upload size exceeds the ' +
     'maximum allowed upload size for a single PUT request', done => {
         testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -133,7 +133,7 @@ describe('objectPut API', () => {
         });
     });
 
-    it('should put object if user has FULL_CONTROL grant on bucket', done => {
+    test('should put object if user has FULL_CONTROL grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-full-control'] =
@@ -141,7 +141,7 @@ describe('objectPut API', () => {
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
-    it('should put object if user has WRITE grant on bucket', done => {
+    test('should put object if user has WRITE grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-grant-write'] =
@@ -150,7 +150,7 @@ describe('objectPut API', () => {
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
-    it('should put object in bucket with public-read-write acl', done => {
+    test('should put object in bucket with public-read-write acl', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
         testPutBucketRequest.headers['x-amz-acl'] = 'public-read-write';
@@ -158,7 +158,7 @@ describe('objectPut API', () => {
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
-    it('should successfully put an object', done => {
+    test('should successfully put an object', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -171,19 +171,18 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     metadata.getObjectMD(bucketName, objectName,
                         {}, log, (err, md) => {
-                            assert(md);
-                            assert
-                            .strictEqual(md['content-md5'], correctMD5);
+                            expect(md).toBeTruthy();
+                            expect(md['content-md5']).toBe(correctMD5);
                             done();
                         });
                 });
         });
     });
 
-    it('should successfully put an object with user metadata', done => {
+    test('should successfully put an object with user metadata', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -205,23 +204,20 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     metadata.getObjectMD(bucketName, objectName, {}, log,
                         (err, md) => {
-                            assert(md);
-                            assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
-                            assert.strictEqual(md['x-amz-meta-test2'],
-                                        'some more metadata');
-                            assert.strictEqual(md['x-amz-meta-test3'],
-                                        'even more metadata');
+                            expect(md).toBeTruthy();
+                            expect(md['x-amz-meta-test']).toBe('some metadata');
+                            expect(md['x-amz-meta-test2']).toBe('some more metadata');
+                            expect(md['x-amz-meta-test3']).toBe('even more metadata');
                             done();
                         });
                 });
         });
     });
 
-    it('should put an object with user metadata but no data', done => {
+    test('should put an object with user metadata but no data', done => {
         const postBody = '';
         const correctMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
         const testPutObjectRequest = new DummyRequest({
@@ -242,25 +238,22 @@ describe('objectPut API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
                     assert.deepStrictEqual(ds, []);
                     metadata.getObjectMD(bucketName, objectName, {}, log,
                         (err, md) => {
-                            assert(md);
-                            assert.strictEqual(md.location, null);
-                            assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
-                            assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
-                            assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
+                            expect(md).toBeTruthy();
+                            expect(md.location).toBe(null);
+                            expect(md['x-amz-meta-test']).toBe('some metadata');
+                            expect(md['x-amz-meta-test2']).toBe('some more metadata');
+                            expect(md['x-amz-meta-test3']).toBe('even more metadata');
                             done();
                         });
                 });
         });
     });
 
-    it('should not leave orphans in data when overwriting an object', done => {
+    test('should not leave orphans in data when overwriting an object', done => {
         const testPutObjectRequest2 = new DummyRequest({
             bucketName,
             namespace,
@@ -280,8 +273,8 @@ describe('objectPut API', () => {
                         // in memory
                         setImmediate(() => {
                             // Data store starts at index 1
-                            assert.strictEqual(ds[0], undefined);
-                            assert.strictEqual(ds[1], undefined);
+                            expect(ds[0]).toBe(undefined);
+                            expect(ds[1]).toBe(undefined);
                             assert.deepStrictEqual(ds[2].value,
                                 Buffer.from('I am another body', 'utf8'));
                             done();
@@ -302,7 +295,7 @@ describe('objectPut API with versioning', () => {
     const testPutObjectRequests = objData.map(data => versioningTestUtils
         .createPutObjectRequest(bucketName, objectName, data));
 
-    it('should delete latest version when creating new null version ' +
+    test('should delete latest version when creating new null version ' +
     'if latest version is null version', done => {
         async.series([
             callback => bucketPut(authInfo, testPutBucketRequest, log,
@@ -369,23 +362,25 @@ describe('objectPut API with versioning', () => {
             });
         });
 
-        it('should still delete null version when creating new null version',
-        done => {
-            objectPut(authInfo, testPutObjectRequests[2], undefined,
-                log, err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
-                    setImmediate(() => {
-                        // old null version should be deleted after putting
-                        // new null version
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, objData[1], objData[2]]);
-                        done(err);
+        test(
+            'should still delete null version when creating new null version',
+            done => {
+                objectPut(authInfo, testPutObjectRequests[2], undefined,
+                    log, err => {
+                        assert.ifError(err, `Unexpected err: ${err}`);
+                        setImmediate(() => {
+                            // old null version should be deleted after putting
+                            // new null version
+                            versioningTestUtils.assertDataStoreValues(ds,
+                                [undefined, objData[1], objData[2]]);
+                            done(err);
+                        });
                     });
-                });
-        });
+            }
+        );
     });
 
-    it('should return BadDigest error and not leave orphans in data when ' +
+    test('should return BadDigest error and not leave orphans in data when ' +
     'contentMD5 and completedHash do not match', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
@@ -405,8 +400,8 @@ describe('objectPut API with versioning', () => {
                 // in memory
                 setImmediate(() => {
                     // Data store starts at index 1
-                    assert.strictEqual(ds[0], undefined);
-                    assert.strictEqual(ds[1], undefined);
+                    expect(ds[0]).toBe(undefined);
+                    expect(ds[1]).toBe(undefined);
                     done();
                 });
             });

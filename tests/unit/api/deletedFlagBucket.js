@@ -76,13 +76,13 @@ function checkBucketListing(authInfo, bucketName, expectedListingLength, done) {
     return serviceGet(authInfo, serviceGetRequest, log, (err, data) => {
         parseString(data, (err, result) => {
             if (expectedListingLength > 0) {
-                assert.strictEqual(result.ListAllMyBucketsResult
-                    .Buckets[0].Bucket.length, expectedListingLength);
-                assert.strictEqual(result.ListAllMyBucketsResult
-                    .Buckets[0].Bucket[0].Name[0], bucketName);
+                expect(result.ListAllMyBucketsResult
+                    .Buckets[0].Bucket.length).toBe(expectedListingLength);
+                expect(result.ListAllMyBucketsResult
+                    .Buckets[0].Bucket[0].Name[0]).toBe(bucketName);
             } else {
-                assert.strictEqual(result.ListAllMyBucketsResult
-                    .Buckets[0].length, 0);
+                expect(result.ListAllMyBucketsResult
+                    .Buckets[0].length).toBe(0);
             }
             done();
         });
@@ -121,35 +121,35 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('putBucket request should recreate bucket with deleted flag if ' +
+    test('putBucket request should recreate bucket with deleted flag if ' +
         'request is from same account that originally put', done => {
         bucketPut(authInfo, baseTestRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._deleted, false);
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                expect(data._transient).toBe(false);
+                expect(data._deleted).toBe(false);
+                expect(data._owner).toBe(authInfo.getCanonicalID());
                 return checkBucketListing(authInfo, bucketName, 1, done);
             });
         });
     });
 
-    it('putBucket request should return error if ' +
+    test('putBucket request should return error if ' +
         'different account sends put bucket request for bucket with ' +
         'deleted flag', done => {
         bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
             assert.deepStrictEqual(err, errors.BucketAlreadyExists);
             metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._deleted, true);
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                expect(data._transient).toBe(false);
+                expect(data._deleted).toBe(true);
+                expect(data._owner).toBe(authInfo.getCanonicalID());
                 return checkBucketListing(otherAccountAuthInfo,
                     bucketName, 0, done);
             });
         });
     });
 
-    it('ACLs from new putBucket request should overwrite ACLs saved ' +
+    test('ACLs from new putBucket request should overwrite ACLs saved ' +
         'in metadata of bucket with deleted flag', done => {
         const alteredRequest = createAlteredRequest({
             'x-amz-acl': 'public-read' }, 'headers',
@@ -157,16 +157,16 @@ describe('deleted flag bucket handling', () => {
         bucketPut(authInfo, alteredRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._deleted, false);
-                assert.strictEqual(data._acl.Canned, 'public-read');
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                expect(data._transient).toBe(false);
+                expect(data._deleted).toBe(false);
+                expect(data._acl.Canned).toBe('public-read');
+                expect(data._owner).toBe(authInfo.getCanonicalID());
                 return checkBucketListing(authInfo, bucketName, 1, done);
             });
         });
     });
 
-    it('putBucketACL request should recreate bucket with deleted flag if ' +
+    test('putBucketACL request should recreate bucket with deleted flag if ' +
         'request is from same account that originally put', done => {
         const putACLRequest = createAlteredRequest({
             'x-amz-acl': 'public-read' }, 'headers',
@@ -175,53 +175,51 @@ describe('deleted flag bucket handling', () => {
         bucketPutACL(authInfo, putACLRequest, log, err => {
             assert.ifError(err);
             metadata.getBucket(bucketName, log, (err, data) => {
-                assert.strictEqual(data._transient, false);
-                assert.strictEqual(data._acl.Canned, 'public-read');
-                assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                expect(data._transient).toBe(false);
+                expect(data._acl.Canned).toBe('public-read');
+                expect(data._owner).toBe(authInfo.getCanonicalID());
                 return checkBucketListing(authInfo, bucketName, 1, done);
             });
         });
     });
 
-    it('putBucketACL request on bucket with deleted flag should return ' +
-        'NoSuchBucket error if request is from another authorized account',
-        // Do not want different account recreating a bucket that the bucket
-        // owner wanted deleted even if the other account is authorized to
-        // change the ACLs
-        done => {
-            const putACLRequest = createAlteredRequest({
-                'x-amz-acl': 'public-read' }, 'headers',
-                baseTestRequest, baseTestRequest.headers);
-            bucketPutACL(otherAccountAuthInfo, putACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
-                metadata.getBucket(bucketName, log, (err, data) => {
-                    assert.strictEqual(data._deleted, true);
-                    assert.strictEqual(data._transient, false);
-                    assert.strictEqual(data._acl.Canned, 'private');
-                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    done();
-                });
+    test('putBucketACL request on bucket with deleted flag should return ' +
+        'NoSuchBucket error if request is from another authorized account', // Do not want different account recreating a bucket that the bucket
+    // owner wanted deleted even if the other account is authorized to
+    // change the ACLs
+    done => {
+        const putACLRequest = createAlteredRequest({
+            'x-amz-acl': 'public-read' }, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        bucketPutACL(otherAccountAuthInfo, putACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            metadata.getBucket(bucketName, log, (err, data) => {
+                expect(data._deleted).toBe(true);
+                expect(data._transient).toBe(false);
+                expect(data._acl.Canned).toBe('private');
+                expect(data._owner).toBe(authInfo.getCanonicalID());
+                done();
             });
         });
+    });
 
-    it('putBucketACL request on bucket with deleted flag should return ' +
-        'AccessDenied error if request is from unauthorized account',
-        done => {
-            const putACLRequest = createAlteredRequest({
-                'x-amz-acl': 'public-read' }, 'headers',
-                baseTestRequest, baseTestRequest.headers);
-            const unauthorizedAccount = makeAuthInfo('keepMeOut');
-            bucketPutACL(unauthorizedAccount, putACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
-                metadata.getBucket(bucketName, log, (err, data) => {
-                    assert.strictEqual(data._deleted, true);
-                    assert.strictEqual(data._transient, false);
-                    assert.strictEqual(data._acl.Canned, 'private');
-                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
-                    done();
-                });
+    test('putBucketACL request on bucket with deleted flag should return ' +
+        'AccessDenied error if request is from unauthorized account', done => {
+        const putACLRequest = createAlteredRequest({
+            'x-amz-acl': 'public-read' }, 'headers',
+            baseTestRequest, baseTestRequest.headers);
+        const unauthorizedAccount = makeAuthInfo('keepMeOut');
+        bucketPutACL(unauthorizedAccount, putACLRequest, log, err => {
+            assert.deepStrictEqual(err, errors.AccessDenied);
+            metadata.getBucket(bucketName, log, (err, data) => {
+                expect(data._deleted).toBe(true);
+                expect(data._transient).toBe(false);
+                expect(data._acl.Canned).toBe('private');
+                expect(data._owner).toBe(authInfo.getCanonicalID());
+                done();
             });
         });
+    });
 
     describe('objectPut on a bucket with deleted flag', () => {
         const objName = 'objectName';
@@ -231,7 +229,7 @@ describe('deleted flag bucket handling', () => {
             });
         });
 
-        it('objectPut request from account that originally created ' +
+        test('objectPut request from account that originally created ' +
             'should recreate bucket', done => {
             const setUpRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
@@ -243,13 +241,13 @@ describe('deleted flag bucket handling', () => {
             objectPut(authInfo, putObjRequest, undefined, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
-                    assert.strictEqual(data._transient, false);
-                    assert.strictEqual(data._deleted, false);
-                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    expect(data._transient).toBe(false);
+                    expect(data._deleted).toBe(false);
+                    expect(data._owner).toBe(authInfo.getCanonicalID());
                     metadata.getObjectMD(bucketName, objName, {}, log,
                         (err, obj) => {
                             assert.ifError(err);
-                            assert.strictEqual(obj['content-md5'], etag);
+                            expect(obj['content-md5']).toBe(etag);
                             return checkBucketListing(authInfo,
                                 bucketName, 1, done);
                         });
@@ -258,7 +256,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('should return NoSuchBucket error on an objectPut request from ' +
+    test('should return NoSuchBucket error on an objectPut request from ' +
         'different account when there is a deleted flag', done => {
         const setUpRequest = createAlteredRequest({}, 'headers',
         baseTestRequest, baseTestRequest.headers);
@@ -273,7 +271,7 @@ describe('deleted flag bucket handling', () => {
 
     describe('initiateMultipartUpload on a bucket with deleted flag', () => {
         const objName = 'objectName';
-        after(done => {
+        afterAll(done => {
             metadata.deleteObjectMD(`${constants.mpuBucketPrefix}` +
                 `${bucketName}`, objName, {}, log, () => {
                     metadata.deleteBucket(`${constants.mpuBucketPrefix}` +
@@ -283,7 +281,7 @@ describe('deleted flag bucket handling', () => {
                 });
         });
 
-        it('should recreate bucket with deleted flag', done => {
+        test('should recreate bucket with deleted flag', done => {
             const initiateRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
             initiateRequest.objectKey = objName;
@@ -291,15 +289,15 @@ describe('deleted flag bucket handling', () => {
             initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                 assert.ifError(err);
                 metadata.getBucket(bucketName, log, (err, data) => {
-                    assert.strictEqual(data._transient, false);
-                    assert.strictEqual(data._deleted, false);
-                    assert.strictEqual(data._owner, authInfo.getCanonicalID());
+                    expect(data._transient).toBe(false);
+                    expect(data._deleted).toBe(false);
+                    expect(data._owner).toBe(authInfo.getCanonicalID());
                     metadata.listObject(`${constants.mpuBucketPrefix}` +
                         `${bucketName}`,
                         { prefix: `overview${constants.splitter}${objName}` },
                         log, (err, results) => {
                             assert.ifError(err);
-                            assert.strictEqual(results.Contents.length, 1);
+                            expect(results.Contents.length).toBe(1);
                             done();
                         });
                 });
@@ -307,7 +305,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('should return NoSuchBucket error on an initiateMultipartUpload ' +
+    test('should return NoSuchBucket error on an initiateMultipartUpload ' +
         'request from different account when there is a deleted flag', done => {
         const initiateRequest = createAlteredRequest({}, 'headers',
         baseTestRequest, baseTestRequest.headers);
@@ -319,7 +317,7 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('deleteBucket request should complete deletion ' +
+    test('deleteBucket request should complete deletion ' +
         'of bucket with deleted flag', done => {
         bucketDelete(authInfo, baseTestRequest, log, err => {
             assert.ifError(err);
@@ -327,7 +325,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('deleteBucket request should return error if account not ' +
+    test('deleteBucket request should return error if account not ' +
         'authorized', done => {
         bucketDelete(otherAccountAuthInfo, baseTestRequest,
             log, err => {
@@ -336,7 +334,7 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('bucketDeleteWebsite request on bucket with delete flag should return ' +
+    test('bucketDeleteWebsite request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketDeleteWebsite(authInfo, baseTestRequest,
             log, err => {
@@ -345,7 +343,7 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('bucketGet request on bucket with delete flag should return ' +
+    test('bucketGet request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketGet(authInfo, baseTestRequest,
             log, err => {
@@ -354,7 +352,7 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('bucketGetACL request on bucket with delete flag should return ' +
+    test('bucketGetACL request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketGetACL(authInfo, baseTestRequest,
             log, err => {
@@ -363,7 +361,7 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('bucketGetCors request on bucket with delete flag should return ' +
+    test('bucketGetCors request on bucket with delete flag should return ' +
     'NoSuchBucket error and complete deletion', done => {
         bucketGetCors(authInfo, baseTestRequest,
         log, err => {
@@ -372,7 +370,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketPutCors request on bucket with delete flag should return ' +
+    test('bucketPutCors request on bucket with delete flag should return ' +
     'NoSuchBucket error and complete deletion', done => {
         const bucketPutCorsRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
@@ -388,7 +386,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketDeleteCors request on bucket with delete flag should return ' +
+    test('bucketDeleteCors request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketDeleteCors(authInfo, baseTestRequest, log, err => {
             assert.deepStrictEqual(err, errors.NoSuchBucket);
@@ -396,7 +394,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketGetWebsite request on bucket with delete flag should return ' +
+    test('bucketGetWebsite request on bucket with delete flag should return ' +
     'NoSuchBucket error and complete deletion', done => {
         bucketGetWebsite(authInfo, baseTestRequest,
         log, err => {
@@ -405,7 +403,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketPutWebsite request on bucket with delete flag should return ' +
+    test('bucketPutWebsite request on bucket with delete flag should return ' +
     'NoSuchBucket error and complete deletion', done => {
         const bucketPutWebsiteRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
@@ -419,7 +417,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('bucketHead request on bucket with delete flag should return ' +
+    test('bucketHead request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketHead(authInfo, baseTestRequest,
             log, err => {
@@ -449,26 +447,27 @@ describe('deleted flag bucket handling', () => {
             });
     }
 
-    it('completeMultipartUpload request on bucket with deleted flag should ' +
+    test('completeMultipartUpload request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
         checkForNoSuchUploadError(completeMultipartUpload, null, done);
     });
 
-    it('listParts request on bucket with deleted flag should ' +
+    test('listParts request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
         checkForNoSuchUploadError(listParts, null, done);
     });
 
     describe('multipartDelete request on a bucket with deleted flag', () => {
-        it('should return NoSuchUpload error if legacyAWSBehavior is enabled',
-        done => {
-            config.locationConstraints[locationConstraint].
-                legacyAwsBehavior = true;
-            checkForNoSuchUploadError(multipartDelete, null, done);
-        });
+        test(
+            'should return NoSuchUpload error if legacyAWSBehavior is enabled',
+            done => {
+                config.locationConstraints[locationConstraint].
+                    legacyAwsBehavior = true;
+                checkForNoSuchUploadError(multipartDelete, null, done);
+            }
+        );
 
-        it('should return no error if legacyAWSBehavior is not enabled',
-        done => {
+        test('should return no error if legacyAWSBehavior is not enabled', done => {
             config.locationConstraints[locationConstraint].
                 legacyAwsBehavior = false;
             const mpuRequest = createAlteredRequest({}, 'headers',
@@ -477,18 +476,18 @@ describe('deleted flag bucket handling', () => {
             mpuRequest.objectKey = 'objectName';
             mpuRequest.query = { uploadId };
             multipartDelete(authInfo, mpuRequest, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 return done();
             });
         });
     });
 
-    it('objectPutPart request on bucket with deleted flag should ' +
+    test('objectPutPart request on bucket with deleted flag should ' +
         'return NoSuchUpload error', done => {
         checkForNoSuchUploadError(objectPutPart, '1', done, true);
     });
 
-    it('list multipartUploads request on bucket with deleted flag should ' +
+    test('list multipartUploads request on bucket with deleted flag should ' +
         'return NoSuchBucket error', done => {
         const listRequest = createAlteredRequest({}, 'headers',
             baseTestRequest, baseTestRequest.headers);
@@ -500,17 +499,16 @@ describe('deleted flag bucket handling', () => {
             });
     });
 
-    it('objectGet request on bucket with deleted flag should' +
-        'return NoSuchBucket error and finish deletion',
-        done => {
-            objectGet(authInfo, baseTestRequest, false,
-            log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
-                confirmDeleted(done);
-            });
+    test('objectGet request on bucket with deleted flag should' +
+        'return NoSuchBucket error and finish deletion', done => {
+        objectGet(authInfo, baseTestRequest, false,
+        log, err => {
+            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            confirmDeleted(done);
         });
+    });
 
-    it('objectGetACL request on bucket with deleted flag should return ' +
+    test('objectGetACL request on bucket with deleted flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         objectGetACL(authInfo, baseTestRequest,
         log, err => {
@@ -519,7 +517,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('objectHead request on bucket with deleted flag should return ' +
+    test('objectHead request on bucket with deleted flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         objectHead(authInfo, baseTestRequest,
         log, err => {
@@ -528,7 +526,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('objectPutACL request on bucket with deleted flag should return ' +
+    test('objectPutACL request on bucket with deleted flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         objectPutACL(authInfo, baseTestRequest,
         log, err => {
@@ -537,7 +535,7 @@ describe('deleted flag bucket handling', () => {
         });
     });
 
-    it('objectDelete request on bucket with deleted flag should return ' +
+    test('objectDelete request on bucket with deleted flag should return ' +
         'NoSuchBucket error', done => {
         objectDelete(authInfo, baseTestRequest,
         log, err => {

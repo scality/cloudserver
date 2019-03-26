@@ -34,7 +34,7 @@ const testCases = [
 
 describe('Location Header Check', () => {
     testCases.forEach(test => {
-        it('should return expected result with location constraint header ' +
+        test('should return expected result with location constraint header ' +
         `set to ${test.location}`, () => {
             const headers = { 'x-amz-location-constraint': `${test.location}` };
             const checkRes =

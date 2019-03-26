@@ -25,8 +25,7 @@ function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
         s3.getObject({ Bucket: bucket, Key: key,
             VersionId: versionId }, next);
     }, (err, results) => {
-        assert.strictEqual(err, null, 'Expected success ' +
-            `getting object, got error ${err}`);
+        expect(err).toBe(null);
         const resultIds = results.map(result => result.VersionId);
         const resultData = results.map(result =>
             result.Body.toString());
@@ -68,35 +67,33 @@ function testSuite() {
             });
         });
 
-        it('should not return version ids when versioning has not been ' +
+        test('should not return version ids when versioning has not been ' +
         'configured via CloudServer', done => {
             const key = `somekey-${genUniqID()}`;
             s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
             Metadata: { 'scal-location-constraint': awsLocation } },
             (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
-                assert.strictEqual(data.VersionId, undefined);
+                expect(err).toBe(null);
+                expect(data.VersionId).toBe(undefined);
                 getAndAssertResult(s3, { bucket, key, body: someBody,
                     expectedVersionId: false }, done);
             });
         });
 
-        it('should not return version ids when versioning has not been ' +
+        test('should not return version ids when versioning has not been ' +
         'configured via CloudServer, even when version id specified', done => {
             const key = `somekey-${genUniqID()}`;
             s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
             Metadata: { 'scal-location-constraint': awsLocation } },
             (err, data) => {
-                assert.strictEqual(err, null, 'Expected success ' +
-                    `putting object, got error ${err}`);
-                assert.strictEqual(data.VersionId, undefined);
+                expect(err).toBe(null);
+                expect(data.VersionId).toBe(undefined);
                 getAndAssertResult(s3, { bucket, key, body: someBody,
                     versionId: 'null', expectedVersionId: false }, done);
             });
         });
 
-        it('should return version id for null version when versioning ' +
+        test('should return version id for null version when versioning ' +
         'has been configured via CloudServer', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -113,7 +110,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should overwrite the null version if putting object twice ' +
+        test('should overwrite the null version if putting object twice ' +
         'before versioning is configured', done => {
             const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
@@ -128,7 +125,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should overwrite existing null version if putting object ' +
+        test('should overwrite existing null version if putting object ' +
         'after suspending versioning', done => {
             const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
@@ -149,7 +146,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should overwrite null version if putting object when ' +
+        test('should overwrite null version if putting object when ' +
         'versioning is suspended after versioning enabled', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [...Array(3).keys()].map(i => `data${i}`);
@@ -162,9 +159,8 @@ function testSuite() {
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: data[1],
                     Metadata: { 'scal-location-constraint': awsLocation } },
                     (err, result) => {
-                        assert.strictEqual(err, null, 'Expected success ' +
-                            `putting object, got error ${err}`);
-                        assert.notEqual(result.VersionId, 'null');
+                        expect(err).toBe(null);
+                        expect(result.VersionId).not.toEqual('null');
                         firstVersionId = result.VersionId;
                         next();
                     }),
@@ -185,8 +181,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should get correct data from aws backend using version IDs',
-        done => {
+        test('should get correct data from aws backend using version IDs', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
@@ -204,8 +199,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should get correct version when getting without version ID',
-        done => {
+        test('should get correct version when getting without version ID', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
@@ -223,10 +217,9 @@ function testSuite() {
             ], done);
         });
 
-        it('should get correct data from aws backend using version IDs ' +
+        test('should get correct data from aws backend using version IDs ' +
         'after putting null versions, putting versions, putting more null ' +
-        'versions and then putting more versions',
-        done => {
+        'versions and then putting more versions', done => {
             const key = `somekey-${genUniqID()}`;
             const data = [...Array(16).keys()].map(i => i.toString());
             // put three null versions,
@@ -270,9 +263,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return the correct data getting versioned object ' +
-        'even if object was deleted from AWS (creating a delete marker)',
-        done => {
+        test('should return the correct data getting versioned object ' +
+        'even if object was deleted from AWS (creating a delete marker)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -287,9 +279,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return the correct data getting versioned object ' +
-        'even if object is put directly to AWS (creating new version)',
-        done => {
+        test('should return the correct data getting versioned object ' +
+        'even if object is put directly to AWS (creating new version)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -304,9 +295,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return a ServiceUnavailable if trying to get an object ' +
-        'that was deleted in AWS but exists in s3 metadata',
-        done => {
+        test('should return a ServiceUnavailable if trying to get an object ' +
+        'that was deleted in AWS but exists in s3 metadata', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -321,16 +311,15 @@ function testSuite() {
                     err => next(err, s3VerId)),
                 (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key },
                     err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
-                        assert.strictEqual(err.statusCode, 503);
+                        expect(err.code).toBe('ServiceUnavailable');
+                        expect(err.statusCode).toBe(503);
                         next();
                     }),
             ], done);
         });
 
-        it('should return a ServiceUnavailable if trying to get a version ' +
-        'that was deleted in AWS but exists in s3 metadata',
-        done => {
+        test('should return a ServiceUnavailable if trying to get a version ' +
+        'that was deleted in AWS but exists in s3 metadata', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
@@ -345,8 +334,8 @@ function testSuite() {
                     err => next(err, s3VerId)),
                 (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key,
                     VersionId: s3VerId }, err => {
-                    assert.strictEqual(err.code, 'ServiceUnavailable');
-                    assert.strictEqual(err.statusCode, 503);
+                    expect(err.code).toBe('ServiceUnavailable');
+                    expect(err.statusCode).toBe(503);
                     next();
                 }),
             ], done);

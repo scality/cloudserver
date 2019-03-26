@@ -26,7 +26,7 @@ describe('serviceGet API', () => {
         url: '/',
     };
 
-    it('should return the list of buckets owned by the user', done => {
+    test('should return the list of buckets owned by the user', done => {
         const testbucketPutRequest1 = {
             namespace,
             bucketName: bucketName1,
@@ -62,21 +62,20 @@ describe('serviceGet API', () => {
                 parseString(result, next);
             },
         ], (err, result) => {
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket.length, 3);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[0].Name[0], bucketName1);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[1].Name[0], bucketName2);
-            assert.strictEqual(result.ListAllMyBucketsResult
-                .Buckets[0].Bucket[2].Name[0], bucketName3);
-            assert.strictEqual(result.ListAllMyBucketsResult.$.xmlns,
-                'http://s3.amazonaws.com/doc/2006-03-01/');
+            expect(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket.length).toBe(3);
+            expect(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[0].Name[0]).toBe(bucketName1);
+            expect(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[1].Name[0]).toBe(bucketName2);
+            expect(result.ListAllMyBucketsResult
+                .Buckets[0].Bucket[2].Name[0]).toBe(bucketName3);
+            expect(result.ListAllMyBucketsResult.$.xmlns).toBe('http://s3.amazonaws.com/doc/2006-03-01/');
             done();
         });
     });
 
-    it('should prevent anonymous user from accessing getService API', done => {
+    test('should prevent anonymous user from accessing getService API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         serviceGet(publicAuthInfo, serviceGetRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);

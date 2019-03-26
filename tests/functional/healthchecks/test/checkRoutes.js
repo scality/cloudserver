@@ -27,7 +27,7 @@ const options = {
 
 function checkResult(expectedStatus, res) {
     const actualStatus = res.statusCode;
-    assert.strictEqual(actualStatus, expectedStatus);
+    expect(actualStatus).toBe(expectedStatus);
 }
 
 function makeChecker(expectedStatus, done) {
@@ -73,28 +73,28 @@ function makeStatsRequest(cb) {
 }
 
 describe('Healthcheck routes', () => {
-    it('should return 200 OK on GET request', done => {
+    test('should return 200 OK on GET request', done => {
         const getOptions = deepCopy(options);
         getOptions.method = 'GET';
         getOptions.agent = makeAgent();
         const req = transport.request(getOptions, makeChecker(200, done));
         req.end();
     });
-    it('should return 200 OK on POST request', done => {
+    test('should return 200 OK on POST request', done => {
         const postOptions = deepCopy(options);
         postOptions.method = 'POST';
         postOptions.agent = makeAgent();
         const req = transport.request(postOptions, makeChecker(200, done));
         req.end();
     });
-    it('should return 400 on other requests', done => {
+    test('should return 400 on other requests', done => {
         const putOptions = deepCopy(options);
         putOptions.method = 'PUT';
         putOptions.agent = makeAgent();
         const req = transport.request(putOptions, makeChecker(400, done));
         req.end();
     });
-    it('should return 200 on deep GET request', done => {
+    test('should return 200 on deep GET request', done => {
         const deepOptions = deepCopy(options);
         deepOptions.method = 'GET';
         deepOptions.path = '/_/healthcheck/deep';
@@ -115,7 +115,7 @@ describe('Healthcheck stats', () => {
 
     afterEach(() => redis.flushdb());
 
-    it('should respond back with total requests', done =>
+    test('should respond back with total requests', done =>
         // interm fix to avoid race condition with Redis
         setTimeout(() => {
             makeStatsRequest((err, res) => {
@@ -127,6 +127,5 @@ describe('Healthcheck stats', () => {
                 assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
                 return done();
             });
-        }, 500)
-    );
+        }, 500));
 });

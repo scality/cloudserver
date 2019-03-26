@@ -20,11 +20,11 @@ let s3;
 function azureCheck(container, key, expected, cb) {
     azureClient.getBlobProperties(container, key, (err, res) => {
         if (expected.error) {
-            assert.strictEqual(err.statusCode, 404);
-            assert.strictEqual(err.code, 'NotFound');
+            expect(err.statusCode).toBe(404);
+            expect(err.code).toBe('NotFound');
         } else {
             const convertedMD5 = convertMD5(res.contentSettings.contentMD5);
-            assert.strictEqual(convertedMD5, expectedMD5);
+            expect(convertedMD5).toBe(expectedMD5);
         }
         return cb();
     });
@@ -34,25 +34,31 @@ describeSkipIfNotMultipleOrCeph('Abort MPU on Azure data backend', function
 describeF() {
     this.timeout(50000);
     withV4(sigCfg => {
-        beforeEach(function beforeFn() {
+        beforeEach(() => {
             this.currentTest.key = uniqName(keyObject);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
         });
         describe('with bucket location header', () => {
-            beforeEach(function beforeEachFn(done) {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
                 async.waterfall([
                     next => s3.createBucket({ Bucket: azureContainerName },
                         err => next(err)),
                     next => s3.createMultipartUpload({
                         Bucket: azureContainerName,
-                        Key: this.currentTest.key,
+                        Key: testContext.currentTest.key,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     }, (err, res) => {
                         if (err) {
                             return next(err);
                         }
-                        this.currentTest.uploadId = res.UploadId;
+                        testContext.currentTest.uploadId = res.UploadId;
                         return next();
                     }),
                 ], done);
@@ -61,57 +67,63 @@ describeF() {
             afterEach(done => s3.deleteBucket({ Bucket: azureContainerName },
                 done));
 
-            it('should abort an MPU with one empty part ', function itFn(done) {
+            test('should abort an MPU with one empty part ', done => {
                 const expected = { error: true };
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
                 };
                 async.waterfall([
                     next => {
                         const partParams = Object.assign({ PartNumber: 1 },
                             params);
                         s3.uploadPart(partParams, err => {
-                            assert.strictEqual(err, null, 'Expected success, ' +
-                            `got error: ${err}`);
+                            expect(err).toBe(null);
                             return next();
                         });
                     },
                     next => s3.abortMultipartUpload(params, err => next(err)),
-                    next => azureCheck(azureContainerName, this.test.key,
+                    next => azureCheck(azureContainerName, testContext.test.key,
                     expected, next),
                 ], done);
             });
 
-            it('should abort MPU with one part bigger than max subpart',
-            function itFn(done) {
-                const expected = { error: true };
-                const params = {
-                    Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
-                };
-                async.waterfall([
-                    next => {
-                        const body = Buffer.alloc(maxSubPartSize + 10);
-                        const partParams = Object.assign(
-                            { PartNumber: 1, Body: body }, params);
-                        s3.uploadPart(partParams, err => {
-                            assert.strictEqual(err, null, 'Expected ' +
-                            `success, got error: ${err}`);
-                            return next();
-                        });
-                    },
-                    next => s3.abortMultipartUpload(params, err => next(err)),
-                    next => azureCheck(azureContainerName, this.test.key,
-                    expected, next),
-                ], done);
-            });
+            test(
+                'should abort MPU with one part bigger than max subpart',
+                done => {
+                    const expected = { error: true };
+                    const params = {
+                        Bucket: azureContainerName,
+                        Key: testContext.test.key,
+                        UploadId: testContext.test.uploadId,
+                    };
+                    async.waterfall([
+                        next => {
+                            const body = Buffer.alloc(maxSubPartSize + 10);
+                            const partParams = Object.assign(
+                                { PartNumber: 1, Body: body }, params);
+                            s3.uploadPart(partParams, err => {
+                                expect(err).toBe(null);
+                                return next();
+                            });
+                        },
+                        next => s3.abortMultipartUpload(params, err => next(err)),
+                        next => azureCheck(azureContainerName, testContext.test.key,
+                        expected, next),
+                    ], done);
+                }
+            );
         });
 
         describe('with previously existing object with same key', () => {
-            beforeEach(function beforeEachFn(done) {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
                 async.waterfall([
                     next => s3.createBucket({ Bucket: azureContainerName },
                         err => next(err)),
@@ -119,25 +131,24 @@ describeF() {
                         const body = Buffer.alloc(10);
                         s3.putObject({
                             Bucket: azureContainerName,
-                            Key: this.currentTest.key,
+                            Key: testContext.currentTest.key,
                             Metadata: { 'scal-location-constraint':
                                 azureLocation },
                             Body: body,
                         }, err => {
-                            assert.equal(err, null, 'Err putting object to ' +
-                            `azure: ${err}`);
+                            expect(err).toEqual(null);
                             return next();
                         });
                     },
                     next => s3.createMultipartUpload({
                         Bucket: azureContainerName,
-                        Key: this.currentTest.key,
+                        Key: testContext.currentTest.key,
                         Metadata: { 'scal-location-constraint': azureLocation },
                     }, (err, res) => {
                         if (err) {
                             return next(err);
                         }
-                        this.currentTest.uploadId = res.UploadId;
+                        testContext.currentTest.uploadId = res.UploadId;
                         return next();
                     }),
                 ], done);
@@ -157,13 +168,12 @@ describeF() {
                 });
             });
 
-            it('should abort MPU without deleting existing object',
-            function itFn(done) {
+            test('should abort MPU without deleting existing object', done => {
                 const expected = { error: false };
                 const params = {
                     Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
                 };
                 async.waterfall([
                     next => {
@@ -171,13 +181,12 @@ describeF() {
                         const partParams = Object.assign(
                             { PartNumber: 1, Body: body }, params);
                         s3.uploadPart(partParams, err => {
-                            assert.strictEqual(err, null, 'Expected ' +
-                            `success, got error: ${err}`);
+                            expect(err).toBe(null);
                             return next();
                         });
                     },
                     next => s3.abortMultipartUpload(params, err => next(err)),
-                    next => azureCheck(azureContainerName, this.test.key,
+                    next => azureCheck(azureContainerName, testContext.test.key,
                     expected, next),
                 ], done);
             });

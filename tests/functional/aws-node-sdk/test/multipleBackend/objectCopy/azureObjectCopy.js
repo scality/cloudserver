@@ -51,13 +51,13 @@ function putSourceObj(key, location, objSize, bucket, cb) {
         sourceParams.Body = body;
     }
     s3.putObject(sourceParams, (err, result) => {
-        assert.equal(err, null, `Error putting source object: ${err}`);
+        expect(err).toEqual(null);
         if (objSize && objSize.empty) {
-            assert.strictEqual(result.ETag, `"${emptyMD5}"`);
+            expect(result.ETag).toBe(`"${emptyMD5}"`);
         } else if (objSize && objSize.big) {
-            assert.strictEqual(result.ETag, `"${bigMD5}"`);
+            expect(result.ETag).toBe(`"${bigMD5}"`);
         } else {
-            assert.strictEqual(result.ETag, `"${normalMD5}"`);
+            expect(result.ETag).toBe(`"${normalMD5}"`);
         }
         cb();
     });
@@ -72,42 +72,40 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
         cb => s3.getObject(destGetParams, cb),
         cb => azureClient.getBlobProperties(azureContainerName, azureKey, cb),
     ], (err, results) => {
-        assert.equal(err, null, `Error in assertGetObjects: ${err}`);
+        expect(err).toEqual(null);
         const [sourceRes, destRes, azureRes] = results;
         const convertedMD5 = convertMD5(azureRes[0].contentSettings.contentMD5);
         if (objSize && objSize.empty) {
-            assert.strictEqual(sourceRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${emptyMD5}"`);
-            assert.strictEqual(convertedMD5, `${emptyMD5}`);
-            assert.strictEqual('0', azureRes[0].contentLength);
+            expect(sourceRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(destRes.ETag).toBe(`"${emptyMD5}"`);
+            expect(convertedMD5).toBe(`${emptyMD5}`);
+            expect('0').toBe(azureRes[0].contentLength);
         } else if (objSize && objSize.big) {
-            assert.strictEqual(sourceRes.ETag, `"${bigMD5}"`);
-            assert.strictEqual(destRes.ETag, `"${bigMD5}"`);
+            expect(sourceRes.ETag).toBe(`"${bigMD5}"`);
+            expect(destRes.ETag).toBe(`"${bigMD5}"`);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
-                assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
+                expect(sourceRes.ServerSideEncryption).toBe('AES256');
+                expect(destRes.ServerSideEncryption).toBe('AES256');
             } else {
-                assert.strictEqual(convertedMD5, `${bigMD5}`);
+                expect(convertedMD5).toBe(`${bigMD5}`);
             }
         } else {
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                assert.strictEqual(sourceRes.ServerSideEncryption, 'AES256');
-                assert.strictEqual(destRes.ServerSideEncryption, 'AES256');
+                expect(sourceRes.ServerSideEncryption).toBe('AES256');
+                expect(destRes.ServerSideEncryption).toBe('AES256');
             } else {
-                assert.strictEqual(sourceRes.ETag, `"${normalMD5}"`);
-                assert.strictEqual(destRes.ETag, `"${normalMD5}"`);
-                assert.strictEqual(convertedMD5, `${normalMD5}`);
+                expect(sourceRes.ETag).toBe(`"${normalMD5}"`);
+                expect(destRes.ETag).toBe(`"${normalMD5}"`);
+                expect(convertedMD5).toBe(`${normalMD5}`);
             }
         }
         if (mdDirective === 'COPY') {
-            assert.strictEqual(sourceRes.Metadata['test-header'],
-                destRes.Metadata['test-header']);
-            assert.strictEqual(azureRes[0].metadata.test_header,
-                destRes.Metadata['test-header']);
+            expect(sourceRes.Metadata['test-header']).toBe(destRes.Metadata['test-header']);
+            expect(azureRes[0].metadata.test_header).toBe(destRes.Metadata['test-header']);
         }
-        assert.strictEqual(sourceRes.ContentLength, destRes.ContentLength);
-        assert.strictEqual(sourceRes.Metadata[locMetaHeader], sourceLoc);
-        assert.strictEqual(destRes.Metadata[locMetaHeader], destLoc);
+        expect(sourceRes.ContentLength).toBe(destRes.ContentLength);
+        expect(sourceRes.Metadata[locMetaHeader]).toBe(sourceLoc);
+        expect(destRes.Metadata[locMetaHeader]).toBe(destLoc);
         callback();
     });
 }
@@ -116,7 +114,7 @@ describeSkipIfNotMultipleOrCeph('MultipleBackend object copy: Azure',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
-        beforeEach(function beFn() {
+        beforeEach(() => {
             this.currentTest.key = `azureputkey-${genUniqID()}`;
             this.currentTest.copyKey = `azurecopyKey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -159,7 +157,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to Azure', function itFn(done) {
+        test('should copy an object from mem to Azure', done => {
             putSourceObj(this.test.key, memLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -169,10 +167,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, memLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', null, done);
@@ -180,28 +176,28 @@ function testSuite() {
             });
         });
 
-        it('should copy an object with no location contraint from mem to Azure',
-        function itFn(done) {
-            putSourceObj(this.test.key, null, null, bucket, () => {
-                const copyParams = {
-                    Bucket: bucketAzure,
-                    Key: this.test.copyKey,
-                    CopySource: `/${bucket}/${this.test.key}`,
-                    MetadataDirective: 'COPY',
-                };
-                s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
-                    assertGetObjects(this.test.key, bucket, undefined,
-                        this.test.copyKey, bucketAzure, undefined,
-                        this.test.copyKey, 'COPY', null, done);
+        test(
+            'should copy an object with no location contraint from mem to Azure',
+            done => {
+                putSourceObj(this.test.key, null, null, bucket, () => {
+                    const copyParams = {
+                        Bucket: bucketAzure,
+                        Key: this.test.copyKey,
+                        CopySource: `/${bucket}/${this.test.key}`,
+                        MetadataDirective: 'COPY',
+                    };
+                    s3.copyObject(copyParams, (err, result) => {
+                        expect(err).toEqual(null);
+                        expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
+                        assertGetObjects(this.test.key, bucket, undefined,
+                            this.test.copyKey, bucketAzure, undefined,
+                            this.test.copyKey, 'COPY', null, done);
+                    });
                 });
-            });
-        });
+            }
+        );
 
-        it('should copy an object from Azure to mem', function itFn(done) {
+        test('should copy an object from Azure to mem', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -211,10 +207,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': memLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
                         this.test.copyKey, bucket, memLocation, this.test.key,
                         'REPLACE', null, done);
@@ -222,7 +216,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from AWS to Azure', function itFn(done) {
+        test('should copy an object from AWS to Azure', done => {
             putSourceObj(this.test.key, awsLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -232,10 +226,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, awsLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', null, done);
@@ -243,7 +235,7 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from Azure to AWS', function itFn(done) {
+        test('should copy an object from Azure to AWS', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -253,10 +245,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': awsLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
                         this.test.copyKey, bucket, awsLocation, this.test.key,
                         'REPLACE', null, done);
@@ -264,8 +254,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from Azure to mem with "REPLACE" directive ' +
-        'and no location constraint md', function itFn(done) {
+        test('should copy an object from Azure to mem with "REPLACE" directive ' +
+        'and no location constraint md', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -274,10 +264,8 @@ function testSuite() {
                     MetadataDirective: 'REPLACE',
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
                         this.test.copyKey, bucket, undefined, this.test.key,
                         'REPLACE', null, done);
@@ -285,8 +273,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from mem to Azure with "REPLACE" directive ' +
-        'and no location constraint md', function itFn(done) {
+        test('should copy an object from mem to Azure with "REPLACE" directive ' +
+        'and no location constraint md', done => {
             putSourceObj(this.test.key, null, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucketAzure,
@@ -295,10 +283,8 @@ function testSuite() {
                     MetadataDirective: 'REPLACE',
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, undefined,
                         this.test.copyKey, bucketAzure, undefined,
                         this.test.copyKey, 'REPLACE', null, done);
@@ -306,9 +292,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from Azure to Azure showing sending ' +
-        'metadata location constraint this doesn\'t matter with COPY directive',
-        function itFn(done) {
+        test('should copy an object from Azure to Azure showing sending ' +
+        'metadata location constraint this doesn\'t matter with COPY directive', done => {
             putSourceObj(this.test.key, azureLocation, null, bucketAzure,
             () => {
                 const copyParams = {
@@ -319,10 +304,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': memLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucketAzure, azureLocation,
                         this.test.copyKey, bucketAzure, azureLocation,
                         this.test.copyKey, 'COPY', null, done);
@@ -330,9 +313,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object with no location constraint from Azure to ' +
-        'Azure relying on the bucket location constraint',
-        function itFn(done) {
+        test('should copy an object with no location constraint from Azure to ' +
+        'Azure relying on the bucket location constraint', done => {
             putSourceObj(this.test.key, null, null, bucketAzure,
             () => {
                 const copyParams = {
@@ -342,10 +324,8 @@ function testSuite() {
                     MetadataDirective: 'COPY',
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucketAzure, undefined,
                         this.test.copyKey, bucketAzure, undefined,
                         this.test.copyKey, 'COPY', null, done);
@@ -353,8 +333,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from Azure to mem because bucket ' +
-        'destination location is mem', function itFn(done) {
+        test('should copy an object from Azure to mem because bucket ' +
+        'destination location is mem', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -363,10 +343,8 @@ function testSuite() {
                     MetadataDirective: 'COPY',
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
                         this.test.copyKey, bucket, memLocation,
                         this.test.key, 'COPY', null, done);
@@ -374,9 +352,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object on Azure to a different Azure ' +
-        'account without source object READ access',
-        function itFn(done) {
+        test('should copy an object on Azure to a different Azure ' +
+        'account without source object READ access', done => {
             putSourceObj(this.test.key, azureLocation2, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -386,10 +363,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation2,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', null, done);
@@ -397,9 +372,8 @@ function testSuite() {
             });
         });
 
-        it('should copy a 5MB object on Azure to a different Azure ' +
-        'account without source object READ access',
-        function itFn(done) {
+        test('should copy a 5MB object on Azure to a different Azure ' +
+        'account without source object READ access', done => {
             putSourceObj(this.test.key, azureLocation2, { big: true }, bucket,
             () => {
                 const copyParams = {
@@ -410,10 +384,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${bigMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${bigMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation2,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', { big: true }, done);
@@ -421,9 +393,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from bucketmatch=false ' +
-        'Azure location to MPU with a bucketmatch=false Azure location',
-        function itFn(done) {
+        test('should copy an object from bucketmatch=false ' +
+        'Azure location to MPU with a bucketmatch=false Azure location', done => {
             putSourceObj(this.test.key, azureLocationMismatch, null, bucket,
             () => {
                 const copyParams = {
@@ -435,10 +406,8 @@ function testSuite() {
                     azureLocationMismatch },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket,
                         azureLocationMismatch,
                         this.test.copyKey, bucket, azureLocationMismatch,
@@ -448,9 +417,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from bucketmatch=false ' +
-        'Azure location to MPU with a bucketmatch=true Azure location',
-        function itFn(done) {
+        test('should copy an object from bucketmatch=false ' +
+        'Azure location to MPU with a bucketmatch=true Azure location', done => {
             putSourceObj(this.test.key, azureLocationMismatch, null, bucket,
             () => {
                 const copyParams = {
@@ -461,10 +429,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket,
                         azureLocationMismatch,
                         this.test.copyKey, bucket, azureLocation,
@@ -473,9 +439,8 @@ function testSuite() {
             });
         });
 
-        it('should copy an object from bucketmatch=true ' +
-        'Azure location to MPU with a bucketmatch=false Azure location',
-        function itFn(done) {
+        test('should copy an object from bucketmatch=true ' +
+        'Azure location to MPU with a bucketmatch=false Azure location', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket, () => {
                 const copyParams = {
                     Bucket: bucket,
@@ -486,10 +451,8 @@ function testSuite() {
                     azureLocationMismatch },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${normalMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${normalMD5}"`);
                     assertGetObjects(this.test.key, bucket,
                         azureLocation,
                         this.test.copyKey, bucket, azureLocationMismatch,
@@ -499,8 +462,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 0-byte object from mem to Azure',
-        function itFn(done) {
+        test('should copy a 0-byte object from mem to Azure', done => {
             putSourceObj(this.test.key, memLocation, { empty: true }, bucket,
             () => {
                 const copyParams = {
@@ -511,10 +473,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${emptyMD5}"`);
                     assertGetObjects(this.test.key, bucket, memLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', { empty: true }, done);
@@ -522,7 +482,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 0-byte object on Azure', function itFn(done) {
+        test('should copy a 0-byte object on Azure', done => {
             putSourceObj(this.test.key, azureLocation, { empty: true }, bucket,
             () => {
                 const copyParams = {
@@ -533,10 +493,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, 'Expected success but got ' +
-                    `error: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${emptyMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${emptyMD5}"`);
                     assertGetObjects(this.test.key, bucket, azureLocation,
                         this.test.copyKey, bucket, azureLocation,
                         this.test.copyKey, 'REPLACE', { empty: true }, done);
@@ -544,7 +502,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 5MB object from mem to Azure', function itFn(done) {
+        test('should copy a 5MB object from mem to Azure', done => {
             putSourceObj(this.test.key, memLocation, { big: true }, bucket,
             () => {
                 const copyParams = {
@@ -555,9 +513,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, `Err copying object: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${bigMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${bigMD5}"`);
                     setTimeout(() => {
                         assertGetObjects(this.test.key, bucket, memLocation,
                             this.test.copyKey, bucket, azureLocation,
@@ -567,7 +524,7 @@ function testSuite() {
             });
         });
 
-        it('should copy a 5MB object on Azure', function itFn(done) {
+        test('should copy a 5MB object on Azure', done => {
             putSourceObj(this.test.key, azureLocation, { big: true }, bucket,
             () => {
                 const copyParams = {
@@ -578,9 +535,8 @@ function testSuite() {
                     Metadata: { 'scal-location-constraint': azureLocation },
                 };
                 s3.copyObject(copyParams, (err, result) => {
-                    assert.equal(err, null, `Err copying object: ${err}`);
-                    assert.strictEqual(result.CopyObjectResult.ETag,
-                        `"${bigMD5}"`);
+                    expect(err).toEqual(null);
+                    expect(result.CopyObjectResult.ETag).toBe(`"${bigMD5}"`);
                     setTimeout(() => {
                         assertGetObjects(this.test.key, bucket, azureLocation,
                             this.test.copyKey, bucket, azureLocation,
@@ -590,14 +546,13 @@ function testSuite() {
             });
         });
 
-        it('should return error if Azure source object has ' +
-        'been deleted', function itFn(done) {
+        test('should return error if Azure source object has ' +
+        'been deleted', done => {
             putSourceObj(this.test.key, azureLocation, null, bucket,
             () => {
                 azureClient.deleteBlob(azureContainerName, this.test.key,
                 err => {
-                    assert.equal(err, null, 'Error deleting object from ' +
-                        `Azure: ${err}`);
+                    expect(err).toEqual(null);
                     const copyParams = {
                         Bucket: bucket,
                         Key: this.test.copyKey,
@@ -605,7 +560,7 @@ function testSuite() {
                         MetadataDirective: 'COPY',
                     };
                     s3.copyObject(copyParams, err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
+                        expect(err.code).toBe('ServiceUnavailable');
                         done();
                     });
                 });

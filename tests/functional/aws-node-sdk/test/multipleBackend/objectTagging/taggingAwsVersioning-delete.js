@@ -43,7 +43,7 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: should delete a tag set on the ' +
+        test('versioning not configured: should delete a tag set on the ' +
         'latest version if no version is specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -56,7 +56,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning not configured: should delete a tag set on the ' +
+        test('versioning not configured: should delete a tag set on the ' +
         'version if specified (null)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -69,7 +69,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning suspended: should delete a tag set on the latest ' +
+        test('versioning suspended: should delete a tag set on the latest ' +
         'version if no version is specified', done => {
             const data = [undefined, 'test1', 'test2'];
             const key = `somekey-${genUniqID()}`;
@@ -83,7 +83,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning suspended: should delete a tag set on a specific ' +
+        test('versioning suspended: should delete a tag set on a specific ' +
         'version (null)', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -98,7 +98,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning enabled then suspended: should delete a tag set on ' +
+        test('versioning enabled then suspended: should delete a tag set on ' +
         'a specific (non-null) version if specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -119,7 +119,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning enabled: should delete a tag set on the latest ' +
+        test('versioning enabled: should delete a tag set on the latest ' +
         'version if no version is specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -133,22 +133,24 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning enabled: should delete a tag set on a specific version',
-        done => {
-            const key = `somekey-${genUniqID()}`;
-            async.waterfall([
-                next => enableVersioning(s3, bucket, next),
-                next => s3.putObject({ Bucket: bucket, Key: key }, next),
-                (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
-                    versionId: putData.VersionId,
-                    expectedVersionId: putData.VersionId }, next),
-                (versionId, next) => delTaggingAndAssert(s3, { bucket, key,
-                    versionId, expectedVersionId: versionId }, next),
-                next => awsGetAssertTags({ key, expectedTags: {} }, next),
-            ], done);
-        });
+        test(
+            'versioning enabled: should delete a tag set on a specific version',
+            done => {
+                const key = `somekey-${genUniqID()}`;
+                async.waterfall([
+                    next => enableVersioning(s3, bucket, next),
+                    next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                    (putData, next) => putTaggingAndAssert(s3, { bucket, key, tags,
+                        versionId: putData.VersionId,
+                        expectedVersionId: putData.VersionId }, next),
+                    (versionId, next) => delTaggingAndAssert(s3, { bucket, key,
+                        versionId, expectedVersionId: versionId }, next),
+                    next => awsGetAssertTags({ key, expectedTags: {} }, next),
+                ], done);
+            }
+        );
 
-        it('versioning enabled: should delete a tag set on a specific ' +
+        test('versioning enabled: should delete a tag set on a specific ' +
         'version that is not the latest version', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -171,7 +173,7 @@ function testSuite() {
             ], done);
         });
 
-        it('versioning suspended then enabled: should delete a tag set on ' +
+        test('versioning suspended then enabled: should delete a tag set on ' +
         'a specific version (null) if specified', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
@@ -191,9 +193,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return an ServiceUnavailable if trying to delete ' +
-        'tags from object that was deleted from AWS directly',
-        done => {
+        test('should return an ServiceUnavailable if trying to delete ' +
+        'tags from object that was deleted from AWS directly', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),
@@ -205,9 +206,8 @@ function testSuite() {
             ], done);
         });
 
-        it('should return an ServiceUnavailable if trying to delete ' +
-        'tags from object that was deleted from AWS directly',
-        done => {
+        test('should return an ServiceUnavailable if trying to delete ' +
+        'tags from object that was deleted from AWS directly', done => {
             const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key }, next),

@@ -64,7 +64,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 assert.deepStrictEqual(processTagSet(test.input), test.output);
             });
         });
@@ -89,7 +89,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 assert.deepStrictEqual(stripTags(test.input), test.output);
             });
         });
@@ -114,7 +114,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 assert.deepStrictEqual(retrieveTags(test.input), test.output);
             });
         });
@@ -146,7 +146,7 @@ describe('GcpUtils Tagging Helper Functions:', () => {
             },
         ];
         tests.forEach(test => {
-            it(test.it, () => {
+            test(test.it, () => {
                 const { metadata, tagQuery } = test.input;
                 assert.deepStrictEqual(
                     getPutTagsMetadata(metadata, tagQuery), test.output);

@@ -43,7 +43,7 @@ function queryReport(done, resultCheck) {
 }
 
 describe('Report route', () => {
-    it('should return 403 if given bad token', done => {
+    test('should return 403 if given bad token', done => {
         const req = transport.request(options('bad-token'), res => {
             if (res.statusCode !== 403) {
                 return done(new Error(`non-200 status ${res.statusCode}`));
@@ -53,12 +53,12 @@ describe('Report route', () => {
         req.on('error', done).end();
     });
 
-    it('should return 200', done => {
+    test('should return 200', done => {
         queryReport(done, () => done());
     });
 
     reportAttributes.forEach(attr => {
-        it(`should contain expected attribute ${attr}`, done => {
+        test(`should contain expected attribute ${attr}`, done => {
             queryReport(done, response => {
                 if (!response[attr]) {
                     return done(new Error(`response missing ${attr}`));
@@ -68,7 +68,7 @@ describe('Report route', () => {
         });
     });
 
-    it('should contain config', done => {
+    test('should contain config', done => {
         queryReport(done, response => {
             if (!response.config) {
                 return done(new Error('response missing config'));
@@ -77,7 +77,7 @@ describe('Report route', () => {
         });
     });
 
-    it('should remove authentication data from config', done => {
+    test('should remove authentication data from config', done => {
         queryReport(done, response => {
             if (response.config && response.config.authData) {
                 return done(new Error('response config contains auth data'));
@@ -86,7 +86,7 @@ describe('Report route', () => {
         });
     });
 
-    it('should remove unwanted sections from config', done => {
+    test('should remove unwanted sections from config', done => {
         queryReport(done, response => {
             if (response.config && response.config.mongodb) {
                 return done(new Error('config contains unwanted sections'));
@@ -95,7 +95,7 @@ describe('Report route', () => {
         });
     });
 
-    it('should remove report token from config', done => {
+    test('should remove report token from config', done => {
         queryReport(done, response => {
             if (response.config && response.config.reportToken) {
                 return done(new Error('response config contains report token'));

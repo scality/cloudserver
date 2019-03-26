@@ -34,26 +34,32 @@ describeSkipIfNotMultipleOrCeph('Abort MPU on GCP data backend', function
 descrbeFn() {
     this.timeout(180000);
     withV4(sigCfg => {
-        beforeEach(function beforeFn() {
+        beforeEach(() => {
             this.currentTest.key = uniqName(keyObject);
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
         });
 
         describe('with bucket location header', () => {
-            beforeEach(function beforeEachFn(done) {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
                 async.waterfall([
                     next => s3.createBucket({ Bucket: bucket },
                         err => next(err)),
                     next => s3.createMultipartUpload({
                         Bucket: bucket,
-                        Key: this.currentTest.key,
+                        Key: testContext.currentTest.key,
                         Metadata: { 'scal-location-constraint': gcpLocation },
                     }, (err, res) => {
                         if (err) {
                             return next(err);
                         }
-                        this.currentTest.uploadId = res.UploadId;
+                        testContext.currentTest.uploadId = res.UploadId;
                         return next();
                     }),
                 ], done);
@@ -62,62 +68,67 @@ descrbeFn() {
             afterEach(done => s3.deleteBucket({ Bucket: bucket },
                 done));
 
-            it('should abort a MPU with 0 parts', function itFn(done) {
+            test('should abort a MPU with 0 parts', done => {
                 const params = {
                     Bucket: bucket,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
                 };
                 async.waterfall([
                     next => s3.abortMultipartUpload(params, () => next()),
                     next => setTimeout(() => checkMPUList(
-                        gcpBucketMPU, this.test.key, this.test.uploadId, next),
+                        gcpBucketMPU, testContext.test.key, testContext.test.uploadId, next),
                     gcpTimeout),
                 ], done);
             });
 
-            it('should abort a MPU with uploaded parts', function itFn(done) {
+            test('should abort a MPU with uploaded parts', done => {
                 const params = {
                     Bucket: bucket,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
                 };
                 async.waterfall([
                     next => {
                         async.times(2, (n, cb) => {
                             const params = {
                                 Bucket: bucket,
-                                Key: this.test.key,
-                                UploadId: this.test.uploadId,
+                                Key: testContext.test.key,
+                                UploadId: testContext.test.uploadId,
                                 Body: body,
                                 PartNumber: n + 1,
                             };
                             s3.uploadPart(params, (err, res) => {
                                 assert.ifError(err,
                                     `Expected success, but got err ${err}`);
-                                assert.strictEqual(
-                                    res.ETag, `"${correctMD5}"`);
+                                expect(res.ETag).toBe(`"${correctMD5}"`);
                                 cb();
                             });
                         }, () => next());
                     },
                     next => s3.abortMultipartUpload(params, () => next()),
                     next => setTimeout(() => checkMPUList(
-                        gcpBucketMPU, this.test.key, this.test.uploadId, next),
+                        gcpBucketMPU, testContext.test.key, testContext.test.uploadId, next),
                     gcpTimeout),
                 ], done);
             });
         });
 
         describe('with previously existing object with same key', () => {
-            beforeEach(function beforeEachFn(done) {
+            let testContext;
+
+            beforeEach(() => {
+                testContext = {};
+            });
+
+            beforeEach(done => {
                 async.waterfall([
                     next => s3.createBucket({ Bucket: bucket },
                         err => next(err)),
                     next => {
                         s3.putObject({
                             Bucket: bucket,
-                            Key: this.currentTest.key,
+                            Key: testContext.currentTest.key,
                             Metadata: {
                                 'scal-location-constraint': gcpLocation },
                             Body: body,
@@ -129,13 +140,13 @@ descrbeFn() {
                     },
                     next => s3.createMultipartUpload({
                         Bucket: bucket,
-                        Key: this.currentTest.key,
+                        Key: testContext.currentTest.key,
                         Metadata: { 'scal-location-constraint': gcpLocation },
                     }, (err, res) => {
                         if (err) {
                             return next(err);
                         }
-                        this.currentTest.uploadId = res.UploadId;
+                        testContext.currentTest.uploadId = res.UploadId;
                         return next();
                     }),
                 ], done);
@@ -155,12 +166,11 @@ descrbeFn() {
                 });
             });
 
-            it('should abort MPU without deleting existing object',
-            function itFn(done) {
+            test('should abort MPU without deleting existing object', done => {
                 const params = {
                     Bucket: bucket,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
+                    Key: testContext.test.key,
+                    UploadId: testContext.test.uploadId,
                 };
                 async.waterfall([
                     next => {
@@ -177,12 +187,12 @@ descrbeFn() {
                     next => setTimeout(() => {
                         const params = {
                             Bucket: gcpBucket,
-                            Key: this.test.key,
+                            Key: testContext.test.key,
                         };
                         gcpClient.getObject(params, (err, res) => {
                             assert.ifError(err,
                                 `Expected success, got error: ${err}`);
-                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                            expect(res.ETag).toBe(`"${correctMD5}"`);
                             next();
                         });
                     }, gcpTimeout),

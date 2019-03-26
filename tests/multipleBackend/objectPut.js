@@ -59,12 +59,12 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
         objectPut(authInfo, testPutObjReq, undefined, log, (err,
             resHeaders) => {
             if (errorDescription) {
-                assert.strictEqual(err.code, 400);
-                assert(err.InvalidArgument);
-                assert(err.description.indexOf(errorDescription) > -1);
+                expect(err.code).toBe(400);
+                expect(err.InvalidArgument).toBeTruthy();
+                expect(err.description.indexOf(errorDescription) > -1).toBeTruthy();
             } else {
-                assert.strictEqual(err, null, `Error putting object: ${err}`);
-                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                expect(err).toBe(null);
+                expect(resHeaders.ETag).toBe(`"${correctMD5}"`);
             }
             cb();
         });
@@ -78,63 +78,63 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         cleanup();
     });
 
-    it('should put an object to mem', done => {
+    test('should put an object to mem', done => {
         put(fileLocation, memLocation, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
-    it('should put an object to file', done => {
+    test('should put an object to file', done => {
         put(memLocation, fileLocation, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to AWS', done => {
+    test('should put an object to AWS', done => {
         put(memLocation, 'awsbackend', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to mem based on bucket location', done => {
+    test('should put an object to mem based on bucket location', done => {
         put(memLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds[1].value, body);
             done();
         });
     });
 
-    it('should put an object to file based on bucket location', done => {
+    test('should put an object to file based on bucket location', done => {
         put(fileLocation, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to AWS based on bucket location', done => {
+    test('should put an object to AWS based on bucket location', done => {
         put('awsbackend', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to Azure based on bucket location', done => {
+    test('should put an object to Azure based on bucket location', done => {
         put('azurebackend', null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to Azure based on object location', done => {
+    test('should put an object to Azure based on object location', done => {
         put(memLocation, 'azurebackend', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
             done();
         });
     });
 
-    it('should put an object to us-east-1 which is file based on bucket' +
+    test('should put an object to us-east-1 which is file based on bucket' +
     ' location if no locationConstraint provided', done => {
         put(null, null, 'localhost', () => {
             assert.deepStrictEqual(ds, []);

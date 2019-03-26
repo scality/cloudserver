@@ -57,33 +57,33 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 undefined, log, () => {
                     objectPut(authInfo, testPutObjectRequest2,
                         undefined, log, () => {
-                            assert.strictEqual(metadata.keyMaps
+                            expect(metadata.keyMaps
                                 .get(bucketName)
-                                .has(objectKey1), true);
-                            assert.strictEqual(metadata.keyMaps
+                                .has(objectKey1)).toBe(true);
+                            expect(metadata.keyMaps
                                 .get(bucketName)
-                                .has(objectKey2), true);
+                                .has(objectKey2)).toBe(true);
                             done();
                         });
                 });
         });
     });
 
-    it('should successfully get object metadata and then ' +
+    test('should successfully get object metadata and then ' +
         'delete metadata and data', done => {
         getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
             true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
-                assert.strictEqual(quietSetting, true);
+                expect(quietSetting).toBe(true);
                 assert.deepStrictEqual(errorResults, []);
-                assert.strictEqual(numOfObjects, 2);
-                assert.strictEqual(totalContentLengthDeleted, contentLength);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), false);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), false);
+                expect(numOfObjects).toBe(2);
+                expect(totalContentLengthDeleted).toBe(contentLength);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey1)).toBe(false);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey2)).toBe(false);
                 // call to delete data is async so wait 20 ms to check
                 // that data deleted
                 setTimeout(() => {
@@ -94,26 +94,25 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             });
     });
 
-    it('should return success results if no such key', done => {
+    test('should return success results if no such key', done => {
         getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
             true, [], [{ key: 'madeup1' }, { key: 'madeup2' }], log,
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
-                assert.strictEqual(quietSetting, true);
+                expect(quietSetting).toBe(true);
                 assert.deepStrictEqual(errorResults, []);
-                assert.strictEqual(numOfObjects, 0);
-                assert.strictEqual(totalContentLengthDeleted,
-                    0);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), true);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), true);
+                expect(numOfObjects).toBe(0);
+                expect(totalContentLengthDeleted).toBe(0);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey1)).toBe(true);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey2)).toBe(true);
                 done();
             });
     });
 
-    it('should return error results if err from metadata getting object' +
+    test('should return error results if err from metadata getting object' +
         'is error other than NoSuchKey', done => {
         // we fake an error by calling on an imaginary bucket
         // even though the getObjMetadataAndDelete function would
@@ -124,7 +123,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
-                assert.strictEqual(quietSetting, true);
+                expect(quietSetting).toBe(true);
                 assert.deepStrictEqual(errorResults, [
                     {
                         entry: { key: objectKey1 },
@@ -135,33 +134,33 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                         error: errors.NoSuchBucket,
                     },
                 ]);
-                assert.strictEqual(totalContentLengthDeleted,
-                    0);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey1), true);
-                assert.strictEqual(metadata.keyMaps.get(bucketName)
-                    .has(objectKey2), true);
+                expect(totalContentLengthDeleted).toBe(0);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey1)).toBe(true);
+                expect(metadata.keyMaps.get(bucketName)
+                    .has(objectKey2)).toBe(true);
                 done();
             });
     });
 
-    it('should return no error or success results if no objects in play',
+    test(
+        'should return no error or success results if no objects in play',
         done => {
             getObjMetadataAndDelete(authInfo, 'foo', request, bucketName,
                 bucket, true, [], [], log,
                 (err, quietSetting, errorResults, numOfObjects,
                     successfullyDeleted, totalContentLengthDeleted) => {
                     assert.ifError(err);
-                    assert.strictEqual(quietSetting, true);
+                    expect(quietSetting).toBe(true);
                     assert.deepStrictEqual(errorResults, []);
-                    assert.strictEqual(numOfObjects, 0);
-                    assert.strictEqual(totalContentLengthDeleted,
-                        0);
+                    expect(numOfObjects).toBe(0);
+                    expect(totalContentLengthDeleted).toBe(0);
                     done();
                 });
-        });
+        }
+    );
 
-    it('should pass along error results', done => {
+    test('should pass along error results', done => {
         const errorResultsSample = [
             {
                 key: 'somekey1',
@@ -178,10 +177,10 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             (err, quietSetting, errorResults, numOfObjects,
                 successfullyDeleted, totalContentLengthDeleted) => {
                 assert.ifError(err);
-                assert.strictEqual(quietSetting, true);
+                expect(quietSetting).toBe(true);
                 assert.deepStrictEqual(errorResults, errorResultsSample);
-                assert.strictEqual(numOfObjects, 2);
-                assert.strictEqual(totalContentLengthDeleted, contentLength);
+                expect(numOfObjects).toBe(2);
+                expect(totalContentLengthDeleted).toBe(contentLength);
                 done();
             });
     });

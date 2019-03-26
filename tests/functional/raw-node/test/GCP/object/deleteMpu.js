@@ -23,8 +23,7 @@ const partSize = 10;
 
 function gcpMpuSetupWrapper(params, callback) {
     gcpMpuSetup(params, (err, result) => {
-        assert.equal(err, null,
-            `Unable to setup MPU test, error ${err}`);
+        expect(err).toEqual(null);
         const { uploadId, etagList } = result;
         this.currentTest.uploadId = uploadId;
         this.currentTest.etagList = etagList;
@@ -32,12 +31,18 @@ function gcpMpuSetupWrapper(params, callback) {
     });
 }
 
-describe('GCP: Abort MPU', function testSuite() {
+describe('GCP: Abort MPU', () => {
+    let testContext;
+
+    beforeEach(() => {
+        testContext = {};
+    });
+
     this.timeout(30000);
     let config;
     let gcpClient;
 
-    before(done => {
+    beforeAll(done => {
         config = getRealAwsConfig(credentialOne);
         gcpClient = new GCP(config);
         async.eachSeries(bucketNames,
@@ -55,13 +60,12 @@ describe('GCP: Abort MPU', function testSuite() {
         done);
     });
 
-    after(done => {
+    afterAll(done => {
         async.eachSeries(bucketNames,
             (bucket, next) => gcpClient.listObjects({
                 Bucket: bucket.Name,
             }, (err, res) => {
-                assert.equal(err, null,
-                    `Expected success, but got error ${err}`);
+                expect(err).toEqual(null);
                 async.map(res.Contents, (object, moveOn) => {
                     const deleteParams = {
                         Bucket: bucket.Name,
@@ -70,8 +74,7 @@ describe('GCP: Abort MPU', function testSuite() {
                     gcpClient.deleteObject(
                         deleteParams, err => moveOn(err));
                 }, err => {
-                    assert.equal(err, null,
-                        `Expected success, but got error ${err}`);
+                    expect(err).toEqual(null);
                     gcpRequestRetry({
                         method: 'DELETE',
                         bucket: bucket.Name,
@@ -89,40 +92,39 @@ describe('GCP: Abort MPU', function testSuite() {
     });
 
     describe('when MPU has 0 parts', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
-                key: this.currentTest.key,
+                key: testContext.currentTest.key,
                 partCount: 0, partSize,
             }, done);
         });
 
-        it('should abort MPU with 0 parts', function testFn(done) {
+        test('should abort MPU with 0 parts', done => {
             return async.waterfall([
                 next => {
                     const params = {
                         Bucket: bucketNames.main.Name,
                         MPU: bucketNames.mpu.Name,
-                        Key: this.test.key,
-                        UploadId: this.test.uploadId,
+                        Key: testContext.test.key,
+                        UploadId: testContext.test.uploadId,
                     };
                     gcpClient.abortMultipartUpload(params, err => {
-                        assert.equal(err, null,
-                            `Expected success, but got error ${err}`);
+                        expect(err).toEqual(null);
                         return next();
                     });
                 },
                 next => {
                     const keyName =
-                        `${this.test.key}-${this.test.uploadId}/init`;
+                        `${testContext.test.key}-${testContext.test.uploadId}/init`;
                     gcpClient.headObject({
                         Bucket: bucketNames.mpu.Name,
                         Key: keyName,
                     }, err => {
-                        assert(err);
-                        assert.strictEqual(err.code, 404);
+                        expect(err).toBeTruthy();
+                        expect(err.code).toBe(404);
                         return next();
                     });
                 },
@@ -131,40 +133,39 @@ describe('GCP: Abort MPU', function testSuite() {
     });
 
     describe('when MPU is incomplete', () => {
-        beforeEach(function beforeFn(done) {
-            this.currentTest.key = `somekey-${genUniqID()}`;
+        beforeEach(done => {
+            testContext.currentTest.key = `somekey-${genUniqID()}`;
             gcpMpuSetupWrapper.call(this, {
                 gcpClient,
                 bucketNames,
-                key: this.currentTest.key,
+                key: testContext.currentTest.key,
                 partCount: numParts, partSize,
             }, done);
         });
 
-        it('should abort incomplete MPU', function testFn(done) {
+        test('should abort incomplete MPU', done => {
             return async.waterfall([
                 next => {
                     const params = {
                         Bucket: bucketNames.main.Name,
                         MPU: bucketNames.mpu.Name,
-                        Key: this.test.key,
-                        UploadId: this.test.uploadId,
+                        Key: testContext.test.key,
+                        UploadId: testContext.test.uploadId,
                     };
                     gcpClient.abortMultipartUpload(params, err => {
-                        assert.equal(err, null,
-                            `Expected success, but got error ${err}`);
+                        expect(err).toEqual(null);
                         return next();
                     });
                 },
                 next => {
                     const keyName =
-                        `${this.test.key}-${this.test.uploadId}/init`;
+                        `${testContext.test.key}-${testContext.test.uploadId}/init`;
                     gcpClient.headObject({
                         Bucket: bucketNames.mpu.Name,
                         Key: keyName,
                     }, err => {
-                        assert(err);
-                        assert.strictEqual(err.code, 404);
+                        expect(err).toBeTruthy();
+                        expect(err.code).toBe(404);
                         return next();
                     });
                 },

@@ -45,7 +45,7 @@ describe('getObjectTagging API', () => {
 
     afterEach(() => cleanup());
 
-    it('should return tags resource', done => {
+    test('should return tags resource', done => {
         const taggingUtil = new TaggingConfigTester();
         const testObjectPutTaggingRequest = taggingUtil
             .createObjectTaggingRequest('PUT', bucketName, objectName);
@@ -62,7 +62,7 @@ describe('getObjectTagging API', () => {
                     process.stdout.write(`Err getting object tagging ${err}`);
                     return done(err);
                 }
-                assert.strictEqual(xml, taggingUtil.constructXml());
+                expect(xml).toBe(taggingUtil.constructXml());
                 return done();
             });
         });

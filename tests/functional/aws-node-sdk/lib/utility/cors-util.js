@@ -61,14 +61,12 @@ function methodRequest(params, callback) {
             if (code) {
                 const message = Number.isNaN(parseInt(code, 10)) ?
                     `<Code>${code}</Code>` : '';
-                assert(total.indexOf(message) > -1, `Expected ${message}`);
-                assert.deepEqual(res.statusCode, statusCode[code],
-                `status code expected: ${statusCode[code]}`);
+                expect(total.indexOf(message) > -1).toBeTruthy();
+                expect(res.statusCode).toEqual(statusCode[code]);
             }
             if (headersResponse) {
                 Object.keys(headersResponse).forEach(key => {
-                    assert.deepEqual(res.headers[key], headersResponse[key],
-                      `error header: ${key}`);
+                    expect(res.headers[key]).toEqual(headersResponse[key]);
                 });
             } else {
             // if no headersResponse provided, should not have these headers
@@ -77,14 +75,12 @@ function methodRequest(params, callback) {
                     'access-control-allow-methods',
                     'access-control-allow-credentials',
                     'vary'].forEach(key => {
-                        assert.strictEqual(res.headers[key], undefined,
-                        `Error: ${key} should not have value`);
+                        expect(res.headers[key]).toBe(undefined);
                     });
             }
             if (headersOmitted) {
                 headersOmitted.forEach(key => {
-                    assert.strictEqual(res.headers[key], undefined,
-                        `Error: ${key} should not have value`);
+                    expect(res.headers[key]).toBe(undefined);
                 });
             }
             return callback();

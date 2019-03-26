@@ -72,23 +72,20 @@ describe('checkLocationConstraint function', () => {
     testChecks.forEach(testCheck => {
         const returnText = testCheck.isError ? 'InvalidLocationConstraint error'
         : 'the appropriate location constraint';
-        it(`with data backend: "${testCheck.data}", ` +
+        test(`with data backend: "${testCheck.data}", ` +
         `location: "${testCheck.locationSent}",` +
-        ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
-        done => {
+        ` and host: "${testCheck.parsedHost}", should return ${returnText} `, done => {
             config.backends.data = testCheck.data;
             request.parsedHost = testCheck.parsedHost;
             const checkLocation = checkLocationConstraint(request,
               testCheck.locationSent, log);
             if (testCheck.isError) {
-                assert.notEqual(checkLocation.error, null,
-                  'Expected failure but got success');
-                assert.strictEqual(checkLocation.error.
-                  InvalidLocationConstraint, true);
+                expect(checkLocation.error).not.toEqual(null);
+                expect(checkLocation.error.
+                  InvalidLocationConstraint).toBe(true);
             } else {
                 assert.ifError(checkLocation.error);
-                assert.strictEqual(checkLocation.locationConstraint,
-                  testCheck.locationReturn);
+                expect(checkLocation.locationConstraint).toBe(testCheck.locationReturn);
             }
             done();
         });
@@ -100,7 +97,7 @@ describe('bucketPut API', () => {
         cleanup();
     });
 
-    it('should return an error if bucket already exists', done => {
+    test('should return an error if bucket already exists', done => {
         const otherAuthInfo = makeAuthInfo('accessKey2');
         bucketPut(authInfo, testRequest, log, () => {
             bucketPut(otherAuthInfo, testRequest,
@@ -111,26 +108,25 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should create a bucket', done => {
+    test('should create a bucket', done => {
         bucketPut(authInfo, testRequest, log, err => {
             if (err) {
                 return done(new Error(err));
             }
             return metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getName(), bucketName);
-                assert.strictEqual(md.getOwner(), canonicalID);
+                expect(md.getName()).toBe(bucketName);
+                expect(md.getOwner()).toBe(canonicalID);
                 const prefix = `${canonicalID}${splitter}`;
                 metadata.listObject(usersBucket, { prefix },
                     log, (err, listResponse) => {
-                        assert.strictEqual(listResponse.Contents[0].key,
-                            `${canonicalID}${splitter}${bucketName}`);
+                        expect(listResponse.Contents[0].key).toBe(`${canonicalID}${splitter}${bucketName}`);
                         done();
                     });
             });
         });
     });
 
-    it('should return an error if ACL set in header ' +
+    test('should return an error if ACL set in header ' +
        'with an invalid group URI', done => {
         const testRequest = {
             bucketName,
@@ -153,7 +149,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' +
+    test('should return an error if ACL set in header ' +
        'with an invalid canned ACL', done => {
         const testRequest = {
             bucketName,
@@ -174,7 +170,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should return an error if ACL set in header ' +
+    test('should return an error if ACL set in header ' +
        'with an invalid email address', done => {
         const testRequest = {
             bucketName,
@@ -196,7 +192,7 @@ describe('bucketPut API', () => {
         });
     });
 
-    it('should set a canned ACL while creating bucket' +
+    test('should set a canned ACL while creating bucket' +
         ' if option set out in header', done => {
         const testRequest = {
             bucketName,
@@ -210,16 +206,16 @@ describe('bucketPut API', () => {
             post: '',
         };
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
+            expect(err).toBe(null);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(err, null);
-                assert.strictEqual(md.getAcl().Canned, 'public-read');
+                expect(err).toBe(null);
+                expect(md.getAcl().Canned).toBe('public-read');
                 done();
             });
         });
     });
 
-    it('should set specific ACL grants while creating bucket' +
+    test('should set specific ACL grants while creating bucket' +
         ' if options set out in header', done => {
         const testRequest = {
             bucketName,
@@ -246,24 +242,24 @@ describe('bucketPut API', () => {
         const canonicalIDforSample2 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
         bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null, 'Error creating bucket');
+            expect(err).toBe(null);
             metadata.getBucket(bucketName, log, (err, md) => {
-                assert.strictEqual(md.getAcl().READ[0], constants.logId);
-                assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
-                assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
-                assert(md.getAcl()
-                       .READ_ACP.indexOf(canonicalIDforSample1) > -1);
-                assert(md.getAcl()
-                       .WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
+                expect(md.getAcl().READ[0]).toBe(constants.logId);
+                expect(md.getAcl().WRITE[0]).toBe(constants.publicId);
+                expect(md.getAcl()
+                       .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1).toBeTruthy();
+                expect(md.getAcl()
+                       .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1).toBeTruthy();
+                expect(md.getAcl()
+                       .READ_ACP.indexOf(canonicalIDforSample1) > -1).toBeTruthy();
+                expect(md.getAcl()
+                       .WRITE_ACP.indexOf(canonicalIDforSample2) > -1).toBeTruthy();
                 done();
             });
         });
     });
 
-    it('should prevent anonymous user from accessing putBucket API', done => {
+    test('should prevent anonymous user from accessing putBucket API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketPut(publicAuthInfo, testRequest, log, err => {
             assert.deepStrictEqual(err, errors.AccessDenied);
@@ -271,7 +267,7 @@ describe('bucketPut API', () => {
         done();
     });
 
-    it('should pick up updated rest endpoint config', done => {
+    test('should pick up updated rest endpoint config', done => {
         const bucketName = 'new-loc-bucket-name';
         const newRestEndpoint = 'newly.defined.rest.endpoint';
         const newLocation = 'scality-us-west-1';
@@ -322,7 +318,8 @@ describe('bucketPut API', () => {
 
         afterEach(() => config.setLocationConstraints(originalLCs));
 
-        it('should return error if location constraint config is not updated',
+        test(
+            'should return error if location constraint config is not updated',
             done => bucketPut(authInfo, req, log, err => {
                 const expectedError = errors.InvalidLocationConstraint;
                 expectedError.description = 'value of the location you are ' +
@@ -330,12 +327,13 @@ describe('bucketPut API', () => {
                     'locationConstraint config';
                 assert.deepStrictEqual(err, expectedError);
                 done();
-            }));
+            })
+        );
 
-        it('should accept updated location constraint config', done => {
+        test('should accept updated location constraint config', done => {
             config.setLocationConstraints(newLCs);
             bucketPut(authInfo, req, log, err => {
-                assert.strictEqual(err, null);
+                expect(err).toBe(null);
                 done();
             });
         });

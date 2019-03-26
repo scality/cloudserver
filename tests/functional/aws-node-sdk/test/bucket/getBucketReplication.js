@@ -42,14 +42,15 @@ describe('aws-node-sdk test getBucketReplication', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
+    test("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
     'not have a replication configuration', done =>
         s3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(errors.ReplicationConfigurationNotFoundError[err.code]);
+            expect(errors.ReplicationConfigurationNotFoundError[err.code]).toBeTruthy();
             return done();
         }));
 
-    it('should get the replication configuration that was put on a bucket',
+    test(
+        'should get the replication configuration that was put on a bucket',
         done => s3.putBucketReplication({
             Bucket: bucket,
             ReplicationConfiguration: replicationConfig,
@@ -67,13 +68,14 @@ describe('aws-node-sdk test getBucketReplication', () => {
                 assert.deepStrictEqual(data, expectedObj);
                 return done();
             });
-        }));
+        })
+    );
 
-    it('should return AccessDenied if user is not bucket owner', done =>
+    test('should return AccessDenied if user is not bucket owner', done =>
         otherAccountS3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(err);
-            assert.strictEqual(err.code, 'AccessDenied');
-            assert.strictEqual(err.statusCode, 403);
+            expect(err).toBeTruthy();
+            expect(err.code).toBe('AccessDenied');
+            expect(err.statusCode).toBe(403);
             return done();
         }));
 });

@@ -10,7 +10,7 @@ const updatedUserMetadata = { food: 'cake' };
 
 runIfMongo('Basic search', () => {
     const bucketName = `basicsearchmebucket${Date.now()}`;
-    before(done => {
+    beforeAll(done => {
         s3Client.createBucket({ Bucket: bucketName }, err => {
             if (err) {
                 return done(err);
@@ -26,7 +26,7 @@ runIfMongo('Basic search', () => {
         });
     });
 
-    after(done => {
+    afterAll(done => {
         s3Client.deleteObjects({ Bucket: bucketName, Delete: { Objects: [
             { Key: objectKey },
             { Key: hiddenKey }],
@@ -39,46 +39,48 @@ runIfMongo('Basic search', () => {
             });
     });
 
-    it('should list object with searched for system metadata', done => {
+    test('should list object with searched for system metadata', done => {
         const encodedSearch = encodeURIComponent(`key="${objectKey}"`);
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, objectKey, done);
     });
 
-    it('should list object with regex searched for system metadata', done => {
+    test('should list object with regex searched for system metadata', done => {
         const encodedSearch = encodeURIComponent('key LIKE "find.*"');
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, objectKey, done);
     });
 
-    it('should list object with regex searched for system metadata with flags',
-    done => {
-        const encodedSearch = encodeURIComponent('key LIKE "/FIND.*/i"');
-        return runAndCheckSearch(s3Client, bucketName,
-            encodedSearch, objectKey, done);
-    });
+    test(
+        'should list object with regex searched for system metadata with flags',
+        done => {
+            const encodedSearch = encodeURIComponent('key LIKE "/FIND.*/i"');
+            return runAndCheckSearch(s3Client, bucketName,
+                encodedSearch, objectKey, done);
+        }
+    );
 
-    it('should return empty when no object match regex', done => {
+    test('should return empty when no object match regex', done => {
         const encodedSearch = encodeURIComponent('key LIKE "/NOTFOUND.*/i"');
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, null, done);
     });
 
-    it('should list object with searched for user metadata', done => {
+    test('should list object with searched for user metadata', done => {
         const encodedSearch =
             encodeURIComponent(`x-amz-meta-food="${userMetadata.food}"`);
         return runAndCheckSearch(s3Client, bucketName, encodedSearch,
             objectKey, done);
     });
 
-    it('should list object with searched for tag metadata', done => {
+    test('should list object with searched for tag metadata', done => {
         const encodedSearch =
             encodeURIComponent('tags.item-type="main"');
         return runAndCheckSearch(s3Client, bucketName, encodedSearch,
             objectKey, done);
     });
 
-    it('should return empty listing when no object has user md', done => {
+    test('should return empty listing when no object has user md', done => {
         const encodedSearch =
         encodeURIComponent('x-amz-meta-food="nosuchfood"');
         return runAndCheckSearch(s3Client, bucketName,
@@ -86,33 +88,32 @@ runIfMongo('Basic search', () => {
     });
 
     describe('search when overwrite object', () => {
-        before(done => {
+        beforeAll(done => {
             s3Client.putObject({ Bucket: bucketName, Key: objectKey,
                 Metadata: updatedUserMetadata }, done);
         });
 
-        it('should list object with searched for updated user metadata',
-            done => {
-                const encodedSearch =
-                encodeURIComponent('x-amz-meta-food' +
-                `="${updatedUserMetadata.food}"`);
-                return runAndCheckSearch(s3Client, bucketName, encodedSearch,
-                objectKey, done);
-            });
+        test('should list object with searched for updated user metadata', done => {
+            const encodedSearch =
+            encodeURIComponent('x-amz-meta-food' +
+            `="${updatedUserMetadata.food}"`);
+            return runAndCheckSearch(s3Client, bucketName, encodedSearch,
+            objectKey, done);
+        });
     });
 });
 
 runIfMongo('Search when no objects in bucket', () => {
     const bucketName = `noobjectbucket${Date.now()}`;
-    before(done => {
+    beforeAll(done => {
         s3Client.createBucket({ Bucket: bucketName }, done);
     });
 
-    after(done => {
+    afterAll(done => {
         s3Client.deleteBucket({ Bucket: bucketName }, done);
     });
 
-    it('should return empty listing when no objects in bucket', done => {
+    test('should return empty listing when no objects in bucket', done => {
         const encodedSearch = encodeURIComponent(`key="${objectKey}"`);
         return runAndCheckSearch(s3Client, bucketName,
             encodedSearch, null, done);
@@ -121,15 +122,15 @@ runIfMongo('Search when no objects in bucket', () => {
 
 runIfMongo('Invalid regular expression searches', () => {
     const bucketName = `badregex-${Date.now()}`;
-    before(done => {
+    beforeAll(done => {
         s3Client.createBucket({ Bucket: bucketName }, done);
     });
 
-    after(done => {
+    afterAll(done => {
         s3Client.deleteBucket({ Bucket: bucketName }, done);
     });
 
-    it('should return error if pattern is invalid', done => {
+    test('should return error if pattern is invalid', done => {
         const encodedSearch = encodeURIComponent('key LIKE "/((helloworld/"');
         const testError = {
             code: 'InvalidArgument',

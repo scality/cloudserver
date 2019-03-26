@@ -17,17 +17,15 @@ function _assertResultElements(entry) {
         'StorageClass',
     ];
     elements.forEach(elem => {
-        assert.notStrictEqual(entry[elem], undefined,
-            `Expected ${elem} in result but did not find it`);
+        expect(entry[elem]).not.toBe(undefined);
         if (elem === 'Owner') {
-            assert(entry.Owner.ID, 'Expected Owner ID but did not find it');
-            assert(entry.Owner.DisplayName,
-                'Expected Owner DisplayName but did not find it');
+            expect(entry.Owner.ID).toBeTruthy();
+            expect(entry.Owner.DisplayName).toBeTruthy();
         }
     });
 }
 
-describe('listObject - Delimiter master', function testSuite() {
+describe('listObject - Delimiter master', () => {
     this.timeout(600000);
 
     withV4(sigCfg => {
@@ -35,19 +33,18 @@ describe('listObject - Delimiter master', function testSuite() {
         const s3 = bucketUtil.s3;
 
         // setup test
-        before(done => {
+        beforeAll(done => {
             s3.createBucket({ Bucket: bucket }, done);
         });
 
         // delete bucket after testing
-        after(done => {
+        afterAll(done => {
             removeAllVersions({ Bucket: bucket }, err => {
                 if (err) {
                     return done(err);
                 }
                 return s3.deleteBucket({ Bucket: bucket }, err => {
-                    assert.strictEqual(err, null,
-                        `Error deleting bucket: ${err}`);
+                    expect(err).toBe(null);
                     return done();
                 });
             });
@@ -79,7 +76,7 @@ describe('listObject - Delimiter master', function testSuite() {
             { name: 'notes/summer/44444.txt', value: null },
         ];
 
-        it('put objects inside bucket', done => {
+        test('put objects inside bucket', done => {
             async.eachSeries(objects, (obj, next) => {
                 async.waterfall([
                     next => {
@@ -113,8 +110,7 @@ describe('listObject - Delimiter master', function testSuite() {
                                 Key: obj.name,
                             }, function test(err) {
                                 const headers = this.httpResponse.headers;
-                                assert.strictEqual(
-                                    headers['x-amz-delete-marker'], 'true');
+                                expect(headers['x-amz-delete-marker']).toBe('true');
                                 return next(err);
                             });
                         }
@@ -329,7 +325,7 @@ describe('listObject - Delimiter master', function testSuite() {
                 nextMarker: undefined,
             },
         ].forEach(test => {
-            it(test.name, done => {
+            test(test.name, done => {
                 const expectedResult = test.expectedResult;
                 s3.listObjects(Object.assign({ Bucket: bucket }, test.params),
                     (err, res) => {
@@ -351,8 +347,8 @@ describe('listObject - Delimiter master', function testSuite() {
                                 `unexpected prefix ${cp.Prefix}`);
                             }
                         });
-                        assert.strictEqual(res.IsTruncated, test.isTruncated);
-                        assert.strictEqual(res.NextMarker, test.nextMarker);
+                        expect(res.IsTruncated).toBe(test.isTruncated);
+                        expect(res.NextMarker).toBe(test.nextMarker);
                         return done();
                     });
             });

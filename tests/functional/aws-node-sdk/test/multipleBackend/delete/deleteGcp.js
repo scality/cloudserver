@@ -24,7 +24,7 @@ function testSuite() {
         let bucketUtil;
         let s3;
 
-        before(() => {
+        beforeAll(() => {
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
@@ -63,7 +63,7 @@ function testSuite() {
                 throw err;
             });
         });
-        after(() => {
+        afterAll(() => {
             process.stdout.write('Deleting bucket\n');
             return bucketUtil.deleteOne(bucket)
             .catch(err => {
@@ -93,22 +93,21 @@ function testSuite() {
         ];
         deleteTests.forEach(test => {
             const { msg, Bucket, Key } = test;
-            it(msg, done => s3.deleteObject({ Bucket, Key }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+            test(msg, done => s3.deleteObject({ Bucket, Key }, err => {
+                expect(err).toBe(null);
                 s3.getObject({ Bucket, Key }, err => {
-                    assert.strictEqual(err.code, 'NoSuchKey', 'Expected ' +
-                        'error but got success');
+                    expect(err.code).toBe('NoSuchKey');
                     done();
                 });
             }));
         });
 
-        it('should return success if the object does not exist',
+        test(
+            'should return success if the object does not exist',
             done => s3.deleteObject({ Bucket: bucket, Key: 'noop' }, err => {
-                assert.strictEqual(err, null,
-                    `Expected success, got error ${JSON.stringify(err)}`);
+                expect(err).toBe(null);
                 done();
-            }));
+            })
+        );
     });
 });

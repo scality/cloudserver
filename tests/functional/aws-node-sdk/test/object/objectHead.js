@@ -9,13 +9,12 @@ const bucketName = 'alexbucketnottaken';
 const objectName = 'someObject';
 
 function checkNoError(err) {
-    assert.equal(err, null,
-        `Expected success, got error ${JSON.stringify(err)}`);
+    expect(err).toEqual(null);
 }
 
 function checkError(err, code) {
-    assert.notEqual(err, null, 'Expected failure but got success');
-    assert.strictEqual(err.code, code);
+    expect(err).not.toEqual(null);
+    expect(err.code).toBe(code);
 }
 
 function dateFromNow(diff) {
@@ -36,7 +35,7 @@ describe('HEAD object, conditions', () => {
         let etagTrim;
         let lastModified;
 
-        before(() => {
+        beforeAll(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return bucketUtil.empty(bucketName).then(() =>
@@ -72,189 +71,172 @@ describe('HEAD object, conditions', () => {
 
         afterEach(() => bucketUtil.empty(bucketName));
 
-        after(() => bucketUtil.deleteOne(bucketName));
+        afterAll(() => bucketUtil.deleteOne(bucketName));
 
-        it('If-Match: returns no error when ETag match, with double quotes ' +
-            'around ETag',
-            done => {
-                requestHead({ IfMatch: etag }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        test('If-Match: returns no error when ETag match, with double quotes ' +
+            'around ETag', done => {
+            requestHead({ IfMatch: etag }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
-        it('If-Match: returns no error when one of ETags match, with double ' +
-            'quotes around ETag',
-            done => {
-                requestHead({ IfMatch: `non-matching,${etag}` }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        test('If-Match: returns no error when one of ETags match, with double ' +
+            'quotes around ETag', done => {
+            requestHead({ IfMatch: `non-matching,${etag}` }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
-        it('If-Match: returns no error when ETag match, without double ' +
-            'quotes around ETag',
-            done => {
-                requestHead({ IfMatch: etagTrim }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        test('If-Match: returns no error when ETag match, without double ' +
+            'quotes around ETag', done => {
+            requestHead({ IfMatch: etagTrim }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
-        it('If-Match: returns no error when one of ETags match, without ' +
-            'double quotes around ETag',
-            done => {
-                requestHead({ IfMatch: `non-matching,${etagTrim}` }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        test('If-Match: returns no error when one of ETags match, without ' +
+            'double quotes around ETag', done => {
+            requestHead({ IfMatch: `non-matching,${etagTrim}` }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
-        it('If-Match: returns no error when ETag match with *', done => {
+        test('If-Match: returns no error when ETag match with *', done => {
             requestHead({ IfMatch: '*' }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-Match: returns PreconditionFailed when ETag does not match',
-            done => {
-                requestHead({ IfMatch: 'non-matching ETag' }, err => {
-                    checkError(err, errors.PreconditionFailed.code);
-                    done();
-                });
+        test('If-Match: returns PreconditionFailed when ETag does not match', done => {
+            requestHead({ IfMatch: 'non-matching ETag' }, err => {
+                checkError(err, errors.PreconditionFailed.code);
+                done();
             });
+        });
 
-        it('If-None-Match: returns no error when ETag does not match', done => {
+        test('If-None-Match: returns no error when ETag does not match', done => {
             requestHead({ IfNoneMatch: 'non-matching' }, err => {
                 checkNoError(err);
                 done();
             });
         });
 
-        it('If-None-Match: returns no error when all ETags do not match',
-            done => {
-                requestHead({
-                    IfNoneMatch: 'non-matching,non-matching-either',
-                }, err => {
+        test('If-None-Match: returns no error when all ETags do not match', done => {
+            requestHead({
+                IfNoneMatch: 'non-matching,non-matching-either',
+            }, err => {
+                checkNoError(err);
+                done();
+            });
+        });
+
+        test('If-None-Match: returns NotModified when ETag match, with double ' +
+            'quotes around ETag', done => {
+            requestHead({ IfNoneMatch: etag }, err => {
+                checkError(err, 'NotModified');
+                done();
+            });
+        });
+
+        test('If-None-Match: returns NotModified when one of ETags match, with ' +
+            'double quotes around ETag', done => {
+            requestHead({
+                IfNoneMatch: `non-matching,${etag}`,
+            }, err => {
+                checkError(err, 'NotModified');
+                done();
+            });
+        });
+
+        test('If-None-Match: returns NotModified when ETag match, without ' +
+            'double quotes around ETag', done => {
+            requestHead({ IfNoneMatch: etagTrim }, err => {
+                checkError(err, 'NotModified');
+                done();
+            });
+        });
+
+        test('If-None-Match: returns NotModified when one of ETags match, ' +
+            'without double quotes around ETag', done => {
+            requestHead({
+                IfNoneMatch: `non-matching,${etagTrim}`,
+            }, err => {
+                checkError(err, 'NotModified');
+                done();
+            });
+        });
+
+        test('If-Modified-Since: returns no error if Last modified date is ' +
+            'greater', done => {
+            requestHead({ IfModifiedSince: dateFromNow(-1) },
+                err => {
                     checkNoError(err);
                     done();
                 });
-            });
-
-        it('If-None-Match: returns NotModified when ETag match, with double ' +
-            'quotes around ETag',
-            done => {
-                requestHead({ IfNoneMatch: etag }, err => {
-                    checkError(err, 'NotModified');
-                    done();
-                });
-            });
-
-        it('If-None-Match: returns NotModified when one of ETags match, with ' +
-            'double quotes around ETag',
-            done => {
-                requestHead({
-                    IfNoneMatch: `non-matching,${etag}`,
-                }, err => {
-                    checkError(err, 'NotModified');
-                    done();
-                });
-            });
-
-        it('If-None-Match: returns NotModified when ETag match, without ' +
-            'double quotes around ETag',
-            done => {
-                requestHead({ IfNoneMatch: etagTrim }, err => {
-                    checkError(err, 'NotModified');
-                    done();
-                });
-            });
-
-        it('If-None-Match: returns NotModified when one of ETags match, ' +
-            'without double quotes around ETag',
-            done => {
-                requestHead({
-                    IfNoneMatch: `non-matching,${etagTrim}`,
-                }, err => {
-                    checkError(err, 'NotModified');
-                    done();
-                });
-            });
-
-        it('If-Modified-Since: returns no error if Last modified date is ' +
-            'greater',
-            done => {
-                requestHead({ IfModifiedSince: dateFromNow(-1) },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    });
-            });
+        });
 
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-Modified-Since: returns NotModified if Last modified ' +
-            'date is lesser',
-            done => {
-                requestHead({ IfModifiedSince: dateFromNow(1) },
-                    err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
-            });
+        test.skip('If-Modified-Since: returns NotModified if Last modified ' +
+            'date is lesser', done => {
+            requestHead({ IfModifiedSince: dateFromNow(1) },
+                err => {
+                    checkError(err, 'NotModified');
+                    done();
+                });
+        });
 
-        it('If-Modified-Since: returns NotModified if Last modified ' +
-            'date is equal',
-            done => {
-                requestHead({ IfModifiedSince: dateConvert(lastModified) },
-                    err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
-            });
+        test('If-Modified-Since: returns NotModified if Last modified ' +
+            'date is equal', done => {
+            requestHead({ IfModifiedSince: dateConvert(lastModified) },
+                err => {
+                    checkError(err, 'NotModified');
+                    done();
+                });
+        });
 
-        it('If-Unmodified-Since: returns no error when lastModified date is ' +
-            'greater',
-            done => {
-                requestHead({ IfUnmodifiedSince: dateFromNow(1) }, err => {
+        test('If-Unmodified-Since: returns no error when lastModified date is ' +
+            'greater', done => {
+            requestHead({ IfUnmodifiedSince: dateFromNow(1) }, err => {
+                checkNoError(err);
+                done();
+            });
+        });
+
+        test('If-Unmodified-Since: returns no error when lastModified ' +
+            'date is equal', done => {
+            requestHead({ IfUnmodifiedSince: dateConvert(lastModified) },
+                err => {
                     checkNoError(err);
                     done();
                 });
-            });
+        });
 
-        it('If-Unmodified-Since: returns no error when lastModified ' +
-            'date is equal',
-            done => {
-                requestHead({ IfUnmodifiedSince: dateConvert(lastModified) },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    });
+        test('If-Unmodified-Since: returns PreconditionFailed when ' +
+            'lastModified date is lesser', done => {
+            requestHead({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
+                checkError(err, errors.PreconditionFailed.code);
+                done();
             });
+        });
 
-        it('If-Unmodified-Since: returns PreconditionFailed when ' +
-            'lastModified date is lesser',
-            done => {
-                requestHead({ IfUnmodifiedSince: dateFromNow(-1) }, err => {
-                    checkError(err, errors.PreconditionFailed.code);
-                    done();
-                });
+        test('If-Match & If-Unmodified-Since: returns no error when match Etag ' +
+            'and lastModified is greater', done => {
+            requestHead({
+                IfMatch: etagTrim,
+                IfUnmodifiedSince: dateFromNow(-1),
+            }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
-        it('If-Match & If-Unmodified-Since: returns no error when match Etag ' +
-            'and lastModified is greater',
-            done => {
-                requestHead({
-                    IfMatch: etagTrim,
-                    IfUnmodifiedSince: dateFromNow(-1),
-                }, err => {
-                    checkNoError(err);
-                    done();
-                });
-            });
-
-        it('If-Match match & If-Unmodified-Since match', done => {
+        test('If-Match match & If-Unmodified-Since match', done => {
             requestHead({
                 IfMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(1),
@@ -264,7 +246,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-Match not match & If-Unmodified-Since not match', done => {
+        test('If-Match not match & If-Unmodified-Since not match', done => {
             requestHead({
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
@@ -274,7 +256,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-Match not match & If-Unmodified-Since match', done => {
+        test('If-Match not match & If-Unmodified-Since match', done => {
             requestHead({
                 IfMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(1),
@@ -286,7 +268,7 @@ describe('HEAD object, conditions', () => {
 
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-Match match & If-Modified-Since not match', done => {
+        test.skip('If-Match match & If-Modified-Since not match', done => {
             requestHead({
                 IfMatch: etagTrim,
                 IfModifiedSince: dateFromNow(1),
@@ -296,7 +278,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-Match match & If-Modified-Since match', done => {
+        test('If-Match match & If-Modified-Since match', done => {
             requestHead({
                 IfMatch: etagTrim,
                 IfModifiedSince: dateFromNow(-1),
@@ -306,7 +288,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-Match not match & If-Modified-Since not match', done => {
+        test('If-Match not match & If-Modified-Since not match', done => {
             requestHead({
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(1),
@@ -316,7 +298,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-Match not match & If-Modified-Since match', done => {
+        test('If-Match not match & If-Modified-Since match', done => {
             requestHead({
                 IfMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(-1),
@@ -326,19 +308,18 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match & If-Modified-Since: returns NotModified when Etag ' +
-            'does not match and lastModified is greater',
-            done => {
-                requestHead({
-                    IfNoneMatch: etagTrim,
-                    IfModifiedSince: dateFromNow(-1),
-                }, err => {
-                    checkError(err, 'NotModified');
-                    done();
-                });
+        test('If-None-Match & If-Modified-Since: returns NotModified when Etag ' +
+            'does not match and lastModified is greater', done => {
+            requestHead({
+                IfNoneMatch: etagTrim,
+                IfModifiedSince: dateFromNow(-1),
+            }, err => {
+                checkError(err, 'NotModified');
+                done();
             });
+        });
 
-        it('If-None-Match not match & If-Modified-Since not match', done => {
+        test('If-None-Match not match & If-Modified-Since not match', done => {
             requestHead({
                 IfNoneMatch: etagTrim,
                 IfModifiedSince: dateFromNow(1),
@@ -348,7 +329,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match match & If-Modified-Since match', done => {
+        test('If-None-Match match & If-Modified-Since match', done => {
             requestHead({
                 IfNoneMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(-1),
@@ -360,7 +341,7 @@ describe('HEAD object, conditions', () => {
 
         // Skipping this test, because real AWS does not provide error as
         // expected
-        it.skip('If-None-Match match & If-Modified-Since not match', done => {
+        test.skip('If-None-Match match & If-Modified-Since not match', done => {
             requestHead({
                 IfNoneMatch: 'non-matching',
                 IfModifiedSince: dateFromNow(1),
@@ -370,7 +351,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match match & If-Unmodified-Since match', done => {
+        test('If-None-Match match & If-Unmodified-Since match', done => {
             requestHead({
                 IfNoneMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(1),
@@ -380,7 +361,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match match & If-Unmodified-Since not match', done => {
+        test('If-None-Match match & If-Unmodified-Since not match', done => {
             requestHead({
                 IfNoneMatch: 'non-matching',
                 IfUnmodifiedSince: dateFromNow(-1),
@@ -390,7 +371,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match not match & If-Unmodified-Since match', done => {
+        test('If-None-Match not match & If-Unmodified-Since match', done => {
             requestHead({
                 IfNoneMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(1),
@@ -400,7 +381,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('If-None-Match not match & If-Unmodified-Since not match', done => {
+        test('If-None-Match not match & If-Unmodified-Since not match', done => {
             requestHead({
                 IfNoneMatch: etagTrim,
                 IfUnmodifiedSince: dateFromNow(-1),
@@ -410,7 +391,7 @@ describe('HEAD object, conditions', () => {
             });
         });
 
-        it('WebsiteRedirectLocation is set & it appears in response', done => {
+        test('WebsiteRedirectLocation is set & it appears in response', done => {
             const redirBktwBody = {
                 Bucket: bucketName,
                 Key: 'redir_present',
@@ -425,18 +406,16 @@ describe('HEAD object, conditions', () => {
                 checkNoError(err);
                 s3.headObject(redirBkt, (err, data) => {
                     checkNoError(err);
-                    assert.strictEqual(data.WebsiteRedirectLocation,
-                            'http://google.com');
+                    expect(data.WebsiteRedirectLocation).toBe('http://google.com');
                     return done();
                 });
             });
         });
 
-        it('WebsiteRedirectLocation is not set & is absent', done => {
+        test('WebsiteRedirectLocation is not set & is absent', done => {
             requestHead({}, (err, data) => {
                 checkNoError(err);
-                assert.strictEqual('WebsiteRedirectLocation' in data,
-                  false, 'WebsiteRedirectLocation header is present.');
+                expect('WebsiteRedirectLocation' in data).toBe(false);
                 done();
             });
         });

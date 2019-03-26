@@ -32,26 +32,26 @@ function _makeRequest(includeXml) {
 }
 
 describe('deleteBucketLifecycle API', () => {
-    before(() => cleanup());
+    beforeAll(() => cleanup());
     beforeEach(done => bucketPut(authInfo, _makeRequest(), log, done));
     afterEach(() => cleanup());
 
-    it('should not return an error even if no lifecycle put', done => {
+    test('should not return an error even if no lifecycle put', done => {
         bucketDeleteLifecycle(authInfo, _makeRequest(), log, err => {
-            assert.equal(err, null, `Err deleting lifecycle: ${err}`);
+            expect(err).toEqual(null);
             done();
         });
     });
-    it('should delete bucket lifecycle', done => {
+    test('should delete bucket lifecycle', done => {
         async.series([
             next => bucketPutLifecycle(authInfo, _makeRequest(true), log, next),
             next => bucketDeleteLifecycle(authInfo, _makeRequest(), log, next),
             next => metadata.getBucket(bucketName, log, next),
         ], (err, results) => {
-            assert.equal(err, null, `Expected success, got error: ${err}`);
+            expect(err).toEqual(null);
             const bucket = results[2];
             const lifecycleConfig = bucket.getLifecycleConfiguration();
-            assert.equal(lifecycleConfig, null);
+            expect(lifecycleConfig).toEqual(null);
             done();
         });
     });

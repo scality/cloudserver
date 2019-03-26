@@ -32,18 +32,18 @@ const key = 'objectKey';
 describe('Testing checkReadLocation', () => {
     let config;
 
-    before(() => {
+    beforeAll(() => {
         config = new ConfigObject();
         config.setLocationConstraints(locationConstraints);
     });
 
-    it('should return null if location does not exist', () => {
+    test('should return null if location does not exist', () => {
         const testResult = checkReadLocation(
             config, 'nonexistloc', key, bucket);
         assert.deepStrictEqual(testResult, null);
     });
 
-    it('should return correct results for bucketMatch true location', () => {
+    test('should return correct results for bucketMatch true location', () => {
         const testResult = checkReadLocation(
             config, 'bucketmatch', key, bucket);
         const expectedResult = {
@@ -54,7 +54,7 @@ describe('Testing checkReadLocation', () => {
         assert.deepStrictEqual(testResult, expectedResult);
     });
 
-    it('should return correct results for bucketMatch false location', () => {
+    test('should return correct results for bucketMatch false location', () => {
         const testResult = checkReadLocation(
             config, 'nobucketmatch', key, bucket);
         const expectedResult = {
