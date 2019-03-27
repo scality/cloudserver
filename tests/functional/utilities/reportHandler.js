@@ -16,12 +16,16 @@ config.setReplicationEndpoints(testLocationConstraints);
 config.backbeat = { host: 'localhost', port: 4242 };
 
 const {
-    _crrRequest,
-    getCRRStats,
+    _crrMetricRequest,
+    getCRRMetrics,
     getReplicationStates,
+    _ingestionMetricRequest,
+    getIngestionMetrics,
+    getIngestionStates,
+    getIngestionInfo,
 } = require('../../../lib/utilities/reportHandler');
 
-const expectedResultsRef = {
+const crrExpectedResultsRef = {
     completions: { count: 10000, size: 10000 },
     failures: { count: 2000, size: 2000 },
     pending: { count: 8000, size: 8000 },
@@ -44,8 +48,25 @@ const expectedResultsRef = {
         },
     },
 };
+const ingestionExpectedResultsRef = {
+    completions: { count: 4000 },
+    pending: { count: 10000 },
+    throughput: { count: 15 },
+    byLocation: {
+        site1: {
+            completions: { count: 2000 },
+            pending: { count: 5000 },
+            throughput: { count: 7 },
+        },
+        site2: {
+            completions: { count: 2000 },
+            pending: { count: 5000 },
+            throughput: { count: 7 },
+        },
+    },
+};
 
-const requestResults = {
+const crrRequestResults = {
     all: {
         completions: { results: { count: 10000, size: 10000 } },
         failures: { results: { count: 2000, size: 2000 } },
@@ -68,15 +89,32 @@ const requestResults = {
         throughput: { results: { count: 5, size: 5 } },
     },
 };
+const ingestionRequestResults = {
+    all: {
+        completions: { results: { count: 4000 } },
+        pending: { results: { count: 10000 } },
+        throughput: { results: { count: 15 } },
+    },
+    site1: {
+        completions: { results: { count: 2000 } },
+        pending: { results: { count: 5000 } },
+        throughput: { results: { count: 7 } },
+    },
+    site2: {
+        completions: { results: { count: 2000 } },
+        pending: { results: { count: 5000 } },
+        throughput: { results: { count: 7 } },
+    },
+};
 
 const expectedStatusResults = {
-    location1: 'enabled',
-    location2: 'disabled',
+    site1: 'enabled',
+    site2: 'disabled',
 };
 
 const expectedScheduleResults = {
-    location1: 'none',
-    location2: new Date(),
+    site1: 'none',
+    site2: new Date(),
 };
 
 function requestFailHandler(req, res) {
@@ -94,15 +132,22 @@ function requestHandler(req, res) {
     const { url } = req;
     if (url.startsWith('/_/metrics/crr/')) {
         const site = url.split('/_/metrics/crr/')[1] || '';
-        if (requestResults[site]) {
-            res.write(JSON.stringify(requestResults[site]));
+        if (crrRequestResults[site]) {
+            res.write(JSON.stringify(crrRequestResults[site]));
+        }
+    } else if (url.startsWith('/_/metrics/ingestion/')) {
+        const site = url.split('/_/metrics/ingestion/')[1] || '';
+        if (ingestionRequestResults[site]) {
+            res.write(JSON.stringify(ingestionRequestResults[site]));
         }
     } else {
         switch (req.url) {
         case '/_/crr/status':
+        case '/_/ingestion/status':
             res.write(JSON.stringify(expectedStatusResults));
             break;
         case '/_/crr/resume/all':
+        case '/_/ingestion/resume/all':
             res.write(JSON.stringify(expectedScheduleResults));
             break;
         default:
@@ -112,79 +157,209 @@ function requestHandler(req, res) {
     res.end();
 }
 
-describe('reportHandler::_crrRequest', function testSuite() {
-    this.timeout(20000);
-    const testPort = '4242';
-    let httpServer;
+[
+    { method: _crrMetricRequest, result: crrExpectedResultsRef },
+    { method: _ingestionMetricRequest, result: ingestionExpectedResultsRef },
+].forEach(item => {
+    describe(`reportHandler::${item.method.name}`, function testSuite() {
+        this.timeout(20000);
+        const testPort = '4242';
+        let httpServer;
 
-    describe('Test Request Failure Cases', () => {
-        before(done => {
-            httpServer = http.createServer(requestFailHandler).listen(testPort);
-            httpServer.on('listening', done);
-            httpServer.on('error', err => {
-                process.stdout.write(`https server: ${err.stack}\n`);
-                process.exit(1);
+        describe('Test Request Failure Cases', () => {
+            before(done => {
+                httpServer = http.createServer(requestFailHandler)
+                                 .listen(testPort);
+                httpServer.on('listening', done);
+                httpServer.on('error', err => {
+                    process.stdout.write(`https server: ${err.stack}\n`);
+                    process.exit(1);
+                });
+            });
+
+            after('Terminating Server', () => {
+                httpServer.close();
+            });
+
+            it('should return empty object if a request error occurs',
+            done => {
+                const endpoint = 'http://nonexists:4242';
+                item.method(endpoint, 'all', logger, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, {});
+                    done();
+                });
+            });
+
+            it('should return empty object if response status code is >= 400',
+            done => {
+                const endpoint = 'http://localhost:4242';
+                item.method(endpoint, 'all', logger, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, {});
+                    done();
+                });
             });
         });
 
-        after('Terminating Server', () => {
-            httpServer.close();
-        });
-
-        it('should return empty object if a request error occurs', done => {
-            const endpoint = 'http://nonexists:4242';
-            _crrRequest(endpoint, 'all', logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {});
-                done();
-            });
-        });
-
-        it('should return empty object if response status code is >= 400',
-        done => {
+        describe('Test Request Success Cases', () => {
             const endpoint = 'http://localhost:4242';
-            _crrRequest(endpoint, 'all', logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {});
-                done();
+            before(done => {
+                httpServer = http.createServer(requestHandler)
+                                 .listen(testPort);
+                httpServer.on('listening', done);
+                httpServer.on('error', err => {
+                    process.stdout.write(`https server: ${err.stack}\n`);
+                    process.exit(1);
+                });
             });
-        });
-    });
 
-    describe('Test Request Success Cases', () => {
-        const endpoint = 'http://localhost:4242';
-        before(done => {
-            httpServer = http.createServer(requestHandler).listen(testPort);
-            httpServer.on('listening', done);
-            httpServer.on('error', err => {
-                process.stdout.write(`https server: ${err.stack}\n`);
-                process.exit(1);
+            after('Terminating Server', () => {
+                httpServer.close();
             });
-        });
 
-        after('Terminating Server', () => {
-            httpServer.close();
-        });
-
-        it('should return correct location metrics', done => {
-            _crrRequest(endpoint, 'site1', logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(
-                    res, expectedResultsRef.byLocation.site1);
-                done();
+            it('should return correct location metrics', done => {
+                item.method(endpoint, 'site1', logger, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(
+                        res, item.result.byLocation.site1);
+                    done();
+                });
             });
         });
     });
 });
 
-describe('reportHandler::getCRRStats', function testSuite() {
+[
+    { method: getCRRMetrics, result: crrExpectedResultsRef },
+    { method: getIngestionMetrics, result: ingestionExpectedResultsRef },
+].forEach(item => {
+    describe(`reportHandler::${item.method.name}`, function testSuite() {
+        this.timeout(20000);
+        const testPort = '4242';
+        let httpServer;
+
+        describe('Test Request Success Cases', () => {
+            before(done => {
+                httpServer = http.createServer(requestHandler).listen(testPort);
+                httpServer.on('listening', done);
+                httpServer.on('error', err => {
+                    process.stdout.write(`https server: ${err.stack}\n`);
+                    process.exit(1);
+                });
+            });
+
+            after('Terminating Server', () => {
+                httpServer.close();
+            });
+
+            it('should return correct results', done => {
+                if (item.method.name === 'getIngestionMetrics') {
+                    const sites = ['site1', 'site2'];
+                    item.method(sites, logger, (err, res) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(res, item.result);
+                        done();
+                    }, config);
+                } else {
+                    item.method(logger, (err, res) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(res, item.result);
+                        done();
+                    }, config);
+                }
+            });
+        });
+    });
+});
+
+[
+    { method: getReplicationStates },
+    { method: getIngestionStates },
+].forEach(item => {
+    describe(`reportHandler::${item.method.name}`, function testSuite() {
+        this.timeout(20000);
+        const testPort = '4242';
+        let httpServer;
+
+        describe('Test Request Failure Cases', () => {
+            before(done => {
+                httpServer = http.createServer(requestFailHandler)
+                                 .listen(testPort);
+                httpServer.on('listening', done);
+                httpServer.on('error', err => {
+                    process.stdout.write(`https server: ${err.stack}\n`);
+                    process.exit(1);
+                });
+            });
+
+            after('Terminating Server', () => {
+                httpServer.close();
+            });
+
+            it('should return empty object if a request error occurs',
+            done => {
+                item.method(logger, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, {});
+                    done();
+                }, { backbeat: { host: 'nonexisthost', port: testPort } });
+            });
+
+            it('should return empty object if response status code is >= 400',
+            done => {
+                item.method(logger, (err, res) => {
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, {});
+                    done();
+                }, { backbeat: { host: 'localhost', port: testPort } });
+            });
+        });
+
+        describe('Test Request Success Cases', () => {
+            before(done => {
+                httpServer = http.createServer(requestHandler)
+                                 .listen(testPort);
+                httpServer.on('listening', done);
+                httpServer.on('error', err => {
+                    process.stdout.write(`https server: ${err.stack}\n`);
+                    process.exit(1);
+                });
+            });
+
+            after('Terminating Server', () => {
+                httpServer.close();
+            });
+
+            it('should return correct results', done => {
+                item.method(logger, (err, res) => {
+                    const expectedResults = {
+                        states: {
+                            site1: 'enabled',
+                            site2: 'disabled',
+                        },
+                        schedules: {
+                            site2: expectedScheduleResults.site2,
+                        },
+                    };
+                    assert.ifError(err);
+                    assert.deepStrictEqual(res, expectedResults);
+                    done();
+                }, { backbeat: { host: 'localhost', port: testPort } });
+            });
+        });
+    });
+});
+
+describe('reportHanlder::getIngestionInfo', function testSuite() {
     this.timeout(20000);
     const testPort = '4242';
     let httpServer;
 
     describe('Test Request Success Cases', () => {
         before(done => {
-            httpServer = http.createServer(requestHandler).listen(testPort);
+            httpServer = http.createServer(requestHandler)
+                             .listen(testPort);
             httpServer.on('listening', done);
             httpServer.on('error', err => {
                 process.stdout.write(`https server: ${err.stack}\n`);
@@ -197,82 +372,37 @@ describe('reportHandler::getCRRStats', function testSuite() {
         });
 
         it('should return correct results', done => {
-            getCRRStats(logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, expectedResultsRef);
-                done();
-            }, config);
-        });
-    });
-});
-
-
-describe('reportHandler::getReplicationStates', function testSuite() {
-    this.timeout(20000);
-    const testPort = '4242';
-    let httpServer;
-
-    describe('Test Request Failure Cases', () => {
-        before(done => {
-            httpServer = http.createServer(requestFailHandler).listen(testPort);
-            httpServer.on('listening', done);
-            httpServer.on('error', err => {
-                process.stdout.write(`https server: ${err.stack}\n`);
-                process.exit(1);
-            });
-        });
-
-        after('Terminating Server', () => {
-            httpServer.close();
-        });
-
-        it('should return empty object if a request error occurs', done => {
-            getReplicationStates(logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {});
-                done();
-            }, { host: 'nonexisthost', port: testPort });
-        });
-
-        it('should return empty object if response status code is >= 400',
-        done => {
-            getReplicationStates(logger, (err, res) => {
-                assert.ifError(err);
-                assert.deepStrictEqual(res, {});
-                done();
-            }, { host: 'localhost', port: testPort });
-        });
-    });
-
-    describe('Test Request Success Cases', () => {
-        before(done => {
-            httpServer = http.createServer(requestHandler).listen(testPort);
-            httpServer.on('listening', done);
-            httpServer.on('error', err => {
-                process.stdout.write(`https server: ${err.stack}\n`);
-                process.exit(1);
-            });
-        });
-
-        after('Terminating Server', () => {
-            httpServer.close();
-        });
-
-        it('should return correct results', done => {
-            getReplicationStates(logger, (err, res) => {
-                const expectedResults = {
+            getIngestionInfo(logger, (err, res) => {
+                const expectedStatusResults = {
                     states: {
-                        location1: 'enabled',
-                        location2: 'disabled',
+                        site1: 'enabled',
+                        site2: 'disabled',
                     },
                     schedules: {
-                        location2: expectedScheduleResults.location2,
+                        site2: expectedScheduleResults.site2,
                     },
                 };
                 assert.ifError(err);
-                assert.deepStrictEqual(res, expectedResults);
+
+                assert(res.metrics);
+                assert(res.status);
+                assert.deepStrictEqual(res.status, expectedStatusResults);
+                assert.deepStrictEqual(res.metrics,
+                    ingestionExpectedResultsRef);
                 done();
-            }, { host: 'localhost', port: testPort });
+            }, config);
+        });
+
+        it('should return empty if no ingestion locations exist', done => {
+            getIngestionInfo(logger, (err, res) => {
+                assert.ifError(err);
+
+                assert(res.metrics);
+                assert(res.status);
+                assert.deepStrictEqual(res.metrics, {});
+                assert.deepStrictEqual(res.status, {});
+                done();
+            });
         });
     });
 });
