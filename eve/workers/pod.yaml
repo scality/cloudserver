@@ -10,6 +10,7 @@ spec:
   - ip: "127.0.0.1"
     hostnames:
     - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com"
+    - "pykmip.local"
   containers:
     {% if vars.env.S3METADATA is defined and vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
@@ -40,6 +41,9 @@ spec:
         - name: artifacts
           readOnly: true
           mountPath: /artifacts
+        - name: kmip-certs
+          readOnly: false
+          mountPath: /ssl-kmip
       command:
         - bash
         - -lc
@@ -79,6 +83,9 @@ spec:
         - name: artifacts
           readOnly: false
           mountPath: /artifacts
+        - name: kmip-certs
+          readOnly: false
+          mountPath: /ssl-kmip
       command:
         - bash
         - -ec
@@ -89,6 +96,26 @@ spec:
         {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" -%}
         - name: S3_LOCATION_FILE
           value: "/usr/src/app/tests/locationConfig/locationConfigTests.json"
+        {%- endif %}
+        {% if vars.pykmip is defined and vars.pykmip == 'enabled' -%}
+        - name: S3KMS
+          value: kmip
+        - name: S3KMIP_PORT
+          value: "5696"
+        - name: S3KMIP_HOSTS
+          value: "pykmip.local"
+        - name: S3KMIP_COMPOUND_CREATE
+          value: "false"
+        - name: S3KMIP_BUCKET_ATTRIBUTE_NAME
+          value: ''
+        - name: S3KMIP_PIPELINE_DEPTH
+          value: "8"
+        - name: S3KMIP_KEY
+          value: /ssl-kmip/kmip-client-key.pem
+        - name: S3KMIP_CERT
+          value: /ssl-kmip/kmip-client-cert.pem
+        - name: S3KMIP_CA
+          value: /ssl-kmip/kmip-ca.pem
         {%- endif %}
         - name: CI
           value: "true"
@@ -151,10 +178,28 @@ spec:
           squid -f /etc/squid/squid.conf -N -z
           squid -f /etc/squid/squid.conf -NYCd 1
     {%- endif %}
+    {% if vars.pykmip is defined and vars.pykmip == 'enabled' -%}
+    - name: pykmip
+      image: {{ images.pykmip }}
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: artifacts
+          readOnly: false
+          mountPath: /artifacts
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+    {%- endif %}
   volumes:
     - name: creds
       emptyDir: {}
     - name: certs
       emptyDir: {}
     - name: artifacts
+      emptyDir: {}
+    - name: kmip-certs
       emptyDir: {}
