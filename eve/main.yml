@@ -83,6 +83,10 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: True
       env: *global-env
+  - ShellCommand: &pykmip-certificates
+      name: Setup certificated for PyKMIP
+      command: cp eve/workers/pykmip/certs/* /ssl-kmip/
+      haltOnFailure: True
   - ShellCommand: &npm-install
       name: install modules
       command: npm install
@@ -114,6 +118,7 @@ stages:
             - file-ft-tests
             - multiple-backend-test
             - mongo-ft-tests
+            - kmip-ft-tests
           waitForFinish: True
           haltOnFailure: True
 
@@ -250,6 +255,45 @@ stages:
           <<: *follow-s3-log
           env:
             <<: *file-mem-mpu
+            <<: *global-env
+      - Upload: *upload-artifacts
+
+  kmip-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+        pykmip: eve/workers/pykmip
+      vars:
+        aggressorMemLimit: "2Gi"
+        s3MemLimit: "1664Mi"
+        redis: enabled
+        pykmip: enabled
+        env:
+          <<: *mongo-vars
+          <<: *global-env
+    steps:
+      - Git: *clone
+      - ShellCommand: *pykmip-certificates
+      - ShellCommand: *credentials
+      - ShellCommand: *npm-install
+      - ShellCommand:
+          command: |
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            bash wait_for_local_port.bash 5696 40
+            npm run ft_kmip
+          logfiles:
+            pykmip:
+              filename: /artifacts/pykmip.log
+              follow: true
+            s3:
+              filename: /artifacts/s3.log
+              follow: true
+          env:
+            <<: *mongo-vars
             <<: *global-env
       - Upload: *upload-artifacts
 
