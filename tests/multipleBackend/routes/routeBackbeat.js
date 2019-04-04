@@ -10,14 +10,23 @@ const { makeid } = require('../../unit/helpers');
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, awsLocation } =
-    require('../../functional/aws-node-sdk/test/multipleBackend/utils');
+const {
+    describeSkipIfNotMultiple,
+    awsLocation,
+    azureLocation,
+    getAzureContainerName,
+    getAzureClient,
+} = require('../../functional/aws-node-sdk/test/multipleBackend/utils');
+
 const { getRealAwsConfig } =
       require('../../functional/aws-node-sdk/test/support/awsConfig');
 const { config } = require('../../../lib/Config');
 
 const awsConfig = getRealAwsConfig(awsLocation);
 const awsClient = new AWS.S3(awsConfig);
+const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
+const azureClient = getAzureClient();
+const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
 const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
@@ -156,8 +165,6 @@ function makeBackbeatRequest(params, callback) {
 
 describeSkipIfNotMultiple('backbeat DELETE routes', () => {
     it('abort MPU', done => {
-        const awsBucket =
-              config.locationConstraints[awsLocation].details.bucketName;
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([
             next =>
@@ -658,7 +665,8 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
     });
-    describe('Batch Delete Route', () => {
+    describe('Batch Delete Route', function test() {
+        this.timeout(30000);
         it('should batch delete a local location', done => {
             let versionId;
             let location;
@@ -717,8 +725,6 @@ describeSkipIfAWS('backbeat routes', () => {
         });
         it('should batch delete a versioned AWS location', done => {
             let versionId;
-            const awsBucket =
-                  config.locationConstraints[awsLocation].details.bucketName;
             const awsKey = `${TEST_BUCKET}/batch-delete-test-key-${makeid(8)}`;
 
             async.series([
@@ -795,6 +801,262 @@ describeSkipIfAWS('backbeat routes', () => {
                     };
                     makeRequest(options, done);
                 },
+            ], done);
+        });
+
+        it('should not put delete tags if the source is not Azure and ' +
+        'if-unmodified-since header is not provided', done => {
+            const awsKey = uuid();
+            async.series([
+                next =>
+                    awsClient.putObject({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, next),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        headers: {
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-tags': JSON.stringify({
+                                'scal-delete-marker': 'true',
+                                'scal-delete-service': 'lifecycle-transition',
+                            }),
+                        },
+                        requestBody: JSON.stringify({
+                            Locations: [{
+                                key: awsKey,
+                                dataStoreName: awsLocation,
+                            }],
+                        }),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    awsClient.getObjectTagging({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data.TagSet, []);
+                        next();
+                    }),
+            ], done);
+        });
+
+        it('should not put tags if the source is not Azure and ' +
+        'if-unmodified-since condition is not met', done => {
+            const awsKey = uuid();
+            async.series([
+                next =>
+                    awsClient.putObject({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, next),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        headers: {
+                            'if-unmodified-since':
+                                'Sun, 31 Mar 2019 00:00:00 GMT',
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-tags': JSON.stringify({
+                                'scal-delete-marker': 'true',
+                                'scal-delete-service': 'lifecycle-transition',
+                            }),
+                        },
+                        requestBody: JSON.stringify({
+                            Locations: [{
+                                key: awsKey,
+                                dataStoreName: awsLocation,
+                            }],
+                        }),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    awsClient.getObjectTagging({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data.TagSet, []);
+                        next();
+                    }),
+            ], done);
+        });
+
+        it('should put tags if the source is not Azure and ' +
+        'if-unmodified-since condition is met', done => {
+            const awsKey = uuid();
+            let lastModified;
+            async.series([
+                next =>
+                    awsClient.putObject({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, next),
+                next =>
+                    awsClient.headObject({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        lastModified = data.LastModified;
+                        return next();
+                    }),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: `/_/backbeat/batchdelete/${awsBucket}/${awsKey}`,
+                        headers: {
+                            'if-unmodified-since': lastModified,
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-tags': JSON.stringify({
+                                'scal-delete-marker': 'true',
+                                'scal-delete-service': 'lifecycle-transition',
+                            }),
+                        },
+                        requestBody: JSON.stringify({
+                            Locations: [{
+                                key: awsKey,
+                                dataStoreName: awsLocation,
+                            }],
+                        }),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    awsClient.getObjectTagging({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.strictEqual(data.TagSet.length, 2);
+                        data.TagSet.forEach(tag => {
+                            const { Key, Value } = tag;
+                            const isValidTag =
+                                Key === 'scal-delete-marker' ||
+                                Key === 'scal-delete-service';
+                            assert(isValidTag);
+                            if (Key === 'scal-delete-marker') {
+                                assert.strictEqual(Value, 'true');
+                            }
+                            if (Key === 'scal-delete-service') {
+                                assert.strictEqual(
+                                    Value, 'lifecycle-transition');
+                            }
+                        });
+                        next();
+                    }),
+            ], done);
+        });
+
+        it('should not delete the object if the source is Azure and ' +
+        'if-unmodified-since condition is not met', done => {
+            const blob = uuid();
+            async.series([
+                next =>
+                    azureClient.createBlockBlobFromText(
+                        containerName, blob, 'a', null, next),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path:
+                            `/_/backbeat/batchdelete/${containerName}/${blob}`,
+                        headers: {
+                            'if-unmodified-since':
+                                'Sun, 31 Mar 2019 00:00:00 GMT',
+                            'x-scal-storage-class': azureLocation,
+                            'x-scal-tags': JSON.stringify({
+                                'scal-delete-marker': 'true',
+                                'scal-delete-service': 'lifecycle-transition',
+                            }),
+                        },
+                        requestBody: JSON.stringify({
+                            Locations: [{
+                                key: blob,
+                                dataStoreName: azureLocation,
+                            }],
+                        }),
+                        jsonResponse: true,
+                    }, err => {
+                        if (err && err.statusCode === 412) {
+                            return next();
+                        }
+                        return next(err);
+                    }),
+                next =>
+                    azureClient.getBlobProperties(
+                        containerName, blob, (err, result) => {
+                            if (err) {
+                                return next(err);
+                            }
+                            assert(result);
+                            return next();
+                        }),
+            ], done);
+        });
+
+        it('should delete the object if the source is Azure and ' +
+        'if-unmodified-since condition is met', done => {
+            const blob = uuid();
+            let lastModified;
+            async.series([
+                next =>
+                    azureClient.createBlockBlobFromText(
+                        containerName, blob, 'a', null, next),
+                next =>
+                    azureClient.getBlobProperties(
+                        containerName, blob, (err, result) => {
+                            if (err) {
+                                return next(err);
+                            }
+                            lastModified = result.lastModified;
+                            return next();
+                        }),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path:
+                            `/_/backbeat/batchdelete/${containerName}/${blob}`,
+                        headers: {
+                            'if-unmodified-since': lastModified,
+                            'x-scal-storage-class': azureLocation,
+                            'x-scal-tags': JSON.stringify({
+                                'scal-delete-marker': 'true',
+                                'scal-delete-service': 'lifecycle-transition',
+                            }),
+                        },
+                        requestBody: JSON.stringify({
+                            Locations: [{
+                                key: blob,
+                                dataStoreName: azureLocation,
+                            }],
+                        }),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    azureClient.getBlobProperties(containerName, blob, err => {
+                        assert(err.statusCode === 404);
+                        return next();
+                    }),
             ], done);
         });
     });
