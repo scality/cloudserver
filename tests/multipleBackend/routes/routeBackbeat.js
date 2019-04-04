@@ -2,6 +2,7 @@ const assert = require('assert');
 const AWS = require('aws-sdk');
 const async = require('async');
 const crypto = require('crypto');
+const uuid = require('uuid/v4');
 const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
 
@@ -393,6 +394,50 @@ describeSkipIfAWS('backbeat routes', () => {
                 assert.ifError(err);
                 done();
             });
+        });
+
+        it('should PUT tags for a non-versioned bucket', function test(done) {
+            this.timeout(10000);
+            const bucket = NONVERSIONED_BUCKET;
+            const awsBucket =
+                  config.locationConstraints[awsLocation].details.bucketName;
+            const awsKey = uuid();
+            async.waterfall([
+                next =>
+                    makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket,
+                        objectKey: awsKey,
+                        resourceType: 'multiplebackenddata',
+                        queryObj: { operation: 'putobject' },
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                            'x-scal-storage-type': 'aws_s3',
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-tags': JSON.stringify({ Key1: 'Value1' }),
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, (err, response) => {
+                        assert.ifError(err);
+                        assert.strictEqual(response.statusCode, 200);
+                        return next();
+                    }),
+                next =>
+                    awsClient.getObjectTagging({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data.TagSet, [{
+                            Key: 'Key1',
+                            Value: 'Value1'
+                        }]);
+                        next();
+                    }),
+            ], done);
         });
 
         it('should refuse PUT data if no x-scal-canonical-id header ' +
