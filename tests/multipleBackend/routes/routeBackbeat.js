@@ -12,12 +12,12 @@ const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const {
     describeSkipIfNotMultiple,
+    itSkipCeph,
     awsLocation,
     azureLocation,
     getAzureContainerName,
     getAzureClient,
 } = require('../../functional/aws-node-sdk/test/multipleBackend/utils');
-
 const { getRealAwsConfig } =
       require('../../functional/aws-node-sdk/test/support/awsConfig');
 const { config } = require('../../../lib/Config');
@@ -663,6 +663,167 @@ describeSkipIfAWS('backbeat routes', () => {
                 assert.strictEqual(JSON.parse(data.body).code, 'ObjNotFound');
                 done();
             });
+        });
+    });
+    describe('backbeat multipart upload operations', function test() {
+        this.timeout(10000);
+
+        // The ceph image does not support putting tags during initiate MPU.
+        itSkipCeph('should put tags if the source is AWS and tags are ' +
+        'provided when initiating the multipart upload', done => {
+            const awsBucket =
+                config.locationConstraints[awsLocation].details.bucketName;
+            const awsKey = uuid();
+            const multipleBackendPath =
+                `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
+            let uploadId;
+            let partData;
+            async.series([
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: multipleBackendPath,
+                        queryObj: { operation: 'initiatempu' },
+                        headers: {
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-storage-type': 'aws_s3',
+                            'x-scal-tags': JSON.stringify({ 'key1': 'value1' }),
+                        },
+                        jsonResponse: true,
+                    }, (err, data) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        uploadId = JSON.parse(data.body).uploadId;
+                        return next();
+                    }),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'PUT',
+                        path: multipleBackendPath,
+                        queryObj: { operation: 'putpart' },
+                        headers: {
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-storage-type': 'aws_s3',
+                            'x-scal-upload-id': uploadId,
+                            'x-scal-part-number': '1',
+                            'content-length': testData.length,
+                        },
+                        requestBody: testData,
+                        jsonResponse: true,
+                    },  (err, data) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        const body = JSON.parse(data.body);
+                        partData = [{
+                            PartNumber: [body.partNumber],
+                            ETag: [body.ETag],
+                        }];
+                        return next();
+                    }),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: multipleBackendPath,
+                        queryObj: { operation: 'completempu' },
+                        headers: {
+                            'x-scal-storage-class': awsLocation,
+                            'x-scal-storage-type': 'aws_s3',
+                            'x-scal-upload-id': uploadId,
+                        },
+                        requestBody: JSON.stringify(partData),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    awsClient.getObjectTagging({
+                        Bucket: awsBucket,
+                        Key: awsKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(data.TagSet, [{
+                            Key: 'key1',
+                            Value: 'value1',
+                        }]);
+                        next();
+                    }),
+            ], done);
+        });
+        it('should put tags if the source is Azure and tags are provided ' +
+        'when completing the multipart upload', done => {
+            const containerName = getAzureContainerName(azureLocation);
+            const blob = uuid();
+            const multipleBackendPath =
+                `/_/backbeat/multiplebackenddata/${containerName}/${blob}`;
+            const uploadId = uuid().replace(/-/g, '');
+            let partData;
+            async.series([
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'PUT',
+                        path: multipleBackendPath,
+                        queryObj: { operation: 'putpart' },
+                        headers: {
+                            'x-scal-storage-class': azureLocation,
+                            'x-scal-storage-type': 'azure',
+                            'x-scal-upload-id': uploadId,
+                            'x-scal-part-number': '1',
+                            'content-length': testData.length,
+                        },
+                        requestBody: testData,
+                        jsonResponse: true,
+                    },  (err, data) => {
+                        if (err) {
+                            return next(err);
+                        }
+                        const body = JSON.parse(data.body);
+                        partData = [{
+                            PartNumber: [body.partNumber],
+                            ETag: [body.ETag],
+                            NumberSubParts: [body.numberSubParts],
+                        }];
+                        return next();
+                    }),
+                next =>
+                    makeRequest({
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: multipleBackendPath,
+                        queryObj: { operation: 'completempu' },
+                        headers: {
+                            'x-scal-storage-class': azureLocation,
+                            'x-scal-storage-type': 'azure',
+                            'x-scal-upload-id': uploadId,
+                            'x-scal-tags': JSON.stringify({ 'key1': 'value1' }),
+                        },
+                        requestBody: JSON.stringify(partData),
+                        jsonResponse: true,
+                    }, next),
+                next =>
+                    azureClient.getBlobProperties(
+                        containerName, blob, (err, result) => {
+                            if (err) {
+                                return next(err);
+                            }
+                            const tags = JSON.parse(result.metadata.tags);
+                            assert.deepStrictEqual(tags, { key1: 'value1' });
+                            return next();
+                        }),
+            ], done);
         });
     });
     describe('Batch Delete Route', function test() {
