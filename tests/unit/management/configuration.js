@@ -1,4 +1,5 @@
 const assert = require('assert');
+const crypto = require('crypto');
 
 const { DummyRequestLogger } = require('../helpers');
 const log = new DummyRequestLogger();
@@ -40,6 +41,11 @@ const locationConstraintsOriginal = Object.assign({},
     config.locationConstraints);
 const restEndpointsOriginal = Object.assign({}, config.restEndpoints);
 const browserAccessEnabledOriginal = config.browserAccessEnabled;
+const instanceId = '19683e55-56f7-4a4c-98a7-706c07e4ec30';
+const publicInstanceId = crypto.createHash('sha256')
+                               .update(instanceId)
+                               .digest('hex');
+
 function resetConfig() {
     config.overlayVersion = overlayVersionOriginal;
     config.authData = authDataOriginal;
@@ -72,6 +78,7 @@ describe('patchConfiguration', () => {
     it('should modify config using the new config', done => {
         const newConf = {
             version: 1,
+            instanceId,
             users: [
                 {
                     secretKey,
@@ -204,6 +211,7 @@ describe('patchConfiguration', () => {
             const actualConf = getConfig();
             const expectedConf = {
                 overlayVersion: 1,
+                publicInstanceId,
                 browserAccessEnabled: true,
                 authData: {
                     accounts: [{
@@ -387,9 +395,11 @@ describe('patchConfiguration', () => {
     'overlayVersion (1)', done => {
         const newConf1 = {
             version: 1,
+            instanceId,
         };
         const newConf2 = {
             version: 2,
+            instanceId,
             browserAccess: {
                 enabled: true,
             },
@@ -413,9 +423,11 @@ describe('patchConfiguration', () => {
     'overlayVersion', done => {
         const newConf1 = {
             version: 1,
+            instanceId,
         };
         const newConf2 = {
             version: 1,
+            instanceId,
             browserAccess: {
                 enabled: true,
             },
