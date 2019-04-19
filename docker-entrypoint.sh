@@ -142,14 +142,6 @@ if [[ "$HEALTHCHECKS_ALLOWFROM" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
 fi
 
-if [[ $JQ_FILTERS_CONFIG != "." ]]; then
-    jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
-    mv config.json.tmp config.json
-fi
-
-if test -v INITIAL_INSTANCE_ID && test -v S3METADATAPATH && ! test -f ${S3METADATAPATH}/uuid ; then
-    echo -n ${INITIAL_INSTANCE_ID} > ${S3METADATAPATH}/uuid
-fi
 # external backends http(s) agent config
 
 # AWS
@@ -184,6 +176,15 @@ fi
 
 if [[ "$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.maxFreeSockets=$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS"
+fi
+
+if [[ $JQ_FILTERS_CONFIG != "." ]]; then
+    jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
+    mv config.json.tmp config.json
+fi
+
+if test -v INITIAL_INSTANCE_ID && test -v S3METADATAPATH && ! test -f ${S3METADATAPATH}/uuid ; then
+    echo -n ${INITIAL_INSTANCE_ID} > ${S3METADATAPATH}/uuid
 fi
 
 # s3 secret credentials for Zenko
