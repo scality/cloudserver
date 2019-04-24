@@ -2,8 +2,9 @@ const assert = require('assert');
 const async = require('async');
 const AWS = require('aws-sdk');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
+const { errors, models } = require('arsenal');
 
+const BucketInfo = models.BucketInfo;
 const { getRealAwsConfig } =
     require('../functional/aws-node-sdk/test/support/awsConfig');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
@@ -11,7 +12,6 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
-const mdWrapper = require('../../lib/metadata/wrapper');
 
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
@@ -20,6 +20,7 @@ const bucketPutVersioning = require('../../lib/api/bucketPutVersioning');
 const initiateMultipartUpload =
     require('../../lib/api/initiateMultipartUpload');
 const multipartDelete = require('../../lib/api/multipartDelete');
+const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const objectPutPart = require('../../lib/api/objectPutPart');
 const completeMultipartUpload =
     require('../../lib/api/completeMultipartUpload');
@@ -54,6 +55,19 @@ const bucketPutRequest = {
     post: '',
     parsedHost: 'localhost',
 };
+
+const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+const awsETagBigObj = 'f1c9645dbc14efddc7d8a322685f26eb';
+const completeBody = '<CompleteMultipartUpload>' +
+    '<Part>' +
+    '<PartNumber>1</PartNumber>' +
+    `<ETag>"${awsETagBigObj}"</ETag>` +
+    '</Part>' +
+    '<Part>' +
+    '<PartNumber>2</PartNumber>' +
+    `<ETag>"${awsETag}"</ETag>` +
+    '</Part>' +
+    '</CompleteMultipartUpload>';
 
 const basicParams = {
     bucketName,
@@ -90,18 +104,6 @@ function _getOverviewKey(objectKey, uploadId) {
     return `overview${splitter}${objectKey}${splitter}${uploadId}`;
 }
 
-const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-const awsETagBigObj = 'f1c9645dbc14efddc7d8a322685f26eb';
-const completeBody = '<CompleteMultipartUpload>' +
-    '<Part>' +
-    '<PartNumber>1</PartNumber>' +
-    `<ETag>"${awsETagBigObj}"</ETag>` +
-    '</Part>' +
-    '<Part>' +
-    '<PartNumber>2</PartNumber>' +
-    `<ETag>"${awsETag}"</ETag>` +
-    '</Part>' +
-    '</CompleteMultipartUpload>';
 function getCompleteParams(objectKey, uploadId) {
     return Object.assign({
         objectKey,
@@ -713,23 +715,210 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         });
     });
 
-    it('should complete a multipart upload initiated on legacy version',
-    done => {
-        const objectKey = `testkey-${Date.now()}`;
-        mpuSetup('scality-internal-mem', objectKey, uploadId => {
-            const mputOverviewKey =
-            _getOverviewKey(objectKey, uploadId);
-            mdWrapper.getObjectMD(mpuBucket, mputOverviewKey, {}, log,
-            (err, res) => {
-                // remove location constraint to mimic legacy behvior
-                // eslint-disable-next-line no-param-reassign
-                res.controllingLocationConstraint = undefined;
-                const compParams = getCompleteParams(objectKey, uploadId);
-                completeMultipartUpload(authInfo, compParams, log,
-                (err, result) => {
-                    assert.equal(err, null, 'Error completing mpu on file ' +
-                    `${err}`);
-                    assertMpuCompleteResults(result, objectKey);
+    describe('with mpu initiated on legacy version', () => {
+        beforeEach(function beFn() {
+            this.currentTest.lcObj = config.locationConstraints;
+            const legacyObj = Object.assign(config.locationConstraints,
+                { legacy: {
+                    type: 'mem',
+                    legacyAwsBehavior: true,
+                    details: {},
+                } });
+            config.setLocationConstraints(legacyObj);
+        });
+
+        afterEach(function afFn() {
+            config.setLocationConstraints(this.currentTest.lcObj);
+        });
+
+        it('should complete a multipart upload', done => {
+            const objectKey = `testkey-${Date.now()}`;
+            mpuSetup('scality-internal-mem', objectKey, uploadId => {
+                const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
+                async.waterfall([
+                    next => {
+                        const bucketMD = BucketInfo.fromObj(
+                            metadata.buckets.get(bucketName));
+                        const objMD =
+                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                        // remove location constraints to mimic legacy behavior
+                        bucketMD.setLocationConstraint(undefined);
+                        objMD.controllingLocationConstraint = undefined;
+                        objMD.dataStoreName = undefined;
+                        objMD[constants.objectLocationConstraintHeader] =
+                            undefined;
+                        next(null, uploadId, bucketMD, objMD);
+                    },
+                    (uploadId, bucketMD, objMD, next) => {
+                        metadata.buckets.set(bucketName, bucketMD);
+                        metadata.keyMaps.get(mpuBucket).
+                            set(mpuOverviewKey, objMD);
+                        next(null, uploadId);
+                    },
+                    (uploadId, next) => {
+                        const compParams = getCompleteParams(
+                            objectKey, uploadId);
+                        completeMultipartUpload(
+                            authInfo, compParams, log, next);
+                    },
+                    (completeRes, resHeaders, next) => {
+                        assertMpuCompleteResults(completeRes, objectKey);
+                        next();
+                    },
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+        });
+
+        it('should abort a multipart upload', done => {
+            const objectKey = `testkey-${Date.now()}`;
+            mpuSetup('scality-internal-mem', objectKey, uploadId => {
+                const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
+                async.waterfall([
+                    next => {
+                        const bucketMD = BucketInfo.fromObj(
+                            metadata.buckets.get(bucketName));
+                        const objMD =
+                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                        // remove location constraints to mimic legacy behavior
+                        bucketMD.setLocationConstraint(undefined);
+                        objMD.controllingLocationConstraint = undefined;
+                        objMD.dataStoreName = undefined;
+                        objMD[constants.objectLocationConstraintHeader] =
+                            undefined;
+                        metadata.buckets.set(bucketName, bucketMD);
+                        metadata.keyMaps.get(mpuBucket).
+                            set(mpuOverviewKey, objMD);
+                        next(null, uploadId);
+                    },
+                    (uploadId, next) => {
+                        const delParams = getDeleteParams(objectKey, uploadId);
+                        multipartDelete(authInfo, delParams, log,
+                            err => next(err, uploadId));
+                    },
+                    (uploadId, next) => {
+                        const listParams = getListParams(objectKey, uploadId);
+                        listParts(authInfo, listParams, log, err => {
+                            assert(err.NoSuchUpload);
+                            next();
+                        });
+                    },
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+        });
+
+        it('should list multipart upload parts', done => {
+            const objectKey = `testkey-${Date.now()}`;
+            mpuSetup('scality-internal-mem', objectKey, uploadId => {
+                const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
+                async.waterfall([
+                    next => {
+                        const bucketMD = BucketInfo.fromObj(
+                            metadata.buckets.get(bucketName));
+                        const objMD =
+                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                        // remove location constraints to mimic legacy behavior
+                        bucketMD.setLocationConstraint(undefined);
+                        objMD.controllingLocationConstraint = undefined;
+                        objMD.dataStoreName = undefined;
+                        objMD[constants.objectLocationConstraintHeader] =
+                            undefined;
+                        metadata.buckets.set(bucketName, bucketMD);
+                        metadata.keyMaps.get(mpuBucket).
+                            set(mpuOverviewKey, objMD);
+                        next(null, uploadId);
+                    },
+                    (uploadId, next) => {
+                        const listParams = getListParams(objectKey, uploadId);
+                        listParts(authInfo, listParams, log, (err, res) => {
+                            assert.ifError(err);
+                            assertListResults(res, null, uploadId, objectKey);
+                            next(null, uploadId);
+                        });
+                    },
+                    (uploadId, next) => {
+                        const delParams = getDeleteParams(objectKey, uploadId);
+                        multipartDelete(authInfo, delParams, log,
+                            err => next(err, uploadId));
+                    },
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+        });
+
+        it('should copy an object as a part to a multipart upload', done => {
+            const objectKey = `testkey-${Date.now()}`;
+            mpuSetup('scality-internal-mem', objectKey, uploadId => {
+                const mpuOverviewKey = _getOverviewKey(objectKey, uploadId);
+                async.waterfall([
+                    next => {
+                        const copyObjectKey = `copykey-${Date.now()}`;
+                        putObject('scality-internal-mem', copyObjectKey,
+                            () => next(null, copyObjectKey));
+                    },
+                    (copyObjectKey, next) => {
+                        const bucketMD = BucketInfo.fromObj(
+                            metadata.buckets.get(bucketName));
+                        const mpuMD =
+                            metadata.keyMaps.get(mpuBucket).get(mpuOverviewKey);
+                        const copyObjMD =
+                            metadata.keyMaps.get(bucketName).get(copyObjectKey);
+                        // remove location constraints to mimic legacy behavior
+                        bucketMD.setLocationConstraint(undefined);
+                        mpuMD.controllingLocationConstraint = undefined;
+                        mpuMD.dataStoreName = undefined;
+                        mpuMD[constants.objectLocationConstraintHeader] =
+                            undefined;
+                        copyObjMD.controllingLocationConstraint = undefined;
+                        copyObjMD.dataStoreName = undefined;
+                        copyObjMD[constants.objectLocationConstraintHeader] =
+                            undefined;
+                        metadata.buckets.set(bucketName, bucketMD);
+                        metadata.keyMaps.get(mpuBucket).
+                            set(mpuOverviewKey, mpuMD);
+                        metadata.keyMaps.get(bucketName).
+                            set(copyObjectKey, copyObjMD);
+                        next(null, uploadId, copyObjectKey);
+                    },
+                    (uploadId, copyObjectKey, next) => {
+                        const copyParams =
+                            getPartParams(objectKey, uploadId, 3);
+                        objectPutCopyPart(authInfo, copyParams, bucketName,
+                        copyObjectKey, undefined, log, err => {
+                            next(err, uploadId);
+                        });
+                    },
+                    (uploadId, next) => {
+                        const listParams = getListParams(objectKey, uploadId);
+                        listParts(authInfo, listParams, log, (err, listRes) => {
+                            assert.ifError(err);
+                            parseString(listRes, (err, json) => {
+                                assert.equal(err, null,
+                                    `Error parsing list part results: ${err}`);
+                                assert.strictEqual(json.ListPartsResult.
+                                    Part[2].PartNumber[0], '3');
+                                assert.strictEqual(json.ListPartsResult.
+                                    Part[2].ETag[0], `"${awsETag}"`);
+                                assert.strictEqual(json.ListPartsResult.
+                                    Part[2].Size[0], '11');
+                                next(null, uploadId);
+                            });
+                        });
+                    },
+                    (uploadId, next) => {
+                        const delParams = getDeleteParams(objectKey, uploadId);
+                        multipartDelete(authInfo, delParams, log,
+                            err => next(err, uploadId));
+                    },
+                ], err => {
+                    assert.ifError(err);
                     done();
                 });
             });
