@@ -43,7 +43,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe.only('User visits bucket website endpoint', () => {
+describe('User visits bucket website endpoint', () => {
     it('should return 404 when no such bucket', done => {
         WebsiteConfigTester.checkHTML({
             method: 'GET',
