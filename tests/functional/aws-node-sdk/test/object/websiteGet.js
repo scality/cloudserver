@@ -43,7 +43,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
     });
 }
 
-describe('User visits bucket website endpoint', () => {
+describe.only('User visits bucket website endpoint', () => {
     it('should return 404 when no such bucket', done => {
         WebsiteConfigTester.checkHTML({
             method: 'GET',
@@ -471,6 +471,7 @@ describe('User visits bucket website endpoint', () => {
 
             it('should serve redirect file if error 403 error occured',
             done => {
+                console.log(`\n--------THIS IS THE TEST------------\n`);
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: endpoint,

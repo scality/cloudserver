@@ -268,6 +268,8 @@ class WebsiteConfigTester {
     * @return {undefined}
     */
     static checkHTML(params, callback) {
+        const util = require('util');
+        console.log(`\n-------PARAMS IN CHECK HTML??? ${util.inspect(params, false, null)}`);
         const { method, responseType, auth, url, redirectUrl } = params;
         _makeWebsiteRequest(auth, method, url, (err, res) => {
             assert.strictEqual(err, null, `Unexpected request err ${err}`);
