@@ -161,7 +161,12 @@
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "bucketMatch": true,
-            "credentialsProfile": "google"
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "serviceKey": "fake001"
+            }
         }
     },
     "gcpbackend2": {
@@ -173,7 +178,12 @@
             "bucketName": "zenko-gcp-bucket-2",
             "mpuBucketName": "zenko-gcp-mpu-2",
             "bucketMatch": true,
-            "credentialsProfile": "google_2"
+            "credentialsProfile": "google_2",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake002",
+                "serviceKey": "fake002"
+            }
         }
     },
     "gcpbackendmismatch": {
@@ -185,7 +195,12 @@
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
             "bucketMatch": false,
-            "credentialsProfile": "google"
+            "credentialsProfile": "google",
+            "serviceCredentials": {
+                "scopes": "https://www.googleapis.com/auth/cloud-platform",
+                "serviceEmail": "fake001",
+                "serviceKey": "fake001"
+            }
         }
     },
     "withversioning": {
