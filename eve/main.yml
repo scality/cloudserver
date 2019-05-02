@@ -150,8 +150,8 @@ stages:
             unset HTTP_PROXY HTTPS_PROXY NO_PROXY
             unset http_proxy https_proxy no_proxy
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm run unit_coverage
-            npm run unit_coverage_legacy_location
+            npm test
+            npm run test_legacy_location
           env: &shared-vars
             <<: *global-env
             S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
