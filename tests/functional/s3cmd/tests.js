@@ -358,7 +358,7 @@ describe('s3cmd getService', () => {
 });
 
 describe('s3cmd putObject', function toto() {
-    this.timeout(15000);
+    this.timeout(30000);
     before('create file to put', done => {
         createFile(upload, 1048576, done);
     });
