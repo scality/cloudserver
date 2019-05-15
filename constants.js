@@ -116,7 +116,16 @@ const constants = {
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
     legacyLocations: ['sproxyd', 'legacy'],
-    serviceAccounts: ['replication', 'lifecycle', 'gc', 'md-ingestion'],
+    // declare here all existing service accounts and their properties
+    // (if any, otherwise an empty object)
+    serviceAccountProperties: {
+        replication: {},
+        lifecycle: {},
+        gc: {},
+        'md-ingestion': {
+            canReplicate: true,
+        },
+    },
     /* eslint-disable camelcase */
     externalBackends: { aws_s3: true, azure: true, gcp: true, pfs: true },
     // some of the available data backends  (if called directly rather
