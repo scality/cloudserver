@@ -193,7 +193,7 @@ spec:
           memory: 512Mi
         limits:
           cpu: 500m
-          memory: 1Gi
+          memory: 1536Mi
       volumeMounts:
         - name: artifacts
           readOnly: false
