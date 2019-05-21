@@ -92,6 +92,7 @@ function _createCompleteMpuRequest(uploadId, parts) {
 
 
 describe('Multipart Upload API', () => {
+    this.timeout(5000);
     beforeEach(() => {
         cleanup();
     });
