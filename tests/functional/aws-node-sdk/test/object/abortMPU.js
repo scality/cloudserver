@@ -1,5 +1,5 @@
 const assert = require('assert');
-
+const uuid = require('uuid/v4');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -55,6 +55,34 @@ describe('Abort MPU', () => {
                 UploadId: uploadId },
             err => {
                 checkError(err, 'InvalidRequest', 'A key must be specified');
+                done();
+            });
+        });
+    });
+});
+
+describe('Abort MPU - No Such Upload', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+
+        beforeEach(() => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+            return s3.createBucketAsync({ Bucket: bucket });
+        });
+
+        afterEach(() => bucketUtil.deleteOne(bucket));
+
+        it('should return NoSuchUpload error when aborting non-existent mpu',
+        done => {
+            s3.abortMultipartUpload({
+                Bucket: bucket,
+                Key: key,
+                UploadId: uuid().replace(/-/g, '') },
+            err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'NoSuchUpload');
                 done();
             });
         });
