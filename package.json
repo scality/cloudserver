@@ -39,7 +39,7 @@
     "request": "^2.81.0",
     "sproxydclient": "scality/sproxydclient#45090b7",
     "sql-where-parser": "~2.2.1",
-    "utapi": "scality/utapi#d2020f8",
+    "utapi": "scality/utapi#da71443",
     "utf-8-validate": "^4.0.2",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
