@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
+  feature/*, documentation/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
     stage: pre-merge
   development/*:
     stage: post-merge
