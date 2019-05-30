@@ -123,11 +123,6 @@ stages:
     worker:
       type: local
     steps:
-      - SetProperty:
-          property: artifacts_name
-          value: "scality-s3-%(prop:buildnumber)s"
-          haltOnFailure: True
-
       - TriggerStages:
           name: Launch all workers
           stage_names:
