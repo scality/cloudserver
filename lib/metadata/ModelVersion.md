@@ -129,3 +129,15 @@ this._ingestion = ingestionConfig || null;
 ### Usage
 
 Used to store the ingestion status of a bucket
+
+## Model version 11
+
+### Properties Added
+
+```javascript
+this._azureInfo = azureInfo || null;
+```
+
+### Usage
+
+Used to store Azure storage account specific information
