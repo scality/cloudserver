@@ -22,8 +22,8 @@ if (config.backends.data === 'file' ||
             port: config.dataDaemon.port,
             dataStore: new arsenal.storage.data.file.DataFileStore(
                 { dataPath: config.dataDaemon.dataPath,
-                    log: config.log }),
-            log: config.log });
+                    log: { logLevel: 'trace', dumpLevel: 'error' } }),
+            log: { logLevel: 'trace', dumpLevel: 'error' } });
     dataServer.setup(err => {
         if (err) {
             logger.error('Error initializing REST data server',
