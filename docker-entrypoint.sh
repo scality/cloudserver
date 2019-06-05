@@ -81,13 +81,32 @@ if [[ "$METADATA_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .metadataClient.host=\"$METADATA_HOST\""
 fi
 
-if [[ "$REDIS_HOST" ]]; then
+if [ -z "$REDIS_HA_NAME" ]; then
+    REDIS_HA_NAME='mymaster'
+fi
+
+if [[ "$REDIS_SENTINELS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.name=\"$REDIS_HA_NAME\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.sentinels=\"$REDIS_SENTINELS\""
+elif [[ "$REDIS_HOST" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.host=\"$REDIS_HOST\""
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=6379"
 fi
 
-if [[ "$REDIS_PORT" ]]; then
+if [[ "$REDIS_PORT" ]] && [[ ! "$REDIS_SENTINELS" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .localCache.port=$REDIS_PORT"
+fi
+
+if [[ "$REDIS_SENTINELS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.name=\"$REDIS_HA_NAME\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.sentinels=\"$REDIS_SENTINELS\""
+elif [[ "$REDIS_HA_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.host=\"$REDIS_HA_HOST\""
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=6379"
+fi
+
+if [[ "$REDIS_HA_PORT" ]] && [[ ! "$REDIS_SENTINELS" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .redis.port=$REDIS_HA_PORT"
 fi
 
 if [[ "$RECORDLOG_ENABLED" ]]; then
