@@ -964,6 +964,22 @@ describeSkipIfAWS('backbeat routes', () => {
                 },
             ], done);
         });
+        it('should skip batch delete of empty location array', done => {
+            async.series([
+                done => {
+                    const options = {
+                        authCredentials: backbeatAuthCredentials,
+                        hostname: ipAddress,
+                        port: 8000,
+                        method: 'POST',
+                        path: '/_/backbeat/batchdelete',
+                        requestBody: '{"Locations":[]}',
+                        jsonResponse: true,
+                    };
+                    makeRequest(options, done);
+                },
+            ], done);
+        });
 
         it('should not put delete tags if the source is not Azure and ' +
         'if-unmodified-since header is not provided', done => {
