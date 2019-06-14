@@ -10,12 +10,15 @@ const readPreference = 'primary';
 const database = 'metadata';
 
 const METASTORE = '__metastore';
+const PENSIEVE = 'PENSIEVE';
 
 const mongoUrl = `mongodb://${replicaSetHosts}/?w=${writeConcern}&` +
     `replicaSet=${replicaSet}&readPreference=${readPreference}`;
 
 const ownerCanonicalId =
     '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
+const overlayVersionId = 'configuration/overlay-version';
+const getOverlayConfigId = vId => `configuration/overlay/${vId}`;
 
 class MongoTestClient {
     constructor(config) {
@@ -46,6 +49,71 @@ class MongoTestClient {
             });
             return cb();
         });
+    }
+
+    /**
+     * @param {Object} overlay - overlay object
+     * @param {Number} id - version id
+     * @param {Function} cb - callback(err)
+     * @return {undefined}
+     */
+    setupMockOverlayConfig(overlay, id, cb) {
+        const c = this.db.collection(PENSIEVE);
+        c.bulkWrite(
+            [{
+                updateOne: {
+                    filter: {
+                        _id: overlayVersionId,
+                    },
+                    update: {
+                        _id: overlayVersionId, value: id,
+                    },
+                    upsert: true,
+                },
+            }, {
+                updateOne: {
+                    filter: {
+                        _id: getOverlayConfigId(id),
+                    },
+                    update: {
+                        _id: getOverlayConfigId(id), value: overlay,
+                    },
+                    upsert: true,
+                }
+            }],
+            { ordered: 1 },
+            err => {
+                if (err) {
+                    return cb(err);
+                }
+                return cb();
+            }
+        );
+    }
+
+    deleteMockOverlayConfig(id, cb) {
+        const c = this.db.collection(PENSIEVE);
+        c.bulkWrite(
+            [{
+                deleteOne: {
+                    filter: {
+                        _id: overlayVersionId,
+                    },
+                },
+            }, {
+                deleteOne: {
+                    filter: {
+                        _id: getOverlayConfigId(id),
+                    }
+                }
+            }], {},
+            err => {
+                if (err) {
+                    return cb(err);
+                }
+                return cb();
+            }
+        );
     }
 
     createBucket(bucketName, location, cb) {

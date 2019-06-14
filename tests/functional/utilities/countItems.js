@@ -111,6 +111,17 @@ const refResults = {
     },
 };
 
+const mockOverlay = {
+    locations: {
+        'us-east-1': {
+            isBuiltIn: true,
+            locationType: 'location-file-v1',
+            name: 'us-east-1',
+            objectId: 'ba63a530-8be1-11e9-b1c7-1egac6571e38',
+        }
+    }
+};
+
 const sortFn = (a, b) => {
     if (a.name < b.name) {
         return -1;
@@ -148,12 +159,25 @@ runIfMongo('reportHandler::countItems', function testSuite() {
     this.timeout(200000);
     const bucketUtil = new BucketUtility('default', {});
 
-    before(done => populateDB(bucketUtil.s3, done));
-    after(done => cleanDB(bucketUtil, done));
+    before(done => {
+        async.series([
+            next => mongoClient.connectClient(next),
+            next => mongoClient.setupMockOverlayConfig(mockOverlay, 1, next),
+            next => populateDB(bucketUtil.s3, next),
+        ], done);
+    });
+    after(done => {
+        async.series([
+            next => mongoClient.deleteMockOverlayConfig(1, next),
+            next => cleanDB(bucketUtil, next),
+            next => mongoClient.disconnectClient(next),
+        ], done);
+    });
 
     it('should return correct countItems report', done => {
         async.series([
             next => metadata.setup(next),
+            next => metadata.client.scanItemCount(logger, next),
             next => metadata.countItems(logger, (err, res) => {
                 assertResults(res, refResults);
                 next();
@@ -172,16 +196,13 @@ runIfMongo('reportHandler::countItems', function testSuite() {
             ], done);
         });
 
-        after(done => {
-            async.series([
-                next => deleteOutBuckets(outBuckets, next),
-                next => mongoClient.disconnectClient(next),
-            ], done);
-        });
+        after(done =>
+            deleteOutBuckets(outBuckets, done));
 
         it('should retrieve update bucket list', done => {
             async.series([
                 next => metadata.setup(next),
+                next => metadata.client.scanItemCount(logger, next),
                 next => metadata.countItems(logger, (err, res) => {
                     const expResults = JSON.parse(JSON.stringify(refResults));
                     expResults.buckets += outBucketCnt;
