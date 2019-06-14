@@ -86,7 +86,6 @@ const constants = {
         'logging',
         'metrics',
         'notification',
-        'policy',
         'requestPayment',
         'restore',
         'torrent',
