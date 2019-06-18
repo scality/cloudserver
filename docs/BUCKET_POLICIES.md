@@ -46,59 +46,61 @@ There are also two optional bucket policy statement keys: Sid and Condition.
 Sid stands for "statement id". If this key is not included, one will be generated for the statement.
 Condition lists the condition under which a statement will take affect.
 The possibilities are as follows:
-    'ArnEquals'
-    'ArnEqualsIfExists'
-    'ArnLike'
-    'ArnLikeIfExists'
-    'ArnNotEquals'
-    'ArnNotEqualsIfExists'
-    'ArnNotLike'
-    'ArnNotLikeIfExists'
-    'BinaryEquals'
-    'BinaryEqualsIfExists'
-    'BinaryNotEquals'
-    'BinaryNotEqualsIfExists'
-    'Bool'
-    'BoolIfExists'
-    'DateEquals'
-    'DateEqualsIfExists'
-    'DateGreaterThan'
-    'DateGreaterThanEquals'
-    'DateGreaterThanEqualsIfExists'
-    'DateGreaterThanIfExists'
-    'DateLessThan'
-    'DateLessThanEquals'
-    'DateLessThanEqualsIfExists'
-    'DateLessThanIfExists'
-    'DateNotEquals'
-    'DateNotEqualsIfExists'
-    'IpAddress'
-    'IpAddressIfExists'
-    'NotIpAddress'
-    'NotIpAddressIfExists'
-    'Null'
-    'NumericEquals'
-    'NumericEqualsIfExists'
-    'NumericGreaterThan'
-    'NumericGreaterThanEquals'
-    'NumericGreaterThanEqualsIfExists'
-    'NumericGreaterThanIfExists'
-    'NumericLessThan'
-    'NumericLessThanEquals'
-    'NumericLessThanEqualsIfExists'
-    'NumericLessThanIfExists'
-    'NumericNotEquals'
-    'NumericNotEqualsIfExists'
-    'StringEquals'
-    'StringEqualsIfExists'
-    'StringEqualsIgnoreCase'
-    'StringEqualsIgnoreCaseIfExists'
-    'StringLike'
-    'StringLikeIfExists'
-    'StringNotEquals'
-    'StringNotEqualsIfExists'
-    'StringNotEqualsIgnoreCase'
-    'StringNotEqualsIgnoreCaseIfExists'
-    'StringNotLike'
-    'StringNotLikeIfExists'
+    - ArnEquals
+    - ArnEqualsIfExists
+    - ArnLike
+    - ArnLikeIfExists
+    - ArnNotEquals
+    - ArnNotEqualsIfExists
+    - ArnNotLike
+    - ArnNotLikeIfExists
+    - BinaryEquals
+    - BinaryEqualsIfExists
+    - BinaryNotEquals
+    - BinaryNotEqualsIfExists
+    - Bool
+    - BoolIfExists
+    - DateEquals
+    - DateEqualsIfExists
+    - DateGreaterThan
+    - DateGreaterThanEquals
+    - DateGreaterThanEqualsIfExists
+    - DateGreaterThanIfExists
+    - DateLessThan
+    - DateLessThanEquals
+    - DateLessThanEqualsIfExists
+    - DateLessThanIfExists
+    - DateNotEquals
+    - DateNotEqualsIfExists
+    - IpAddress
+    - IpAddressIfExists
+    - NotIpAddress
+    - NotIpAddressIfExists
+    - Null
+    - NumericEquals
+    - NumericEqualsIfExists
+    - NumericGreaterThan
+    - NumericGreaterThanEquals
+    - NumericGreaterThanEqualsIfExists
+    - NumericGreaterThanIfExists
+    - NumericLessThan
+    - NumericLessThanEquals
+    - NumericLessThanEqualsIfExists
+    - NumericLessThanIfExists
+    - NumericNotEquals
+    - NumericNotEqualsIfExists
+    - StringEquals
+    - StringEqualsIfExists
+    - StringEqualsIgnoreCase
+    - StringEqualsIgnoreCaseIfExists
+    - StringLike
+    - StringLikeIfExists
+    - StringNotEquals
+    - StringNotEqualsIfExists
+    - StringNotEqualsIgnoreCase
+    - StringNotEqualsIgnoreCaseIfExists
+    - StringNotLike
+    - StringNotLikeIfExists
+
+The value of the Condition key will be an object containing the desired condition name as that key. The value of inner object can be a string, boolean, number, or object, depending on the condition.
 
