@@ -39,13 +39,13 @@
         "readonly": true
     },
     "bucketd": {
-        "bootstrap": ["localhost:9000"]
+        "bootstrap": ["metadata-bucketd:9000"]
     },
     "vaultd": {
         "host": "localhost",
         "port": 8500
     },
-    "clusters": 10,
+    "clusters": 1,
     "log": {
         "logLevel": "info",
         "dumpLevel": "error"

@@ -1,8 +1,15 @@
 {
     "us-east-1": {
-        "type": "file",
+        "type": "scality",
         "legacyAwsBehavior": true,
-        "details": {}
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["sproxyd"],
+                    "path": "/proxy/arc/"
+                }
+            }
+       }
     },
     "us-east-2": {
         "type": "file",
