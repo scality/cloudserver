@@ -84,5 +84,13 @@ describe('aws-node-sdk test delete bucket', () => {
                 }),
             ], done);
         });
+
+        it('should return error 404 NoSuchBucket if the bucket name is invalid',
+        done => {
+            s3.deleteBucket({ Bucket: 'bucketA' }, err => {
+                checkError(err, 'NoSuchBucket');
+                return done();
+            });
+        });
     });
 });
