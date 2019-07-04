@@ -1,0 +1,40 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-450202:
+    - bucketclient > Arsenal > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - google-auto-auth > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - vaultclient > xml2js > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - arsenal > aws-sdk > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - vaultclient > arsenal > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > Arsenal > ioredis > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - arsenal > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > Arsenal > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - bucketclient > Arsenal > ioredis > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - arsenal > aws-sdk > xml2js > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - vaultclient > arsenal > xml2js > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > vaultclient > Arsenal > async > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > vaultclient > xml2js > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > vaultclient > Arsenal > ioredis > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
+    - utapi > vaultclient > Arsenal > xml2js > xmlbuilder > lodash:
+        patched: '2019-07-04T03:28:11.783Z'
