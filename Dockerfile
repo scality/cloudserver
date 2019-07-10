@@ -11,7 +11,6 @@ RUN apt-get update \
     && npm install --production \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && npm cache clear \
     && rm -rf ~/.node-gyp \
     && rm -rf /tmp/npm-*
 
