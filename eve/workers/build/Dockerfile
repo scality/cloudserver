@@ -1,4 +1,4 @@
-FROM buildpack-deps:stretch-curl
+FROM buildpack-deps:xenial-curl
 
 #
 # Install packages needed by the buildchain
