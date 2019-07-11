@@ -103,14 +103,6 @@ if [[ "$MONGODB_DATABASE" ]]; then
    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.database=\"$MONGODB_DATABASE\""
 fi
 
-if [[ "$MONGODB_AUTH_USERNAME" ]]; then
-   JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.authCredentials.username=\"$MONGODB_AUTH_USERNAME\""
-fi
-
-if [[ "$MONGODB_AUTH_PASSWORD" ]]; then
-   JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .mongodb.authCredentials.password=\"$MONGODB_AUTH_PASSWORD\""
-fi
-
 if [ -z "$REDIS_HA_NAME" ]; then
     REDIS_HA_NAME='mymaster'
 fi
