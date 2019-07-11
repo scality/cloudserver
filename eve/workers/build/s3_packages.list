@@ -1,0 +1,11 @@
+build-essential
+curl
+default-jdk
+libdigest-hmac-perl
+lsof
+maven
+netcat
+redis-server
+ruby-full
+yarn=1.7.0-1
+zlib1g-dev

@@ -1,0 +1,160 @@
+---
+version: 0.2
+
+branches:
+  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
+    stage: pre-merge
+  development/*:
+    stage: post-merge
+
+models:
+  - env: &file-mem-mpu
+      S3BACKEND: "file"
+      S3VAULT: "mem"
+      MPU_TESTING: "yes"
+  - Git: &clone
+      name: Pull repo
+      repourl: '%(prop:git_reference)s'
+      shallow: True
+      retryFetch: True
+      haltOnFailure: True
+  - ShellCommand: &npm-install
+      name: install modules
+      command: npm install
+      haltOnFailure: True
+  - Upload: &upload-artifacts
+      source: /artifacts
+      urls:
+        - "*"
+  - ShellCommand: &follow-s3-log
+      logfiles:
+        s3:
+          filename: /artifacts/s3.log
+          follow: true
+  - ShellCommand: &add-hostname
+      name: add hostname
+      command: |
+        echo "127.0.0.1 testrequestbucket.localhost" >> /etc/hosts
+        echo \
+        "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
+        >> /etc/hosts
+      haltOnFailure: True
+
+
+stages:
+  pre-merge:
+    worker:
+      type: local
+    steps:
+      - TriggerStages:
+          name: Launch all workers
+          stage_names:
+            - linting-coverage
+            - file-ft-tests
+          waitForFinish: True
+          haltOnFailure: True
+
+  linting-coverage:
+    worker:
+      type: docker
+      path: eve/workers/build
+      volumes: &default_volumes
+        - '/home/eve/workspace'
+    steps:
+      - Git: *clone
+      - ShellCommand: *npm-install
+      - ShellCommand: *add-hostname
+      - ShellCommand:
+          name: Linting
+          command: |
+            set -ex
+            npm run --silent lint -- --max-warnings 0
+            npm run --silent lint_md
+            flake8 $(git ls-files "*.py")
+            yamllint $(git ls-files "*.yml")
+      - ShellCommand:
+          name: Unit Coverage
+          command: |
+            set -ex
+            unset HTTP_PROXY HTTPS_PROXY NO_PROXY
+            unset http_proxy https_proxy no_proxy
+            mkdir -p $CIRCLE_TEST_REPORTS/unit
+            npm test
+          env: &shared-vars
+            CIRCLE_TEST_REPORTS: /tmp
+            CIRCLE_ARTIFACTS: /tmp
+            CI_REPORTS: /tmp
+      - ShellCommand:
+          name: Unit Coverage logs
+          command: find /tmp/unit -exec cat {} \;
+
+  file-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMemLimit: "3Gi"
+        s3MemLimit: "2560Mi"
+        redis: enabled
+        env:
+          <<: *file-mem-mpu
+    steps:
+      - Git: *clone
+      - ShellCommand: *npm-install
+      - ShellCommand:
+          command: |
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            npm run ft_test
+          <<: *follow-s3-log
+          env:
+            <<: *file-mem-mpu
+      - Upload: *upload-artifacts
+
+  post-merge:
+    worker:
+      type: local
+    steps:
+      - Git: *clone
+      - ShellCommand: &docker_login
+          name: Private Registry Login
+          command: >
+            docker login
+            -u '%(secret:private_registry_username)s'
+            -p '%(secret:private_registry_password)s'
+            '%(secret:private_registry_url)s'
+      - ShellCommand:
+          name: Dockerhub Login
+          command: >
+            docker login
+            -u '%(secret:dockerhub_ro_user)s'
+            -p '%(secret:dockerhub_ro_password)s'
+      - SetProperty: &docker_image_name
+          name: Set docker image name property
+          property: docker_image_name
+          value:
+            "%(secret:private_registry_url)s/zenko/cloudserver:\
+            %(prop:commit_short_revision)s"
+      - ShellCommand:
+          name: Build docker image
+          command: >-
+            docker build
+            --no-cache
+            -t %(prop:docker_image_name)s
+            .
+      - ShellCommand:
+          name: Tag images
+          command: |
+            docker tag %(prop:docker_image_name)s zenko/cloudserver:$TAG
+            docker tag %(prop:docker_image_name)s zenko/cloudserver:latest
+          env:
+            TAG: "latest-%(prop:product_version)s"
+      - ShellCommand:
+          name: Push image
+          command: |
+            docker push %(prop:docker_image_name)s
+            docker push zenko/cloudserver:latest-%(prop:product_version)s
+            docker push zenko/cloudserver:latest
