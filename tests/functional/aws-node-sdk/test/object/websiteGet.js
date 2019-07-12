@@ -206,7 +206,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe(`redirect all requests to ${redirectEndpoint}`, () => {
+        describe.skip(`redirect all requests to ${redirectEndpoint}`, () => {
             beforeEach(done => {
                 const redirectAllTo = {
                     HostName: 'www.google.com',
@@ -236,7 +236,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect all requests to https://www.google.com ' +
+        describe.skip('redirect all requests to https://www.google.com ' +
             'since https protocol set in website config', () => {
             // Note: these tests will all redirect to https even if
             // conf does not have https since protocol in website config
@@ -345,7 +345,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect to hostname with prefix condition', () => {
+        describe.skip('redirect to hostname with prefix condition', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
@@ -370,7 +370,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect to hostname with prefix and error condition',
+        describe.skip('redirect to hostname with prefix and error condition',
         () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -397,7 +397,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect with multiple redirect rules', () => {
+        describe.skip('redirect with multiple redirect rules', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const conditions = {
@@ -425,7 +425,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect with protocol',
+        describe.skip('redirect with protocol',
         () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
@@ -480,7 +480,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect using ReplaceKeyPrefixWith', () => {
+        describe.skip('redirect using ReplaceKeyPrefixWith', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
                 const condition = {
@@ -506,7 +506,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect requests with prefix /about to redirect/',
+        describe.skip('redirect requests with prefix /about to redirect/',
         () => {
             beforeEach(done => {
                 const condition = {
@@ -535,7 +535,7 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
-        describe('redirect requests, with prefix /about and that return ' +
+        describe.skip('redirect requests, with prefix /about and that return ' +
         '403 error, to prefix redirect/', () => {
             beforeEach(done => {
                 const condition = {
