@@ -6,7 +6,7 @@ ENV no_proxy localhost,127.0.0.1
 
 EXPOSE 8000
 
-COPY ./package.json ./package-lock.json /usr/src/app/
+COPY ./package.json /usr/src/app/
 
 WORKDIR /usr/src/app
 
