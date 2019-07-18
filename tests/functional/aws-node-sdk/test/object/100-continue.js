@@ -82,7 +82,7 @@ class ContinueRequestHandler {
     }
 }
 
-describe.only('PUT public object with 100-continue header', () => {
+describe('PUT public object with 100-continue header', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
