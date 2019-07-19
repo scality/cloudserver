@@ -6,6 +6,7 @@ const url = require('url');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const conf = require('../../../../../lib/Config').config;
+const jsutil = require('arsenal').jsutil;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -60,6 +61,7 @@ class ContinueRequestHandler {
     }
 
     sendsBodyOnContinue(cb) {
+        const cbOnce = jsutil.once(cb);
         const options = this.getRequestOptions();
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options);
@@ -77,11 +79,11 @@ class ContinueRequestHandler {
             // Has the entire body been sent?
             assert.strictEqual(req.socket.bytesWritten, expected);
             console.log('$$$$$$$$$$$$$$$$$$');
-            return cb();
+            return cbOnce();
         });
         req.on('error', err => {
             console.log('############', err);
-            return cb(err)
+            return cbOnce(err)
         } );
     }
 }
