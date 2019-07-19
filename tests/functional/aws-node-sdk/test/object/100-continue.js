@@ -76,9 +76,13 @@ class ContinueRequestHandler {
             const expected = body.length + headerLen;
             // Has the entire body been sent?
             assert.strictEqual(req.socket.bytesWritten, expected);
+            console.log('$$$$$$$$$$$$$$$$$$');
             return cb();
         });
-        req.on('error', err => cb(err));
+        req.on('error', err => {
+            console.log('############', err);
+            return cb(err)
+        } );
     }
 }
 
