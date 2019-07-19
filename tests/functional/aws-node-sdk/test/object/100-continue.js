@@ -78,13 +78,9 @@ class ContinueRequestHandler {
             const expected = body.length + headerLen;
             // Has the entire body been sent?
             assert.strictEqual(req.socket.bytesWritten, expected);
-            console.log('$$$$$$$$$$$$$$$$$$');
             return cbOnce();
         });
-        req.on('error', err => {
-            console.log('############', err);
-            return cbOnce(err)
-        } );
+        req.on('error', err => cbOnce(err));
     }
 }
 
@@ -130,7 +126,7 @@ describe('PUT public object with 100-continue header', () => {
         it('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it.only('should continue if a public user', done =>
+        it('should continue if a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .sendsBodyOnContinue(done));
     });
