@@ -80,9 +80,7 @@ class ContinueRequestHandler {
             assert.strictEqual(req.socket.bytesWritten, expected);
             return cbOnce();
         });
-        req.on('error', err => {
-            return cbOnce(err)
-        });
+        req.on('error', err => cbOnce(err));
     }
 }
 
