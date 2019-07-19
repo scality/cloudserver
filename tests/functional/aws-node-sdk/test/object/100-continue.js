@@ -124,7 +124,7 @@ describe('PUT public object with 100-continue header', () => {
         it('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it('should continue if a public user', done =>
+        it.only('should continue if a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .sendsBodyOnContinue(done));
     });
