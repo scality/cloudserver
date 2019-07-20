@@ -1,0 +1,60 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - vaultclient > Arsenal > socket.io > socket.io-client > engine.io-client > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-adapter > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > engine.io-client > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > engine.io > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-client > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-parser > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > socket.io-parser > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-client > socket.io-parser > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > debug:
+        patched: '2019-07-20T03:26:20.045Z'
+  'npm:minimatch:20160620':
+    - vaultclient > Arsenal > simple-glob > glob > minimatch:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > simple-glob > minimatch:
+        patched: '2019-07-20T03:26:20.045Z'
+  'npm:ms:20170412':
+    - vaultclient > Arsenal > socket.io > socket.io-client > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-adapter > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > engine.io > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-parser > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
+    - vaultclient > Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        patched: '2019-07-20T03:26:20.045Z'
