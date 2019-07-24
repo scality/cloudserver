@@ -387,7 +387,9 @@ stages:
           env:
             <<: *mongo-vars
             <<: *global-env
+      - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
+      - Upload: *upload-junits
 
   post-merge:
     worker:
