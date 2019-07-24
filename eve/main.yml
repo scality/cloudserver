@@ -281,8 +281,8 @@ stages:
         s3: "."
         pykmip: eve/workers/pykmip
       vars:
-        aggressorMemLimit: "2Gi"
-        s3MemLimit: "1664Mi"
+        aggressorMem: "2Gi"
+        s3Mem: "1664Mi"
         redis: enabled
         pykmip: enabled
         env:
