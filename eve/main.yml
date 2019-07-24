@@ -83,10 +83,6 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: True
       env: *global-env
-  - ShellCommand: &pykmip-certificates
-      name: Setup certificated for PyKMIP
-      command: cp eve/workers/pykmip/certs/* /ssl-kmip/
-      haltOnFailure: True
   - ShellCommand: &npm-install
       name: install modules
       command: npm install
@@ -271,7 +267,6 @@ stages:
           <<: *global-env
     steps:
       - Git: *clone
-      - ShellCommand: *pykmip-certificates
       - ShellCommand: *credentials
       - ShellCommand: *npm-install
       - ShellCommand:
