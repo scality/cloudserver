@@ -193,8 +193,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "2560Mi"
-        s3MemLimit: "2560Mi"
+        aggressorMem: "2560Mi"
+        s3Mem: "2560Mi"
         env:
           <<: *multiple-backend-vars
           <<: *global-env
@@ -239,8 +239,8 @@ stages:
         s3: "."
         ceph: eve/workers/ceph
       vars:
-        aggressorMemLimit: "2500Mi"
-        s3MemLimit: "2560Mi"
+        aggressorMem: "2500Mi"
+        s3Mem: "2560Mi"
         redis: enabled
         env:
           <<: *multiple-backend-vars
@@ -298,8 +298,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "2Gi"
-        s3MemLimit: "1664Mi"
+        aggressorMem: "2Gi"
+        s3Mem: "1664Mi"
         redis: enabled
         env:
           <<: *mongo-vars
@@ -329,8 +329,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMemLimit: "3Gi"
-        s3MemLimit: "2560Mi"
+        aggressorMem: "3Gi"
+        s3Mem: "2560Mi"
         redis: enabled
         env:
           <<: *file-mem-mpu
@@ -361,8 +361,8 @@ stages:
         s3: "."
         pykmip: eve/workers/pykmip
       vars:
-        aggressorMemLimit: "2Gi"
-        s3MemLimit: "1664Mi"
+        aggressorMem: "2Gi"
+        s3Mem: "1664Mi"
         redis: enabled
         pykmip: enabled
         env:

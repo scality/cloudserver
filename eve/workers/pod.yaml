@@ -19,7 +19,7 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 100m
+          cpu: 500m
           memory: 1Gi
         limits:
           cpu: 500m
@@ -30,11 +30,11 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 100m
-          memory: 1Gi
+          cpu: "1"
+          memory: {{ vars.aggressorMem }}
         limits:
           cpu: "1"
-          memory: {{ vars.aggressorMemLimit }}
+          memory: {{ vars.aggressorMem }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -69,11 +69,11 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 200m
-          memory: 1Gi
+          cpu: "2"
+          memory: {{ vars.s3Mem }}
         limits:
           cpu: "2"
-          memory: {{ vars.s3MemLimit }}
+          memory: {{ vars.s3Mem }}
       volumeMounts:
         - name: creds
           readOnly: false
@@ -150,7 +150,7 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 100m
+          cpu: 200m
           memory: 128Mi
         limits:
           cpu: 200m
@@ -162,7 +162,7 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 100m
+          cpu: 250m
           memory: 128Mi
         limits:
           cpu: 250m
@@ -189,8 +189,8 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 250m
-          memory: 512Mi
+          cpu: 500m
+          memory: 1536Mi
         limits:
           cpu: 500m
           memory: 1536Mi
