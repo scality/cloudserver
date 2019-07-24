@@ -286,7 +286,9 @@ stages:
             S3_LOCATION_FILE: "/kube_pod-prod-cloudserver-backend-0/\
               build/tests/locationConfig/locationConfigCeph.json"
           <<: *follow-s3-ceph-logs
+      - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
+      - Upload: *upload-junits
 
   mongo-ft-tests:
     worker: &s3-pod
