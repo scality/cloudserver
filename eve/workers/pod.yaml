@@ -11,6 +11,16 @@ spec:
     hostnames:
     - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com"
     - "pykmip.local"
+  {% if vars.pykmip is defined and vars.pykmip == 'enabled' -%}
+  initContainers:
+    - name: kmip-certs-installer
+      image: {{ images.pykmip }}
+      command: [ 'sh', '-c', 'cp /ssl/* /ssl-kmip/']
+      volumeMounts:
+        - name: kmip-certs
+          readOnly: false
+          mountPath: /ssl-kmip
+  {%- endif %}
   containers:
     {% if vars.env.S3METADATA is defined and vars.env.S3METADATA == "mongodb" -%}
     - name: mongo
@@ -41,9 +51,6 @@ spec:
         - name: artifacts
           readOnly: true
           mountPath: /artifacts
-        - name: kmip-certs
-          readOnly: false
-          mountPath: /ssl-kmip
       command:
         - bash
         - -lc
