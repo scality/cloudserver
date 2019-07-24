@@ -116,7 +116,17 @@ models:
         "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
         >> /etc/hosts
       haltOnFailure: True
-
+  - ShellCommand: &setup-junit-upload
+      name: preparing junit files for upload
+      command: |
+        mkdir -p artifacts/junit
+        find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
+      alwaysRun: true
+  - Upload: &upload-junits
+      source: artifacts
+      urls:
+        - "*"
+      alwaysRun: true
 
 stages:
   pre-merge:
@@ -172,6 +182,8 @@ stages:
       - ShellCommand:
           name: Unit Coverage logs
           command: find /tmp/unit -exec cat {} \;
+      - ShellCommand: *setup-junit-upload
+      - Upload: *upload-junits
 
   multiple-backend-test:
     worker:
@@ -214,7 +226,9 @@ stages:
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
+      - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
+      - Upload: *upload-junits
 
   ceph-backend-tests:
     worker:
@@ -301,7 +315,9 @@ stages:
           env:
             <<: *mongo-vars
             <<: *global-env
+      - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
+      - Upload: *upload-junits
 
   file-ft-tests:
     worker:
@@ -330,7 +346,9 @@ stages:
           env:
             <<: *file-mem-mpu
             <<: *global-env
+      - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
+      - Upload: *upload-junits
 
   kmip-ft-tests:
     worker:
