@@ -30,3 +30,6 @@ _build
 node_modules
 yarn.lock
 .tox
+
+# Junit directory
+junit
