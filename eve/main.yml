@@ -99,8 +99,8 @@ models:
   - ShellCommand: &setup-junit-upload
       name: preparing junit files for upload
       command: |
-        mkdir -p artifacts/junit
-        find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
+        mkdir -p artifacts/junit/%(prop:stage_name)s
+        find . -name "*junit*.xml" -exec cp {} artifacts/junit/%(prop:stage_name)s/ ";"
       alwaysRun: true
   - Upload: &upload-junits
       source: artifacts
@@ -121,7 +121,12 @@ stages:
             - multiple-backend-test
             - mongo-ft-tests
           waitForFinish: True
-          haltOnFailure: True
+
+      - TriggerStages:
+          name: Upload testrail reports
+          stage_names:
+            - testrail-upload
+          waitForFinish: True
 
   linting-coverage:
     worker:
@@ -309,3 +314,21 @@ stages:
           command: |
             docker push %(prop:docker_image_name)s
             docker push zenko/cloudserver:latest-%(prop:product_version)s
+
+  testrail-upload:
+    worker:
+      type: kube_pod
+      path: eve/workers/testrail.yaml
+    steps:
+      - ShellCommand:
+          name: upload reports
+          command: |
+            testrail -r "%(prop:artifacts_private_url)s/junit/linting-coverage" -n "linting-coverage %(prop:bootstrap)s"
+            testrail -r "%(prop:artifacts_private_url)s/junit/file-ft-tests" -n "file-ft-tests %(prop:bootstrap)s"
+            testrail -r "%(prop:artifacts_private_url)s/junit/multiple-backend-test" -n "multiple-backend-test %(prop:bootstrap)s"
+            testrail -r "%(prop:artifacts_private_url)s/junit/mongo-ft-tests" -n "mongo-ft-tests %(prop:bootstrap)s"
+          env:
+            TESTRAIL_LOGIN: '%(secret:testrail_login)s'
+            TESTRAIL_KEY: '%(secret:testrail_key)s'
+          warnOnFailure: true
+          flunkOnFailure: false

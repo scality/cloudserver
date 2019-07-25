@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker
+spec:
+  containers:
+    - name: testrail
+      image: registry.oci.scality.net/testrail/testrail:0.0.1-alpha3
+      command: ["/bin/sh", "-c", "buildbot-worker create-worker . ${BUILDMASTER}:${BUILDMASTER_PORT} ${WORKERNAME} ${WORKERPASS} && buildbot-worker start --nodaemon"]
+      resources:
+        requests:
+          cpu: "250m"
+          memory: 1Gi
+        limits:
+          cpu: "1"
+          memory: 1Gi
+      volumeMounts:
+        - name: worker-workspace
+          mountPath: "%(prop:builddir)s"
+  volumes:
+    - name: worker-workspace
+      emptyDir: {}
