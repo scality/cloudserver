@@ -193,9 +193,15 @@ describe('PUT object', () => {
                 });
             });
 
-            it('should return BadRequest if putting more that 10 tags',
+            it('should allow putting 50 tags', done => {
+                const taggingConfig = generateMultipleTagQuery(50);
+                s3.putObject({ Bucket: bucket, Key: object,
+                    Tagging: taggingConfig }, done);
+            });
+
+            it('should return BadRequest if putting more that 50 tags',
             done => {
-                const taggingConfig = generateMultipleTagQuery(11);
+                const taggingConfig = generateMultipleTagQuery(51);
                 s3.putObject({ Bucket: bucket, Key: object,
                     Tagging: taggingConfig }, err => {
                     _checkError(err, 'BadRequest', 400);
