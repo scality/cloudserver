@@ -170,6 +170,66 @@ describe('MultipleBackend put object', function testSuite() {
                 });
             });
 
+            it('should put only metadata to mem with mdonly header', done => {
+                const key = `mdonly-${genUniqID()}`;
+                const b64 = Buffer.from(correctMD5, 'hex').toString('base64');
+                const params = { Bucket: bucket, Key: key,
+                    Metadata: { 'scal-location-constraint': awsLocation,
+                    'mdonly': 'true',
+                    'md5chksum': b64,
+                    'size': body.length.toString(),
+                    } };
+                s3.putObject(params, err => {
+                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                    s3.headObject({ Bucket: bucket, Key: key },
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        getAwsError(key, 'NoSuchKey', () => done());
+                    });
+                });
+            });
+
+            it('should put actual object with body and mdonly header', done => {
+                const key = `mdonly-${genUniqID()}`;
+                const b64 = Buffer.from(correctMD5, 'hex').toString('base64');
+                const params = { Bucket: bucket, Key: key, Body: body,
+                    Metadata: { 'scal-location-constraint': awsLocation,
+                    'mdonly': 'true',
+                    'md5chksum': b64,
+                    'size': body.length.toString(),
+                    } };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                        assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        awsGetCheck(key, correctMD5, correctMD5, awsLocation,
+                            () => done());
+                    });
+                });
+            });
+
+            it('should put 0-byte normally with mdonly header', done => {
+                const key = `mdonly-${genUniqID()}`;
+                const b64 = Buffer.from(emptyMD5, 'hex').toString('base64');
+                const params = { Bucket: bucket, Key: key,
+                    Metadata: { 'scal-location-constraint': awsLocation,
+                    'mdonly': 'true',
+                    'md5chksum': b64,
+                    'size': '0',
+                    } };
+                s3.putObject(params, err => {
+                    assert.equal(err, null, 'Expected success, ' +
+                    `got error ${err}`);
+                    awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
+                        () => done());
+                });
+            });
+
             it('should put a 0-byte object to AWS', done => {
                 const key = `somekey-${genUniqID()}`;
                 const params = { Bucket: bucket, Key: key,
