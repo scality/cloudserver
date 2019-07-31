@@ -57,7 +57,7 @@
     "tv4": "^1.2.7"
   },
   "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient#9ff12c18"
+    "cdmiclient": "scality/cdmiclient#e2fe7cc"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
