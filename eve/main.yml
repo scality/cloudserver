@@ -85,7 +85,7 @@ models:
       env: *global-env
   - ShellCommand: &npm-install
       name: install modules
-      command: npm install
+      command: npm cache clean --force && npm install
       haltOnFailure: True
   - Upload: &upload-artifacts
       source: /artifacts
