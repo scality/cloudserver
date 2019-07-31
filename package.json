@@ -65,7 +65,7 @@
     "tv4": "^1.2.7"
   },
   "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient#8f0c2e6"
+    "cdmiclient": "scality/cdmiclient#4a9d4a2"
   },
   "scripts": {
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
