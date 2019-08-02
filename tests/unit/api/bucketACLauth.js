@@ -2,7 +2,7 @@ const assert = require('assert');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized }
-    = require('../../../lib/api/apiUtils/authorization/aclChecks');
+    = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 
 const ownerCanonicalId = 'ownerCanonicalId';
 const creationDate = new Date().toJSON();
@@ -199,7 +199,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
     });
 
     it('should allow access to bucket owner', () => {
-        const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+        const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
             ownerCanonicalId);
         assert.strictEqual(result, true);
     });
@@ -221,7 +221,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
-            const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+            const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
                 value.id);
             assert.strictEqual(result, false);
             done();

@@ -122,6 +122,29 @@ const constants = {
         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     // user metadata applied on zenko objects
     zenkoIDHeader: 'x-amz-meta-zenko-instance-id',
+    bucketOwnerActions: [
+        'bucketDeleteCors',
+        'bucketDeleteLifecycle',
+        'bucketDeletePolicy',
+        'bucketDeleteReplication',
+        'bucketDeleteWebsite',
+        'bucketGetCors',
+        'bucketGetLifecycle',
+        'bucketGetLocation',
+        'bucketGetPolicy',
+        'bucketGetReplication',
+        'bucketGetVersioning',
+        'bucketGetWebsite',
+        'bucketPutCors',
+        'bucketPutLifecycle',
+        'bucketPutPolicy',
+        'bucketPutReplication',
+        'bucketPutVersioning',
+        'bucketPutWebsite',
+        'objectDeleteTagging',
+        'objectGetTagging',
+        'objectPutTagging',
+    ],
 };
 
 module.exports = constants;
