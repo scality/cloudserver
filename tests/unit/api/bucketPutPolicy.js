@@ -18,36 +18,35 @@ const testBucketPutRequest = {
 };
 
 const expectedBucketPolicy = {
-    version: '2012-10-17',
-    statements: [
+    Version: '2012-10-17',
+    Statement: [
         {
-            sid: '',
-            effect: 'Allow',
-            resource: 'arn:aws:s3::bucketname',
-            principal: '*',
-            actions: ['s3:sampleAction'],
+            Effect: 'Allow',
+            Resource: `arn:aws:s3:::${bucketName}`,
+            Principal: '*',
+            Action: ['s3:GetBucketLocation'],
         },
     ],
 };
 
-const testPutPolicyRequest = {
-    bucketName,
-    headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
-    },
-    post: JSON.stringify(expectedBucketPolicy),
-};
+function getPolicyRequest(policy) {
+    return {
+        bucketName,
+        headers: {
+            host: `${bucketName}.s3.amazonaws.com`,
+        },
+        post: JSON.stringify(policy),
+    };
+}
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('putBucketPolicy API', () => {
+describe('putBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());
 
     it('should update a bucket\'s metadata with bucket policy obj', done => {
-        bucketPutPolicy(authInfo, testPutPolicyRequest, log, err => {
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy),
+        log, err => {
             if (err) {
                 process.stdout.write(`Err putting bucket policy ${err}`);
                 return done(err);
@@ -61,6 +60,17 @@ describeSkipUntilImpl('putBucketPolicy API', () => {
                 assert.deepStrictEqual(bucketPolicy, expectedBucketPolicy);
                 return done();
             });
+        });
+    });
+
+    it('should return error if policy resource does not include bucket name',
+    done => {
+        expectedBucketPolicy.Statement[0].Resource = 'arn:aws::s3:::badname';
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy),
+        log, err => {
+            assert.strictEqual(err.MalformedPolicy, true);
+            assert.strictEqual(err.description, 'Policy has invalid resource');
+            return done();
         });
     });
 });
