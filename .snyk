@@ -1,0 +1,129 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - bucketclient > Arsenal > socket.io > engine.io > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > engine.io > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-adapter > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > engine.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > engine.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-adapter > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > engine.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > engine.io-client > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > socket.io-parser > debug:
+        patched: '2019-08-08T03:26:16.511Z'
+  SNYK-JS-LODASH-450202:
+    - utapi > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - utapi > Arsenal > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - vaultclient > Arsenal > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - utapi > vaultclient > Arsenal > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+    - google-auto-auth > async > lodash:
+        patched: '2019-08-08T03:26:16.511Z'
+  'npm:minimatch:20160620':
+    - Arsenal > simple-glob > glob > minimatch:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > simple-glob > minimatch:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > simple-glob > minimatch:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > simple-glob > glob > minimatch:
+        patched: '2019-08-08T03:26:16.511Z'
+  'npm:ms:20170412':
+    - Arsenal > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > engine.io > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-adapter > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > engine.io > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-adapter > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - Arsenal > socket.io > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
+    - bucketclient > Arsenal > socket.io-client > engine.io-client > debug > ms:
+        patched: '2019-08-08T03:26:16.511Z'
