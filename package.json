@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
-    "arsenal": "github:scality/Arsenal#40aa7d8",
+    "arsenal": "github:scality/Arsenal#9e5d4ae",
     "async": "~2.5.0",
     "aws-sdk": "2.28.0",
     "azure-storage": "^2.1.0",
@@ -40,7 +40,7 @@
     "request": "^2.81.0",
     "sql-where-parser": "~2.2.1",
     "sproxydclient": "scality/sproxydclient#13e87ea",
-    "utapi": "scality/utapi#28dc2e0",
+    "utapi": "scality/utapi#30f323d",
     "utf-8-validate": "^4.0.2",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",

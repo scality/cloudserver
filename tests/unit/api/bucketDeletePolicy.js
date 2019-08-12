@@ -22,14 +22,13 @@ function _makeRequest(includePolicy) {
     };
     if (includePolicy) {
         const examplePolicy = {
-            version: '2012-10-17',
-            statements: [
+            Version: '2012-10-17',
+            Statement: [
                 {
-                    sid: '',
-                    effect: 'Allow',
-                    resource: 'arn:aws:s3::bucketname',
-                    principal: '*',
-                    actions: ['s3:sampleAction'],
+                    Effect: 'Allow',
+                    Resource: `arn:aws:s3:::${bucketName}`,
+                    Principal: '*',
+                    Action: ['s3:GetBucketLocation'],
                 },
             ],
         };
@@ -38,10 +37,7 @@ function _makeRequest(includePolicy) {
     return request;
 }
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('deleteBucketPolicy API', () => {
+describe('deleteBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, _makeRequest(), log, done));
     afterEach(() => cleanup());
