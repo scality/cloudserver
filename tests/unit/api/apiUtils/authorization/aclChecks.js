@@ -1,7 +1,7 @@
 const assert = require('assert');
 
 const { isServiceAccount, getServiceAccountProperties } =
-      require('../../../../../lib/api/apiUtils/authorization/aclChecks');
+      require('../../../../../lib/api/apiUtils/authorization/permissionChecks');
 
 describe('aclChecks', () => {
     it('should return whether a canonical ID is a service account', () => {

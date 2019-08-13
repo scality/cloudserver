@@ -19,14 +19,13 @@ const testBasicRequest = {
 };
 
 const expectedBucketPolicy = {
-    version: '2012-10-17',
-    statements: [
+    Version: '2012-10-17',
+    Statement: [
         {
-            sid: '',
-            effect: '',
-            resource: '',
-            principal: '',
-            actions: '',
+            Effect: 'Allow',
+            Resource: `arn:aws:s3:::${bucketName}`,
+            Principal: '*',
+            Action: ['s3:GetBucketLocation'],
         },
     ],
 };
@@ -37,10 +36,7 @@ const testPutPolicyRequest = {
     post: JSON.stringify(expectedBucketPolicy),
 };
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('getBucketPolicy API', () => {
+describe('getBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBasicRequest, log, done));
     afterEach(() => cleanup());
@@ -64,7 +60,7 @@ describeSkipUntilImpl('getBucketPolicy API', () => {
         it('should return bucket policy', done => {
             bucketGetPolicy(authInfo, testBasicRequest, log, (err, res) => {
                 assert.equal(err, null);
-                assert.deepStrictEqual(expectedBucketPolicy, res);
+                assert.deepStrictEqual(expectedBucketPolicy, JSON.parse(res));
                 done();
             });
         });
