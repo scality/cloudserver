@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const assert = require('assert');
 const async = require('async');
+const { errors } = require('arsenal');
 const { parseString } = require('xml2js');
 const helpers = require('../helpers');
 const DummyRequest = require('../DummyRequest');
@@ -9,6 +10,7 @@ const initiateMultipartUpload =
     require('../../../lib/api/initiateMultipartUpload');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { ds } = require('../../../lib/data/in_memory/backend');
+const metastore = require('../../../lib/metadata/in_memory/backend');
 
 function createBucket(authInfo, log, cb) {
     const request = {
@@ -79,19 +81,19 @@ describe('Multipart Upload API', () => {
         const log = new helpers.DummyRequestLogger();
 
         beforeEach(done => {
-            process.env.TEST_API_DATA = 'true';
             async.waterfall([
                 next => createBucket(authInfo, log, next),
                 (_, next) => initiateMPU(authInfo, log, next),
                 (res, _, next) => parseUploadID(res, next),
-                (uploadId, next) => putMPUPart(uploadId, authInfo, log, next),
-            ], err => {
-                process.env.TEST_API_DATA = 'false';
-                if (err && !err.NoSuchBucket) {
-                    return done(err);
-                }
-                return done();
-            });
+                (uploadId, next) => {
+                    metastore.errors.putObject = errors.InternalError;
+                    putMPUPart(uploadId, authInfo, log, err => {
+                        metastore.errors.putObject = null;
+                        assert(err === errors.InternalError);
+                        return next();
+                    });
+                },
+            ], done);
         });
 
         it('should cleanup orphaned data', () => {
