@@ -340,9 +340,9 @@ aws-sdk@2.28.0:
     xmlbuilder "2.6.2"
 
 aws-sdk@^2.2.23:
-  version "2.508.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.508.0.tgz#19eeb9da0df41382d45568367837eeb6e7eab3b5"
-  integrity sha512-VXMxsuwK31U+N259562VPiwQblwRQFQoVnv0d4Gp4Ji+JimCvV6qF73zobZy7cQK5ZPAB25BK4JVMdTYkpi+vA==
+  version "2.509.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.509.0.tgz#5677043cbcfa3ec52370abb90b13cb0bdb4aa790"
+  integrity sha512-GZYqJYK2SizKe+Ae24IXZdJlB1kdrZ1o1/Lh5P2oMskCkhTNkzL/v6siKnM0WYh1hPVAHbPLyNkGzwJZ5w2SkA==
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -1214,9 +1214,9 @@ esrecurse@^4.1.0:
     estraverse "^4.1.0"
 
 estraverse@^4.1.0, estraverse@^4.1.1, estraverse@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/estraverse/-/estraverse-4.2.0.tgz#0dee3fed31fcd469618ce7342099fc1afa0bdb13"
-  integrity sha1-De4/7TH81GlhjOc0IJn8GvoL2xM=
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/estraverse/-/estraverse-4.3.0.tgz#398ad3f3c5a24948be7725e83d11a7de28cdbd1d"
+  integrity sha512-39nnKffWz8xN1BU/2c79n9nB9HDzo0niYUqx6xyqUnyoAnQyyWpOTdZEeiCch8BBu515t4wp9ZmgVfVhn9EBpw==
 
 esutils@^2.0.2:
   version "2.0.3"
@@ -3656,9 +3656,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#dcaf14c:
-  version "8.0.0"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/dcaf14ca9fcc6706f9c04eb835a497fcb34ca10c"
+utapi@scality/utapi#b522b3d:
+  version "7.4.5"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/b522b3d782b1e29b640a25b79ba5c06e445eaf71"
   dependencies:
     arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
