@@ -1,8 +1,8 @@
 const assert = require('assert');
 const { Logger } = require('werelogs');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 const helpers = require('../../helpers');
-const { ds, backend } = require('../../../../lib/data/in_memory/backend');
+const { ds, backend } = storage.data.inMemory.datastore;
 const { dataDelete } =
     require('../../../../lib/api/apiUtils/object/deleteObject');
 const log = new Logger('_').newRequestLogger();

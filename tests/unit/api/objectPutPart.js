@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const assert = require('assert');
 const async = require('async');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
 const { parseString } = require('xml2js');
 const helpers = require('../helpers');
 const DummyRequest = require('../DummyRequest');
@@ -9,8 +9,8 @@ const bucketPut = require('../../../lib/api/bucketPut').bucketPut;
 const initiateMultipartUpload =
     require('../../../lib/api/initiateMultipartUpload');
 const objectPutPart = require('../../../lib/api/objectPutPart');
-const { ds } = require('../../../lib/data/in_memory/backend');
-const metastore = require('../../../lib/metadata/in_memory/backend');
+const { ds } = storage.data.inMemory.datastore;
+const { metastore } = storage.metadata.inMemory;
 
 function createBucket(authInfo, log, cb) {
     const request = {
