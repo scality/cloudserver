@@ -33,7 +33,7 @@ const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
-const bucketName = `bucketname-${Date.now}`;
+const bucketName = `bucketname-${Date.now()}`;
 
 const body1 = Buffer.from('I am a body', 'utf8');
 const body2 = Buffer.from('I am a body with a different ETag', 'utf8');
