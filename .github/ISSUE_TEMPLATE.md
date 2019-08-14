@@ -48,7 +48,7 @@ Describe the results you expected
 
 - Node.js version,
 - Docker version,
-- npm version,
+- yarn version,
 - distribution/OS,
 - optional: anything else you deem helpful to us.
 

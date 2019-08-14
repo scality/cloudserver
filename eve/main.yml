@@ -83,12 +83,9 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: true
       env: *global-env
-  - ShellCommand: &node_version
-      name: get node version
-      command: node -v
   - ShellCommand: &yarn-install
       name: install modules
-      command: yarn install --frozen-lockfile
+      command: yarn install
       haltOnFailure: true
   - Upload: &upload-artifacts
       source: /artifacts
@@ -114,7 +111,7 @@ models:
         echo \
         "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
         >> /etc/hosts
-      haltOnFailure: True
+      haltOnFailure: true
   - ShellCommand: &setup-junit-upload
       name: preparing junit files for upload
       command: |
@@ -126,11 +123,6 @@ models:
       urls:
         - "*"
       alwaysRun: true
-  - ShellCommand: &setup-github-ssh
-      name: setup ssh with github
-      command: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H github.com > ~/.ssh/ssh_known_hosts
 
 stages:
   pre-merge:
@@ -157,8 +149,8 @@ stages:
         - '/home/eve/workspace'
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *yarn-install
+      - ShellCommand: *add-hostname
       - ShellCommand: *credentials
       - ShellCommand:
           name: Linting
@@ -204,7 +196,6 @@ stages:
           <<: *global-env
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
       - ShellCommand: *yarn-install
       - ShellCommand:
@@ -213,7 +204,8 @@ stages:
             source /root/.aws/exports &> /dev/null
             set -ex
             bash wait_for_local_port.bash 8000 40
-            yarn run multiple_backend_test"
+            yarn run multiple_backend_test
+            yarn run ft_awssdk_external_backends"
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
@@ -256,7 +248,7 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
             bash -c "
@@ -264,7 +256,7 @@ stages:
             set -ex
             bash eve/workers/ceph/wait_for_ceph.sh
             bash wait_for_local_port.bash 8000 40
-            npm run multiple_backend_test"
+            yarn run multiple_backend_test"
           env:
             <<: *multiple-backend-vars
             <<: *global-env
@@ -283,8 +275,8 @@ stages:
             <<: *multiple-backend-vars
       - ShellCommand:
           command: |
-            npm run ft_awssdk &&
-            npm run ft_s3cmd
+            yarn run ft_awssdk &&
+            yarn run ft_s3cmd
           env:
             <<: *file-mem-mpu
             <<: *global-env
@@ -312,7 +304,6 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
@@ -343,7 +334,6 @@ stages:
           <<: *global-env
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
       - ShellCommand: *yarn-install
       - ShellCommand:

@@ -183,7 +183,7 @@ Zenko CloudServer.
 .. code:: shell
 
     $ docker run -d --name cloudserver -e DATA_HOST=cloudserver-data \
-    -e METADATA_HOST=cloudserver-metadata scality/cloudserver npm run start_s3server
+    -e METADATA_HOST=cloudserver-metadata scality/cloudserver yarn run start_s3server
 
 REDIS\_HOST
 ~~~~~~~~~~~

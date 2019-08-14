@@ -7,12 +7,15 @@ ENV no_proxy localhost,127.0.0.1
 EXPOSE 8000
 
 COPY ./package.json /usr/src/app/
+COPY ./yarn.lock /usr/src/app/
 
-# Keep the .git directory in order to properly report version
-COPY ./package.json yarn.lock ./
+WORKDIR /usr/src/app
+
+RUN curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb http://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 
 RUN apt-get update \
-    && apt-get install -y jq python git build-essential ssh --no-install-recommends \
+    && apt-get install -y jq python git build-essential ssh --no-install-recommends yarn \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts \
     && yarn cache clean \

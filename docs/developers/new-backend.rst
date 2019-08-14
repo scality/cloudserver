@@ -18,12 +18,12 @@ service:
 
   $ git clone https://github.com/scality/cloudserver
   $ cd cloudserver
-  $ npm install
-  $ npm start
+  $ yarn install
+  $ yarn start
 
 .. tip::
 
-    Some optional dependencies may fail, resulting in you seeing `NPM
+    Some optional dependencies may fail, resulting in you seeing `yarn
     WARN` messages; these can safely be ignored.  Refer to the User
     documentation for all available options.
 
