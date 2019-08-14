@@ -11,7 +11,7 @@ RUN apt-get update \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts \
     && yarn cache clean \
-    && yarn install --production --ignore-optional \
+    && yarn install --frozen-lockfile --production --ignore-optional \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \

@@ -162,7 +162,7 @@ or metadata servers as standalone services, for example.
 .. code:: shell
 
     docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
-    scality/s3server npm run start_dataserver
+    scality/s3server yarn run start_dataserver
 
 
 DATA\_HOST and METADATA\_HOST

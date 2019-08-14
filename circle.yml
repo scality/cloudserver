@@ -24,7 +24,7 @@ machine:
 dependencies:
   override:
     - rm -rf node_modules
-    - npm install
+    - yarn install --frozen-lockfile
   post:
     - sudo pip install flake8 yamllint
     - sudo pip install s3cmd==1.6.1
