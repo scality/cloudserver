@@ -36,9 +36,9 @@ killandsleep () {
 if [ $CIRCLE_NODE_INDEX -eq 0 ]
 then
 
-  npm run --silent lint -- --max-warnings 0
+  yarn run --silent lint -- --max-warnings 0
 
-  npm run --silent lint_md
+  yarn run --silent lint_md
 
   flake8 $(git ls-files "*.py")
 
@@ -46,13 +46,13 @@ then
 
   mkdir -p $CIRCLE_TEST_REPORTS/unit
 
-  npm run unit_coverage
+  yarn run unit_coverage
 
-  npm run unit_coverage_legacy_location
+  yarn run unit_coverage_legacy_location
 
-  npm run start_dmd &
+  yarn run start_dmd &
   bash wait_for_local_port.bash 9990 40 &&
-  npm run multiple_backend_test
+  yarn run multiple_backend_test
 
   killandsleep 9990
 

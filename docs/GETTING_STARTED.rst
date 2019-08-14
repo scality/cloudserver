@@ -13,7 +13,7 @@ Dependencies
 ~~~~~~~~~~~~
 
 Building and running the Scality Zenko CloudServer requires node.js 6.9.5 and
-npm v3 . Up-to-date versions can be found at
+yarn v3 . Up-to-date versions can be found at
 `Nodesource <https://github.com/nodesource/distributions>`__.
 
 Clone source code
@@ -30,14 +30,14 @@ Go to the ./S3 folder,
 
 .. code:: shell
 
-    npm install
+    yarn install
 
 Run it with a file backend
 --------------------------
 
 .. code:: shell
 
-    npm start
+    yarn start
 
 This starts an Zenko CloudServer on port 8000. Two additional ports 9990 and
 9991 are also open locally for internal transfer of metadata and data,
@@ -59,7 +59,7 @@ with absolute paths. So, when starting the server:
     mkdir -m 700 $(pwd)/myFavoriteMetadataPath
     export S3DATAPATH="$(pwd)/myFavoriteDataPath"
     export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
-    npm start
+    yarn start
 
 Run it with multiple data backends
 ----------------------------------
@@ -67,7 +67,7 @@ Run it with multiple data backends
 .. code:: shell
 
     export S3DATA='multiple'
-    npm start
+    yarn start
 
 This starts an Zenko CloudServer on port 8000. The default access key is
 accessKey1 with a secret key of verySecretKey1.
@@ -93,7 +93,7 @@ Run it with an in-memory backend
 
 .. code:: shell
 
-    npm run mem_backend
+    yarn run mem_backend
 
 This starts an Zenko CloudServer on port 8000. The default access key is
 accessKey1 with a secret key of verySecretKey1.
@@ -110,19 +110,19 @@ You can run the unit tests with the following command:
 
 .. code:: shell
 
-    npm test
+    yarn test
 
 You can run the multiple backend unit tests with:
 
 .. code:: shell
-    CI=true S3DATA=multiple npm start
-    npm run multiple_backend_test
+    CI=true S3DATA=multiple yarn start
+    yarn run multiple_backend_test
 
 You can run the linter with:
 
 .. code:: shell
 
-    npm run lint
+    yarn run lint
 
 Running functional tests locally:
 
@@ -160,8 +160,8 @@ instance port (``6379`` by default)
 
 .. code:: shell
 
-    CI=true npm run mem_backend
-    CI=true npm run ft_test
+    CI=true yarn run mem_backend
+    CI=true yarn run ft_test
 
 Configuration
 -------------
@@ -265,7 +265,7 @@ Note: Anything in the ``authdata.json`` file will be ignored.
 
 .. code:: shell
 
-    SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey npm start
+    SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey yarn start
 
 
 Scality with SSL
@@ -369,7 +369,7 @@ something like:
 Test your config
 ^^^^^^^^^^^^^^^^^
 
-If you do not have aws-sdk installed, run ``$> npm install aws-sdk``. In
+If you do not have aws-sdk installed, run ``$> yarn install aws-sdk``. In
 a ``test.js`` file, paste the following script:
 
 .. code:: js
