@@ -30,4 +30,4 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "yarn", "start" ]
 
-CMD [ "npm", "start" ]
+CMD [ "yarn", "start" ]

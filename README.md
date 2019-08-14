@@ -37,7 +37,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Dependencies
 
-Building and running the Zenko CloudServer requires node.js 6.9.5 and npm v3
+Building and running the Zenko CloudServer requires node.js 6.9.5 and yarn v3
 . Up-to-date versions can be found at
 [Nodesource](https://github.com/nodesource/distributions).
 

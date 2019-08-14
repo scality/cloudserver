@@ -22,7 +22,7 @@ Installation
 
       $ git clone https://github.com/scality/cloudserver.git
 
-2. Go to the cloudserver directory and use npm to install the js dependencies.
+2. Go to the cloudserver directory and use yarn to install the js dependencies.
 
    .. code-block:: shell
 
@@ -103,7 +103,7 @@ Run unit tests with the command:
 
 .. code-block:: shell
 
-   $ npm test
+   $ yarn test
 
     yarn test
 
@@ -157,8 +157,8 @@ installed in the environment the tests are running in.
 
    .. code-block:: shell
 
-      $ CI=true npm run mem_backend
-      $ CI=true npm run ft_test
+      $ CI=true yarn run mem_backend
+      $ CI=true yarn run ft_test
 
     CI=true yarn run mem_backend
     CI=true yarn run ft_test
@@ -370,7 +370,7 @@ SSL certificates.
 Test the Config
 ^^^^^^^^^^^^^^^
 
-If aws-sdk is not installed, run ``$> npm install aws-sdk``. 
+If aws-sdk is not installed, run ``$> yarn install aws-sdk``. 
 
 If you do not have aws-sdk installed, run ``$> yarn install aws-sdk``. In
 a ``test.js`` file, paste the following script:

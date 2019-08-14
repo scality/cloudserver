@@ -18,8 +18,8 @@ service:
 
   $ git clone https://github.com/scality/cloudserver
   $ cd cloudserver
-  $ npm install
-  $ npm start
+  $ yarn install
+  $ yarn start
 
 .. tip::
 

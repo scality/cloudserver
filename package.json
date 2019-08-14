@@ -23,12 +23,7 @@
     "async": "~2.5.0",
     "aws-sdk": "2.28.0",
     "azure-storage": "^2.1.0",
-<<<<<<< HEAD
-    "bucketclient": "scality/bucketclient#fbb356e",
-    "bufferutil": "^3.0.5",
-=======
     "bucketclient": "scality/bucketclient#6d2d5a4",
->>>>>>> origin/w/7.5/improvement/S3C-2365-install-yarn
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
@@ -39,25 +34,12 @@
     "node-forge": "^0.7.1",
     "node-uuid": "^1.4.3",
     "npm-run-all": "~4.1.5",
-<<<<<<< HEAD
-    "prom-client": "^10.2.3",
-    "request": "^2.81.0",
-    "sql-where-parser": "~2.2.1",
-    "utapi": "scality/utapi#28dc2e0",
-    "utf-8-validate": "^4.0.2",
-    "utf8": "~2.1.1",
-    "uuid": "^3.0.1",
-    "vaultclient": "scality/vaultclient#fe3f85a",
-    "werelogs": "scality/werelogs#351a2a3",
-    "ws": "^5.1.0",
-=======
     "sproxydclient": "scality/sproxydclient#854a82b",
     "utapi": "scality/utapi#72aedba",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
     "vaultclient": "scality/vaultclient#478710c",
     "werelogs": "scality/werelogs#0a4c576",
->>>>>>> origin/w/7.5/improvement/S3C-2365-install-yarn
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
@@ -77,12 +59,6 @@
     "s3blaster": "scality/s3blaster#950fab1",
     "tv4": "^1.2.7"
   },
-<<<<<<< HEAD
-  "optionalDependencies": {
-    "cdmiclient": "scality/cdmiclient#64aa657"
-  },
-=======
->>>>>>> origin/w/7.5/improvement/S3C-2365-install-yarn
   "scripts": {
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
@@ -91,18 +67,10 @@
     "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support",
     "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/versioning/",
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
-<<<<<<< HEAD
-    "ft_management": "cd tests/functional/report && npm test",
-    "ft_node": "cd tests/functional/raw-node && npm test",
-    "ft_node_routes": "cd tests/functional/raw-node && npm run test-routes",
-    "ft_gcp": "cd tests/functional/raw-node && npm run test-gcp",
-    "ft_healthchecks": "cd tests/functional/healthchecks && npm test",
-=======
     "ft_management": "cd tests/functional/report && yarn test",
     "ft_node": "cd tests/functional/raw-node && yarn test",
     "ft_gcp": "cd tests/functional/raw-node && yarn run test-gcp",
     "ft_healthchecks": "cd tests/functional/healthchecks && yarn test",
->>>>>>> origin/w/7.5/improvement/S3C-2365-install-yarn
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
     "ft_s3curl": "cd tests/functional/s3curl && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
     "ft_util": "cd tests/functional/utilities && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
@@ -115,7 +83,7 @@
     "mem_backend": "S3BACKEND=mem node index.js",
     "perf": "mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json tests/performance/s3standard.js",
     "start": "npm-run-all --parallel start_dmd start_s3server",
-    "start_mongo": "npm run cloudserver",
+    "start_mongo": "yarn run cloudserver",
     "start_mdserver": "node mdserver.js",
     "start_dataserver": "node dataserver.js",
     "start_pfsserver": "node pfsserver.js",
