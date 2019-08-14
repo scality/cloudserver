@@ -1,0 +1,45 @@
+---
+general:
+  branches:
+    ignore:
+      - /^ultron\/.*/   # Ignore ultron/* branches
+  artifacts:
+    - coverage/
+
+machine:
+  node:
+    version: 6.13.1
+  services:
+    - redis
+    - docker
+  ruby:
+    version: "2.4.1"
+  environment:
+    CXX: g++-4.9
+    ENABLE_LOCAL_CACHE: true
+    REPORT_TOKEN: report-token-1
+  hosts:
+    bucketwebsitetester.s3-website-us-east-1.amazonaws.com: 127.0.0.1
+
+dependencies:
+  override:
+    - rm -rf node_modules
+    - yarn install --frozen-lockfile
+  post:
+    - sudo pip install flake8 yamllint
+    - sudo pip install s3cmd==1.6.1
+    # fog and ruby testing dependencies
+    - gem install fog-aws -v 1.3.0
+    - gem install mime-types -v 3.1
+    - gem install rspec -v 3.5
+    - gem install json
+    # java sdk dependencies
+    - sudo apt-get install -y -q default-jdk
+
+
+test:
+  override:
+    - docker run --name squid-proxy -d --net=host
+      --publish 3128:3128 sameersbn/squid:3.3.8-23
+    - bash tests.bash:
+        parallel: true

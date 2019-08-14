@@ -8,15 +8,20 @@ EXPOSE 8000
 
 COPY ./package.json /usr/src/app/
 
-WORKDIR /usr/src/app
+# Keep the .git directory in order to properly report version
+COPY ./package.json yarn.lock ./
 
 RUN apt-get update \
-    && apt-get install -y jq python git build-essential --no-install-recommends \
-    && npm install --production \
+    && apt-get install -y jq python git build-essential ssh --no-install-recommends \
+    && mkdir -p /root/ssh \
+    && ssh-keyscan -H github.com > /root/ssh/known_hosts \
+    && yarn cache clean \
+    && yarn install --frozen-lockfile --production --ignore-optional \
+    && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && npm cache clear --force \
+    && yarn cache clean \
     && rm -rf ~/.node-gyp \
-    && rm -rf /tmp/npm-*
+    && rm -rf /tmp/yarn-*
 
 COPY . /usr/src/app
 
@@ -24,4 +29,4 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-CMD [ "npm", "start" ]
+CMD [ "yarn", "start" ]

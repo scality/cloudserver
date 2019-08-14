@@ -169,8 +169,8 @@ servers as standalone services, for example.
 
 .. code:: shell
 
-    $ docker run -d --name cloudserver-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0 \
-    scality/cloudserver npm run start_dataserver
+    docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
+    scality/s3server yarn run start_dataserver
 
 
 DATA\_HOST and METADATA\_HOST

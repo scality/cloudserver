@@ -139,7 +139,7 @@ to start the server and start writing data to AWS S3 through CloudServer.
 .. code:: shell
 
    # Start the server locally
-   $> S3DATA=multiple npm start
+   $> S3DATA=multiple yarn start
 
 Run the server as a docker container with the ability to write to AWS S3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,7 +306,7 @@ to start the server and start writing data to MS Azure through CloudServer.
 .. code:: shell
 
    # Start the server locally
-   $> S3DATA=multiple npm start
+   $> S3DATA=multiple yarn start
 
 Run the server as a docker container with the ability to write to MS Azure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
