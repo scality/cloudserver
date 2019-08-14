@@ -75,18 +75,21 @@ models:
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
-      shallow: True
-      retryFetch: True
-      haltOnFailure: True
+      shallow: true
+      retryFetch: true
+      haltOnFailure: true
   - ShellCommand: &credentials
       name: Setup Credentials
       command: bash eve/workers/build/credentials.bash
-      haltOnFailure: True
+      haltOnFailure: true
       env: *global-env
-  - ShellCommand: &npm-install
+  - ShellCommand: &node_version
+      name: get node version
+      command: node -v
+  - ShellCommand: &yarn-install
       name: install modules
-      command: npm install
-      haltOnFailure: True
+      command: yarn install --frozen-lockfile
+      haltOnFailure: true
   - Upload: &upload-artifacts
       source: /artifacts
       urls:
@@ -107,6 +110,11 @@ models:
       urls:
         - "*"
       alwaysRun: true
+  - ShellCommand: &setup-github-ssh
+      name: setup ssh with github
+      command: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H github.com > ~/.ssh/ssh_known_hosts
 
 stages:
   pre-merge:
@@ -132,14 +140,15 @@ stages:
         - '/home/eve/workspace'
     steps:
       - Git: *clone
-      - ShellCommand: *npm-install
+      - ShellCommand: *setup-github-ssh
+      - ShellCommand: *yarn-install
       - ShellCommand: *credentials
       - ShellCommand:
           name: Linting
           command: |
             set -ex
-            npm run --silent lint -- --max-warnings 0
-            npm run --silent lint_md
+            yarn run --silent lint -- --max-warnings 0
+            yarn run --silent lint_md
             flake8 $(git ls-files "*.py")
             yamllint $(git ls-files "*.yml")
       - ShellCommand:
@@ -147,8 +156,8 @@ stages:
           command: |
             set -ex
             mkdir -p $CIRCLE_TEST_REPORTS/unit
-            npm test
-            npm run test_legacy_location
+            yarn test
+            yarn run test_legacy_location
           env: &shared-vars
             <<: *global-env
             S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
@@ -176,15 +185,16 @@ stages:
           <<: *global-env
     steps:
       - Git: *clone
+      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
             bash -c "
             source /root/.aws/exports &> /dev/null
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run multiple_backend_test"
+            yarn run multiple_backend_test"
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
@@ -223,12 +233,13 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *setup-github-ssh
+      - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run ft_test
+            yarn run ft_test
           <<: *follow-s3-log
           env:
             <<: *mongo-vars
@@ -253,13 +264,14 @@ stages:
           <<: *global-env
     steps:
       - Git: *clone
+      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
-      - ShellCommand: *npm-install
+      - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
             set -ex
             bash wait_for_local_port.bash 8000 40
-            npm run ft_test
+            yarn run ft_test
           <<: *follow-s3-log
           env:
             <<: *file-mem-mpu
