@@ -746,7 +746,7 @@ Operation
 Startup
 ~~~~~~~
 
-The simplest deployment is still to launch with npm start, this will
+The simplest deployment is still to launch with yarn start, this will
 start one instance of the Zenko CloudServer connector and will listen on the
 locally bound dmd ports 9990 and 9991 (by default, see below).
 
@@ -755,7 +755,7 @@ command in the Zenko CloudServer directory:
 
 ::
 
-   npm run start_dmd
+   yarn run start_dmd
 
 This will open two ports:
 
@@ -770,7 +770,7 @@ elsewhere with:
 
 .. code:: sh
 
-   npm run start_s3server
+   yarn run start_s3server
 
 Configuration
 ~~~~~~~~~~~~~

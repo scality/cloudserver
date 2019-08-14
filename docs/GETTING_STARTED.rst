@@ -10,7 +10,7 @@ Dependencies
 ------------
 
 Building and running the Scality Zenko CloudServer requires node.js 6.9.5 and
-npm v3. Up-to-date versions can be found at
+yarn v3 . Up-to-date versions can be found at
 `Nodesource <https://github.com/nodesource/distributions>`__.
 
 Installation
@@ -26,15 +26,14 @@ Installation
 
    .. code-block:: shell
 
-      $ cd cloudserver
-      $ npm install
+    yarn install
 
 Running CloudServer with a File Backend
 ---------------------------------------
 
 .. code-block:: shell
 
-   $ npm start
+    yarn start
 
 This starts a Zenko CloudServer on port 8000. Two additional ports, 9990 
 and 9991, are also open locally for internal transfer of metadata and 
@@ -50,19 +49,19 @@ absolute paths. Thus, when starting the server:
 
 .. code-block:: shell
 
-   $ mkdir -m 700 $(pwd)/myFavoriteDataPath
-   $ mkdir -m 700 $(pwd)/myFavoriteMetadataPath
-   $ export S3DATAPATH="$(pwd)/myFavoriteDataPath"
-   $ export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
-   $ npm start
+    mkdir -m 700 $(pwd)/myFavoriteDataPath
+    mkdir -m 700 $(pwd)/myFavoriteMetadataPath
+    export S3DATAPATH="$(pwd)/myFavoriteDataPath"
+    export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
+    yarn start
 
 Running CloudServer with Multiple Data Backends
 -----------------------------------------------
 
 .. code-block:: shell
 
-   $ export S3DATA='multiple'
-   $ npm start
+    export S3DATA='multiple'
+    yarn start
 
 This starts a Zenko CloudServer on port 8000. 
 
@@ -86,7 +85,7 @@ Run CloudServer with an In-Memory Backend
 
 .. code-block:: shell
 
-   $ npm run mem_backend
+    yarn run mem_backend
 
 This starts a Zenko CloudServer on port 8000. 
 
@@ -106,18 +105,19 @@ Run unit tests with the command:
 
    $ npm test
 
-Run multiple-backend unit tests with:
+    yarn test
 
 .. code-block:: shell
 
-   $ CI=true S3DATA=multiple npm start
-   $ npm run multiple_backend_test
+.. code:: shell
+    CI=true S3DATA=multiple yarn start
+    yarn run multiple_backend_test
 
 Run the linter with:
 
 .. code-block:: shell
 
-   $ npm run lint
+    yarn run lint
 
 Running Functional Tests Locally
 --------------------------------
@@ -160,7 +160,8 @@ installed in the environment the tests are running in.
       $ CI=true npm run mem_backend
       $ CI=true npm run ft_test
 
-.. _Configuration:
+    CI=true yarn run mem_backend
+    CI=true yarn run ft_test
 
 Configuration
 -------------
@@ -261,7 +262,7 @@ These variables specify authentication credentials for an account named
 
 .. code-block:: shell
 
-   $ SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey npm start
+    SCALITY_ACCESS_KEY_ID=newAccessKey SCALITY_SECRET_ACCESS_KEY=newSecretKey yarn start
 
 .. _Using_SSL:
 
@@ -371,7 +372,8 @@ Test the Config
 
 If aws-sdk is not installed, run ``$> npm install aws-sdk``. 
 
-Paste the following script into a file named "test.js":
+If you do not have aws-sdk installed, run ``$> yarn install aws-sdk``. In
+a ``test.js`` file, paste the following script:
 
 .. code:: js
 

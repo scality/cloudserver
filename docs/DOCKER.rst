@@ -169,8 +169,8 @@ servers as standalone services, for example.
 
 .. code:: shell
 
-    $ docker run -d --name cloudserver-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0 \
-    scality/cloudserver npm run start_dataserver
+    docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
+    scality/s3server yarn run start_dataserver
 
 
 DATA\_HOST and METADATA\_HOST
@@ -182,8 +182,8 @@ Zenko CloudServer.
 
 .. code:: shell
 
-    $ docker run -d --name cloudserver -e DATA_HOST=cloudserver-data \
-    -e METADATA_HOST=cloudserver-metadata scality/cloudserver npm run start_s3server
+    docker run -d --name s3server -e DATA_HOST=s3server-data
+    -e METADATA_HOST=s3server-metadata scality/s3server yarn run start_s3server
 
 REDIS\_HOST
 ~~~~~~~~~~~

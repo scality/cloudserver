@@ -52,22 +52,22 @@ git clone https://github.com/scality/S3.git
 Go to the ./S3 folder,
 
 ```shell
-npm install
+yarn install
 ```
 
 If you get an error regarding installation of the diskUsage module,
 please install g++.
 
-If you get an error regarding level-down bindings, try clearing your npm cache:
+If you get an error regarding level-down bindings, try clearing your yarn cache:
 
 ```shell
-npm cache clear
+yarn cache clear
 ```
 
 ## Run it with a file backend
 
 ```shell
-npm start
+yarn start
 ```
 
 This starts a Zenko CloudServer on port 8000. Two additional ports 9990 and
@@ -90,14 +90,14 @@ mkdir -m 700 $(pwd)/myFavoriteDataPath
 mkdir -m 700 $(pwd)/myFavoriteMetadataPath
 export S3DATAPATH="$(pwd)/myFavoriteDataPath"
 export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
-npm start
+yarn start
 ```
 
 ## Run it with multiple data backends
 
 ```shell
 export S3DATA='multiple'
-npm start
+yarn start
 ```
 
 This starts a Zenko CloudServer on port 8000.
@@ -126,7 +126,7 @@ to learn how to set location constraints.
 ## Run it with an in-memory backend
 
 ```shell
-npm run mem_backend
+yarn run mem_backend
 ```
 
 This starts a Zenko CloudServer on port 8000.

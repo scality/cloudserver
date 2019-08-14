@@ -7,16 +7,16 @@ COPY . /usr/src/app
 
 RUN apt-get update \
     && apt-get install -y jq python git build-essential --no-install-recommends \
-    && npm install --production \
+    && yarn install --production \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && npm cache clear \
+    && yarn cache clear \
     && rm -rf ~/.node-gyp \
-    && rm -rf /tmp/npm-*
+    && rm -rf /tmp/yarn-*
 
 ENV S3BACKEND mem
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
-CMD [ "npm", "start" ]
+CMD [ "yarn", "start" ]
 
 EXPOSE 8000
