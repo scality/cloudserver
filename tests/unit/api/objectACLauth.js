@@ -3,7 +3,7 @@ const assert = require('assert');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { isObjAuthorized }
-    = require('../../../lib/api/apiUtils/authorization/aclChecks');
+    = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 
 const bucketOwnerCanonicalId = 'bucketOwnerCanonicalId';
 const creationDate = new Date().toJSON();
