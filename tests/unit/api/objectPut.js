@@ -14,6 +14,7 @@ const DummyRequest = require('../DummyRequest');
 const { maximumAllowedUploadSize } = require('../../../constants');
 
 const { ds } = storage.data.inMemory.datastore;
+const { metastore } = storage.metadata.inMemory;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -257,6 +258,70 @@ describe('objectPut API', () => {
                             done();
                         });
                 });
+        });
+    });
+
+    describe('putObjectMD error condition', () => {
+        function errorFunc(method) {
+            if (method === metastore.putObject.name) {
+                return errors.InternalError;
+            }
+            return null;
+        }
+
+        afterEach(() => metastore.clearErrorFunc());
+
+        describe('non-0-byte object', () => {
+            beforeEach(done => {
+                bucketPut(authInfo, testPutBucketRequest, log, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(ds.length, 0);
+                    metastore.setErrorFunc(errorFunc);
+                    return objectPut(
+                        authInfo, testPutObjectRequest, null, log, err => {
+                            assert.deepStrictEqual(err, errors.InternalError);
+                            done();
+                        });
+                });
+            });
+
+            it('should delete the data', () => {
+                assert.strictEqual(ds.length, 2);
+                assert.strictEqual(ds[0], undefined);
+                assert.strictEqual(ds[1], undefined);
+            });
+        });
+
+        describe('0-byte object', () => {
+            const postBody = Buffer.from('', 'utf8');
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                url: '/',
+            }, postBody);
+
+            beforeEach(done => {
+                bucketPut(authInfo, testPutBucketRequest, log, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(ds.length, 0);
+                    metastore.setErrorFunc(errorFunc);
+                    return objectPut(
+                        authInfo, testPutObjectRequest, null, log, err => {
+                            assert.deepStrictEqual(err, errors.InternalError);
+                            done();
+                        });
+                });
+            });
+
+            it('should not attempt deletion of the data', () => {
+                assert.strictEqual(ds.length, 0);
+            });
         });
     });
 
