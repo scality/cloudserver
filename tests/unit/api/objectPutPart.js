@@ -80,21 +80,30 @@ describe('Multipart Upload API', () => {
         const authInfo = helpers.makeAuthInfo();
         const log = new helpers.DummyRequestLogger();
 
+        function errorFunc(method) {
+            if (method === metastore.putObject.name) {
+                return errors.InternalError;
+            }
+            return null;
+        }
+
         beforeEach(done => {
             async.waterfall([
                 next => createBucket(authInfo, log, next),
                 (_, next) => initiateMPU(authInfo, log, next),
                 (res, _, next) => parseUploadID(res, next),
                 (uploadId, next) => {
-                    metastore.errors.putObject = errors.InternalError;
+                    assert.strictEqual(ds.length, 0);
+                    metastore.setErrorFunc(errorFunc);
                     putMPUPart(uploadId, authInfo, log, err => {
-                        delete metastore.errors.putObject;
                         assert(err === errors.InternalError);
                         return next();
                     });
                 },
             ], done);
         });
+
+        afterEach(() => metastore.clearErrorFunc());
 
         it('should cleanup orphaned data', () => {
             assert.strictEqual(ds.length, 2);
