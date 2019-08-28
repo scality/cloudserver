@@ -9,7 +9,6 @@ const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const { ds } = require('../../../lib/data/in_memory/backend');
-const metastore = require('../../../lib/metadata/in_memory/backend');
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const DummyRequest = require('../DummyRequest');
@@ -246,70 +245,6 @@ describe('objectPut API', () => {
                             done();
                         });
                 });
-        });
-    });
-
-    describe('putObjectMD error condition', () => {
-        function errorFunc(method) {
-            if (method === metastore.putObject.name) {
-                return errors.InternalError;
-            }
-            return null;
-        }
-
-        afterEach(() => metastore.clearErrorFunc());
-
-        describe('non-0-byte object', () => {
-            beforeEach(done => {
-                bucketPut(authInfo, testPutBucketRequest, log, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(ds.length, 0);
-                    metastore.setErrorFunc(errorFunc);
-                    return objectPut(
-                        authInfo, testPutObjectRequest, null, log, err => {
-                            assert.deepStrictEqual(err, errors.InternalError);
-                            done();
-                        });
-                });
-            });
-
-            it('should delete the data', () => {
-                assert.strictEqual(ds.length, 2);
-                assert.strictEqual(ds[0], undefined);
-                assert.strictEqual(ds[1], undefined);
-            });
-        });
-
-        describe('0-byte object', () => {
-            const postBody = Buffer.from('', 'utf8');
-            const testPutObjectRequest = new DummyRequest({
-                bucketName,
-                namespace,
-                objectKey: objectName,
-                headers: { host: `${bucketName}.s3.amazonaws.com` },
-                url: '/',
-            }, postBody);
-
-            beforeEach(done => {
-                bucketPut(authInfo, testPutBucketRequest, log, err => {
-                    if (err) {
-                        return done(err);
-                    }
-                    assert.strictEqual(ds.length, 0);
-                    metastore.setErrorFunc(errorFunc);
-                    return objectPut(
-                        authInfo, testPutObjectRequest, null, log, err => {
-                            assert.deepStrictEqual(err, errors.InternalError);
-                            done();
-                        });
-                });
-            });
-
-            it('should not attempt deletion of the data', () => {
-                assert.strictEqual(ds.length, 0);
-            });
         });
     });
 
