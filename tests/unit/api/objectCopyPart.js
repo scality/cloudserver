@@ -1,16 +1,12 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
-const constants = require('../../../constants');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload
 = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = require('../../../lib/metadata/in_memory/metadata');
-const { ds } = require('../../../lib/data/in_memory/backend');
-const metastore = require('../../../lib/metadata/in_memory/backend');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
@@ -63,13 +59,13 @@ const putSourceBucketRequest = _createBucketPutRequest(sourceBucketName);
 const initiateRequest = _createInitiateRequest(destBucketName);
 
 describe('objectCopyPart', () => {
-    const objData = Buffer.from('foo', 'utf8');
     let uploadId;
-
-    beforeEach(done => {
+    const objData = Buffer.from('foo', 'utf8');
+    const testPutObjectRequest =
+        versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey,
+            objData);
+    before(done => {
         cleanup();
-        const testPutObjectRequest = versioningTestUtils
-            .createPutObjectRequest(sourceBucketName, objectKey, objData);
         async.waterfall([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
                 err => callback(err)),
@@ -84,16 +80,13 @@ describe('objectCopyPart', () => {
                 return done(err);
             }
             return parseString(res, (err, json) => {
-                if (err) {
-                    return done(err);
-                }
                 uploadId = json.InitiateMultipartUploadResult.UploadId[0];
                 return done();
             });
         });
     });
 
-    afterEach(() => cleanup());
+    after(() => cleanup());
 
     it('should copy part even if legacy metadata without dataStoreName',
     done => {
@@ -108,66 +101,5 @@ describe('objectCopyPart', () => {
                 assert.ifError(err, `Unexpected err: ${err}`);
                 done();
             });
-    });
-
-    describe('getObjectMD error condition', () => {
-        function errorFunc(method, objName) {
-            if (method !== metastore.getObject.name) {
-                return null;
-            }
-            if (objName !== `${uploadId}${constants.splitter}00001`) {
-                return null;
-            }
-            return errors.InternalError;
-        }
-
-        beforeEach(done => {
-            assert.deepStrictEqual(ds[1].value, objData);
-            const req = _createObjectCopyPartRequest(destBucketName, uploadId);
-            metastore.setErrorFunc(errorFunc);
-            objectPutCopyPart(
-                authInfo, req, sourceBucketName, objectKey, null, log, err => {
-                    assert.deepStrictEqual(err, errors.InternalError);
-                    done();
-                });
-        });
-
-        afterEach(() => metastore.clearErrorFunc());
-
-        it('should delete the destination data', () => {
-            assert.strictEqual(ds.length, 3);
-            assert.strictEqual(ds[0], undefined);
-            assert.deepStrictEqual(ds[1].value, objData); // The source data.
-            assert.strictEqual(ds[2], undefined); // The destination data.
-        });
-    });
-
-    describe('putObjectMD error condition', () => {
-        function errorFunc(method) {
-            if (method === metastore.putObject.name) {
-                return errors.InternalError;
-            }
-            return null;
-        }
-
-        beforeEach(done => {
-            assert.deepStrictEqual(ds[1].value, objData);
-            const req = _createObjectCopyPartRequest(destBucketName, uploadId);
-            metastore.setErrorFunc(errorFunc);
-            objectPutCopyPart(
-                authInfo, req, sourceBucketName, objectKey, null, log, err => {
-                    assert.deepStrictEqual(err, errors.InternalError);
-                    done();
-                });
-        });
-
-        afterEach(() => metastore.clearErrorFunc());
-
-        it('should delete the destination data', () => {
-            assert.strictEqual(ds.length, 3);
-            assert.strictEqual(ds[0], undefined);
-            assert.deepStrictEqual(ds[1].value, objData); // The source data.
-            assert.strictEqual(ds[2], undefined); // The destination data.
-        });
     });
 });
