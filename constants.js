@@ -123,6 +123,9 @@ const constants = {
         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     // user metadata applied on zenko objects
     zenkoIDHeader: 'x-amz-meta-zenko-instance-id',
+    // response header to be sent when there are invalid
+    // user metadata in the object's metadata
+    invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
 };
 
 module.exports = constants;
