@@ -1,0 +1,46 @@
+const assert = require('assert');
+const { invalidObjectUserMetadataHeader } = require('../../../../constants');
+const genMaxSizeMetaHeaders = require(
+    '../../../functional/aws-node-sdk/lib/utility/genMaxSizeMetaHeaders');
+const checkUserMetadataSize
+    = require('../../../../lib/api/apiUtils/object/checkUserMetadataSize');
+
+const userMetadataKey = 'x-amz-meta-';
+const metadata = {};
+
+let userMetadataKeys = 0;
+
+describe('Check user metadata size', () => {
+    before('Set up metadata', () => {
+        const md = genMaxSizeMetaHeaders();
+        for (const prop in md) {
+            if (md.hasOwnProperty(prop)) {
+                metadata[`${userMetadataKey}${prop}`] = md[prop];
+            }
+        }
+        userMetadataKeys = Object.keys(metadata)
+            .filter(key => key.startsWith(userMetadataKey)).length;
+    });
+
+    it('Should return user metadata when the size is within limits', () => {
+        const responseMetadata = checkUserMetadataSize(metadata);
+        assert.notStrictEqual(responseMetadata, null);
+        assert.notStrictEqual(responseMetadata, undefined);
+        assert.strictEqual(userMetadataKeys > 0, true);
+    });
+
+    it('Should not return user metadata when the size exceeds limit', () => {
+        const firstMetadatKey = `${userMetadataKey}header0`;
+        // add one more byte to be over the limit
+        metadata[firstMetadatKey] = `${metadata[firstMetadatKey]}${'0'}`;
+        const responseMetadata = checkUserMetadataSize(metadata);
+        const invalidHeader
+            = responseMetadata[invalidObjectUserMetadataHeader];
+        const responseMetdataKeys = Object.keys(responseMetadata)
+            .filter(key => key.startsWith(userMetadataKey));
+        assert.notStrictEqual(responseMetadata, null);
+        assert.notStrictEqual(responseMetadata, undefined);
+        assert.strictEqual(responseMetdataKeys > 0, false);
+        assert.strictEqual(invalidHeader, userMetadataKeys);
+    });
+});
