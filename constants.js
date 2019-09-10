@@ -145,6 +145,9 @@ const constants = {
         'objectGetTagging',
         'objectPutTagging',
     ],
+    // response header to be sent when there are invalid
+    // user metadata in the object's metadata
+    invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
 };
 
 module.exports = constants;
