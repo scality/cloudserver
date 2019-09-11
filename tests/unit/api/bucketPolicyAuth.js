@@ -17,7 +17,7 @@ const otherUserArn = 'arn:aws:iam::123456789012:user/other';
 const otherAccountUserArn = 'arn:aws:iam:987654321098:user/other';
 const accountArn = 'arn:aws:iam::123456789012:root';
 const accountId = '123456789012';
-const bucAction = 'bucketPut';
+const bucAction = 'bucketHead';
 const objAction = 'objectPut';
 const basePolicyObj = {
     Version: '2012-10-17',
@@ -133,7 +133,7 @@ const authTests = [
         bucketId: canonicalIdToVet,
         objectId: canonicalIdToVet,
         keyToChange: 'Action',
-        bucketValue: ['s3:CreateBucket'],
+        bucketValue: ['s3:ListBucket'],
         objectValue: ['s3:PutObject'],
         expected: true,
     },
