@@ -3836,9 +3836,9 @@ url@0.10.3:
     punycode "1.3.2"
     querystring "0.2.0"
 
-utapi@scality/utapi#72aedba:
-  version "7.4.5"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/72aedba8bab198cf682bcfc7ffca7ac9e2afe6c0"
+utapi@scality/utapi#5ccb8d0:
+  version "8.0.0"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/5ccb8d03bef59e9048daa592947427cbfb8db802"
   dependencies:
     arsenal scality/Arsenal#32c895b
     async "^2.0.1"
