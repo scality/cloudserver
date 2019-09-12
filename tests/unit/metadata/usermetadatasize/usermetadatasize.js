@@ -24,7 +24,6 @@ describe('Check user metadata size', () => {
         const responseMetadata = checkUserMetadataSize(metadata);
         const invalidHeader
             = responseMetadata[invalidObjectUserMetadataHeader];
-        assert.notEqual(responseMetadata, undefined);
         assert.strictEqual(userMetadataKeys > 0, true);
         assert.strictEqual(invalidHeader, undefined);
         assert.deepStrictEqual(metadata, responseMetadata);
