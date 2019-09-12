@@ -22,8 +22,11 @@ describe('Check user metadata size', () => {
 
     it('Should return user metadata when the size is within limits', () => {
         const responseMetadata = checkUserMetadataSize(metadata);
-        assert.notEqual(responseMetadata, undefined);
+        const invalidHeader
+            = responseMetadata[invalidObjectUserMetadataHeader];
         assert.strictEqual(userMetadataKeys > 0, true);
+        assert.strictEqual(invalidHeader, undefined);
+        assert.deepStrictEqual(metadata, responseMetadata);
     });
 
     it('Should not return user metadata when the size exceeds limit', () => {
@@ -33,10 +36,10 @@ describe('Check user metadata size', () => {
         const responseMetadata = checkUserMetadataSize(metadata);
         const invalidHeader
             = responseMetadata[invalidObjectUserMetadataHeader];
-        const responseMetdataKeys = Object.keys(responseMetadata)
+        const responseMetadataKeys = Object.keys(responseMetadata)
             .filter(key => key.startsWith(userMetadataKey));
         assert.notEqual(responseMetadata, undefined);
-        assert.strictEqual(responseMetdataKeys > 0, false);
+        assert.strictEqual(responseMetadataKeys.length > 0, false);
         assert.strictEqual(invalidHeader, userMetadataKeys);
     });
 });
