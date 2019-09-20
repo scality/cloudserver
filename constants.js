@@ -69,6 +69,10 @@ const constants = {
     maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
         5368709120,
 
+    // AWS sets a maximum total parts limit
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    maximumAllowedPartCount: 10000,
+
     // AWS states max size for user-defined metadata (x-amz-meta- headers) is
     // 2 KB: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
     // In testing, AWS seems to allow up to 88 more bytes, so we do the same.
