@@ -7,11 +7,11 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucket = 'policyputtestbucket';
 const basicStatement = {
-    Sid: 'statement-id',
+    Sid: 'statementid',
     Effect: 'Allow',
     Principal: '*',
     Action: ['s3:putBucketPolicy'],
-    Resource: 'aws:arn:s3::example-bucket',
+    Resource: `arn:aws:s3:::${bucket}`,
 };
 
 function getPolicyParams(paramToChange) {
@@ -26,7 +26,7 @@ function getPolicyParams(paramToChange) {
     }
     return {
         Bucket: bucket,
-        Policy: bucketPolicy,
+        Policy: JSON.stringify(bucketPolicy),
     };
 }
 
@@ -44,10 +44,7 @@ function assertError(err, expectedErr, cb) {
     cb();
 }
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('aws-sdk test put bucket policy', () => {
+describe('aws-sdk test put bucket policy', () => {
     let s3;
     let otherAccountS3;
 
@@ -69,10 +66,10 @@ describeSkipUntilImpl('aws-sdk test put bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return AccessDenied if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner', done => {
             const params = getPolicyParams();
             otherAccountS3.putBucketPolicy(params,
-                err => assertError(err, 'AccessDenied', done));
+                err => assertError(err, 'MethodNotAllowed', done));
         });
 
         it('should put a bucket policy on bucket', done => {
