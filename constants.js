@@ -83,18 +83,14 @@ const constants = {
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
+    // Non-bucket queries
     unsupportedQueries: [
-        'accelerate',
-        'analytics',
-        'inventory',
-        'logging',
-        'metrics',
-        'notification',
-        'policy',
-        'requestPayment',
+        'legal-hold',
         'restore',
+        'retention',
         'torrent',
     ],
+
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
         'x-amz-server-side-encryption',
@@ -130,6 +126,22 @@ const constants = {
     // response header to be sent when there are invalid
     // user metadata in the object's metadata
     invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
+    // Bucket queries supported by AWS that we do not currently support.
+    unsupportedBucketQueries: [
+        'accelerate',
+        'analytics',
+        'encryption',
+        'inventory',
+        'logging',
+        'metrics',
+        'notification',
+        'object-lock',
+        'policy',
+        'policyStatus',
+        'publicAccessBlock',
+        'requestPayment',
+        'tagging',
+    ],
 };
 
 module.exports = constants;
