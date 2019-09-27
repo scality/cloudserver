@@ -106,7 +106,6 @@ const constants = {
         'encryption',
         'publicAccessBlock',
         'policyStatus',
-        'tagging',
         'object-lock',
     ],
     // Headers supported by AWS that we do not currently support.
