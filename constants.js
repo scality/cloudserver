@@ -93,7 +93,14 @@ const constants = {
         'requestPayment',
         'restore',
         'torrent',
+        'legal-hold',
+        'retention',
+        'encryption',
+        'publicAccessBlock',
+        'policyStatus',
+        'object-lock',
     ],
+
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
         'x-amz-server-side-encryption',
@@ -152,6 +159,10 @@ const constants = {
     // response header to be sent when there are invalid
     // user metadata in the object's metadata
     invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
+    // Bucket queries supported by AWS that we do not currently support.
+    unsupportedBucketQueries: [
+        'tagging',
+    ],
 };
 
 module.exports = constants;
