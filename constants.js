@@ -94,7 +94,6 @@ const constants = {
         'metrics',
         'notification',
         'object-lock',
-        'policy',
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
