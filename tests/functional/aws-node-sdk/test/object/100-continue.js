@@ -154,7 +154,8 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
         it('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it('should not send continue if denied for a public user', done =>
+
+        it('should continue if a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .shouldNotGetContinue(done));
     });
