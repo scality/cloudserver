@@ -196,34 +196,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#61d7790":
+"arsenal@github:scality/Arsenal#a7b6fc8":
   version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/61d779083f1e74f2aa1221f831e9b4a1484f7730"
-  dependencies:
-    "@hapi/joi" "^15.1.0"
-    JSONStream "^1.0.0"
-    ajv "4.10.0"
-    async "~2.1.5"
-    debug "~2.3.3"
-    diskusage "^1.1.1"
-    ioredis "4.9.5"
-    ipaddr.js "1.2.0"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    node-forge "^0.7.1"
-    simple-glob "^0.1"
-    socket.io "~1.7.3"
-    socket.io-client "~1.7.3"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
-  optionalDependencies:
-    ioctl "2.0.0"
-
-arsenal@scality/Arsenal#32c895b:
-  version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/a7b6fc8fb8ed332fd2695e1c0fafad726116727e"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -283,6 +258,31 @@ arsenal@scality/Arsenal#b03f5b8:
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
     joi "^10.6"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    node-forge "^0.7.1"
+    simple-glob "^0.1"
+    socket.io "~1.7.3"
+    socket.io-client "~1.7.3"
+    utf8 "2.1.2"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#0ff7ec82
+    xml2js "~0.4.16"
+  optionalDependencies:
+    ioctl "2.0.0"
+
+arsenal@scality/Arsenal#f8bf038:
+  version "7.4.3"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/f8bf038b81d352dbe9637c49d09df9e548461792"
+  dependencies:
+    "@hapi/joi" "^15.1.0"
+    JSONStream "^1.0.0"
+    ajv "4.10.0"
+    async "~2.1.5"
+    debug "~2.3.3"
+    diskusage "^1.1.1"
+    ioredis "4.9.5"
+    ipaddr.js "1.2.0"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
