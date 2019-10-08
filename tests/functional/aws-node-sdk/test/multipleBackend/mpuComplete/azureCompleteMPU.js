@@ -101,7 +101,7 @@ function mpuSetup(key, location, cb) {
     });
 }
 
-describeSkipIfNotMultipleOrCeph('Complete MPU API for Azure data backend',
+describe.skip('Complete MPU API for Azure data backend',
 function testSuite() {
     this.timeout(150000);
     withV4(sigCfg => {
