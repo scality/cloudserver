@@ -144,6 +144,27 @@ describe('Object Part Copy', () => {
                 });
         });
 
+        it('should return InvalidArgument error given invalid range', done => {
+            s3.putObject({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+                Body: Buffer.alloc(oneHundredMBPlus11, 'packing'),
+            }, err => {
+                checkNoError(err);
+                s3.uploadPartCopy({ Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                    CopySourceRange: 'bad-range-parameter',
+                },
+                err => {
+                    checkError(err, 'InvalidArgument');
+                    done();
+                });
+            });
+        });
+
         it('should return EntityTooLarge error if attempt to copy ' +
             'object larger than max and do not specify smaller ' +
             'range in request', done => {
