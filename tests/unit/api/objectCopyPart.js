@@ -39,12 +39,12 @@ function _createInitiateRequest(bucketName) {
     return new DummyRequest(params);
 }
 
-function _createObjectCopyPartRequest(destBucketName, uploadId) {
+function _createObjectCopyPartRequest(destBucketName, uploadId, headers) {
     const params = {
         bucketName: destBucketName,
         namespace,
         objectKey,
-        headers: {},
+        headers: headers || {},
         url: `/${destBucketName}/${objectKey}?partNumber=1`,
         query: {
             partNumber: 1,
@@ -99,6 +99,21 @@ describe('objectCopyPart', () => {
             sourceBucketName, objectKey,
             undefined, log, err => {
                 assert.ifError(err, `Unexpected err: ${err}`);
+                done();
+            });
+    });
+
+    it('should return InvalidArgument error given invalid range', done => {
+        const headers = { 'x-amz-copy-source-range': 'bad-range-parameter' };
+        const req =
+            _createObjectCopyPartRequest(destBucketName, uploadId, headers);
+        objectPutCopyPart(
+            authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
+                assert(err.InvalidArgument);
+                assert.strictEqual(err.description,
+                    'The x-amz-copy-source-range value must be of the form ' +
+                    'bytes=first-last where first and last are the ' +
+                    'zero-based offsets of the first and last bytes to copy');
                 done();
             });
     });
