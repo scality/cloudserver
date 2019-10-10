@@ -79,8 +79,8 @@
 	"database": "metadata"
     },
     "requests": {
-        "viaProxy": false,
-        "trustedProxyIPs": [],
-        "extractClientIPFromHeader": ""
+        "viaProxy": true,
+        "trustedProxyIPs": ["123.123.123.123"],
+        "extractClientIPFromHeader": "x-forwarded-for"
     }
 }
