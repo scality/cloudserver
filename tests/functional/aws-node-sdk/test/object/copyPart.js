@@ -288,7 +288,7 @@ describe('Object Part Copy', () => {
                         }, (err, res) => {
                             checkNoError(err);
                             assert.strictEqual(res.ETag, finalMpuETag);
-                            assert.strictEqual(res.ContentLength, '4');
+                            assert.strictEqual(res.ContentLength, 4);
                             assert.strictEqual(res.Body.toString(), 'I am');
                             done();
                         });
@@ -495,7 +495,7 @@ describe('Object Part Copy', () => {
                             Key: destObjName,
                         });
                     }).then(res => {
-                        assert.strictEqual(res.ContentLength, '25000092');
+                        assert.strictEqual(res.ContentLength, 25000092);
                         assert.strictEqual(res.ETag, finalCombinedETag);
                     })
                 .catch(err => {

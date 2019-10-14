@@ -270,7 +270,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         { it: 'should get a range from the first part of an object ' +
             'put by multipart upload',
             range: 'bytes=0-9',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 0-9/10485760',
             // Uploaded object is 5MB of 0 in the first part and
             // 5 MB of 1 in the second part so a range from the
@@ -282,7 +282,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             // The completed MPU byte count starts at 0, so the first part ends
             // at byte 5242879 and the second part begins at byte 5242880
             range: 'bytes=5242880-5242889',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 5242880-5242889/10485760',
             // A range from the second part should just contain 1
             expectedBuff: Buffer.alloc(10, 1),
@@ -290,7 +290,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         { it: 'should get a range that spans both parts of an object put ' +
             'by multipart upload',
             range: 'bytes=5242875-5242884',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 5242875-5242884/10485760',
             // Range that spans the two parts should contain 5 bytes
             // of 0 and 5 bytes of 1
@@ -301,7 +301,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             'requested goes beyond the actual object end',
             // End is actually 10485759 since size is 10485760
             range: 'bytes=10485750-10485790',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 10485750-10485759/10485760',
             // Range from the second part should just contain 1
             expectedBuff: Buffer.alloc(10, 1),
@@ -309,7 +309,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         {
             it: 'should get entire object if range is invalid',
             range: 'bytes=-10485761',
-            contentLength: '10485760',
+            contentLength: 10485760,
             contentRange: 'bytes 0-10485759/10485760',
             expectedBuff: Buffer.concat([firstBufferBody, secondBufferBody]),
         },
@@ -447,7 +447,7 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     const regularObjectRangeGetTests = [
         { it: 'should get a range for an object put without MPU',
             range: 'bytes=10-99',
-            contentLength: '90',
+            contentLength: 90,
             contentRange: 'bytes 10-99/200',
             // Buffer.fill(value, offset, end)
             expectedBuff: Buffer.allocUnsafe(90).fill(0, 0, 40).fill(1, 40),
@@ -455,20 +455,20 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         { it: 'should get a range for an object using only an end ' +
             'offset in the request',
             range: 'bytes=-10',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 190-199/200',
             expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get a range for an object using only a start offset ' +
             'in the request',
             range: 'bytes=190-',
-            contentLength: '10',
+            contentLength: 10,
             contentRange: 'bytes 190-199/200',
             expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get full object if range header is invalid',
             range: 'bytes=-',
-            contentLength: '200',
+            contentLength: 200,
             // Since range header is invalid full object should be returned
             // and there should be no Content-Range header
             contentRange: undefined,
