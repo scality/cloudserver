@@ -14,7 +14,7 @@ const endRangeTest = (inputRange, expectedRange, cb) => {
     };
 
     s3.getObject(params, (err, data) => {
-        assert.strictEqual(data.ContentLength, '90');
+        assert.strictEqual(data.ContentLength, 90);
         assert.strictEqual(data.ContentRange, expectedRange);
         assert.deepStrictEqual(data.Body, Buffer.allocUnsafe(90).fill(1));
         cb();
