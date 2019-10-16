@@ -253,8 +253,8 @@ describe('GET object', () => {
                           assert.strictEqual(res.ContentEncoding,
                             'gzip');
                           assert.strictEqual(res.ContentType, contentType);
-                          assert.strictEqual(res.Expires,
-                              new Date(expires).toGMTString());
+                          assert.strictEqual(res.Expires.toGMTString(),
+                            new Date(expires).toGMTString());
                           assert.strictEqual(res.AcceptRanges, 'bytes');
                           return done();
                       });
@@ -292,7 +292,8 @@ describe('GET object', () => {
                         assert.strictEqual(res.ContentLanguage,
                             contentLanguage);
                         assert.strictEqual(res.ContentType, contentType);
-                        assert.strictEqual(res.Expires, expires);
+                        assert.strictEqual(res.Expires.toGMTString(),
+                            new Date(expires).toGMTString());
                         return done();
                     });
                 });

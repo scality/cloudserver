@@ -69,8 +69,8 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                   // to be compatible with AWS behavior
                   assert.strictEqual(res.ContentEncoding,
                     'gzip,');
-                  assert.strictEqual(res.Expires,
-                      expires.toUTCString());
+                  assert.strictEqual(res.Expires.toGMTString(),
+                      expires.toGMTString());
                   return done();
               });
         });

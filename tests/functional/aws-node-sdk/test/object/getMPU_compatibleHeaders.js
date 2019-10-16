@@ -111,7 +111,8 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                 assert.strictEqual(res.CacheControl, cacheControl);
                 assert.strictEqual(res.ContentDisposition, contentDisposition);
                 assert.strictEqual(res.ContentEncoding, 'gzip');
-                assert.strictEqual(res.Expires, expires.toGMTString());
+                assert.strictEqual(res.Expires.toGMTString(),
+                    expires.toGMTString());
             });
         });
     });
