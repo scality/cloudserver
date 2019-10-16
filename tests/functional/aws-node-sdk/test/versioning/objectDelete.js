@@ -71,7 +71,7 @@ describe('delete marker creation in bucket with null version', () => {
                 callback => s3.deleteObject({ Bucket: bucket, Key: key },
                     (err, data) => {
                         _assertNoError(err, 'creating delete marker');
-                        assert.strictEqual(data.DeleteMarker, 'true');
+                        assert.strictEqual(data.DeleteMarker, true);
                         assert(data.VersionId);
                         return callback(null, data.VersionId);
                     }),
@@ -106,7 +106,7 @@ describe('delete marker creation in bucket with null version', () => {
                 callback => s3.deleteObject({ Bucket: bucket, Key: key },
                     (err, data) => {
                         _assertNoError(err, 'creating delete marker');
-                        assert.strictEqual(data.DeleteMarker, 'true');
+                        assert.strictEqual(data.DeleteMarker, true);
                         assert.strictEqual(data.VersionId, 'null');
                         return callback(null, data.VersionId);
                     }),
@@ -235,7 +235,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 assert.notEqual(res.VersionId, undefined);
                 return s3.deleteObject({
                     Bucket: bucket,
@@ -244,7 +244,7 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res2.DeleteMarker, 'true');
+                    assert.strictEqual(res2.DeleteMarker, true);
                     assert.notEqual(res2.VersionId, res.VersionId);
                     return s3.deleteObject({
                         Bucket: bucket,
@@ -309,7 +309,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 assert.strictEqual(
                     versionIds.find(item => item === res.VersionId),
                     undefined);
@@ -375,7 +375,7 @@ describe('aws-node-sdk test delete object', () => {
                     return done(err);
                 }
                 assert.strictEqual(res.VersionId, version);
-                assert.equal(res.DeleteMarker, 'true');
+                assert.equal(res.DeleteMarker, true);
                 return done();
             });
         });
@@ -426,7 +426,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 assert.notEqual(res.VersionId, undefined);
                 return s3.deleteObject({
                     Bucket: bucket,
@@ -435,7 +435,7 @@ describe('aws-node-sdk test delete object', () => {
                     if (err) {
                         return done(err);
                     }
-                    assert.strictEqual(res2.DeleteMarker, 'true');
+                    assert.strictEqual(res2.DeleteMarker, true);
                     assert.strictEqual(res2.VersionId, res.VersionId);
                     return s3.deleteObject({
                         Bucket: bucket,
@@ -454,7 +454,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 assert.strictEqual(res.VersionId, 'null');
                 return done();
             });
@@ -557,7 +557,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 versionIds.push(res.VersionId);
                 return done();
             });
@@ -585,7 +585,7 @@ describe('aws-node-sdk test delete object', () => {
                 if (err) {
                     return done(err);
                 }
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 assert.strictEqual(
                     versionIds.find(item => item === res.VersionId),
                     undefined);
@@ -605,7 +605,7 @@ describe('aws-node-sdk test delete object', () => {
                     return done(err);
                 }
                 assert.strictEqual(res.VersionId, version);
-                assert.strictEqual(res.DeleteMarker, 'true');
+                assert.strictEqual(res.DeleteMarker, true);
                 version = versionIds.pop();
                 return s3.deleteObject({
                     Bucket: bucket,
@@ -616,7 +616,7 @@ describe('aws-node-sdk test delete object', () => {
                         return done(err);
                     }
                     assert.strictEqual(res.VersionId, version);
-                    assert.strictEqual(res.DeleteMarker, 'true');
+                    assert.strictEqual(res.DeleteMarker, true);
                     return s3.getObject({
                         Bucket: bucket,
                         Key: key,

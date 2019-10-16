@@ -143,14 +143,15 @@ describe('Object Version Copy', () => {
             const destinationVersionId = response.VersionId;
             assert.strictEqual(response.ETag, etag);
             const copyLastModified = new Date(response.LastModified)
-                .toUTCString();
+                .toGMTString();
             s3.getObject({ Bucket: destBucketName,
                 Key: destObjName }, (err, res) => {
                 checkNoError(err);
                 assert.strictEqual(res.VersionId, destinationVersionId);
                 assert.strictEqual(res.Body.toString(), content);
                 assert.deepStrictEqual(res.Metadata, copyVersionMetadata);
-                assert.strictEqual(res.LastModified, copyLastModified);
+                assert.strictEqual(res.LastModified.toGMTString(),
+                    copyLastModified);
                 done();
             });
         }
@@ -282,7 +283,7 @@ describe('Object Version Copy', () => {
                             assert.strictEqual(res.ContentEncoding,
                               'base64,'
                             );
-                            assert.strictEqual(res.Expires,
+                            assert.strictEqual(res.Expires.toGMTString(),
                                 originalExpires.toGMTString());
                             done();
                         });
@@ -385,7 +386,8 @@ describe('Object Version Copy', () => {
                     // Should remove V4 streaming value 'aws-chunked'
                     // to be compatible with AWS behavior
                     assert.strictEqual(res.ContentEncoding, 'gzip,');
-                    assert.strictEqual(res.Expires, newExpires.toGMTString());
+                    assert.strictEqual(res.Expires.toGMTString(),
+                        newExpires.toGMTString());
                     done();
                 });
             });
@@ -433,7 +435,7 @@ describe('Object Version Copy', () => {
                         originalContentDisposition);
                       assert.strictEqual(res.ContentEncoding,
                         'base64,');
-                      assert.strictEqual(res.Expires,
+                      assert.strictEqual(res.Expires.toGMTString(),
                         originalExpires.toGMTString());
                       done();
                   });
@@ -705,7 +707,7 @@ describe('Object Version Copy', () => {
                 if (err) {
                     done(err);
                 }
-                assert.strictEqual(data.DeleteMarker, 'true');
+                assert.strictEqual(data.DeleteMarker, true);
                 s3.copyObject({
                     Bucket: destBucketName,
                     Key: destObjName,
@@ -727,7 +729,7 @@ describe('Object Version Copy', () => {
                 if (err) {
                     done(err);
                 }
-                assert.strictEqual(data.DeleteMarker, 'true');
+                assert.strictEqual(data.DeleteMarker, true);
                 const deleteMarkerId = data.VersionId;
                 s3.copyObject({
                     Bucket: destBucketName,
