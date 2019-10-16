@@ -6,7 +6,7 @@ Using Public Clouds as data backends
 Introduction
 ------------
 
-As stated in our `GETTING STARTED guide <../GETTING_STARTED/#location-configuration>`__,
+As stated in our `GETTING STARTED guide <GETTING_STARTED.html#location-configuration>`__,
 new data backends can be added by creating a region (also called location
 constraint) with the right endpoint and credentials.
 This section of the documentation shows you how to set up our currently

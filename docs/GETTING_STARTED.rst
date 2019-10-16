@@ -4,7 +4,6 @@ Getting Started
 .. figure:: ../res/scality-cloudserver-logo.png
    :alt: Zenko CloudServer logo
 
-|CircleCI| |Scality CI|
 
 Dependencies
 ------------
@@ -95,7 +94,7 @@ The default access key is accessKey1. The secret key is verySecretKey1.
 Run CloudServer for Continuous Integration Testing or in Production with Docker
 -------------------------------------------------------------------------------
 
-`DOCKER <./DOCKER>`__
+Run Cloudserver with `DOCKER <DOCKER.html>`__
 
 Testing
 ~~~~~~~
