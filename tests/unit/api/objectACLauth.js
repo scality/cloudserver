@@ -63,7 +63,8 @@ describe('object acl authorization for objectGet and objectHead', () => {
         'authenticated-read ACL', () => {
         object.acl.Canned = 'authenticated-read';
         const publicResults = requestTypes.map(type =>
-            isObjAuthorized(bucket, object, type, constants.publicId, null, log));
+            isObjAuthorized(bucket, object, type, constants.publicId,
+                null, log));
         assert.deepStrictEqual(publicResults, [false, false]);
     });
 

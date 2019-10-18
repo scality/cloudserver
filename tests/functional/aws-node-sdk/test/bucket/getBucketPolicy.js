@@ -53,7 +53,8 @@ describe('aws-sdk test get bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return MethodNotAllowed if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner',
+        done => {
             otherAccountS3.getBucketPolicy({ Bucket: bucket },
             err => assertError(err, 'MethodNotAllowed', done));
         });
@@ -76,7 +77,8 @@ describe('aws-sdk test get bucket policy', () => {
                     const parsedRes = JSON.parse(res.Policy);
                     assert.equal(err, null, 'Error getting bucket policy: ' +
                         `${err}`);
-                    assert.deepStrictEqual(parsedRes.Statement[0], expectedPolicy);
+                    assert.deepStrictEqual(parsedRes.Statement[0],
+                        expectedPolicy);
                     done();
                 });
             });

@@ -66,7 +66,8 @@ describe('aws-sdk test put bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return MethodNotAllowed if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner',
+        done => {
             const params = getPolicyParams();
             otherAccountS3.putBucketPolicy(params,
                 err => assertError(err, 'MethodNotAllowed', done));

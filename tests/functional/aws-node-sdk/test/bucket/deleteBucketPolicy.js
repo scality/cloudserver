@@ -52,7 +52,8 @@ describe('aws-sdk test delete bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return MethodNotAllowed if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner',
+        done => {
             otherAccountS3.deleteBucketPolicy({ Bucket: bucket },
             err => assertError(err, 'MethodNotAllowed', done));
         });
@@ -63,7 +64,10 @@ describe('aws-sdk test delete bucket policy', () => {
         });
 
         it('should delete policy from bucket', done => {
-            const params = { Bucket: bucket, Policy: JSON.stringify(bucketPolicy) };
+            const params = {
+                Bucket: bucket,
+                Policy: JSON.stringify(bucketPolicy),
+            };
             s3.putBucketPolicy(params, err => {
                 assert.equal(err, null);
                 s3.deleteBucketPolicy({ Bucket: bucket }, err => {
