@@ -1,9 +1,8 @@
 node_modules
 localData/*
 localMetadata/*
-.git
 # Keep the .git/HEAD file in order to properly report version
-!.git/HEAD
+.git/objects
 .github
 .tox
 coverage
