@@ -9,19 +9,19 @@ const bucket = 'getbucketpolicy-testbucket';
 const bucketPolicy = {
     Version: '2012-10-17',
     Statement: [{
-        Sid: 'test-id',
+        Sid: 'testid',
         Effect: 'Allow',
-        Principle: '*',
+        Principal: '*',
         Action: 's3:putBucketPolicy',
-        Resource: 'arn:aws:s3::getbucketpolicy-testbucket',
+        Resource: `arn:aws:s3:::${bucket}`,
     }],
 };
 const expectedPolicy = {
-    Sid: 'test-id',
+    Sid: 'testid',
     Effect: 'Allow',
-    Principle: '*',
+    Principal: '*',
     Action: 's3:putBucketPolicy',
-    Resource: 'arn:aws:s3::getbucketpolicy-testbucket',
+    Resource: `arn:aws:s3:::${bucket}`,
 };
 
 // Check for the expected error response code and status code.
@@ -38,10 +38,7 @@ function assertError(err, expectedErr, cb) {
     cb();
 }
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('aws-sdk test get bucket policy', () => {
+describe('aws-sdk test get bucket policy', () => {
     const config = getConfig('default', { signatureVersion: 'v4' });
     const s3 = new S3(config);
     const otherAccountS3 = new BucketUtility('lisa', {}).s3;
@@ -56,9 +53,10 @@ describeSkipUntilImpl('aws-sdk test get bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return AccessDenied if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner',
+        done => {
             otherAccountS3.getBucketPolicy({ Bucket: bucket },
-            err => assertError(err, 'AccessDenied', done));
+            err => assertError(err, 'MethodNotAllowed', done));
         });
 
         it('should return NoSuchBucketPolicy error if no policy put to bucket',
@@ -71,14 +69,16 @@ describeSkipUntilImpl('aws-sdk test get bucket policy', () => {
         it('should get bucket policy', done => {
             s3.putBucketPolicy({
                 Bucket: bucket,
-                Policy: bucketPolicy,
+                Policy: JSON.stringify(bucketPolicy),
             }, err => {
                 assert.equal(err, null, `Err putting bucket policy: ${err}`);
                 s3.getBucketPolicy({ Bucket: bucket },
                 (err, res) => {
+                    const parsedRes = JSON.parse(res.Policy);
                     assert.equal(err, null, 'Error getting bucket policy: ' +
                         `${err}`);
-                    assert.deepStrictEqual(res.Statement[0], expectedPolicy);
+                    assert.deepStrictEqual(parsedRes.Statement[0],
+                        expectedPolicy);
                     done();
                 });
             });

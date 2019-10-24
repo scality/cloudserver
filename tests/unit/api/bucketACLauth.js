@@ -2,13 +2,15 @@ const assert = require('assert');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized }
-    = require('../../../lib/api/apiUtils/authorization/aclChecks');
+    = require('../../../lib/api/apiUtils/authorization/permissionChecks');
+const { DummyRequestLogger } = require('../helpers');
 
 const ownerCanonicalId = 'ownerCanonicalId';
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     'iAmTheOwnerDisplayName', creationDate);
 const accountToVet = 'accountToVetId';
+const log = new DummyRequestLogger();
 
 describe('bucket authorization for bucketGet, bucketHead, ' +
     'objectGet, and objectHead', () => {
@@ -92,7 +94,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
             }
             bucket.setCannedAcl(value.canned);
             const results = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, value.id));
+                isBucketAuthorized(bucket, type, value.id, null, log));
             assert.deepStrictEqual(results, value.response);
             done();
         });
@@ -199,7 +201,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
     });
 
     it('should allow access to bucket owner', () => {
-        const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+        const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
             ownerCanonicalId);
         assert.strictEqual(result, true);
     });
@@ -221,7 +223,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
-            const result = isBucketAuthorized(bucket, 'bucketOwnerAction',
+            const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
                 value.id);
             assert.strictEqual(result, false);
             done();

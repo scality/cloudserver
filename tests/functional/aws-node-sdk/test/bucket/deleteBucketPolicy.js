@@ -9,11 +9,11 @@ const bucket = 'deletebucketpolicy-test-bucket';
 const bucketPolicy = {
     Version: '2012-10-17',
     Statement: [{
-        Sid: 'test-id',
+        Sid: 'testid',
         Effect: 'Allow',
-        Principle: '*',
+        Principal: '*',
         Action: 's3:putBucketPolicy',
-        Resource: `arn:aws:s3::${bucket}`,
+        Resource: `arn:aws:s3:::${bucket}`,
     }],
 };
 
@@ -31,10 +31,7 @@ function assertError(err, expectedErr, cb) {
     cb();
 }
 
-const describeSkipUntilImpl =
-    process.env.BUCKET_POLICY ? describe : describe.skip;
-
-describeSkipUntilImpl('aws-sdk test delete bucket policy', () => {
+describe('aws-sdk test delete bucket policy', () => {
     let s3;
     let otherAccountS3;
 
@@ -55,9 +52,10 @@ describeSkipUntilImpl('aws-sdk test delete bucket policy', () => {
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-        it('should return AccessDenied if user is not bucket owner', done => {
+        it('should return MethodNotAllowed if user is not bucket owner',
+        done => {
             otherAccountS3.deleteBucketPolicy({ Bucket: bucket },
-            err => assertError(err, 'AccessDenied', done));
+            err => assertError(err, 'MethodNotAllowed', done));
         });
 
         it('should return no error if no policy on bucket', done => {
@@ -66,7 +64,10 @@ describeSkipUntilImpl('aws-sdk test delete bucket policy', () => {
         });
 
         it('should delete policy from bucket', done => {
-            const params = { Bucket: bucket, Policy: bucketPolicy };
+            const params = {
+                Bucket: bucket,
+                Policy: JSON.stringify(bucketPolicy),
+            };
             s3.putBucketPolicy(params, err => {
                 assert.equal(err, null);
                 s3.deleteBucketPolicy({ Bucket: bucket }, err => {
