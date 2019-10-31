@@ -49,10 +49,27 @@ describe('V4Transform class', () => {
         });
     });
 
-    it('should ignore data sent after final chunk', done => {
+    it('should raise an error if signature is wrong', done => {
         const v4Transform = new V4Transform(streamingV4Params, log, err => {
-            assert.strictEqual(err, null);
+            assert(err);
             done();
+        });
+        const filler1 = '8;chunk-signature=51d2511f7c6887907dff20474d8db6' +
+        '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
+        const filler2 = '0;chunk-signature=baadc0debaadc0debaadc0debaadc0de' +
+        'baadc0debaadc0debaadc0debaadc0de\r\n';
+        const chunks = [
+            Buffer.from(filler1),
+            Buffer.from(filler2),
+            null,
+        ];
+        const authMe = new AuthMe(chunks);
+        authMe.pipe(v4Transform);
+    });
+
+    it('should ignore data sent after final chunk', done => {
+        const v4Transform = new V4Transform(streamingV4Params, log, () => {
+            assert(false);
         });
         const filler1 = '8;chunk-signature=51d2511f7c6887907dff20474d8db6' +
         '7d557e5f515a6fa6a8466bb12f8833bcca\r\ncontents\r\n';
