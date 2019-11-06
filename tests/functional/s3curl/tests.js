@@ -478,6 +478,23 @@ describe('s3curl putObject', () => {
                 });
         });
 
+    it('should not be able to put an object if using streaming ' +
+    'chunked-upload with a valid V2 signature',
+        done => {
+            provideRawOutput([
+                '--debug',
+                `--put=${upload}`,
+                '--',
+                '-H',
+                'x-amz-content-sha256: STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
+                `${endpoint}/${bucket}/${prefix}${delimiter}${upload}1`,
+                '-v'],
+                (httpCode, rawOutput) => {
+                    assert.strictEqual(httpCode, '400 BAD REQUEST');
+                    assertError(rawOutput.stdout, 'InvalidArgument', done);
+                });
+        });
+
     it('should not be able to put an object in a bucket with an invalid name',
         done => {
             provideRawOutput([
