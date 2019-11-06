@@ -93,12 +93,12 @@ new.host.com, for example, specify the endpoint with:
 .. note:: On Unix-like systems (Linux, OS X, etc.) edit /etc/hosts
    to associate 127.0.0.1 with new.host.com.
 
-REMOTE_MANAGEMENT_DISABLE=1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REMOTE_MANAGEMENT_DISABLE
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 CloudServer is a part of `Zenko <https://www.zenko.io/>`__. When you run CloudServer standalone it will still try to connect to Orbit by default (browser-based graphical user interface for the Zenko).
 
-Using this variable will default to accessKey1 and verySecretKey1 for credentials and disable the automatic Orbit management:
+Setting this variable to true(1) will default to accessKey1 and verySecretKey1 for credentials and disable the automatic Orbit management:
 
 .. code-block:: shell
 

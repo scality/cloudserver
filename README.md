@@ -25,7 +25,7 @@ application on the go.
 
 ## Docker
 
-[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/scality/s3server/)
+[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/zenko/cloudserver/)
 
 ## Contributing
 
