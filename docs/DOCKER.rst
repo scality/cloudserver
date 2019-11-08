@@ -96,7 +96,7 @@ new.host.com, for example, specify the endpoint with:
 REMOTE_MANAGEMENT_DISABLE
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CloudServer is a part of `Zenko <https://www.zenko.io/>`__. When you run CloudServer standalone it will still try to connect to Orbit by default (browser-based graphical user interface for the Zenko).
+CloudServer is a part of `Zenko <https://www.zenko.io/>`__. When you run CloudServer standalone it will still try to connect to Orbit by default (browser-based graphical user interface for Zenko).
 
 Setting this variable to true(1) will default to accessKey1 and verySecretKey1 for credentials and disable the automatic Orbit management:
 
