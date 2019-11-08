@@ -50,7 +50,7 @@ function checkRanges(range, bytes) {
         const contentRange = range === '-' ? undefined :
             `bytes ${begin}-${end}/${bytes}`;
 
-        assert.deepStrictEqual(res.ContentLength, total.toString());
+        assert.deepStrictEqual(res.ContentLength, total);
         assert.deepStrictEqual(res.ContentRange, contentRange);
         assert.deepStrictEqual(res.ContentType, 'application/octet-stream');
         assert.deepStrictEqual(res.Metadata, {});
