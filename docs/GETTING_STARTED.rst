@@ -4,6 +4,7 @@ Getting Started
 .. figure:: ../res/scality-cloudserver-logo.png
    :alt: Zenko CloudServer logo
 
+If you have any questions or issues running CloudServer feel free to ask questions on **[Zenko forum](https://forum.zenko.io/)!**
 
 Dependencies
 ------------

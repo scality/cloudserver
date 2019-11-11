@@ -19,13 +19,15 @@ continous integration test environment to emulate the AWS S3 service locally
 or as an abstraction layer to develop object storage enabled
 application on the go.
 
-## Learn more at [www.zenko.io/cloudserver](https://www.zenko.io/cloudserver/)
+Learn more at **[www.zenko.io/cloudserver](https://www.zenko.io/cloudserver/)**
 
-## [May I offer you some lovely documentation?](http://s3-server.readthedocs.io/en/latest/)
+**[CloudServer Documentation](http://s3-server.readthedocs.io/en/latest/)**
+
+For questions, concerns and suggestions about CloudServer visit **[Zenko forum](https://forum.zenko.io/)**
 
 ## Docker
 
-[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/zenko/cloudserver/)
+[Run Zenko CloudServer with Docker](https://hub.docker.com/r/zenko/cloudserver/)
 
 ## Contributing
 
