@@ -204,12 +204,47 @@ describe('bucketGet API', () => {
     });
 });
 
+const testsForV2 = [...tests,
+    {
+        name: 'return no owner info when --fetch-owner option is not used',
+        request: Object.assign({ query: {}, url: baseUrl }, baseGetRequest),
+        assertion: result => {
+            const owners
+                = result.ListBucketResult.Contents.filter(c => c.Owner);
+            assert.strictEqual(owners.length, 0);
+        },
+    },
+    {
+        name: 'return owner info when --fetch-owner option is used',
+        request: Object.assign({ query: { 'fetch-owner': 'true' },
+            url: baseUrl }, baseGetRequest),
+        assertion: result => {
+            const owners
+                = result.ListBucketResult.Contents.filter(c =>
+                    c.Owner[0].ID[0] === authInfo.canonicalID &&
+                    c.Owner[0].DisplayName[0] === authInfo.accountDisplayName);
+            assert.strictEqual(owners.length,
+                result.ListBucketResult.Contents.length);
+        },
+    },
+    {
+        name: 'return no owner info when --no-fetch-owner option is used',
+        request: Object.assign({ query: { 'fetch-owner': 'false' },
+            url: baseUrl }, baseGetRequest),
+        assertion: result => {
+            const owners
+                = result.ListBucketResult.Contents.filter(c => c.Owner);
+            assert.strictEqual(owners.length, 0);
+        },
+    },
+];
+
 describe('bucketGet API V2', () => {
     beforeEach(() => {
         cleanup();
     });
 
-    tests.forEach(test => {
+    testsForV2.forEach(test => {
         /* eslint-disable no-param-reassign */
         test.request.query['list-type'] = 2;
         test.request.url = test.request.url.indexOf('?') > -1 ?
@@ -217,7 +252,7 @@ describe('bucketGet API V2', () => {
             `${test.request.url}?list-type=2`;
         /* eslint-enable no-param-reassign */
 
-        it(`should return ${test.name}`, done => {
+        it(`should ${test.name}`, done => {
             const testGetRequest = test.request;
 
             async.waterfall([
@@ -233,6 +268,13 @@ describe('bucketGet API V2', () => {
                 (result, corsHeaders, next) => parseString(result, next),
             ],
             (err, result) => {
+                // v2 requests should return 'KeyCount' in response
+                const keyCount =
+                    Number.parseInt(result.ListBucketResult.KeyCount[0], 10);
+                const keysReturned = result.ListBucketResult.Contents ?
+                    result.ListBucketResult.Contents.length : 0;
+                assert.strictEqual(keyCount, keysReturned);
+                // assert the results from tests
                 test.assertion(result);
                 done();
             });

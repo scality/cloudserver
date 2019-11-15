@@ -147,6 +147,14 @@ if [[ "$CRR_METRICS_PORT" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .backbeat.port=$CRR_METRICS_PORT"
 fi
 
+if [[ "$WE_OPERATOR_HOST" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .workflowEngineOperator.host=\"$WE_OPERATOR_HOST\""
+fi
+
+if [[ "$WE_OPERATOR_PORT" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .workflowEngineOperator.port=$WE_OPERATOR_PORT"
+fi
+
 if [[ "$HEALTHCHECKS_ALLOWFROM" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .healthChecks.allowFrom=[\"$HEALTHCHECKS_ALLOWFROM\"]"
 fi

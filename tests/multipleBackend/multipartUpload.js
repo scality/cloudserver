@@ -65,6 +65,7 @@ const bucketPutRequest = {
 
 const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const awsETagBigObj = 'f1c9645dbc14efddc7d8a322685f26eb';
+const tagSet = 'key1=value1&key2=value2';
 const completeBody = '<CompleteMultipartUpload>' +
     '<Part>' +
     '<PartNumber>1</PartNumber>' +
@@ -379,6 +380,30 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             assert.strictEqual(err, null, 'Error initiating MPU');
             assertMpuInitResults(result, objectKey, uploadId => {
                 abortMPU(uploadId, getAwsParamsBucketNotMatch(objectKey), done);
+            });
+        });
+    });
+
+    it('should initiate a multipart upload with tags on AWS', done => {
+        const objectKey = `key-${Date.now()}`;
+        const initiateRequest = {
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                'host': `${bucketName}.s3.amazonaws.com`,
+                'x-amz-meta-scal-location-constraint': `${awsLocation}`,
+                'x-amz-tagging': tagSet,
+            },
+            url: `/${objectKey}?uploads`,
+            parsedHost: 'localhost',
+        };
+
+        initiateMultipartUpload(authInfo, initiateRequest, log,
+        (err, result) => {
+            assert.ifError(err);
+            assertMpuInitResults(result, objectKey, uploadId => {
+                abortMPU(uploadId, getAwsParams(objectKey), done);
             });
         });
     });

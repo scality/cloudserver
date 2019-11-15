@@ -288,7 +288,7 @@ Deploying Zenko CloudServer with SSL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First, deploy CloudServer with a file backend using `our DockerHub page
-<https://hub.docker.com/r/scality/cloudserver/>`__.
+<https://hub.docker.com/r/zenko/cloudserver>`__.
 
 .. note::
 

@@ -111,7 +111,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
             assert.strictEqual(err, null,
                 `Unexpected err deleting object: ${err}`);
-            assert.strictEqual(data.DeleteMarker, 'true');
+            assert.strictEqual(data.DeleteMarker, true);
             assert(data.VersionId);
             utils.putObjectAcl(aclParams, err => {
                 assert(err);
@@ -132,7 +132,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
             assert.strictEqual(err, null,
                 `Unexpected err deleting object: ${err}`);
-            assert.strictEqual(data.DeleteMarker, 'true');
+            assert.strictEqual(data.DeleteMarker, true);
             assert(data.VersionId);
             aclParams.VersionId = data.VersionId;
             utils.putObjectAcl(aclParams, err => {
@@ -153,7 +153,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
             assert.strictEqual(err, null,
                 `Unexpected err deleting object: ${err}`);
-            assert.strictEqual(data.DeleteMarker, 'true');
+            assert.strictEqual(data.DeleteMarker, true);
             assert(data.VersionId);
             utils.getObjectAcl(aclParams, err => {
                 assert(err);
@@ -175,7 +175,7 @@ function _testBehaviorVersioningEnabledOrSuspended(utils, versionIds) {
         s3.deleteObject({ Bucket: bucket, Key: key }, (err, data) => {
             assert.strictEqual(err, null,
                 `Unexpected err deleting object: ${err}`);
-            assert.strictEqual(data.DeleteMarker, 'true');
+            assert.strictEqual(data.DeleteMarker, true);
             assert(data.VersionId);
             aclParams.VersionId = data.VersionId;
             utils.getObjectAcl(aclParams, err => {

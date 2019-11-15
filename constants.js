@@ -91,17 +91,25 @@ const constants = {
         .update('', 'binary').digest('hex'),
 
     // Queries supported by AWS that we do not currently support.
+    // Non-bucket queries
     unsupportedQueries: [
         'accelerate',
         'analytics',
+        'encryption',
         'inventory',
+        'legal-hold',
         'logging',
         'metrics',
         'notification',
+        'object-lock',
+        'policyStatus',
+        'publicAccessBlock',
         'requestPayment',
         'restore',
+        'retention',
         'torrent',
     ],
+
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
         'x-amz-server-side-encryption',
@@ -172,6 +180,14 @@ const constants = {
         'objectDeleteTagging',
         'objectGetTagging',
         'objectPutTagging',
+    ],
+    // response header to be sent when there are invalid
+    // user metadata in the object's metadata
+    invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
+    // Bucket specific queries supported by AWS that we do not currently support
+    // these queries may or may not be supported at object level
+    unsupportedBucketQueries: [
+        'tagging',
     ],
 };
 

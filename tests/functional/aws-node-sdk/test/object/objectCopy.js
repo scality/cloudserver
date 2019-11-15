@@ -137,7 +137,7 @@ describe('Object Copy', () => {
             checkNoError(error);
             assert.strictEqual(response.ETag, etag);
             const copyLastModified = new Date(response.LastModified)
-                .toUTCString();
+                .toGMTString();
             s3.getObject({ Bucket: destBucketName,
                 Key: destObjName }, (err, res) => {
                 checkNoError(err);
@@ -145,7 +145,7 @@ describe('Object Copy', () => {
                     content);
                 assert.deepStrictEqual(res.Metadata,
                     copyVersionMetadata);
-                assert.strictEqual(res.LastModified,
+                assert.strictEqual(res.LastModified.toGMTString(),
                     copyLastModified);
                 done();
             });
@@ -330,7 +330,7 @@ describe('Object Copy', () => {
                             assert.strictEqual(res.ContentEncoding,
                               'base64,'
                             );
-                            assert.strictEqual(res.Expires,
+                            assert.strictEqual(res.Expires.toGMTString(),
                                 originalExpires.toGMTString());
                             done();
                         });
@@ -480,7 +480,8 @@ describe('Object Copy', () => {
                     // Should remove V4 streaming value 'aws-chunked'
                     // to be compatible with AWS behavior
                     assert.strictEqual(res.ContentEncoding, 'gzip,');
-                    assert.strictEqual(res.Expires, newExpires.toGMTString());
+                    assert.strictEqual(res.Expires.toGMTString(),
+                        newExpires.toGMTString());
                     done();
                 });
             });
@@ -528,7 +529,7 @@ describe('Object Copy', () => {
                         originalContentDisposition);
                       assert.strictEqual(res.ContentEncoding,
                         'base64,');
-                      assert.strictEqual(res.Expires,
+                      assert.strictEqual(res.Expires.toGMTString(),
                         originalExpires.toGMTString());
                       done();
                   });
