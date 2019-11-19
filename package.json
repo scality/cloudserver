@@ -96,6 +96,8 @@
     "start_s3server": "node index.js",
     "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
     "start_utapi": "node lib/utapi/utapi.js",
+    "start_secure_channel_proxy": "node bin/secure_channel_proxy.js",
+    "start_metrics_server": "node bin/metrics_server.js",
     "utapi_replay": "node lib/utapi/utapiReplay.js",
     "utapi_reindex": "node lib/utapi/utapiReindex.js",
     "management_agent": "node managementAgent.js",
