@@ -104,12 +104,12 @@ describe('PUT object', () => {
                 });
             });
 
-        it('should return Not Implemented error for obj. encryption using ' +
+        it('should return InvalidArgument error for obj. encryption using ' +
             'AWS-managed encryption keys', done => {
             const params = { Bucket: bucket, Key: 'key',
                 ServerSideEncryption: 'AES256' };
             s3.putObject(params, err => {
-                assert.strictEqual(err.code, 'NotImplemented');
+                assert.strictEqual(err.code, 'InvalidArgument');
                 done();
             });
         });
