@@ -42,7 +42,7 @@
     "utf-8-validate": "^4.0.2",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
-    "vaultclient": "scality/vaultclient#767c58d",
+    "vaultclient": "scality/vaultclient#e1c0044",
     "werelogs": "scality/werelogs#22bca9c",
     "ws": "^5.1.0",
     "xml2js": "~0.4.16"
