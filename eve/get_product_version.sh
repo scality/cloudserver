@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
-LOCAL_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
-BRANCHES=(development q stabilization)
+script_full_path=$(readlink -f "$0")
+file_dir=$(dirname "$script_full_path")/..
 
-for branch in ${BRANCHES[@]}; do
-    if echo "${LOCAL_BRANCH}\/" | grep -q ^${branch} ; then
-        cat .git/HEAD | sed 's/.*\///'
-        exit 0
-    fi
-done
+PACKAGE_VERSION=$(cat $file_dir/package.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",]//g' \
+  | tr -d '[[:space:]]')
 
-echo 0.0.0
+echo $PACKAGE_VERSION
