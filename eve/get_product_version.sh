@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 LOCAL_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 BRANCHES=(development q stabilization)
