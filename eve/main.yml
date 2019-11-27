@@ -394,42 +394,47 @@ stages:
       type: local
     steps:
       - Git: *clone
+      - ShellCommand: &wait_docker_daemon
+          name: Wait for Docker daemon to be ready
+          command: |
+            bash -c '
+            for i in {1..150}
+            do
+              docker info &> /dev/null && exit
+              sleep 2
+            done
+            echo "Could not reach Docker daemon from buildbot worker" >&2
+            exit 1'
+          haltOnFailure: true
       - ShellCommand: &docker_login
           name: Private Registry Login
           command: >
             docker login
-            -u '%(secret:private_registry_username)s'
-            -p '%(secret:private_registry_password)s'
-            '%(secret:private_registry_url)s'
-      - ShellCommand:
-          name: Dockerhub Login
-          command: >
-            docker login
-            -u '%(secret:dockerhub_ro_user)s'
-            -p '%(secret:dockerhub_ro_password)s'
-      - SetProperty: &docker_image_name
-          name: Set docker image name property
-          property: docker_image_name
-          value:
-            "%(secret:private_registry_url)s/zenko/cloudserver:\
-            %(prop:commit_short_revision)s"
+            -u '%(secret:harbor_login)s'
+            -p '%(secret:harbor_password)s'
+            registry.scality.com
+      - SetProperty: &registry_url
+          name: registry
+          property: registry_url
+          value: registry.scality.com/zenko-dev/cloudserver
+      - SetProperty: &docker_tag_revision
+          name: Set docker tag revision property
+          property: docker_tag_revision
+          value: "%(prop:registry_url)s:%(prop:commit_short_revision)s"
+      - SetProperty: &docker_tag_latest
+          name: Set docker tag latest property
+          property: docker_tag_latest
+          value: "%(prop:registry_url)s:latest-%(prop:product_version)s"
       - ShellCommand:
           name: Build docker image
           command: >-
             docker build
             --no-cache
-            -t %(prop:docker_image_name)s
+            -t %(prop:docker_tag_revision)s
+            -t %(prop:docker_tag_latest)s
             .
       - ShellCommand:
-          name: Tag images
+          name: Push images
           command: |
-            docker tag %(prop:docker_image_name)s zenko/cloudserver:$TAG
-            docker tag %(prop:docker_image_name)s zenko/cloudserver:latest
-          env:
-            TAG: "latest-%(prop:product_version)s"
-      - ShellCommand:
-          name: Push image
-          command: |
-            docker push %(prop:docker_image_name)s
-            docker push zenko/cloudserver:latest-%(prop:product_version)s
-            docker push zenko/cloudserver:latest
+            docker push %(prop:docker_tag_revision)s
+            docker push %(prop:docker_tag_latest)s
