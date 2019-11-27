@@ -391,7 +391,10 @@ stages:
 
   post-merge:
     worker:
-      type: local
+      type: kube_pod
+      path: eve/workers/release/pod.yaml
+      images:
+        release: eve/workers/release
     steps:
       - Git: *clone
       - ShellCommand: &docker_login
