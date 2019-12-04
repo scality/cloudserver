@@ -36,8 +36,8 @@
     "utapi": "scality/utapi#8cbda6d",
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
-    "vaultclient": "scality/vaultclient#401288f",
-    "werelogs": "scality/werelogs#4e0d97c",
+    "vaultclient": "scality/vaultclient#21d03b1",
+    "werelogs": "scality/werelogs#0a4c576",
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
