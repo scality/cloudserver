@@ -99,7 +99,7 @@ function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
     });
 }
 
-describe.skip('streaming V4 signature with bad chunk signature', () => {
+describe('streaming V4 signature with bad chunk signature', () => {
     it('Cloudserver should be robust against bad signature in streaming ' +
     'payload', function badSignatureInStreamingPayload(cb) {
         this.timeout(120000);
