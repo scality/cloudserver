@@ -4507,13 +4507,13 @@ utapi@scality/utapi#5ccb8d0:
   version "8.0.0"
   resolved "https://codeload.github.com/scality/utapi/tar.gz/5ccb8d03bef59e9048daa592947427cbfb8db802"
   dependencies:
-    arsenal scality/Arsenal#32c895b
+    arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#478710c
-    werelogs scality/werelogs#0a4c576
+    vaultclient scality/vaultclient#cc9ba34
+    werelogs scality/werelogs#4e0d97c
 
 utf-8-validate@^4.0.2:
   version "4.0.2"
