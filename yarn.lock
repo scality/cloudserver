@@ -209,6 +209,7 @@ arraybuffer.slice@0.0.6:
   version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/a7b6fc8fb8ed332fd2695e1c0fafad726116727e"
   dependencies:
+    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -216,7 +217,6 @@ arraybuffer.slice@0.0.6:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
-    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -602,6 +602,7 @@ bucketclient@scality/bucketclient#6d2d5a4:
   dependencies:
     arsenal scality/Arsenal#9f2e74e
     werelogs scality/werelogs#4e0d97c
+    yarn "^1.17.3"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -3742,13 +3743,13 @@ utapi@scality/utapi#b522b3d:
   version "7.4.5"
   resolved "https://codeload.github.com/scality/utapi/tar.gz/b522b3d782b1e29b640a25b79ba5c06e445eaf71"
   dependencies:
-    arsenal scality/Arsenal#32c895b
+    arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#478710c
-    werelogs scality/werelogs#0a4c576
+    vaultclient scality/vaultclient#cc9ba34
+    werelogs scality/werelogs#4e0d97c
 
 utf8@2.1.2, utf8@~2.1.1:
   version "2.1.2"
