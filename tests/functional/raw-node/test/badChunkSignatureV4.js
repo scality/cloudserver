@@ -95,7 +95,7 @@ function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
     });
 }
 
-describe.skip('streaming V4 signature with bad chunk signature', () => {
+describe('streaming V4 signature with bad chunk signature', () => {
     const bucketUtil = new BucketUtility('default', {});
 
     before(done => createBucket(bucketUtil, done));
