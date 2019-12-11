@@ -41,6 +41,27 @@ function createBucket(cb) {
     req.end();
 }
 
+function deleteBucket(cb) {
+    const req = new HttpRequestAuthV4(
+        `http://${config.ipAddress}:${PORT}/${BUCKET}`, {
+            accessKey: config.accessKey,
+            secretKey: config.secretKey,
+            method: 'DELETE',
+            headers: {
+                connection: 'keep-alive',
+            },
+        }, res => {
+            assert.strictEqual(res.statusCode, 204);
+            res.on('data', () => {});
+            res.on('end', cb);
+        });
+
+    req.on('error', err => {
+        assert.ifError(err);
+    });
+    req.end();
+}
+
 class HttpChunkedUploadWithBadSignature extends HttpRequestAuthV4 {
     constructor(url, params, callback) {
         super(url, params, callback);
@@ -100,28 +121,28 @@ function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
 }
 
 describe('streaming V4 signature with bad chunk signature', () => {
+    before(done => createBucket(done));
+    after(done => deleteBucket(done));
     it('Cloudserver should be robust against bad signature in streaming ' +
     'payload', function badSignatureInStreamingPayload(cb) {
         this.timeout(120000);
-        createBucket(() => {
-            async.timesLimit(N_PUTS, 10, (n, done) => {
-                // multiple test cases depend on the value of
-                // alterSignatureChunkId:
-                // alterSignatureChunkId >= 0 &&
-                // alterSignatureChunkId < N_DATA_CHUNKS
-                //    <=> alter the signature of the target data chunk
-                // alterSignatureChunkId == N_DATA_CHUNKS
-                //    <=> alter the signature of the last empty chunk that
-                //        carries the last payload signature
-                // alterSignatureChunkId > N_DATA_CHUNKS
-                //    <=> no signature is altered (regular test case)
-                // By making n go from 0 to nDatachunks+1, we cover all
-                // above cases.
+        async.timesLimit(N_PUTS, 10, (n, done) => {
+            // multiple test cases depend on the value of
+            // alterSignatureChunkId:
+            // alterSignatureChunkId >= 0 &&
+            // alterSignatureChunkId < N_DATA_CHUNKS
+            //    <=> alter the signature of the target data chunk
+            // alterSignatureChunkId == N_DATA_CHUNKS
+            //    <=> alter the signature of the last empty chunk that
+            //        carries the last payload signature
+            // alterSignatureChunkId > N_DATA_CHUNKS
+            //    <=> no signature is altered (regular test case)
+            // By making n go from 0 to nDatachunks+1, we cover all
+            // above cases.
 
-                const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ?
-                      (n % (N_DATA_CHUNKS + 2)) : null;
-                testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
-            }, err => cb(err));
-        });
+            const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ?
+                  (n % (N_DATA_CHUNKS + 2)) : null;
+            testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
+        }, err => cb(err));
     });
 });
