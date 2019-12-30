@@ -232,9 +232,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#a75db31":
+"arsenal@github:scality/Arsenal#c1bb2ac":
   version "8.1.4"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/a75db3122faba57f8ce93124ec29719824e9f6d6"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/c1bb2ac0585294b022718eb988361011b5b8ad6c"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -259,7 +259,7 @@ arraybuffer.slice@~0.0.7:
     simple-glob "^0.2.0"
     socket.io "~2.2.0"
     socket.io-client "~2.2.0"
-    sproxydclient "github:scality/sproxydclient#13e87ea"
+    sproxydclient "github:scality/sproxydclient#30e7115"
     utf8 "3.0.0"
     uuid "^3.0.1"
     werelogs scality/werelogs#0ff7ec82
@@ -344,7 +344,7 @@ arsenal@scality/Arsenal#c57cde8:
     simple-glob "^0.2.0"
     socket.io "~2.2.0"
     socket.io-client "~2.2.0"
-    sproxydclient "github:scality/sproxydclient#13e87ea"
+    sproxydclient "github:scality/sproxydclient#a6ec980"
     utf8 "3.0.0"
     uuid "^3.0.1"
     werelogs scality/werelogs#0ff7ec82
@@ -4057,9 +4057,9 @@ sprintf-js@~1.0.2:
     async "^3.1.0"
     werelogs scality/werelogs#351a2a3
 
-"sproxydclient@github:scality/sproxydclient#4f619d6":
-  version "8.0.1"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/4f619d65bad67b8fbe87b14910fb94c3d5541127"
+"sproxydclient@github:scality/sproxydclient#30e7115":
+  version "8.0.2"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/30e7115668bc7e10b4ec3cfdbaa7a124cdc21cc5"
   dependencies:
     async "^3.1.0"
     werelogs scality/werelogs#351a2a3
