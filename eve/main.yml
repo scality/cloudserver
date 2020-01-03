@@ -153,6 +153,11 @@ stages:
       - ShellCommand: *add-hostname
       - ShellCommand: *credentials
       - ShellCommand:
+          name: Unit Coverage mandatory file
+          command: |
+            set -ex
+            test -f .git/HEAD
+      - ShellCommand:
           name: Linting
           command: |
             set -ex
