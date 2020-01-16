@@ -80,6 +80,25 @@ describe('PUT Bucket ACL', () => {
             });
         });
 
+        it('should set multiple ACL permissions with same grantee specified' +
+        'using email', done => {
+            s3.putBucketAcl({
+                Bucket: bucketName,
+                GrantRead: 'emailAddress=sampleaccount1@sampling.com',
+                GrantWrite: 'emailAddress=sampleaccount1@sampling.com',
+            }, err => {
+                assert(!err);
+                s3.getBucketAcl({
+                    Bucket: bucketName,
+                }, (err, res) => {
+                    assert(!err);
+                    // expect both READ and WRITE grants to exist
+                    assert.strictEqual(res.Grants.length, 2);
+                    return done();
+                });
+            });
+        });
+
         it('should return InvalidArgument if invalid grantee ' +
             'user ID provided in ACL header request', done => {
             s3.putBucketAcl({
