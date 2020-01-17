@@ -203,6 +203,50 @@ describe('putBucketACL API', () => {
         });
     });
 
+    it('should set all ACLs sharing the same email in request headers',
+        done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-grant-full-control':
+                        'emailaddress="sampleaccount1@sampling.com"' +
+                        ',emailaddress="sampleaccount2@sampling.com"',
+                    'x-amz-grant-read':
+                        'emailaddress="sampleaccount1@sampling.com"',
+                    'x-amz-grant-write':
+                        'emailaddress="sampleaccount1@sampling.com"',
+                    'x-amz-grant-read-acp':
+                        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                        'f8f8d5218e7cd47ef2be',
+                    'x-amz-grant-write-acp':
+                        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eac' +
+                        'f8f8d5218e7cd47ef2bf',
+                },
+                url: '/?acl',
+                query: { acl: '' },
+            };
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err, undefined);
+                metadata.getBucket(bucketName, log, (err, md) => {
+                    assert(md.getAcl().WRITE.indexOf(canonicalIDforSample1)
+                        > -1);
+                    assert(md.getAcl().READ.indexOf(canonicalIDforSample1)
+                        > -1);
+                    assert(md.getAcl().FULL_CONTROL
+                        .indexOf(canonicalIDforSample1) > -1);
+                    assert(md.getAcl().FULL_CONTROL
+                        .indexOf(canonicalIDforSample2) > -1);
+                    assert(md.getAcl().READ_ACP
+                        .indexOf(canonicalIDforSample1) > -1);
+                    assert(md.getAcl().WRITE_ACP
+                        .indexOf(canonicalIDforSample2) > -1);
+                    done();
+                });
+            });
+        });
+
     it('should return an error if invalid grantee user ID ' +
     'provided in ACL header request', done => {
         // Canonical ID should be a 64-digit hex string
