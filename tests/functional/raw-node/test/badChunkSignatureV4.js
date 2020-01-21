@@ -9,7 +9,7 @@ const HttpRequestAuthV4 = require('../utils/HttpRequestAuthV4');
 const config = require('../../config.json');
 
 const DUMMY_SIGNATURE =
-      'baadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0de';
+    'baadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0debaadc0de';
 
 http.globalAgent.keepAlive = true;
 
@@ -61,24 +61,24 @@ class HttpChunkedUploadWithBadSignature extends HttpRequestAuthV4 {
 function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
     const req = new HttpChunkedUploadWithBadSignature(
         `http://${config.ipAddress}:${PORT}/${BUCKET}/obj-${n}`, {
-            accessKey: config.accessKey,
-            secretKey: config.secretKey,
-            method: 'PUT',
-            headers: {
-                'content-length': N_DATA_CHUNKS * DATA_CHUNK_SIZE,
-                'connection': 'keep-alive',
-            },
-            alterSignatureChunkId,
-        }, res => {
-            if (alterSignatureChunkId >= 0 &&
-                alterSignatureChunkId <= N_DATA_CHUNKS) {
-                assert.strictEqual(res.statusCode, 403);
-            } else {
-                assert.strictEqual(res.statusCode, 200);
-            }
-            res.on('data', () => {});
-            res.on('end', cb);
-        });
+        accessKey: config.accessKey,
+        secretKey: config.secretKey,
+        method: 'PUT',
+        headers: {
+            'content-length': N_DATA_CHUNKS * DATA_CHUNK_SIZE,
+            'connection': 'keep-alive',
+        },
+        alterSignatureChunkId,
+    }, res => {
+        if (alterSignatureChunkId >= 0 &&
+            alterSignatureChunkId <= N_DATA_CHUNKS) {
+            assert.strictEqual(res.statusCode, 403);
+        } else {
+            assert.strictEqual(res.statusCode, 200);
+        }
+        res.on('data', () => { });
+        res.on('end', cb);
+    });
 
     req.on('error', err => {
         assert.ifError(err);
@@ -101,25 +101,25 @@ describe('streaming V4 signature with bad chunk signature', () => {
     before(done => createBucket(bucketUtil, done));
     after(done => cleanupBucket(bucketUtil, done));
     it('Cloudserver should be robust against bad signature in streaming ' +
-    'payload', function badSignatureInStreamingPayload(cb) {
-        this.timeout(120000);
-        async.timesLimit(N_PUTS, 10, (n, done) => {
-            // multiple test cases depend on the value of
-            // alterSignatureChunkId:
-            // alterSignatureChunkId >= 0 &&
-            // alterSignatureChunkId < N_DATA_CHUNKS
-            //    <=> alter the signature of the target data chunk
-            // alterSignatureChunkId == N_DATA_CHUNKS
-            //    <=> alter the signature of the last empty chunk that
-            //        carries the last payload signature
-            // alterSignatureChunkId > N_DATA_CHUNKS
-            //    <=> no signature is altered (regular test case)
-            // By making n go from 0 to nDatachunks+1, we cover all
-            // above cases.
+        'payload', function badSignatureInStreamingPayload(cb) {
+            this.timeout(120000);
+            async.timesLimit(N_PUTS, 10, (n, done) => {
+                // multiple test cases depend on the value of
+                // alterSignatureChunkId:
+                // alterSignatureChunkId >= 0 &&
+                // alterSignatureChunkId < N_DATA_CHUNKS
+                //    <=> alter the signature of the target data chunk
+                // alterSignatureChunkId == N_DATA_CHUNKS
+                //    <=> alter the signature of the last empty chunk that
+                //        carries the last payload signature
+                // alterSignatureChunkId > N_DATA_CHUNKS
+                //    <=> no signature is altered (regular test case)
+                // By making n go from 0 to nDatachunks+1, we cover all
+                // above cases.
 
-            const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ?
-                  (n % (N_DATA_CHUNKS + 2)) : null;
-            testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
-        }, err => cb(err));
-    });
+                const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ?
+                    (n % (N_DATA_CHUNKS + 2)) : null;
+                testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
+            }, err => cb(err));
+        });
 });
