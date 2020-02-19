@@ -63,7 +63,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey, isUser) {
+function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -78,9 +78,11 @@ function makeAuthInfo(accessKey, isUser) {
         shortid: 'shortid',
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
+        arn: 'arn:aws:iam::shortid:root',
     };
-    if (isUser) {
-        params.IAMdisplayName = `${accessKey}UserDisplayName`;
+    if (userName) {
+        params.IAMdisplayName = `${accessKey}-${userName}-UserDisplayName`;
+        params.arn = `arn:aws:iam::shortid:user/${userName}`;
     }
     return new AuthInfo(params);
 }

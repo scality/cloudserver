@@ -8,20 +8,20 @@ const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const accessKey = 'accessKey1';
 const altAccessKey = 'accessKey2';
 const authInfo = makeAuthInfo(accessKey);
-const userAuthInfo = makeAuthInfo(accessKey, true);
-const altAuthInfo = makeAuthInfo(altAccessKey);
-const altUserAuthInfo = makeAuthInfo(altAccessKey, true);
+const userAuthInfo = makeAuthInfo(accessKey, 'user');
+const altUserAuthInfo = makeAuthInfo(accessKey, 'other');
+const altAcctAuthInfo = makeAuthInfo(altAccessKey);
+const altAcctUserAuthInfo = makeAuthInfo(altAccessKey, 'altUser');
 const bucketOwnerCanonicalId = authInfo.getCanonicalID();
 const objectOwnerCanonicalId = userAuthInfo.getCanonicalID();
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('policyBucketAuthTester', bucketOwnerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const object = { 'owner-id': objectOwnerCanonicalId };
-const canonicalIdToVet = altAuthInfo.getCanonicalID();
+const canonicalIdToVet = altAcctAuthInfo.getCanonicalID();
 const userArn = userAuthInfo.getArn();
-console.log(`\n----- user arn: ${userArn}\n\n`);
-const otherUserArn = 'arn:aws:iam::123456789012:user/other';
-const otherAccountUserArn = altUserAuthInfo.getArn();
+const otherUserArn = altUserAuthInfo.getArn();
+const otherAcctUserArn = altAcctUserAuthInfo.getArn();
 const accountArn = authInfo.getArn();
 const accountId = authInfo.getShortid();
 const bucAction = 'bucketPut';
@@ -108,8 +108,8 @@ const authTests = [
     {
         name: 'should deny access if account arn principal doesn\'t match ' +
             'user arn of non-',
-        bucketId: otherAccountUserArn,
-        objectId: otherAccountUserArn,
+        bucketId: otherAcctUserArn,
+        objectId: otherAcctUserArn,
         keyToChange: 'Principal',
         bucketValue: { AWS: accountArn },
         objectValue: { AWS: accountArn },
