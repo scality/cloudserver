@@ -63,7 +63,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey) {
+function makeAuthInfo(accessKey, isUser) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -73,12 +73,16 @@ function makeAuthInfo(accessKey) {
     };
     canIdMap[constants.publicId] = constants.publicId;
 
-    return new AuthInfo({
+    const params = {
         canonicalID: canIdMap[accessKey] || canIdMap.default,
         shortid: 'shortid',
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
-    });
+    };
+    if (isUser) {
+        params.IAMdisplayName = `${accessKey}UserDisplayName`;
+    }
+    return new AuthInfo(params);
 }
 
 class WebsiteConfig {

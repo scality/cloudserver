@@ -3,20 +3,27 @@ const { BucketInfo, BucketPolicy } = require('arsenal').models;
 const constants = require('../../../constants');
 const { isBucketAuthorized, isObjAuthorized, validatePolicyResource }
     = require('../../../lib/api/apiUtils/authorization/permissionChecks');
-const { DummyRequestLogger } = require('../helpers');
+const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
-const bucketOwnerCanonicalId = 'bucketOwnerCanonicalId';
+const accessKey = 'accessKey1';
+const altAccessKey = 'accessKey2';
+const authInfo = makeAuthInfo(accessKey);
+const userAuthInfo = makeAuthInfo(accessKey, true);
+const altAuthInfo = makeAuthInfo(altAccessKey);
+const altUserAuthInfo = makeAuthInfo(altAccessKey, true);
+const bucketOwnerCanonicalId = authInfo.getCanonicalID();
+const objectOwnerCanonicalId = userAuthInfo.getCanonicalID();
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('policyBucketAuthTester', bucketOwnerCanonicalId,
-    'iAmTheOwnerDisplayName', creationDate);
-const objectOwnerCanonicalId = 'objectOwnerCanonicalId';
+    authInfo.getAccountDisplayName(), creationDate);
 const object = { 'owner-id': objectOwnerCanonicalId };
-const canonicalIdToVet = 'canonicalIdToVet';
-const userArn = 'arn:aws:iam::123456789012:user/user';
+const canonicalIdToVet = altAuthInfo.getCanonicalID();
+const userArn = userAuthInfo.getArn();
+console.log(`\n----- user arn: ${userArn}\n\n`);
 const otherUserArn = 'arn:aws:iam::123456789012:user/other';
-const otherAccountUserArn = 'arn:aws:iam:987654321098:user/other';
-const accountArn = 'arn:aws:iam::123456789012:root';
-const accountId = '123456789012';
+const otherAccountUserArn = altUserAuthInfo.getArn();
+const accountArn = authInfo.getArn();
+const accountId = authInfo.getShortid();
 const bucAction = 'bucketPut';
 const objAction = 'objectPut';
 const basePolicyObj = {
@@ -187,7 +194,7 @@ const resourceTests = [
     },
 ];
 
-describe('bucket policy authorization', () => {
+describe.only('bucket policy authorization', () => {
     describe('isBucketAuthorized with no policy set', () => {
         it('should allow access to bucket owner', done => {
             const allowed = isBucketAuthorized(bucket, 'bucketPut',
