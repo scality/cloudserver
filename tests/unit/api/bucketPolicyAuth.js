@@ -14,15 +14,11 @@ const altAcctAuthInfo = makeAuthInfo(altAccessKey);
 const altAcctUserAuthInfo = makeAuthInfo(altAccessKey, 'altUser');
 const bucketOwnerCanonicalId = authInfo.getCanonicalID();
 const objectOwnerCanonicalId = userAuthInfo.getCanonicalID();
+const canonicalIdToVet = altAcctAuthInfo.getCanonicalID();
 const creationDate = new Date().toJSON();
 const bucket = new BucketInfo('policyBucketAuthTester', bucketOwnerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const object = { 'owner-id': objectOwnerCanonicalId };
-const canonicalIdToVet = altAcctAuthInfo.getCanonicalID();
-const userArn = userAuthInfo.getArn();
-const otherUserArn = altUserAuthInfo.getArn();
-const otherAcctUserArn = altAcctUserAuthInfo.getArn();
-const accountArn = authInfo.getArn();
 const accountId = authInfo.getShortid();
 const bucAction = 'bucketPut';
 const objAction = 'objectPut';
@@ -42,7 +38,9 @@ const authTests = [
     {
         name: 'should allow access if canonical user principal matches non-',
         bucketId: canonicalIdToVet,
+        bucketAuthInfo: altAcctAuthInfo,
         objectId: canonicalIdToVet,
+        objectAuthInfo: altAcctAuthInfo,
         keyToChange: 'Principal',
         bucketValue: { CanonicalUser: [canonicalIdToVet] },
         objectValue: { CanonicalUser: [canonicalIdToVet] },
@@ -50,26 +48,32 @@ const authTests = [
     },
     {
         name: 'should allow access if user arn principal matches non-',
-        bucketId: userArn,
-        objectId: userArn,
+        bucketId: objectOwnerCanonicalId,
+        bucketAuthInfo: userAuthInfo,
+        objectId: objectOwnerCanonicalId,
+        objectAuthInfo: userAuthInfo,
         keyToChange: 'Principal',
-        bucketValue: { AWS: userArn },
-        objectValue: { AWS: userArn },
+        bucketValue: { AWS: userAuthInfo.getArn() },
+        objectValue: { AWS: userAuthInfo.getArn() },
         expected: true,
     },
     {
         name: 'should allow access if account arn principal matches non-',
-        bucketId: accountArn,
-        objectId: accountArn,
+        bucketId: bucketOwnerCanonicalId,
+        bucketAuthInfo: authInfo,
+        objectId: bucketOwnerCanonicalId,
+        objectAuthInfo: authInfo,
         keyToChange: 'Principal',
-        bucketValue: { AWS: accountArn },
-        objectValue: { AWS: accountArn },
+        bucketValue: { AWS: authInfo.getArn() },
+        objectValue: { AWS: authInfo.getArn() },
         expected: true,
     },
     {
         name: 'should allow access if account id principal matches non-',
         bucketId: accountId,
+        bucketAuthInfo: authInfo,
         objectId: accountId,
+        objectAuthInfo: authInfo,
         keyToChange: 'Principal',
         bucketValue: { AWS: accountId },
         objectValue: { AWS: accountId },
@@ -78,8 +82,10 @@ const authTests = [
     {
         name: 'should allow access if account id principal is contained in ' +
             'user arn of non-',
-        bucketId: userArn,
-        objectId: userArn,
+        bucketId: objectOwnerCanonicalId,
+        bucketAuthInfo: userAuthInfo.getArn(),
+        objectId: objectOwnerCanonicalId,
+        objectAuthInfo: userAuthInfo.getArn(),
         keyToChange: 'Principal',
         bucketValue: { AWS: accountId },
         objectValue: { AWS: accountId },
@@ -88,8 +94,10 @@ const authTests = [
     {
         name: 'should allow access if account id principal is contained in ' +
             'account arn of non-',
-        bucketId: accountArn,
-        objectId: accountArn,
+        bucketId: bucketOwnerCanonicalId,
+        bucketAuthInfo: authInfo,
+        objectId: bucketOwnerCanonicalId,
+        objectAuthInfo: authInfo,
         keyToChange: 'Principal',
         bucketValue: { AWS: accountId },
         objectValue: { AWS: accountId },
@@ -98,37 +106,45 @@ const authTests = [
     {
         name: 'should allow access if account arn principal is contained in ' +
             'user arn of non-',
-        bucketId: userArn,
-        objectId: userArn,
+        bucketId: objectOwnerCanonicalId,
+        bucketAuthInfo: userAuthInfo,
+        objectId: objectOwnerCanonicalId,
+        objectAuthInfo: userAuthInfo,
         keyToChange: 'Principal',
-        bucketValue: { AWS: accountArn },
-        objectValue: { AWS: accountArn },
+        bucketValue: { AWS: authInfo.getArn() },
+        objectValue: { AWS: authInfo.getArn() },
         expected: true,
     },
     {
         name: 'should deny access if account arn principal doesn\'t match ' +
             'user arn of non-',
-        bucketId: otherAcctUserArn,
-        objectId: otherAcctUserArn,
+        bucketId: altAcctUserAuthInfo.getCanonicalID(),
+        bucketAuthInfo: altAcctUserAuthInfo,
+        objectId: altAcctUserAuthInfo.getCanonicalID(),
+        objectAuthInfo: altAcctUserAuthInfo,
         keyToChange: 'Principal',
-        bucketValue: { AWS: accountArn },
-        objectValue: { AWS: accountArn },
+        bucketValue: { AWS: authInfo.getArn() },
+        objectValue: { AWS: authInfo.getArn() },
         expected: false,
     },
     {
         name: 'should deny access if user arn principal doesn\'t match ' +
             'user arn of non-',
-        bucketId: userArn,
-        objectId: userArn,
+        bucketId: objectOwnerCanonicalId,
+        bucketAuthInfo: userAuthInfo,
+        objectId: objectOwnerCanonicalId,
+        objectAuthInfo: userAuthInfo,
         keyToChange: 'Principal',
-        bucketValue: { AWS: otherUserArn },
-        objectValue: { AWS: otherUserArn },
+        bucketValue: { AWS: altUserAuthInfo.getArn() },
+        objectValue: { AWS: altUserAuthInfo.getArn() },
         expected: false,
     },
     {
         name: 'should deny access if principal doesn\'t match non-',
         bucketId: canonicalIdToVet,
+        bucketAuthInfo: altAcctAuthInfo,
         objectId: canonicalIdToVet,
+        objectAuthInfo: altAcctAuthInfo,
         keyToChange: 'Principal',
         bucketValue: { CanonicalUser: [bucketOwnerCanonicalId] },
         objectValue: { CanonicalUser: [objectOwnerCanonicalId] },
@@ -138,7 +154,9 @@ const authTests = [
         name: 'should allow access if principal and action match policy for ' +
             'non-',
         bucketId: canonicalIdToVet,
+        bucketAuthInfo: altAcctAuthInfo,
         objectId: canonicalIdToVet,
+        objectAuthInfo: altAcctAuthInfo,
         keyToChange: 'Action',
         bucketValue: ['s3:CreateBucket'],
         objectValue: ['s3:PutObject'],
@@ -148,7 +166,9 @@ const authTests = [
         name: 'should deny access if principal matches but action does not ' +
             'match policy for non-',
         bucketId: canonicalIdToVet,
+        bucketAuthInfo: altAcctAuthInfo,
         objectId: canonicalIdToVet,
+        objectAuthInfo: altAcctAuthInfo,
         keyToChange: 'Action',
         bucketValue: ['s3:GetBucketLocation'],
         objectValue: ['s3:GetObject'],
@@ -157,7 +177,9 @@ const authTests = [
     {
         name: 'should allow access even if bucket policy denies for ',
         bucketId: bucketOwnerCanonicalId,
+        bucketAuthInfo: authInfo,
         objectId: objectOwnerCanonicalId,
+        objectAuthInfo: userAuthInfo,
         keyToChange: 'Effect',
         bucketValue: 'Deny',
         objectValue: 'Deny',
@@ -241,7 +263,7 @@ describe.only('bucket policy authorization', () => {
                 newPolicy.Statement[0][t.keyToChange] = t.bucketValue;
                 bucket.setBucketPolicy(newPolicy);
                 const allowed = isBucketAuthorized(bucket, bucAction,
-                    t.bucketId, t.bucketId, log);
+                    t.bucketId, t.bucketAuthInfo, log);
                 assert.equal(allowed, t.expected);
                 done();
             });
@@ -317,7 +339,7 @@ describe.only('bucket policy authorization', () => {
                 newPolicy.Statement[0][t.keyToChange] = t.objectValue;
                 bucket.setBucketPolicy(newPolicy);
                 const allowed = isObjAuthorized(bucket, object, objAction,
-                    t.objectId, t.objectId, log);
+                    t.objectId, t.objectAuthInfo, log);
                 assert.equal(allowed, t.expected);
                 done();
             });
