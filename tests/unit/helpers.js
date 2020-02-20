@@ -65,7 +65,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey) {
+function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -75,13 +75,26 @@ function makeAuthInfo(accessKey) {
         default: crypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
-
-    return new AuthInfo({
+    const acctIdMap = {
+        accessKey1: '123456789098',
+        accessKey2: '234567890987',
+        default: 'shortid',
+    };
+    const shortid = acctIdMap[accessKey] || acctIdMap.default;
+    const params = {
         canonicalID: canIdMap[accessKey] || canIdMap.default,
-        shortid: 'shortid',
+        shortid,
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
-    });
+        arn: `arn:aws:iam::${shortid}:root`,
+    };
+
+    if (userName) {
+        params.IAMdisplayName = `${accessKey}-${userName}-userDisplayName`;
+        params.arn = `arn:aws:iam::${shortid}:user/${userName}`;
+    }
+
+    return new AuthInfo(params);
 }
 
 class WebsiteConfig {
