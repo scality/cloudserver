@@ -154,9 +154,9 @@ const authTests = [
     },
     {
         name: 'should deny access if principal doesn\'t match non-',
-        bucketId: altAcctAuthInfo,
+        bucketId: altAcctCanonicalId,
         bucketAuthInfo: altAcctAuthInfo,
-        objectId: altAcctAuthInfo,
+        objectId: altAcctCanonicalId,
         objectAuthInfo: altAcctAuthInfo,
         keyToChange: 'Principal',
         bucketValue: { CanonicalUser: [bucketOwnerCanonicalId] },
