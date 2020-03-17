@@ -3,15 +3,21 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 const constants = require('../../../constants');
 const { isBucketAuthorized }
     = require('../../../lib/api/apiUtils/authorization/permissionChecks');
-const { DummyRequestLogger } = require('../helpers');
+const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
 
-const ownerCanonicalId = 'ownerCanonicalId';
 const lifecycleServiceAccountId = '0123456789abcdef/lifecycle';
 const unknownServiceAccountId = '0123456789abcdef/unknown';
 const creationDate = new Date().toJSON();
+const accessKey = 'accessKey1';
+const altAccessKey = 'accessKey2';
+const authInfo = makeAuthInfo(accessKey);
+const userAuthInfo = makeAuthInfo(accessKey, 'user');
+const ownerCanonicalId = authInfo.getCanonicalID();
+const altAcctAuthInfo = makeAuthInfo(altAccessKey);
+const accountToVet = altAcctAuthInfo.getCanonicalID();
+
 const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
-    'iAmTheOwnerDisplayName', creationDate);
-const accountToVet = 'accountToVetId';
+    authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
 describe('bucket authorization for bucketGet, bucketHead, ' +
@@ -39,7 +45,11 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
     const orders = [
         {
             it: 'should allow access to bucket owner', canned: '',
-            id: ownerCanonicalId, response: trueArray,
+            id: ownerCanonicalId, response: trueArray, auth: authInfo,
+        },
+        {
+            it: 'should allow access to user in bucket owner account', canned: '',
+            id: ownerCanonicalId, response: trueArray, auth: userAuthInfo,
         },
         {
             it: 'should allow access to lifecycle service account',
@@ -54,48 +64,50 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
         {
             it: 'should allow access to anyone if canned public-read ACL',
             canned: 'public-read', id: accountToVet, response: trueArray,
+            auth: altAcctAuthInfo,
         },
         {
             it: 'should allow access to anyone if canned public-read-write ACL',
             canned: 'public-read-write', id: accountToVet, response: trueArray,
+            auth: altAcctAuthInfo,
         },
         {
             it: 'should not allow request on the bucket (bucketGet, bucketHead)'
             + ' but should allow request on the object (objectGet, objectHead)'
             + ' to public user if authenticated-read  ACL',
             canned: 'authenticated-read', id: constants.publicId,
-            response: falseArrayBucketTrueArrayObject,
+            response: falseArrayBucketTrueArrayObject, auth: altAcctAuthInfo,
         },
         {
             it: 'should allow access to any authenticated user if authenticated'
             + '-read ACL', canned: 'authenticated-read', id: accountToVet,
-            response: trueArray,
+            response: trueArray, auth: altAcctAuthInfo,
         },
         {
             it: 'should not allow request on the bucket (bucketGet, bucketHead)'
             + ' but should allow request on the object (objectGet, objectHead)'
             + ' to public user if private canned ACL',
             canned: '', id: accountToVet,
-            response: falseArrayBucketTrueArrayObject,
+            response: falseArrayBucketTrueArrayObject, auth: altAcctAuthInfo,
         },
         {
             it: 'should not allow request on the bucket (bucketGet, bucketHead)'
             + ' but should allow request on the object (objectGet, objectHead)'
             + ' to just any user if private canned ACL',
             canned: '', id: accountToVet,
-            response: falseArrayBucketTrueArrayObject,
+            response: falseArrayBucketTrueArrayObject, auth: altAcctAuthInfo,
         },
         {
             it: 'should allow access to user if account was granted'
             + ' FULL_CONTROL',
             canned: '', id: accountToVet, response: trueArray,
-            aclParam: ['FULL_CONTROL', accountToVet],
+            aclParam: ['FULL_CONTROL', accountToVet], auth: altAcctAuthInfo,
         },
         {
             it: 'should not allow access to just any user if private'
             + ' canned ACL',
             canned: '', id: accountToVet, response: trueArray,
-            aclParam: ['READ', accountToVet],
+            aclParam: ['READ', accountToVet], auth: altAcctAuthInfo,
         },
     ];
 
@@ -106,7 +118,7 @@ describe('bucket authorization for bucketGet, bucketHead, ' +
             }
             bucket.setCannedAcl(value.canned);
             const results = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, value.id, null, log));
+                isBucketAuthorized(bucket, type, value.id, value.auth, log));
             assert.deepStrictEqual(results, value.response);
             done();
         });
@@ -128,22 +140,30 @@ describe('bucket authorization for bucketGetACL', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketGetACL',
-            ownerCanonicalId);
+            ownerCanonicalId, authInfo);
+        assert.strictEqual(result, true);
+    });
+
+    it('should allow access to user in bucket owner account', () => {
+        const result = isBucketAuthorized(bucket, 'bucketGetACL',
+            ownerCanonicalId, userAuthInfo);
         assert.strictEqual(result, true);
     });
 
     const orders = [
         {
             it: 'log group only if canned log-delivery-write acl',
-            id: constants.logId, canned: 'log-delivery-write',
+            id: constants.logId, canned: 'log-delivery-write', auth: null,
         },
         {
             it: 'account only if account was granted FULL_CONTROL right',
             id: accountToVet, aclParam: ['FULL_CONTROL', accountToVet],
+            auth: altAcctAuthInfo,
         },
         {
             it: 'account only if account was granted READ_ACP right',
             id: accountToVet, aclParam: ['READ_ACP', accountToVet],
+            auth: altAcctAuthInfo,
         },
     ];
     orders.forEach(value => {
@@ -157,7 +177,7 @@ describe('bucket authorization for bucketGetACL', () => {
                 bucket.setCannedAcl(value.canned);
             }
             const authorizedResult = isBucketAuthorized(bucket, 'bucketGetACL',
-                                                        value.id);
+                value.id, value.auth);
             assert.strictEqual(authorizedResult, true);
             done();
         });
@@ -179,7 +199,13 @@ describe('bucket authorization for bucketPutACL', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketPutACL',
-            ownerCanonicalId);
+            ownerCanonicalId, authInfo);
+        assert.strictEqual(result, true);
+    });
+
+    it('should allow access to user in bucket owner account', () => {
+        const result = isBucketAuthorized(bucket, 'bucketPutACL',
+            ownerCanonicalId, userAuthInfo);
         assert.strictEqual(result, true);
     });
 
@@ -188,11 +214,11 @@ describe('bucket authorization for bucketPutACL', () => {
         it('should allow access to account if ' +
            `account was granted ${value} right`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketPutACL',
-                accountToVet);
+                accountToVet, altAcctAuthInfo);
             assert.strictEqual(noAuthResult, false);
             bucket.setSpecificAcl(accountToVet, value);
             const authorizedResult = isBucketAuthorized(bucket, 'bucketPutACL',
-                accountToVet);
+                accountToVet, altAcctAuthInfo);
             assert.strictEqual(authorizedResult, true);
             done();
         });
@@ -214,19 +240,25 @@ describe('bucket authorization for bucketOwnerAction', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
-            ownerCanonicalId);
+            ownerCanonicalId, authInfo);
         assert.strictEqual(result, true);
+    });
+
+    it('should not allow access to user in bucket owner account', () => {
+        const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
+            ownerCanonicalId, userAuthInfo);
+        assert.strictEqual(result, false);
     });
 
     const orders = [
         {
             it: 'other account (even if other account has FULL_CONTROL rights'
             + ' in bucket)', id: accountToVet, canned: '',
-            aclParam: ['FULL_CONTROL', accountToVet],
+            aclParam: ['FULL_CONTROL', accountToVet], auth: altAcctAuthInfo,
         },
         {
             it: 'public user (even if bucket is public read write)',
-            id: constants.publicId, canned: 'public-read-write',
+            id: constants.publicId, canned: 'public-read-write', auth: altAcctAuthInfo,
         },
     ];
     orders.forEach(value => {
@@ -236,7 +268,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
             }
             bucket.setCannedAcl(value.canned);
             const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
-                value.id);
+                value.id, value.auth);
             assert.strictEqual(result, false);
             done();
         });
@@ -258,7 +290,13 @@ describe('bucket authorization for bucketDelete', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketDelete',
-            ownerCanonicalId);
+            ownerCanonicalId, authInfo);
+        assert.strictEqual(result, true);
+    });
+
+    it('should allow access to user in bucket owner account', () => {
+        const result = isBucketAuthorized(bucket, 'bucketDelete',
+            ownerCanonicalId, userAuthInfo);
         assert.strictEqual(result, true);
     });
 
@@ -266,11 +304,11 @@ describe('bucket authorization for bucketDelete', () => {
         {
             it: 'other account (even if other account has FULL_CONTROL rights '
             + 'in bucket)', id: accountToVet, canned: '',
-            aclParam: ['FULL_CONTROL', accountToVet],
+            aclParam: ['FULL_CONTROL', accountToVet], auth: altAcctAuthInfo,
         },
         {
             it: 'public user (even if bucket is public read write)',
-            id: constants.publicId, canned: 'public-read-write',
+            id: constants.publicId, canned: 'public-read-write', auth: null,
         },
     ];
     orders.forEach(value => {
@@ -279,7 +317,7 @@ describe('bucket authorization for bucketDelete', () => {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
-            const result = isBucketAuthorized(bucket, 'bucketDelete', value.id);
+            const result = isBucketAuthorized(bucket, 'bucketDelete', value.id, value.auth);
             assert.strictEqual(result, false);
             done();
         });
@@ -303,7 +341,13 @@ describe('bucket authorization for objectDelete and objectPut', () => {
 
     it('should allow access to bucket owner', () => {
         const results = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, ownerCanonicalId));
+            isBucketAuthorized(bucket, type, ownerCanonicalId, authInfo));
+        assert.deepStrictEqual(results, [true, true]);
+    });
+
+    it('should allow access to user in bucket owner account', () => {
+        const results = requestTypes.map(type =>
+            isBucketAuthorized(bucket, type, ownerCanonicalId, userAuthInfo));
         assert.deepStrictEqual(results, [true, true]);
     });
 
@@ -331,25 +375,25 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         {
             it: 'user if account was granted FULL_CONTROL', canned: '',
             id: accountToVet, response: [false, false],
-            aclParam: ['FULL_CONTROL', accountToVet],
+            aclParam: ['FULL_CONTROL', accountToVet], auth: altAcctAuthInfo,
         },
         {
             it: 'user if account was granted WRITE right', canned: '',
             id: accountToVet, response: [false, false],
-            aclParam: ['WRITE', accountToVet],
+            aclParam: ['WRITE', accountToVet], auth: altAcctAuthInfo,
         },
     ];
     orders.forEach(value => {
         it(`should allow access to ${value.it}`, done => {
             bucket.setCannedAcl(value.canned);
             const noAuthResults = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, value.id));
+                isBucketAuthorized(bucket, type, value.id, value.auth));
             assert.deepStrictEqual(noAuthResults, value.response);
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             const authResults = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, accountToVet));
+                isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo));
             assert.deepStrictEqual(authResults, [true, true]);
             done();
         });
@@ -361,7 +405,7 @@ describe('bucket authorization for objectPutACL and objectGetACL', () => {
         'are done at object level', done => {
         const requestTypes = ['objectPutACL', 'objectGetACL'];
         const results = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, accountToVet));
+            isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo));
         assert.deepStrictEqual(results, [true, true]);
         const publicUserResults = requestTypes.map(type =>
             isBucketAuthorized(bucket, type, constants.publicId));
