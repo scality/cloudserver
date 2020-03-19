@@ -232,10 +232,10 @@ describe('bucket authorization for bucketOwnerAction', () => {
         assert.strictEqual(result, true);
     });
 
-    it('should not allow access to user in bucket owner account', () => {
+    it('should allow access to user in bucket owner account', () => {
         const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
             ownerCanonicalId, userAuthInfo);
-        assert.strictEqual(result, false);
+        assert.strictEqual(result, true);
     });
 
     const orders = [
