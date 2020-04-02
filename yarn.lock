@@ -241,43 +241,33 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#3ed66c5":
-  version "8.2.1"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/3ed66c50f6ebb14e56ad7dbe37e97a96b427519f"
+"arsenal@github:scality/Arsenal#97bc429":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/97bc42926d85f228ee44168f4b3e69712ab5a16e"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
-    async "~2.6.1"
-    aws-sdk "2.80.0"
-    azure-storage "^2.1.0"
-    backo "^1.1.0"
-    bson "4.0.0"
-    debug "~4.1.0"
+    async "~2.1.5"
+    debug "~2.3.3"
     diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl"
-    hdclient scality/hdclient#5145e04e5ed33e85106765b1caa90cd245ef482b
-    https-proxy-agent "^2.2.0"
     ioredis "4.9.5"
-    ipaddr.js "1.8.1"
+    ipaddr.js "1.2.0"
     level "~5.0.1"
     level-sublevel "~6.6.5"
-    mongodb "^3.0.1"
     node-forge "^0.7.1"
-    prom-client "10.2.3"
-    simple-glob "^0.2.0"
-    socket.io "~2.2.0"
-    socket.io-client "~2.2.0"
-    sproxydclient "github:scality/sproxydclient#30e7115"
-    utf8 "3.0.0"
+    simple-glob "^0.1"
+    socket.io "~1.7.3"
+    socket.io-client "~1.7.3"
+    utf8 "2.1.2"
     uuid "^3.0.1"
     werelogs scality/werelogs#0ff7ec82
     xml2js "~0.4.16"
   optionalDependencies:
-    ioctl "2.0.1"
+    ioctl "2.0.0"
 
 arsenal@scality/Arsenal#32c895b:
-  version "7.4.3"
+  version "7.5.0"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
   dependencies:
     "@hapi/joi" "^15.1.0"
@@ -422,11 +412,6 @@ async@^2.0.1, async@^2.1.4, async@^2.3.0, async@~2.6.1:
   integrity sha512-zflvls11DCy+dQWzTW2dzuilv8Z5X/pjfmZOWba6TNIVDm+2UDaJmXSOXlasHKfNBs8oo3M0aT50fDEWfKZjXg==
   dependencies:
     lodash "^4.17.14"
-
-async@^3.1.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/async/-/async-3.2.0.tgz#b3a2685c5ebb641d3de02d161002c60fc9f85720"
-  integrity sha512-TR2mEZFVOj2pLStYxLht7TyfuRzaydfpxr3k9RpHIzMgw7A64dzsdqCxH1WJyQdoe8T10nDXd9wnEigmiuHIZw==
 
 async@~1.4.2:
   version "1.4.2"
@@ -4145,13 +4130,6 @@ sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
-
-"sproxydclient@github:scality/sproxydclient#30e7115":
-  version "8.0.2"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/30e7115668bc7e10b4ec3cfdbaa7a124cdc21cc5"
-  dependencies:
-    async "^3.1.0"
-    werelogs scality/werelogs#351a2a3
 
 "sproxydclient@github:scality/sproxydclient#a6ec980":
   version "7.4.0"
