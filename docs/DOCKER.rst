@@ -1,11 +1,7 @@
 Docker
 ======
 
--  `Environment Variables <#environment-variables>`__
--  `Tunables and setup tips <#tunables-and-setup-tips>`__
--  `Examples for continuous integration with
-   Docker <#continuous-integration-with-docker-hosted CloudServer>`__
--  `Examples for going in production with Docker <#in-production-with-docker-hosted CloudServer>`__
+.. _environment-variables:
 
 Environment Variables
 ---------------------
@@ -15,25 +11,27 @@ S3DATA
 
 S3DATA=multiple
 ^^^^^^^^^^^^^^^
-Allows you to run Scality Zenko CloudServer with multiple data backends, defined
+
+This variable enables running CloudServer with multiple data backends, defined
 as regions.
-When using multiple data backends, a custom ``locationConfig.json`` file is
-mandatory. It will allow you to set custom regions. You will then need to
-provide associated rest_endpoints for each custom region in your
-``config.json`` file.
-`Learn more about multiple backends configuration <../GETTING_STARTED/#location-configuration>`__
 
-If you are using Scality RING endpoints, please refer to your customer
-documentation.
+For multiple data backends, a custom locationConfig.json file is required.
+This file enables you to set custom regions. You must provide associated 
+rest_endpoints for each custom region in config.json.
 
-Running it with an AWS S3 hosted backend
-""""""""""""""""""""""""""""""""""""""""
-To run CloudServer with an S3 AWS backend, you will have to add a new section
-to your ``locationConfig.json`` file with the ``aws_s3`` location type:
+`Learn more about multiple-backend configurations <GETTING_STARTED.html#location-configuration>`__
+
+If you are using Scality RING endpoints, refer to your customer documentation.
+
+Running CloudServer with an AWS S3-Hosted Backend
+"""""""""""""""""""""""""""""""""""""""""""""""""
+
+To run CloudServer with an S3 AWS backend, add a new section to the 
+``locationConfig.json`` file with the ``aws_s3`` location type:
 
 .. code:: json
 
-(...)
+    (...)
     "awsbackend": {
         "type": "aws_s3",
         "details": {
@@ -43,126 +41,139 @@ to your ``locationConfig.json`` file with the ``aws_s3`` location type:
             "credentialsProfile": "aws_hosted_profile"
         }
     }
-(...)
+    (...)
 
-You will also have to edit your AWS credentials file to be able to use your
-command line tool of choice. This file should mention credentials for all the
-backends you're using. You can use several profiles when using multiple
-profiles.
+Edit your AWS credentials file to enable your preferred command-line tool.
+This file must mention credentials for all backends in use. You can use 
+several profiles if multiple profiles are configured.
 
 .. code:: json
 
-[default]
-aws_access_key_id=accessKey1
-aws_secret_access_key=verySecretKey1
-[aws_hosted_profile]
-aws_access_key_id={{YOUR_ACCESS_KEY}}
-aws_secret_access_key={{YOUR_SECRET_KEY}}
+    [default]
+    aws_access_key_id=accessKey1
+    aws_secret_access_key=verySecretKey1
+    [aws_hosted_profile]
+    aws_access_key_id={{YOUR_ACCESS_KEY}}
+    aws_secret_access_key={{YOUR_SECRET_KEY}}
 
-Just as you need to mount your locationConfig.json, you will need to mount your
-AWS credentials file at run time:
-``-v ~/.aws/credentials:/root/.aws/credentials`` on Linux, OS X, or Unix or
+As with locationConfig.json, the AWS credentials file must be mounted at 
+run time: ``-v ~/.aws/credentials:/root/.aws/credentials`` on Unix-like 
+systems (Linux, OS X, etc.), or 
 ``-v C:\Users\USERNAME\.aws\credential:/root/.aws/credentials`` on Windows
 
-NOTE: One account can't copy to another account with a source and
-destination on real AWS unless the account associated with the
-access Key/secret Key pairs used for the destination bucket has rights
-to get in the source bucket. ACL's would have to be updated
-on AWS directly to enable this.
+.. note:: One account cannot copy to another account with a source and
+   destination on real AWS unless the account associated with the 
+   accessKey/secretKey pairs used for the destination bucket has source 
+   bucket access privileges. To enable this, update ACLs directly on AWS.
 
 S3BACKEND
-~~~~~~
+~~~~~~~~~
 
 S3BACKEND=file
-^^^^^^^^^^^
-When storing file data, for it to be persistent you must mount docker volumes
-for both data and metadata. See `this section <#using-docker-volumes-in-production>`__
+^^^^^^^^^^^^^^
+
+For stored file data to persist, you must mount Docker volumes
+for both data and metadata. See :ref:`In Production with a Docker-Hosted CloudServer <in-production-w-a-Docker-hosted-cloudserver>`
 
 S3BACKEND=mem
-^^^^^^^^^^
-This is ideal for testing - no data will remain after container is shutdown.
+^^^^^^^^^^^^^
+
+This is ideal for testing: no data remains after the container is shut down.
 
 ENDPOINT
 ~~~~~~~~
 
-This variable specifies your endpoint. If you have a domain such as
-new.host.com, by specifying that here, you and your users can direct s3
-server requests to new.host.com.
+This variable specifies the endpoint. To direct CloudServer requests to 
+new.host.com, for example, specify the endpoint with:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e ENDPOINT=new.host.com scality/s3server
+    $ docker run -d --name cloudserver -p 8000:8000 -e ENDPOINT=new.host.com zenko/cloudserver
 
-Note: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
-permissions, make sure to associate 127.0.0.1 with ``new.host.com``
+.. note:: On Unix-like systems (Linux, OS X, etc.) edit /etc/hosts
+   to associate 127.0.0.1 with new.host.com.
+
+REMOTE_MANAGEMENT_DISABLE
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CloudServer is a part of `Zenko <https://www.zenko.io/>`__. When you run CloudServer standalone it will still try to connect to Orbit by default (browser-based graphical user interface for Zenko).
+
+Setting this variable to true(1) will default to accessKey1 and verySecretKey1 for credentials and disable the automatic Orbit management:
+
+.. code-block:: shell
+
+    $ docker run -d --name cloudserver -p 8000:8000 -e REMOTE_MANAGEMENT_DISABLE=1 zenko/cloudserver
 
 SCALITY\_ACCESS\_KEY\_ID and SCALITY\_SECRET\_ACCESS\_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These variables specify authentication credentials for an account named
-"CustomAccount".
+“CustomAccount”.
 
-You can set credentials for many accounts by editing
-``conf/authdata.json`` (see below for further info), but if you just
-want to specify one set of your own, you can use these environment
-variables.
+Set account credentials for multiple accounts by editing conf/authdata.json
+(see below for further details). To specify one set for personal use, set these 
+environment variables:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=newAccessKey
-    -e SCALITY_SECRET_ACCESS_KEY=newSecretKey scality/s3server
+   $ docker run -d --name cloudserver -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=newAccessKey \
+   -e SCALITY_SECRET_ACCESS_KEY=newSecretKey zenko/cloudserver
 
-Note: Anything in the ``authdata.json`` file will be ignored. Note: The
-old ``ACCESS_KEY`` and ``SECRET_KEY`` environment variables are now
-deprecated
+.. note:: This takes precedence over the contents of the authdata.json 
+	  file. The authdata.json file is ignored. 
+
+.. note:: The ACCESS_KEY and SECRET_KEY environment variables are 
+	  deprecated.
 
 LOG\_LEVEL
 ~~~~~~~~~~
 
-This variable allows you to change the log level: info, debug or trace.
-The default is info. Debug will give you more detailed logs and trace
-will give you the most detailed.
+This variable changes the log level. There are three levels: info, debug, 
+and trace. The default is info. Debug provides more detailed logs, and trace
+provides the most detailed logs.
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e LOG_LEVEL=trace scality/s3server
+    $ docker run -d --name cloudserver -p 8000:8000 -e LOG_LEVEL=trace zenko/cloudserver
 
 SSL
 ~~~
 
-This variable set to true allows you to run S3 with SSL:
+Set true, this variable runs CloudServer with SSL.
 
-**Note1**: You also need to specify the ENDPOINT environment variable.
-**Note2**: In your ``/etc/hosts`` file on Linux, OS X, or Unix with root
-permissions, make sure to associate 127.0.0.1 with ``<YOUR_ENDPOINT>``
+If SSL is set true: 
 
-**Warning**: These certs, being self-signed (and the CA being generated
-inside the container) will be untrusted by any clients, and could
-disappear on a container upgrade. That's ok as long as it's for quick
-testing. Also, best security practice for non-testing would be to use an
-extra container to do SSL/TLS termination such as haproxy/nginx/stunnel
-to limit what an exploit on either component could expose, as well as
-certificates in a mounted volume
+* The ENDPOINT environment variable must also be specified.
+
+* On Unix-like systems (Linux, OS X, etc.), 127.0.0.1 must be associated with
+  <YOUR_ENDPOINT> in /etc/hosts.
+
+   .. Warning:: Self-signed certs with a CA generated within the container are 
+      suitable for testing purposes only. Clients cannot trust them, and they may
+      disappear altogether on a container upgrade. The best security practice for 
+      production environments is to use an extra container, such as 
+      haproxy/nginx/stunnel, for SSL/TLS termination and to pull certificates
+      from a mounted volume, limiting what an exploit on either component
+      can expose. 
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000 -e SSL=TRUE -e ENDPOINT=<YOUR_ENDPOINT>
-    scality/s3server
+     $ docker run -d --name cloudserver -p 8000:8000 -e SSL=TRUE -e ENDPOINT=<YOUR_ENDPOINT> \
+     zenko/cloudserver
 
-More information about how to use S3 server with SSL
-`here <https://s3.scality.com/v1.0/page/scality-with-ssl>`__
+  For more information about using ClousdServer with SSL, see `Using SSL <GETTING_STARTED.html#Using SSL>`__
 
 LISTEN\_ADDR
 ~~~~~~~~~~~~
 
-This variable instructs the Zenko CloudServer, and its data and metadata
-components to listen on the specified address. This allows starting the data
-or metadata servers as standalone services, for example.
+This variable causes CloudServer and its data and metadata components to 
+listen on the specified address. This allows starting the data or metadata 
+servers as standalone services, for example.
 
 .. code:: shell
 
     docker run -d --name s3server-data -p 9991:9991 -e LISTEN_ADDR=0.0.0.0
-    scality/s3server npm run start_dataserver
+    scality/s3server yarn run start_dataserver
 
 
 DATA\_HOST and METADATA\_HOST
@@ -174,8 +185,8 @@ Zenko CloudServer.
 
 .. code:: shell
 
-    docker run -d --name s3server -e DATA_HOST=s3server-data
-    -e METADATA_HOST=s3server-metadata scality/s3server npm run start_s3server
+    $ docker run -d --name cloudserver -e DATA_HOST=cloudserver-data \
+    -e METADATA_HOST=cloudserver-metadata zenko/cloudserver yarn run start_s3server
 
 REDIS\_HOST
 ~~~~~~~~~~~
@@ -185,19 +196,21 @@ localhost.
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000
-    -e REDIS_HOST=my-redis-server.example.com scality/s3server
+    $ docker run -d --name cloudserver -p 8000:8000 \
+    -e REDIS_HOST=my-redis-server.example.com zenko/cloudserver
 
 REDIS\_PORT
 ~~~~~~~~~~~
 
-Use this variable to connect to the redis cache server on another port than
-the default 6379.
+Use this variable to connect to the Redis cache server on a port other 
+than the default 6379.
 
 .. code:: shell
 
-    docker run -d --name s3server -p 8000:8000
-    -e REDIS_PORT=6379 scality/s3server
+    $ docker run -d --name cloudserver -p 8000:8000 \
+    -e REDIS_PORT=6379 zenko/cloudserver
+
+.. _tunables-and-setup-tips:
 
 Tunables and Setup Tips
 -----------------------
@@ -205,60 +218,57 @@ Tunables and Setup Tips
 Using Docker Volumes
 ~~~~~~~~~~~~~~~~~~~~
 
-Zenko CloudServer runs with a file backend by default.
+CloudServer runs with a file backend by default, meaning that data is 
+stored inside the CloudServer’s Docker container.
 
-So, by default, the data is stored inside your Zenko CloudServer Docker
-container.
+For data and metadata to persist, data and metadata must be hosted in Docker 
+volumes outside the CloudServer’s Docker container. Otherwise, the data
+and metadata are destroyed when the container is erased.
 
-However, if you want your data and metadata to persist, you **MUST** use
-Docker volumes to host your data and metadata outside your Zenko CloudServer
-Docker container. Otherwise, the data and metadata will be destroyed
-when you erase the container.
+.. code-block:: shell
 
-.. code:: shell
+    $ docker run -­v $(pwd)/data:/usr/src/app/localData -­v $(pwd)/metadata:/usr/src/app/localMetadata \
+    -p 8000:8000 ­-d zenko/cloudserver
 
-    docker run -­v $(pwd)/data:/usr/src/app/localData -­v $(pwd)/metadata:/usr/src/app/localMetadata
-    -p 8000:8000 ­-d scality/s3server
+This command mounts the ./data host directory to the container
+at /usr/src/app/localData and the ./metadata host directory to
+the container at /usr/src/app/localMetaData. 
 
-This command mounts the host directory, ``./data``, into the container
-at ``/usr/src/app/localData`` and the host directory, ``./metadata``, into
-the container at ``/usr/src/app/localMetaData``. It can also be any host
-mount point, like ``/mnt/data`` and ``/mnt/metadata``.
+.. tip:: These host directories can be mounted to any accessible mount 
+   point, such as /mnt/data and /mnt/metadata, for example.
 
-Adding modifying or deleting accounts or users credentials
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding, Modifying, or Deleting Accounts or Credentials
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Create locally a customized ``authdata.json`` based on our ``/conf/authdata.json``.
+1. Create a customized authdata.json file locally based on /conf/authdata.json.
 
-2. Use `Docker
-   Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__
-   to override the default ``authdata.json`` through a docker file mapping.
+2. Use `Docker volumes <https://docs.docker.com/storage/volumes/>`__
+   to override the default ``authdata.json`` through a Docker file mapping.
+
 For example:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json -p 8000:8000 -d
-    scality/s3server
+    $ docker run -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json -p 8000:8000 -d \
+    zenko/cloudserver
 
-Specifying your own host name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Specifying a Host Name
+~~~~~~~~~~~~~~~~~~~~~~
 
-To specify a host name (e.g. s3.domain.name), you can provide your own
-`config.json <https://github.com/scality/S3/blob/master/config.json>`__
-using `Docker
-Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__.
+To specify a host name (for example, s3.domain.name), provide your own
+`config.json <https://github.com/scality/cloudserver/blob/master/config.json>`__
+file using `Docker volumes <https://docs.docker.com/storage/volumes/>`__.
 
-First add a new key-value pair in the restEndpoints section of your
-config.json. The key in the key-value pair should be the host name you
-would like to add and the value is the default location\_constraint for
-this endpoint.
+First, add a new key-value pair to the restEndpoints section of your
+config.json. Make the key the host name you want, and the value the default 
+location\_constraint for this endpoint.
 
 For example, ``s3.example.com`` is mapped to ``us-east-1`` which is one
 of the ``location_constraints`` listed in your locationConfig.json file
 `here <https://github.com/scality/S3/blob/master/locationConfig.json>`__.
 
-More information about location configuration
-`here <https://github.com/scality/S3/blob/master/README.md#location-configuration>`__
+For more information about location configuration, see:
+`GETTING STARTED <GETTING_STARTED.html#location-configuration>`__
 
 .. code:: json
 
@@ -266,33 +276,33 @@ More information about location configuration
         "localhost": "file",
         "127.0.0.1": "file",
         ...
-        "s3.example.com": "us-east-1"
+        "cloudserver.example.com": "us-east-1"
     },
 
-Then, run your Scality S3 Server using `Docker
-Volume <https://docs.docker.com/engine/tutorials/dockervolumes/>`__:
+Next, run CloudServer using a `Docker volume 
+<https://docs.docker.com/engine/tutorials/dockervolumes/>`__:
 
-.. code:: shell
+.. code-block:: shell
 
-    docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d scality/s3server
+    $ docker run -v $(pwd)/config.json:/usr/src/app/config.json -p 8000:8000 -d zenko/cloudserver
 
-Your local ``config.json`` file will override the default one through a
-docker file mapping.
+The local ``config.json`` file overrides the default one through a Docker 
+file mapping.
 
-Running as an unprivileged user
+Running as an Unprivileged User
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Zenko CloudServer runs as root by default.
+CloudServer runs as root by default.
 
-You can change that by modifing the dockerfile and specifying a user
-before the entrypoint.
+To change this, modify the dockerfile and specify a user before the 
+entry point.
 
-The user needs to exist within the container, and own the folder
-**/usr/src/app** for Scality Zenko CloudServer to run properly.
+The user must exist within the container, and must own the 
+/usr/src/app directory for CloudServer to run.
 
-For instance, you can modify these lines in the dockerfile:
+For example, the following dockerfile lines can be modified:
 
-.. code:: shell
+.. code-block:: shell
 
     ...
     && groupadd -r -g 1001 scality \
@@ -304,54 +314,58 @@ For instance, you can modify these lines in the dockerfile:
     USER scality
     ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-Continuous integration with Docker hosted CloudServer
------------------------------------------------------
+.. _continuous-integration-with-docker-hosted-cloudserver:
 
-When you start the Docker Scality Zenko CloudServer image, you can adjust the
-configuration of the Scality Zenko CloudServer instance by passing one or more
-environment variables on the docker run command line.
+Continuous Integration with a Docker-Hosted CloudServer
+-------------------------------------------------------
 
-Sample ways to run it for CI are:
+When you start the Docker CloudServer image, you can adjust the
+configuration of the CloudServer instance by passing one or more
+environment variables on the ``docker run`` command line.
 
-- With custom locations (one in-memory, one hosted on AWS), and custom
-  credentials mounted:
 
-.. code:: shell
+To run CloudServer for CI with custom locations (one in-memory, 
+one hosted on AWS), and custom credentials mounted:
 
-    docker run --name CloudServer -p 8000:8000
-    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
-    -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json
-    -v ~/.aws/credentials:/root/.aws/credentials
-    -e S3DATA=multiple -e S3BACKEND=mem scality/s3server
+.. code-block:: shell
 
-- With custom locations, (one in-memory, one hosted on AWS, one file),
-  and custom credentials set as environment variables
-  (see `this section <#scality-access-key-id-and-scality-secret-access-key>`__):
+   $ docker run --name CloudServer -p 8000:8000 \
+   -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
+   -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json \
+   -v ~/.aws/credentials:/root/.aws/credentials \
+   -e S3DATA=multiple -e S3BACKEND=mem zenko/cloudserver
 
-.. code:: shell
+To run CloudServer for CI with custom locations, (one in-memory, one
+hosted on AWS, and one file), and custom credentials `set as environment 
+variables <GETTING_STARTED.html#scality-access-key-id-and-scality-secret-access-key>`__):
 
-    docker run --name CloudServer -p 8000:8000
-    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
-    -v ~/.aws/credentials:/root/.aws/credentials
-    -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata
-    -e SCALITY_ACCESS_KEY_ID=accessKey1
-    -e SCALITY_SECRET_ACCESS_KEY=verySecretKey1
-    -e S3DATA=multiple -e S3BACKEND=mem scality/s3server
+.. code-block:: shell
 
-In production with Docker hosted CloudServer
---------------------------------------------
+   $ docker run --name CloudServer -p 8000:8000 \
+   -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
+   -v ~/.aws/credentials:/root/.aws/credentials \
+   -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata \
+   -e SCALITY_ACCESS_KEY_ID=accessKey1 \
+   -e SCALITY_SECRET_ACCESS_KEY=verySecretKey1 \
+   -e S3DATA=multiple -e S3BACKEND=mem zenko/cloudserver
 
-In production, we expect that data will be persistent, that you will use the
-multiple backends capabilities of Zenko CloudServer, and that you will have a
-custom endpoint for your local storage, and custom credentials for your local
-storage:
+.. _in-production-w-a-Docker-hosted-cloudserver:
 
-.. code:: shell
+In Production with a Docker-Hosted CloudServer
+----------------------------------------------
 
-    docker run -d --name CloudServer
-    -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata
-    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json
-    -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json
-    -v ~/.aws/credentials:/root/.aws/credentials -e S3DATA=multiple
-    -e ENDPOINT=custom.endpoint.com
-    -p 8000:8000 ­-d scality/s3server
+Because data must persist in production settings, CloudServer offers
+multiple-backend capabilities. This requires a custom endpoint 
+and custom credentials for local storage.
+
+Customize these with:
+
+.. code-block:: shell
+
+   $ docker run -d --name CloudServer \
+   -v $(pwd)/data:/usr/src/app/localData -v $(pwd)/metadata:/usr/src/app/localMetadata \
+   -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
+   -v $(pwd)/authdata.json:/usr/src/app/conf/authdata.json \
+   -v ~/.aws/credentials:/root/.aws/credentials -e S3DATA=multiple \
+   -e ENDPOINT=custom.endpoint.com \
+   -p 8000:8000 ­-d zenko/cloudserver \

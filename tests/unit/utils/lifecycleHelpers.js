@@ -47,8 +47,8 @@ function getLifecycleXml() {
         '<Filter><And>' +
         `<Prefix>${prefix}</Prefix>` +
         `<Tag><Key>${tags[0].key}</Key>` +
-        `<Value>${tags[0].value}</Value>` +
-        `<Key>${tags[1].key}</Key>` +
+        `<Value>${tags[0].value}</Value></Tag>` +
+        `<Tag><Key>${tags[1].key}</Key>` +
         `<Value>${tags[1].value}</Value></Tag>` +
         '</And></Filter>' +
         `<${action2}><NoncurrentDays>${days2}</NoncurrentDays></${action2}>` +

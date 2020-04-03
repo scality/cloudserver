@@ -4,7 +4,7 @@ const async = require('async');
 const { s3middleware } = require('arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, uniqName, getAzureClient,
+const { describeSkipIfNotMultipleOrCeph, uniqName, getAzureClient,
     getAzureContainerName, convertMD5, azureLocation } = require('../utils');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
 const maxSubPartSize = azureMpuUtils.maxSubPartSize;
@@ -30,7 +30,7 @@ function azureCheck(container, key, expected, cb) {
     });
 }
 
-describeSkipIfNotMultiple('Abort MPU on Azure data backend', function
+describeSkipIfNotMultipleOrCeph('Abort MPU on Azure data backend', function
 describeF() {
     this.timeout(50000);
     withV4(sigCfg => {

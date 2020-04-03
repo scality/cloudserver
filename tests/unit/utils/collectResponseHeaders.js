@@ -20,6 +20,11 @@ describe('Middleware: Collect Response Headers', () => {
         });
     });
 
+    it('should add the Accept-Ranges header', () => {
+        const headers = collectResponseHeaders({});
+        assert.strictEqual(headers['Accept-Ranges'], 'bytes');
+    });
+
     it('should return an undefined value when x-amz-website-redirect-location' +
        ' is empty', () => {
         const objectMD = { 'x-amz-website-redirect-location': '' };

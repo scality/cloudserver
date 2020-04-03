@@ -1,14 +1,16 @@
 const assert = require('assert');
 const async = require('async');
+const { storage } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
-const { ds } = require('../../../lib/data/in_memory/backend');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
+
+const { ds } = storage.data.inMemory.datastore;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';

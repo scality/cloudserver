@@ -4,11 +4,12 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultiple, awsS3, awsBucket, getAwsRetry,
     getAzureClient, getAzureContainerName, convertMD5, memLocation,
-    fileLocation, awsLocation, azureLocation } = require('../utils');
+    fileLocation, awsLocation, azureLocation, genUniqID,
+    isCEPH } = require('../utils');
 
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
-const bucket = 'testmultbackendtagging';
+const bucket = `taggingbucket${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -20,7 +21,12 @@ let bucketUtil;
 let s3;
 
 const putParams = { Bucket: bucket, Body: body };
-const testBackends = [memLocation, fileLocation, awsLocation, azureLocation];
+
+const testBackends = [memLocation, fileLocation, awsLocation];
+if (!isCEPH) {
+    testBackends.push(azureLocation);
+}
+
 const tagString = 'key1=value1&key2=value2';
 const putTags = {
     TagSet: [
@@ -189,10 +195,11 @@ function testSuite() {
 
         describe('putObject with tags and putObjectTagging', () => {
             testBackends.forEach(backend => {
-                const itSkipIfAzure = backend === 'azurebackend' ? it.skip : it;
+                const itSkipIfAzureOrCeph = backend === 'azurebackend' ||
+                                            isCEPH ? it.skip : it;
                 it(`should put an object with tags to ${backend} backend`,
                 done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = Object.assign({ Key: key, Tagging: tagString,
                         Metadata: { 'scal-location-constraint': backend } },
                          putParams);
@@ -205,7 +212,7 @@ function testSuite() {
 
                 it(`should put a 0 byte object with tags to ${backend} backend`,
                 done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
                         Key: key,
@@ -221,7 +228,7 @@ function testSuite() {
 
                 it(`should put tags to preexisting object in ${backend} ` +
                 'backend', done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = Object.assign({ Key: key, Metadata:
                         { 'scal-location-constraint': backend } }, putParams);
                     process.stdout.write('Putting object\n');
@@ -239,7 +246,7 @@ function testSuite() {
 
                 it('should put tags to preexisting 0 byte object in ' +
                 `${backend} backend`, done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
                         Key: key,
@@ -258,9 +265,9 @@ function testSuite() {
                     });
                 });
 
-                itSkipIfAzure('should put tags to completed MPU object in ' +
-                `${backend}`, done => {
-                    const key = `somekey-${Date.now()}`;
+                itSkipIfAzureOrCeph('should put tags to completed MPU ' +
+                `object in ${backend}`, done => {
+                    const key = `somekey-${genUniqID()}`;
                     const params = {
                         Bucket: bucket,
                         Key: key,
@@ -282,7 +289,7 @@ function testSuite() {
             'version in AWS, even if a delete marker was created directly ' +
             'on AWS before tags are put',
             done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = Object.assign({ Key: key, Metadata:
                     { 'scal-location-constraint': awsLocation } }, putParams);
                 process.stdout.write('Putting object\n');
@@ -307,7 +314,7 @@ function testSuite() {
             testBackends.forEach(backend => {
                 it(`should get tags from object on ${backend} backend`,
                 done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = Object.assign({ Key: key, Tagging: tagString,
                         Metadata: { 'scal-location-constraint': backend } },
                         putParams);
@@ -322,7 +329,7 @@ function testSuite() {
 
             it('should not return error on getting tags from object that has ' +
             'had a delete marker put directly on AWS', done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = Object.assign({ Key: key, Tagging: tagString,
                     Metadata: { 'scal-location-constraint': awsLocation } },
                     putParams);
@@ -343,7 +350,7 @@ function testSuite() {
             testBackends.forEach(backend => {
                 it(`should delete tags from object on ${backend} backend`,
                 done => {
-                    const key = `somekey-${Date.now()}`;
+                    const key = `somekey-${genUniqID()}`;
                     const params = Object.assign({ Key: key, Tagging: tagString,
                         Metadata: { 'scal-location-constraint': backend } },
                         putParams);
@@ -361,7 +368,7 @@ function testSuite() {
 
             it('should not return error on deleting tags from object that ' +
             'has had delete markers put directly on AWS', done => {
-                const key = `somekey-${Date.now()}`;
+                const key = `somekey-${genUniqID()}`;
                 const params = Object.assign({ Key: key, Tagging: tagString,
                     Metadata: { 'scal-location-constraint': awsLocation } },
                     putParams);

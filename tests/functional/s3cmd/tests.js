@@ -51,26 +51,23 @@ function diff(putFile, receivedFile, done) {
 
 function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
-    proc.spawn('dd', ['if=/dev/urandom', `of=${name}`,
-        `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
-            assert.strictEqual(code, 0);
-            callback();
-        });
+    const ret = proc.spawnSync('dd', ['if=/dev/urandom', `of=${name}`,
+        `bs=${bytes}`, 'count=1'], { stdio: 'inherit' });
+    assert.strictEqual(ret.status, 0);
+    callback();
 }
 
 function createEmptyFile(name, callback) {
     process.stdout.write(`touch ${name}\n`);
-    proc.spawn('touch', [name], { stdio: 'inherit' }).on('exit', code => {
-        assert.strictEqual(code, 0);
-        callback();
-    });
+    const ret = proc.spawnSync('touch', [name], { stdio: 'inherit' });
+    assert.strictEqual(ret.status, 0);
+    callback();
 }
 
 function deleteFile(file, callback) {
     process.stdout.write(`rm ${file}\n`);
-    proc.spawn('rm', [`${file}`]).on('exit', () => {
-        callback();
-    });
+    proc.spawnSync('rm', [`${file}`]);
+    callback();
 }
 
 function exec(args, done, exitCode) {
@@ -83,11 +80,10 @@ function exec(args, done, exitCode) {
         av = av.concat(isScality);
     }
     process.stdout.write(`${program} ${av}\n`);
-    proc.spawn(program, av, { stdio: 'inherit' }).on('exit', code => {
-        assert.strictEqual(code, exit,
-                           's3cmd did not yield expected exit status.');
-        done();
-    });
+    const ret = proc.spawnSync(program, av, { stdio: 'inherit' });
+    assert.strictEqual(ret.status, exit,
+                        's3cmd did not yield expected exit status.');
+    done();
 }
 
 // Test stdout or stderr against expected output
@@ -362,7 +358,7 @@ describe('s3cmd getService', () => {
 });
 
 describe('s3cmd putObject', function toto() {
-    this.timeout(10000);
+    this.timeout(30000);
     before('create file to put', done => {
         createFile(upload, 1048576, done);
     });

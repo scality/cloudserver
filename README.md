@@ -2,9 +2,7 @@
 
 ![Zenko CloudServer logo](res/scality-cloudserver-logo.png)
 
-[![CircleCI][badgepub]](https://circleci.com/gh/scality/S3)
-[![Scality CI][badgepriv]](http://ci.ironmann.io/gh/scality/S3)
-[![Docker Pulls][badgedocker]](https://hub.docker.com/r/scality/s3server/)
+[![Docker Pulls][badgedocker]](https://hub.docker.com/r/zenko/cloudserver)
 [![Docker Pulls][badgetwitter]](https://twitter.com/zenko)
 
 ## Overview
@@ -27,7 +25,7 @@ application on the go.
 
 ## Docker
 
-[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/scality/s3server/)
+[Run your Zenko CloudServer with Docker](https://hub.docker.com/r/zenko/cloudserver/)
 
 ## Contributing
 
@@ -39,7 +37,7 @@ https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md).
 
 ### Dependencies
 
-Building and running the Zenko CloudServer requires node.js 6.9.5 and npm v3
+Building and running the Zenko CloudServer requires node.js 10.x and yarn v1.17.x
 . Up-to-date versions can be found at
 [Nodesource](https://github.com/nodesource/distributions).
 
@@ -54,22 +52,22 @@ git clone https://github.com/scality/S3.git
 Go to the ./S3 folder,
 
 ```shell
-npm install
+yarn install --frozen-lockfile
 ```
 
 If you get an error regarding installation of the diskUsage module,
 please install g++.
 
-If you get an error regarding level-down bindings, try clearing your npm cache:
+If you get an error regarding level-down bindings, try clearing your yarn cache:
 
 ```shell
-npm cache clear
+yarn cache clean
 ```
 
 ## Run it with a file backend
 
 ```shell
-npm start
+yarn start
 ```
 
 This starts a Zenko CloudServer on port 8000. Two additional ports 9990 and
@@ -92,14 +90,14 @@ mkdir -m 700 $(pwd)/myFavoriteDataPath
 mkdir -m 700 $(pwd)/myFavoriteMetadataPath
 export S3DATAPATH="$(pwd)/myFavoriteDataPath"
 export S3METADATAPATH="$(pwd)/myFavoriteMetadataPath"
-npm start
+yarn start
 ```
 
 ## Run it with multiple data backends
 
 ```shell
 export S3DATA='multiple'
-npm start
+yarn start
 ```
 
 This starts a Zenko CloudServer on port 8000.
@@ -121,13 +119,14 @@ where the data is saved. If the bucket has no location
 constraint, the endpoint of the PUT request will be
 used to determine location.
 
-See the Configuration section below to learn how to set
-location constraints.
+See the Configuration section in our documentation
+[here](http://s3-server.readthedocs.io/en/latest/GETTING_STARTED/#configuration)
+to learn how to set location constraints.
 
 ## Run it with an in-memory backend
 
 ```shell
-npm run mem_backend
+yarn run mem_backend
 ```
 
 This starts a Zenko CloudServer on port 8000.

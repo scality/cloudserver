@@ -79,4 +79,65 @@ this._lifecycleConfiguration = lifecycleConfiguration || null;
 
 ### Usage
 
-Used to store the bucket lifecycle configuration info
+Used to store the bucket lifecycle configuration info.
+Backwards compatible: add a uid to bucket if not exist. Otherwise, use existing
+
+## Model version 7
+
+### Properties Added
+
+```javascript
+this._uid = uid || uuid();
+```
+
+### Usage
+
+Used to set a unique identifier on a bucket
+
+## Model version 8
+
+### Properties Added
+
+```javascript
+this._readLocationConstraint = readLocationConstraint || null;
+```
+
+### Usage
+
+Used to store default read location of the bucket
+
+## Model version 9
+
+### Properties Added
+
+```javascript
+this._isNFS = isNFS || null;
+```
+
+### Usage
+
+Used to determine whether the bucket may be accessed through NFS
+
+## Model version 10
+
+### Properties Added
+
+```javascript
+this._ingestion = ingestionConfig || null;
+```
+
+### Usage
+
+Used to store the ingestion status of a bucket
+
+## Model version 11
+
+### Properties Added
+
+```javascript
+this._azureInfo = azureInfo || null;
+```
+
+### Usage
+
+Used to store Azure storage account specific information

@@ -14,7 +14,7 @@ Got an idea? Get started!
 In order to contribute, please follow the `Contributing
 Guidelines <https://github.com/scality/Guidelines/blob/master/CONTRIBUTING.md>`__.
 If anything is unclear to you, reach out to us on
-`slack <https://zenko-io.slack.com/>`__ or via a GitHub issue.
+`forum <https://forum.zenko.io/>`__ or via a GitHub issue.
 
 Don't write code? There are other ways to help!
 -----------------------------------------------

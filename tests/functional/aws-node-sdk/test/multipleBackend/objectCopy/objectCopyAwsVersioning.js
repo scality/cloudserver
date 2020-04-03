@@ -14,10 +14,12 @@ const {
     putToAwsBackend,
     awsGetLatestVerId,
     getAndAssertResult,
+    genUniqID,
+    itSkipCeph,
 } = require('../utils');
 
-const sourceBucketName = 'buckettestobjectcopyawsversioning-source';
-const destBucketName = 'buckettestobjectcopyawsversioning-dest';
+const sourceBucketName = `awsversioningsrc${genUniqID()}`;
+const destBucketName = `awsversioningdst${genUniqID()}`;
 
 const someBody = Buffer.from('I am a body', 'utf8');
 const wrongVersionBody = 'this is not the content you wanted';
@@ -52,7 +54,7 @@ function createBuckets(testParams, cb) {
 
 function putSourceObj(testParams, cb) {
     const { sourceBucket, isEmptyObj } = testParams;
-    const sourceKey = `sourcekey-${Date.now()}`;
+    const sourceKey = `sourcekey-${genUniqID()}`;
     const sourceParams = {
         Bucket: sourceBucket,
         Key: sourceKey,
@@ -81,7 +83,7 @@ function copyObject(testParams, cb) {
     const { sourceBucket, sourceKey, sourceVersionId, sourceVersioningState,
         destBucket, directive, destVersioningState, isEmptyObj }
         = testParams;
-    const destKey = `destkey-${Date.now()}`;
+    const destKey = `destkey-${genUniqID()}`;
     const copyParams = {
         Bucket: destBucket,
         Key: destKey,
@@ -216,8 +218,9 @@ function testSuite() {
                 destLocation: awsLocation,
             });
             const { isEmptyObj, directive } = testParams;
-            it(`should copy ${isEmptyObj ? 'an empty' : ''} object from AWS ` +
-            'backend non-versioned bucket to AWS backend versioned bucket ' +
+            itSkipCeph(`should copy ${isEmptyObj ? 'an empty' : ''} ` +
+            'object from AWS backend non-versioned bucket' +
+            'to AWS backend versioned bucket ' +
             `with ${directive} directive`, done => {
                 Object.assign(testParams, {
                     sourceVersioningState: undefined,
@@ -236,8 +239,9 @@ function testSuite() {
                 ], done);
             });
 
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version from one ` +
-            `AWS backend versioned bucket to another on ${directive} directive`,
+            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+            'from one AWS backend versioned bucket' +
+            `to another on ${directive} directive`,
             done => {
                 Object.assign(testParams, {
                     sourceVersioningState: 'Enabled',
@@ -257,9 +261,9 @@ function testSuite() {
                 ], done);
             });
 
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}null version ` +
-            'from one AWS backend versioning suspended bucket to another '
-            + `versioning suspended bucket with ${directive} directive`,
+            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}null ` +
+            'version from one AWS backend versioning suspended bucket to ' +
+            ` another versioning suspended bucket with ${directive} directive`,
             done => {
                 Object.assign(testParams, {
                     sourceVersioningState: 'Suspended',
@@ -281,9 +285,9 @@ function testSuite() {
                 ], done);
             });
 
-            it(`should copy ${isEmptyObj ? 'an empty ' : ''}version from a ` +
-            'AWS backend versioned bucket to a versioned-suspended one with '
-            + `${directive} directive`, done => {
+            itSkipCeph(`should copy ${isEmptyObj ? 'an empty ' : ''}version ` +
+            'from a AWS backend versioned bucket to a versioned-suspended' +
+            `one with ${directive} directive`, done => {
                 Object.assign(testParams, {
                     sourceVersioningState: 'Enabled',
                     destVersioningState: 'Suspended',
@@ -304,10 +308,11 @@ function testSuite() {
             });
         });
 
-        it('versioning not configured: if copy object to a pre-existing ' +
-        'object on AWS backend, metadata should be overwritten but data of ' +
-        'previous version in AWS should not be deleted', function itF(done) {
-            const destKey = `destkey-${Date.now()}`;
+        itSkipCeph('versioning not configured: if copy object to a ' +
+        'pre-existing object on AWS backend, metadata should be overwritten ' +
+        'but data of  previous version in AWS should not be deleted',
+        function itF(done) {
+            const destKey = `destkey-${genUniqID()}`;
             const testParams = {
                 sourceBucket: sourceBucketName,
                 sourceLocation: awsLocation,

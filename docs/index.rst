@@ -1,11 +1,12 @@
 Scality Zenko CloudServer
-==================
+=========================
 
 .. _user-docs:
 
 .. toctree::
    :maxdepth: 2
    :caption: Documentation
+   :glob:
 
    CONTRIBUTING
    GETTING_STARTED
@@ -14,3 +15,4 @@ Scality Zenko CloudServer
    DOCKER
    INTEGRATIONS
    ARCHITECTURE
+   developers/*

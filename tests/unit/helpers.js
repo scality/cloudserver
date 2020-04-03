@@ -1,11 +1,13 @@
 const crypto = require('crypto');
 const assert = require('assert');
+const { storage } = require('arsenal');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const constants = require('../../constants');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
-const { resetCount, ds } = require('../../lib/data/in_memory/backend');
 const DummyRequest = require('./DummyRequest');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { resetCount, ds } = storage.data.inMemory.datastore;
 
 const testsRangeOnEmptyFile = [
     { range: 'bytes=0-9', valid: true },
@@ -63,22 +65,36 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey) {
+function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
         accessKey2: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2bf',
+        lifecycleKey1: '0123456789abcdef/lifecycle',
         default: crypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
-
-    return new AuthInfo({
+    const acctIdMap = {
+        accessKey1: '123456789098',
+        accessKey2: '234567890987',
+        default: 'shortid',
+    };
+    const shortid = acctIdMap[accessKey] || acctIdMap.default;
+    const params = {
         canonicalID: canIdMap[accessKey] || canIdMap.default,
-        shortid: 'shortid',
+        shortid,
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
-    });
+        arn: `arn:aws:iam::${shortid}:root`,
+    };
+
+    if (userName) {
+        params.IAMdisplayName = `${accessKey}-${userName}-userDisplayName`;
+        params.arn = `arn:aws:iam::${shortid}:user/${userName}`;
+    }
+
+    return new AuthInfo(params);
 }
 
 class WebsiteConfig {

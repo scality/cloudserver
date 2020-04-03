@@ -1,10 +1,12 @@
+.. _use-public-cloud:
+
 Using Public Clouds as data backends
 ====================================
 
 Introduction
 ------------
 
-As stated in our `GETTING STARTED guide <../GETTING_STARTED/#location-configuration>`__,
+As stated in our `GETTING STARTED guide <GETTING_STARTED.html#location-configuration>`__,
 new data backends can be added by creating a region (also called location
 constraint) with the right endpoint and credentials.
 This section of the documentation shows you how to set up our currently
@@ -137,7 +139,7 @@ to start the server and start writing data to AWS S3 through CloudServer.
 .. code:: shell
 
    # Start the server locally
-   $> S3DATA=multiple npm start
+   $> S3DATA=multiple yarn start
 
 Run the server as a docker container with the ability to write to AWS S3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,8 +162,8 @@ CloudServer.
    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
    -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
    -v ~/.aws/credentials:/root/.aws/credentials \
-   -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
-   -d scality/s3server
+   -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000 \
+   -d scality/cloudserver
 
 Testing: put an object to AWS S3 using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,7 +245,7 @@ There are a few configurable options here:
   this region should behave like any other AWS S3 region (in the case of MS Azure
   hosted data, this is mostly relevant for the format of errors);
 - :code:`azureStorageEndpoint` : set to your storage account's endpoint, usually
-  :code:`https://{{storageAccountName}}.blob.core.windows.name`;
+  :code:`https://{{storageAccountName}}.blob.core.windows.net`;
 - :code:`azureContainerName` : set to an *existing container* in your MS Azure
   storage account; this is the container in which your data will be stored for
   this location constraint;
@@ -304,7 +306,7 @@ to start the server and start writing data to MS Azure through CloudServer.
 .. code:: shell
 
    # Start the server locally
-   $> S3DATA=multiple npm start
+   $> S3DATA=multiple yarn start
 
 Run the server as a docker container with the ability to write to MS Azure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -322,7 +324,7 @@ CloudServer.
    -v $(pwd)/locationConfig.json:/usr/src/app/locationConfig.json \
    -v $(pwd)/conf/authdata.json:/usr/src/app/conf/authdata.json \
    -e S3DATA=multiple -e ENDPOINT=http://localhost -p 8000:8000
-   -d scality/s3server
+   -d scality/cloudserver
 
 Testing: put an object to MS Azure using CloudServer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

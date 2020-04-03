@@ -12,12 +12,13 @@ const {
     awsGetLatestVerId,
     getAndAssertResult,
     describeSkipIfNotMultiple,
+    genUniqID,
 } = require('../utils');
 
 const data = ['a', 'b'].map(char => Buffer.alloc(minimumAllowedPartSize, char));
 const concattedData = Buffer.concat(data);
 
-const bucket = 'buckettestmultiplebackendmpuawsversioning';
+const bucket = `mpuawsversioning${genUniqID()}`;
 
 function mpuSetup(s3, key, location, cb) {
     const partArray = [];
@@ -115,7 +116,7 @@ function testSuite() {
 
         it('versioning not configured: should not return version id ' +
         'completing mpu', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
                 completeAndAssertMpu(s3, { bucket, key, uploadId, partArray,
                     expectVersionId: false }, done);
@@ -125,7 +126,7 @@ function testSuite() {
         it('versioning not configured: if complete mpu on already-existing ' +
         'object, metadata should be overwritten but data of previous version' +
         'in AWS should not be deleted', function itF(done) {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
                 next => awsGetLatestVerId(key, '', next),
@@ -151,7 +152,7 @@ function testSuite() {
 
         it('versioning suspended: should not return version id completing mpu',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => suspendVersioning(s3, bucket, next),
                 next => mpuSetup(s3, key, awsLocation, next),
@@ -163,7 +164,7 @@ function testSuite() {
 
         it('versioning enabled: should return version id completing mpu',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => mpuSetup(s3, key, awsLocation, next),

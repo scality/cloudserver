@@ -1,0 +1,9 @@
+node_modules
+localData/*
+localMetadata/*
+# Keep the .git/HEAD file in order to properly report version
+.git/objects
+.github
+.tox
+coverage
+.DS_Store

@@ -1,12 +1,19 @@
 const assert = require('assert');
 const httpMocks = require('node-mocks-http');
 const { EventEmitter } = require('events');
-const { errors } = require('arsenal');
-const routesUtils = require('arsenal').s3routes.routesUtils;
+const { errors, storage, s3routes } = require('arsenal');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
-const data = require('../../../lib/data/wrapper');
+const { config } = require('../../../lib/Config');
+const { client, implName, data } = require('../../../lib/data/wrapper');
+const kms = require('../../../lib/kms/wrapper');
+const vault = require('../../../lib/auth/vault');
+const locationStorageCheck =
+    require('../../../lib/api/apiUtils/object/locationStorageCheck');
+const metadata = require('../../../lib/metadata/wrapper');
+
+const routesUtils = s3routes.routesUtils;
+const { ds } = storage.data.inMemory.datastore;
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();
@@ -24,6 +31,15 @@ const dataStoreEntry = {
         owner,
         namespace,
     },
+};
+const dataRetrievalParams = {
+    client,
+    implName,
+    config,
+    kms,
+    metadata,
+    locStorageCheckFn: locationStorageCheck,
+    vault,
 };
 
 // TODO: Enable tests as a follow up. Technically tests were passing with node 4
@@ -47,8 +63,8 @@ describe.skip('responseStreamData:', () => {
             assert.strictEqual(data, postBody.toString());
             done();
         });
-        return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, data.get, response, null, log);
+        return responseStreamData(errCode, overrideHeaders, resHeaders,
+            dataLocations, dataRetrievalParams, response, null, log);
     });
 
     it('should stream full requested object data for two part object', done => {
@@ -75,8 +91,8 @@ describe.skip('responseStreamData:', () => {
             assert.strictEqual(data, doublePostBody);
             done();
         });
-        return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, data.get, response, null, log);
+        return responseStreamData(errCode, overrideHeaders, resHeaders,
+            dataLocations, dataRetrievalParams, response, null, log);
     });
 
     it('#334 non-regression test, destroy connection on error', done => {
@@ -106,7 +122,7 @@ describe.skip('responseStreamData:', () => {
             }
             return done();
         });
-        return responseStreamData(errCode, overrideHeaders,
-            resHeaders, dataLocations, data.get, response, null, log);
+        return responseStreamData(errCode, overrideHeaders, resHeaders,
+            dataLocations, dataRetrievalParams, response, null, log);
     });
 });

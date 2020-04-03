@@ -4,7 +4,7 @@ const async = require('async');
 const { s3middleware } = require('arsenal');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
-const { describeSkipIfNotMultiple, expectedETag, uniqName, getAzureClient,
+const { describeSkipIfNotMultipleOrCeph, expectedETag, uniqName, getAzureClient,
     getAzureContainerName, convertMD5, azureLocation, azureLocationMismatch }
     = require('../utils');
 const azureMpuUtils = s3middleware.azureHelper.mpuUtils;
@@ -47,7 +47,7 @@ function azureCheck(key, cb) {
     });
 }
 
-describeSkipIfNotMultiple('MultipleBackend put part to AZURE', function
+describeSkipIfNotMultipleOrCeph('MultipleBackend put part to AZURE', function
 describeF() {
     this.timeout(80000);
     withV4(sigCfg => {
@@ -310,8 +310,8 @@ describeF() {
     });
 });
 
-describeSkipIfNotMultiple('MultipleBackend put part to AZURE location with ' +
-'bucketMatch sets to false', function
+describeSkipIfNotMultipleOrCeph('MultipleBackend put part to AZURE ' +
+'location with bucketMatch sets to false', function
 describeF() {
     this.timeout(80000);
     withV4(sigCfg => {

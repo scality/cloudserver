@@ -39,6 +39,8 @@ const constants = {
     // once the multipart upload is complete.
     mpuBucketPrefix: 'mpuShadowBucket',
     blacklistedPrefixes: { bucket: [], object: [] },
+    // GCP Object Tagging Prefix
+    gcpTaggingPrefix: 'aws-tag-',
     // PublicId is used as the canonicalID for a request that contains
     // no authentication information.  Requestor can access
     // only public resources
@@ -64,14 +66,20 @@ const constants = {
     // http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadComplete.html
     minimumAllowedPartSize: 5242880,
 
+    // AWS sets a maximum total parts limit
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
+    maximumAllowedPartCount: 10000,
+
+    gcpMaximumAllowedPartCount: 1024,
+
     // Max size on put part or copy part is 5GB. For functional
     // testing use 110 MB as max
     maximumAllowedPartSize: process.env.MPU_TESTING === 'yes' ? 110100480 :
         5368709120,
 
-    // AWS sets a maximum total parts limit
-    // https://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadUploadPart.html
-    maximumAllowedPartCount: 10000,
+    // Max size allowed in a single put object request is 5GB
+    // https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
+    maximumAllowedUploadSize: 5368709120,
 
     // AWS states max size for user-defined metadata (x-amz-meta- headers) is
     // 2 KB: http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUT.html
@@ -94,7 +102,6 @@ const constants = {
         'metrics',
         'notification',
         'object-lock',
-        'policy',
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
@@ -105,7 +112,6 @@ const constants = {
 
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
-        'x-amz-server-side-encryption',
         'x-amz-server-side-encryption-customer-algorithm',
         'x-amz-server-side-encryption-aws-kms-key-id',
         'x-amz-server-side-encryption-context',
@@ -116,8 +122,18 @@ const constants = {
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
     legacyLocations: ['sproxyd', 'legacy'],
+    // declare here all existing service accounts and their properties
+    // (if any, otherwise an empty object)
+    serviceAccountProperties: {
+        replication: {},
+        lifecycle: {},
+        gc: {},
+        'md-ingestion': {
+            canReplicate: true,
+        },
+    },
     /* eslint-disable camelcase */
-    externalBackends: { aws_s3: true, azure: true, gcp: true },
+    externalBackends: { aws_s3: true, azure: true, gcp: true, pfs: true },
     // some of the available data backends  (if called directly rather
     // than through the multiple backend gateway) need a key provided
     // as a string as first parameter of the get/delete methods.
@@ -126,15 +142,44 @@ const constants = {
     // for external backends, don't call unless at least 1 minute
     // (60,000 milliseconds) since last call
     externalBackendHealthCheckInterval: 60000,
-    versioningNotImplBackends: { azure: true },
-    mpuMDStoredExternallyBackend: { aws_s3: true },
+    versioningNotImplBackends: { azure: true, gcp: true },
+    mpuMDStoredExternallyBackend: { aws_s3: true, gcp: true },
+    skipBatchDeleteBackends: { azure: true, gcp: true },
+    s3HandledBackends: { azure: true, gcp: true },
+    hasCopyPartBackends: { aws_s3: true, gcp: true },
     /* eslint-enable camelcase */
     mpuMDStoredOnS3Backend: { azure: true },
     azureAccountNameRegex: /^[a-z0-9]{3,24}$/,
     base64Regex: new RegExp('^(?:[A-Za-z0-9+/]{4})*' +
         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
+    productName: 'APN/1.0 Scality/1.0 Scality CloudServer for Zenko',
+    // location constraint delimiter
+    zenkoSeparator: ':',
     // user metadata applied on zenko objects
     zenkoIDHeader: 'x-amz-meta-zenko-instance-id',
+    bucketOwnerActions: [
+        'bucketDeleteCors',
+        'bucketDeleteLifecycle',
+        'bucketDeletePolicy',
+        'bucketDeleteReplication',
+        'bucketDeleteWebsite',
+        'bucketGetCors',
+        'bucketGetLifecycle',
+        'bucketGetLocation',
+        'bucketGetPolicy',
+        'bucketGetReplication',
+        'bucketGetVersioning',
+        'bucketGetWebsite',
+        'bucketPutCors',
+        'bucketPutLifecycle',
+        'bucketPutPolicy',
+        'bucketPutReplication',
+        'bucketPutVersioning',
+        'bucketPutWebsite',
+        'objectDeleteTagging',
+        'objectGetTagging',
+        'objectPutTagging',
+    ],
     // response header to be sent when there are invalid
     // user metadata in the object's metadata
     invalidObjectUserMetadataHeader: 'x-amz-missing-meta',

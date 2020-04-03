@@ -6,6 +6,7 @@ const url = require('url');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const conf = require('../../../../../lib/Config').config;
+const jsutil = require('arsenal').jsutil;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -60,6 +61,7 @@ class ContinueRequestHandler {
     }
 
     sendsBodyOnContinue(cb) {
+        const cbOnce = jsutil.once(cb);
         const options = this.getRequestOptions();
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options);
@@ -76,9 +78,12 @@ class ContinueRequestHandler {
             const expected = body.length + headerLen;
             // Has the entire body been sent?
             assert.strictEqual(req.socket.bytesWritten, expected);
-            return cb();
+            return cbOnce();
         });
-        req.on('error', err => cb(err));
+        /* eslint-disable arrow-body-style */
+        req.on('error', err => {
+            return cbOnce(err);
+        });
     }
 }
 
@@ -124,7 +129,7 @@ describe('PUT public object with 100-continue header', () => {
         it('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it('should continue if a public user', done =>
+        it.only('should continue if a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
                 .sendsBodyOnContinue(done));
     });

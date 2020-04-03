@@ -1,11 +1,11 @@
-const { auth } = require('arsenal');
+const { auth, storage } = require('arsenal');
 
 const http = require('http');
 const https = require('https');
 const querystring = require('querystring');
 
 const conf = require('../../../../lib/Config').config;
-const { GcpSigner } = require('../../../../lib/data/external/GCP');
+const { GcpSigner } = storage.data.external;
 
 const transport = conf.https ? https : http;
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';

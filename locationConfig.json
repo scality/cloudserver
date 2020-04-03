@@ -1,81 +1,97 @@
 {
     "us-east-1": {
         "type": "file",
+        "objectId": "us-east-1",
         "legacyAwsBehavior": true,
         "details": {}
     },
     "us-east-2": {
         "type": "file",
+        "objectId": "us-east-2",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "us-west-1": {
         "type": "file",
+        "objectId": "us-west-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "us-west-2": {
         "type": "file",
+        "objectId": "us-west-2",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ca-central-1": {
         "type": "file",
+        "objectId": "ca-central-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "cn-north-1": {
         "type": "file",
+        "objectId": "cn-north-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ap-south-1": {
         "type": "file",
+        "objectId": "ap-south-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ap-northeast-1": {
         "type": "file",
+        "objectId": "ap-northeast-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ap-northeast-2": {
         "type": "file",
+        "objectId": "ap-northeast-2",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ap-southeast-1": {
         "type": "file",
+        "objectId": "ap-southeast-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "ap-southeast-2": {
         "type": "file",
+        "objectId": "ap-southeast-2",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "eu-central-1": {
         "type": "file",
+        "objectId": "eu-central-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "eu-west-1": {
         "type": "file",
+        "objectId": "eu-west-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "eu-west-2": {
         "type": "file",
+        "objectId": "eu-west-2",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "EU": {
         "type": "file",
+        "objectId": "EU",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "sa-east-1": {
         "type": "file",
+        "objectId": "sa-east-1",
         "legacyAwsBehavior": false,
         "details": {}
     }

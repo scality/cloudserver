@@ -7,7 +7,7 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
     require('../helpers');
 const constants = require('../../../constants');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');
@@ -19,9 +19,9 @@ const objectPutTagging = require('../../../lib/api/objectPutTagging');
 const objectDeleteTagging = require('../../../lib/api/objectDeleteTagging');
 
 const log = new DummyRequestLogger();
-const canonicalID = 'accessKey1';
-const authInfo = makeAuthInfo(canonicalID);
+const authInfo = makeAuthInfo('accessKey1');
 const ownerID = authInfo.getCanonicalID();
+const authInfoLifecycleService = makeAuthInfo('lifecycleKey1');
 const namespace = 'default';
 const bucketName = 'source-bucket';
 const mpuShadowBucket = `${constants.mpuBucketPrefix}${bucketName}`;
@@ -76,6 +76,7 @@ const emptyReplicationMD = {
     role: '',
     storageType: '',
     dataStoreVersionId: '',
+    isNFS: null,
 };
 
 // Check that the object key has the expected replication information.
@@ -293,6 +294,7 @@ describe('Replication object MD without bucket replication config', () => {
                 'arn:aws:iam::account-id:role/dest-resource',
             storageType: '',
             dataStoreVersionId: '',
+            isNFS: null,
         };
         const newReplicationMD = hasStorageClass ? Object.assign(replicationMD,
             { storageClass: storageClassType }) : replicationMD;
@@ -344,18 +346,27 @@ describe('Replication object MD without bucket replication config', () => {
                     return done();
                 }));
 
-        it("should update status to 'PENDING' and content to '['METADATA']' " +
-            'if putting object ACL', done =>
+        it('should not update metadata if putting object ACL', done => {
+            let completedReplicationInfo;
             async.series([
                 next => putObjectAndCheckMD(keyA, newReplicationMD, next),
-                next => objectPutACL(authInfo, objectACLReq, log, next),
+                next => {
+                    const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                    // Update metadata to a status after replication
+                    // has occurred.
+                    objectMD.replicationInfo.status = 'COMPLETED';
+                    completedReplicationInfo = JSON.parse(
+                        JSON.stringify(objectMD.replicationInfo));
+                    objectPutACL(authInfo, objectACLReq, log, next);
+                },
             ], err => {
                 if (err) {
                     return done(err);
                 }
-                checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                checkObjectReplicationInfo(keyA, completedReplicationInfo);
                 return done();
-            }));
+            });
+        });
 
         it('should update metadata if putting a delete marker', done =>
             async.series([
@@ -376,6 +387,22 @@ describe('Replication object MD without bucket replication config', () => {
                 const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
                 assert.strictEqual(objectMD.isDeleteMarker, true);
                 checkObjectReplicationInfo(keyA, replicateMetadataOnly);
+                return done();
+            }));
+
+        it('should not update metadata if putting a delete marker owned by ' +
+        'Lifecycle service account', done =>
+            async.series([
+                next => putObjectAndCheckMD(keyA, newReplicationMD, next),
+                next => objectDelete(authInfoLifecycleService, deleteReq,
+                                     log, next),
+            ], err => {
+                if (err) {
+                    return done(err);
+                }
+                const objectMD = metadata.keyMaps.get(bucketName).get(keyA);
+                assert.strictEqual(objectMD.isDeleteMarker, true);
+                checkObjectReplicationInfo(keyA, emptyReplicationMD);
                 return done();
             }));
 
@@ -474,10 +501,12 @@ describe('Replication object MD without bucket replication config', () => {
 
         ['awsbackend',
         'azurebackend',
+        'gcpbackend',
         'awsbackend,azurebackend'].forEach(backend => {
             const storageTypeMap = {
                 'awsbackend': 'aws_s3',
                 'azurebackend': 'azure',
+                'gcpbackend': 'gcp',
                 'awsbackend,azurebackend': 'aws_s3,azure',
             };
             const storageType = storageTypeMap[backend];
@@ -497,10 +526,11 @@ describe('Replication object MD without bucket replication config', () => {
                     role: 'arn:aws:iam::account-id:role/resource',
                     storageType,
                     dataStoreVersionId: '',
+                    isNFS: null,
                 };
 
                 // Expected for a metadata-only replication operation (for
-                // example, putting an object ACL).
+                // example, putting object tags).
                 const expectedReplicationInfoMD = Object.assign({},
                     expectedReplicationInfo, { content: ['METADATA'] });
 
@@ -547,19 +577,30 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a put object ACL request', done =>
+                it('should update on a put object ACL request', done => {
+                    let completedReplicationInfo;
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, next),
-                        next => objectPutACL(authInfo, objectACLReq, log, next),
+                        next => {
+                            const objectMD = metadata.keyMaps
+                                  .get(bucketName).get(keyA);
+                            // Update metadata to a status after replication
+                            // has occurred.
+                            objectMD.replicationInfo.status = 'COMPLETED';
+                            completedReplicationInfo = JSON.parse(
+                                JSON.stringify(objectMD.replicationInfo));
+                            objectPutACL(authInfo, objectACLReq, log, next);
+                        },
                     ], err => {
                         if (err) {
                             return done(err);
                         }
                         checkObjectReplicationInfo(keyA,
-                            expectedReplicationInfoMD);
+                                                   completedReplicationInfo);
                         return done();
-                    }));
+                    });
+                });
 
                 it('should update on a put object tagging request', done =>
                     async.series([

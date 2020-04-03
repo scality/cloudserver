@@ -1,31 +1,43 @@
 {
     "us-east-1": {
         "type": "file",
+        "objectId": "us-east-1",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
+    "us-east-2": {
+        "type": "file",
+        "objectId": "us-east-2",
         "legacyAwsBehavior": true,
         "details": {}
     },
     "scality-internal-file": {
         "type": "file",
+        "objectId": "scality-internal-file",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "dataFile": {
         "type": "file",
+        "objectId": "dataFile",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "scality-internal-mem": {
         "type": "mem",
+        "objectId": "scality-internal-mem",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "scality-us-west-1": {
         "type": "mem",
+        "objectId": "scality-us-west-1",
         "legacyAwsBehavior": false,
         "details": {}
     },
     "awsbackendencryption": {
         "type": "aws_s3",
+        "objectId": "awsbackendencryption",
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
@@ -37,6 +49,7 @@
     },
     "awsbackend": {
         "type": "aws_s3",
+        "objectId": "awsbackend",
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
@@ -45,8 +58,21 @@
             "credentialsProfile": "default"
         }
     },
+    "awsbackendhttp": {
+        "type": "aws_s3",
+        "objectId": "awsbackendhttp",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "https": false
+        }
+    },
     "awsbackendmismatch": {
         "type": "aws_s3",
+        "objectId": "awsbackendmismatch",
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
@@ -57,6 +83,7 @@
     },
     "awsbackend2": {
         "type": "aws_s3",
+        "objectId": "awsbackend2",
         "legacyAwsBehavior": true,
         "details": {
             "awsEndpoint": "s3.amazonaws.com",
@@ -65,8 +92,21 @@
             "credentialsProfile": "default_2"
         }
     },
+    "awsbackendPathStyle": {
+        "type": "aws_s3",
+        "objectId": "awsbackendPathStyle",
+        "legacyAwsBehavior": true,
+        "details": {
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "pathStyle": true
+        }
+    },
     "azurebackend": {
         "type": "azure",
+        "objectId": "azurebackend",
         "legacyAwsBehavior": true,
         "details": {
             "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
@@ -78,6 +118,7 @@
     },
     "azurebackend2": {
         "type": "azure",
+        "objectId": "azurebackend2",
         "legacyAwsBehavior": true,
         "details": {
             "azureStorageEndpoint": "https://fakeaccountname2.blob.core.fake.net/",
@@ -89,6 +130,7 @@
     },
     "azurebackendmismatch": {
         "type": "azure",
+        "objectId": "azurebackendmismatch",
         "legacyAwsBehavior": true,
         "details": {
             "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
@@ -100,6 +142,7 @@
     },
     "azurenonexistcontainer": {
         "type": "azure",
+        "objectId": "azurenonexistcontainer",
         "legacyAwsBehavior": true,
         "details": {
             "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
@@ -111,90 +154,69 @@
     },
     "gcpbackend": {
         "type": "gcp",
+        "objectId": "gcpbackend",
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
             "bucketMatch": true,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "credentialsProfile": "google"
         }
     },
     "gcpbackend2": {
         "type": "gcp",
+        "objectId": "gcpbackend2",
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
             "bucketName": "zenko-gcp-bucket-2",
-            "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
+            "mpuBucketName": "zenko-gcp-mpu-2",
             "bucketMatch": true,
-            "credentialsProfile": "google_2",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake002",
-                "serviceKey": "fake002"
-            }
+            "credentialsProfile": "google_2"
         }
     },
     "gcpbackendmismatch": {
         "type": "gcp",
+        "objectId": "gcpbackendmismatch",
         "legacyAwsBehavior": true,
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
             "bucketName": "zenko-gcp-bucket",
             "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
             "bucketMatch": false,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "credentialsProfile": "google"
         }
     },
-    "gcpbackendproxy": {
-        "type": "gcp",
+    "withversioning": {
+        "type": "aws_s3",
+        "objectId": "withversioning",
         "legacyAwsBehavior": true,
         "details": {
-            "proxy": "https://proxy.server",
-            "https": true,
-            "gcpEndpoint": "storage.googleapis.com",
-            "bucketName": "zenko-gcp-bucket",
-            "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
-            "bucketMatch": false,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": true
         }
     },
-    "gcpbackendnoproxy": {
-        "type": "gcp",
+    "withoutversioning": {
+        "type": "aws_s3",
+        "objectId": "withoutversioning",
         "legacyAwsBehavior": true,
         "details": {
-            "https": false,
-            "gcpEndpoint": "storage.googleapis.com",
-            "bucketName": "zenko-gcp-bucket",
-            "mpuBucketName": "zenko-gcp-mpu",
-            "overflowBucketName": "zenko-gcp-overflow",
-            "bucketMatch": false,
-            "credentialsProfile": "google",
-            "serviceCredentials": {
-                "scopes": "https://www.googleapis.com/auth/cloud-platform",
-                "serviceEmail": "fake001",
-                "serviceKey": "fake001"
-            }
+            "awsEndpoint": "s3.amazonaws.com",
+            "bucketName": "multitester555",
+            "bucketMatch": true,
+            "credentialsProfile": "default",
+            "supportsVersioning": false
         }
+    },
+    "transientfile": {
+        "type": "file",
+        "objectId": "transientfile",
+        "legacyAwsBehavior": false,
+        "details": {},
+        "isTransient": true
     }
 }

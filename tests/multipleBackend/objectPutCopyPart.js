@@ -2,18 +2,19 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
+const { storage } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const initiateMultipartUpload
     = require('../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const constants = require('../../constants');
+const { metadata } = storage.metadata.inMemory.metadata;
+const { ds } = storage.data.inMemory.datastore;
 
 const s3 = new AWS.S3();
 
@@ -36,6 +37,12 @@ const awsLocationMismatch = 'awsbackendmismatch';
 const partETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const { config } = require('../../lib/Config');
+const isCEPH = (config.locationConstraints[awsLocation]
+                    .details.awsEndpoint !== undefined &&
+                config.locationConstraints[awsLocation]
+                    .details.awsEndpoint.indexOf('amazon') === -1);
+const itSkipCeph = isCEPH ? it.skip : it;
 
 function getSourceAndDestKeys() {
     const timestamp = Date.now();
@@ -197,7 +204,7 @@ function testSuite() {
         });
     });
 
-    it('should copy part to AWS based on mpu location', done => {
+    itSkipCeph('should copy part to AWS based on mpu location', done => {
         copyPutPart(memLocation, awsLocation, null, 'localhost',
         (keys, uploadId) => {
             assert.strictEqual(ds.length, 2);
@@ -240,7 +247,7 @@ function testSuite() {
         });
     });
 
-    it('should copy part to AWS based on bucket location', done => {
+    itSkipCeph('should copy part to AWS based on bucket location', done => {
         copyPutPart(awsLocation, null, null, 'localhost', (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
             const awsReq = getAwsParams(keys.destObjName, uploadId);
@@ -255,8 +262,8 @@ function testSuite() {
         });
     });
 
-    it('should copy part an object on AWS location that has bucketMatch ' +
-    'equals false to a mpu with a different AWS location', done => {
+    itSkipCeph('should copy part an object on AWS location that has ' +
+    'bucketMatch equals false to a mpu with a different AWS location', done => {
         copyPutPart(null, awsLocation, awsLocationMismatch, 'localhost',
         (keys, uploadId) => {
             assert.deepStrictEqual(ds, []);
@@ -272,7 +279,7 @@ function testSuite() {
         });
     });
 
-    it('should copy part an object on AWS to a mpu with a different ' +
+    itSkipCeph('should copy part an object on AWS to a mpu with a different ' +
     'AWS location that has bucketMatch equals false', done => {
         copyPutPart(null, awsLocationMismatch, awsLocation, 'localhost',
         (keys, uploadId) => {
@@ -290,7 +297,7 @@ function testSuite() {
         });
     });
 
-    it('should return error 403 AccessDenied copying part to a ' +
+    itSkipCeph('should return error 403 AccessDenied copying part to a ' +
     'different AWS location without object READ access',
     done => {
         const errorPutCopyPart = { code: 'AccessDenied', statusCode: 403 };

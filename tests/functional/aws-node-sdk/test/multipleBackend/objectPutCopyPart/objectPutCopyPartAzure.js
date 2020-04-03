@@ -7,9 +7,10 @@ const { config } = require('../../../../../../lib/Config');
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
-  memLocation, awsLocation, awsS3, getOwnerInfo } = require('../utils');
+  memLocation, awsLocation, awsS3, getOwnerInfo, genUniqID }
+  = require('../utils');
 
-const describeSkipIfNotMultiple = config.backends.data !== 'multiple'
+const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple'
     ? describe.skip : describe;
 
 let azureContainerName;
@@ -21,8 +22,8 @@ config.locationConstraints[azureLocation].details.azureContainerName) {
       config.locationConstraints[azureLocation].details.azureContainerName;
 }
 
-const memBucketName = 'membucketnameputcopypartazure';
-const awsBucketName = 'awsbucketnameputcopypartazure';
+const memBucketName = `memputcopypartazure${genUniqID()}`;
+const awsBucketName = `awsputcopypartazure${genUniqID()}`;
 
 const normalBodySize = 11;
 const normalBody = Buffer.from('I am a body', 'utf8');
@@ -110,7 +111,7 @@ function assertCopyPart(infos, cb) {
     ], cb);
 }
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
         beforeEach(() => {
@@ -582,7 +583,7 @@ describeSkipIfNotMultiple('Put Copy Part to AZURE', function describeF() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE with large object',
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with large object',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {
@@ -677,7 +678,7 @@ function describeF() {
     });
 });
 
-describeSkipIfNotMultiple('Put Copy Part to AZURE with complete MPU',
+describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE with complete MPU',
 function describeF() {
     this.timeout(800000);
     withV4(sigCfg => {

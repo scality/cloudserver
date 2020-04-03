@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
+  feature/*, documentation/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
     stage: pre-merge
   development/*:
     stage: post-merge
@@ -83,12 +83,9 @@ models:
       command: bash eve/workers/build/credentials.bash
       haltOnFailure: true
       env: *global-env
-  - ShellCommand: &node_version
-      name: get node version
-      command: node -v
   - ShellCommand: &yarn-install
       name: install modules
-      command: yarn install --frozen-lockfile
+      command: yarn install
       haltOnFailure: true
   - Upload: &upload-artifacts
       source: /artifacts
@@ -99,6 +96,22 @@ models:
         s3:
           filename: /artifacts/s3.log
           follow: true
+  - ShellCommand: &follow-s3-ceph-logs
+      logfiles:
+        ceph:
+          filename: /artifacts/ceph.log
+          follow: true
+        s3:
+          filename: /artifacts/s3.log
+          follow: true
+  - ShellCommand: &add-hostname
+      name: add hostname
+      command: |
+        echo "127.0.0.1 testrequestbucket.localhost" >> /etc/hosts
+        echo \
+        "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" \
+        >> /etc/hosts
+      haltOnFailure: true
   - ShellCommand: &setup-junit-upload
       name: preparing junit files for upload
       command: |
@@ -110,11 +123,6 @@ models:
       urls:
         - "*"
       alwaysRun: true
-  - ShellCommand: &setup-github-ssh
-      name: setup ssh with github
-      command: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H github.com > ~/.ssh/ssh_known_hosts
 
 stages:
   pre-merge:
@@ -128,6 +136,8 @@ stages:
             - file-ft-tests
             - multiple-backend-test
             - mongo-ft-tests
+            - ceph-backend-tests
+            - kmip-ft-tests
           waitForFinish: true
           haltOnFailure: true
 
@@ -139,9 +149,14 @@ stages:
         - '/home/eve/workspace'
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *yarn-install
+      - ShellCommand: *add-hostname
       - ShellCommand: *credentials
+      - ShellCommand:
+          name: Unit Coverage mandatory file
+          command: |
+            set -ex
+            test -f .git/HEAD
       - ShellCommand:
           name: Linting
           command: |
@@ -154,6 +169,8 @@ stages:
           name: Unit Coverage
           command: |
             set -ex
+            unset HTTP_PROXY HTTPS_PROXY NO_PROXY
+            unset http_proxy https_proxy no_proxy
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             yarn test
             yarn run test_legacy_location
@@ -177,14 +194,13 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "2Gi"
-        s3Mem: "2Gi"
+        aggressorMem: "2560Mi"
+        s3Mem: "2560Mi"
         env:
           <<: *multiple-backend-vars
           <<: *global-env
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
       - ShellCommand: *yarn-install
       - ShellCommand:
@@ -193,7 +209,8 @@ stages:
             source /root/.aws/exports &> /dev/null
             set -ex
             bash wait_for_local_port.bash 8000 40
-            yarn run multiple_backend_test"
+            yarn run multiple_backend_test
+            yarn run ft_awssdk_external_backends"
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
@@ -215,6 +232,66 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
+  ceph-backend-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+        ceph: eve/workers/ceph
+      vars:
+        aggressorMem: "2500Mi"
+        s3Mem: "2560Mi"
+        redis: enabled
+        env:
+          <<: *multiple-backend-vars
+          <<: *global-env
+          CI_CEPH: "true"
+          MPU_TESTING: "yes"
+          S3_LOCATION_FILE: tests/locationConfig/locationConfigCeph.json
+    steps:
+      - Git: *clone
+      - ShellCommand: *credentials
+      - ShellCommand: *yarn-install
+      - ShellCommand:
+          command: |
+            bash -c "
+            source /root/.aws/exports &> /dev/null
+            set -ex
+            bash eve/workers/ceph/wait_for_ceph.sh
+            bash wait_for_local_port.bash 8000 40
+            yarn run multiple_backend_test"
+          env:
+            <<: *multiple-backend-vars
+            <<: *global-env
+          <<: *follow-s3-ceph-logs
+      - ShellCommand:
+          command: mvn test
+          workdir: build/tests/functional/jaws
+          <<: *follow-s3-ceph-logs
+          env:
+            <<: *multiple-backend-vars
+      - ShellCommand:
+          command: rspec tests.rb
+          workdir: build/tests/functional/fog
+          <<: *follow-s3-ceph-logs
+          env:
+            <<: *multiple-backend-vars
+      - ShellCommand:
+          command: |
+            yarn run ft_awssdk &&
+            yarn run ft_s3cmd
+          env:
+            <<: *file-mem-mpu
+            <<: *global-env
+            S3_LOCATION_FILE: "/kube_pod-prod-cloudserver-backend-0/\
+              build/tests/locationConfig/locationConfigCeph.json"
+          <<: *follow-s3-ceph-logs
+      - ShellCommand: *setup-junit-upload
+      - Upload: *upload-artifacts
+      - Upload: *upload-junits
+
   mongo-ft-tests:
     worker: &s3-pod
       type: kube_pod
@@ -232,7 +309,6 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
@@ -255,15 +331,14 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "1920Mi"
-        s3Mem: "2Gi"
+        aggressorMem: "3Gi"
+        s3Mem: "2560Mi"
         redis: enabled
         env:
           <<: *file-mem-mpu
           <<: *global-env
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
       - ShellCommand: *yarn-install
       - ShellCommand:
@@ -279,45 +354,95 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  post-merge:
+  kmip-ft-tests:
     worker:
-      type: local
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+        pykmip: eve/workers/pykmip
+      vars:
+        aggressorMem: "2Gi"
+        s3Mem: "1664Mi"
+        redis: enabled
+        pykmip: enabled
+        env:
+          <<: *mongo-vars
+          <<: *global-env
     steps:
       - Git: *clone
+      - ShellCommand: *credentials
+      - ShellCommand: *yarn-install
+      - ShellCommand:
+          command: |
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            bash wait_for_local_port.bash 5696 40
+            yarn run ft_kmip
+          logfiles:
+            pykmip:
+              filename: /artifacts/pykmip.log
+              follow: true
+            s3:
+              filename: /artifacts/s3.log
+              follow: true
+          env:
+            <<: *mongo-vars
+            <<: *global-env
+      - ShellCommand: *setup-junit-upload
+      - Upload: *upload-artifacts
+      - Upload: *upload-junits
+
+  post-merge:
+    worker:
+      type: kube_pod
+      path: eve/workers/release/pod.yaml
+      images:
+        release: eve/workers/release
+    steps:
+      - Git: *clone
+      - ShellCommand: &wait_docker_daemon
+          name: Wait for Docker daemon to be ready
+          command: |
+            bash -c '
+            for i in {1..150}
+            do
+              docker info &> /dev/null && exit
+              sleep 2
+            done
+            echo "Could not reach Docker daemon from buildbot worker" >&2
+            exit 1'
+          haltOnFailure: true
       - ShellCommand: &docker_login
           name: Private Registry Login
           command: >
             docker login
-            -u '%(secret:private_registry_username)s'
-            -p '%(secret:private_registry_password)s'
-            '%(secret:private_registry_url)s'
-      - ShellCommand:
-          name: Dockerhub Login
-          command: >
-            docker login
-            -u '%(secret:dockerhub_ro_user)s'
-            -p '%(secret:dockerhub_ro_password)s'
-      - SetProperty: &docker_image_name
-          name: Set docker image name property
-          property: docker_image_name
-          value:
-            "%(secret:private_registry_url)s/zenko/cloudserver:\
-            %(prop:commit_short_revision)s"
+            -u '%(secret:harbor_login)s'
+            -p '%(secret:harbor_password)s'
+            registry.scality.com
+      - SetProperty: &registry_url
+          name: registry
+          property: registry_url
+          value: registry.scality.com/zenko/cloudserver
+      - SetProperty: &docker_tag_revision
+          name: Set docker tag revision property
+          property: docker_tag_revision
+          value: "%(prop:registry_url)s:%(prop:commit_short_revision)s"
+      - SetProperty: &docker_tag_latest
+          name: Set docker tag latest property
+          property: docker_tag_latest
+          value: "%(prop:registry_url)s:latest-%(prop:product_version)s"
       - ShellCommand:
           name: Build docker image
           command: >-
             docker build
             --no-cache
-            -t %(prop:docker_image_name)s
+            -t %(prop:docker_tag_revision)s
+            -t %(prop:docker_tag_latest)s
             .
       - ShellCommand:
-          name: Tag images
+          name: Push images
           command: |
-            docker tag %(prop:docker_image_name)s zenko/cloudserver:$TAG
-          env:
-            TAG: "latest-%(prop:product_version)s"
-      - ShellCommand:
-          name: Push image
-          command: |
-            docker push %(prop:docker_image_name)s
-            docker push zenko/cloudserver:latest-%(prop:product_version)s
+            docker push %(prop:docker_tag_revision)s
+            docker push %(prop:docker_tag_latest)s

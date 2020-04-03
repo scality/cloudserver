@@ -13,10 +13,11 @@ const {
     putVersionsToAws,
     getAndAssertResult,
     describeSkipIfNotMultiple,
+    genUniqID,
 } = require('../utils');
 
 const someBody = 'testbody';
-const bucket = 'buckettestmultiplebackendgetawsversioning';
+const bucket = `getawsversioning${genUniqID()}`;
 
 function getAndAssertVersions(s3, bucket, key, versionIds, expectedData,
     cb) {
@@ -69,7 +70,7 @@ function testSuite() {
 
         it('should not return version ids when versioning has not been ' +
         'configured via CloudServer', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
             Metadata: { 'scal-location-constraint': awsLocation } },
             (err, data) => {
@@ -83,7 +84,7 @@ function testSuite() {
 
         it('should not return version ids when versioning has not been ' +
         'configured via CloudServer, even when version id specified', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
             Metadata: { 'scal-location-constraint': awsLocation } },
             (err, data) => {
@@ -97,7 +98,7 @@ function testSuite() {
 
         it('should return version id for null version when versioning ' +
         'has been configured via CloudServer', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
                     Metadata: { 'scal-location-constraint': awsLocation } },
@@ -114,7 +115,7 @@ function testSuite() {
 
         it('should overwrite the null version if putting object twice ' +
         'before versioning is configured', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
             async.waterfall([
                 next => mapToAwsPuts(s3, bucket, key, data, err => next(err)),
@@ -129,7 +130,7 @@ function testSuite() {
 
         it('should overwrite existing null version if putting object ' +
         'after suspending versioning', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = ['data1', 'data2'];
             async.waterfall([
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0],
@@ -150,7 +151,7 @@ function testSuite() {
 
         it('should overwrite null version if putting object when ' +
         'versioning is suspended after versioning enabled', done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = [...Array(3).keys()].map(i => `data${i}`);
             let firstVersionId;
             async.waterfall([
@@ -186,7 +187,7 @@ function testSuite() {
 
         it('should get correct data from aws backend using version IDs',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
             async.waterfall([
@@ -205,7 +206,7 @@ function testSuite() {
 
         it('should get correct version when getting without version ID',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = [...Array(5).keys()].map(i => i.toString());
             const versionIds = ['null'];
             async.waterfall([
@@ -226,7 +227,7 @@ function testSuite() {
         'after putting null versions, putting versions, putting more null ' +
         'versions and then putting more versions',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             const data = [...Array(16).keys()].map(i => i.toString());
             // put three null versions,
             // 5 real versions,
@@ -272,7 +273,7 @@ function testSuite() {
         it('should return the correct data getting versioned object ' +
         'even if object was deleted from AWS (creating a delete marker)',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
@@ -289,7 +290,7 @@ function testSuite() {
         it('should return the correct data getting versioned object ' +
         'even if object is put directly to AWS (creating new version)',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
@@ -306,7 +307,7 @@ function testSuite() {
         it('should return a ServiceUnavailable if trying to get an object ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,
@@ -330,7 +331,7 @@ function testSuite() {
         it('should return a ServiceUnavailable if trying to get a version ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
-            const key = `somekey-${Date.now()}`;
+            const key = `somekey-${genUniqID()}`;
             async.waterfall([
                 next => enableVersioning(s3, bucket, next),
                 next => s3.putObject({ Bucket: bucket, Key: key, Body: someBody,

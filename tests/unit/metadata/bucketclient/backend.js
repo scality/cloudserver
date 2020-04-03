@@ -1,7 +1,8 @@
 const assert = require('assert');
 const http = require('http');
+const bucketclientLib = require('bucketclient');
 const BucketClientInterface =
-    require('../../../../lib/metadata/bucketclient/backend');
+    require('arsenal').storage.metadata.bucketclient.BucketClientInterface;
 const { DummyRequestLogger } =
     require('../../helpers.js');
 
@@ -43,7 +44,10 @@ function handler(req, res) {
 
 describe('BucketFileInteraface::listMultipartUploads', () => {
     before('Creating Server', done => {
-        bucketclient = new BucketClientInterface();
+        bucketclient = new BucketClientInterface({
+            bucketdBootstrap: ['localhost'],
+            bucketdLog: null,
+        }, bucketclientLib, logger);
         server = http.createServer(handler).listen(port);
         server.on('listening', () => {
             done();
