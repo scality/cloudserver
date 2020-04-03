@@ -197,9 +197,34 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#d852c8a":
+"arsenal@github:scality/Arsenal#b33c1fc":
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/d852c8ad22730cbab7881d4c6829769ce6372136"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b33c1fc9a3dbc4d4fd40aba6ad19ddd0cef54b1c"
+  dependencies:
+    "@hapi/joi" "^15.1.0"
+    JSONStream "^1.0.0"
+    ajv "4.10.0"
+    async "~2.1.5"
+    debug "~2.3.3"
+    diskusage "^1.1.1"
+    ioredis "4.9.5"
+    ipaddr.js "1.2.0"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    node-forge "^0.7.1"
+    simple-glob "^0.1"
+    socket.io "~1.7.3"
+    socket.io-client "~1.7.3"
+    utf8 "2.1.2"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#0ff7ec82
+    xml2js "~0.4.16"
+  optionalDependencies:
+    ioctl "2.0.0"
+
+arsenal@scality/Arsenal#32c895b:
+  version "7.4.3"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -223,33 +248,8 @@ arraybuffer.slice@0.0.6:
     ioctl "2.0.0"
 
 arsenal@scality/Arsenal#9f2e74e:
-  version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
-  dependencies:
-    JSONStream "^1.0.0"
-    ajv "4.10.0"
-    async "~2.1.5"
-    debug "~2.3.3"
-    diskusage "^1.1.1"
-    ioredis "4.9.5"
-    ipaddr.js "1.2.0"
-    joi "^10.6"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    node-forge "^0.7.1"
-    simple-glob "^0.1"
-    socket.io "~1.7.3"
-    socket.io-client "~1.7.3"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
-  optionalDependencies:
-    ioctl "2.0.0"
-
-arsenal@scality/Arsenal#b03f5b8:
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b03f5b80acd6acaaf8dd2d49cd955e6b95279ab3"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -272,23 +272,20 @@ arsenal@scality/Arsenal#b03f5b8:
   optionalDependencies:
     ioctl "2.0.0"
 
-arsenal@scality/Arsenal#dd6fde6:
-  version "8.0.6"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/dd6fde61bbb7a799c822b8095c67f455c7c55e8f"
+arsenal@scality/Arsenal#b03f5b8:
+  version "7.4.3"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b03f5b80acd6acaaf8dd2d49cd955e6b95279ab3"
   dependencies:
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
-    bson "2.0.4"
     debug "~2.3.3"
     diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
     joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
-    mongodb "^3.0.1"
     node-forge "^0.7.1"
     simple-glob "^0.1"
     socket.io "~1.7.3"
@@ -545,14 +542,6 @@ bindings@^1.1.1:
   dependencies:
     file-uri-to-path "1.0.0"
 
-bl@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/bl/-/bl-2.2.0.tgz#e1a574cdf528e4053019bb800b041c0ac88da493"
-  integrity sha512-wbgvOpqopSr7uq6fJrLH8EsvYMJf9gzfo2jCsL2eTy75qXPukA4pCgHamOQkZtY5vmfVtjB+P3LNlMHW5CEZXA==
-  dependencies:
-    readable-stream "^2.3.5"
-    safe-buffer "^5.1.1"
-
 bl@~0.8.1:
   version "0.8.2"
   resolved "https://registry.yarnpkg.com/bl/-/bl-0.8.2.tgz#c9b6bca08d1bc2ea00fc8afb4f1a5fd1e1c66e4e"
@@ -582,16 +571,6 @@ browserify-mime@~1.2.9:
   version "1.2.9"
   resolved "https://registry.yarnpkg.com/browserify-mime/-/browserify-mime-1.2.9.tgz#aeb1af28de6c0d7a6a2ce40adb68ff18422af31f"
   integrity sha1-rrGvKN5sDXpqLOQK22j/GEIq8x8=
-
-bson@2.0.4:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/bson/-/bson-2.0.4.tgz#5b8e40f80d3d1b96a2ae55311c6612c25e586e50"
-  integrity sha512-e/GPy6CE0xL7MOYYRMIEwPGKF21WNaQdPIpV0YvaQDoR7oc47KUZ8c2P/TlRJVQP8RZ4CEsArGBC1NbkCRvl1w==
-
-bson@^1.1.1:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/bson/-/bson-1.1.4.tgz#f76870d799f15b854dffb7ee32f0a874797f7e89"
-  integrity sha512-S/yKGU1syOMzO86+dGpg2qGoDL0zvzcb262G+gqEy6TgP6rt6z6qxSFX/8X6vLC91P7G7C3nLs0+bvDzmvBA3Q==
 
 bson@~1.0.4:
   version "1.0.9"
@@ -976,7 +955,7 @@ delayed-stream@~1.0.0:
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
   integrity sha1-3zrhmayt+31ECqrgsp4icrJOxhk=
 
-denque@^1.1.0, denque@^1.4.1:
+denque@^1.1.0:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/denque/-/denque-1.4.1.tgz#6744ff7641c148c3f8a69c307e51235c1f4a37cf"
   integrity sha512-OfzPuSZKGcgr96rf1oODnfjqBFmr1DVoc/TrItj3Ohe0Ah1C5WX5Baquw/9U9KovnQ88EqmJbD66rKYUQYN1tQ==
@@ -1370,13 +1349,6 @@ fast-levenshtein@~2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
-
-"fcntl@github:scality/node-fcntl":
-  version "0.1.0"
-  resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/9108603d8881d7762dcadfde1db927a1653dfda5"
-  dependencies:
-    bindings "^1.1.1"
-    nan "^2.3.2"
 
 figures@^1.3.5:
   version "1.7.0"
@@ -2459,11 +2431,6 @@ media-typer@0.3.0:
   resolved "https://registry.yarnpkg.com/media-typer/-/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
   integrity sha1-hxDXrwqmJvj/+hzgAWhUUmMlV0g=
 
-memory-pager@^1.0.2:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/memory-pager/-/memory-pager-1.5.0.tgz#d8751655d22d384682741c972f2c3d6dfa3e66b5"
-  integrity sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==
-
 memorystream@^0.3.1:
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/memorystream/-/memorystream-0.3.1.tgz#86d7090b30ce455d63fbae12dda51a47ddcaf9b2"
@@ -2606,19 +2573,6 @@ mongodb@^2.2.31:
     es6-promise "3.2.1"
     mongodb-core "2.1.20"
     readable-stream "2.2.7"
-
-mongodb@^3.0.1:
-  version "3.5.5"
-  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-3.5.5.tgz#1334c3e5a384469ac7ef0dea69d59acc829a496a"
-  integrity sha512-GCjDxR3UOltDq00Zcpzql6dQo1sVry60OXJY3TDmFc2SWFY6c8Gn1Ardidc5jDirvJrx2GC3knGOImKphbSL3A==
-  dependencies:
-    bl "^2.2.0"
-    bson "^1.1.1"
-    denque "^1.4.1"
-    require_optional "^1.0.1"
-    safe-buffer "^5.1.2"
-  optionalDependencies:
-    saslprep "^1.0.0"
 
 ms@0.7.1:
   version "0.7.1"
@@ -3052,7 +3006,7 @@ readable-stream@2.2.7:
     string_decoder "~1.0.0"
     util-deprecate "~1.0.1"
 
-readable-stream@^2.2.2, readable-stream@^2.3.5:
+readable-stream@^2.2.2:
   version "2.3.7"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.7.tgz#1eca1cf711aef814c04f62252a36a62f6cb23b57"
   integrity sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==
@@ -3178,7 +3132,7 @@ require-uncached@^1.0.2:
     caller-path "^0.1.0"
     resolve-from "^1.0.0"
 
-require_optional@^1.0.1, require_optional@~1.0.0:
+require_optional@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/require_optional/-/require_optional-1.0.1.tgz#4cf35a4247f64ca3df8c2ef208cc494b1ca8fc2e"
   integrity sha512-qhM/y57enGWHAe3v/NcwML6a3/vfESLe/sGM2dII+gEO0BpKRUkWZow/tyloNqJyN6kXSl3RyyM8Ll5D/sJP8g==
@@ -3269,7 +3223,7 @@ s3blaster@scality/s3blaster#7a836b6:
     underscore "^1.8.3"
     utf8 "~2.1.1"
 
-safe-buffer@^5.0.1, safe-buffer@^5.1.1, safe-buffer@^5.1.2, safe-buffer@~5.2.0:
+safe-buffer@^5.0.1, safe-buffer@^5.1.2, safe-buffer@~5.2.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.2.0.tgz#b74daec49b1148f88c64b68d49b1e815c1f2f519"
   integrity sha512-fZEwUGbVl7kouZs1jCdMLdt95hdIv0ZeHg6L7qPeciMZhZ+/gdesW4wgTARkrFWEpspjEATAzUGPG8N2jJiwbg==
@@ -3288,13 +3242,6 @@ safer-buffer@^2.0.2, safer-buffer@^2.1.0, safer-buffer@~2.1.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
-
-saslprep@^1.0.0:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/saslprep/-/saslprep-1.0.3.tgz#4c02f946b56cf54297e347ba1093e7acac4cf226"
-  integrity sha512-/MY/PEMbk2SuY5sScONwhUDsV2p77Znkb/q3nSVstq/yQzYJOH/Azh29p9oJLsl3LnQwSvZDKagDGBsBwSooag==
-  dependencies:
-    sparse-bitfield "^3.0.3"
 
 sax@0.5.x:
   version "0.5.8"
@@ -3427,13 +3374,6 @@ source-map@^0.6.1, source-map@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
-
-sparse-bitfield@^3.0.3:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/sparse-bitfield/-/sparse-bitfield-3.0.3.tgz#ff4ae6e68656056ba4b3e792ab3334d38273ca11"
-  integrity sha1-/0rm5oZWBWuks+eSqzM004JzyhE=
-  dependencies:
-    memory-pager "^1.0.2"
 
 spdx-correct@^3.0.0:
   version "3.1.0"
@@ -3881,11 +3821,11 @@ vaultclient@scality/vaultclient#21d03b1:
     werelogs scality/werelogs#4e0d97c
     xml2js "0.4.19"
 
-vaultclient@scality/vaultclient#cc9ba34:
-  version "7.4.0"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/cc9ba34b9abf3aac8324e912671547f5fc31baf4"
+vaultclient@scality/vaultclient#478710c:
+  version "7.5.1"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/478710cbe2c479f35ba3f302f73b2932ec0716d9"
   dependencies:
-    arsenal scality/Arsenal#9f2e74e
+    arsenal scality/Arsenal#b03f5b8
     commander "2.20.0"
     werelogs scality/werelogs#4e0d97c
     xml2js "0.4.19"
