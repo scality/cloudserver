@@ -236,14 +236,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-arraybuffer.slice@~0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
-  integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
-
-"arsenal@github:scality/Arsenal#3ed66c5":
-  version "8.2.1"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/3ed66c50f6ebb14e56ad7dbe37e97a96b427519f"
+"arsenal@github:scality/Arsenal#d350f3d":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/d350f3db8283907b650a132e33e69fdd21cb5731"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -301,10 +296,11 @@ arsenal@scality/Arsenal#32c895b:
   optionalDependencies:
     ioctl "2.0.0"
 
-arsenal@scality/Arsenal#b03f5b8:
-  version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b03f5b80acd6acaaf8dd2d49cd955e6b95279ab3"
+arsenal@scality/Arsenal#9f2e74e:
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
   dependencies:
+    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -312,7 +308,6 @@ arsenal@scality/Arsenal#b03f5b8:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
-    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -4581,13 +4576,13 @@ utapi@scality/utapi#5ccb8d0:
   version "8.0.0"
   resolved "https://codeload.github.com/scality/utapi/tar.gz/5ccb8d03bef59e9048daa592947427cbfb8db802"
   dependencies:
-    arsenal scality/Arsenal#32c895b
+    arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#478710c
-    werelogs scality/werelogs#0a4c576
+    vaultclient scality/vaultclient#cc9ba34
+    werelogs scality/werelogs#4e0d97c
 
 utf-8-validate@^4.0.2:
   version "4.0.2"
