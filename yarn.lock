@@ -236,9 +236,14 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#d350f3d":
-  version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/d350f3db8283907b650a132e33e69fdd21cb5731"
+arraybuffer.slice@~0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
+  integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
+
+"arsenal@github:scality/Arsenal#44b8de5":
+  version "8.2.1"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/44b8de565f4bc36e147103d874d6cd7206cbf2b2"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -271,36 +276,10 @@ arraybuffer.slice@0.0.6:
   optionalDependencies:
     ioctl "2.0.1"
 
-arsenal@scality/Arsenal#32c895b:
-  version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
-  dependencies:
-    "@hapi/joi" "^15.1.0"
-    JSONStream "^1.0.0"
-    ajv "4.10.0"
-    async "~2.1.5"
-    debug "~2.3.3"
-    diskusage "^1.1.1"
-    ioredis "4.9.5"
-    ipaddr.js "1.2.0"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    node-forge "^0.7.1"
-    simple-glob "^0.1"
-    socket.io "~1.7.3"
-    socket.io-client "~1.7.3"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
-  optionalDependencies:
-    ioctl "2.0.0"
-
 arsenal@scality/Arsenal#9f2e74e:
-  version "7.5.0"
+  version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
   dependencies:
-    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -308,6 +287,7 @@ arsenal@scality/Arsenal#9f2e74e:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
+    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -4576,13 +4556,13 @@ utapi@scality/utapi#5ccb8d0:
   version "8.0.0"
   resolved "https://codeload.github.com/scality/utapi/tar.gz/5ccb8d03bef59e9048daa592947427cbfb8db802"
   dependencies:
-    arsenal scality/Arsenal#dd6fde6
+    arsenal scality/Arsenal#32c895b
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#cc9ba34
-    werelogs scality/werelogs#4e0d97c
+    vaultclient scality/vaultclient#478710c
+    werelogs scality/werelogs#0a4c576
 
 utf-8-validate@^4.0.2:
   version "4.0.2"
@@ -4641,11 +4621,11 @@ validator@~9.4.1:
   resolved "https://registry.yarnpkg.com/validator/-/validator-9.4.1.tgz#abf466d398b561cd243050112c6ff1de6cc12663"
   integrity sha512-YV5KjzvRmSyJ1ee/Dm5UED0G+1L4GZnLN3w6/T+zZm8scVua4sOhYKWTUrKa0H/tMiJyO9QLHMPN+9mB/aMunA==
 
-vaultclient@scality/vaultclient#478710c:
-  version "7.5.1"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/478710cbe2c479f35ba3f302f73b2932ec0716d9"
+vaultclient@scality/vaultclient#cc9ba34:
+  version "7.4.0"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/cc9ba34b9abf3aac8324e912671547f5fc31baf4"
   dependencies:
-    arsenal scality/Arsenal#b03f5b8
+    arsenal scality/Arsenal#9f2e74e
     commander "2.20.0"
     werelogs scality/werelogs#4e0d97c
     xml2js "0.4.19"
@@ -4667,12 +4647,6 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
-
-werelogs@scality/werelogs#0a4c576:
-  version "7.4.1"
-  resolved "https://codeload.github.com/scality/werelogs/tar.gz/0a4c57658f9cf56838628f3a328cdee5f5b5adc3"
-  dependencies:
-    safe-json-stringify "1.0.3"
 
 werelogs@scality/werelogs#0ff7ec82:
   version "7.4.0"
