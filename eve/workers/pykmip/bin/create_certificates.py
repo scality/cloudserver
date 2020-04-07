@@ -30,7 +30,7 @@ def create_rsa_private_key(key_size=2048, public_exponent=65537):
     return private_key
 
 
-def create_self_signed_certificate(subject_name, private_key, days_valid=365):
+def create_self_signed_certificate(subject_name, private_key, days_valid=36500):
     subject = x509.Name([
         x509.NameAttribute(x509.NameOID.ORGANIZATION_NAME, u"Scality"),
         x509.NameAttribute(x509.NameOID.COMMON_NAME, subject_name)
@@ -59,7 +59,7 @@ def create_certificate(subject_name,
                        private_key,
                        signing_certificate,
                        signing_key,
-                       days_valid=365,
+                       days_valid=36500,
                        client_auth=False):
     subject = x509.Name([
         x509.NameAttribute(x509.NameOID.ORGANIZATION_NAME, u"Scality"),
