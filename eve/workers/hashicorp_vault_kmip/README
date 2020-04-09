@@ -1,0 +1,16 @@
+This docker container spawns a hashicorp vault/kmip server for integration
+test purpose.
+
+Please note, the server does not setup TLS communication with the clients.
+
+The kmip scope and role are defined at the beginning of the setup.sh script:
+SCOPE="scality-s3c"
+ROLE="admin"
+
+When running this container, you have to set an environment variable called
+"LICENSE" containing the hashicorp vault license. The license value is
+available in the CI secrets with the key "hashicorp_vault_license".
+
+The whole container is setup and ready when it is also listening on HTTP. This
+should be used to coordinate test start. On this web server, the tester can get
+the kmip ca.pem, cert.pem, and key.pem at /ca.pem /cert.pem and /key.pem URIs.
