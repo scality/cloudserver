@@ -236,6 +236,7 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
+<<<<<<< HEAD
 arraybuffer.slice@~0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
@@ -279,6 +280,17 @@ arraybuffer.slice@~0.0.7:
 arsenal@scality/Arsenal#32c895b:
   version "7.5.0"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
+=======
+<<<<<<< HEAD
+"arsenal@github:scality/Arsenal#65e92eb":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/65e92ebd92fb8fa68e39dde8224554f6e8970c5c"
+=======
+"arsenal@github:scality/Arsenal#5f6dda1aa18a0":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/5f6dda1aa18a00e4876d4a985e55b9b9263def75"
+>>>>>>> origin/w/7.6/bugfix/S3C-2668_update_arsenal_for_tagging_utf8_fix
+>>>>>>> origin/w/7.7/bugfix/S3C-2668_update_arsenal_for_tagging_utf8_fix
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
