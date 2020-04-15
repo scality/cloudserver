@@ -1,0 +1,112 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.14.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - utapi > arsenal > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > engine.io > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-adapter > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > engine.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > engine.io > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-adapter > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > engine.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > engine.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > engine.io-client > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-adapter > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-adapter > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > socket.io-parser > debug:
+        patched: '2020-04-15T03:27:01.203Z'
+  'npm:minimatch:20160620':
+    - utapi > arsenal > simple-glob > glob > minimatch:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > simple-glob > glob > minimatch:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > simple-glob > minimatch:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > simple-glob > minimatch:
+        patched: '2020-04-15T03:27:01.203Z'
+  'npm:ms:20170412':
+    - utapi > arsenal > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > engine.io > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-adapter > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > engine.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > engine.io > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-adapter > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > engine.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > engine.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > engine.io-client > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > arsenal > socket.io > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-adapter > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
+    - utapi > vaultclient > arsenal > socket.io > socket.io-client > socket.io-parser > debug > ms:
+        patched: '2020-04-15T03:27:01.203Z'
