@@ -137,7 +137,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should return Accept-Ranges header if request header includes' +
+    it('should return Accept-Ranges header if request header includes ' +
        '"Range" header with specified range bytes of an object', done => {
         const testGetRequest = {
             bucketName,
@@ -149,6 +149,7 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err, null, `Error: ${err}`);
                 objectHead(authInfo, testGetRequest, log, (err, res) => {
                     assert.strictEqual(res['accept-ranges'], 'bytes');
                     done();
