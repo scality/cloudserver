@@ -137,6 +137,26 @@ describe('objectHead API', () => {
         });
     });
 
+    it('should return Accept-Ranges headeer if request header includes' +
+       '"Range" header with specified range bytes of an object', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { 'Range': 'bytes=1-9' },
+            url: `/${bucketName}/${objectName}`,
+        };
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res['accept-ranges'], 'bytes');
+                    done();
+                });
+            });
+        });
+    });
+
     it('should get the object metadata', done => {
         const testGetRequest = {
             bucketName,
