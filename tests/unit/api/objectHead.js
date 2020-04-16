@@ -143,7 +143,7 @@ describe('objectHead API', () => {
             bucketName,
             namespace,
             objectKey: objectName,
-            headers: { Range: 'bytes=1-9' },
+            headers: { range: 'bytes=1-9' },
             url: `/${bucketName}/${objectName}`,
         };
 
