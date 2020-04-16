@@ -148,8 +148,7 @@ describe('objectHead API', () => {
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
-            objectPut(authInfo, testPutObjectRequest, undefined, log,
-                (err, res) => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 objectHead(authInfo, testGetRequest, log, (err, res) => {
                     assert.strictEqual(res['accept-ranges'], 'bytes');
                     done();
