@@ -137,6 +137,102 @@ describe('objectHead API', () => {
         });
     });
 
+    it('should return Accept-Ranges header if request includes "Range" ' +
+       'header with specified range bytes of an object', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { range: 'bytes=1-9' },
+            url: `/${bucketName}/${objectName}`,
+        };
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err, null, `Error copying: ${err}`);
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res['accept-ranges'], 'bytes');
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should return InvalidRequest error when both the Range header and ' +
+       'the partNumber query parameter specified', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { range: 'bytes=1-9' },
+            url: `/${bucketName}/${objectName}`,
+            query: {
+                partNumber: '1',
+            },
+        };
+        const customizedInvalidRequestError = errors.InvalidRequest
+            .customizeDescription('Cannot specify both Range header and ' +
+                'partNumber query parameter.');
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                objectHead(authInfo, testGetRequest, log, err => {
+                    assert.deepStrictEqual(err, customizedInvalidRequestError);
+                    assert.deepStrictEqual(err.InvalidRequest, true);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should return InvalidArgument error if partNumber is nan', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            query: {
+                partNumber: 'nan',
+            },
+        };
+        const customizedInvalidArgumentError = errors.InvalidArgument
+            .customizeDescription('Part number must be a number.');
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                objectHead(authInfo, testGetRequest, log, err => {
+                    assert.deepStrictEqual(err, customizedInvalidArgumentError);
+                    assert.deepStrictEqual(err.InvalidArgument, true);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should not return Accept-Ranges header if request does not include ' +
+       '"Range" header with specified range bytes of an object', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res['accept-ranges'], undefined);
+                    done();
+                });
+            });
+        });
+    });
+
     it('should get the object metadata', done => {
         const testGetRequest = {
             bucketName,
