@@ -66,7 +66,7 @@ describe('putObjectTagging API', () => {
         });
     });
 
-    afterEach(() => cleanup());
+    afterEach(cleanup);
 
     it('should update an object\'s metadata with tags resource', done => {
         const taggingUtil = new TaggingConfigTester();
