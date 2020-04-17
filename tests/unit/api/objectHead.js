@@ -176,7 +176,8 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidRequestError);
                     assert.deepStrictEqual(err.InvalidRequest, true);
                     done();
@@ -185,8 +186,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should return InvalidArgument error if partNumber is not a number',
-        done => {
+    it('should return InvalidArgument error if partNumber is nan', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -202,7 +202,8 @@ describe('objectHead API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                assert.strictEqual(err, null, `Error objectPut: ${err}`);
+                objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidArgumentError);
                     assert.deepStrictEqual(err.InvalidArgument, true);
                     done();
