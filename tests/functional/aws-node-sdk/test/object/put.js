@@ -3,7 +3,8 @@ const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const provideRawOutput = require('../../lib/utility/provideRawOutput');
-const { taggingTests } = require('../../lib/utility/tagging');
+const { taggingTests, generateMultipleTagQuery }
+    = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
 
@@ -14,18 +15,6 @@ function _checkError(err, code, statusCode) {
     assert(err, 'Expected error but found none');
     assert.strictEqual(err.code, code);
     assert.strictEqual(err.statusCode, statusCode);
-}
-
-function generateMultipleTagQuery(numberOfTag) {
-    let tags = '';
-    let and = '';
-    for (let i = 0; i < numberOfTag; i++) {
-        if (i !== 0) {
-            and = '&';
-        }
-        tags = `key${i}=value${i}${and}${tags}`;
-    }
-    return tags;
 }
 
 describe('PUT object', () => {
