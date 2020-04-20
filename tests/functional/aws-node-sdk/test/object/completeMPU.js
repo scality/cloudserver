@@ -138,5 +138,58 @@ describe('Complete MPU', () => {
                 _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
             });
         });
+
+        describe('with tags set on initiation', () => {
+            const tagKey = 'keywithtags';
+            beforeEach(() => {
+                const result = {};
+                return s3.createMultipartUploadAsync({
+                    Bucket: bucket,
+                    Key: tagKey,
+                    Tagging: 'key1=value1&key2=value2' })
+                .then(data => {
+                    result.uploadId = data.UploadId;
+                    return s3.uploadPartAsync({ Bucket: bucket, Key: tagKey,
+                        PartNumber: 1, UploadId: data.UploadId, Body: 'foo' });
+                })
+                .then(data => {
+                    result.eTag = data.ETag;
+                    return s3.completeMultipartUploadAsync({
+                        Bucket: bucket,
+                        Key: tagKey,
+                        UploadId: result.uploadId,
+                        MultipartUpload: {
+                            Parts: [{
+                                ETag: data.ETag,
+                                PartNumber: 1,
+                            }],
+                        },
+                    });
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
+            });
+
+            it('should have tags set on completed MPU object', done => {
+                const expectedTagSet = [
+                    {
+                        Key: 'key1',
+                        Value: 'value1',
+                    },
+                    {
+                        Key: 'key2',
+                        Value: 'value2',
+                    },
+                ];
+                s3.getObjectTagging({ Bucket: bucket, Key: tagKey },
+                    (err, tagData) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(expectedTagSet, tagData.TagSet);
+                        done();
+                    });
+            });
+        });
     });
 });
