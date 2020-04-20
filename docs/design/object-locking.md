@@ -19,7 +19,7 @@ object lock flag on an existing bucket, a migration needs to be performed
 on the bucket using a tool. Objects that were created before the lock is set
 are not protected by Object Locking
 
-## What happens when an object is locked?
+## What happens when an object is locked
 
 A lock when set on an object version prevents deletes, overwrites on that
 version until the lock expires. The lock however doesn't prevent creation of
@@ -84,8 +84,9 @@ Root users with account credentials or IAM users who are given the permission
 ### Implementation
 
 #### Storing Object lock configuration
+
 Object lock can be enabled on a bucket during bucket creation using
-` x-amz-bucket-object-lock-enabled` header. This is stored along with the
+`x-amz-bucket-object-lock-enabled` header. This is stored along with the
 bucket's metadata defined in BucketInfo model.
 Any default lock settings (governance/compliance mode, days/years for retention
 period) defined using `PutObjectLockConfiguration` request are stored along
@@ -94,8 +95,10 @@ When a PUT Object request is received, the lock configuration is evaluated and
 retain until date and time is calculated and set as `retain-until-date`
 property on the object's metadata.
 Lock configuration on a PUT object request is evaluated the following order
+
 1. Bucket's configuration for retention mode/period
 2. Object's configuration in the PUT Object for retention mode/period
+
 The object's settings override the bucket's settings when calculating the
 `retain-until-date` date and time to be stored on the object's metadata.
 Lock configuration on an object version can also be changed using
@@ -106,6 +109,7 @@ permission to make the request.
 Note: Delete markers do not have any object lock protection
 
 #### Processing DELETE requests
+
 Whenever requests such as  DELETE object using version-id,
 Multi-Object DELETE specifying version-id or a Lifecycle action to
 permanently delete the object version are received, the current date and time is
@@ -161,7 +165,6 @@ bucket, otherwise the lock is ignored in the destination bucket.
 
 * **Get Object Retention**- get retention mode/period configuration set on a
   object version
-
 
 ## FAQ
 
