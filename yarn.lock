@@ -3819,9 +3819,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#b522b3d:
+utapi@scality/utapi#45d7e26:
   version "7.4.5"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/b522b3d782b1e29b640a25b79ba5c06e445eaf71"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/45d7e26afbe3867b6a1e8dcd261f7082ef8ea178"
   dependencies:
     arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
