@@ -35,14 +35,6 @@ const enableVersioningRequest =
 const suspendVersioningRequest =
     versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
 
-function generateString(number) {
-    let word = '';
-    for (let i = 0; i < number; i++) {
-        word = `${word}w`;
-    }
-    return word;
-}
-
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, testPutBucketRequest, log, err => {
@@ -68,11 +60,10 @@ describe('parseTagFromQuery', () => {
         { tagging: 'key1=value1=value2', error: invalidArgument },
         { tagging: '=value1', error: invalidArgument },
         { tagging: 'key1%=value1', error: invalidArgument },
-        { tagging: `${generateString(129)}=value1`, error: invalidTag },
-        { tagging: `key1=${generateString(257)}`, error: invalidTag },
-        { tagging: `${generateString(129)}=value1`, error: invalidTag },
-        { tagging: `key1=${generateString(257)}`, error: invalidTag },
-        { tagging: 'key1#=value1', error: invalidTag },
+        { tagging: `${'w'.repeat(129)}=value1`, error: invalidTag },
+        { tagging: `key1=${'w'.repeat(257)}`, error: invalidTag },
+        { tagging: `${'w'.repeat(129)}=value1`, error: invalidTag },
+        { tagging: `key1=${'w'.repeat(257)}`, error: invalidTag },
     ];
     tests.forEach(test => {
         const behavior = test.error ? 'fail' : 'pass';
