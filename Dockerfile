@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 COPY ./package.json yarn.lock ./
 
 RUN apt-get update \
-    && apt-get install -y jq python git build-essential ssh --no-install-recommends \
+    && apt-get install -y ca-certificates jq python git build-essential ssh --no-install-recommends \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts \
     && yarn cache clean \

@@ -197,9 +197,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#3d0c3be":
+"arsenal@github:scality/Arsenal#1b4c946":
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/3d0c3bea2ef52df6a7c1c1cb0a85cd453f33001f"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/1b4c946669d7221d3c6b56a08f19811d6535e351"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -583,7 +583,6 @@ bucketclient@scality/bucketclient#6d2d5a4:
   dependencies:
     arsenal scality/Arsenal#9f2e74e
     werelogs scality/werelogs#4e0d97c
-    yarn "^1.17.3"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -3766,13 +3765,13 @@ utapi@scality/utapi#72aedba:
   version "7.4.5"
   resolved "https://codeload.github.com/scality/utapi/tar.gz/72aedba8bab198cf682bcfc7ffca7ac9e2afe6c0"
   dependencies:
-    arsenal scality/Arsenal#32c895b
+    arsenal scality/Arsenal#dd6fde6
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#478710c
-    werelogs scality/werelogs#0a4c576
+    vaultclient scality/vaultclient#cc9ba34
+    werelogs scality/werelogs#4e0d97c
 
 utf8@2.1.2, utf8@~2.1.1:
   version "2.1.2"
