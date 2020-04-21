@@ -197,9 +197,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#5f6dda1aa18a0":
+"arsenal@github:scality/Arsenal#bbfc32e":
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/5f6dda1aa18a00e4876d4a985e55b9b9263def75"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/bbfc32e67e6d0b10f77539fb318b727d9cb297d0"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -591,7 +591,6 @@ bucketclient@scality/bucketclient#6d2d5a4:
   dependencies:
     arsenal scality/Arsenal#9f2e74e
     werelogs scality/werelogs#4e0d97c
-    yarn "^1.17.3"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -3981,11 +3980,6 @@ yallist@^2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-2.1.2.tgz#1c11f9218f076089a47dd512f93c6699a6a81d52"
   integrity sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=
-
-yarn@^1.17.3:
-  version "1.21.1"
-  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.21.1.tgz#1d5da01a9a03492dc4a5957befc1fd12da83d89c"
-  integrity sha512-dQgmJv676X/NQczpbiDtc2hsE/pppGDJAzwlRiADMTvFzYbdxPj2WO4PcNyriSt2c4jsCMpt8UFRKHUozt21GQ==
 
 yeast@0.1.2:
   version "0.1.2"
