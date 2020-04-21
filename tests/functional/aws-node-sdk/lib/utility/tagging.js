@@ -12,6 +12,19 @@ const taggingTests = [
     },
 ];
 
+function generateMultipleTagQuery(numberOfTag) {
+    let tags = '';
+    let and = '';
+    for (let i = 0; i < numberOfTag; i++) {
+        if (i !== 0) {
+            and = '&';
+        }
+        tags = `key${i}=value${i}${and}${tags}`;
+    }
+    return tags;
+}
+
 module.exports = {
     taggingTests,
+    generateMultipleTagQuery,
 };
