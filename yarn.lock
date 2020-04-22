@@ -251,7 +251,6 @@ arsenal@scality/Arsenal#9f2e74e:
   version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
   dependencies:
-    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -259,6 +258,7 @@ arsenal@scality/Arsenal#9f2e74e:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
+    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -3762,9 +3762,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#72aedba:
-  version "7.4.5"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/72aedba8bab198cf682bcfc7ffca7ac9e2afe6c0"
+utapi@scality/utapi#2bc5d07:
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/2bc5d07f85ba6d0e1ec230efe579b23386c99fa7"
   dependencies:
     arsenal scality/Arsenal#32c895b
     async "^2.0.1"
