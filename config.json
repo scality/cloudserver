@@ -73,11 +73,6 @@
         "enabled": false,
         "recordLogName": "s3-recordlog"
     },
-    "mongodb": {
-	"host": "localhost",
-	"port": 27018,
-	"database": "metadata"
-    },
     "requests": {
         "viaProxy": false,
         "trustedProxyCIDRs": [],
