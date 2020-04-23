@@ -368,7 +368,7 @@ stages:
         redis: enabled
         pykmip: enabled
         env:
-          <<: *mongo-vars
+          <<: *file-mem-mpu
           <<: *global-env
     steps:
       - Git: *clone
@@ -388,7 +388,7 @@ stages:
               filename: /artifacts/s3.log
               follow: true
           env:
-            <<: *mongo-vars
+            <<: *file-mem-mpu
             <<: *global-env
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
