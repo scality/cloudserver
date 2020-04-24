@@ -197,9 +197,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#4d54b49":
+"arsenal@github:scality/Arsenal#336e42a":
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/4d54b49c038229013ea519c74dcd1c4a56712b08"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/336e42a9e04938ead212f0f3bfe9424d7c487cd5"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -578,7 +578,6 @@ bucketclient@scality/bucketclient#6d2d5a4:
   dependencies:
     arsenal scality/Arsenal#9f2e74e
     werelogs scality/werelogs#4e0d97c
-    yarn "^1.17.3"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
