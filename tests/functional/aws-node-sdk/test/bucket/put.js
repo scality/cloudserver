@@ -192,6 +192,44 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             it('should create bucket if name is an IP address with some suffix',
                 done => _test('192.168.5.4-suffix', done));
         });
+
+        describe('bucket creation success with object lock', () => {
+            function _testObjectLock(name, done) {
+                bucketUtil.s3.createBucket({
+                    Bucket: name,
+                    ObjectLockEnabledForBucket: true,
+                }, (err, res) => {
+                    assert.ifError(err);
+                    assert(res.Location, 'No Location in response');
+                    assert.strictEqual(res.Location, `/${name}`,
+                        'Wrong Location header');
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                });
+            }
+            function _testVersioning(name, done) {
+                bucketUtil.s3.createBucket({
+                    Bucket: name,
+                    ObjectLockEnabledForBucket: true,
+                }, (err, res) => {
+                    assert.ifError(err);
+                    assert(res.Location, 'No Location in response');
+                    assert.strictEqual(res.Location, `/${name}`,
+                        'Wrong Location header');
+                    bucketUtil.s3.getBucketVersioning({ Bucket: name }, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.Status, 'Enabled');
+                        assert.strictEqual(res.MFADelete, 'Disabled');
+                    });
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                });
+            }
+            it('should create bucket without error', done =>
+            _testObjectLock('bucket-with-object-lock', done));
+
+            it('should create bucket with versioning enabled by default', done =>
+            _testVersioning('bucket-with-object-lock', done));
+        });
+
         Object.keys(locationConstraints).forEach(
         location => {
             describeSkipAWS(`bucket creation with location: ${location}`,
