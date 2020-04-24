@@ -21,7 +21,7 @@
   "dependencies": {
     "arsenal": "github:scality/Arsenal#fc0123e",
     "async": "~2.5.0",
-    "aws-sdk": "2.178.0",
+    "aws-sdk": "^2.178.0",
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#6d2d5a4",
     "commander": "^2.9.0",
