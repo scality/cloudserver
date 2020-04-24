@@ -70,3 +70,16 @@ describe('bucket creation', () => {
         });
     });
 });
+describe('bucket creation with object lock', () => {
+    it('should return 200 when creating a bucket with object lock', done => {
+        const bucketName = 'test-bucket-with-objectlock';
+        const headers = {
+            'x-amz-bucket-object-lock-enabled': true,
+        };
+        createBucket(authInfo, bucketName, headers,
+            normalBehaviorLocationConstraint, log, err => {
+                assert.ifError(err);
+                done();
+            });
+    });
+});
