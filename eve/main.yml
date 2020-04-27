@@ -61,10 +61,6 @@ models:
       gcpbackendmismatch_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
       gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
       gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
-  - env: &mongo-vars
-      S3BACKEND: "mem"
-      MPU_TESTING: "yes"
-      S3METADATA: mongodb
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
@@ -127,7 +123,6 @@ stages:
             - linting-coverage
             - file-ft-tests
             - multiple-backend-test
-            - mongo-ft-tests
             - kmip-ft-tests
           waitForFinish: true
           haltOnFailure: true
@@ -216,38 +211,6 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  mongo-ft-tests:
-    worker: &s3-pod
-      type: kube_pod
-      path: eve/workers/pod.yaml
-      images:
-        aggressor: eve/workers/build
-        s3: "."
-      vars:
-        aggressorMem: "2Gi"
-        s3Mem: "1664Mi"
-        redis: enabled
-        env:
-          <<: *mongo-vars
-          <<: *global-env
-    steps:
-      - Git: *clone
-      - ShellCommand: *credentials
-      - ShellCommand: *setup-github-ssh
-      - ShellCommand: *yarn-install
-      - ShellCommand:
-          command: |
-            set -ex
-            bash wait_for_local_port.bash 8000 40
-            yarn run ft_test
-          <<: *follow-s3-log
-          env:
-            <<: *mongo-vars
-            <<: *global-env
-      - ShellCommand: *setup-junit-upload
-      - Upload: *upload-artifacts
-      - Upload: *upload-junits
-
   file-ft-tests:
     worker:
       type: kube_pod
@@ -294,7 +257,7 @@ stages:
         redis: enabled
         pykmip: enabled
         env:
-          <<: *mongo-vars
+          <<: *file-mem-mpu
           <<: *global-env
     steps:
       - Git: *clone
@@ -314,7 +277,7 @@ stages:
               filename: /artifacts/s3.log
               follow: true
           env:
-            <<: *mongo-vars
+            <<: *file-mem-mpu
             <<: *global-env
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
