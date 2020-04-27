@@ -160,7 +160,7 @@ describe('Complete MPU', () => {
                                 assert(err, 'Expected err but found none');
                                 assert.strictEqual(err.code, test.error);
                                 assert.strictEqual(err.statusCode, 400);
-                                done();
+                                next('expected');
                             }
                             next(null, data.UploadId);
                         }),
@@ -185,19 +185,23 @@ describe('Complete MPU', () => {
                             },
                         }, next),
                     ], err => {
-                        assert.equal(err, null, 'Error in mpu setup: ' +
-                        `${JSON.stringify(err)}`);
-                        s3.getObjectTagging({
-                            Bucket: bucket,
-                            Key: tagKey,
-                        }, (err, tagData) => {
-                            assert.equal(err, null, 'Expected success, ' +
-                                `got error ${JSON.stringify(err)}`);
-                            assert.deepStrictEqual(tagData.TagSet[0], {
-                                Key: test.tag.key,
-                                Value: test.tag.value });
+                        if (err === 'expected') {
                             done();
-                        });
+                        } else {
+                            assert.ifError(err);
+                            s3.getObjectTagging({
+                                Bucket: bucket,
+                                Key: tagKey,
+                            }, (err, tagData) => {
+                                assert.ifError(err);
+                                assert.deepStrictEqual(tagData.TagSet,
+                                    [{
+                                        Key: test.tag.key,
+                                        Value: test.tag.value,
+                                    }]);
+                                done();
+                            });
+                        }
                     });
                 });
             });
