@@ -76,8 +76,7 @@ describe('Initiate MPU', () => {
                     Key: key,
                     Tagging: taggingConfig,
                 }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
+                    assert.ifError(err);
                     done();
                 });
             });
@@ -89,8 +88,7 @@ describe('Initiate MPU', () => {
                     Key: key,
                     Tagging: taggingConfig,
                 }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
+                    assert.ifError(err);
                     done();
                 });
             });
