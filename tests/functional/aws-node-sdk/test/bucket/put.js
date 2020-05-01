@@ -191,6 +191,29 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             it('should create bucket if name is an IP address with some suffix',
                 done => _test('192.168.5.4-suffix', done));
         });
+
+        describe('bucket creation success with object lock', () => {
+            function _test(name, done) {
+                const bucket = {
+                    Bucket: name,
+                    ObjectLockEnabledForBucket: true,
+                };
+                bucketUtil.s3.createBucket(bucket, (err, res) => {
+                    assert.ifError(err);
+                    assert(res.Location, 'No Location in response');
+                    assert.deepStrictEqual(res.Location, `/${name}`,
+                      'Wrong Location header');
+                    bucketUtil.s3.getBucketVersioning({ Bucket: name }, (err, res) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(res.Status, 'Enabled');
+                    })
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                });
+            }
+            it('should create bucket with versioning enabled by default', done =>
+            _test('bucket-with-object-lock', done));
+        });
+
         Object.keys(locationConstraints).forEach(
         location => {
             describeSkipAWS(`bucket creation with location: ${location}`,
