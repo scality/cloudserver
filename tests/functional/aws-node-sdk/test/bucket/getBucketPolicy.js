@@ -1,9 +1,9 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 const { S3 } = require('aws-sdk');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const assertError = require('../../lib/utility/assertError');
 
 const bucket = 'getbucketpolicy-testbucket';
 const bucketPolicy = {
@@ -23,20 +23,6 @@ const expectedPolicy = {
     Action: 's3:putBucketPolicy',
     Resource: `arn:aws:s3:::${bucket}`,
 };
-
-// Check for the expected error response code and status code.
-function assertError(err, expectedErr, cb) {
-    if (expectedErr === null) {
-        assert.strictEqual(err, null, `expected no error but got '${err}'`);
-    } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
-    }
-    cb();
-}
 
 describe('aws-sdk test get bucket policy', () => {
     const config = getConfig('default', { signatureVersion: 'v4' });

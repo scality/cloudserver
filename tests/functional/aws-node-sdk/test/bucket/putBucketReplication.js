@@ -1,27 +1,14 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 const { S3 } = require('aws-sdk');
 const { series } = require('async');
 
 const getConfig = require('../support/config');
 const replicationUtils = require('../../lib/utility/replication');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const assertError = require('../../lib/utility/assertError');
 
 const sourceBucket = 'source-bucket';
 const destinationBucket = 'destination-bucket';
-
-// Check for the expected error response code and status code.
-function assertError(err, expectedErr) {
-    if (expectedErr === null) {
-        assert.strictEqual(err, null, `expected no error but got '${err}'`);
-    } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be 400 but got ' +
-            `'${err.statusCode}'`);
-    }
-}
 
 // Get parameters for putBucketReplication.
 function getReplicationParams(config) {
@@ -77,8 +64,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
             next => s3.putBucketVersioning(versioningParams, next),
             next => s3.putBucketReplication(replicationParams, next),
         ], err => {
-            assertError(err, expectedErr);
-            return cb();
+            assertError(err, expectedErr, cb);
         });
     }
 
@@ -91,8 +77,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
     it('should return \'NoSuchBucket\' error if bucket does not exist', done =>
         s3.putBucketReplication(replicationParams, err => {
-            assertError(err, 'NoSuchBucket');
-            return done();
+            assertError(err, 'NoSuchBucket', done);
         }));
 
     describe('test putBucketReplication bucket versioning status', () => {
@@ -111,8 +96,7 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
         it('should not put configuration on bucket without versioning', done =>
             s3.putBucketReplication(replicationParams, err => {
-                assertError(err, 'InvalidRequest');
-                return done();
+                assertError(err, 'InvalidRequest', done);
             }));
 
         it('should not put configuration on bucket with \'Suspended\'' +
@@ -129,10 +113,8 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
 
     function checkError(config, expectedErr, cb) {
         const replicationParams = getReplicationParams(config);
-        s3.putBucketReplication(replicationParams, err => {
-            assertError(err, expectedErr);
-            return cb();
-        });
+        s3.putBucketReplication(replicationParams, err =>
+            assertError(err, expectedErr, cb));
     }
 
     beforeEach(done => {
