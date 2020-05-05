@@ -72,7 +72,7 @@ describe('bucket creation', () => {
 });
 describe('bucket creation with object lock', () => {
     it('should return 200 when creating a bucket with object lock', done => {
-        const bucketName = 'creationbucket-withobjectlock1';
+        const bucketName = 'test-bucket-with-objectlock';
         const headers = {
             'x-amz-bucket-object-lock-enabled': true,
         };

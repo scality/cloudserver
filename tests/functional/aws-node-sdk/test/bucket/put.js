@@ -206,7 +206,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     bucketUtil.s3.getBucketVersioning({ Bucket: name }, (err, res) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(res.Status, 'Enabled');
-                    })
+                        assert.deepStrictEqual(res.MFADelete, 'Disabled');
+                    });
                     bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
