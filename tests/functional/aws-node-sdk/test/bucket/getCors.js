@@ -26,8 +26,8 @@ describe('GET bucket cors', () => {
                     MaxAgeSeconds: 3000 },
             ] };
             before(() =>
-                s3.createBucketAsync({ Bucket: bucketName })
-                .then(() => s3.putBucketCorsAsync({
+                s3.createBucketPromise({ Bucket: bucketName })
+                .then(() => s3.putBucketCorsPromise({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));
@@ -51,8 +51,8 @@ describe('GET bucket cors', () => {
                     AllowedHeaders: [testValue] },
             ] };
             before(() =>
-                s3.createBucketAsync({ Bucket: bucketName })
-                .then(() => s3.putBucketCorsAsync({
+                s3.createBucketPromise({ Bucket: bucketName })
+                .then(() => s3.putBucketCorsPromise({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));
@@ -75,8 +75,8 @@ describe('GET bucket cors', () => {
                     AllowedOrigins: ['http://www.example.com'] },
             ] };
             before(() =>
-                s3.createBucketAsync({ Bucket: bucketName })
-                .then(() => s3.putBucketCorsAsync({
+                s3.createBucketPromise({ Bucket: bucketName })
+                .then(() => s3.putBucketCorsPromise({
                     Bucket: bucketName,
                     CORSConfiguration: sampleCors,
                 })));

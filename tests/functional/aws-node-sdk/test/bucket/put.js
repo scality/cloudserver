@@ -197,7 +197,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             () => {
                 after(() => bucketUtil.deleteOne(bucketName));
                 it(`should create bucket with location: ${location}`, done => {
-                    bucketUtil.s3.createBucketAsync(
+                    bucketUtil.s3.createBucketPromise(
                         {
                             Bucket: bucketName,
                             CreateBucketConfiguration: {
@@ -210,7 +210,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         describe('bucket creation with invalid location', () => {
             it('should return errors InvalidLocationConstraint', done => {
-                bucketUtil.s3.createBucketAsync(
+                bucketUtil.s3.createBucketPromise(
                     {
                         Bucket: bucketName,
                         CreateBucketConfiguration: {

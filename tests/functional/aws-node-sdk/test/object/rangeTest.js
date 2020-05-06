@@ -35,7 +35,7 @@ function getOuterRange(range, bytes) {
 // Get the ranged object from a bucket. Write the response body to a file, then
 // use getRangeExec to check that all the bytes are in the correct location.
 function checkRanges(range, bytes) {
-    return s3.getObjectAsync({
+    return s3.getObjectPromise({
         Bucket: bucket,
         Key: key,
         Range: `bytes=${range}`,
@@ -68,7 +68,7 @@ function uploadParts(bytes, uploadId) {
     return Promise.map([1, 2], part =>
         execFileAsync('dd', [`if=${name}`, `of=${name}.mpuPart${part}`,
             'bs=5242880', `skip=${part - 1}`, 'count=1'])
-        .then(() => s3.uploadPartAsync({
+        .then(() => s3.uploadPartPromise({
             Bucket: bucket,
             Key: key,
             PartNumber: part,
@@ -97,8 +97,8 @@ describe('aws-node-sdk range tests', () => {
             let uploadId;
 
             beforeEach(() =>
-                s3.createBucketAsync({ Bucket: bucket })
-                .then(() => s3.createMultipartUploadAsync({
+                s3.createBucketPromise({ Bucket: bucket })
+                .then(() => s3.createMultipartUploadPromise({
                     Bucket: bucket,
                     Key: key,
                 }))
@@ -107,7 +107,7 @@ describe('aws-node-sdk range tests', () => {
                 })
                 .then(() => createHashedFile(fileSize))
                 .then(() => uploadParts(fileSize, uploadId))
-                .then(res => s3.completeMultipartUploadAsync({
+                .then(res => s3.completeMultipartUploadPromise({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
@@ -127,7 +127,7 @@ describe('aws-node-sdk range tests', () => {
             );
 
             afterEach(() => bucketUtil.empty(bucket)
-                .then(() => s3.abortMultipartUploadAsync({
+                .then(() => s3.abortMultipartUploadPromise({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
@@ -164,9 +164,9 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2000;
 
             beforeEach(() =>
-                s3.createBucketAsync({ Bucket: bucket })
+                s3.createBucketPromise({ Bucket: bucket })
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObjectAsync({
+                .then(() => s3.putObjectPromise({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),
@@ -221,9 +221,9 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2900;
 
             beforeEach(() =>
-                s3.createBucketAsync({ Bucket: bucket })
+                s3.createBucketPromise({ Bucket: bucket })
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObjectAsync({
+                .then(() => s3.putObjectPromise({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),

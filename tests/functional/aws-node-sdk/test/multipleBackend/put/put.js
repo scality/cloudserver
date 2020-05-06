@@ -80,9 +80,9 @@ describe('MultipleBackend put object', function testSuite() {
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                s3.createBucketAsync = createEncryptedBucketPromise;
+                s3.createBucketPromise = createEncryptedBucketPromise;
             }
-            return s3.createBucketAsync({ Bucket: bucket })
+            return s3.createBucketPromise({ Bucket: bucket })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;

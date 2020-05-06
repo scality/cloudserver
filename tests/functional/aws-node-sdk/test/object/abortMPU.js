@@ -23,12 +23,12 @@ describe('Abort MPU', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
-            .then(() => s3.createMultipartUploadAsync({
+            return s3.createBucketPromise({ Bucket: bucket })
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: bucket, Key: key }))
             .then(res => {
                 uploadId = res.UploadId;
-                return s3.uploadPartAsync({ Bucket: bucket, Key: key,
+                return s3.uploadPartPromise({ Bucket: bucket, Key: key,
                     PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
             })
             .catch(err => {
@@ -38,7 +38,7 @@ describe('Abort MPU', () => {
         });
 
         afterEach(() =>
-            s3.abortMultipartUploadAsync({
+            s3.abortMultipartUploadPromise({
                 Bucket: bucket,
                 Key: key,
                 UploadId: uploadId,
@@ -69,7 +69,7 @@ describe('Abort MPU - No Such Upload', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket });
+            return s3.createBucketPromise({ Bucket: bucket });
         });
 
         afterEach(() => bucketUtil.deleteOne(bucket));

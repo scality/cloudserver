@@ -20,18 +20,18 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
             this.currentTest.key = `somekey-${Date.now()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: azureContainerName })
-            .then(() => s3.createMultipartUploadAsync({
+            return s3.createBucketPromise({ Bucket: azureContainerName })
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: azureContainerName, Key: this.currentTest.key,
                 Metadata: { 'scal-location-constraint': azureLocation } }))
             .then(res => {
                 this.currentTest.uploadId = res.UploadId;
-                return s3.uploadPartAsync({ Bucket: azureContainerName,
+                return s3.uploadPartPromise({ Bucket: azureContainerName,
                     Key: this.currentTest.key, PartNumber: 1,
                     UploadId: this.currentTest.uploadId, Body: bodyFirstPart });
             }).then(res => {
                 this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.uploadPartAsync({ Bucket: azureContainerName,
+            }).then(() => s3.uploadPartPromise({ Bucket: azureContainerName,
                 Key: this.currentTest.key, PartNumber: 2,
                 UploadId: this.currentTest.uploadId, Body: bodySecondPart })
             ).then(res => {
@@ -45,7 +45,7 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
 
         afterEach(function afterEachFn() {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUploadAsync({
+            return s3.abortMultipartUploadPromise({
                 Bucket: azureContainerName, Key: this.currentTest.key,
                 UploadId: this.currentTest.uploadId,
             })
