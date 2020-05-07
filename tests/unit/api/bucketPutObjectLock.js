@@ -46,17 +46,17 @@ describe('putBucketObjectLock API', () => {
         beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
         afterEach(() => cleanup());
 
-        it('should return Invalid State error', done => {
+        it('should return InvalidBucketState error', done => {
             bucketPutObjectLock(authInfo, putObjLockRequest, log, err => {
-                assert.strictEqual(err.InvalidState, true);
+                assert.strictEqual(err.InvalidBucketState, true);
                 done();
             });
         });
     });
 
     describe('with Object Lock enabled on bucket', () => {
-        const bucketObjLockRequest = Object.assign({}, bucketPutRequest);
-        bucketObjLockRequest.headers['object-lock-enabled'] = true;
+        const bucketObjLockRequest = Object.assign({}, bucketPutRequest,
+            { headers: { 'x-amz-bucket-object-lock-enabled': true } });
 
         beforeEach(done => bucketPut(authInfo, bucketObjLockRequest, log, done));
         afterEach(() => cleanup());

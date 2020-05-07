@@ -80,3 +80,17 @@ this._lifecycleConfiguration = lifecycleConfiguration || null;
 ### Usage
 
 Used to store the bucket lifecycle configuration info
+
+## Model version 7
+
+### Properties Added
+
+```javascript
+this._objectLockEnabled = objectLockEnabled || false;
+this._objectLockConfiguration = objectLockConfiguration || null;
+```
+
+### Usage
+
+Used to determine whether object lock capabilities are enabled on a bucket and 
+to store the object lock configuration of the bucket
