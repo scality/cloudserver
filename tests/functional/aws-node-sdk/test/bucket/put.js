@@ -114,7 +114,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             // Hence it skips some of test suites.
             const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
-            it('should return 405 if empty name', done => {
+            // aws-sdk now (v2.363.0) returns 'UriParameterError' error
+            it.skip('should return 405 if empty name', done => {
                 const shortName = '';
 
                 testFn(shortName, done, 405, 'MethodNotAllowed');
