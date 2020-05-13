@@ -31,8 +31,8 @@ describe('GET bucket website', () => {
 
         describe('with existing bucket configuration', () => {
             before(() =>
-                s3.createBucketAsync({ Bucket: bucketName })
-                .then(() => s3.putBucketWebsiteAsync({
+                s3.createBucketPromise({ Bucket: bucketName })
+                .then(() => s3.putBucketWebsitePromise({
                     Bucket: bucketName,
                     WebsiteConfiguration: config,
                 })));

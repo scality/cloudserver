@@ -99,7 +99,7 @@ describe('PUT public object with 100-continue header', () => {
             const signedUrl = s3.getSignedUrl('putObject', params);
             const { path } = url.parse(signedUrl);
             continueRequest = new ContinueRequestHandler(path);
-            return s3.createBucketAsync({ Bucket: bucket });
+            return s3.createBucketPromise({ Bucket: bucket });
         });
 
         afterEach(() =>
