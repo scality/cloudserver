@@ -58,14 +58,15 @@ describe('HEAD object, conditions', () => {
             }, fields), cb);
         }
 
-        beforeEach(() => s3.putObjectAsync({
+        beforeEach(() => s3.putObjectPromise({
             Bucket: bucketName,
             Key: objectName,
             Body: 'I am the best content ever',
         }).then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
-            return s3.headObjectAsync({ Bucket: bucketName, Key: objectName });
+            return s3.headObjectPromise(
+                { Bucket: bucketName, Key: objectName });
         }).then(res => {
             lastModified = res.LastModified;
         }));

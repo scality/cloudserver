@@ -15,10 +15,10 @@ describe('DELETE object', () => {
 
         before(() => {
             process.stdout.write('creating bucket\n');
-            return s3.createBucketAsync({ Bucket: bucketName })
+            return s3.createBucketPromise({ Bucket: bucketName })
             .then(() => {
                 process.stdout.write('initiating multipart upload\n');
-                return s3.createMultipartUploadAsync({ Bucket: bucketName,
+                return s3.createMultipartUploadPromise({ Bucket: bucketName,
                     Key: objectName });
             })
             .then(res => {
@@ -27,7 +27,7 @@ describe('DELETE object', () => {
                 const uploads = [];
                 for (let i = 1; i <= 3; i++) {
                     uploads.push(
-                        s3.uploadPartAsync({ Bucket: bucketName,
+                        s3.uploadPartPromise({ Bucket: bucketName,
                             Key: objectName, PartNumber: i, Body: testfile,
                             UploadId: uploadId })
                     );
@@ -40,7 +40,7 @@ describe('DELETE object', () => {
             })
             .then(res => {
                 process.stdout.write('about to complete multipart upload\n');
-                return s3.completeMultipartUploadAsync({
+                return s3.completeMultipartUploadPromise({
                     Bucket: bucketName,
                     Key: objectName,
                     UploadId: uploadId,

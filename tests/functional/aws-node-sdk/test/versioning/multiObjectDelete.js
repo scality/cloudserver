@@ -94,7 +94,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
         it('should batch delete 1000 objects quietly', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
-            return s3.deleteObjectsAsync({
+            return s3.deleteObjectsPromise({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
@@ -111,7 +111,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
         it('should batch delete 1000 objects', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
-            return s3.deleteObjectsAsync({
+            return s3.deleteObjectsPromise({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
@@ -133,7 +133,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = 'invalid-version-id';
-            return s3.deleteObjectsAsync({
+            return s3.deleteObjectsPromise({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
@@ -153,7 +153,7 @@ describe('Multi-Object Versioning Delete Success', function success() {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = nonExistingId;
-            return s3.deleteObjectsAsync({
+            return s3.deleteObjectsPromise({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
@@ -183,7 +183,7 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
             async.waterfall([
                 next => s3.createBucket({ Bucket: bucketName },
                     err => next(err)),
-                next => s3.putBucketVersioningAsync({
+                next => s3.putBucketVersioningPromise({
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',

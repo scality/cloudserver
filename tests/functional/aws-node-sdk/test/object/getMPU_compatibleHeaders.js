@@ -43,11 +43,11 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
             })
             .then(() => {
                 process.stdout.write('creating bucket\n');
-                return s3.createBucketAsync({ Bucket: bucketName });
+                return s3.createBucketPromise({ Bucket: bucketName });
             })
             .then(() => {
                 process.stdout.write('initiating multipart upload\n');
-                return s3.createMultipartUploadAsync(params);
+                return s3.createMultipartUploadPromise(params);
             })
             .then(res => {
                 uploadId = res.UploadId;
@@ -75,14 +75,14 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         () => {
             const params = { Bucket: bucketName, Key: 'key', PartNumber: 1,
                 UploadId: uploadId };
-            return s3.uploadPartAsync(params)
+            return s3.uploadPartPromise(params)
             .catch(err => {
                 process.stdout.write(`Error in uploadPart ${err}\n`);
                 throw err;
             })
             .then(res => {
                 process.stdout.write('about to complete multipart upload\n');
-                return s3.completeMultipartUploadAsync({
+                return s3.completeMultipartUploadPromise({
                     Bucket: bucketName,
                     Key: objectName,
                     UploadId: uploadId,
@@ -99,7 +99,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
             })
             .then(() => {
                 process.stdout.write('about to get object\n');
-                return s3.getObjectAsync({
+                return s3.getObjectPromise({
                     Bucket: bucketName, Key: objectName,
                 });
             })

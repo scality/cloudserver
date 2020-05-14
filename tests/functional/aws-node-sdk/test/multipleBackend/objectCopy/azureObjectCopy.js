@@ -123,14 +123,14 @@ function testSuite() {
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                s3.createBucketAsync = createEncryptedBucketPromise;
+                s3.createBucketPromise = createEncryptedBucketPromise;
             }
-            return s3.createBucketAsync({ Bucket: bucket,
+            return s3.createBucketPromise({ Bucket: bucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: memLocation,
                 },
             })
-            .then(() => s3.createBucketAsync({ Bucket: bucketAzure,
+            .then(() => s3.createBucketPromise({ Bucket: bucketAzure,
               CreateBucketConfiguration: {
                   LocationConstraint: azureLocation,
               },
