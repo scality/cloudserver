@@ -28,7 +28,7 @@ function testSuite() {
             process.stdout.write('Creating bucket\n');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
+            return s3.createBucketPromise({ Bucket: bucket })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -36,27 +36,27 @@ function testSuite() {
                 process.stdout.write('Putting object to GCP\n');
                 const params = { Bucket: bucket, Key: gcpObject, Body: body,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObjectAsync(params);
+                return s3.putObjectPromise(params);
             })
             .then(() => {
                 process.stdout.write('Putting 0-byte object to GCP\n');
                 const params = { Bucket: bucket, Key: emptyObject,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObjectAsync(params);
+                return s3.putObjectPromise(params);
             })
             .then(() => {
                 process.stdout.write('Putting large object to GCP\n');
                 const params = { Bucket: bucket, Key: bigObject,
                     Body: bigBody,
                     Metadata: { 'scal-location-constraint': gcpLocation } };
-                return s3.putObjectAsync(params);
+                return s3.putObjectPromise(params);
             })
             .then(() => {
                 process.stdout.write('Putting object to GCP\n');
                 const params = { Bucket: bucket, Key: mismatchObject,
                     Body: body, Metadata:
                     { 'scal-location-constraint': gcpLocationMismatch } };
-                return s3.putObjectAsync(params);
+                return s3.putObjectPromise(params);
             })
             .catch(err => {
                 process.stdout.write(`Error putting objects: ${err}\n`);
