@@ -29,7 +29,7 @@ describe('Multiple backend get object', function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
+            return s3.createBucketPromise({ Bucket: bucket })
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -53,21 +53,21 @@ describe('Multiple backend get object', function testSuite() {
         describeSkipIfNotMultipleOrCeph('with objects in GCP', () => {
             before(() => {
                 process.stdout.write('Putting object to GCP\n');
-                return s3.putObjectAsync({ Bucket: bucket, Key: gcpObject,
+                return s3.putObjectPromise({ Bucket: bucket, Key: gcpObject,
                     Body: body,
                     Metadata: {
                         'scal-location-constraint': gcpLocation },
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to GCP\n');
-                    return s3.putObjectAsync({ Bucket: bucket,
+                    return s3.putObjectPromise({ Bucket: bucket,
                         Key: emptyGcpObject,
                         Metadata: {
                             'scal-location-constraint': gcpLocation } });
                 })
                 .then(() => {
                     process.stdout.write('Putting large object to GCP\n');
-                    return s3.putObjectAsync({ Bucket: bucket,
+                    return s3.putObjectPromise({ Bucket: bucket,
                         Key: bigObject, Body: bigBody,
                         Metadata: {
                             'scal-location-constraint': gcpLocation } });
