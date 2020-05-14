@@ -232,7 +232,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 bucketUtil.s3.deleteBucket({ Bucket: bucketName }, done));
             it('should create bucket with location and ingestion', done => {
                 async.waterfall([
-                    next => bucketUtil.s3.createBucketAsync(
+                    next => bucketUtil.s3.createBucketPromise(
                         {
                             Bucket: bucketName,
                             CreateBucketConfiguration: {
