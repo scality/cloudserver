@@ -115,20 +115,20 @@ function testSuite() {
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
-                s3.createBucketAsync = createEncryptedBucketPromise;
+                s3.createBucketPromise = createEncryptedBucketPromise;
             }
-            return s3.createBucketAsync({ Bucket: bucket,
+            return s3.createBucketPromise({ Bucket: bucket,
               CreateBucketConfiguration: {
                   LocationConstraint: memLocation,
               },
             })
-            .then(() => s3.createBucketAsync({
+            .then(() => s3.createBucketPromise({
                 Bucket: awsServerSideEncryptionbucket,
                 CreateBucketConfiguration: {
                     LocationConstraint: awsLocationEncryption,
                 },
             }))
-            .then(() => s3.createBucketAsync({ Bucket: bucketAws,
+            .then(() => s3.createBucketPromise({ Bucket: bucketAws,
               CreateBucketConfiguration: {
                   LocationConstraint: awsLocation,
               },

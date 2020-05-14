@@ -25,7 +25,7 @@ describe('DELETE bucket website', () => {
         });
 
         describe('with existing bucket', () => {
-            beforeEach(() => s3.createBucketAsync({ Bucket: bucketName }));
+            beforeEach(() => s3.createBucketPromise({ Bucket: bucketName }));
             afterEach(() => bucketUtil.deleteOne(bucketName));
 
             describe('without existing configuration', () => {

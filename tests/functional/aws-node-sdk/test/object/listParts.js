@@ -23,14 +23,14 @@ describe('List parts', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
-            .then(() => s3.createMultipartUploadAsync({
+            return s3.createBucketPromise({ Bucket: bucket })
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: bucket, Key: key }))
             .then(res => {
                 uploadId = res.UploadId;
-                return s3.uploadPartAsync({ Bucket: bucket, Key: key,
+                return s3.uploadPartPromise({ Bucket: bucket, Key: key,
                     PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
-            }).then(() => s3.uploadPartAsync({ Bucket: bucket, Key: key,
+            }).then(() => s3.uploadPartPromise({ Bucket: bucket, Key: key,
                 PartNumber: 2, UploadId: uploadId, Body: bodySecondPart })
             ).then(res => {
                 secondEtag = res.ETag;
@@ -44,7 +44,7 @@ describe('List parts', () => {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUploadAsync({
+            return s3.abortMultipartUploadPromise({
                 Bucket: bucket, Key: key, UploadId: uploadId,
             })
             .then(() => bucketUtil.empty(bucket))
@@ -80,12 +80,12 @@ describe('List parts', () => {
 /* eslint-disable no-param-reassign */
 function createPart(sigCfg, bucketUtil, s3, key) {
     let uploadId;
-    return s3.createBucketAsync({ Bucket: bucket })
-    .then(() => s3.createMultipartUploadAsync({
+    return s3.createBucketPromise({ Bucket: bucket })
+    .then(() => s3.createMultipartUploadPromise({
         Bucket: bucket, Key: key }))
     .then(res => {
         uploadId = res.UploadId;
-        return s3.uploadPartAsync({ Bucket: bucket, Key: key,
+        return s3.uploadPartPromise({ Bucket: bucket, Key: key,
             PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
     })
     .then(() => Promise.resolve(uploadId));
@@ -94,7 +94,7 @@ function createPart(sigCfg, bucketUtil, s3, key) {
 function deletePart(s3, bucketUtil, key, uploadId) {
     process.stdout.write('Emptying bucket');
 
-    return s3.abortMultipartUploadAsync({
+    return s3.abortMultipartUploadPromise({
         Bucket: bucket, Key: key, UploadId: uploadId,
     })
     .then(() => bucketUtil.empty(bucket))

@@ -153,7 +153,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
 
             it('should list buckets', done => {
                 s3
-                    .listBucketsAsync()
+                    .listBucketsPromise()
                     .then(data => {
                         const isValidResponse = tv4.validate(data, svcSchema);
                         if (!isValidResponse) {
@@ -196,12 +196,13 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 let anotherS3;
 
                 before(() => {
-                    anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')));
+                    anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')),
+                        { suffix: 'Promise' });
                 });
 
                 it('should not return other accounts bucket list', done => {
                     anotherS3
-                        .listBucketsAsync()
+                        .listBucketsPromise()
                         .then(data => {
                             const hasSameBuckets = data.Buckets
                                 .filter(filterFn)

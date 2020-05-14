@@ -73,8 +73,8 @@ describe('PUT Object ACL', () => {
             ];
 
             Promise
-                .mapSeries(objects, param => s3.putObjectAsync(param))
-                .then(() => s3.putObjectAclAsync({ Bucket, Key,
+                .mapSeries(objects, param => s3.putObjectPromise(param))
+                .then(() => s3.putObjectAclPromise({ Bucket, Key,
                     ACL: 'public-read' }))
                 .then(data => {
                     assert(data);
