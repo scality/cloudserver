@@ -15,8 +15,8 @@ describe('PUT object', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
-            .then(() => s3.createMultipartUploadAsync({
+            return s3.createBucketPromise({ Bucket: bucket })
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: bucket, Key: key }))
             .then(res => {
                 uploadId = res.UploadId;
@@ -30,7 +30,7 @@ describe('PUT object', () => {
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUploadAsync({
+            return s3.abortMultipartUploadPromise({
                 Bucket: bucket, Key: key, UploadId: uploadId,
             })
             .then(() => bucketUtil.empty(bucket))

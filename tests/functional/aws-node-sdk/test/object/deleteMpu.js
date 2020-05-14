@@ -54,7 +54,7 @@ describe('DELETE multipart', () => {
             `${confLocation.name}`,
             () => {
                 beforeEach(() =>
-                    s3.createBucketAsync({ Bucket: bucket,
+                    s3.createBucketPromise({ Bucket: bucket,
                         CreateBucketConfiguration: {
                             LocationConstraint: confLocation.location,
                         } })
@@ -89,7 +89,7 @@ describe('DELETE multipart', () => {
                     let uploadId;
 
                     beforeEach(() =>
-                        s3.createMultipartUploadAsync({
+                        s3.createMultipartUploadPromise({
                             Bucket: bucket,
                             Key: key,
                         })

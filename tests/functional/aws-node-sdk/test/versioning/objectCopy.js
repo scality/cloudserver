@@ -88,11 +88,11 @@ describe('Object Version Copy', () => {
 
         beforeEach(() => bucketUtil.createOne(sourceBucketName)
             .then(() => bucketUtil.createOne(destBucketName))
-            .then(() => s3.putBucketVersioningAsync({
+            .then(() => s3.putBucketVersioningPromise({
                 Bucket: sourceBucketName,
                 VersioningConfiguration: { Status: 'Enabled' },
             }))
-            .then(() => s3.putObjectAsync({
+            .then(() => s3.putObjectPromise({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: content,
@@ -109,13 +109,13 @@ describe('Object Version Copy', () => {
                     `?versionId=${versionId}`;
                 etagTrim = etag.substring(1, etag.length - 1);
                 copySourceVersionId = res.VersionId;
-                return s3.headObjectAsync({
+                return s3.headObjectPromise({
                     Bucket: sourceBucketName,
                     Key: sourceObjName,
                 });
             }).then(res => {
                 lastModified = res.LastModified;
-            }).then(() => s3.putObjectAsync({ Bucket: sourceBucketName,
+            }).then(() => s3.putObjectPromise({ Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: secondContent }))
         );
