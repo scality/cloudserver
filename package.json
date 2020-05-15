@@ -19,7 +19,11 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
+<<<<<<< HEAD
     "arsenal": "github:scality/Arsenal#d9ff2c2",
+=======
+    "arsenal": "github:scality/Arsenal#f988270",
+>>>>>>> origin/feature/S3C-2785_AddObjectLockForPutBucket
     "async": "~2.5.0",
     "aws-sdk": "2.363.0",
     "azure-storage": "^2.1.0",
