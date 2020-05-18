@@ -114,7 +114,8 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             // Hence it skips some of test suites.
             const itSkipIfAWS = process.env.AWS_ON_AIR ? it.skip : it;
 
-            it('should return 405 if empty name', done => {
+            // aws-sdk now (v2.363.0) returns 'UriParameterError' error
+            it.skip('should return 405 if empty name', done => {
                 const shortName = '';
 
                 testFn(shortName, done, 405, 'MethodNotAllowed');
@@ -193,26 +194,40 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         });
 
         describe('bucket creation success with object lock', () => {
-            function _test(name, done) {
-                const bucket = {
+            function _testObjectLock(name, done) {
+                bucketUtil.s3.createBucket({
                     Bucket: name,
                     ObjectLockEnabledForBucket: true,
-                };
-                bucketUtil.s3.createBucket(bucket, (err, res) => {
+                }, (err, res) => {
                     assert.ifError(err);
                     assert(res.Location, 'No Location in response');
-                    assert.deepStrictEqual(res.Location, `/${name}`,
-                      'Wrong Location header');
+                    assert.strictEqual(res.Location, `/${name}`,
+                        'Wrong Location header');
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                });
+            }
+            function _testVersioning(name, done) {
+                bucketUtil.s3.createBucket({
+                    Bucket: name,
+                    ObjectLockEnabledForBucket: true,
+                }, (err, res) => {
+                    assert.ifError(err);
+                    assert(res.Location, 'No Location in response');
+                    assert.strictEqual(res.Location, `/${name}`,
+                        'Wrong Location header');
                     bucketUtil.s3.getBucketVersioning({ Bucket: name }, (err, res) => {
                         assert.ifError(err);
-                        assert.deepStrictEqual(res.Status, 'Enabled');
-                        assert.deepStrictEqual(res.MFADelete, 'Disabled');
+                        assert.strictEqual(res.Status, 'Enabled');
+                        assert.strictEqual(res.MFADelete, 'Disabled');
                     });
                     bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
+            it('should create bucket without error', done =>
+            _testObjectLock('bucket-with-object-lock', done));
+
             it('should create bucket with versioning enabled by default', done =>
-            _test('bucket-with-object-lock', done));
+            _testVersioning('bucket-with-object-lock', done));
         });
 
         Object.keys(locationConstraints).forEach(
@@ -221,7 +236,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
             () => {
                 after(() => bucketUtil.deleteOne(bucketName));
                 it(`should create bucket with location: ${location}`, done => {
-                    bucketUtil.s3.createBucketAsync(
+                    bucketUtil.s3.createBucketPromise(
                         {
                             Bucket: bucketName,
                             CreateBucketConfiguration: {
@@ -234,7 +249,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
 
         describe('bucket creation with invalid location', () => {
             it('should return errors InvalidLocationConstraint', done => {
-                bucketUtil.s3.createBucketAsync(
+                bucketUtil.s3.createBucketPromise(
                     {
                         Bucket: bucketName,
                         CreateBucketConfiguration: {

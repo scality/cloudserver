@@ -40,7 +40,7 @@ describe('HEAD object, compatibility headers [Cache-Control, ' +
                     ContentEncoding: contentEncoding,
                     Expires: expires,
                 };
-                return s3.putObjectAsync(params);
+                return s3.putObjectPromise(params);
             })
             .catch(err => {
                 process.stdout.write(`Error with putObject: ${err}\n`);

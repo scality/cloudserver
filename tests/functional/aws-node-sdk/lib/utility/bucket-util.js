@@ -7,12 +7,12 @@ class BucketUtility {
     constructor(profile = 'default', config = {}) {
         const s3Config = getConfig(profile, config);
 
-        this.s3 = Promise.promisifyAll(new S3(s3Config));
+        this.s3 = Promise.promisifyAll(new S3(s3Config), { suffix: 'Promise' });
     }
 
     createOne(bucketName) {
         return this.s3
-            .createBucketAsync({ Bucket: bucketName })
+            .createBucketPromise({ Bucket: bucketName })
             .then(() => bucketName);
     }
 
@@ -40,7 +40,7 @@ class BucketUtility {
 
     deleteOne(bucketName) {
         return this.s3
-            .deleteBucketAsync({ Bucket: bucketName });
+            .deleteBucketPromise({ Bucket: bucketName });
     }
 
     deleteMany(bucketNames) {
@@ -63,14 +63,14 @@ class BucketUtility {
         };
 
         return this.s3
-            .listObjectVersionsAsync(param)
+            .listObjectVersionsPromise(param)
             .then(data =>
                 Promise.all(
                     data.Versions
                         .filter(object => !object.Key.endsWith('/'))
                         // remove all objects
                         .map(object =>
-                            this.s3.deleteObjectAsync({
+                            this.s3.deleteObjectPromise({
                                 Bucket: bucketName,
                                 Key: object.Key,
                                 VersionId: object.VersionId,
@@ -81,7 +81,7 @@ class BucketUtility {
                             .filter(object => object.Key.endsWith('/'))
                             // remove all directories
                             .map(object =>
-                                this.s3.deleteObjectAsync({
+                                this.s3.deleteObjectPromise({
                                     Bucket: bucketName,
                                     Key: object.Key,
                                     VersionId: object.VersionId,
@@ -91,7 +91,7 @@ class BucketUtility {
                         )
                         .concat(data.DeleteMarkers
                             .map(object =>
-                                 this.s3.deleteObjectAsync({
+                                 this.s3.deleteObjectPromise({
                                      Bucket: bucketName,
                                      Key: object.Key,
                                      VersionId: object.VersionId,
@@ -103,7 +103,7 @@ class BucketUtility {
 
     getOwner() {
         return this.s3
-            .listBucketsAsync()
+            .listBucketsPromise()
             .then(data => data.Owner);
     }
 }

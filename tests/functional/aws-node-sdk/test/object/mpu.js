@@ -85,14 +85,14 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            return s3.createBucketAsync({ Bucket: bucket })
+            return s3.createBucketPromise({ Bucket: bucket })
             .then(() => bucketUtil.getOwner())
             .then(res => {
                 // The owner of the bucket will also be the MPU upload owner.
                 data.displayName = res.DisplayName;
                 data.userId = res.ID;
             })
-            .then(() => s3.createMultipartUploadAsync({
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: bucket,
                 Key: objectKey,
             }))
@@ -102,7 +102,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
         });
 
         afterEach(() =>
-            s3.abortMultipartUploadAsync({
+            s3.abortMultipartUploadPromise({
                 Bucket: bucket,
                 Key: objectKey,
                 UploadId: data.uploadId,
@@ -112,7 +112,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
         );
 
         it('should list ongoing multipart uploads', () =>
-            s3.listMultipartUploadsAsync({ Bucket: bucket })
+            s3.listMultipartUploadsPromise({ Bucket: bucket })
             .then(res => checkValues(res, data))
         );
 
@@ -121,7 +121,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             data.delimiter = 'test-delimiter';
             data.maxUploads = 1;
 
-            return s3.listMultipartUploadsAsync({
+            return s3.listMultipartUploadsPromise({
                 Bucket: bucket,
                 Prefix: 'to',
                 Delimiter: 'test-delimiter',
@@ -133,7 +133,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
         it('should list 0 multipart uploads when MaxUploads is 0', () => {
             data.maxUploads = 0;
 
-            return s3.listMultipartUploadsAsync({
+            return s3.listMultipartUploadsPromise({
                 Bucket: bucket,
                 MaxUploads: 0,
             })

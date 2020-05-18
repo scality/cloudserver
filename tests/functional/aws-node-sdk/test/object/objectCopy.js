@@ -97,7 +97,7 @@ describe('Object Copy', () => {
             });
         });
 
-        beforeEach(() => s3.putObjectAsync({
+        beforeEach(() => s3.putObjectPromise({
             Bucket: sourceBucketName,
             Key: sourceObjName,
             Body: content,
@@ -110,7 +110,7 @@ describe('Object Copy', () => {
         }).then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
-            return s3.headObjectAsync({
+            return s3.headObjectPromise({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
             });
