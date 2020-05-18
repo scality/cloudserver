@@ -254,6 +254,7 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
+<<<<<<< HEAD
 arraybuffer.slice@~0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
@@ -262,6 +263,23 @@ arraybuffer.slice@~0.0.7:
 "arsenal@github:scality/Arsenal#9f58044":
   version "8.2.1"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f580444f350470d878d4aa49bff7fec1d2b0181"
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+"arsenal@github:scality/Arsenal#842ded1":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/842ded13094bf52c06844e8d870e1f9e8672143c"
+=======
+"arsenal@github:scality/Arsenal#c5e21e0":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/c5e21e07191df97a136ce57e5620390a4e79ced3"
+>>>>>>> 3d386bdeaffb7f0a4ebf2873dfa2185df6a04b30
+=======
+"arsenal@github:scality/Arsenal#f988270":
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/f988270a0c557f0d663cae5a6d3dc5b840ccc4ff"
+>>>>>>> development/7.7
+>>>>>>> origin/feature/S3C-2790_GetObjectLockConfiguration
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -470,10 +488,18 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha1-x57Zf380y48robyXkLzDZkdLS3k=
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+aws-sdk@2.178.0:
+  version "2.178.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.178.0.tgz#e8257adde039cad2a1ac0abd278d172b6c39a9c7"
+  integrity sha1-6CV63eA5ytKhrAq9J40XK2w5qcc=
+=======
 aws-sdk@2.363.0:
   version "2.363.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.363.0.tgz#6d366a78d5b008fd927d6ff24815d39d78b54778"
   integrity sha512-kQOfjzCEllH45OFN0z3fvhpSWDFWu19715A7TztHx6IEWKwwIEyd3b2XhTZtQLJrI1Giv7iGALwH46gybH9HJw==
+>>>>>>> development/7.7
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -501,9 +527,21 @@ aws-sdk@2.80.0:
     xmlbuilder "4.2.1"
 
 aws-sdk@^2.2.23:
+<<<<<<< HEAD
+  version "2.669.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.669.0.tgz#7e8e7985120102da6bdbf40a18d8b9d692dea1ba"
+  integrity sha512-kuVcSRpDzvkgmeSmMX6Q32eTOb8UeihhUdavMrvUOP6fzSU19cNWS9HAIkYOi/jrEDK85cCZxXjxqE3JGZIGcw==
+=======
+aws-sdk@^2.178.0, aws-sdk@^2.2.23:
+  version "2.670.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.670.0.tgz#d54d18b9245df7b89bea96102e5bdebd99587701"
+  integrity sha512-hGRnZtp1wDUh6hZRBHO0Ki7thx/xbRlIEiTKlWes+f/0E1Nhm3KpelsBZ3L/Q6y1ragwkQd4Q720AmWEqemLyA==
+>>>>>>> 3d386bdeaffb7f0a4ebf2873dfa2185df6a04b30
+=======
   version "2.671.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.671.0.tgz#2c6e164a0f540d6fc428c123f2994ac081663ff5"
   integrity sha512-i83+/TIOLlhAxvV2xVLz5+XGtNqJgQJwP/e8J49rzDkyMV6OE2FgxU8utujGrComrSJFpITqMFqug+ZfdHoLIQ==
+>>>>>>> development/7.7
   dependencies:
     buffer "4.9.1"
     events "1.1.1"
@@ -4594,6 +4632,7 @@ util-deprecate@^1.0.1, util-deprecate@~1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=
 
+<<<<<<< HEAD
 uuid@3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.0.1.tgz#6544bba2dfda8c1cf17e629a3a305e2bb1fee6c1"
@@ -4604,6 +4643,8 @@ uuid@3.1.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.1.0.tgz#3dd3d3e790abc24d7b0d3a034ffababe28ebbc04"
   integrity sha512-DIWtzUkw04M4k3bf1IcpS2tngXEL26YUD2M0tMDUpnUrz2hgzUBlD55a4FjdLGPvfHxS6uluGWvaVEqgBcVa+g==
 
+=======
+>>>>>>> origin/feature/S3C-2790_GetObjectLockConfiguration
 uuid@3.3.2:
   version "3.3.2"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"

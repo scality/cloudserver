@@ -88,6 +88,8 @@ Backwards compatible: add a uid to bucket if not exist. Otherwise, use existing
 
 ```javascript
 this._uid = uid || uuid();
+this._objectLockEnabled = objectLockEnabled || false;
+this._objectLockConfiguration = objectLockConfiguration || null;
 ```
 
 ### Usage
