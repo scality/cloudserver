@@ -141,3 +141,17 @@ this._azureInfo = azureInfo || null;
 ### Usage
 
 Used to store Azure storage account specific information
+
+## Model version 12
+
+### Properties Added
+
+```javascript
+this._objectLockEnabled = objectLockEnabled || false;
+this._objectLockConfiguration = objectLockConfiguration || null;
+```
+
+### Usage
+
+Used to determine whether object lock capabilities are enabled on a bucket and
+to store the object lock configuration of the bucket
