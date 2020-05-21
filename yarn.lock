@@ -295,7 +295,7 @@ arraybuffer.slice@~0.0.7:
     ioctl "2.0.1"
 
 arsenal@scality/Arsenal#32c895b:
-  version "7.4.3"
+  version "7.5.0"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/32c895b21a31eb67dacc6e76d7f58b8142bf3ad1"
   dependencies:
     JSONStream "^1.0.0"
