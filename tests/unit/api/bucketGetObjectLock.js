@@ -10,7 +10,7 @@ const bucketName = 'bucketname';
 
 const bucketPutReq = {
     bucketName,
-    headers: { 
+    headers: {
         host: `${bucketName}.s3.amazonaws.com`,
     },
     url: '/',
@@ -18,7 +18,7 @@ const bucketPutReq = {
 
 const testBucketPutReqWithObjLock = {
     bucketName,
-    headers: { 
+    headers: {
         host: `${bucketName}.s3.amazonaws.com`,
         'x-amz-bucket-object-lock-enabled': true
     },
@@ -48,14 +48,11 @@ function getObjectLockXml(mode, type, time) {
         objectLockEnabled: '<ObjectLockEnabled>Enabled</ObjectLockEnabled>',
         ruleOpen: '<Rule><DefaultRetention>',
         ruleClose: '</DefaultRetention></Rule>',
-    }
+    };
     const retentionMode = `<Mode>${mode}</Mode>`;
     const retentionTime = `<${type}>${time}</${type}>`;
 
-    let xmlStr = '<?xml version="1.0" encoding="UTF-8"?>' +
-        xml.objLockConfigOpen +
-        xml.link +
-        xml.objectLockEnabled;
+    let xmlStr = `<?xml version="1.0" encoding="UTF-8"?>${xml.objLockConfigOpen}${xml.link}${xml.objectLockEnabled}`;
 
     // object lock is enabled and object lock configuration is set
     if (arguments.length === 3) {
@@ -66,7 +63,7 @@ function getObjectLockXml(mode, type, time) {
     }
     xmlStr += xml.objLockConfigClose;
     return xmlStr;
-};
+}
 
 describe('bucketGetObjectLock API', () => {
     before(done => bucketPut(authInfo, bucketPutReq, log, done));
