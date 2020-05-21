@@ -93,7 +93,6 @@ const constants = {
         'logging',
         'metrics',
         'notification',
-        'object-lock',
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
