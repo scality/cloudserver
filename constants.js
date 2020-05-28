@@ -105,7 +105,6 @@ const constants = {
         'publicAccessBlock',
         'requestPayment',
         'restore',
-        'retention',
         'torrent',
     ],
 
