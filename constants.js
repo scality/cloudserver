@@ -89,7 +89,6 @@ const constants = {
         'analytics',
         'encryption',
         'inventory',
-        'legal-hold',
         'logging',
         'metrics',
         'notification',
