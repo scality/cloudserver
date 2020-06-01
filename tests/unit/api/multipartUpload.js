@@ -1,9 +1,9 @@
 const { errors } = require('arsenal');
 
 const assert = require('assert');
-const crypto = require('crypto');
-
 const async = require('async');
+const crypto = require('crypto');
+const moment = require('moment');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -15,6 +15,7 @@ const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const { ds } = require('../../../lib/data/in_memory/backend');
+const getObjectRetention = require('../../../lib/api/objectGetRetention');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = require('../../../lib/metadata/in_memory/metadata');
@@ -29,8 +30,10 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
+const lockedBucket = 'objectlockenabledbucket';
 const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const postBody = Buffer.from('I am a body', 'utf8');
+const futureDate = moment().add(1, 'Days').toISOString();
 const bucketPutRequest = {
     bucketName,
     namespace,
@@ -41,6 +44,9 @@ const bucketPutRequest = {
     '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
     '</CreateBucketConfiguration >',
 };
+const lockEnabledBucketRequest = Object.assign(bucketPutRequest, {});
+lockEnabledBucketRequest.headers['x-amz-bucket-object-lock-enabled'] = true;
+lockEnabledBucketRequest.bucketName = lockedBucket;
 const objectKey = 'testObject';
 const initiateRequest = {
     bucketName,
@@ -48,6 +54,26 @@ const initiateRequest = {
     objectKey,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
+};
+const retentionInitiateRequest = Object.assign(initiateRequest, {});
+retentionInitiateRequest.headers['x-amz-object-lock-mode'] = 'GOVERNANCE';
+retentionInitiateRequest.headers['x-amz-object-lock-retain-until-date'] =
+    futureDate;
+retentionInitiateRequest.bucketName = lockedBucket;
+const legalHoldInitiateRequest = Object.assign(initiateRequest, {});
+legalHoldInitiateRequest.headers['x-amz-object-lock-mode'] = 'GOVERNANCE';
+legalHoldInitiateRequest.headers['x-amz-object-lock-retain-until-date'] =
+    futureDate;
+const getRetentionRequest = {
+    bucketName: lockedBucket,
+    namespace,
+    objectKey,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+};
+legalHoldInitiateRequest.bucketName = lockedBucket;
+const expectedRetentionConfig = {
+    Mode: 'GOVERNANCE',
+    RetainUntilDate: futureDate,
 };
 
 function _createPutPartRequest(uploadId, partNumber, partBody) {
@@ -1752,6 +1778,47 @@ describe('complete mpu with versioning', () => {
                     objData[1], objData[2]]);
                 done(err);
             });
+        });
+    });
+});
+
+describe('multipart upload with object lock', () => {
+    before(done => {
+        cleanup();
+        bucketPut(authInfo, lockEnabledBucketRequest, log, done);
+    });
+
+    after(cleanup);
+
+    it('mpu object should contain retention info when mpu initiated with ' +
+    'object retention', done => {
+        async.waterfall([
+            next => initiateMultipartUpload(authInfo, retentionInitiateRequest,
+                log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const partBody = Buffer.from('foobar', 'utf8');
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = _createPutPartRequest(testUploadId, 1,
+                    partBody);
+                partRequest.bucketName = lockedBucket;
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, eTag) => next(err, eTag, testUploadId));
+            },
+            (eTag, testUploadId, next) => {
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(testUploadId,
+                    parts);
+                completeRequest.bucketName = lockedBucket;
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+            next => getObjectRetention(authInfo, getRetentionRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+        ], (json, err) => {
+            assert.ifError(err);
+            assert.deepStrictEqual(json.ObjectRetention, expectedRetentionConfig);
+            done();
         });
     });
 });
