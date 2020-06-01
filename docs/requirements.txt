@@ -101,7 +101,7 @@ snowballstemmer==1.2.1 \
     --hash=sha256:919f26a68b2c17a7634da993d91339e288964f93c274f1343e3bbbe2096e1128 \
     --hash=sha256:9f3bcd3c401c3e862ec0ebe6d2c069ebc012ce142cce209c098ccb5b09136e89 \
     # via sphinx
-sphinx==1.8.2 \
+sphinx==3.0.4 \
     --hash=sha256:120732cbddb1b2364471c3d9f8bfd4b0c5b550862f99a65736c77f970b142aea \
     --hash=sha256:b348790776490894e0424101af9c8413f2a86831524bd55c5f379d3e3e12ca64
 sphinxcontrib-websupport==1.1.0 \
