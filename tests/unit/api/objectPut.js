@@ -162,6 +162,75 @@ describe('objectPut API', () => {
         });
     });
 
+    const generatePutObjectReq = (date, mode) => new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {
+            'x-amz-object-lock-retain-until-date': date,
+            'x-amz-object-lock-mode': mode,
+        },
+        url: `/${bucketName}/${objectName}`,
+        calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+    }, postBody);
+
+    const retentionInfo = (date, mode) => ({
+        retainUntilDate: date,
+        mode: mode,
+    });
+
+    it('should successfully put an object with valid retention date and COMPLIANCE mode', done => {
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            const testDate = new Date(2022, 6, 3);
+            const testModeComp = 'COMPLIANCE';
+            const request = generatePutObjectReq(testDate, testModeComp);
+            const expectedRetention = retentionInfo(testDate, testModeComp);
+            objectPut(authInfo, request, undefined, log, (err, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log,
+                    (err, objectMD) => {
+                        assert(objectMD);
+                        assert.ifError(err);
+                        assert.deepStrictEqual(objectMD.retentionInfo,
+                            expectedRetention);
+                        assert.strictEqual(objectMD.retentionInfo.mode,
+                            expectedRetention.mode);
+                        assert.strictEqual(
+                            objectMD.retentionInfo.retainUntilDate,
+                            expectedRetention.retainUntilDate);
+                        done();
+                    });
+            });
+        });
+    });
+
+    it('should successfully put an object with valid retention date and GOVERNANCE mode', done => {
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            const testDate = new Date(2022, 6, 3);
+            const testModeComp = 'GOVERNANCE';
+            const request = generatePutObjectReq(testDate, testModeComp);
+            const expectedRetention = retentionInfo(testDate, testModeComp);
+            objectPut(authInfo, request, undefined, log, (err, resHeaders) => {
+                assert.ifError(err);
+                assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log,
+                    (err, objectMD) => {
+                        assert(objectMD);
+                        assert.ifError(err);
+                        assert.deepStrictEqual(objectMD.retentionInfo,
+                            expectedRetention);
+                        assert.strictEqual(objectMD.retentionInfo.mode,
+                            expectedRetention.mode);
+                        assert.strictEqual(
+                            objectMD.retentionInfo.retainUntilDate,
+                            expectedRetention.retainUntilDate);
+                        done();
+                    });
+            });
+        });
+    });
+
     it('should successfully put an object with user metadata', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
