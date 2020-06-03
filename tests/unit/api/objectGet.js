@@ -75,6 +75,157 @@ describe('objectGet API', () => {
         });
     });
 
+    const testPutBucketRequestObjectLock = {
+        bucketName,
+        namespace,
+        headers: {
+            host: `${bucketName}.s3.amazonaws.com`,
+            'x-amz-object-lock-enabled': true,
+        },
+        url: `/${bucketName}`,
+    };
+
+    const testPutObjectReqRetention = (date, mode) => new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {
+            'x-amz-object-lock-retain-until-date': date,
+            'x-amz-object-lock-mode': mode,
+            'content-length': '12',
+        },
+        parsedContentLength: 12,
+        url: `/${bucketName}/${objectName}`,
+    }, postBody);
+
+    const testDate = new Date(2022, 6, 3);
+
+    it('should get the object metadata with valid retention info', done => {
+        bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
+            const request = testPutObjectReqRetention(testDate, 'GOVERNANCE');
+            objectPut(authInfo, request, undefined,
+                log, (err, headers) => {
+                    assert.ifError(err);
+                    assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false, log,
+                        (err, res, headers) => {
+                            assert.ifError(err);
+                            assert.strictEqual(
+                                headers['x-amz-object-lock-retain-until-date'],
+                                testDate);
+                            assert.strictEqual(
+                                headers['x-amz-object-lock-mode'],
+                                'GOVERNANCE');
+                            assert.strictEqual(headers.ETag,
+                                `"${correctMD5}"`);
+                            done();
+                        });
+                });
+        });
+    });
+
+    const testPutObjectReqLegalHold = legalHold => new DummyRequest({
+        bucketName,
+        namespace,
+        objectKey: objectName,
+        headers: {
+            'x-amz-object-lock-legal-hold': legalHold,
+            'content-length': '12',
+        },
+        parsedContentLength: 12,
+        url: `/${bucketName}/${objectName}`,
+    }, postBody);
+
+    it('should get the object metadata with legal hold status ON', done => {
+        bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
+            const request = testPutObjectReqLegalHold('ON');
+            objectPut(authInfo, request, undefined,
+                log, (err, resHeaders) => {
+                    assert.ifError(err);
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false, log,
+                        (err, res, responseMetaHeaders) => {
+                            assert.ifError(err);
+                            console.log(`\nresponseMetaHeaders:${JSON.stringify(responseMetaHeaders, null, 2)}\n`)
+                            assert.strictEqual(
+                                responseMetaHeaders['x-amz-object-lock-legal-hold'],
+                                'ON');
+                            assert.strictEqual(responseMetaHeaders.ETag,
+                                `"${correctMD5}"`);
+                            done();
+                        });
+                });
+        });
+    });
+
+    it('should get the object metadata with legal hold status OFF', done => {
+        bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
+            const request = testPutObjectReqLegalHold('OFF');
+            objectPut(authInfo, request, undefined,
+                log, (err, resHeaders) => {
+                    assert.ifError(err);
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGet(authInfo, testGetRequest, false,
+                        log, (err, res, responseMetaHeaders) => {
+                            assert.ifError(err);
+                            console.log(`\nresponseMetaHeaders:${JSON.stringify(responseMetaHeaders, null, 2)}\n`)
+                            assert.strictEqual(
+                                responseMetaHeaders.ObjectLockLegalHoldStatus,
+                                'OFF');
+                            assert.strictEqual(responseMetaHeaders.ETag,
+                                `"${correctMD5}"`);
+                            done();
+                        });
+                });
+        });
+    });
+
+    const testPutObjectReqRetentionAndLegalHold = (date, mode, status) => {
+        return new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-retain-until-date': date,
+                'x-amz-object-lock-mode': mode,
+                'x-amz-object-lock-legal-hold': status,
+                'content-length': '12',
+            },
+            parsedContentLength: 12,
+            url: `/${bucketName}/${objectName}`,
+        }, postBody);
+    }
+
+    it('should get the object metadata with both retention and legal hold',
+        done => {
+            bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
+                const request = testPutObjectReqRetentionAndLegalHold(
+                    testDate, 'COMPLIANCE', 'ON');
+                objectPut(authInfo, request, undefined,
+                    log, (err, resHeaders) => {
+                        assert.ifError(err);
+                        assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                        objectGet(authInfo, testGetRequest, false, log,
+                            (err, res, headers) => {
+                                assert.ifError(err);
+                                assert.strictEqual(
+                                    headers['x-amz-object-lock-legal-hold'],
+                                    'ON');
+                                assert.strictEqual(
+                                    /* eslint-disable next line */
+                                    headers['x-amz-object-lock-retain-until-date'],
+                                    testDate);
+                                assert.strictEqual(
+                                    headers['x-amz-object-lock-mode'],
+                                    'COMPLIANCE');
+                                assert.strictEqual(headers.ETag,
+                                    `"${correctMD5}"`);
+                                done();
+                        });
+                });
+            });
+    });
+
     it('should get the object data retrieval info', done => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
