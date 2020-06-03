@@ -146,7 +146,6 @@ describe('objectGet API', () => {
                     objectGet(authInfo, testGetRequest, false, log,
                         (err, res, responseMetaHeaders) => {
                             assert.ifError(err);
-                            console.log(`\nresponseMetaHeaders:${JSON.stringify(responseMetaHeaders, null, 2)}\n`)
                             assert.strictEqual(
                                 responseMetaHeaders['x-amz-object-lock-legal-hold'],
                                 'ON');
@@ -168,7 +167,6 @@ describe('objectGet API', () => {
                     objectGet(authInfo, testGetRequest, false,
                         log, (err, res, responseMetaHeaders) => {
                             assert.ifError(err);
-                            console.log(`\nresponseMetaHeaders:${JSON.stringify(responseMetaHeaders, null, 2)}\n`)
                             assert.strictEqual(
                                 responseMetaHeaders.ObjectLockLegalHoldStatus,
                                 'OFF');
