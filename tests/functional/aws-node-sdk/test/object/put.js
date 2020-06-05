@@ -6,6 +6,7 @@ const provideRawOutput = require('../../lib/utility/provideRawOutput');
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
+const removeObjectLock = require('../../lib/utility/objectLock-util');
 
 const bucket = 'bucket2putstuffin4324242';
 const object = 'object2putstuffin';
@@ -316,13 +317,13 @@ describe('PUT object with object lock', () => {
             const date = new Date(2050, 10, 10);
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key1',
                 ObjectLockRetainUntilDate: date,
                 ObjectLockMode: 'COMPLIANCE',
             };
-            s3.putObject(params, err => {
+            s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                done();
+                removeObjectLock(bucket, 'key1', res.VersionId, done);
             });
         });
 
@@ -331,13 +332,13 @@ describe('PUT object with object lock', () => {
             const date = new Date(2050, 10, 10);
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key2',
                 ObjectLockRetainUntilDate: date,
                 ObjectLockMode: 'GOVERNANCE',
             };
-            s3.putObject(params, err => {
+            s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                done();
+                removeObjectLock(bucket, 'key2', res.VersionId, done);
             });
         });
 
@@ -345,7 +346,7 @@ describe('PUT object with object lock', () => {
             const date = new Date(2050, 10, 10);
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key3',
                 ObjectLockMode: 'Governance',
                 ObjectLockRetainUntilDate: date,
             };
@@ -359,19 +360,19 @@ describe('PUT object with object lock', () => {
         it('should put object with valid legal hold status ON', done => {
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key4',
                 ObjectLockLegalHoldStatus: 'ON',
             };
-            s3.putObject(params, err => {
+            s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                done();
+                removeObjectLock(bucket, 'key4', res.VersionId, done);
             });
         });
 
         it('should put object with valid legal hold status OFF', done => {
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key5',
                 ObjectLockLegalHoldStatus: 'OFF',
             };
             s3.putObject(params, err => {
@@ -383,7 +384,7 @@ describe('PUT object with object lock', () => {
         it('should error with invalid legal hold status', done => {
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key6',
                 ObjectLockLegalHoldStatus: 'on',
             };
             s3.putObject(params, err => {
@@ -399,7 +400,7 @@ describe('PUT object with object lock', () => {
             const date = new Date(2050, 10, 10);
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key7',
                 ObjectLockRetainUntilDate: date,
             };
             s3.putObject(params, err => {
@@ -416,7 +417,7 @@ describe('PUT object with object lock', () => {
             'but object lock retain until date header is missing', done => {
             const params = {
                 Bucket: bucket,
-                Key: 'key',
+                Key: 'key8',
                 ObjectLockMode: 'GOVERNANCE',
             };
             s3.putObject(params, err => {
