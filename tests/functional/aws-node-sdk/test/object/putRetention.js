@@ -5,13 +5,13 @@ const moment = require('moment');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
-const bucketName = 'lockenabledputobjectretentionbucket';
-const unlockedBucket = 'locknotenabledputobjectretentionbucket';
+const bucketName = 'lockenabledputbucket';
+const unlockedBucket = 'locknotenabledputbucket';
 const objectName = 'putobjectretentionobject';
 
 const retentionConfig = {
     Mode: 'GOVERNANCE',
-    RetainUntilDate: moment().add(1, "Days").toISOString(),
+    RetainUntilDate: moment().add(1, 'Days').toISOString(),
 };
 
 function _checkError(err, code, statusCode) {
