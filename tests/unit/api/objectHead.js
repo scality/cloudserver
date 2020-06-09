@@ -256,4 +256,56 @@ describe('objectHead API', () => {
                 });
         });
     });
+
+    it('should get the object metadata with object lock', done => {
+        const testPutBucketRequestLock = {
+            bucketName,
+            namespace,
+            headers: { 'x-amz-bucket-object-lock-enabled': true },
+            url: `/${bucketName}`,
+        };
+        const testPutObjectRequestLock = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-retain-until-date': '2050-10-10',
+                'x-amz-object-lock-mode': 'GOVERNANCE',
+                'x-amz-object-lock-legal-hold': 'ON',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: correctMD5,
+        }, postBody);
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+
+        bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+            objectPut(authInfo, testPutObjectRequestLock, undefined, log,
+                (err, resHeaders) => {
+                    assert.ifError(err);
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        assert.ifError(err);
+                        const expectedDate = testPutObjectRequestLock
+                        .headers['x-amz-object-lock-retain-until-date'];
+                        const expectedMode = testPutObjectRequestLock
+                        .headers['x-amz-object-lock-mode'];
+                        assert.ifError(err);
+                        assert.strictEqual(
+                            res['x-amz-object-lock-retain-until-date'],
+                            expectedDate);
+                        assert.strictEqual(res['x-amz-object-lock-mode'],
+                            expectedMode);
+                        assert.strictEqual(res['x-amz-object-lock-legal-hold'],
+                            'ON');
+                        done();
+                    });
+            });
+        });
+    });
 });
