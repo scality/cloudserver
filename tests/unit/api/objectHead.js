@@ -271,6 +271,7 @@ describe('objectHead API', () => {
             headers: {
                 'x-amz-object-lock-retain-until-date': '2050-10-10',
                 'x-amz-object-lock-mode': 'GOVERNANCE',
+                'x-amz-object-lock-legal-hold': 'ON',
             },
             url: `/${bucketName}/${objectName}`,
             calculatedHash: correctMD5,
@@ -298,8 +299,10 @@ describe('objectHead API', () => {
                         assert.strictEqual(
                             res['x-amz-object-lock-retain-until-date'],
                             expectedDate);
-                            assert.strictEqual(res['x-amz-object-lock-mode'],
+                        assert.strictEqual(res['x-amz-object-lock-mode'],
                             expectedMode);
+                        assert.strictEqual(res['x-amz-object-lock-legal-hold'],
+                            'ON');
                         done();
                     });
             });

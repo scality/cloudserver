@@ -136,47 +136,29 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
     }, postBody);
 
-    it('should get the object metadata with legal hold status ON', done => {
-        bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
-            const request = testPutObjectReqLegalHold('ON');
-            objectPut(authInfo, request, undefined,
-                log, (err, resHeaders) => {
-                    assert.ifError(err);
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest, false, log,
-                        (err, res, responseMetaHeaders) => {
-                            assert.ifError(err);
-                            assert.strictEqual(
-                                responseMetaHeaders['x-amz-object-lock-legal-hold'],
-                                'ON');
-                            assert.strictEqual(responseMetaHeaders.ETag,
-                                `"${correctMD5}"`);
-                            done();
-                        });
-                });
+    const testStatuses = ['ON', 'OFF'];
+    testStatuses.forEach(status => {
+        it(`should get object metadata with legal hold ${status}`, done => {
+            bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
+                const request = testPutObjectReqLegalHold(status);
+                objectPut(authInfo, request, undefined, log,
+                    (err, resHeaders) => {
+                        assert.ifError(err);
+                        assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                        objectGet(authInfo, testGetRequest, false, log,
+                            (err, res, headers) => {
+                                assert.ifError(err);
+                                assert.strictEqual(
+                                    headers['x-amz-object-lock-legal-hold'],
+                                    status);
+                                assert.strictEqual(headers.ETag,
+                                    `"${correctMD5}"`);
+                                done();
+                            });
+                    });
+            });
         });
-    });
-
-    it('should get the object metadata with legal hold status OFF', done => {
-        bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
-            const request = testPutObjectReqLegalHold('OFF');
-            objectPut(authInfo, request, undefined,
-                log, (err, resHeaders) => {
-                    assert.ifError(err);
-                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest, false,
-                        log, (err, res, responseMetaHeaders) => {
-                            assert.ifError(err);
-                            assert.strictEqual(
-                                responseMetaHeaders.ObjectLockLegalHoldStatus,
-                                'OFF');
-                            assert.strictEqual(responseMetaHeaders.ETag,
-                                `"${correctMD5}"`);
-                            done();
-                        });
-                });
-        });
-    });
+    })
 
     const testPutObjectReqRetentionAndLegalHold = (date, mode, status) => {
         return new DummyRequest({
@@ -199,8 +181,8 @@ describe('objectGet API', () => {
             bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
                 const request = testPutObjectReqRetentionAndLegalHold(
                     testDate, 'COMPLIANCE', 'ON');
-                objectPut(authInfo, request, undefined,
-                    log, (err, resHeaders) => {
+                objectPut(authInfo, request, undefined, log,
+                    (err, resHeaders) => {
                         assert.ifError(err);
                         assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                         objectGet(authInfo, testGetRequest, false, log,
