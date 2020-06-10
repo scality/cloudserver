@@ -85,7 +85,7 @@ describe('objectGet API', () => {
         url: `/${bucketName}`,
     };
 
-    const testPutObjectReqRetention = (date, mode) => new DummyRequest({
+    const createPutDummyRetention = (date, mode) => new DummyRequest({
         bucketName,
         namespace,
         objectKey: objectName,
@@ -102,24 +102,24 @@ describe('objectGet API', () => {
 
     it('should get the object metadata with valid retention info', done => {
         bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
-            const request = testPutObjectReqRetention(testDate, 'GOVERNANCE');
+            const request = createPutDummyRetention(testDate, 'GOVERNANCE');
             objectPut(authInfo, request, undefined,
                 log, (err, headers) => {
                     assert.ifError(err);
                     assert.strictEqual(headers.ETag, `"${correctMD5}"`);
-                    objectGet(authInfo, testGetRequest, false, log,
-                        (err, res, headers) => {
-                            assert.ifError(err);
-                            assert.strictEqual(
-                                headers['x-amz-object-lock-retain-until-date'],
-                                testDate);
-                            assert.strictEqual(
-                                headers['x-amz-object-lock-mode'],
-                                'GOVERNANCE');
-                            assert.strictEqual(headers.ETag,
-                                `"${correctMD5}"`);
-                            done();
-                        });
+                    const req = testGetRequest;
+                    objectGet(authInfo, req, false, log, err, res, headers => {
+                        assert.ifError(err);
+                        assert.strictEqual(
+                            headers['x-amz-object-lock-retain-until-date'],
+                            testDate);
+                        assert.strictEqual(
+                            headers['x-amz-object-lock-mode'],
+                            'GOVERNANCE');
+                        assert.strictEqual(headers.ETag,
+                            `"${correctMD5}"`);
+                        done();
+                    });
                 });
         });
     });
@@ -160,7 +160,7 @@ describe('objectGet API', () => {
         });
     })
 
-    const testPutObjectReqRetentionAndLegalHold = (date, mode, status) => {
+    const createPutDummyRetentionAndLegalHold = (date, mode, status) => {
         return new DummyRequest({
             bucketName,
             namespace,
@@ -179,7 +179,7 @@ describe('objectGet API', () => {
     it('should get the object metadata with both retention and legal hold',
         done => {
             bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
-                const request = testPutObjectReqRetentionAndLegalHold(
+                const request = createPutDummyRetentionAndLegalHold(
                     testDate, 'COMPLIANCE', 'ON');
                 objectPut(authInfo, request, undefined, log,
                     (err, resHeaders) => {
