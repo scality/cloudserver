@@ -124,7 +124,7 @@ describe('objectGet API', () => {
         });
     });
 
-    const testPutObjectReqLegalHold = legalHold => new DummyRequest({
+    const createPutDummyLegalHold = legalHold => new DummyRequest({
         bucketName,
         namespace,
         objectKey: objectName,
@@ -140,7 +140,7 @@ describe('objectGet API', () => {
     testStatuses.forEach(status => {
         it(`should get object metadata with legal hold ${status}`, done => {
             bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
-                const request = testPutObjectReqLegalHold(status);
+                const request = createPutDummyLegalHold(status);
                 objectPut(authInfo, request, undefined, log,
                     (err, resHeaders) => {
                         assert.ifError(err);
