@@ -1,5 +1,4 @@
 const assert = require('assert');
-
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -763,6 +762,35 @@ describe('Object Copy', () => {
                 });
             });
 
+        it('should return an error if copy request has object lock legal ' +
+            'hold header but object lock is not enabled on destination bucket',
+            done => {
+                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ObjectLockLegalHoldStatus: 'ON',
+                },
+                err => {
+                    checkError(err, 'InvalidRequest');
+                    done();
+                });
+            });
+
+        it('should return an error if copy request has retention headers ' +
+            'but object lock is not enabled on destination bucket',
+            done => {
+                const mockDate = new Date(2050, 10, 12);
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ObjectLockMode: 'GOVERNANCE',
+                    ObjectLockRetainUntilDate: mockDate,
+                },
+                err => {
+                    checkError(err, 'InvalidRequest');
+                    done();
+                });
+            });
 
         it('should return an error if attempt to copy to nonexistent bucket',
             done => {
@@ -1195,5 +1223,121 @@ describe('Object Copy', () => {
                 done();
             });
         });
+    });
+});
+
+describe('Object Copy with object lock enabled on both destination ' +
+    'bucket and source bucket', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+
+        before(() => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+            return bucketUtil.empty(sourceBucketName)
+                .then(() => bucketUtil.empty(destBucketName))
+                .then(() =>
+                    bucketUtil.deleteMany([sourceBucketName, destBucketName]))
+                .catch(err => {
+                    if (err.code !== 'NoSuchBucket') {
+                        process.stdout.write(`${err}\n`);
+                        throw err;
+                    }
+                })
+                .then(() => bucketUtil.createOneWithLock(sourceBucketName))
+                .then(() => bucketUtil.createOneWithLock(destBucketName))
+                .catch(err => {
+                    throw err;
+                });
+        });
+
+        beforeEach(() => s3.putObjectPromise({
+            Bucket: sourceBucketName,
+            Key: sourceObjName,
+            Body: content,
+            Metadata: originalMetadata,
+            ObjectLockMode: 'GOVERNANCE',
+            ObjectLockRetainUntilDate: new Date(2050, 1, 1),
+        }).then(() => s3.headObjectPromise({
+            Bucket: sourceBucketName,
+            Key: sourceObjName,
+        })));
+
+        afterEach(() => bucketUtil.empty(sourceBucketName)
+            .then(() => bucketUtil.empty(destBucketName)));
+
+        after(() => bucketUtil.deleteMany([sourceBucketName, destBucketName]));
+
+        it('should not copy default retention info of the destination ' +
+            'bucket if legal hold header is passed with copy object request',
+            done => {
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ObjectLockLegalHoldStatus: 'ON',
+                },
+                err => {
+                    assert.ifError(err);
+                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                        (err, res) => {
+                            assert.ifError(err);
+                            assert.strictEqual(res.ObjectLockMode, undefined);
+                            assert.strictEqual(res.ObjectLockRetainUntilDate,
+                                undefined);
+                            assert.strictEqual(res.ObjectLockLegalHoldStatus,
+                                'ON');
+                            done();
+                        });
+                });
+            });
+
+        it('should not copy default retention info of the destination ' +
+            'bucket if legal hold header is passed with copy object request',
+            done => {
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ObjectLockLegalHoldStatus: 'on',
+                },
+                err => {
+                    assert.ifError(err);
+                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                        (err, res) => {
+                            assert.ifError(err);
+                            assert.strictEqual(res.ObjectLockMode, undefined);
+                            assert.strictEqual(res.ObjectLockRetainUntilDate,
+                                undefined);
+                            assert.strictEqual(res.ObjectLockLegalHoldStatus,
+                                'OFF');
+                            done();
+                        });
+                });
+            });
+
+        it('should overwrite default retention info of the destination ' +
+            'bucket if retention headers passed with copy object request',
+            done => {
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    ObjectLockMode: 'COMPLIANCE',
+                    ObjectLockRetainUntilDate: new Date(2055, 2, 3),
+                },
+                err => {
+                    assert.ifError(err);
+                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                        (err, res) => {
+                            assert.ifError(err);
+                            assert.strictEqual(res.ObjectLockMode, 'COMPLIANCE');
+                            assert.strictEqual(res.ObjectLockRetainUntilDate.toGMTString(),
+                                new Date(2055, 2, 3).toGMTString());
+                            done();
+                        });
+                });
+            });
     });
 });
