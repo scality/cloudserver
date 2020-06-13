@@ -97,7 +97,6 @@ const constants = {
         'analytics',
         'encryption',
         'inventory',
-        'legal-hold',
         'logging',
         'metrics',
         'notification',
@@ -105,7 +104,6 @@ const constants = {
         'publicAccessBlock',
         'requestPayment',
         'restore',
-        'retention',
         'torrent',
     ],
 
