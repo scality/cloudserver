@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const moment = require('moment');
 const { errors, s3middleware, storage } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
