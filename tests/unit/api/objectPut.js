@@ -3,6 +3,7 @@ const async = require('async');
 const { errors, s3middleware, storage } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const { parseTagFromQuery } = s3middleware.tagging;
@@ -10,6 +11,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
+const { objectLockTestUtils } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 const { maximumAllowedUploadSize } = require('../../../constants');
 
@@ -22,10 +24,20 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
+const mockDate = new Date(2050, 10, 12);
 const testPutBucketRequest = new DummyRequest({
     bucketName,
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
+    url: '/',
+});
+const testPutBucketRequestLock = new DummyRequest({
+    bucketName,
+    namespace,
+    headers: {
+        'host': `${bucketName}.s3.amazonaws.com`,
+        'x-amz-bucket-object-lock-enabled': true,
+    },
     url: '/',
 });
 
@@ -174,6 +186,154 @@ describe('objectPut API', () => {
         });
     });
 
+    const mockModes = ['GOVERNANCE', 'COMPLIANCE'];
+    mockModes.forEach(mockMode => {
+        it(`should put an object with valid date & ${mockMode} mode`, done => {
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-object-lock-retain-until-date': mockDate,
+                    'x-amz-object-lock-mode': mockMode,
+                },
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            }, postBody);
+            bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    (err, headers) => {
+                        assert.ifError(err);
+                        assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                        metadata.getObjectMD(bucketName, objectName, {}, log,
+                            (err, md) => {
+                                const { mode, retainUntilDate }
+                                    = md.retentionInfo;
+                                assert.ifError(err);
+                                assert(md);
+                                assert.strictEqual(mode, mockMode);
+                                assert.strictEqual(retainUntilDate, mockDate);
+                                done();
+                            });
+                    });
+            });
+        });
+    });
+
+    const formatTime = time => time.slice(0, 20);
+
+    const testObjectLockConfigs = [
+        {
+            testMode: 'COMPLIANCE',
+            val: 30,
+            type: 'Days',
+        },
+        {
+            testMode: 'GOVERNANCE',
+            val: 5,
+            type: 'Years',
+        },
+    ];
+    testObjectLockConfigs.forEach(config => {
+        const { testMode, type, val } = config;
+        it('should put an object with default retention if object does not ' +
+            'have retention configuration but bucket has', done => {
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {},
+                url: `/${bucketName}/${objectName}`,
+                calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+            }, postBody);
+
+            const testObjLockRequest = {
+                bucketName,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: objectLockTestUtils.generateXml(testMode, val, type),
+            };
+
+            bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+                bucketPutObjectLock(authInfo, testObjLockRequest, log, () => {
+                    objectPut(authInfo, testPutObjectRequest, undefined, log,
+                        (err, headers) => {
+                            assert.ifError(err);
+                            assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                            metadata.getObjectMD(bucketName, objectName, {},
+                                log, (err, md) => {
+                                    const { mode, retainUntilDate: retainDate }
+                                        = md.retentionInfo;
+                                    const date = moment();
+                                    const days
+                                        = type === 'Days' ? val : val * 365;
+                                    const expectedDate
+                                        = date.add(days, 'Days');
+                                    assert.ifError(err);
+                                    assert.strictEqual(mode, testMode);
+                                    assert.strictEqual(formatTime(retainDate),
+                                        formatTime(expectedDate.toISOString()));
+                                    done();
+                                });
+                        });
+                });
+            });
+        });
+    });
+
+
+    it('should successfully put an object with legal hold ON', done => {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-legal-hold': 'ON',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+            objectPut(authInfo, request, undefined, log, (err, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log,
+                    (err, md) => {
+                        assert.ifError(err);
+                        assert.strictEqual(md.legalHold, true);
+                        done();
+                    });
+            });
+        });
+    });
+
+    it('should successfully put an object with legal hold OFF', done => {
+        const request = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-legal-hold': 'OFF',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+            objectPut(authInfo, request, undefined, log, (err, headers) => {
+                assert.ifError(err);
+                assert.strictEqual(headers.ETag, `"${correctMD5}"`);
+                metadata.getObjectMD(bucketName, objectName, {}, log,
+                    (err, md) => {
+                        assert.ifError(err);
+                        assert(md);
+                        assert.strictEqual(md.legalHold, false);
+                        done();
+                    });
+            });
+        });
+    });
+
     it('should successfully put an object with user metadata', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
@@ -279,6 +439,30 @@ describe('objectPut API', () => {
                         });
                     });
                 });
+        });
+    });
+
+    it('should not put object with retention configuration if object lock ' +
+        'is not enabled on the bucket', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-retain-until-date': mockDate,
+                'x-amz-object-lock-mode': 'GOVERNANCE',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                assert.deepStrictEqual(err, errors.InvalidRequest
+                    .customizeDescription(
+                        'Bucket is missing ObjectLockConfiguration'));
+                done();
+            });
         });
     });
 });
