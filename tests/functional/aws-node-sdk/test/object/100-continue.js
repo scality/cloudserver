@@ -15,6 +15,7 @@ const port = process.env.AWS_ON_AIR ? 80 : 8000;
 const bucket = 'foo-bucket';
 const key = 'foo-key';
 const body = Buffer.alloc(1024 * 1024);
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 class ContinueRequestHandler {
     constructor(path) {
@@ -86,8 +87,8 @@ class ContinueRequestHandler {
         });
     }
 }
-
-describe('PUT public object with 100-continue header', () => {
+// TODO: S3C-3063
+describeSkipIfE2E('PUT public object with 100-continue header', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
