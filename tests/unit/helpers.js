@@ -342,6 +342,18 @@ class CorsConfigTester {
     }
 }
 
+const objectLockTestUtils = {
+    generateXml: (mode, num, daysOrYears) =>
+        '<ObjectLockConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<ObjectLockEnabled>Enabled</ObjectLockEnabled>' +
+        '<Rule><DefaultRetention>' +
+        `<Mode>${mode}</Mode>` +
+        `<${daysOrYears}>${num}</${daysOrYears}>` +
+        '</DefaultRetention></Rule>' +
+        '</ObjectLockConfiguration>',
+};
+
 const versioningTestUtils = {
     createPutObjectRequest: (bucketName, keyName, body) => {
         const params = {
@@ -485,6 +497,7 @@ module.exports = {
     makeAuthInfo,
     WebsiteConfig,
     CorsConfigTester,
+    objectLockTestUtils,
     versioningTestUtils,
     TaggingConfigTester,
     AccessControlPolicy,
