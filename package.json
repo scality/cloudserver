@@ -56,7 +56,7 @@
     "tv4": "^1.2.7"
   },
   "scripts": {
-    "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/object/objectCopy.js",
+    "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket",
     "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support",
@@ -68,7 +68,7 @@
     "ft_healthchecks": "cd tests/functional/healthchecks && yarn test",
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
     "ft_s3curl": "cd tests/functional/s3curl && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
-    "ft_test": "npm-run-all -s ft_awssdk",
+    "ft_test": "npm-run-all -s ft_awssdk ft_s3cmd ft_s3curl ft_node ft_healthchecks ft_management",
     "ft_kmip": "cd tests/functional/kmip && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
     "install_ft_deps": "yarn install aws-sdk@2.28.0 bluebird@3.3.1 mocha@2.3.4 mocha-junit-reporter@1.23.1 tv4@1.2.7",
     "lint": "eslint $(git ls-files '*.js')",
