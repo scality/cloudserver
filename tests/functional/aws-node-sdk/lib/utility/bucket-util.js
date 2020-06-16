@@ -16,6 +16,14 @@ class BucketUtility {
             .then(() => bucketName);
     }
 
+    createOneWithLock(bucketName) {
+        return this.s3.createBucketPromise({
+            Bucket: bucketName,
+            ObjectLockEnabledForBucket: true,
+        })
+        .then(() => bucketName);
+    }
+
     createMany(bucketNames) {
         const promises = bucketNames.map(
             bucketName => this.createOne(bucketName)
