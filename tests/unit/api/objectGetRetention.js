@@ -31,11 +31,11 @@ const putObjectRequest = new DummyRequest({
     url: `/${bucketName}/${objectName}`,
 }, postBody);
 
-const objectRetentionXml = '<ObjectRetention ' +
+const objectRetentionXml = '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${date.toISOString()}</RetainUntilDate>` +
-    '</ObjectRetention>';
+    '</Retention>';
 
 const putObjRetRequest = {
     bucketName,
