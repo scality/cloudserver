@@ -779,8 +779,10 @@ describe('Object Copy', () => {
         it('should return an error if copy request has retention headers ' +
             'but object lock is not enabled on destination bucket',
             done => {
-                const mockDate = moment().add(90, 'days');
-                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                const mockDate = new Date(2050, 10, 12);
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     ObjectLockMode: 'GOVERNANCE',
                     ObjectLockRetainUntilDate: mockDate,
@@ -1230,9 +1232,6 @@ describe('Object Copy with object lock enabled on both destination ' +
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
-        let etag;
-        let etagTrim;
-        let lastModified;
 
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -1263,13 +1262,10 @@ describe('Object Copy with object lock enabled on both destination ' +
             ObjectLockRetainUntilDate: new Date(2050, 1, 1),
         }).then(res => {
             etag = res.ETag;
-            etagTrim = etag.substring(1, etag.length - 1);
             return s3.headObjectPromise({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
             });
-        }).then(res => {
-            lastModified = res.LastModified;
         }));
 
         afterEach(() => bucketUtil.empty(sourceBucketName)
