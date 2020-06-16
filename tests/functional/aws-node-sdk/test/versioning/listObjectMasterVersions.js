@@ -7,6 +7,8 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const { removeAllVersions } = require('../../lib/utility/versioning-util');
 
 const bucket = `versioning-bucket-${Date.now()}`;
+const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+
 
 function _assertResultElements(entry) {
     const elements = [
@@ -160,6 +162,8 @@ describe('listObject - Delimiter master', function testSuite() {
                 commonPrefix: [],
                 isTruncated: false,
                 nextMarker: undefined,
+                // TODO: S3C-3064
+                skipe2e: true,
             },
             {
                 name: 'with bad marker',
@@ -329,7 +333,8 @@ describe('listObject - Delimiter master', function testSuite() {
                 nextMarker: undefined,
             },
         ].forEach(test => {
-            it(test.name, done => {
+            const runTest = test.skipe2e ? itSkipIfE2E : it;
+            runTest(test.name, done => {
                 const expectedResult = test.expectedResult;
                 s3.listObjects(Object.assign({ Bucket: bucket }, test.params),
                     (err, res) => {
