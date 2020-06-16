@@ -1,5 +1,4 @@
 const assert = require('assert');
-const moment = require('moment');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -1260,13 +1259,10 @@ describe('Object Copy with object lock enabled on both destination ' +
             Metadata: originalMetadata,
             ObjectLockMode: 'GOVERNANCE',
             ObjectLockRetainUntilDate: new Date(2050, 1, 1),
-        }).then(res => {
-            etag = res.ETag;
-            return s3.headObjectPromise({
-                Bucket: sourceBucketName,
-                Key: sourceObjName,
-            });
-        }));
+        }).then(() => s3.headObjectPromise({
+            Bucket: sourceBucketName,
+            Key: sourceObjName,
+        })));
 
         afterEach(() => bucketUtil.empty(sourceBucketName)
             .then(() => bucketUtil.empty(destBucketName)));
