@@ -323,7 +323,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(bucket, 'key1', res.VersionId, done);
+                removeObjectLock(
+                    [{ bucket, key: 'key1', versionId: res.VersionId }], done);
             });
         });
 
@@ -338,7 +339,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(bucket, 'key2', res.VersionId, done);
+                removeObjectLock(
+                    [{ bucket, key: 'key2', versionId: res.VersionId }], done);
             });
         });
 
@@ -365,7 +367,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(bucket, 'key4', res.VersionId, done);
+                removeObjectLock(
+                    [{ bucket, key: 'key4', versionId: res.VersionId }], done);
             });
         });
 
