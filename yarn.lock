@@ -379,9 +379,9 @@ aws-sdk@2.363.0:
     xml2js "0.4.19"
 
 aws-sdk@^2.2.23:
-  version "2.698.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.698.0.tgz#edb85a004f13ac002e59baf6639f9215dbbd1e3f"
-  integrity sha512-6S01wJMGwVLU7uld3sNXd1YuZab/Rha7qMFznxOHjkX/N+N0N1+Spd0T4NqXX9ebSai+OfeLT2H0IwyH4LAIZw==
+  version "2.699.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.699.0.tgz#e77b6ffa4c860882e2779c060b74fab33d42f554"
+  integrity sha512-EC431z/+i/cJgOgnDpOJ8Fa6+p7Oo1vIvdm/uJqP9tJX3+pxi/M/tvQavfz4yAlLBFqjQwxa8nrPisby0Mr5MQ==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -3677,9 +3677,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#2bc5d07:
+utapi@scality/utapi#89ede12:
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/2bc5d07f85ba6d0e1ec230efe579b23386c99fa7"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/89ede12a609cb4de2e9d42a69d858c4c19aa4343"
   dependencies:
     arsenal scality/Arsenal#32c895b
     async "^2.0.1"
