@@ -23,6 +23,8 @@ const { metadata } = require('../../../lib/metadata/in_memory/metadata');
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
+const removeObjectLock =
+    require('../../functional/aws-node-sdk/lib/utility/objectLock-util');
 
 const log = new DummyRequestLogger();
 
@@ -1804,6 +1806,7 @@ describe('multipart upload with object lock', () => {
 
     it('mpu object should contain retention info when mpu initiated with ' +
     'object retention', done => {
+        let versionId;
         async.waterfall([
             next => initiateMultipartUpload(authInfo, retentionInitiateRequest,
                 log, next),
@@ -1827,17 +1830,22 @@ describe('multipart upload with object lock', () => {
                 completeRequest.headers = { host: `${lockedBucket}.s3.amazonaws.com` };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
-            (xml, headers, next) => getObjectRetention(authInfo, getObjectLockInfoRequest, log, next),
+            (xml, headers, next) => {
+                versionId = headers['x-amz-version-id'];
+                getObjectRetention(authInfo, getObjectLockInfoRequest, log, next);
+            },
             (result, corsHeaders, next) => parseString(result, next),
         ], (err, json) => {
             assert.ifError(err);
             assert.deepStrictEqual(json.Retention, expectedRetentionConfig);
-            done();
+            removeObjectLock(
+                [{ bucket: lockedBucket, key: objectKey, versionId }], done);
         });
     });
 
     it('mpu object should contain legal hold info when mpu initiated with ' +
     'legal hold', done => {
+        let versionId;
         async.waterfall([
             next => initiateMultipartUpload(authInfo, legalHoldInitiateRequest,
                 log, next),
@@ -1861,12 +1869,16 @@ describe('multipart upload with object lock', () => {
                 completeRequest.headers = { host: `${lockedBucket}.s3.amazonaws.com` };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
-            (xml, headers, next) => getObjectLegalHold(authInfo, getObjectLockInfoRequest, log, next),
+            (xml, headers, next) => {
+                versionId = headers['x-amz-version-id'];
+                getObjectLegalHold(authInfo, getObjectLockInfoRequest, log, next);
+            },
             (result, corsHeaders, next) => parseString(result, next),
         ], (err, json) => {
             assert.ifError(err);
             assert.deepStrictEqual(json.LegalHold, expectedLegalHold);
-            done();
+            removeObjectLock(
+                [{ bucket: lockedBucket, key: objectKey, versionId }], done);
         });
     });
 });

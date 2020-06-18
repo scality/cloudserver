@@ -1,6 +1,7 @@
 const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const removeObjectLock = require('../../lib/utility/objectLock-util');
 
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
@@ -1231,6 +1232,7 @@ describe('Object Copy with object lock enabled on both destination ' +
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
+        let versionId;
 
         before(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
@@ -1259,10 +1261,13 @@ describe('Object Copy with object lock enabled on both destination ' +
             Metadata: originalMetadata,
             ObjectLockMode: 'GOVERNANCE',
             ObjectLockRetainUntilDate: new Date(2050, 1, 1),
-        }).then(() => s3.headObjectPromise({
-            Bucket: sourceBucketName,
-            Key: sourceObjName,
-        })));
+        }).then(res => {
+            versionId = res.VersionId;
+            s3.headObjectPromise({
+                Bucket: sourceBucketName,
+                Key: sourceObjName,
+            });
+        }));
 
         afterEach(() => bucketUtil.empty(sourceBucketName)
             .then(() => bucketUtil.empty(destBucketName)));
@@ -1288,7 +1293,18 @@ describe('Object Copy with object lock enabled on both destination ' +
                                 undefined);
                             assert.strictEqual(res.ObjectLockLegalHoldStatus,
                                 'ON');
-                            done();
+                            const removeLockObjs = [
+                                {
+                                    bucket: sourceBucketName,
+                                    key: sourceObjName,
+                                    versionId,
+                                }, {
+                                    bucket: destBucketName,
+                                    key: destObjName,
+                                    versionId: res.VersionId,
+                                },
+                            ];
+                            removeObjectLock(removeLockObjs, done);
                         });
                 });
             });
@@ -1312,7 +1328,14 @@ describe('Object Copy with object lock enabled on both destination ' +
                                 undefined);
                             assert.strictEqual(res.ObjectLockLegalHoldStatus,
                                 'OFF');
-                            done();
+                            const removeLockObjs = [
+                                {
+                                    bucket: sourceBucketName,
+                                    key: sourceObjName,
+                                    versionId,
+                                },
+                            ];
+                            removeObjectLock(removeLockObjs, done);
                         });
                 });
             });
@@ -1335,7 +1358,18 @@ describe('Object Copy with object lock enabled on both destination ' +
                             assert.strictEqual(res.ObjectLockMode, 'COMPLIANCE');
                             assert.strictEqual(res.ObjectLockRetainUntilDate.toGMTString(),
                                 new Date(2055, 2, 3).toGMTString());
-                            done();
+                            const removeLockObjs = [
+                                {
+                                    bucket: sourceBucketName,
+                                    key: sourceObjName,
+                                    versionId,
+                                }, {
+                                    bucket: destBucketName,
+                                    key: destObjName,
+                                    versionId: res.VersionId,
+                                },
+                            ];
+                            removeObjectLock(removeLockObjs, done);
                         });
                 });
             });

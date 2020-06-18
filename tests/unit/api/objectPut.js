@@ -256,7 +256,7 @@ describe('objectPut API', () => {
                                     const days
                                         = type === 'Days' ? val : val * 365;
                                     const expectedDate
-                                        = date.add(days, 'Days');
+                                        = date.add(days, 'days');
                                     assert.ifError(err);
                                     assert.strictEqual(mode, testMode);
                                     assert.strictEqual(formatTime(retainDate),
