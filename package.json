@@ -31,6 +31,7 @@
     "google-auto-auth": "^0.9.1",
     "http-proxy": "^1.17.0",
     "https-proxy-agent": "^2.2.0",
+    "moment": "^2.26.0",
     "mongodb": "^2.2.31",
     "node-forge": "^0.7.1",
     "node-uuid": "^1.4.3",
