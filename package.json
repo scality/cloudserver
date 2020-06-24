@@ -24,7 +24,7 @@
     "aws-sdk": "2.363.0",
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#949f11a",
-    "bufferutil": "^3.0.5",
+    "bufferutil": "^4.0.1",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
