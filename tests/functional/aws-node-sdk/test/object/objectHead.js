@@ -448,7 +448,7 @@ describe('HEAD object, conditions', () => {
                 checkNoError(err);
                 s3.headObject(mockHeadObjectParams, (err, data) => {
                     checkNoError(err);
-                    assert.strictEqual(data['AcceptRanges'], 'bytes');
+                    assert.strictEqual(data.AcceptRanges, 'bytes');
                     done();
                 });
             });
