@@ -433,6 +433,27 @@ describe('HEAD object, conditions', () => {
             });
         });
 
+        it('Accept-Ranges header should appear in the response', done => {
+            const objectName = 'mock-obj';
+            const mockPutObjectParams = {
+                Bucket: bucketName,
+                Key: objectName,
+                Body: 'hello',
+            };
+            const mockHeadObjectParams = {
+                Bucket: bucketName,
+                Key: objectName,
+            };
+            s3.putObject(mockPutObjectParams, err => {
+                checkNoError(err);
+                s3.headObject(mockHeadObjectParams, (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.AcceptRanges, 'bytes');
+                    done();
+                });
+            });
+        });
+
         it('WebsiteRedirectLocation is not set & is absent', done => {
             requestHead({}, (err, data) => {
                 checkNoError(err);
