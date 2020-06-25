@@ -63,7 +63,6 @@ describe('aws-sdk put object legal hold', () => {
                 assert.ifError(err);
                 s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
                     versionId = res.VersionId;
-                    s3.putObjectLegalHold();
                 });
                 done();
             });
