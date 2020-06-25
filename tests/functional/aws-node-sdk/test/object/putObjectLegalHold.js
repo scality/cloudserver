@@ -2,8 +2,10 @@ const assert = require('assert');
 const { errors } = require('arsenal');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const removeObjectLock = require('../../lib/utility/objectLock-util');
 
-const bucket = 'object-lock-test-bucket';
+const bucket = 'mock-bucket-with-lock';
+const key = 'mock-object';
 
 // Check for the expected error response code and status code.
 function assertError(err, expectedErr, cb) {
@@ -24,13 +26,13 @@ function assertError(err, expectedErr, cb) {
     return cb();
 }
 
-function getParams(status) {
+function createLegalHoldParams(status) {
     if (!status) {
         return { Bucket: bucket };
     }
     return {
         Bucket: bucket,
-        Key: 'key',
+        Key: key,
         LegalHold: {
             Status: status,
         },
@@ -43,35 +45,48 @@ describe('aws-sdk put object legal hold', () => {
         const s3 = bucketUtil.s3;
         const otherAccountBucketUtility = new BucketUtility('lisa', {});
         const otherAccountS3 = otherAccountBucketUtility.s3;
+        let versionId;
 
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            ObjectLockEnabledForBucket: true,
-        }, err => {
-            if (err) {
-                return done(err);
-            }
-            return s3.putObject({ Bucket: bucket, Key: 'key' }, done);
-        }));
+        before(done => {
+            s3.createBucket({
+                Bucket: bucket,
+                ObjectLockEnabledForBucket: true
+            }, done);
+        });
 
-        afterEach(() => {
-            process.stdout.write('Emptying bucket');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
+        beforeEach(done => {
+            const params = {
+                Bucket: bucket,
+                Key: key,
+            };
+            s3.putObject(params, (err, res) => {
+                s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                    versionId = res.VersionId;
+                });
+                done();
             });
         });
+
+        afterEach(done => {
+            s3.listObjects({ Bucket: bucket }, (err, res) => {
+                res.Contents.forEach(obj => {
+                    s3.deleteObject({ Bucket: bucket, Key: obj.Key }, err => {
+                        if (err) {
+                            return done(err);
+                        }
+                        done();
+                    });
+                });
+            });
+        });
+
+        after(() => s3.deleteBucket({ Bucket: bucket }));
 
         it('should return NoSuchBucket error if bucket does not exist',
             done => {
                 const params = {
                     Bucket: 'non-existant-bucket',
-                    Key: 'key',
+                    Key: key,
                     LegalHold: {
                         Status: 'ON',
                     },
@@ -82,90 +97,66 @@ describe('aws-sdk put object legal hold', () => {
 
         it('should return AccessDenied if the user is not bucket owner',
             done => {
-                const params = getParams('ON');
-                otherAccountS3.putObjectLegalHold(params,
-                    err => assertError(err, 'AccessDenied', done));
+                const params = createLegalHoldParams('ON');
+                otherAccountS3.putObjectLegalHold(params, err =>
+                    assertError(err, 'AccessDenied', done));
             });
 
-        it('should successfully put legal hold status ON', done => {
-            const params = getParams('ON');
-            s3.putObjectLegalHold(params, err => {
-                if (err) {
-                    return done(err);
-                }
-                const { Bucket, Key } = params;
-                return s3.getObjectLegalHold({ Bucket, Key }, (err, res) => {
-                    assert.deepStrictEqual(res,
-                        { LegalHold: { Status: 'ON' } });
-                    assertError(err, null, done);
-                });
-            });
-        });
-
-        it('should successfully put legal hold status OFF', done => {
-            const params = getParams('OFF');
-            s3.putObjectLegalHold(params, err => {
-                if (err) {
-                    return done(err);
-                }
-                const { Bucket, Key } = params;
-                return s3.getObjectLegalHold({ Bucket, Key }, (err, res) => {
-                    assert.deepStrictEqual(res,
-                        { LegalHold: { Status: 'OFF' } });
-                    assertError(err, null, done);
+        const validStatuses = ['ON', 'OFF'];
+        validStatuses.forEach(status => {
+            it(`should successfully put legal hold status ${status}`, done => {
+                const params = createLegalHoldParams(`${status}`);
+                s3.putObjectLegalHold(params, err => {
+                    if (err) {
+                        done(err);
+                    }
+                    const { Bucket, Key } = params;
+                    s3.getObjectLegalHold({ Bucket, Key }, (err, res) => {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(res,
+                            { LegalHold: { Status: `${status}` } });
+                        const objectWithLock = [
+                            {
+                                bucket: bucket,
+                                key: key,
+                                versionId,
+                            },
+                        ];
+                        removeObjectLock(objectWithLock, done);
+                    });
                 });
             });
         });
 
         it('should not allow object legal hold with empty Status', done => {
-            const params
-                = { Bucket: bucket, Key: 'key', LegalHold: { Status: '' } };
+            const params = {
+                Bucket: bucket,
+                Key: key,
+                LegalHold: {
+                    Status: '',
+                },
+            };
             s3.putObjectLegalHold(params, err =>
                 assertError(err, 'MalformedXML', done));
         });
 
-        it('should not allow object legal hold with empty LegalHold', done => {
-            const params = { Bucket: bucket, Key: 'key', LegalHold: {} };
+        it('should not allow empty LegalHold', done => {
+            const params = {
+                Bucket: bucket,
+                Key: key,
+                LegalHold: {},
+            };
             s3.putObjectLegalHold(params, err =>
                 assertError(err, 'MalformedXML', done));
         });
 
-        [true, false].forEach(bool => {
-            it('should not allow invalid legal hold status type', done => {
-                const params = {
-                    Bucket: bucket,
-                    Key: 'key',
-                    LegalHold: {
-                        Status: `${bool}`,
-                    },
-                };
+        const invalidStatuses = ['On', 'On', 'off', 'active', true, false];
+        invalidStatuses.forEach(status => {
+            it('should not allow invalid legal hold status "On"', done => {
+                const params = createLegalHoldParams(`${status}`);
                 s3.putObjectLegalHold(params, err =>
-                    assertError(err.code, 'InvalidParameterType', done));
+                    assertError(err, 'MalformedXML', done));
             });
-        });
-
-        it('should not allow invalid legal hold status "On"', done => {
-            const params = getParams('On');
-            s3.putObjectLegalHold(params, err =>
-                assertError(err, 'MalformedXML', done));
-        });
-
-        it('should not allow invalid legal hold status "on"', done => {
-            const params = getParams('on');
-            s3.putObjectLegalHold(params, err =>
-                assertError(err, 'MalformedXML', done));
-        });
-
-        it('should not allow invalid legal hold status "Off"', done => {
-            const params = getParams('Off');
-            s3.putObjectLegalHold(params, err =>
-                assertError(err, 'MalformedXML', done));
-        });
-
-        it('should not allow invalid legal hold status "off"', done => {
-            const params = getParams('off');
-            s3.putObjectLegalHold(params, err =>
-                assertError(err, 'MalformedXML', done));
-        });
+        })
     });
 });
