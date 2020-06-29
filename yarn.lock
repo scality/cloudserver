@@ -264,9 +264,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#b4b5712":
+"arsenal@github:scality/Arsenal#6383d14":
   version "8.2.1"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b4b5712df7953b0f34cab2234e2f284c19c121b1"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/6383d14d49377901c6f5ee38fc94936e432cf20b"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -295,7 +295,7 @@ arraybuffer.slice@~0.0.7:
     utf8 "3.0.0"
     uuid "^3.0.1"
     werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
+    xml2js "~0.4.23"
   optionalDependencies:
     ioctl "2.0.1"
 
@@ -328,6 +328,7 @@ arsenal@scality/Arsenal#b03f5b8:
   version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b03f5b80acd6acaaf8dd2d49cd955e6b95279ab3"
   dependencies:
+    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -335,7 +336,6 @@ arsenal@scality/Arsenal#b03f5b8:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
-    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -4792,7 +4792,7 @@ xml2js@0.4.19:
     sax ">=0.6.0"
     xmlbuilder "~9.0.1"
 
-xml2js@~0.4.16:
+xml2js@~0.4.16, xml2js@~0.4.23:
   version "0.4.23"
   resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.4.23.tgz#a0c69516752421eb2ac758ee4d4ccf58843eac66"
   integrity sha512-ySPiMjM0+pLDftHgXY4By0uswI3SPKLDw/i3UXbnO8M/p28zqexCUoPmQFrYD+/1BzhGJSs2i1ERWKJAtiLrug==
