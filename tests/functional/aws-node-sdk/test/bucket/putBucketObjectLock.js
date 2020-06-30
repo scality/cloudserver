@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 const { S3 } = require('aws-sdk');
 
 const checkError = require('../../lib/utility/checkError');
@@ -14,8 +13,8 @@ function getObjectLockParams(status, mode, days, years) {
         Rule: {
             DefaultRetention: {
                 Mode: mode,
-            }
-        }
+            },
+        },
     };
     if (days) {
         objectLockConfig.Rule.DefaultRetention.Days = days;
@@ -67,7 +66,7 @@ describe('aws-sdk test put object lock configuration', () => {
     describe('config rules', () => {
         beforeEach(done => s3.createBucket({
             Bucket: bucket,
-            ObjectLockEnabledForBucket: true
+            ObjectLockEnabledForBucket: true,
         }, done));
 
         afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
@@ -152,7 +151,7 @@ describe('aws-sdk test put object lock configuration', () => {
                 });
             });
 
-            it('should not allow object lock config request with invalid mode',
+        it('should not allow object lock config request with invalid mode',
             done => {
                 const params = getObjectLockParams('Enabled', 'Governance', 10);
                 s3.putObjectLockConfiguration(params, err => {
