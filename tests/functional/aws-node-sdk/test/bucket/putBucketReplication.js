@@ -6,6 +6,8 @@ const { series } = require('async');
 const getConfig = require('../support/config');
 const replicationUtils = require('../../lib/utility/replication');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+
 
 const sourceBucket = 'source-bucket';
 const destinationBucket = 'destination-bucket';
@@ -175,18 +177,16 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
         config.Role = ARN;
-
-        it('should accept configuration if \'Role\' is a single valid ' +
-            `Amazon Resource Name: '${ARN}', and a rule storageClass defines ` +
-            'an external location', done =>
-            checkError(config, null, done));
+        const test = `should allow only one role to be specified for external
+         locations`;
+        itSkipIfE2E(test, done => checkError(config, null, done));
     });
 
     it('should allow a combination of storageClasses across rules', done => {
         const config = setConfigRules([replicationConfig.Rules[0], {
             Destination: {
                 Bucket: `arn:aws:s3:::${destinationBucket}`,
-                StorageClass: 'us-east-2',
+                StorageClass: 'us-east-1',
             },
             Prefix: 'bar',
             Status: 'Enabled',
@@ -196,8 +196,8 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
         checkError(config, null, done);
     });
 
-    it('should not allow a comma separated list of roles when a rule ' +
-        'storageClass defines an external location', done => {
+    itSkipIfE2E('should not allow a comma separated list of roles when' +
+        ' a rule storageClass defines an external location', done => {
         const config = {
             Role: 'arn:aws:iam::account-id:role/src-resource,' +
                 'arn:aws:iam::account-id:role/dest-resource',
@@ -353,7 +353,7 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
             },
         });
 
-        it('should accept configuration when \'StorageClass\' is ' +
+        itSkipIfE2E('should accept configuration when \'StorageClass\' is ' +
             `${storageClass}`, done => checkError(config, null, done));
     });
 
