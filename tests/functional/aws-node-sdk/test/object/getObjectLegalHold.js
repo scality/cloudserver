@@ -46,7 +46,7 @@ describe('GET object legal hold', () => {
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
-            return removeLockPromise([{ bucket: bucket, key: key, versionId }])
+            return removeLockPromise([{ bucket, key, versionId }])
             .then(() => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucket);
@@ -68,7 +68,7 @@ describe('GET object legal hold', () => {
                     checkError(err, 'AccessDenied', 403);
                     done();
                 });
-        });
+            });
 
         it('should return NoSuchKey error if key does not exist', done => {
             s3.getObjectLegalHold({
@@ -133,7 +133,7 @@ describe('GET object legal hold', () => {
             }, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res.LegalHold, { Status: 'ON' });
-                removeObjectLock([{ bucket: bucket, key: key, versionId }], done);
+                removeObjectLock([{ bucket, key, versionId }], done);
             });
         });
     });
