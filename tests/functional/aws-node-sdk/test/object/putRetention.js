@@ -4,7 +4,7 @@ const moment = require('moment');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../../../utilities/objectLock-util');
 
 const bucketName = 'lockenabledputbucket';
 const unlockedBucket = 'locknotenabledputbucket';
@@ -119,8 +119,8 @@ describe('PUT object retention', () => {
                 Retention: retentionConfig,
             }, err => {
                 assert.ifError(err);
-                removeObjectLock([
-                    { bucket: bucketName, key: objectName, versionId }], done);
+                changeObjectLock([
+                    { bucket: bucketName, key: objectName, versionId }], '', done);
             });
         });
     });

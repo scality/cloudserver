@@ -13,8 +13,7 @@ const initiateMultipartUpload
 const objectPut = require('../../../lib/api/objectPut');
 const objectGet = require('../../../lib/api/objectGet');
 const objectPutPart = require('../../../lib/api/objectPutPart');
-const removeObjectLock =
-    require('../../functional/aws-node-sdk/lib/utility/objectLock-util');
+const changeObjectLock = require('../../utilities/objectLock-util');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -120,11 +119,11 @@ describe('objectGet API', () => {
                             'GOVERNANCE');
                         assert.strictEqual(headers.ETag,
                             `"${correctMD5}"`);
-                        removeObjectLock([{
+                        changeObjectLock([{
                             bucket: bucketName,
                             key: objectName,
                             versionId: headers['x-amz-version-id'],
-                        }], done);
+                        }], '', done);
                     });
                 });
         });
@@ -159,11 +158,11 @@ describe('objectGet API', () => {
                                     status);
                                 assert.strictEqual(headers.ETag,
                                     `"${correctMD5}"`);
-                                removeObjectLock([{
+                                changeObjectLock([{
                                     bucket: bucketName,
                                     key: objectName,
                                     versionId: headers['x-amz-version-id'],
-                                }], done);
+                                }], '', done);
                             });
                     });
             });
