@@ -5,9 +5,9 @@ const moment = require('moment');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../lib/utility/objectLock-util');
 
-const removeLockPromise = Promise.promisify(removeObjectLock);
+const changeLockPromise = Promise.promisify(changeObjectLock);
 
 const bucketName = 'lockenabledbucket';
 const unlockedBucket = 'locknotenabledbucket';
@@ -66,7 +66,7 @@ describe('GET object retention', () => {
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
-            return removeLockPromise([{ bucket: bucketName, key: objectName, versionId }])
+            return changeLockPromise([{ bucket: bucketName, key: objectName, versionId }], '')
             .then(() => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucketName);
@@ -155,8 +155,8 @@ describe('GET object retention', () => {
             }, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res.Retention, expectedConfig);
-                removeObjectLock([
-                    { bucket: bucketName, key: objectName, versionId }], done);
+                changeObjectLock([
+                    { bucket: bucketName, key: objectName, versionId }], '', done);
             });
         });
     });
