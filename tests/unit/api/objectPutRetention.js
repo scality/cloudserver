@@ -44,12 +44,8 @@ const putObjRetRequest = {
     post: objectRetentionXml,
 };
 
-const expectedRetInfo = {
-    retention: {
-        mode: 'GOVERNANCE',
-        retainUntilDate: date.toISOString(),
-    },
-};
+const expectedMode = 'GOVERNANCE';
+const expectedDate = date.toISOString();
 
 describe('putObjectRetention API', () => {
     before(() => cleanup());
@@ -89,8 +85,8 @@ describe('putObjectRetention API', () => {
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
                 (err, objMD) => {
                     assert.ifError(err);
-                    assert.deepStrictEqual(objMD.retentionInfo,
-                        expectedRetInfo);
+                    assert.strictEqual(objMD.retentionMode, expectedMode);
+                    assert.strictEqual(objMD.retentionDate, expectedDate);
                     return done();
                 });
             });
