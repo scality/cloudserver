@@ -9,13 +9,14 @@ const versionIdUtils = versioning.VersionID;
 
 const log = new DummyRequestLogger();
 
-function removeObjectLock(objects, cb) {
+function changeObjectLock(objects, newConfig, cb) {
     async.each(objects, (object, next) => {
         const { bucket, key, versionId } = object;
         metadataGetObject(bucket, key, versionIdUtils.decode(versionId), log, (err, objMD) => {
             assert.ifError(err);
+            // set newConfig as empty string to remove object lock
             /* eslint-disable no-param-reassign */
-            objMD.retentionInfo = '';
+            objMD.retentionInfo = newConfig;
             objMD.legalHold = false;
             metadata.putObjectMD(bucket, key, objMD, { versionId: objMD.versionId }, log, err => {
                 assert.ifError(err);
@@ -25,4 +26,4 @@ function removeObjectLock(objects, cb) {
     }, cb);
 }
 
-module.exports = removeObjectLock;
+module.exports = changeObjectLock;
