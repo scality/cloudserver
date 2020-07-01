@@ -196,8 +196,8 @@ describe('objectPut API', () => {
                         assert.strictEqual(headers.ETag, `"${correctMD5}"`);
                         metadata.getObjectMD(bucketName, objectName, {}, log,
                             (err, md) => {
-                                const { mode, retainUntilDate }
-                                    = md.retentionInfo;
+                                const mode = md.retentionMode;
+                                const retainUntilDate = md.retentionDate;
                                 assert.ifError(err);
                                 assert(md);
                                 assert.strictEqual(mode, mockMode);
@@ -250,8 +250,8 @@ describe('objectPut API', () => {
                             assert.strictEqual(headers.ETag, `"${correctMD5}"`);
                             metadata.getObjectMD(bucketName, objectName, {},
                                 log, (err, md) => {
-                                    const { mode, retainUntilDate: retainDate }
-                                        = md.retentionInfo;
+                                    const mode = md.retentionMode;
+                                    const retainDate = md.retentionDate;
                                     const date = moment();
                                     const days
                                         = type === 'Days' ? val : val * 365;
