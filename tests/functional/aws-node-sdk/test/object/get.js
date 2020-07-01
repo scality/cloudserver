@@ -1,7 +1,9 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
+const moment = require('moment');
 
+const removeObjectLock = require('../../lib/utility/objectLock-util');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -190,7 +192,10 @@ describe('GET object', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             // Create a bucket to put object to get later
-            s3.createBucket({ Bucket: bucketName }, done);
+            s3.createBucket({
+                Bucket: bucketName,
+                ObjectLockEnabledForBucket: true
+            }, done);
         });
 
         after(done => {
@@ -1013,6 +1018,52 @@ describe('GET object', () => {
                           undefined);
                       return done();
                   });
+            });
+        });
+
+        describe('object lock headers', () => {
+            const formatDate = date => date.toString().slice(0, 20);
+            const mockDate = moment().add(1, 'days').toISOString();
+            const mockMode = 'GOVERNANCE';
+            beforeEach(done => {
+                const params = {
+                    Bucket: bucketName,
+                    Key: objectName,
+                    ObjectLockRetainUntilDate: mockDate,
+                    ObjectLockMode: mockMode,
+                    ObjectLockLegalHoldStatus: 'ON',
+                };
+                s3.putObject(params, done);
+            });
+        
+            afterEach(done => s3.listObjects({ Bucket: bucketName }, (err, res) => {
+                assert.ifError(err);
+                res.Contents.forEach(object => {
+                    s3.deleteObject({
+                        Bucket: bucketName,
+                        Key: object.Key,
+                    }, done);
+                });
+            }));
+        
+            it('should return object lock headers if set on the object', done => {
+                s3.getObject({ Bucket: bucketName, Key: objectName }, (err, res) => {
+                    assert.ifError(err);
+                    assert.strictEqual(res.ObjectLockLegalHoldStatus, 'ON');
+                    assert.strictEqual(res.ObjectLockMode, mockMode);
+                    const responseDate
+                        = formatDate(res.ObjectLockRetainUntilDate.toISOString());
+                    const expectedDate = formatDate(mockDate);
+                    assert.strictEqual(responseDate, expectedDate);
+                    const objectWithLock = [
+                        {
+                            bucket: bucketName,
+                            key: objectName,
+                            versionId: res.VersionId,
+                        },
+                    ];
+                    removeObjectLock(objectWithLock, done);
+                });
             });
         });
     });
