@@ -262,7 +262,7 @@ describe('objectHead API', () => {
         const testPutBucketRequestLock = {
             bucketName,
             namespace,
-            headers: { 'x-amz-bucket-object-lock-enabled': true },
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
             url: `/${bucketName}`,
         };
         const testPutObjectRequestLock = new DummyRequest({
