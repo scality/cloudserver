@@ -56,7 +56,7 @@ describe('putBucketObjectLock API', () => {
 
     describe('with Object Lock enabled on bucket', () => {
         const bucketObjLockRequest = Object.assign({}, bucketPutRequest,
-            { headers: { 'x-amz-bucket-object-lock-enabled': true } });
+            { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
 
         beforeEach(done => bucketPut(authInfo, bucketObjLockRequest, log, done));
         afterEach(() => cleanup());
