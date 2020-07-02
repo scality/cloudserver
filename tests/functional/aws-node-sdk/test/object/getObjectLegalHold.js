@@ -4,9 +4,9 @@ const Promise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const removeLockPromise = Promise.promisify(removeObjectLock);
+const changeLockPromise = Promise.promisify(changeObjectLock);
 
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
@@ -46,7 +46,7 @@ describe('GET object legal hold', () => {
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
-            return removeLockPromise([{ bucket, key, versionId }])
+            return changeLockPromise([{ bucket, key, versionId }], '')
             .then(() => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucket);
@@ -133,7 +133,7 @@ describe('GET object legal hold', () => {
             }, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res.LegalHold, { Status: 'ON' });
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
     });
