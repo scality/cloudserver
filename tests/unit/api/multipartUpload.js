@@ -51,7 +51,7 @@ const lockEnabledBucketRequest = Object.assign({}, bucketPutRequest);
 lockEnabledBucketRequest.bucketName = lockedBucket;
 lockEnabledBucketRequest.headers = {
     'host': `${lockedBucket}.s3.amazonaws.com`,
-    'x-amz-bucket-object-lock-enabled': true,
+    'x-amz-bucket-object-lock-enabled': 'true',
 };
 const initiateRequest = {
     bucketName,
