@@ -15,7 +15,8 @@ function removeObjectLock(objects, cb) {
         metadataGetObject(bucket, key, versionIdUtils.decode(versionId), log, (err, objMD) => {
             assert.ifError(err);
             /* eslint-disable no-param-reassign */
-            objMD.retentionInfo = '';
+            objMD.retentionMode = '';
+            objMD.retentionDate = '';
             objMD.legalHold = false;
             metadata.putObjectMD(bucket, key, objMD, { versionId: objMD.versionId }, log, err => {
                 assert.ifError(err);
