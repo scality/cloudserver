@@ -6,7 +6,7 @@ const provideRawOutput = require('../../lib/utility/provideRawOutput');
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../lib/utility/objectLock-util');
 
 const bucket = 'bucket2putstuffin4324242';
 const object = 'object2putstuffin';
@@ -323,8 +323,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(
-                    [{ bucket, key: 'key1', versionId: res.VersionId }], done);
+                changeObjectLock(
+                    [{ bucket, key: 'key1', versionId: res.VersionId }], '', done);
             });
         });
 
@@ -339,8 +339,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(
-                    [{ bucket, key: 'key2', versionId: res.VersionId }], done);
+                changeObjectLock(
+                    [{ bucket, key: 'key2', versionId: res.VersionId }], '', done);
             });
         });
 
@@ -367,8 +367,8 @@ describe('PUT object with object lock', () => {
             };
             s3.putObject(params, (err, res) => {
                 assert.ifError(err);
-                removeObjectLock(
-                    [{ bucket, key: 'key4', versionId: res.VersionId }], done);
+                changeObjectLock(
+                    [{ bucket, key: 'key4', versionId: res.VersionId }], '', done);
             });
         });
 
