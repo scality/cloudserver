@@ -210,9 +210,9 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#55b6cea":
+"arsenal@github:scality/Arsenal#b585307":
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/55b6ceadabca9686eff8fb1ae7794a5b536ec52e"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/b5853078c666c39d532d2a133e3dedc4a68bd566"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -264,7 +264,6 @@ arsenal@scality/Arsenal#9f2e74e:
   version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
   dependencies:
-    "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
     ajv "4.10.0"
     async "~2.1.5"
@@ -272,6 +271,7 @@ arsenal@scality/Arsenal#9f2e74e:
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.2.0"
+    joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
@@ -379,9 +379,9 @@ aws-sdk@2.363.0:
     xml2js "0.4.19"
 
 aws-sdk@^2.2.23:
-  version "2.705.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.705.0.tgz#6c42851f0efdfe2685eb2dab72740a01742468bd"
-  integrity sha512-eD3YD3UgCdFIYlkAVYW1rbriKSNHm7nsZbYsBuo91pbyq4XYT56w2oTyNECorYPoq//Y4LQTTx8cbOuEjsNi3w==
+  version "2.709.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.709.0.tgz#33b0c0fe8b9420c65610545394be047ac2d93c8f"
+  integrity sha512-F3sKXsCiutj9RglVXdqb/XJ3Ko3G+pX081Nf1YjVJpLydwE2v16FGxrLqE5pqyWMDeUf5nZHnBoMuOYD8ip+Kw==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -1824,9 +1824,9 @@ is-my-ip-valid@^1.0.0:
   integrity sha512-gmh/eWXROncUzRnIa1Ubrt5b8ep/MGSnfAUI3aRp+sqTCs1tv1Isl8d8F6JmkN3dXKc3ehZMrtiPN9eL03NuaQ==
 
 is-my-json-valid@^2.10.0:
-  version "2.20.1"
-  resolved "https://registry.yarnpkg.com/is-my-json-valid/-/is-my-json-valid-2.20.1.tgz#78135763c941088b50db7509aeb59286e55b982d"
-  integrity sha512-KWo8x7CYK5goqyYFJM4ZmapN2DvIGKkx5C1WLHyo2Dcr4R9u4Y9ofpZxn5+LF/d0FHR3AeFcYxVlqIA2OOwuJA==
+  version "2.20.4"
+  resolved "https://registry.yarnpkg.com/is-my-json-valid/-/is-my-json-valid-2.20.4.tgz#f027a2154727d14c0c73c946bf8ac5b5aee98796"
+  integrity sha512-Ym0D5NOxJ+f+zzQHkLfu5n9B1134ra+KwskpDD86200xYQBsAb9OKX81eSsI4oKN9GNAhDAReS7t8Mxtih/l+A==
   dependencies:
     generate-function "^2.0.0"
     generate-object-property "^1.1.0"
