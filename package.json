@@ -33,7 +33,7 @@
     "http-proxy-agent": "^4.0.1",
     "https-proxy-agent": "^2.2.0",
     "moment": "^2.26.0",
-    "mongodb": "^2.2.31",
+    "mongodb": "^3.5.9",
     "node-fetch": "^2.6.0",
     "node-forge": "^0.7.1",
     "node-uuid": "^1.4.3",
