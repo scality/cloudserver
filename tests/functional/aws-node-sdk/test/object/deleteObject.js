@@ -3,7 +3,7 @@ const moment = require('moment');
 const Promise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../lib/utility/objectLock-util');
 
 const bucketName = 'testdeletempu';
 const objectName = 'key';
@@ -217,12 +217,12 @@ describe('DELETE object', () => {
                     VersionId: versionIdTwo,
                 }, err => {
                     assert.strictEqual(err.code, 'AccessDenied');
-                    removeObjectLock(
+                    changeObjectLock(
                         [{
                             bucket: bucketName,
                             key: objectNameTwo,
                             versionId: versionIdTwo,
-                        }], done);
+                        }], '', done);
                 });
             });
         });
