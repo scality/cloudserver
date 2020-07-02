@@ -3,7 +3,7 @@ const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const checkError = require('../../lib/utility/checkError');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../lib/utility/objectLock-util');
 
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
@@ -120,7 +120,7 @@ describe('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, 'ON');
             s3.putObjectLegalHold(params, err => {
                 assert.ifError(err);
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
@@ -128,7 +128,7 @@ describe('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, 'OFF');
             s3.putObjectLegalHold(params, err => {
                 assert.ifError(err);
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
@@ -136,7 +136,7 @@ describe('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, '');
             s3.putObjectLegalHold(params, err => {
                 checkError(err, 'MalformedXML', 400);
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
@@ -147,7 +147,7 @@ describe('PUT object legal hold', () => {
                 LegalHold: {},
             }, err => {
                 checkError(err, 'MalformedXML', 400);
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
@@ -155,7 +155,7 @@ describe('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, true);
             s3.putObjectLegalHold(params, err => {
                 checkError(err, 'InvalidParameterType');
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
 
@@ -163,7 +163,7 @@ describe('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, 'on');
             s3.putObjectLegalHold(params, err => {
                 checkError(err, 'MalformedXML', 400);
-                removeObjectLock([{ bucket, key, versionId }], done);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });
     });

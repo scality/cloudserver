@@ -1,7 +1,7 @@
 const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
-const removeObjectLock = require('../../lib/utility/objectLock-util');
+const changeObjectLock = require('../../lib/utility/objectLock-util');
 
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
@@ -1304,7 +1304,7 @@ describe('Object Copy with object lock enabled on both destination ' +
                                     versionId: res.VersionId,
                                 },
                             ];
-                            removeObjectLock(removeLockObjs, done);
+                            changeObjectLock(removeLockObjs, '', done);
                         });
                 });
             });
@@ -1335,7 +1335,7 @@ describe('Object Copy with object lock enabled on both destination ' +
                                     versionId,
                                 },
                             ];
-                            removeObjectLock(removeLockObjs, done);
+                            changeObjectLock(removeLockObjs, '', done);
                         });
                 });
             });
@@ -1369,7 +1369,7 @@ describe('Object Copy with object lock enabled on both destination ' +
                                     versionId: res.VersionId,
                                 },
                             ];
-                            removeObjectLock(removeLockObjs, done);
+                            changeObjectLock(removeLockObjs, '', done);
                         });
                 });
             });
