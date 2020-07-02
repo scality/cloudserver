@@ -6,7 +6,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const objectHead = require('../../../lib/api/objectHead');
 const DummyRequest = require('../DummyRequest');
-const removeObjectLock =
+const changeObjectLock =
     require('../../functional/aws-node-sdk/lib/utility/objectLock-util');
 
 const log = new DummyRequestLogger();
@@ -305,11 +305,11 @@ describe('objectHead API', () => {
                             expectedMode);
                         assert.strictEqual(res['x-amz-object-lock-legal-hold'],
                             'ON');
-                        removeObjectLock([{
+                        changeObjectLock([{
                             bucket: bucketName,
                             key: objectName,
                             versionId: res['x-amz-version-id'],
-                        }], done);
+                        }], '', done);
                     });
                 });
         });

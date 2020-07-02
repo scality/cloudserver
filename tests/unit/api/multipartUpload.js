@@ -21,7 +21,7 @@ const initiateMultipartUpload
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
-const removeObjectLock =
+const changeObjectLock =
     require('../../functional/aws-node-sdk/lib/utility/objectLock-util');
 
 const { metadata } = storage.metadata.inMemory.metadata;
@@ -1839,8 +1839,8 @@ describe('multipart upload with object lock', () => {
         ], (err, json) => {
             assert.ifError(err);
             assert.deepStrictEqual(json.Retention, expectedRetentionConfig);
-            removeObjectLock(
-                [{ bucket: lockedBucket, key: objectKey, versionId }], done);
+            changeObjectLock(
+                [{ bucket: lockedBucket, key: objectKey, versionId }], '', done);
         });
     });
 
@@ -1878,8 +1878,8 @@ describe('multipart upload with object lock', () => {
         ], (err, json) => {
             assert.ifError(err);
             assert.deepStrictEqual(json.LegalHold, expectedLegalHold);
-            removeObjectLock(
-                [{ bucket: lockedBucket, key: objectKey, versionId }], done);
+            changeObjectLock(
+                [{ bucket: lockedBucket, key: objectKey, versionId }], '', done);
         });
     });
 });
