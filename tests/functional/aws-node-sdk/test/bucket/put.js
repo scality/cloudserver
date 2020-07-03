@@ -208,7 +208,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                         assert.deepStrictEqual(res.ObjectLockConfiguration,
                             { ObjectLockEnabled: 'Enabled' });
                     });
-                    bucketUtil.deleteOne(name).then(done).catch(done);
+                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
             function _testObjectLockDisabled(name, done) {
