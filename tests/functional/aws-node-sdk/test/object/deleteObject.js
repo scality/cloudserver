@@ -5,11 +5,11 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
 
-const bucketName = 'testdeletempu';
-const objectName = 'key';
-const objectNameTwo = 'secondkey';
+const bucketName = `testdeletempu-${Date.now()}`;
+const objectName = `key-${Date.now()}`;
+const objectNameTwo = `secondkey-${Date.now()}`;
 
-describe('DELETE object', () => {
+describe.only('DELETE object', () => {
     withV4(sigCfg => {
         let uploadId;
         const bucketUtil = new BucketUtility('default', sigCfg);
