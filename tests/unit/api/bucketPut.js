@@ -25,6 +25,17 @@ const testRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
 };
 
+const createTestRequestWithLock = enabled => ({
+    bucketName,
+    namespace,
+    url: '/',
+    post: '',
+    headers: {
+        'host': `${bucketName}.s3.amazonaws.com`,
+        'x-amz-bucket-object-lock-enabled': `${enabled}`,
+    },
+});
+
 const testChecks = [
     {
         data: 'scality-internal-file',
@@ -126,6 +137,53 @@ describe('bucketPut API', () => {
                             `${canonicalID}${splitter}${bucketName}`);
                         done();
                     });
+            });
+        });
+    });
+
+    const validEnabledVals = ['True', 'true'];
+    validEnabledVals.forEach(val => {
+        it('with object lock enabled', done => {
+            const params = createTestRequestWithLock(val);
+            bucketPut(authInfo, params, log, err => {
+                if (err) {
+                    return done(new Error(err));
+                }
+                return metadata.getBucket(bucketName, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.isObjectLockEnabled(), true);
+                    done();
+                });
+            });
+        });
+    });
+
+    const validDisabledVals = ['False', 'false'];
+    validDisabledVals.forEach(val => {
+        it('without object lock', done => {
+            const params = createTestRequestWithLock(val);
+            bucketPut(authInfo, params, log, err => {
+                if (err) {
+                    return done(new Error(err));
+                }
+                return metadata.getBucket(bucketName, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.isObjectLockEnabled(), false);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('without object lock if no header passed in', done => {
+        bucketPut(authInfo, testRequest, log, err => {
+            if (err) {
+                return done(new Error(err));
+            }
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                assert.strictEqual(md.isObjectLockEnabled(), false);
+                done();
             });
         });
     });
