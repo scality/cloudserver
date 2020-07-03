@@ -141,34 +141,18 @@ describe('bucketPut API', () => {
         });
     });
 
-    const validEnabledVals = ['True', 'true'];
+    const validEnabledVals = ['True', 'true', 'False', 'false'];
     validEnabledVals.forEach(val => {
-        it('with object lock enabled', done => {
+        it('when valid object lock enabled header passed in', done => {
             const params = createTestRequestWithLock(val);
+            const expectedVal = ['True', 'true'].includes(val);
             bucketPut(authInfo, params, log, err => {
                 if (err) {
                     return done(new Error(err));
                 }
                 return metadata.getBucket(bucketName, log, (err, md) => {
                     assert.ifError(err);
-                    assert.strictEqual(md.isObjectLockEnabled(), true);
-                    done();
-                });
-            });
-        });
-    });
-
-    const validDisabledVals = ['False', 'false'];
-    validDisabledVals.forEach(val => {
-        it('without object lock', done => {
-            const params = createTestRequestWithLock(val);
-            bucketPut(authInfo, params, log, err => {
-                if (err) {
-                    return done(new Error(err));
-                }
-                return metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.ifError(err);
-                    assert.strictEqual(md.isObjectLockEnabled(), false);
+                    assert.strictEqual(md.isObjectLockEnabled(), expectedVal);
                     done();
                 });
             });
