@@ -63,7 +63,7 @@ describe('putObjectLegalHold API', () => {
 
     describe('with Object Lock enabled on bucket', () => {
         const bucketObjLockRequest = Object.assign({}, putBucketRequest,
-            { headers: { 'x-amz-bucket-object-lock-enabled': true } });
+            { headers: { 'x-amz-bucket-object-lock-enabled': 'true' } });
 
         beforeEach(done => {
             bucketPut(authInfo, bucketObjLockRequest, log, err => {

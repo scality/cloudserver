@@ -130,6 +130,49 @@ describe('bucketPut API', () => {
         });
     });
 
+    const createTestRequestWithLock = status => ({
+        bucketName,
+        namespace,
+        url: '/',
+        post: '',
+        headers: {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-bucket-object-lock-enabled': `${status}`,
+        },
+    });
+
+    const validObjLockVals = ['True', 'true', 'False', 'false'];
+
+    validObjLockVals.forEach(val => {
+        it('when valid object lock enabled header passed in', done => {
+            const params = createTestRequestWithLock(val);
+            const expectedVal = ['True', 'true'].includes(val);
+            bucketPut(authInfo, params, log, err => {
+                if (err) {
+                    return done(new Error(err));
+                }
+                return metadata.getBucket(bucketName, log, (err, md) => {
+                    assert.ifError(err);
+                    assert.strictEqual(md.isObjectLockEnabled(), expectedVal);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('without object lock if no header passed in', done => {
+        bucketPut(authInfo, testRequest, log, err => {
+            if (err) {
+                return done(new Error(err));
+            }
+            return metadata.getBucket(bucketName, log, (err, md) => {
+                assert.ifError(err);
+                assert.strictEqual(md.isObjectLockEnabled(), false);
+                done();
+            });
+        });
+    });
+
     it('should return an error if ACL set in header ' +
        'with an invalid group URI', done => {
         const testRequest = {
