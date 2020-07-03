@@ -201,7 +201,6 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     ObjectLockEnabledForBucket: true,
                 }, (err, res) => {
                     assert.ifError(err);
-                    assert(res.Location, 'No Location in response');
                     assert.strictEqual(res.Location, `/${name}`,
                     'Wrong Location header');
                     bucketUtil.s3.getObjectLockConfiguration({ Bucket: name }, (err, res) => {
@@ -209,7 +208,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                         assert.deepStrictEqual(res.ObjectLockConfiguration,
                             { ObjectLockEnabled: 'Enabled' });
                     });
-                    bucketUtil.deleteOne(name).then(() => done()).catch(done);
+                    bucketUtil.deleteOne(name).then(done).catch(done);
                 });
             }
             function _testObjectLockDisabled(name, done) {
