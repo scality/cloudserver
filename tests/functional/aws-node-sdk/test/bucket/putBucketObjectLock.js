@@ -61,6 +61,19 @@ describe('aws-sdk test put object lock configuration', () => {
                 done();
             });
         });
+
+        it('should return InvalidBucketState error without Rule', done => {
+            const params = {
+                Bucket: bucket,
+                ObjectLockConfiguration: {
+                    ObjectLockEnabled: 'Enabled',
+                },
+            };
+            s3.putObjectLockConfiguration(params, err => {
+                checkError(err, 'InvalidBucketState', 409);
+                done();
+            });
+        });
     });
 
     describe('config rules', () => {
