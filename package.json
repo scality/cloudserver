@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
+    "@hapi/joi": "^17.1.0",
     "arsenal": "github:scality/Arsenal#e6622df",
     "async": "~2.5.0",
     "aws-sdk": "2.363.0",
