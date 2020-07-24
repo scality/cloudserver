@@ -22,7 +22,7 @@
     "@hapi/joi": "^17.1.0",
     "arsenal": "github:scality/Arsenal#78d6263",
     "async": "~2.5.0",
-    "aws-sdk": "2.363.0",
+    "aws-sdk": "2.719.0",
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#949f11a",
     "bufferutil": "^3.0.5",
