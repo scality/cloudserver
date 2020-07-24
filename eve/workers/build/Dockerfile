@@ -11,7 +11,7 @@ RUN curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && cat /tmp/*packages.list | xargs apt-get install -y \
     && git clone https://github.com/tj/n.git \
     && make -C ./n \
-    && n 10 \
+    && n 10.19.0 \
     && pip install pip==9.0.1 \
     && rm -rf ./n \
     && rm -rf /var/lib/apt/lists/* \
