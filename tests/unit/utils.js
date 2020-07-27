@@ -121,9 +121,8 @@ describe('utils.isValidBucketName', () => {
     });
 
     it('should return false if bucketname is greater than ' +
-        '63 characters long', () => {
-        const longString = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
-            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        '255 characters long', () => {
+        const longString = 'a'.repeat(256);
         const result = utils.isValidBucketName(longString);
         assert.strictEqual(result, false);
     });
@@ -145,6 +144,13 @@ describe('utils.isValidBucketName', () => {
 
     it('should return true if bucketname does not break rules', () => {
         const result = utils.isValidBucketName('okay');
+        assert.strictEqual(result, true);
+    });
+
+    it('should return true if bucketname is over 63 characters long ' +
+        'but less than 256 characters', () => {
+        const longString = 'a'.repeat(64);
+        const result = utils.isValidBucketName(longString);
         assert.strictEqual(result, true);
     });
 });

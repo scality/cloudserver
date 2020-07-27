@@ -77,9 +77,9 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 testFn(shortName, done);
             });
 
-            itSkipIfAWS('should return 400 if name is longer than 63 chars',
+            itSkipIfAWS('should return 400 if name is longer than 255 chars',
                 done => {
-                    const longName = 'x'.repeat(64);
+                    const longName = 'x'.repeat(256);
                     testFn(longName, done);
                 }
             );
