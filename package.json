@@ -4,7 +4,7 @@
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
-    "node": ">=10"
+    "node": ">=10.19.0"
   },
   "repository": "scality/S3",
   "keywords": [
