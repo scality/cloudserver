@@ -57,7 +57,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-scality": "scality/Guidelines#28e73a2",
     "eslint-plugin-import": "^2.14.0",
-    "ioredis": "4.9.5",
+    "ioredis": "4.17.3",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
