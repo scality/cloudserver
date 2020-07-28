@@ -45,7 +45,7 @@
     "utapi": "scality/utapi#282a55c",
     "utf-8-validate": "^4.0.2",
     "utf8": "~2.1.1",
-    "uuid": "^3.0.1",
+    "uuid": "^8.3.0",
     "vaultclient": "scality/vaultclient#e1c0044",
     "werelogs": "scality/werelogs#22bca9c",
     "ws": "^5.1.0",
