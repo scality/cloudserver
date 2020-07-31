@@ -91,7 +91,6 @@ const constants = {
         'inventory',
         'logging',
         'metrics',
-        'notification',
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
