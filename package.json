@@ -47,7 +47,7 @@
     "eslint-config-scality": "scality/Guidelines#71a059ad",
     "ioredis": "4.9.5",
     "istanbul": "1.0.0-alpha.2",
-    "istanbul-api": "1.0.0-alpha.13",
+    "istanbul-api": "3.0.0",
     "lolex": "^1.4.0",
     "mocha": "^2.3.4",
     "mocha-multi-reporters": "^1.1.7",
