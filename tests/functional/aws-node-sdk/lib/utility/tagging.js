@@ -13,15 +13,14 @@ const taggingTests = [
 ];
 
 function generateMultipleTagQuery(numberOfTag) {
-    let tags = '';
-    let and = '';
+    let tagsArray = [];
     for (let i = 0; i < numberOfTag; i++) {
         if (i !== 0) {
             and = '&';
         }
-        tags = `key${i}=value${i}${and}${tags}`;
+        tagsArray.push(`key${i}=value${i}`);
     }
-    return tags;
+    return tagsArray.join('&');
 }
 
 module.exports = {
