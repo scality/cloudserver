@@ -146,8 +146,7 @@ describe('Complete MPU', () => {
 
             taggingTests.forEach(test => {
                 it(test.it, done => {
-                    const key = encodeURIComponent(test.tag.key);
-                    const value = encodeURIComponent(test.tag.value);
+                    const [key, value] = [test.tag.key, test.tag.value].map(encodeURIComponent);
                     const tagging = `${key}=${value}`;
 
                     async.waterfall([
@@ -157,7 +156,6 @@ describe('Complete MPU', () => {
                             Tagging: tagging,
                         }, (err, data) => {
                             if (test.error) {
-                                assert(err, 'Expected err but found none');
                                 assert.strictEqual(err.code, test.error);
                                 assert.strictEqual(err.statusCode, 400);
                                 next('expected');
