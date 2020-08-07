@@ -15,9 +15,6 @@ const taggingTests = [
 function generateMultipleTagQuery(numberOfTag) {
     let tagsArray = [];
     for (let i = 0; i < numberOfTag; i++) {
-        if (i !== 0) {
-            and = '&';
-        }
         tagsArray.push(`key${i}=value${i}`);
     }
     return tagsArray.join('&');
