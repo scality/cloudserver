@@ -82,6 +82,7 @@ function checkObjectData(s3, objectKey, dataValue, done) {
  * @param {object} params.authCredentials.accessKey - access key
  * @param {object} params.authCredentials.secretKey - secret key
  * @param {string} [params.requestBody] - request body contents
+ * @param {object} [params.queryObj] - query params
  * @param {function} callback - with error and response parameters
  * @return {undefined} - and call callback
  */
@@ -186,6 +187,10 @@ describeSkipIfAWS('backbeat routes', () => {
                             method: 'PUT', bucket: TEST_BUCKET,
                             objectKey: testCase.encodedKey,
                             resourceType: 'metadata',
+                            queryObj: {
+                                versionId: versionIdUtils.encode(
+                                    testMd.versionId),
+                            },
                             authCredentials: backbeatAuthCredentials,
                             requestBody: JSON.stringify(newMd),
                         }, next);
@@ -223,6 +228,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
@@ -233,6 +241,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     headers: { 'x-scal-replication-content': 'METADATA' },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
@@ -267,6 +278,9 @@ describeSkipIfAWS('backbeat routes', () => {
         done => makeBackbeatRequest({
             method: 'PUT', bucket: NONVERSIONED_BUCKET,
             objectKey: testKey, resourceType: 'metadata',
+            queryObj: {
+                versionId: versionIdUtils.encode(testMd.versionId),
+            },
             authCredentials: backbeatAuthCredentials,
             requestBody: JSON.stringify(testMd),
         },
@@ -315,6 +329,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: 'does-not-exist',
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     headers: { 'x-scal-replication-content': 'METADATA' },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
