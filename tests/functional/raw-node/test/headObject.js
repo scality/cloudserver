@@ -8,7 +8,7 @@ const authCredentials = {
 };
 const bucket = 'rawnodeapibucket';
 
-describe.only('api tests', () => {
+describe('api tests', () => {
     before(() => {
         makeS3Request({
             method: 'PUT',
