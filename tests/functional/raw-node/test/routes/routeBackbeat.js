@@ -110,7 +110,7 @@ describeSkipIfAWS('backbeat routes:', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        return s3.createBucketPromise({ Bucket: TEST_BUCKET })
+        s3.createBucketPromise({ Bucket: TEST_BUCKET })
             .then(() => s3.putBucketVersioningPromise(
                 {
                     Bucket: TEST_BUCKET,
