@@ -116,7 +116,7 @@
   resolved "https://registry.yarnpkg.com/@octetstream/promisify/-/promisify-2.0.2.tgz#29ac3bd7aefba646db670227f895d812c1a19615"
   integrity sha512-7XHoRB61hxsz8lBQrjC1tq/3OEIgpvGWg6DKAdwi7WRzruwkmsdwmOoUXbU4Dtd4RSOMDwed0SkP3y8UlMt1Bg==
 
-"@senx/warp10@^1.0.7":
+"@senx/warp10@^1.0.10":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-1.0.10.tgz#4cc7c112ed6834f2bbd7ca516ca47ec70803c063"
   integrity sha512-9ObNk6tWgl0RJwjbZMa+LfdfZDqiy1gmVUotT9yGQHSa2vQk32XpTelMpQUL2E6ZSd2USqgxEInpwJ0azZ7WLA==
@@ -824,7 +824,7 @@ arraybuffer.slice@0.0.6:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.6.tgz#f33b2159f0532a3f3107a272c0ccfbd1ad2979ca"
   integrity sha1-8zshWfBTKj8xB6JywMz70a0peco=
 
-"arsenal@github:scality/Arsenal#e6622df":
+"arsenal@github:scality/Arsenal#hotfix/7.7.0":
   version "7.5.0"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/e6622dfdcec30ba95fef9a978007f5796680b01b"
   dependencies:
@@ -1265,13 +1265,12 @@ browserify-zlib@^0.1.4:
   dependencies:
     pako "~0.2.0"
 
-bucketclient@scality/bucketclient#6d2d5a4:
+bucketclient@scality/bucketclient#hotfix/7.7.0:
   version "7.4.5"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/6d2d5a482d3a8860fc98d55c479dcdab177e92f1"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/b31405d7fea18408c71917de6ce38f0ce56e0544"
   dependencies:
     arsenal scality/Arsenal#9f2e74e
     werelogs scality/werelogs#4e0d97c
-    yarn "^1.17.3"
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -6376,7 +6375,7 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
 
-sproxydclient@scality/sproxydclient#44f025b:
+sproxydclient@scality/sproxydclient#hotfix/7.7.0:
   version "7.4.7"
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/44f025bfa30cb5c2cfc6702cb1887d493d4c43b2"
   dependencies:
@@ -7035,12 +7034,12 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#eef4623:
+utapi@scality/utapi#hotfix/7.7.0:
   version "7.5.0"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/eef4623a1e2178650b36795dc7faecca91eed5bd"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/530e5ed056e3562c2f7de19dfedeac1901c2bf81"
   dependencies:
     "@hapi/joi" "^17.1.1"
-    "@senx/warp10" "^1.0.7"
+    "@senx/warp10" "^1.0.10"
     arsenal scality/Arsenal#32c895b
     async "^2.0.1"
     body-parser "^1.19.0"
@@ -7133,18 +7132,18 @@ vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-vaultclient@scality/vaultclient#21d03b1:
+vaultclient@scality/vaultclient#478710c:
   version "7.5.1"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/21d03b17bb47748fc6f8acf8b299bd3fbf0b4dea"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/478710cbe2c479f35ba3f302f73b2932ec0716d9"
   dependencies:
     arsenal scality/Arsenal#b03f5b8
     commander "2.20.0"
     werelogs scality/werelogs#4e0d97c
     xml2js "0.4.19"
 
-vaultclient@scality/vaultclient#478710c:
+vaultclient@scality/vaultclient#hotfix/7.7.0:
   version "7.5.1"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/478710cbe2c479f35ba3f302f73b2932ec0716d9"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/63a460d229cc7785c70057890ad05ab3a19d4273"
   dependencies:
     arsenal scality/Arsenal#b03f5b8
     commander "2.20.0"
@@ -7165,7 +7164,7 @@ vscode-languageserver-types@^3.5.0:
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.15.1.tgz#17be71d78d2f6236d414f0001ce1ef4d23e6b6de"
   integrity sha512-+a9MPUQrNGRrGU630OGbYVQ+11iOIovjCkqxajPa9w57Sd5ruK8WQNsslzpa0x/QJqC8kRc2DUxWjIFwoNm4ZQ==
 
-werelogs@scality/werelogs#0a4c576:
+werelogs@scality/werelogs#0a4c576, werelogs@scality/werelogs#hotfix/7.7.0:
   version "7.4.1"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/0a4c57658f9cf56838628f3a328cdee5f5b5adc3"
   dependencies:
@@ -7406,11 +7405,6 @@ yargs@^3.19.0:
     string-width "^1.0.1"
     window-size "^0.1.4"
     y18n "^3.2.0"
-
-yarn@^1.17.3:
-  version "1.22.4"
-  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.22.4.tgz#01c1197ca5b27f21edc8bc472cd4c8ce0e5a470e"
-  integrity sha512-oYM7hi/lIWm9bCoDMEWgffW8aiNZXCWeZ1/tGy0DWrN6vmzjCXIKu2Y21o8DYVBUtiktwKcNoxyGl/2iKLUNGA==
 
 yeast@0.1.2:
   version "0.1.2"
