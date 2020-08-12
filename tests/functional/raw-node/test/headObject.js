@@ -9,23 +9,25 @@ const authCredentials = {
 const bucket = 'rawnodeapibucket';
 
 describe('api tests', () => {
-    before(() => {
+    before(done => {
         makeS3Request({
             method: 'PUT',
             authCredentials,
             bucket,
         }, err => {
             assert.ifError(err);
+            done();
         });
     });
 
-    after(() => {
+    after(done => {
         makeS3Request({
             method: 'DELETE',
             authCredentials,
             bucket,
         }, err => {
             assert.ifError(err);
+            done();
         });
     });
 
