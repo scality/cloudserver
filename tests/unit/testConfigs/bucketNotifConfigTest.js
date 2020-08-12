@@ -3,16 +3,13 @@ const { bucketNotifAssert } = require('../../../lib/Config');
 
 describe('bucketNotifAssert', () => {
     it('should not throw an error if bucket notification config is valid', () => {
-        assert.doesNotThrow(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: { user: 'user', password: 'password' },
-            }]);
-        },
-        'should not throw an error if there is no bucket notification config');
+        bucketNotifAssert([{
+            resource: 'target1',
+            type: 'kafka',
+            host: 'localhost',
+            port: 8000,
+            auth: { user: 'user', password: 'password' },
+        }]);
     });
     it('should throw an error if bucket notification config is not an array', () => {
         assert.throws(() => {
