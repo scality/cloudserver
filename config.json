@@ -117,5 +117,14 @@
         "viaProxy": false,
         "trustedProxyCIDRs": [],
         "extractClientIPFromHeader": ""
-    }
+    },
+    "bucketNotificationDestinations": [
+        {
+            "resource": "target1",
+            "type": "dummy",
+            "host": "localhost",
+            "port": 6000,
+            "auth": { "user": "user", "password": "password" }
+        }
+    ]
 }
