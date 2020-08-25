@@ -32,11 +32,10 @@ describe('aws-sdk test put notification configuration', () => {
     let s3;
     let otherAccountS3;
 
-    before(done => {
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
         otherAccountS3 = new BucketUtility('lisa', {}).s3;
-        return done();
     });
 
     it('should return NoSuchBucket error if bucket does not exist', done => {
