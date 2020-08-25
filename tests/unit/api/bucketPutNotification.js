@@ -45,22 +45,16 @@ const putNotifConfigRequest = {
 };
 
 describe('putBucketNotification API', () => {
-    before(() => cleanup());
+    before(cleanup);
     beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
-    afterEach(() => cleanup());
+    afterEach(cleanup);
 
     it('should update a bucket\'s metadata with bucket notification obj',
     done => {
         bucketPutNotification(authInfo, putNotifConfigRequest, log, err => {
-            if (err) {
-                process.stdout.write(`Err putting bucket notification ${err}`);
-                return done(err);
-            }
+            assert.ifError(err);
             return metadata.getBucket(bucketName, log, (err, bucket) => {
-                if (err) {
-                    process.stdout.write(`Err retrieving bucket MD ${err}`);
-                    return done(err);
-                }
+                assert.ifError(err);
                 const bucketNotifConfig = bucket.getNotificationConfiguration();
                 assert.deepStrictEqual(bucketNotifConfig, expectedNotifConfig);
                 return done();
