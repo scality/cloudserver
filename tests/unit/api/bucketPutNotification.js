@@ -23,7 +23,7 @@ const expectedNotifConfig = {
             id: 'notification-id',
             events: ['s3:ObjectCreated:*'],
             queueArn: 'arn:scality:bucketnotif:::target1',
-            filterRules: [],
+            filterRules: undefined,
         },
     ],
 };
