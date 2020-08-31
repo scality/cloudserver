@@ -82,9 +82,7 @@
         {
             "resource": "target1",
             "type": "dummy",
-            "host": "localhost",
-            "port": 6000,
-            "auth": { "user": "user", "password": "password" }
+            "host": "localhost:6000"
         }
     ]
 }
