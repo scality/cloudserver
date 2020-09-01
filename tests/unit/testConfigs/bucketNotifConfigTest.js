@@ -21,7 +21,7 @@ describe('bucketNotifAssert', () => {
                 auth: { user: 'user', password: 'password' },
             });
         },
-        '/bad config: bucket notification configuration must be an array/');
+            '/bad config: bucket notification configuration must be an array/');
     });
     it('should throw an error if resource is not a string', () => {
         assert.throws(() => {
@@ -67,73 +67,6 @@ describe('bucketNotifAssert', () => {
             }]);
         }, '/bad config: port must be a positive integer/');
     });
-    it('should throw an error if auth is not an object', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: 'yes',
-            }]);
-        }, '/bad config: bucket notification auth must be an object/');
-    });
-    it('should throw an error if auth is an empty object', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: {},
-            }]);
-        }, '/bad config: bucket notification configuration ' +
-        'auth should contain either cert or user and password/');
-    });
-    it('should throw an error if auth includes cert, user, and password', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: { user: 'user', password: 'password', cert: 'cert/path' },
-            }]);
-        }, '/bad config: bucket notification configuration ' +
-        'auth should contain either cert or user and password/');
-    });
-    it('should throw an error if auth includes user but no password', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: { user: 'user' },
-            }]);
-        }, '/bad config: bucket notification configuration ' +
-        'auth should contain both user and password if not using cert/');
-    });
-    it('should throw an error if auth user is not a string', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: { user: 1, password: 'password' },
-            }]);
-        }, '/bad config: bucket notification configuration auth user should be a string/');
-    });
-    it('should throw an error if auth password is not a string', () => {
-        assert.throws(() => {
-            bucketNotifAssert([{
-                resource: 'target1',
-                type: 'kafka',
-                host: 'localhost',
-                port: 8000,
-                auth: { user: 'user', password: 12345 },
-            }]);
-        }, '/bad config: bucket notification configuration auth password should be a string/');
-    });
+    // TODO: currently auth is fluid and once a concrete structure is
+    // established, add tests to auth part of the config
 });
