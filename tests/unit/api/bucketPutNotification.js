@@ -28,36 +28,53 @@ const expectedNotifConfig = {
     ],
 };
 
-const notifXml = '<NotificationConfiguration>' +
-    '<QueueConfiguration>' +
-    '<Id>notification-id</Id>' +
-    '<Queue>arn:scality:bucketnotif:::target1</Queue>' +
-    '<Event>s3:ObjectCreated:*</Event>' +
-    '</QueueConfiguration>' +
-    '</NotificationConfiguration>';
+function getNotifRequest(empty) {
+    const queueConfig = empty ? '' :
+        '<QueueConfiguration>' +
+        '<Id>notification-id</Id>' +
+        '<Queue>arn:scality:bucketnotif:::target1</Queue>' +
+        '<Event>s3:ObjectCreated:*</Event>' +
+        '</QueueConfiguration>';
 
-const putNotifConfigRequest = {
-    bucketName,
-    headers: {
-        host: `${bucketName}.s3.amazonaws.com`,
-    },
-    post: notifXml,
-};
+    const notifXml = '<NotificationConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        `${queueConfig}` +
+        '</NotificationConfiguration>';
+
+    const putNotifConfigRequest = {
+        bucketName,
+        headers: {
+            host: `${bucketName}.s3.amazonaws.com`,
+        },
+        post: notifXml,
+    };
+    return putNotifConfigRequest;
+}
 
 describe('putBucketNotification API', () => {
     before(cleanup);
     beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
     afterEach(cleanup);
 
-    it('should update a bucket\'s metadata with bucket notification obj',
-    done => {
-        bucketPutNotification(authInfo, putNotifConfigRequest, log, err => {
+    it('should update bucket metadata with bucket notification obj', done => {
+        bucketPutNotification(authInfo, getNotifRequest(), log, err => {
             assert.ifError(err);
             return metadata.getBucket(bucketName, log, (err, bucket) => {
                 assert.ifError(err);
                 const bucketNotifConfig = bucket.getNotificationConfiguration();
                 assert.deepStrictEqual(bucketNotifConfig, expectedNotifConfig);
-                return done();
+                done();
+            });
+        });
+    });
+
+    it('should update bucket metadata with empty bucket notification', done => {
+        bucketPutNotification(authInfo, getNotifRequest(true), log, err => {
+            assert.ifError(err);
+            return metadata.getBucket(bucketName, log, (err, bucket) => {
+                assert.ifError(err);
+                const bucketNotifConfig = bucket.getNotificationConfiguration();
+                assert.deepStrictEqual(bucketNotifConfig, {});
+                done();
             });
         });
     });
