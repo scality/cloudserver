@@ -1,4 +1,3 @@
-const assert = require('assert');
 const { S3 } = require('aws-sdk');
 
 const checkError = require('../../lib/utility/checkError');
@@ -64,30 +63,29 @@ describe('aws-sdk test put notification configuration', () => {
         it('should put notification configuration on bucket with basic config',
             done => {
                 const params = getNotificationParams();
-                s3.putBucketNotificationConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+                s3.putBucketNotificationConfiguration(params, done);
             });
 
         it('should put notification configuration on bucket with multiple events',
             done => {
                 const params = getNotificationParams(
                     ['s3:ObjectCreated:*', 's3:ObjectRemoved:*']);
-                s3.putBucketNotificationConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+                s3.putBucketNotificationConfiguration(params, done);
             });
 
         it('should put notification configuration on bucket with id',
             done => {
                 const params = getNotificationParams(null, null, 'notification-id');
-                s3.putBucketNotificationConfiguration(params, err => {
-                    assert.ifError(err);
-                    done();
-                });
+                s3.putBucketNotificationConfiguration(params, done);
             });
+
+        it('should put empty notification configuration', done => {
+            const params = {
+                Bucket: bucket,
+                NotificationConfiguration: {},
+            };
+            s3.putBucketNotificationConfiguration(params, done);
+        });
 
         it('should not allow notification config request with invalid arn',
             done => {
