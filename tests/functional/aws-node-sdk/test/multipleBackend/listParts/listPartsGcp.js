@@ -20,18 +20,18 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
             this.currentTest.key = `somekey-${genUniqID()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketAsync({ Bucket: bucket })
-            .then(() => s3.createMultipartUploadAsync({
+            return s3.createBucketPromise({ Bucket: bucket })
+            .then(() => s3.createMultipartUploadPromise({
                 Bucket: bucket, Key: this.currentTest.key,
                 Metadata: { 'scal-location-constraint': gcpLocation } }))
             .then(res => {
                 this.currentTest.uploadId = res.UploadId;
-                return s3.uploadPartAsync({ Bucket: bucket,
+                return s3.uploadPartPromise({ Bucket: bucket,
                     Key: this.currentTest.key, PartNumber: 1,
                     UploadId: this.currentTest.uploadId, Body: bodyFirstPart });
             }).then(res => {
                 this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.uploadPartAsync({ Bucket: bucket,
+            }).then(() => s3.uploadPartPromise({ Bucket: bucket,
                 Key: this.currentTest.key, PartNumber: 2,
                 UploadId: this.currentTest.uploadId, Body: bodySecondPart })
             ).then(res => {
@@ -45,7 +45,7 @@ describeSkipIfNotMultipleOrCeph('List parts of MPU on GCP data backend', () => {
 
         afterEach(function afterEachFn() {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUploadAsync({
+            return s3.abortMultipartUploadPromise({
                 Bucket: bucket, Key: this.currentTest.key,
                 UploadId: this.currentTest.uploadId,
             })

@@ -64,7 +64,7 @@ function createEncryptedBucket(bucketParams, cb) {
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 
-const createEncryptedBucketPromise = Promise.promisify(createEncryptedBucket);
+const createEncryptedBucketPromise = Promise.promisify(createEncryptedBucket, { suffix: 'Promise' });
 
 module.exports = {
     createEncryptedBucketPromise,

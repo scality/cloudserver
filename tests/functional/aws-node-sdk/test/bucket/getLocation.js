@@ -23,7 +23,7 @@ describeSkipAWS('GET bucket location ', () => {
                 return;
             }
             describe(`with location: ${location}`, () => {
-                before(done => s3.createBucketAsync(
+                before(done => s3.createBucketPromise(
                     {
                         Bucket: bucketName,
                         CreateBucketConfiguration: {
@@ -48,7 +48,7 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location us-east-1', () => {
-            before(done => s3.createBucketAsync(
+            before(done => s3.createBucketPromise(
                 {
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
@@ -105,7 +105,7 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location configuration', () => {
-            before(done => s3.createBucketAsync(
+            before(done => s3.createBucketPromise(
                 {
                     Bucket: bucketName,
                     CreateBucketConfiguration: {

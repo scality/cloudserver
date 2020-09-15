@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const {
@@ -6,6 +7,7 @@ const {
     versioningEnabled,
     versioningSuspended,
 } = require('../../lib/utility/versioning-util.js');
+const { taggingTests } = require('../../lib/utility/tagging');
 
 const date = Date.now();
 const bucket = `completempu${date}`;
@@ -54,11 +56,11 @@ describe('Complete MPU', () => {
 
         function _initiateMpuAndPutOnePart() {
             const result = {};
-            return s3.createMultipartUploadAsync({
+            return s3.createMultipartUploadPromise({
                 Bucket: bucket, Key: key })
             .then(data => {
                 result.uploadId = data.UploadId;
-                return s3.uploadPartAsync({ Bucket: bucket, Key: key,
+                return s3.uploadPartPromise({ Bucket: bucket, Key: key,
                     PartNumber: 1, UploadId: data.UploadId, Body: 'foo' });
             })
             .then(data => {
@@ -105,7 +107,7 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
+            beforeEach(() => s3.putBucketVersioningPromise({ Bucket: bucket,
                 VersioningConfiguration: versioningEnabled })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
@@ -124,7 +126,7 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.putBucketVersioningAsync({ Bucket: bucket,
+            beforeEach(() => s3.putBucketVersioningPromise({ Bucket: bucket,
                 VersioningConfiguration: versioningSuspended })
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
@@ -136,6 +138,71 @@ describe('Complete MPU', () => {
             it('should complete an MPU with fewer parts than were ' +
                 'originally put and should not return a version id', done => {
                 _completeMpuAndCheckVid(uploadId, eTag, undefined, done);
+            });
+        });
+
+        describe('with tags set on initiation', () => {
+            const tagKey = 'keywithtags';
+
+            taggingTests.forEach(test => {
+                it(test.it, done => {
+                    const [key, value] =
+                        [test.tag.key, test.tag.value].map(encodeURIComponent);
+                    const tagging = `${key}=${value}`;
+
+                    async.waterfall([
+                        next => s3.createMultipartUpload({
+                            Bucket: bucket,
+                            Key: tagKey,
+                            Tagging: tagging,
+                        }, (err, data) => {
+                            if (test.error) {
+                                assert.strictEqual(err.code, test.error);
+                                assert.strictEqual(err.statusCode, 400);
+                                next('expected');
+                            }
+                            next(null, data.UploadId);
+                        }),
+                        (uploadId, next) => s3.uploadPart({
+                            Bucket: bucket,
+                            Key: tagKey,
+                            PartNumber: 1,
+                            UploadId: uploadId,
+                            Body: 'foo',
+                        }, (err, data) => {
+                            next(err, data.ETag, uploadId);
+                        }),
+                        (eTag, uploadId, next) => s3.completeMultipartUpload({
+                            Bucket: bucket,
+                            Key: tagKey,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [{
+                                    ETag: eTag,
+                                    PartNumber: 1,
+                                }],
+                            },
+                        }, next),
+                    ], err => {
+                        if (err === 'expected') {
+                            done();
+                        } else {
+                            assert.ifError(err);
+                            s3.getObjectTagging({
+                                Bucket: bucket,
+                                Key: tagKey,
+                            }, (err, tagData) => {
+                                assert.ifError(err);
+                                assert.deepStrictEqual(tagData.TagSet,
+                                    [{
+                                        Key: test.tag.key,
+                                        Value: test.tag.value,
+                                    }]);
+                                done();
+                            });
+                        }
+                    });
+                });
             });
         });
     });
