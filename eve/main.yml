@@ -433,6 +433,14 @@ stages:
           name: Set docker tag latest property
           property: docker_tag_latest
           value: "%(prop:registry_url)s:latest-%(prop:product_version)s"
+      - SetPropertyFromCommand: &short_version
+          name: Set short version
+          property: short_version
+          command: echo "%(prop:product_version)s" | grep -o '^[0-9]*\.[0-9]*'
+      - SetProperty: &docker_tag_short_version
+          name: Set docker tag latest short version property
+          property: docker_tag_short_version
+          value: "%(prop:registry_url)s:latest-%(prop:short_version)s"
       - ShellCommand:
           name: Build docker image
           command: >-
@@ -440,9 +448,11 @@ stages:
             --no-cache
             -t %(prop:docker_tag_revision)s
             -t %(prop:docker_tag_latest)s
+            -t %(prop:docker_tag_short_version)s
             .
       - ShellCommand:
           name: Push images
           command: |
             docker push %(prop:docker_tag_revision)s
             docker push %(prop:docker_tag_latest)s
+            docker push %(prop:docker_tag_short_version)s
