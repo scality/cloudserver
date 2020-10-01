@@ -3,6 +3,7 @@ const assert = require('assert');
 const { storage } = require('arsenal');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
+const { RequestContext } = require('arsenal').policies;
 const constants = require('../../constants');
 const DummyRequest = require('./DummyRequest');
 
@@ -489,6 +490,12 @@ class AccessControlPolicy {
     }
 }
 
+function createRequestContext(apiMethod, request) {
+    return new RequestContext(request.headers,
+        request.query, request.bucketName, request.objectKey,
+        '127.0.0.1', false, apiMethod, 's3');
+}
+
 module.exports = {
     testsRangeOnEmptyFile,
     makeid,
@@ -504,4 +511,5 @@ module.exports = {
     versioningTestUtils,
     TaggingConfigTester,
     AccessControlPolicy,
+    createRequestContext,
 };
