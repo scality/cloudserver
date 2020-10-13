@@ -351,47 +351,51 @@ describe('Object Copy', () => {
         it('should not return error if copying object w/ > ' +
         '2KB user-defined md and COPY directive',
             done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = {
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    MetadataDirective: 'COPY',
-                    Metadata: metadata,
-                };
-                s3.copyObject(params, err => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    // add one more byte to be over the limit
-                    metadata.header0 = `${metadata.header0}${'0'}`;
+                setTimeout(() => {
+                    const metadata = genMaxSizeMetaHeaders();
+                    const params = {
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        MetadataDirective: 'COPY',
+                        Metadata: metadata,
+                    };
                     s3.copyObject(params, err => {
                         assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                        done();
+                        // add one more byte to be over the limit
+                        metadata.header0 = `${metadata.header0}${'0'}`;
+                        s3.copyObject(params, err => {
+                            assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                            done();
+                        });
                     });
-                });
+                }, 60000);
             });
 
         it('should return error if copying object w/ > 2KB ' +
         'user-defined md and REPLACE directive',
             done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = {
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: metadata,
-                };
-                s3.copyObject(params, err => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    // add one more byte to be over the limit
-                    metadata.header0 = `${metadata.header0}${'0'}`;
+                setTimeout(() => {
+                    const metadata = genMaxSizeMetaHeaders();
+                    const params = {
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                        CopySource: `${sourceBucketName}/${sourceObjName}`,
+                        MetadataDirective: 'REPLACE',
+                        Metadata: metadata,
+                    };
                     s3.copyObject(params, err => {
-                        assert(err, 'Expected err but did not find one');
-                        assert.strictEqual(err.code, 'MetadataTooLarge');
-                        assert.strictEqual(err.statusCode, 400);
-                        done();
+                        assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                        // add one more byte to be over the limit
+                        metadata.header0 = `${metadata.header0}${'0'}`;
+                        s3.copyObject(params, err => {
+                            assert(err, 'Expected err but did not find one');
+                            assert.strictEqual(err.code, 'MetadataTooLarge');
+                            assert.strictEqual(err.statusCode, 400);
+                            done();
+                        });
                     });
-                });
+                }, 60000);
             });
 
         it('should copy an object from a source to the same destination ' +
