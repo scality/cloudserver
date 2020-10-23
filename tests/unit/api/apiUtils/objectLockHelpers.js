@@ -159,8 +159,8 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
         const expectedRetainUntilDate
             = date.add(mockConfigWithDays.days, 'days');
         const retainUntilDate = calculateRetainUntilDate(mockConfigWithDays);
-        assert.strictEqual(retainUntilDate.slice(0, 20),
-            expectedRetainUntilDate.toISOString().slice(0, 20));
+        assert.strictEqual(retainUntilDate.slice(0, 16),
+            expectedRetainUntilDate.toISOString().slice(0, 16));
     });
 
     it('should calculate retainUntilDate for config with years', () => {
@@ -172,7 +172,7 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
         const expectedRetainUntilDate
             = date.add(mockConfigWithYears.years * 365, 'days');
         const retainUntilDate = calculateRetainUntilDate(mockConfigWithYears);
-        assert.strictEqual(retainUntilDate.slice(0, 20),
-            expectedRetainUntilDate.toISOString().slice(0, 20));
+        assert.strictEqual(retainUntilDate.slice(0, 16),
+            expectedRetainUntilDate.toISOString().slice(0, 16));
     });
 });
