@@ -350,7 +350,7 @@ describe('Object Copy', () => {
                     );
             });
 
-        // TODO: S3C-3482, figure out why this test fails in Integration builds
+        // TODO: see S3C-3482, figure out why this test fails in Integration builds
         itSkipIfE2E('should not return error if copying object w/ > ' +
         '2KB user-defined md and COPY directive',
             done => {
@@ -373,7 +373,7 @@ describe('Object Copy', () => {
                 });
             });
 
-        // TODO: S3C-3482, figure out why this test fails in Integration builds
+        // TODO: see S3C-3482, figure out why this test fails in Integration builds
         itSkipIfE2E('should return error if copying object w/ > 2KB ' +
         'user-defined md and REPLACE directive',
             done => {
