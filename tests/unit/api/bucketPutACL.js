@@ -24,6 +24,18 @@ const canonicalIDforSample1 =
 const canonicalIDforSample2 =
     '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2bf';
 
+const invalidIds = {
+    'too short': 'id="invalid_id"',
+    'too long':
+        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2aaa',
+    'only numbers':
+        'id=0000000000000000000000000000000000000000000000000000000000000000',
+    'only letters':
+        'id=abcdefabcdefabcdefabcdefabcdefacbdefabcdefabcdefabcdefabcdefabcd',
+    'non-hex letters':
+        'id=79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2ZZ',
+};
+
 describe('putBucketACL API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
@@ -247,24 +259,23 @@ describe('putBucketACL API', () => {
             });
         });
 
-    it('should return an error if invalid grantee user ID ' +
-    'provided in ACL header request', done => {
-        // Canonical ID should be a 64-digit hex string
-        const invalidCanonicalID = 'id="invalid_id"';
-        const testACLRequest = {
-            bucketName,
-            namespace,
-            headers: {
-                'host': `${bucketName}.s3.amazonaws.com`,
-                'x-amz-grant-full-control': invalidCanonicalID,
-            },
-            url: '/?acl',
-            query: { acl: '' },
-        };
-
-        return bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.deepStrictEqual(err, errors.InvalidArgument);
-            done();
+    Object.keys(invalidIds).forEach(idType => {
+        it('should return an error if grantee canonical ID provided in ACL ' +
+        `request invalid because ${idType}`, done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-grant-full-control': invalidIds[idType],
+                },
+                url: '/?acl',
+                query: { acl: '' },
+            };
+            return bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.deepStrictEqual(err, errors.InvalidArgument);
+                done();
+            });
         });
     });
 
