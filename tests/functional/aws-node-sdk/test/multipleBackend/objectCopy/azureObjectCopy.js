@@ -5,7 +5,7 @@ const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const constants = require('../../../../../../constants');
 const {
-    describeSkipIfNotMultipleOrCeph,
+    describeSkipIfNotMultiple,
     getAzureClient,
     getAzureContainerName,
     convertMD5,
@@ -14,7 +14,6 @@ const {
     azureLocation,
     azureLocation2,
     azureLocationMismatch,
-    genUniqID,
 } = require('../utils');
 const { createEncryptedBucketPromise } =
     require('../../../lib/utility/createEncryptedBucket');
@@ -22,8 +21,8 @@ const { createEncryptedBucketPromise } =
 const azureClient = getAzureClient();
 const azureContainerName = getAzureContainerName(azureLocation);
 
-const bucket = `objectcopybucket${genUniqID()}`;
-const bucketAzure = `objectcopyazure${genUniqID()}`;
+const bucket = 'buckettestmultiplebackendobjectcopy';
+const bucketAzure = 'bucketazuretestmultiplebackendobjectcopy';
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(5 * 1024 * 1024);
 const normalMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -112,13 +111,13 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
     });
 }
 
-describeSkipIfNotMultipleOrCeph('MultipleBackend object copy: Azure',
+describeSkipIfNotMultiple('MultipleBackend object copy: Azure',
 function testSuite() {
     this.timeout(250000);
     withV4(sigCfg => {
         beforeEach(function beFn() {
-            this.currentTest.key = `azureputkey-${genUniqID()}`;
-            this.currentTest.copyKey = `azurecopyKey-${genUniqID()}`;
+            this.currentTest.key = `azureputkey-${Date.now()}`;
+            this.currentTest.copyKey = `azurecopyKey-${Date.now()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
