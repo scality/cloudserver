@@ -837,7 +837,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 done => s3.putObject({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
-                    Body: new Buffer('hello'),
+                    Body: Buffer.from('hello'),
                 }, (err, data) => {
                     assert.ifError(err);
                     versionId = data.VersionId;
@@ -892,7 +892,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 done => awsClient.putObject({
                     Bucket: awsBucket,
                     Key: awsKey,
-                    Body: new Buffer('hello'),
+                    Body: Buffer.from('hello'),
                 }, (err, data) => {
                     assert.ifError(err);
                     versionId = data.VersionId;

@@ -29,7 +29,7 @@ describe('ChannelMessageV0', () => {
         });
 
         it('should roundtrip channel data', () => {
-            const data = new Buffer('dummydata');
+            const data = Buffer.from('dummydata');
             const b = ChannelMessageV0.encodeChannelDataMessage(50, data);
             const m = new ChannelMessageV0(b);
 
@@ -51,7 +51,7 @@ describe('ChannelMessageV0', () => {
 
     describe('decoder', () => {
         it('should parse metrics request', () => {
-            const b = new Buffer([METRICS_REQUEST_MESSAGE, 0, 0]);
+            const b = Buffer.from([METRICS_REQUEST_MESSAGE, 0, 0]);
             const m = new ChannelMessageV0(b);
 
             assert.strictEqual(METRICS_REQUEST_MESSAGE, m.getType());
@@ -60,7 +60,7 @@ describe('ChannelMessageV0', () => {
         });
 
         it('should parse overlay push', () => {
-            const b = new Buffer([CONFIG_OVERLAY_MESSAGE, 0, 0, 34, 65, 34]);
+            const b = Buffer.from([CONFIG_OVERLAY_MESSAGE, 0, 0, 34, 65, 34]);
             const m = new ChannelMessageV0(b);
 
             assert.strictEqual(CONFIG_OVERLAY_MESSAGE, m.getType());
