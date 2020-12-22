@@ -66,6 +66,7 @@
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
     "ft_management": "cd tests/functional/report && yarn test",
     "ft_node": "cd tests/functional/raw-node && yarn test",
+    "ft_node_routes": "cd tests/functional/raw-node && yarn run test-routes",
     "ft_gcp": "cd tests/functional/raw-node && yarn run test-gcp",
     "ft_healthchecks": "cd tests/functional/healthchecks && yarn test",
     "ft_s3cmd": "cd tests/functional/s3cmd && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
