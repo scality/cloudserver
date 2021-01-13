@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const { errors } = require('arsenal');
 
 
@@ -7,6 +8,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 
 const bucketName = 'alexbucketnottaken';
 const objectName = 'someObject';
+const partSize = 1024 * 1024 * 5; // 5MB minumum required part size.
 
 function checkNoError(err) {
     assert.equal(err, null,
@@ -439,6 +441,70 @@ describe('HEAD object, conditions', () => {
                 assert.strictEqual('WebsiteRedirectLocation' in data,
                   false, 'WebsiteRedirectLocation header is present.');
                 done();
+            });
+        });
+
+        it('PartNumber is set & PartsCount is absent because object is not ' +
+        'multipart', done => {
+            requestHead({ PartNumber: 1 }, (err, data) => {
+                assert.ifError(err);
+                assert.strictEqual('PartsCount' in data, false,
+                    'PartsCount header is present.');
+                done();
+            });
+        });
+
+        it('PartNumber is set & PartsCount appears in response for ' +
+        'multipart object', done => {
+            const mpuKey = 'mpukey';
+            async.waterfall([
+                next => s3.createMultipartUpload({
+                    Bucket: bucketName,
+                    Key: mpuKey,
+                }, next),
+                (data, next) => {
+                    const uploadId = data.UploadId;
+                    s3.uploadPart({
+                        Bucket: bucketName,
+                        Key: mpuKey,
+                        UploadId: uploadId,
+                        PartNumber: 1,
+                        Body: Buffer.alloc(partSize).fill('a'),
+                    }, (err, data) => next(err, uploadId, data.ETag));
+                },
+                (uploadId, etagOne, next) => s3.uploadPart({
+                    Bucket: bucketName,
+                    Key: mpuKey,
+                    UploadId: uploadId,
+                    PartNumber: 2,
+                    Body: Buffer.alloc(partSize).fill('z'),
+                }, (err, data) => next(err, uploadId, etagOne, data.ETag)),
+                (uploadId, etagOne, etagTwo, next) =>
+                s3.completeMultipartUpload({
+                    Bucket: bucketName,
+                    Key: mpuKey,
+                    UploadId: uploadId,
+                    MultipartUpload: {
+                        Parts: [{
+                            PartNumber: 1,
+                            ETag: etagOne,
+                        }, {
+                            PartNumber: 2,
+                            ETag: etagTwo,
+                        }],
+                    },
+                }, next),
+            ], err => {
+                assert.ifError(err);
+                s3.headObject({
+                    Bucket: bucketName,
+                    Key: mpuKey,
+                    PartNumber: 1,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.PartsCount, 2);
+                    done();
+                });
             });
         });
     });
