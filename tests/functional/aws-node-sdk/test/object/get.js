@@ -36,8 +36,8 @@ function checkError(err, code) {
     assert.strictEqual(err.code, code);
 }
 
-function checkContentLength(contentLengthHeader, expectedSize) {
-    assert.strictEqual(Number.parseInt(contentLengthHeader, 10), expectedSize);
+function checkIntegerHeader(integerHeader, expectedSize) {
+    assert.strictEqual(Number.parseInt(integerHeader, 10), expectedSize);
 }
 
 function dateFromNow(diff) {
@@ -69,7 +69,7 @@ describe('GET object', () => {
                 PartNumber: partNumber,
             }, (err, data) => {
                 checkNoError(err);
-                checkContentLength(data.ContentLength, len);
+                checkIntegerHeader(data.ContentLength, len);
                 const md5Hash = crypto.createHash('md5');
                 const md5HashExpected = crypto.createHash('md5');
                 assert.strictEqual(
@@ -760,7 +760,7 @@ describe('GET object', () => {
                         checkNoError(err);
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
-                            checkContentLength(data.ContentLength, partSize);
+                            checkIntegerHeader(data.ContentLength, partSize);
                             const md5Hash = crypto.createHash('md5');
                             const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize).fill(num);
@@ -779,7 +779,7 @@ describe('GET object', () => {
                         checkNoError(err);
                         return requestGet({ PartNumber: num }, (err, data) => {
                             checkNoError(err);
-                            checkContentLength(data.ContentLength, partSize);
+                            checkIntegerHeader(data.ContentLength, partSize);
                             const md5Hash = crypto.createHash('md5');
                             const md5HashExpected = crypto.createHash('md5');
                             const expected = Buffer.alloc(partSize)
@@ -839,7 +839,7 @@ describe('GET object', () => {
                 }, err => {
                     checkNoError(err);
                     return requestGet({ PartNumber: '1' }, (err, data) => {
-                        checkContentLength(data.ContentLength, 10);
+                        checkIntegerHeader(data.ContentLength, 10);
                         const md5Hash = crypto.createHash('md5');
                         const md5HashExpected = crypto.createHash('md5');
                         const expected = Buffer.alloc(10);
@@ -876,6 +876,35 @@ describe('GET object', () => {
                         done();
                     });
                 }));
+
+            it('should not include PartsCount response header for regular ' +
+            'put object', done => {
+                s3.putObject({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    Body: Buffer.alloc(10),
+                }, err => {
+                    assert.ifError(err);
+                    requestGet({ PartNumber: 1 }, (err, data) => {
+                        assert.ifError(err);
+                        assert.strictEqual('PartsCount' in data, false,
+                            'PartsCount header is present.');
+                        done();
+                    });
+                });
+            });
+
+            it('should include PartsCount response header for mpu object',
+            done => {
+                completeMPU(orderedPartNumbers, err => {
+                    assert.ifError(err);
+                    return requestGet({ PartNumber: 1 }, (err, data) => {
+                        assert.ifError(err);
+                        checkIntegerHeader(data.PartsCount, 10);
+                        done();
+                    });
+                });
+            });
 
             describe('uploadPartCopy', () => {
                 // The original object was composed of three parts
