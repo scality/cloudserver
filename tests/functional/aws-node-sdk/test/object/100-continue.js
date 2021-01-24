@@ -19,6 +19,7 @@ const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 class ContinueRequestHandler {
     constructor(path) {
         this.path = path;
+        this.expectHeader = '100-continue';
         return this;
     }
 
@@ -40,7 +41,7 @@ class ContinueRequestHandler {
             method: 'PUT',
             headers: {
                 'content-length': body.length,
-                'Expect': this.expectHeader || '100-continue',
+                'Expect': this.expectHeader,
             },
         };
     }
@@ -49,12 +50,18 @@ class ContinueRequestHandler {
         const options = this.getRequestOptions();
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options, res => {
-            assert.strictEqual(res.statusCode, statusCode);
-            return cb();
+            res.on('data', () => {});
+            res.on('end', () => {
+                assert.strictEqual(res.statusCode, statusCode);
+                return cb();
+            });
         });
         // Send the body either on the continue event, or immediately.
         if (this.expectHeader === '100-continue') {
-            req.on('continue', () => req.end(body));
+            req.flushHeaders();
+            req.on('continue', () => {
+                return req.end(body);
+            });
         } else {
             req.end(body);
         }
@@ -64,20 +71,44 @@ class ContinueRequestHandler {
         const options = this.getRequestOptions();
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
         const req = transport.request(options);
+        req.flushHeaders();
         // At this point we have only sent the header.
-        assert(req.output.length === 1);
-        const headerLen = req.output[0].length;
+        const headerLen = req._header.length;
         req.on('continue', () => {
             // Has only the header been sent?
             assert.strictEqual(req.socket.bytesWritten, headerLen);
             // Send the body since the continue event has been emitted.
             return req.end(body);
         });
-        req.on('close', () => {
-            const expected = body.length + headerLen;
-            // Has the entire body been sent?
-            assert.strictEqual(req.socket.bytesWritten, expected);
-            return cb();
+        req.on('response', res => {
+            res.on('data', () => {});
+            res.on('end', () => {
+                const expected = body.length + headerLen;
+                // Has the entire body been sent?
+                assert.strictEqual(req.socket.bytesWritten, expected);
+                return cb();
+            });
+            res.on('error', err => cb(err));
+        });
+        req.on('error', err => cb(err));
+    }
+
+    shouldNotGetContinue(cb) {
+        const options = this.getRequestOptions();
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+        const req = transport.request(options);
+        req.flushHeaders();
+        // At this point we have only sent the header.
+        const headerLen = req._header.length;
+        req.on('continue', () => cb('Continue beeing seen when 403 is expected'));
+        req.on('response', res => {
+            res.on('data', () => {});
+            res.on('end', () => {
+                const expected = headerLen;
+                assert.strictEqual(req.socket.bytesWritten, expected);
+                return cb();
+            });
+            res.on('error', err => cb(err));
         });
         req.on('error', err => cb(err));
     }
@@ -125,8 +156,8 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
         it('should wait for continue event before sending body', done =>
             continueRequest.sendsBodyOnContinue(done));
 
-        it('should continue if a public user', done =>
+        it('should not send continue if denied for a public user', done =>
             continueRequest.setRequestPath(invalidSignedURL)
-                .sendsBodyOnContinue(done));
+                .shouldNotGetContinue(done));
     });
 });
