@@ -84,7 +84,7 @@ models:
       command: node -v
   - ShellCommand: &yarn-install
       name: install modules
-      command: yarn install --frozen-lockfile
+      command: yarn cache clean && yarn install --frozen-lockfile
       haltOnFailure: true
   - Upload: &upload-artifacts
       source: /artifacts
