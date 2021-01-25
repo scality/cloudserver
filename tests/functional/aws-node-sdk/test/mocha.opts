@@ -1,3 +1,4 @@
 --recursive
 --timeout 40000
 --ui tdd
+--bail

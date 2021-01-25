@@ -34,21 +34,21 @@ describe('User visits bucket website endpoint and requests resource ' +
     describe('when x-amz-website-redirect-location: /redirect.html', () => {
         beforeEach(() => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }))
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+                WebsiteRedirectLocation: '/redirect.html' }).promise())
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }));
+                ContentType: 'text/html' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -76,15 +76,15 @@ describe('User visits bucket website endpoint and requests resource ' +
     () => {
         beforeEach(() => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }));
+                WebsiteRedirectLocation: 'https://www.google.com' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -112,14 +112,14 @@ describe('User visits bucket website endpoint and requests resource ' +
     describe('when key with header is private', () => {
         beforeEach(() => {
             const webConfig = new WebsiteConfigTester('index.html');
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }));
+                WebsiteRedirectLocation: 'https://www.google.com' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -154,20 +154,20 @@ describe('User visits bucket website endpoint and requests resource ' +
                 HostName: 'www.google.com',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }))
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+                WebsiteRedirectLocation: '/redirect.html' }).promise())
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }));
+                ContentType: 'text/html' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -203,15 +203,15 @@ describe('User visits bucket website endpoint and requests resource ' +
             };
             const webConfig = new WebsiteConfigTester(null, null,
               redirectAllTo);
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }));
+                WebsiteRedirectLocation: '/redirect.html' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -250,15 +250,15 @@ describe('User visits bucket website endpoint and requests resource ' +
                 HostName: 'www.google.com',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'about/index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: '/redirect.html' }));
+                WebsiteRedirectLocation: '/redirect.html' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));
@@ -296,21 +296,21 @@ describe('User visits bucket website endpoint and requests resource ' +
                 ReplaceKeyWith: 'redirect.html',
             };
             webConfig.addRoutingRule(redirect, condition);
-            return s3.putBucketWebsitePromise({ Bucket: bucket,
-                WebsiteConfiguration: webConfig })
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+            return s3.putBucketWebsite({ Bucket: bucket,
+                WebsiteConfiguration: webConfig }).promise()
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'index.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/index.html')),
                 ContentType: 'text/html',
-                WebsiteRedirectLocation: 'https://www.google.com' }))
-            .then(() => s3.putObjectPromise({ Bucket: bucket,
+                WebsiteRedirectLocation: 'https://www.google.com' }).promise())
+            .then(() => s3.putObject({ Bucket: bucket,
                 Key: 'redirect.html',
                 ACL: 'public-read',
                 Body: fs.readFileSync(path.join(__dirname,
                     '/websiteFiles/redirect.html')),
-                ContentType: 'text/html' }));
+                ContentType: 'text/html' }).promise());
         });
 
         afterEach(() => bucketUtil.empty(bucket));

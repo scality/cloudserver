@@ -22,7 +22,7 @@ describe('Tag condition keys updateRequestContext', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucket })
+            return s3.createBucket({ Bucket: bucket }).promise()
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -39,7 +39,7 @@ describe('Tag condition keys updateRequestContext', () => {
         it('should update request contexts with request tags and existing object tags', done => {
             const tagsToExist = 'oneKey=oneValue&twoKey=twoValue';
             const params = { Bucket: bucket, Key: object, Tagging: tagsToExist };
-            s3.putObject(params, err => {
+            return s3.putObject(params, err => {
                 assert.ifError(err);
                 updateRequestContexts(objPutTaggingReq, requestContexts, 'objectPutTagging', log,
                 (err, newRequestContexts) => {

@@ -73,9 +73,9 @@ describe('PUT Object ACL', () => {
             ];
 
             Promise
-                .mapSeries(objects, param => s3.putObjectPromise(param))
-                .then(() => s3.putObjectAclPromise({ Bucket, Key,
-                    ACL: 'public-read' }))
+                .mapSeries(objects, param => s3.putObject(param).promise())
+                .then(() => s3.putObjectAcl({ Bucket, Key,
+                    ACL: 'public-read' }).promise())
                 .then(data => {
                     assert(data);
                     done();

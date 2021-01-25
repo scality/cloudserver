@@ -105,7 +105,6 @@ describe('GET object', () => {
                             UploadId: uploadId,
                             Body: Buffer.alloc(partSize).fill(partNumber),
                         };
-
                         return s3.uploadPart(uploadPartParams, (err, data) => {
                             checkNoError(err);
                             ETags = ETags.concat(data.ETag);
@@ -1069,10 +1068,10 @@ describe('GET object with object lock', () => {
                 ObjectLockMode: mockMode,
                 ObjectLockLegalHoldStatus: 'ON',
             };
-            return s3.createBucketPromise(
-                { Bucket: bucket, ObjectLockEnabledForBucket: true })
-            .then(() => s3.putObjectPromise(params))
-            .then(() => s3.getObjectPromise({ Bucket: bucket, Key: key }))
+            return s3.createBucket(
+                { Bucket: bucket, ObjectLockEnabledForBucket: true }).promise()
+            .then(() => s3.putObject(params).promise())
+            .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
             /* eslint-disable no-return-assign */
             .then(res => versionId = res.VersionId)
             .catch(err => {
@@ -1082,7 +1081,7 @@ describe('GET object with object lock', () => {
         });
 
         afterEach(() => changeLockPromise([{ bucket, key, versionId }], '')
-            .then(() => s3.listObjectVersionsPromise({ Bucket: bucket }))
+            .then(() => s3.listObjectVersions({ Bucket: bucket }).promise())
             .then(res => res.Versions.forEach(object => {
                 const params = [
                     {
@@ -1097,7 +1096,7 @@ describe('GET object with object lock', () => {
                 process.stdout.write('Emptying and deleting buckets\n');
                 return bucketUtil.empty(bucket);
             })
-            .then(() => s3.deleteBucketPromise({ Bucket: bucket }))
+            .then(() => s3.deleteBucket({ Bucket: bucket }).promise())
             .catch(err => {
                 process.stdout.write('Error in afterEach');
                 throw err;

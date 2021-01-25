@@ -23,13 +23,13 @@ describe('Abort MPU', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucket })
-            .then(() => s3.createMultipartUploadPromise({
-                Bucket: bucket, Key: key }))
+            return s3.createBucket({ Bucket: bucket }).promise()
+            .then(() => s3.createMultipartUpload({
+                Bucket: bucket, Key: key }).promise())
             .then(res => {
                 uploadId = res.UploadId;
-                return s3.uploadPartPromise({ Bucket: bucket, Key: key,
-                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart });
+                return s3.uploadPart({ Bucket: bucket, Key: key,
+                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart }).promise();
             })
             .catch(err => {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);
@@ -38,11 +38,11 @@ describe('Abort MPU', () => {
         });
 
         afterEach(() =>
-            s3.abortMultipartUploadPromise({
+            s3.abortMultipartUpload({
                 Bucket: bucket,
                 Key: key,
                 UploadId: uploadId,
-            })
+            }).promise()
             .then(() => bucketUtil.empty(bucket))
             .then(() => bucketUtil.deleteOne(bucket))
         );
@@ -71,7 +71,7 @@ describe('Abort MPU - No Such Upload', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucket });
+            return s3.createBucket({ Bucket: bucket }).promise();
         });
 
         afterEach(() => bucketUtil.deleteOne(bucket));

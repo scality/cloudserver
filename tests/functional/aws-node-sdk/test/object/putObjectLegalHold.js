@@ -41,11 +41,11 @@ describe('PUT object legal hold', () => {
 
         beforeEach(() => {
             process.stdout.write('Putting buckets and objects\n');
-            return s3.createBucketPromise(
-                { Bucket: bucket, ObjectLockEnabledForBucket: true })
-            .then(() => s3.createBucketPromise({ Bucket: unlockedBucket }))
-            .then(() => s3.putObjectPromise({ Bucket: unlockedBucket, Key: key }))
-            .then(() => s3.putObjectPromise({ Bucket: bucket, Key: key }))
+            return s3.createBucket(
+                { Bucket: bucket, ObjectLockEnabledForBucket: true }).promise()
+            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
+            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
+            .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
             .then(res => {
                 versionId = res.VersionId;
             })

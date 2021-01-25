@@ -50,7 +50,7 @@ describe('Versioning on a replication source bucket', () => {
         beforeEach(done => {
             async.waterfall([
                 cb => s3.createBucket({ Bucket: bucketName }, e => cb(e)),
-                cb => s3.putBucketVersioningPromise({
+                cb => s3.putBucketVersioning({
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',

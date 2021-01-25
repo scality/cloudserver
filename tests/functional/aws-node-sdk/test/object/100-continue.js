@@ -59,9 +59,7 @@ class ContinueRequestHandler {
         // Send the body either on the continue event, or immediately.
         if (this.expectHeader === '100-continue') {
             req.flushHeaders();
-            req.on('continue', () => {
-                return req.end(body);
-            });
+            req.on('continue', () => req.end(body));
         } else {
             req.end(body);
         }
@@ -131,7 +129,7 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
             const signedUrl = s3.getSignedUrl('putObject', params);
             const { path } = url.parse(signedUrl);
             continueRequest = new ContinueRequestHandler(path);
-            return s3.createBucketPromise({ Bucket: bucket });
+            return s3.createBucket({ Bucket: bucket }).promise();
         });
 
         afterEach(() =>
