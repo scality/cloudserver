@@ -1,5 +1,4 @@
 const assert = require('assert');
-const Promise = require('bluebird');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -15,11 +14,13 @@ describe('DELETE object', () => {
 
         before(() => {
             process.stdout.write('creating bucket\n');
-            return s3.createBucketPromise({ Bucket: bucketName })
+            return s3.createBucket({ Bucket: bucketName }).promise()
             .then(() => {
                 process.stdout.write('initiating multipart upload\n');
-                return s3.createMultipartUploadPromise({ Bucket: bucketName,
-                    Key: objectName });
+                return s3.createMultipartUpload({
+                    Bucket: bucketName,
+                    Key: objectName,
+                }).promise();
             })
             .then(res => {
                 process.stdout.write('uploading parts\n');
@@ -27,9 +28,10 @@ describe('DELETE object', () => {
                 const uploads = [];
                 for (let i = 1; i <= 3; i++) {
                     uploads.push(
-                        s3.uploadPartPromise({ Bucket: bucketName,
+                        s3.uploadPart({ Bucket: bucketName,
                             Key: objectName, PartNumber: i, Body: testfile,
-                            UploadId: uploadId })
+                            UploadId: uploadId,
+                        }).promise()
                     );
                 }
                 return Promise.all(uploads);
@@ -40,7 +42,7 @@ describe('DELETE object', () => {
             })
             .then(res => {
                 process.stdout.write('about to complete multipart upload\n');
-                return s3.completeMultipartUploadPromise({
+                return s3.completeMultipartUpload({
                     Bucket: bucketName,
                     Key: objectName,
                     UploadId: uploadId,
@@ -51,7 +53,7 @@ describe('DELETE object', () => {
                             { ETag: res[2].ETag, PartNumber: 3 },
                         ],
                     },
-                });
+                }).promise();
             })
             .catch(err => {
                 process.stdout.write(`completeMultipartUpload error: ${err}\n`);

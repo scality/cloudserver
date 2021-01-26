@@ -1,4 +1,4 @@
-const Promise = require('bluebird');
+const bluebird = require('bluebird');
 const { S3 } = require('aws-sdk');
 const projectFixture = require('../fixtures/project');
 const getConfig = require('../../test/support/config');
@@ -7,12 +7,16 @@ class BucketUtility {
     constructor(profile = 'default', config = {}) {
         const s3Config = getConfig(profile, config);
 
-        this.s3 = Promise.promisifyAll(new S3(s3Config), { suffix: 'Promise' });
+        this.s3 = new S3(s3Config);
+        this.s3.config.setPromisesDependency(bluebird);
+        this.s3.config.update({
+            maxRetries: 0,
+        });
     }
 
     createOne(bucketName) {
         return this.s3
-            .createBucketPromise({ Bucket: bucketName })
+            .createBucket({ Bucket: bucketName }).promise()
             .then(() => bucketName);
     }
 
@@ -40,7 +44,7 @@ class BucketUtility {
 
     deleteOne(bucketName) {
         return this.s3
-            .deleteBucketPromise({ Bucket: bucketName });
+            .deleteBucket({ Bucket: bucketName }).promise();
     }
 
     deleteMany(bucketNames) {
@@ -63,39 +67,39 @@ class BucketUtility {
         };
 
         return this.s3
-            .listObjectVersionsPromise(param)
+            .listObjectVersions(param).promise()
             .then(data =>
                 Promise.all(
                     data.Versions
                         .filter(object => !object.Key.endsWith('/'))
                         // remove all objects
                         .map(object =>
-                            this.s3.deleteObjectPromise({
+                            this.s3.deleteObject({
                                 Bucket: bucketName,
                                 Key: object.Key,
                                 VersionId: object.VersionId,
-                            })
+                            }).promise()
                               .then(() => object)
                         )
                         .concat(data.Versions
                             .filter(object => object.Key.endsWith('/'))
                             // remove all directories
                             .map(object =>
-                                this.s3.deleteObjectPromise({
+                                this.s3.deleteObject({
                                     Bucket: bucketName,
                                     Key: object.Key,
                                     VersionId: object.VersionId,
-                                })
+                                }).promise()
                                 .then(() => object)
                             )
                         )
                         .concat(data.DeleteMarkers
                             .map(object =>
-                                 this.s3.deleteObjectPromise({
+                                 this.s3.deleteObject({
                                      Bucket: bucketName,
                                      Key: object.Key,
                                      VersionId: object.VersionId,
-                                 })
+                                 }).promise()
                                  .then(() => object)))
                 )
             );
@@ -103,7 +107,7 @@ class BucketUtility {
 
     getOwner() {
         return this.s3
-            .listBucketsPromise()
+            .listBuckets().promise()
             .then(data => data.Owner);
     }
 }

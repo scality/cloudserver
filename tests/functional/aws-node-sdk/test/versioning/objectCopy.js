@@ -88,11 +88,11 @@ describe('Object Version Copy', () => {
 
         beforeEach(() => bucketUtil.createOne(sourceBucketName)
             .then(() => bucketUtil.createOne(destBucketName))
-            .then(() => s3.putBucketVersioningPromise({
+            .then(() => s3.putBucketVersioning({
                 Bucket: sourceBucketName,
                 VersioningConfiguration: { Status: 'Enabled' },
-            }))
-            .then(() => s3.putObjectPromise({
+            }).promise())
+            .then(() => s3.putObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
                 Body: content,
@@ -102,22 +102,22 @@ describe('Object Version Copy', () => {
                 ContentEncoding: originalContentEncoding,
                 Expires: originalExpires,
                 Tagging: originalTagging,
-            })).then(res => {
+            }).promise()).then(res => {
                 etag = res.ETag;
                 versionId = res.VersionId;
                 copySource = `${sourceBucketName}/${sourceObjName}` +
                     `?versionId=${versionId}`;
                 etagTrim = etag.substring(1, etag.length - 1);
                 copySourceVersionId = res.VersionId;
-                return s3.headObjectPromise({
+                return s3.headObject({
                     Bucket: sourceBucketName,
                     Key: sourceObjName,
-                });
+                }).promise();
             }).then(res => {
                 lastModified = res.LastModified;
-            }).then(() => s3.putObjectPromise({ Bucket: sourceBucketName,
+            }).then(() => s3.putObject({ Bucket: sourceBucketName,
                 Key: sourceObjName,
-                Body: secondContent }))
+                Body: secondContent }).promise())
         );
 
         afterEach(done => async.parallel([

@@ -99,7 +99,7 @@ describe('Object Copy', () => {
             });
         });
 
-        beforeEach(() => s3.putObjectPromise({
+        beforeEach(() => s3.putObject({
             Bucket: sourceBucketName,
             Key: sourceObjName,
             Body: content,
@@ -109,13 +109,13 @@ describe('Object Copy', () => {
             ContentEncoding: originalContentEncoding,
             Expires: originalExpires,
             Tagging: originalTagging,
-        }).then(res => {
+        }).promise().then(res => {
             etag = res.ETag;
             etagTrim = etag.substring(1, etag.length - 1);
-            return s3.headObjectPromise({
+            return s3.headObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
-            });
+            }).promise();
         }).then(res => {
             lastModified = res.LastModified;
         }));
@@ -1201,3 +1201,4 @@ describe('Object Copy', () => {
         });
     });
 });
+
