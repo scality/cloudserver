@@ -101,7 +101,6 @@ describe('GET object', () => {
                             UploadId: uploadId,
                             Body: Buffer.alloc(partSize).fill(partNumber),
                         };
-
                         return s3.uploadPart(uploadPartParams, (err, data) => {
                             checkNoError(err);
                             ETags = ETags.concat(data.ETag);
@@ -1045,3 +1044,4 @@ describe('GET object', () => {
         });
     });
 });
+

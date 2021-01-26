@@ -348,9 +348,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
                 Promise
                     .mapSeries(test.objectPutParams(Bucket),
-                        param => s3.putObjectPromise(param))
+                        param => s3.putObject(param).promise())
                     .then(() =>
-                        s3.listObjectsPromise(test.listObjectParams(Bucket)))
+                        s3.listObjects(test.listObjectParams(Bucket)).promise())
                     .then(data => {
                         const isValidResponse =
                             tv4.validate(data, bucketSchema);
@@ -373,9 +373,10 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
                 Promise
                     .mapSeries(test.objectPutParams(Bucket),
-                        param => s3.putObjectPromise(param))
+                        param => s3.putObject(param).promise())
                     .then(() =>
-                        s3.listObjectsV2Promise(test.listObjectParams(Bucket)))
+                        s3.listObjectsV2(test.listObjectParams(Bucket))
+                            .promise())
                     .then(data => {
                         const isValidResponse =
                             tv4.validate(data, bucketSchemaV2);
@@ -398,8 +399,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsPromise({ Bucket, Prefix: k }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjects({ Bucket, Prefix: k }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchema);
@@ -422,8 +423,8 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsPromise({ Bucket, Marker: k }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjects({ Bucket, Marker: k }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchema);
@@ -446,9 +447,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
 
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsPromise({ Bucket, MaxKeys: 1,
-                        Delimiter: 'foo' }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjects({ Bucket, MaxKeys: 1,
+                        Delimiter: 'foo' }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchema);
@@ -471,9 +472,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsV2Promise(
-                        { Bucket, StartAfter: k }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjectsV2(
+                        { Bucket, StartAfter: k }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchemaV2);
@@ -497,9 +498,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const objects = [{ Bucket, Key: k }];
 
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsV2Promise(
-                        { Bucket, ContinuationToken: generateToken(k) }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjectsV2({
+                        Bucket,
+                        ContinuationToken: generateToken(k),
+                    }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchemaV2);
@@ -523,9 +526,9 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
                 const Bucket = bucketName;
                 const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
                 Promise
-                    .mapSeries(objects, param => s3.putObjectPromise(param))
-                    .then(() => s3.listObjectsV2Promise({ Bucket, MaxKeys: 1,
-                        Delimiter: 'foo' }))
+                    .mapSeries(objects, param => s3.putObject(param).promise())
+                    .then(() => s3.listObjectsV2({ Bucket, MaxKeys: 1,
+                        Delimiter: 'foo' }).promise())
                     .then(data => {
                         const isValidResponse = tv4.validate(data,
                             bucketSchemaV2);

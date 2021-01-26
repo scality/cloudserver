@@ -56,12 +56,17 @@ describe('Complete MPU', () => {
 
         function _initiateMpuAndPutOnePart() {
             const result = {};
-            return s3.createMultipartUploadPromise({
-                Bucket: bucket, Key: key })
+            return s3.createMultipartUpload({
+                Bucket: bucket, Key: key }).promise()
             .then(data => {
                 result.uploadId = data.UploadId;
-                return s3.uploadPartPromise({ Bucket: bucket, Key: key,
-                    PartNumber: 1, UploadId: data.UploadId, Body: 'foo' });
+                return s3.uploadPart({
+                    Bucket: bucket,
+                    Key: key,
+                    PartNumber: 1,
+                    UploadId: data.UploadId,
+                    Body: 'foo',
+                }).promise();
             })
             .then(data => {
                 result.eTag = data.ETag;
@@ -107,8 +112,8 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.putBucketVersioningPromise({ Bucket: bucket,
-                VersioningConfiguration: versioningEnabled })
+            beforeEach(() => s3.putBucketVersioning({ Bucket: bucket,
+                VersioningConfiguration: versioningEnabled }).promise()
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;
@@ -126,8 +131,8 @@ describe('Complete MPU', () => {
             let uploadId;
             let eTag;
 
-            beforeEach(() => s3.putBucketVersioningPromise({ Bucket: bucket,
-                VersioningConfiguration: versioningSuspended })
+            beforeEach(() => s3.putBucketVersioning({ Bucket: bucket,
+                VersioningConfiguration: versioningSuspended }).promise()
                 .then(() => _initiateMpuAndPutOnePart())
                 .then(result => {
                     uploadId = result.uploadId;

@@ -32,13 +32,13 @@ describe('Put object with same key as prior object', () => {
                       .catch(done);
         });
 
-        beforeEach(() => s3.putObjectPromise({
+        beforeEach(() => s3.putObject({
             Bucket: bucketName,
             Key: objectName,
             Body: 'I am the best content ever',
             Metadata: firstPutMetadata,
-        }).then(() =>
-            s3.headObjectPromise({ Bucket: bucketName, Key: objectName })
+        }).promise().then(() =>
+            s3.headObject({ Bucket: bucketName, Key: objectName }).promise()
         ).then(res => {
             assert.deepStrictEqual(res.Metadata, firstPutMetadata);
         }));
@@ -48,13 +48,13 @@ describe('Put object with same key as prior object', () => {
         after(() => bucketUtil.deleteOne(bucketName));
 
         it('should overwrite all user metadata and data on overwrite put',
-            () => s3.putObjectPromise({
+            () => s3.putObject({
                 Bucket: bucketName,
                 Key: objectName,
                 Body: 'Much different',
                 Metadata: secondPutMetadata,
-            }).then(() =>
-                s3.getObjectPromise({ Bucket: bucketName, Key: objectName })
+            }).promise().then(() =>
+                s3.getObject({ Bucket: bucketName, Key: objectName }).promise()
             ).then(res => {
                 assert.deepStrictEqual(res.Metadata, secondPutMetadata);
                 assert.deepStrictEqual(res.Body.toString(),

@@ -20,21 +20,23 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
             this.currentTest.key = `somekey-${Date.now()}`;
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: azureContainerName })
-            .then(() => s3.createMultipartUploadPromise({
+            return s3.createBucket({ Bucket: azureContainerName }).promise()
+            .then(() => s3.createMultipartUpload({
                 Bucket: azureContainerName, Key: this.currentTest.key,
-                Metadata: { 'scal-location-constraint': azureLocation } }))
+                Metadata: { 'scal-location-constraint': azureLocation },
+            }).promise())
             .then(res => {
                 this.currentTest.uploadId = res.UploadId;
-                return s3.uploadPartPromise({ Bucket: azureContainerName,
+                return s3.uploadPart({ Bucket: azureContainerName,
                     Key: this.currentTest.key, PartNumber: 1,
-                    UploadId: this.currentTest.uploadId, Body: bodyFirstPart });
+                    UploadId: this.currentTest.uploadId, Body: bodyFirstPart,
+                }).promise();
             }).then(res => {
                 this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.uploadPartPromise({ Bucket: azureContainerName,
+            }).then(() => s3.uploadPart({ Bucket: azureContainerName,
                 Key: this.currentTest.key, PartNumber: 2,
-                UploadId: this.currentTest.uploadId, Body: bodySecondPart })
-            ).then(res => {
+                UploadId: this.currentTest.uploadId, Body: bodySecondPart,
+            }).promise()).then(res => {
                 this.currentTest.secondEtag = res.ETag;
             })
             .catch(err => {
@@ -45,10 +47,10 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
 
         afterEach(function afterEachFn() {
             process.stdout.write('Emptying bucket');
-            return s3.abortMultipartUploadPromise({
+            return s3.abortMultipartUpload({
                 Bucket: azureContainerName, Key: this.currentTest.key,
                 UploadId: this.currentTest.uploadId,
-            })
+            }).promise()
             .then(() => bucketUtil.empty(azureContainerName))
             .then(() => {
                 process.stdout.write('Deleting bucket');
