@@ -29,7 +29,7 @@ describe('aws-node-sdk test delete bucket', () => {
             async.waterfall([
                 next => s3.createBucket({ Bucket: bucketName },
                     err => next(err)),
-                next => s3.putBucketVersioningPromise({
+                next => s3.putBucketVersioning({
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',

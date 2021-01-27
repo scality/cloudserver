@@ -37,7 +37,7 @@ describe('DELETE bucket cors', () => {
         });
 
         describe('with existing bucket', () => {
-            beforeEach(() => s3.createBucketPromise({ Bucket: bucketName }));
+            beforeEach(() => s3.createBucket({ Bucket: bucketName }).promise());
             afterEach(() => bucketUtil.deleteOne(bucketName));
 
             describe('without existing cors configuration', () => {

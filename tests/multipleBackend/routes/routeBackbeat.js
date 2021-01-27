@@ -217,13 +217,13 @@ describeSkipIfAWS('backbeat routes', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucketPromise({ Bucket: TEST_BUCKET })
-            .then(() => s3.putBucketVersioningPromise(
+        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+            .then(() => s3.putBucketVersioning(
                 {
                     Bucket: TEST_BUCKET,
                     VersioningConfiguration: { Status: 'Enabled' },
-                }))
-            .then(() => s3.createBucketPromise({ Bucket: NONVERSIONED_BUCKET }))
+                }).promise())
+            .then(() => s3.createBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -232,9 +232,9 @@ describeSkipIfAWS('backbeat routes', () => {
     });
     after(done => {
         bucketUtil.empty(TEST_BUCKET)
-            .then(() => s3.deleteBucketPromise({ Bucket: TEST_BUCKET }))
+            .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
-            .then(() => s3.deleteBucketPromise({ Bucket: NONVERSIONED_BUCKET }))
+            .then(() => s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
             .then(() => done());
     });
 

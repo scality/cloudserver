@@ -122,6 +122,7 @@ function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
+            s3.createBucketPromise = Promise.promisify(s3.createBucket);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }

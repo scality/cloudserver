@@ -85,34 +85,34 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
 
-            return s3.createBucketPromise({ Bucket: bucket })
+            return s3.createBucket({ Bucket: bucket }).promise()
             .then(() => bucketUtil.getOwner())
             .then(res => {
                 // The owner of the bucket will also be the MPU upload owner.
                 data.displayName = res.DisplayName;
                 data.userId = res.ID;
             })
-            .then(() => s3.createMultipartUploadPromise({
+            .then(() => s3.createMultipartUpload({
                 Bucket: bucket,
                 Key: objectKey,
-            }))
+            }).promise())
             .then(res => {
                 data.uploadId = res.UploadId;
             });
         });
 
         afterEach(() =>
-            s3.abortMultipartUploadPromise({
+            s3.abortMultipartUpload({
                 Bucket: bucket,
                 Key: objectKey,
                 UploadId: data.uploadId,
-            })
+            }).promise()
             .then(() => bucketUtil.empty(bucket))
             .then(() => bucketUtil.deleteOne(bucket))
         );
 
         it('should list ongoing multipart uploads', () =>
-            s3.listMultipartUploadsPromise({ Bucket: bucket })
+            s3.listMultipartUploads({ Bucket: bucket }).promise()
             .then(res => checkValues(res, data))
         );
 
@@ -121,22 +121,22 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             data.delimiter = 'test-delimiter';
             data.maxUploads = 1;
 
-            return s3.listMultipartUploadsPromise({
+            return s3.listMultipartUploads({
                 Bucket: bucket,
                 Prefix: 'to',
                 Delimiter: 'test-delimiter',
                 MaxUploads: 1,
-            })
+            }).promise()
             .then(res => checkValues(res, data));
         });
 
         it('should list 0 multipart uploads when MaxUploads is 0', () => {
             data.maxUploads = 0;
 
-            return s3.listMultipartUploadsPromise({
+            return s3.listMultipartUploads({
                 Bucket: bucket,
                 MaxUploads: 0,
-            })
+            }).promise()
             .then(res => checkValues(res, data));
         });
     })

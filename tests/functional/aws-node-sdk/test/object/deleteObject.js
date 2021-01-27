@@ -19,11 +19,13 @@ describe('DELETE object', () => {
         describe('with multipart upload', () => {
             before(() => {
                 process.stdout.write('creating bucket\n');
-                return s3.createBucketPromise({ Bucket: bucketName })
+                return s3.createBucket({ Bucket: bucketName }).promise()
                 .then(() => {
                     process.stdout.write('initiating multipart upload\n');
-                    return s3.createMultipartUploadPromise({ Bucket: bucketName,
-                        Key: objectName });
+                    return s3.createMultipartUpload({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    }).promise();
                 })
                 .then(res => {
                     process.stdout.write('uploading parts\n');
@@ -31,13 +33,13 @@ describe('DELETE object', () => {
                     const uploads = [];
                     for (let i = 1; i <= 3; i++) {
                         uploads.push(
-                            s3.uploadPartPromise({
+                            s3.uploadPart({
                                 Bucket: bucketName,
                                 Key: objectName,
                                 PartNumber: i,
                                 Body: testfile,
                                 UploadId: uploadId,
-                            })
+                            }).promise()
                         );
                     }
                     return Promise.all(uploads);
@@ -49,7 +51,7 @@ describe('DELETE object', () => {
                 .then(res => {
                     process.stdout.write('about to complete multipart ' +
                         'upload\n');
-                    return s3.completeMultipartUploadPromise({
+                    return s3.completeMultipartUpload({
                         Bucket: bucketName,
                         Key: objectName,
                         UploadId: uploadId,
@@ -60,7 +62,7 @@ describe('DELETE object', () => {
                                 { ETag: res[2].ETag, PartNumber: 3 },
                             ],
                         },
-                    });
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write('completeMultipartUpload error: ' +
@@ -99,20 +101,20 @@ describe('DELETE object', () => {
             const retainDate = moment().add(10, 'days').toISOString();
             before(() => {
                 process.stdout.write('creating bucket\n');
-                return s3.createBucketPromise({
+                return s3.createBucket({
                     Bucket: bucketName,
                     ObjectLockEnabledForBucket: true,
-                })
+                }).promise()
                 .catch(err => {
                     process.stdout.write(`Error creating bucket ${err}\n`);
                     throw err;
                 })
                 .then(() => {
                     process.stdout.write('putting object\n');
-                    return s3.putObjectPromise({
+                    return s3.putObject({
                         Bucket: bucketName,
                         Key: objectName,
-                    });
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write('Error putting object');
@@ -121,14 +123,14 @@ describe('DELETE object', () => {
                 .then(res => {
                     versionIdOne = res.VersionId;
                     process.stdout.write('putting object retention\n');
-                    return s3.putObjectRetentionPromise({
+                    return s3.putObjectRetention({
                         Bucket: bucketName,
                         Key: objectName,
                         Retention: {
                             Mode: 'GOVERNANCE',
                             RetainUntilDate: retainDate,
                         },
-                    });
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write('Err putting object retention\n');
@@ -136,10 +138,10 @@ describe('DELETE object', () => {
                 })
                 .then(() => {
                     process.stdout.write('putting object\n');
-                    return s3.putObjectPromise({
+                    return s3.putObject({
                         Bucket: bucketName,
                         Key: objectNameTwo,
-                    });
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write(('Err putting second object\n'));
@@ -148,13 +150,13 @@ describe('DELETE object', () => {
                 .then(res => {
                     versionIdTwo = res.VersionId;
                     process.stdout.write('putting object legal hold\n');
-                    return s3.putObjectLegalHoldPromise({
+                    return s3.putObjectLegalHold({
                         Bucket: bucketName,
                         Key: objectNameTwo,
                         LegalHold: {
                             Status: 'ON',
                         },
-                    });
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write('Err putting object legal hold\n');

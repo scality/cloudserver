@@ -11,6 +11,7 @@ const { versioningEnabled } = require('../../../lib/utility/versioning-util');
 const { describeSkipIfNotMultiple, getAwsRetry, awsLocation,
     awsLocationEncryption, memLocation, fileLocation, genUniqID, isCEPH }
     = require('../utils');
+const Promise = require('bluebird');
 const bucket = `putaws${genUniqID()}`;
 const body = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
@@ -80,6 +81,7 @@ describe.only('MultipleBackend put object', function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             process.stdout.write('Creating bucket\n');
+            s3.createBucketPromise = Promise.promisify(s3.createBucket);
             if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }

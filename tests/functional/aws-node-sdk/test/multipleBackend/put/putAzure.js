@@ -108,7 +108,7 @@ describeF() {
 
         describe('with no bucket location header', () => {
             beforeEach(() =>
-              s3.createBucketPromise({ Bucket: azureContainerName })
+              s3.createBucket({ Bucket: azureContainerName }).promise()
                 .catch(err => {
                     process.stdout.write(`Error creating bucket: ${err}\n`);
                     throw err;
