@@ -94,13 +94,13 @@ describe('Multi-Object Versioning Delete Success', function success() {
         it('should batch delete 1000 objects quietly', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
-            return s3.deleteObjectsPromise({
+            return s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
                     Quiet: true,
                 },
-            }).then(res => {
+            }).promise().then(res => {
                 assert.strictEqual(res.Deleted.length, 0);
                 assert.strictEqual(res.Errors.length, 0);
             }).catch(err => {
@@ -111,13 +111,13 @@ describe('Multi-Object Versioning Delete Success', function success() {
         it('should batch delete 1000 objects', () => {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
-            return s3.deleteObjectsPromise({
+            return s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
                     Quiet: false,
                 },
-            }).then(res => {
+            }).promise().then(res => {
                 assert.strictEqual(res.Deleted.length, 1000);
                 // order of returned objects not sorted
                 assert.deepStrictEqual(sortList(res.Deleted),
@@ -133,12 +133,12 @@ describe('Multi-Object Versioning Delete Success', function success() {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = 'invalid-version-id';
-            return s3.deleteObjectsPromise({
+            return s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
                 },
-            }).then(res => {
+            }).promise().then(res => {
                 assert.strictEqual(res.Deleted.length, 999);
                 assert.strictEqual(res.Errors.length, 1);
                 assert.strictEqual(res.Errors[0].Code, 'NoSuchVersion');
@@ -153,12 +153,12 @@ describe('Multi-Object Versioning Delete Success', function success() {
             const objects = objectsRes.slice(0, 1000).map(obj =>
                 ({ Key: obj.Key, VersionId: obj.VersionId }));
             objects[0].VersionId = nonExistingId;
-            return s3.deleteObjectsPromise({
+            return s3.deleteObjects({
                 Bucket: bucketName,
                 Delete: {
                     Objects: objects,
                 },
-            }).then(res => {
+            }).promise().then(res => {
                 assert.strictEqual(res.Deleted.length, 1000);
                 assert.strictEqual(res.Errors.length, 0);
                 const foundVersionId = res.Deleted.find(entry =>
@@ -183,7 +183,7 @@ describe('Multi-Object Versioning Delete - deleting delete marker',
             async.waterfall([
                 next => s3.createBucket({ Bucket: bucketName },
                     err => next(err)),
-                next => s3.putBucketVersioningPromise({
+                next => s3.putBucketVersioning({
                     Bucket: bucketName,
                     VersioningConfiguration: {
                         Status: 'Enabled',

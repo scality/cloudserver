@@ -35,11 +35,11 @@ function getOuterRange(range, bytes) {
 // Get the ranged object from a bucket. Write the response body to a file, then
 // use getRangeExec to check that all the bytes are in the correct location.
 function checkRanges(range, bytes) {
-    return s3.getObjectPromise({
+    return s3.getObject({
         Bucket: bucket,
         Key: key,
         Range: `bytes=${range}`,
-    })
+    }).promise()
     .then(res => {
         const { begin, end } = getOuterRange(range, bytes);
         const total = (end - begin) + 1;
@@ -68,13 +68,13 @@ function uploadParts(bytes, uploadId) {
     return Promise.map([1, 2], part =>
         execFileAsync('dd', [`if=${name}`, `of=${name}.mpuPart${part}`,
             'bs=5242880', `skip=${part - 1}`, 'count=1'])
-        .then(() => s3.uploadPartPromise({
+        .then(() => s3.uploadPart({
             Bucket: bucket,
             Key: key,
             PartNumber: part,
             UploadId: uploadId,
             Body: createReadStream(`${name}.mpuPart${part}`),
-        }))
+        }).promise())
     );
 }
 
@@ -97,17 +97,17 @@ describe('aws-node-sdk range tests', () => {
             let uploadId;
 
             beforeEach(() =>
-                s3.createBucketPromise({ Bucket: bucket })
-                .then(() => s3.createMultipartUploadPromise({
+                s3.createBucket({ Bucket: bucket }).promise()
+                .then(() => s3.createMultipartUpload({
                     Bucket: bucket,
                     Key: key,
-                }))
+                }).promise())
                 .then(res => {
                     uploadId = res.UploadId;
                 })
                 .then(() => createHashedFile(fileSize))
                 .then(() => uploadParts(fileSize, uploadId))
-                .then(res => s3.completeMultipartUploadPromise({
+                .then(res => s3.completeMultipartUpload({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
@@ -123,15 +123,15 @@ describe('aws-node-sdk range tests', () => {
                             },
                         ],
                     },
-                }))
+                }).promise())
             );
 
             afterEach(() => bucketUtil.empty(bucket)
-                .then(() => s3.abortMultipartUploadPromise({
+                .then(() => s3.abortMultipartUpload({
                     Bucket: bucket,
                     Key: key,
                     UploadId: uploadId,
-                }))
+                }).promise())
                 .catch(err => new Promise((resolve, reject) => {
                     if (err.code !== 'NoSuchUpload') {
                         reject(err);
@@ -164,13 +164,13 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2000;
 
             beforeEach(() =>
-                s3.createBucketPromise({ Bucket: bucket })
+                s3.createBucket({ Bucket: bucket }).promise()
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObjectPromise({
+                .then(() => s3.putObject({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),
-                })));
+                }).promise()));
 
             afterEach(() =>
                 bucketUtil.empty(bucket)
@@ -221,13 +221,13 @@ describe('aws-node-sdk range tests', () => {
             const fileSize = 2900;
 
             beforeEach(() =>
-                s3.createBucketPromise({ Bucket: bucket })
+                s3.createBucket({ Bucket: bucket }).promise()
                 .then(() => createHashedFile(fileSize))
-                .then(() => s3.putObjectPromise({
+                .then(() => s3.putObject({
                     Bucket: bucket,
                     Key: key,
                     Body: createReadStream(`hashedFile.${fileSize}`),
-                })));
+                }).promise()));
 
             afterEach(() =>
                 bucketUtil.empty(bucket)

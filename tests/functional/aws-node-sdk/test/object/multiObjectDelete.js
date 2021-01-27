@@ -61,7 +61,7 @@ describe('Multi-Object Delete Success', function success() {
             signatureVersion: 'v4',
         });
         s3 = bucketUtil.s3;
-        return s3.createBucketPromise({ Bucket: bucketName })
+        return s3.createBucket({ Bucket: bucketName }).promise()
         .catch(err => {
             process.stdout.write(`Error creating bucket: ${err}\n`);
             throw err;
@@ -76,11 +76,11 @@ describe('Multi-Object Delete Success', function success() {
             const putPromises = objects.map(key => {
                 const mustComplete = Math.max(0, queued.length - parallel + 1);
                 const result = Promise.some(queued, mustComplete).then(() =>
-                    s3.putObjectPromise({
+                    s3.putObject({
                         Bucket: bucketName,
                         Key: key,
                         Body: 'somebody',
-                    })
+                    }).promise()
                 );
                 queued.push(result);
                 return result;
@@ -92,17 +92,17 @@ describe('Multi-Object Delete Success', function success() {
         });
     });
 
-    afterEach(() => s3.deleteBucketPromise({ Bucket: bucketName }));
+    afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
     it('should batch delete 1000 objects', () => {
         const objects = createObjectsList(1000);
-        return s3.deleteObjectsPromise({
+        return s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        }).then(res => {
+        }).promise().then(res => {
             assert.strictEqual(res.Deleted.length, 1000);
             // order of returned objects not sorted
             assert.deepStrictEqual(sortList(res.Deleted), sortList(objects));
@@ -114,13 +114,13 @@ describe('Multi-Object Delete Success', function success() {
 
     it('should batch delete 1000 objects quietly', () => {
         const objects = createObjectsList(1000);
-        return s3.deleteObjectsPromise({
+        return s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: true,
             },
-        }).then(res => {
+        }).promise().then(res => {
             assert.strictEqual(res.Deleted.length, 0);
             assert.strictEqual(res.Errors.length, 0);
         }).catch(err => {
@@ -137,24 +137,24 @@ describe('Multi-Object Delete Error Responses', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucketName })
+            return s3.createBucket({ Bucket: bucketName }).promise()
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
             });
         });
 
-        afterEach(() => s3.deleteBucketPromise({ Bucket: bucketName }));
+        afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
         it('should return error if request deletion of more than 1000 objects',
             () => {
                 const objects = createObjectsList(1001);
-                return s3.deleteObjectsPromise({
+                return s3.deleteObjects({
                     Bucket: bucketName,
                     Delete: {
                         Objects: objects,
                     },
-                }).catch(err => {
+                }).promise().catch(err => {
                     checkError(err, 'MalformedXML');
                 });
             });
@@ -162,12 +162,12 @@ describe('Multi-Object Delete Error Responses', () => {
         it('should return error if request deletion of 0 objects',
             () => {
                 const objects = createObjectsList(0);
-                return s3.deleteObjectsPromise({
+                return s3.deleteObjects({
                     Bucket: bucketName,
                     Delete: {
                         Objects: objects,
                     },
-                }).catch(err => {
+                }).promise().catch(err => {
                     checkError(err, 'MalformedXML');
                 });
             });
@@ -175,12 +175,12 @@ describe('Multi-Object Delete Error Responses', () => {
         it('should return no error if try to delete non-existent objects',
             () => {
                 const objects = createObjectsList(1000);
-                return s3.deleteObjectsPromise({
+                return s3.deleteObjects({
                     Bucket: bucketName,
                     Delete: {
                         Objects: objects,
                     },
-                }).then(res => {
+                }).promise().then(res => {
                     assert.strictEqual(res.Deleted.length, 1000);
                     assert.strictEqual(res.Errors.length, 0);
                 }).catch(err => {
@@ -190,12 +190,12 @@ describe('Multi-Object Delete Error Responses', () => {
 
         it('should return error if no such bucket', () => {
             const objects = createObjectsList(1);
-            return s3.deleteObjectsPromise({
+            return s3.deleteObjects({
                 Bucket: 'nosuchbucket2323292093',
                 Delete: {
                     Objects: objects,
                 },
-            }).catch(err => {
+            }).promise().catch(err => {
                 checkError(err, 'NoSuchBucket');
             });
         });
@@ -213,18 +213,18 @@ describe('Multi-Object Delete Access', function access() {
             signatureVersion: 'v4',
         });
         s3 = bucketUtil.s3;
-        return s3.createBucketPromise({ Bucket: bucketName })
+        return s3.createBucket({ Bucket: bucketName }).promise()
         .catch(err => {
             process.stdout.write(`Error creating bucket: ${err}\n`);
             throw err;
         })
         .then(() => {
             for (let i = 1; i < 501; i++) {
-                createObjects.push(s3.putObjectPromise({
+                createObjects.push(s3.putObject({
                     Bucket: bucketName,
                     Key: `${key}${i}`,
                     Body: 'somebody',
-                }));
+                }).promise());
             }
             return Promise.all(createObjects)
             .catch(err => {
@@ -234,7 +234,7 @@ describe('Multi-Object Delete Access', function access() {
         });
     });
 
-    after(() => s3.deleteBucketPromise({ Bucket: bucketName }));
+    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
     it('should return access denied error for each object where no acl ' +
         'permission', () => {
@@ -245,13 +245,13 @@ describe('Multi-Object Delete Access', function access() {
             item.Code = 'AccessDenied';
             item.Message = 'Access Denied';
         });
-        return otherAccountS3.deleteObjectsPromise({
+        return otherAccountS3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        }).then(res => {
+        }).promise().then(res => {
             assert.strictEqual(res.Deleted.length, 0);
             assert.deepStrictEqual(sortList(res.Errors), sortList(errorList));
             assert.strictEqual(res.Errors.length, 500);
@@ -263,13 +263,13 @@ describe('Multi-Object Delete Access', function access() {
 
     it('should batch delete objects where requester has permission', () => {
         const objects = createObjectsList(500);
-        return s3.deleteObjectsPromise({
+        return s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        }).then(res => {
+        }).promise().then(res => {
             assert.strictEqual(res.Deleted.length, 500);
             assert.strictEqual(res.Errors.length, 0);
         }).catch(err => {
@@ -289,11 +289,11 @@ describe('Multi-Object Delete with Object Lock', () => {
             signatureVersion: 'v4',
         });
         s3 = bucketUtil.s3;
-        return s3.createBucketPromise({
+        return s3.createBucket({
             Bucket: bucketName,
             ObjectLockEnabledForBucket: true,
-        })
-        .then(() => s3.putObjectLockConfigurationPromise({
+        }).promise()
+        .then(() => s3.putObjectLockConfiguration({
             Bucket: bucketName,
             ObjectLockConfiguration: {
                 ObjectLockEnabled: 'Enabled',
@@ -304,18 +304,18 @@ describe('Multi-Object Delete with Object Lock', () => {
                     },
                 },
             },
-        }))
+        }).promise())
         .catch(err => {
             process.stdout.write(`Error creating bucket: ${err}\n`);
             throw err;
         })
         .then(() => {
             for (let i = 1; i < 6; i++) {
-                createObjects.push(s3.putObjectPromise({
+                createObjects.push(s3.putObject({
                     Bucket: bucketName,
                     Key: `${key}${i}`,
                     Body: 'somebody',
-                }));
+                }).promise());
             }
             return Promise.all(createObjects)
             .then(res => {
@@ -330,17 +330,17 @@ describe('Multi-Object Delete with Object Lock', () => {
         });
     });
 
-    after(() => s3.deleteBucketPromise({ Bucket: bucketName }));
+    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
     it('should not delete locked objects', () => {
         const objects = createObjectsList(5, versionIds);
-        return s3.deleteObjectsPromise({
+        return s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        }).then(res => {
+        }).promise().then(res => {
             assert.strictEqual(res.Errors.length, 5);
             res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
         });
@@ -361,13 +361,13 @@ describe('Multi-Object Delete with Object Lock', () => {
             date: moment().subtract(10, 'days').toISOString(),
         };
         return changeLockPromise(objectsCopy, newRetention)
-        .then(() => s3.deleteObjectsPromise({
+        .then(() => s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        })).then(res => {
+        }).promise()).then(res => {
             assert.strictEqual(res.Deleted.length, 5);
             assert.strictEqual(res.Errors.length, 0);
         }).catch(err => {

@@ -34,7 +34,7 @@ describe('Multiple backend get object', function testSuite() {
             process.stdout.write('Creating bucket');
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucket })
+            return s3.createBucket({ Bucket: bucket }).promise()
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
@@ -183,46 +183,50 @@ describe('Multiple backend get object', function testSuite() {
             '(mem/file/AWS)', () => {
             before(() => {
                 process.stdout.write('Putting object to mem\n');
-                return s3.putObjectPromise({ Bucket: bucket, Key: memObject,
+                return s3.putObject({ Bucket: bucket, Key: memObject,
                     Body: body,
-                    Metadata: { 'scal-location-constraint': memLocation } })
+                    Metadata: { 'scal-location-constraint': memLocation },
+                }).promise()
                 .then(() => {
                     process.stdout.write('Putting object to file\n');
-                    return s3.putObjectPromise({ Bucket: bucket,
+                    return s3.putObject({ Bucket: bucket,
                         Key: fileObject,
                         Body: body,
                         Metadata:
                         { 'scal-location-constraint': fileLocation },
-                    });
+                    }).promise();
                 })
                 .then(() => {
                     process.stdout.write('Putting object to AWS\n');
-                    return s3.putObjectPromise({ Bucket: bucket, Key: awsObject,
+                    return s3.putObject({ Bucket: bucket, Key: awsObject,
                         Body: body,
                         Metadata: {
-                            'scal-location-constraint': awsLocation } });
+                            'scal-location-constraint': awsLocation },
+                    }).promise();
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to mem\n');
-                    return s3.putObjectPromise({ Bucket: bucket,
+                    return s3.putObject({ Bucket: bucket,
                         Key: emptyObject,
                         Metadata:
                         { 'scal-location-constraint': memLocation },
-                    });
+                    }).promise();
                 })
                 .then(() => {
                     process.stdout.write('Putting 0-byte object to AWS\n');
-                    return s3.putObjectPromise({ Bucket: bucket,
+                    return s3.putObject({ Bucket: bucket,
                         Key: emptyAwsObject,
                         Metadata: {
-                            'scal-location-constraint': awsLocation } });
+                            'scal-location-constraint': awsLocation },
+                    }).promise();
                 })
                 .then(() => {
                     process.stdout.write('Putting large object to AWS\n');
-                    return s3.putObjectPromise({ Bucket: bucket,
+                    return s3.putObject({ Bucket: bucket,
                         Key: bigObject, Body: bigBody,
                         Metadata: {
-                            'scal-location-constraint': awsLocation } });
+                            'scal-location-constraint': awsLocation },
+                    }).promise();
                 })
                 .catch(err => {
                     process.stdout.write(`Error putting objects: ${err}\n`);
