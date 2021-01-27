@@ -43,11 +43,11 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
             })
             .then(() => {
                 process.stdout.write('creating bucket\n');
-                return s3.createBucketPromise({ Bucket: bucketName });
+                return s3.createBucket({ Bucket: bucketName }).promise();
             })
             .then(() => {
                 process.stdout.write('initiating multipart upload\n');
-                return s3.createMultipartUploadPromise(params);
+                return s3.createMultipartUpload(params).promise();
             })
             .then(res => {
                 uploadId = res.UploadId;
@@ -75,14 +75,14 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
         () => {
             const params = { Bucket: bucketName, Key: 'key', PartNumber: 1,
                 UploadId: uploadId };
-            return s3.uploadPartPromise(params)
+            return s3.uploadPart(params).promise()
             .catch(err => {
                 process.stdout.write(`Error in uploadPart ${err}\n`);
                 throw err;
             })
             .then(res => {
                 process.stdout.write('about to complete multipart upload\n');
-                return s3.completeMultipartUploadPromise({
+                return s3.completeMultipartUpload({
                     Bucket: bucketName,
                     Key: objectName,
                     UploadId: uploadId,
@@ -91,7 +91,7 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
                             { ETag: res.ETag, PartNumber: 1 },
                         ],
                     },
-                });
+                }).promise();
             })
             .catch(err => {
                 process.stdout.write(`Error completing upload ${err}\n`);
@@ -99,9 +99,9 @@ describe('GET multipart upload object [Cache-Control, Content-Disposition, ' +
             })
             .then(() => {
                 process.stdout.write('about to get object\n');
-                return s3.getObjectPromise({
+                return s3.getObject({
                     Bucket: bucketName, Key: objectName,
-                });
+                }).promise();
             })
             .catch(err => {
                 process.stdout.write(`Error getting object ${err}\n`);

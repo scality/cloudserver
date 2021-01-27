@@ -54,10 +54,10 @@ describe('DELETE multipart', () => {
             `${confLocation.name}`,
             () => {
                 beforeEach(() =>
-                    s3.createBucketPromise({ Bucket: bucket,
+                    s3.createBucket({ Bucket: bucket,
                         CreateBucketConfiguration: {
                             LocationConstraint: confLocation.location,
-                        } })
+                        } }).promise()
                     .catch(err => {
                         process.stdout.write(`Error in beforeEach: ${err}\n`);
                         throw err;
@@ -89,10 +89,10 @@ describe('DELETE multipart', () => {
                     let uploadId;
 
                     beforeEach(() =>
-                        s3.createMultipartUploadPromise({
+                        s3.createMultipartUpload({
                             Bucket: bucket,
                             Key: key,
-                        })
+                        }).promise()
                         .then(res => {
                             uploadId = res.UploadId;
                             return s3.uploadPart({

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const tv4 = require('tv4');
-const Promise = require('bluebird');
+const bluebird = require('bluebird');
 const async = require('async');
 const { S3 } = require('aws-sdk');
 
@@ -153,7 +153,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
 
             it('should list buckets', done => {
                 s3
-                    .listBucketsPromise()
+                    .listBuckets().promise()
                     .then(data => {
                         const isValidResponse = tv4.validate(data, svcSchema);
                         if (!isValidResponse) {
@@ -196,13 +196,13 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                 let anotherS3;
 
                 before(() => {
-                    anotherS3 = Promise.promisifyAll(new S3(getConfig('lisa')),
-                        { suffix: 'Promise' });
+                    anotherS3 = new S3(getConfig('lisa'));
+                    anotherS3.config.setPromisesDependency(bluebird);
                 });
 
                 it('should not return other accounts bucket list', done => {
                     anotherS3
-                        .listBucketsPromise()
+                        .listBuckets().promise()
                         .then(data => {
                             const hasSameBuckets = data.Buckets
                                 .filter(filterFn)

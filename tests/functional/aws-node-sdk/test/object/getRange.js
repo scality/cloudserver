@@ -28,17 +28,17 @@ describe('aws-node-sdk range test of large end position', () => {
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return s3.createBucketPromise({ Bucket: bucketName })
+            return s3.createBucket({ Bucket: bucketName }).promise()
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
             }).then(() =>
-                s3.putObjectPromise({
+                s3.putObject({
                     Bucket: bucketName,
                     Key: objName,
                     Body: Buffer.allocUnsafe(2890).fill(0, 0, 2800)
                                                   .fill(1, 2800),
-                }))
+                }).promise())
             .catch(err => {
                 process.stdout.write(`Error in beforeEach: ${err}\n`);
                 throw err;

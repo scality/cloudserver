@@ -25,11 +25,13 @@ describe('PUT object retention', () => {
 
         beforeEach(() => {
             process.stdout.write('Putting buckets and objects\n');
-            return s3.createBucketPromise(
-                { Bucket: bucketName, ObjectLockEnabledForBucket: true })
-            .then(() => s3.createBucketPromise({ Bucket: unlockedBucket }))
-            .then(() => s3.putObjectPromise({ Bucket: unlockedBucket, Key: objectName }))
-            .then(() => s3.putObjectPromise({ Bucket: bucketName, Key: objectName }))
+            return s3.createBucket({
+                Bucket: bucketName,
+                ObjectLockEnabledForBucket: true,
+            }).promise()
+            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
+            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: objectName }).promise())
+            .then(() => s3.putObject({ Bucket: bucketName, Key: objectName }).promise())
             .then(res => {
                 versionId = res.VersionId;
             })

@@ -23,13 +23,13 @@ describeSkipAWS('GET bucket location ', () => {
                 return;
             }
             describe(`with location: ${location}`, () => {
-                before(done => s3.createBucketPromise(
+                before(() => s3.createBucket(
                     {
                         Bucket: bucketName,
                         CreateBucketConfiguration: {
                             LocationConstraint: location,
                         },
-                    }, done));
+                    }).promise());
                 after(() => bucketUtil.deleteOne(bucketName));
 
                 it(`should return location configuration: ${location} ` +
@@ -48,13 +48,13 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location us-east-1', () => {
-            before(done => s3.createBucketPromise(
+            before(() => s3.createBucket(
                 {
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
                         LocationConstraint: 'us-east-1',
                     },
-                }, done));
+                }).promise());
             afterEach(() => bucketUtil.deleteOne(bucketName));
             it('should return empty location',
             done => {
@@ -105,13 +105,13 @@ describeSkipAWS('GET bucket location ', () => {
         });
 
         describe('with location configuration', () => {
-            before(done => s3.createBucketPromise(
+            before(() => s3.createBucket(
                 {
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
                         LocationConstraint: 'us-east-1',
                     },
-                }, done));
+                }).promise());
             after(() => bucketUtil.deleteOne(bucketName));
 
             it('should return AccessDenied if user is not bucket owner',
