@@ -17,18 +17,7 @@ const testBucketPutRequest = {
     url: '/',
 };
 
-const expectedBucketPolicy = {
-    Version: '2012-10-17',
-    Statement: [
-        {
-            Effect: 'Allow',
-            Resource: `arn:aws:s3:::${bucketName}`,
-            Principal: '*',
-            Action: ['s3:GetBucketLocation'],
-        },
-    ],
-};
-
+let expectedBucketPolicy = {};
 function getPolicyRequest(policy) {
     return {
         bucketName,
@@ -41,7 +30,20 @@ function getPolicyRequest(policy) {
 
 describe('putBucketPolicy API', () => {
     before(() => cleanup());
-    beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
+    beforeEach(done => {
+        expectedBucketPolicy = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Resource: `arn:aws:s3:::${bucketName}`,
+                    Principal: '*',
+                    Action: ['s3:GetBucketLocation'],
+                },
+            ],
+        };        
+        bucketPut(authInfo, testBucketPutRequest, log, done);
+    });
     afterEach(() => cleanup());
 
     it('should update a bucket\'s metadata with bucket policy obj', done => {
@@ -70,6 +72,35 @@ describe('putBucketPolicy API', () => {
         log, err => {
             assert.strictEqual(err.MalformedPolicy, true);
             assert.strictEqual(err.description, 'Policy has invalid resource');
+            return done();
+        });
+    });
+
+    it('should return error if policy contains conditions', done => {
+        expectedBucketPolicy.Statement[0].Condition =
+            { StringEquals: { 's3:x-amz-acl': ['public-read'] } };
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
+        err => {
+            assert.strictEqual(err.NotImplemented, true);
+            return done();
+        });
+    });
+
+    it('should return error if policy contains service principal', done => {
+        expectedBucketPolicy.Statement[0].Principal = { Service: ['test.com'] };
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
+        err => {
+            assert.strictEqual(err.NotImplemented, true);
+            return done();
+        });
+    });
+
+    it('should return error if policy contains federated principal', done => {
+        expectedBucketPolicy.Statement[0].Principal =
+            { Federated: 'www.test.com' };
+        bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
+        err => {
+            assert.strictEqual(err.NotImplemented, true);
             return done();
         });
     });
