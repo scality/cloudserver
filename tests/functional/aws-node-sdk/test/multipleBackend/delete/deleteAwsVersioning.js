@@ -55,7 +55,7 @@ function _assertDeleteResult(result, resultType, requestVersionId) {
             `did not expect version id in result, got "${result.VersionId}"`);
     }
     if (expectDeleteMarker) {
-        assert.strictEqual(result.DeleteMarker, 'true');
+        assert.strictEqual(result.DeleteMarker, true);
     } else {
         assert.strictEqual(result.DeleteMarker, undefined);
     }

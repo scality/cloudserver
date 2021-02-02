@@ -113,7 +113,7 @@ describe('Multiple backend get object', function testSuite() {
                         assert.equal(err, null,
                             `Expected success but got error ${err}`);
                         if (range) {
-                            assert.strictEqual(res.ContentLength, `${size}`);
+                            assert.strictEqual(res.ContentLength, size);
                             assert.strictEqual(res.ContentRange, contentRange);
                         }
                         assert.strictEqual(res.ETag, `"${MD5}"`);
