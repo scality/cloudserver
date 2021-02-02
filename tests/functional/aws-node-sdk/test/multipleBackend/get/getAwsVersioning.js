@@ -304,7 +304,7 @@ function testSuite() {
             ], done);
         });
 
-        it('should return a ServiceUnavailable if trying to get an object ' +
+        it('should return a LocationNotFound if trying to get an object ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
             const key = `somekey-${genUniqID()}`;
@@ -321,14 +321,14 @@ function testSuite() {
                     err => next(err, s3VerId)),
                 (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key },
                     err => {
-                        assert.strictEqual(err.code, 'ServiceUnavailable');
-                        assert.strictEqual(err.statusCode, 503);
+                        assert.strictEqual(err.code, 'LocationNotFound');
+                        assert.strictEqual(err.statusCode, 424);
                         next();
                     }),
             ], done);
         });
 
-        it('should return a ServiceUnavailable if trying to get a version ' +
+        it('should return a LocationNotFound if trying to get a version ' +
         'that was deleted in AWS but exists in s3 metadata',
         done => {
             const key = `somekey-${genUniqID()}`;
@@ -345,8 +345,8 @@ function testSuite() {
                     err => next(err, s3VerId)),
                 (s3VerId, next) => s3.getObject({ Bucket: bucket, Key: key,
                     VersionId: s3VerId }, err => {
-                    assert.strictEqual(err.code, 'ServiceUnavailable');
-                    assert.strictEqual(err.statusCode, 503);
+                    assert.strictEqual(err.code, 'LocationNotFound');
+                    assert.strictEqual(err.statusCode, 424);
                     next();
                 }),
             ], done);
