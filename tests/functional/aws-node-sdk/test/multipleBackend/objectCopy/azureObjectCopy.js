@@ -31,6 +31,8 @@ const bigMD5 = '5f363e0e58a95f06cbe9bbc662c5dfb6';
 const emptyMD5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const locMetaHeader = constants.objectLocationConstraintHeader.substring(11);
 
+const Promise = require('bluebird');
+
 const azureTimeout = 40000;
 
 let bucketUtil;
