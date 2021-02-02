@@ -2,6 +2,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const { errors, storage } = require('arsenal');
 const AWS = require('aws-sdk');
+AWS.config.logger = console;
 const uuid = require('uuid/v4');
 
 const async = require('async');
