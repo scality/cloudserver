@@ -279,7 +279,7 @@ utils.getAndAssertResult = (s3, params, cb) => {
             if (expectedTagCount && expectedTagCount === '0') {
                 assert.strictEqual(data.TagCount, undefined);
             } else if (expectedTagCount) {
-                assert.strictEqual(data.TagCount, expectedTagCount);
+                assert.strictEqual(data.TagCount, parseInt(expectedTagCount, 10));
             }
             return cb();
         });
