@@ -61,11 +61,14 @@ function mpuSetup(key, location, cb) {
                 Metadata: { 'scal-location-constraint': location },
             };
             s3.createMultipartUpload(params, (err, res) => {
+                if (err) {
+                    return next(err);
+                }
                 const uploadId = res.UploadId;
                 assert(uploadId);
                 assert.strictEqual(res.Bucket, azureContainerName);
                 assert.strictEqual(res.Key, key);
-                next(err, uploadId);
+                return next(null, uploadId);
             });
         },
         (uploadId, next) => {
@@ -77,8 +80,11 @@ function mpuSetup(key, location, cb) {
                 Body: smallBody,
             };
             s3.uploadPart(partParams, (err, res) => {
+                if (err) {
+                    return next(err);
+                }
                 partArray.push({ ETag: res.ETag, PartNumber: 1 });
-                next(err, uploadId);
+                return next(null, uploadId);
             });
         },
         (uploadId, next) => {
@@ -90,8 +96,11 @@ function mpuSetup(key, location, cb) {
                 Body: bigBody,
             };
             s3.uploadPart(partParams, (err, res) => {
+                if (err) {
+                    return next(err);
+                }
                 partArray.push({ ETag: res.ETag, PartNumber: 2 });
-                next(err, uploadId);
+                return next(null, uploadId);
             });
         },
     ], (err, uploadId) => {
