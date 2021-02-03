@@ -5,7 +5,7 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { makeTagQuery, updateRequestContexts } =
     require('../../../../../../lib/api/apiUtils/authorization/tagConditionKeys');
 const { DummyRequestLogger, TaggingConfigTester, createRequestContext } = require('../../../../../unit/helpers');
-
+const { initMetadata } = require('../../utils/init');
 const taggingUtil = new TaggingConfigTester();
 const log = new DummyRequestLogger();
 const bucket = 'bucket2testconditionkeys';
@@ -18,6 +18,8 @@ describe('Tag condition keys updateRequestContext', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
+
+        before(done => initMetadata(done));
 
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
