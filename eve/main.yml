@@ -66,6 +66,7 @@ models:
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
+      MPU_TESTING: "yes"
   - env: &file-mem-mpu
       S3BACKEND: "file"
       S3VAULT: "mem"
