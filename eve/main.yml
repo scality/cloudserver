@@ -4,8 +4,6 @@ version: 0.2
 branches:
   feature/*, documentation/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*:
     stage: pre-merge
-  development/*:
-    stage: post-merge
 
 models:
   - env: &global-env
@@ -123,6 +121,35 @@ models:
       urls:
         - "*"
       alwaysRun: true
+  - env: &docker_env
+      DEVELOPMENT_DOCKER_IMAGE_NAME: >-
+        registry.scality.com/%(prop:git_slug)s-dev/%(prop:git_slug)s
+      PRODUCTION_DOCKER_IMAGE_NAME: >-
+        registry.scality.com/%(prop:git_slug)s/%(prop:git_slug)s
+  - ShellCommand: &docker_login
+      name: Login to docker registry
+      command: >
+        docker login
+        -u "${HARBOR_LOGIN}"
+        -p "${HARBOR_PASSWORD}"
+        registry.scality.com
+      usePTY: true
+      env:
+        HARBOR_LOGIN: '%(secret:harbor_login)s'
+        HARBOR_PASSWORD: '%(secret:harbor_password)s'
+  - ShellCommand: &wait_docker_daemon
+      name: Wait for Docker daemon to be ready
+      command: |
+        bash -c '
+        for i in {1..150}
+        do
+          docker info &> /dev/null && exit
+          sleep 2
+        done
+        echo "Could not reach Docker daemon from buildbot worker" >&2
+        exit 1'
+      haltOnFailure: true
+
 
 stages:
   pre-merge:
@@ -132,6 +159,7 @@ stages:
       - TriggerStages:
           name: Launch all workers
           stage_names:
+            - docker-build
             - linting-coverage
             - file-ft-tests
             - multiple-backend-test
@@ -394,65 +422,66 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  post-merge:
-    worker:
+  # The docker-build stage ensures that your images are built on every commit
+  # and also hosted on the registry to help you pull it up and
+  # test it in a real environment if needed.
+  # It also allows us to pull and rename it when performing a release.
+  docker-build:
+    worker: &docker_worker
       type: kube_pod
-      path: eve/workers/release/pod.yaml
+      path: eve/workers/docker/pod.yaml
       images:
-        release: eve/workers/release
+        worker: eve/workers/docker
     steps:
       - Git: *clone
-      - ShellCommand: &wait_docker_daemon
-          name: Wait for Docker daemon to be ready
-          command: |
-            bash -c '
-            for i in {1..150}
-            do
-              docker info &> /dev/null && exit
-              sleep 2
-            done
-            echo "Could not reach Docker daemon from buildbot worker" >&2
-            exit 1'
-          haltOnFailure: true
-      - ShellCommand: &docker_login
-          name: Private Registry Login
-          command: >
-            docker login
-            -u '%(secret:harbor_login)s'
-            -p '%(secret:harbor_password)s'
-            registry.scality.com
-      - SetProperty: &registry_url
-          name: registry
-          property: registry_url
-          value: registry.scality.com/zenko/cloudserver
-      - SetProperty: &docker_tag_revision
-          name: Set docker tag revision property
-          property: docker_tag_revision
-          value: "%(prop:registry_url)s:%(prop:commit_short_revision)s"
-      - SetProperty: &docker_tag_latest
-          name: Set docker tag latest property
-          property: docker_tag_latest
-          value: "%(prop:registry_url)s:latest-%(prop:product_version)s"
-      - SetPropertyFromCommand: &short_version
-          name: Set short version
-          property: short_version
-          command: echo "%(prop:product_version)s" | grep -o '^[0-9]*\.[0-9]*'
-      - SetProperty: &docker_tag_short_version
-          name: Set docker tag latest short version property
-          property: docker_tag_short_version
-          value: "%(prop:registry_url)s:latest-%(prop:short_version)s"
+      - ShellCommand: *wait_docker_daemon
+      - ShellCommand: *docker_login
       - ShellCommand:
-          name: Build docker image
+          name: docker build
           command: >-
-            docker build
-            --no-cache
-            -t %(prop:docker_tag_revision)s
-            -t %(prop:docker_tag_latest)s
-            -t %(prop:docker_tag_short_version)s
-            .
+            docker build .
+            --tag=${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:commit_short_revision)s
+          env: *docker_env
+          haltOnFailure: true
       - ShellCommand:
-          name: Push images
+          name: push docker image into the development namespace
+          command: docker push ${DEVELOPMENT_DOCKER_IMAGE_NAME}
+          haltOnFailure: true
+          env: *docker_env
+
+  # This stage can be used to release your Docker image.
+  # To use this stage:
+  # 1. Tag the repository
+  # 2. Force a build using:
+  #    * A branch that ideally matches the tag
+  #    * The release stage
+  #    * An extra property with the name tag and its value being the actual tag
+  release:
+    worker:
+      type: local
+    steps:
+      - TriggerStages:
+          stage_names:
+            - docker-release
+          haltOnFailure: true
+  docker-release:
+    worker: *docker_worker
+    steps:
+      - Git: *clone
+      - ShellCommand: *wait_docker_daemon
+      - ShellCommand: *docker_login
+      - EvePropertyFromCommand:
+          name: get tag short revision
+          property: tag_revision
           command: |
-            docker push %(prop:docker_tag_revision)s
-            docker push %(prop:docker_tag_latest)s
-            docker push %(prop:docker_tag_short_version)s
+            git checkout refs/tags/%(prop:tag)s 2&> /dev/null
+            git rev-parse --short HEAD
+          haltOnFailure: true
+      - ShellCommand:
+          name: publish docker image to Scality Production OCI registry
+          command: |
+            docker pull ${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:tag_revision)s
+            docker tag ${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:tag_revision)s \
+            ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
+            docker push ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
+          env: *docker_env
