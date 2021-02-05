@@ -85,6 +85,11 @@ models:
       name: install modules
       command: yarn install
       haltOnFailure: true
+  - ShellCommand: &check-s3-action-logs
+      name: Check s3 action logs
+      command: |
+        LOGS=`cat /artifacts/s3.log | grep 'No actionLog'`
+        test `echo -n ${LOGS} | wc -l` -eq 0 || (echo $LOGS && false)
   - Upload: &upload-artifacts
       source: /artifacts
       urls:
@@ -256,6 +261,7 @@ stages:
           <<: *follow-s3-log
           env:
             <<: *multiple-backend-vars
+      - ShellCommand: *check-s3-action-logs
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
       - Upload: *upload-junits
@@ -378,6 +384,7 @@ stages:
           env:
             <<: *file-mem-mpu
             <<: *global-env
+      - ShellCommand: *check-s3-action-logs
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
       - Upload: *upload-junits
