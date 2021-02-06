@@ -1231,7 +1231,10 @@ describe('Object Copy', () => {
     });
 });
 
-describe('Object Copy with object lock enabled on both destination ' +
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+
+describeSkipIfCeph('Object Copy with object lock enabled on both destination ' +
     'bucket and source bucket', () => {
     withV4(sigCfg => {
         let bucketUtil;
