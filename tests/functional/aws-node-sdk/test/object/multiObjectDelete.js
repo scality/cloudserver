@@ -278,7 +278,10 @@ describe('Multi-Object Delete Access', function access() {
     });
 });
 
-describe('Multi-Object Delete with Object Lock', () => {
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+
+describeSkipIfCeph('Multi-Object Delete with Object Lock', () => {
     let bucketUtil;
     let s3;
     const versionIds = [];

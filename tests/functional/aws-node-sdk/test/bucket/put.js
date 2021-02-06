@@ -302,7 +302,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                         assert.ifError(err);
                         assert.strictEqual(res.Location, `/${bucketName}`);
                         return next();
-                    }).promise(),
+                    }),
                     next => bucketUtil.s3.getBucketLocation(
                         {
                             Bucket: bucketName,
