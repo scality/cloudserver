@@ -14,7 +14,10 @@ const objPutTaggingReq = taggingUtil
 .createObjectTaggingRequest('PUT', bucket, object);
 const requestContexts = [createRequestContext('objectPutTagging', objPutTaggingReq)];
 
-describe('Tag condition keys updateRequestContext', () => {
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+
+describeSkipIfCeph('Tag condition keys updateRequestContext', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
