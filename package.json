@@ -21,7 +21,7 @@
   "dependencies": {
     "@hapi/joi": "^17.1.0",
     "agentkeepalive": "^4.1.3",
-    "arsenal": "github:scality/Arsenal#372df63",
+    "arsenal": "github:scality/Arsenal#bugfix/ZENKO-2153-fix-tests",
     "async": "~2.5.0",
     "aws-sdk": "2.831.0",
     "azure-storage": "^2.1.0",
