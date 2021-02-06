@@ -94,37 +94,45 @@ describe('Multi-Object Delete Success', function success() {
 
     afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
 
-    it('should batch delete 1000 objects', () => {
+    it('should batch delete 1000 objects', done => {
         const objects = createObjectsList(1000);
-        return s3.deleteObjects({
+        s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: false,
             },
-        }).promise().then(res => {
+        }, function result(err, res) {
+            checkNoError(err);
+            if (this.httpResponse.body.toString()
+                    .indexOf('<?xml version="1.0"') === -1) {
+                return done('S3C-2642: should have included xml declaration');
+            }
             assert.strictEqual(res.Deleted.length, 1000);
             // order of returned objects not sorted
             assert.deepStrictEqual(sortList(res.Deleted), sortList(objects));
             assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
+            return done();
         });
     });
 
-    it('should batch delete 1000 objects quietly', () => {
+    it('should batch delete 1000 objects quietly', done => {
         const objects = createObjectsList(1000);
-        return s3.deleteObjects({
+        s3.deleteObjects({
             Bucket: bucketName,
             Delete: {
                 Objects: objects,
                 Quiet: true,
             },
-        }).promise().then(res => {
+        }, function result(err, res) {
+            checkNoError(err);
+            if (this.httpResponse.body.toString()
+                    .indexOf('<?xml version="1.0"') === -1) {
+                return done('S3C-2642: should have included xml declaration');
+            }
             assert.strictEqual(res.Deleted.length, 0);
             assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
+            return done();
         });
     });
 });
