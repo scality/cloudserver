@@ -119,7 +119,7 @@ describe('Multiple backend get object', function testSuite() {
                 }, (err, res) => {
                     assert.equal(err, null, 'Expected success but got ' +
                       `error ${err}`);
-                    assert.strictEqual(res.ContentLength, '10');
+                    assert.strictEqual(res.ContentLength, 10);
                     assert.strictEqual(res.Body.toString(), 'helloworld');
                     assert.deepStrictEqual(res.Metadata,
                       { 'scal-location-constraint': awsLocation });
@@ -171,7 +171,7 @@ describe('Multiple backend get object', function testSuite() {
                 }, (err, res) => {
                     assert.equal(err, null, 'Expected success but got ' +
                       `error ${err}`);
-                    assert.strictEqual(res.ContentLength, '10');
+                    assert.strictEqual(res.ContentLength, 10);
                     assert.strictEqual(res.Body.toString(), 'helloworld');
                     assert.deepStrictEqual(res.Metadata,
                       { 'scal-location-constraint': awsLocationMismatch });
@@ -293,7 +293,7 @@ describe('Multiple backend get object', function testSuite() {
                     (err, res) => {
                         assert.equal(err, null, 'Expected success but got ' +
                             `error ${err}`);
-                        assert.strictEqual(res.ContentLength, '10');
+                        assert.strictEqual(res.ContentLength, 10);
                         assert.strictEqual(res.ContentRange,
                             `bytes 0-9/${bigBodyLen}`);
                         assert.strictEqual(res.ETag, `"${bigMD5}"`);

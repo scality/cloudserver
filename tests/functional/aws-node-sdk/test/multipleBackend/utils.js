@@ -2,6 +2,7 @@ const assert = require('assert');
 const crypto = require('crypto');
 const { errors, storage } = require('arsenal');
 const AWS = require('aws-sdk');
+AWS.config.logger = console;
 const uuid = require('uuid/v4');
 
 const async = require('async');
@@ -279,7 +280,7 @@ utils.getAndAssertResult = (s3, params, cb) => {
             if (expectedTagCount && expectedTagCount === '0') {
                 assert.strictEqual(data.TagCount, undefined);
             } else if (expectedTagCount) {
-                assert.strictEqual(data.TagCount, expectedTagCount);
+                assert.strictEqual(data.TagCount, parseInt(expectedTagCount, 10));
             }
             return cb();
         });
