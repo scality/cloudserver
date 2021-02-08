@@ -154,5 +154,42 @@ describeSkipIfNotMultiple('Multiple backend delete', () => {
                 });
             });
         });
+        it('should delete object while mpu in progress', () => {
+            let uploadId = null;
+            return s3.putObject({
+                Bucket: bucket,
+                Key: fileObject,
+                Body: body,
+                Metadata: {
+                    'scal-location-constraint': fileLocation,
+                },
+            }).promise().then(() => { // eslint-disable-line arrow-body-style
+                return s3.createMultipartUpload({
+                    Bucket: bucket,
+                    Key: fileObject,
+                }).promise();
+            }).then(res => {
+                uploadId = res.UploadId;
+                return s3.deleteObject({
+                    Bucket: bucket,
+                    Key: fileObject,
+                }).promise();
+            }).then(() => { // eslint-disable-line arrow-body-style
+                return s3.abortMultipartUpload({
+                    Bucket: bucket,
+                    Key: fileObject,
+                    UploadId: uploadId,
+                }).promise();
+            }).then(() => { // eslint-disable-line arrow-body-style
+                return s3.getObject({
+                    Bucket: bucket,
+                    Key: fileObject,
+                }).promise().catch(err => {
+                    if (err.code !== 'NoSuchKey') {
+                        throw err;
+                    }
+                });
+            });
+        });
     });
 });
