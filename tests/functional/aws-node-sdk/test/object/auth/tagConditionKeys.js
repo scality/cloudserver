@@ -5,7 +5,7 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const { makeTagQuery, updateRequestContexts } =
     require('../../../../../../lib/api/apiUtils/authorization/tagConditionKeys');
 const { DummyRequestLogger, TaggingConfigTester, createRequestContext } = require('../../../../../unit/helpers');
-
+const { initMetadata } = require('../../utils/init');
 const taggingUtil = new TaggingConfigTester();
 const log = new DummyRequestLogger();
 const bucket = 'bucket2testconditionkeys';
@@ -14,10 +14,15 @@ const objPutTaggingReq = taggingUtil
 .createObjectTaggingRequest('PUT', bucket, object);
 const requestContexts = [createRequestContext('objectPutTagging', objPutTaggingReq)];
 
-describe('Tag condition keys updateRequestContext', () => {
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+
+describeSkipIfCeph('Tag condition keys updateRequestContext', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
+
+        before(done => initMetadata(done));
 
         beforeEach(() => {
             bucketUtil = new BucketUtility('default', sigCfg);
