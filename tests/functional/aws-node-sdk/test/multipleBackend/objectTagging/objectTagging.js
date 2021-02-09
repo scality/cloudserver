@@ -70,7 +70,7 @@ function awsGet(key, tagCheck, isEmpty, isMpu, callback) {
             assert.strictEqual(res.ETag, `"${correctMD5}"`);
         }
         if (tagCheck) {
-            assert.strictEqual(res.TagCount, '2');
+            assert.strictEqual(res.TagCount, 2);
         } else {
             assert.strictEqual(res.TagCount, undefined);
         }
@@ -114,7 +114,7 @@ function getObject(key, backend, tagCheck, isEmpty, isMpu, callback) {
             assert.strictEqual(res.Metadata['scal-location-constraint'],
                 backend);
             if (tagCheck) {
-                assert.strictEqual(res.TagCount, '2');
+                assert.strictEqual(res.TagCount, 2);
             } else {
                 assert.strictEqual(res.TagCount, undefined);
             }

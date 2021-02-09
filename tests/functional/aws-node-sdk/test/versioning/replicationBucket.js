@@ -16,7 +16,7 @@ function checkNoError(err) {
     assert.ifError(err, `Expected success, got error ${JSON.stringify(err)}`);
 }
 
-function testVersioning(s3, versioningStatus, replicationStatus, cb) {
+function testVersioning(s3, versioningStatus, replicationStatus, removeReplication, cb) {
     const versioningParams = { Bucket: bucketName,
         VersioningConfiguration: { Status: versioningStatus } };
     const replicationParams = {
@@ -38,6 +38,12 @@ function testVersioning(s3, versioningStatus, replicationStatus, cb) {
     };
     async.waterfall([
         cb => s3.putBucketReplication(replicationParams, e => cb(e)),
+        cb => {
+            if (removeReplication) {
+                return s3.deleteBucketReplication({ Bucket: bucketName }, e => cb(e));
+            }
+            return process.nextTick(() => cb());
+        },
         cb => s3.putBucketVersioning(versioningParams, e => cb(e)),
     ], cb);
 }
@@ -63,15 +69,22 @@ describe('Versioning on a replication source bucket', () => {
 
         it('should not be able to disable versioning if replication enabled',
         done => {
-            testVersioning(s3, 'Suspended', 'Enabled', err => {
+            testVersioning(s3, 'Suspended', 'Enabled', false, err => {
                 checkError(err, 'InvalidBucketState');
                 done();
             });
         });
 
-        it('should be able to disable versioning if replication disabled',
+        it('should not be able to disable versioning if replication disabled',
         done => {
-            testVersioning(s3, 'Suspended', 'Disabled', err => {
+            testVersioning(s3, 'Suspended', 'Disabled', false, err => {
+                checkError(err, 'InvalidBucketState');
+                done();
+            });
+        });
+
+        it('should be able to disable versioning after removed replication', done => {
+            testVersioning(s3, 'Suspended', 'Disabled', true, err => {
                 checkNoError(err);
                 done();
             });
