@@ -1,4 +1,6 @@
 const bluebird = require('bluebird');
+const AWS = require('aws-sdk');
+AWS.config.logger = console;
 const { S3 } = require('aws-sdk');
 const projectFixture = require('../fixtures/project');
 const getConfig = require('../../test/support/config');

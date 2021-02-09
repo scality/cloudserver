@@ -11,7 +11,7 @@ const bucket = `completempugcp${genUniqID()}`;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
 const s3MD5 = 'bfb875032e51cbe2a60c5b6b99a2153f-2';
-const expectedContentLength = '10485771';
+const expectedContentLength = 10485771;
 const gcpTimeout = 5000;
 
 let s3;
