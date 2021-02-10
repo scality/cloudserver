@@ -160,6 +160,11 @@ const constants = {
     unsupportedBucketQueries: [
         'tagging',
     ],
+    suppressedUtapiEventFields: [
+        'object',
+        'location',
+        'versionId',
+    ],
 };
 
 module.exports = constants;
