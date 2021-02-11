@@ -9,6 +9,9 @@ const bucketName = 'testdeletempu';
 const objectName = 'key';
 const objectNameTwo = 'secondkey';
 
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+
 describe('DELETE object', () => {
     withV4(sigCfg => {
         let uploadId;
@@ -95,7 +98,7 @@ describe('DELETE object', () => {
             });
         });
 
-        describe('with object lock', () => {
+        describeSkipIfCeph('with object lock', () => {
             let versionIdOne;
             let versionIdTwo;
             const retainDate = moment().add(10, 'days').toISOString();
