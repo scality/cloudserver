@@ -914,7 +914,8 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     (uploadId, copyObjectKey, next) => {
                         const copyParams =
                             getPartParams(objectKey, uploadId, 3);
-                        objectPutCopyPart(authInfo, copyParams, bucketName,
+                        const req = new DummyRequest(copyParams, undefined);
+                        objectPutCopyPart(authInfo, req, bucketName,
                         copyObjectKey, undefined, log, err => {
                             next(err, uploadId);
                         });
