@@ -295,3 +295,51 @@ Should force path-style requests even though v3 advertises it does by default.
     $client->createBucket(array(
         'Bucket' => 'bucketphp',
     ));
+
+Go
+~~
+
+`AWS Go SDK <https://github.com/aws/aws-sdk-go>`__
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code:: go
+
+   package main
+
+   import (
+      "context"
+      "fmt"
+      "log"
+      "os"
+      "time"
+
+      "github.com/aws/aws-sdk-go/aws"
+      "github.com/aws/aws-sdk-go/aws/endpoints"
+      "github.com/aws/aws-sdk-go/aws/session"
+      "github.com/aws/aws-sdk-go/service/s3"
+   )
+
+   func main() {
+      os.Setenv("AWS_ACCESS_KEY_ID", "accessKey1")
+      os.Setenv("AWS_SECRET_ACCESS_KEY", "verySecretKey1")
+      endpoint := "http://localhost:8000"
+      timeout := time.Duration(10) * time.Second
+      sess := session.Must(session.NewSession())
+
+      // Create a context with a timeout that will abort the upload if it takes
+      // more than the passed in timeout.
+      ctx, cancel := context.WithTimeout(context.Background(), timeout)
+      defer cancel()
+
+      svc := s3.New(sess, &aws.Config{
+         Region:   aws.String(endpoints.UsEast1RegionID),
+         Endpoint: &endpoint,
+      })
+
+      out, err := svc.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
+      if err != nil {
+         log.Fatal(err)
+      } else {
+         fmt.Println(out)
+      }
+   }
