@@ -89,7 +89,7 @@ function handlePostRequest(req, res, expected) {
         if (rawData !== expected) {
             return respondWithError(req, res, 400, 'incorrect body value');
         }
-        res.write('post completed');
+        res.write('{"body": "post completed"}');
         return res.end();
     });
 }
@@ -300,7 +300,7 @@ function createTestServer(proto, hostname, port, handler, callback) {
                     (err, res, body) => {
                         assert.ifError(err);
                         assert.equal(res.statusCode, 200);
-                        assert.equal(body, 'post completed');
+                        assert.equal(body, '{"body": "post completed"}');
                         done();
                     });
             });
@@ -310,7 +310,7 @@ function createTestServer(proto, hostname, port, handler, callback) {
                     (err, res, body) => {
                         assert.ifError(err);
                         assert.equal(res.statusCode, 200);
-                        assert.equal(body, 'post completed');
+                        assert.equal(body, '{"body": "post completed"}');
                         done();
                     });
             });
@@ -320,7 +320,20 @@ function createTestServer(proto, hostname, port, handler, callback) {
                     (err, res, body) => {
                         assert.ifError(err);
                         assert.equal(res.statusCode, 200);
-                        assert.equal(body, 'post completed');
+                        assert.equal(body, '{"body": "post completed"}');
+                        done();
+                    });
+            });
+
+            it('should post with json data (json response)', done => {
+                request.post(`${host}/postjson`,
+                    { body: { key: 'value' }, json: true },
+                    (err, res, body) => {
+                        assert.ifError(err);
+                        assert.equal(res.statusCode, 200);
+                        assert.deepStrictEqual(body, {
+                            body: 'post completed',
+                        });
                         done();
                     });
             });
