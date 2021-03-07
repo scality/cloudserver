@@ -158,6 +158,7 @@ stages:
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             yarn test
             yarn run test_legacy_location
+            yarn run test_utapi_v2
           env: &shared-vars
             <<: *global-env
             S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
