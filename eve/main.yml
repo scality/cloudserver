@@ -431,7 +431,7 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  file-ft-tests:
+  utapi-v2-tests:
     worker:
       type: kube_pod
       path: eve/workers/pod.yaml
