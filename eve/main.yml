@@ -439,23 +439,21 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "2Gi"
-        s3Mem: "2Gi"
+        aggressorMem: "3Gi"
+        s3Mem: "2560Mi"
+        redis: enabled
         env:
           ENABLE_UTAPI_V2: t
           S3BACKEND: mem
     steps:
       - Git: *clone
-      - ShellCommand: *setup-github-ssh
       - ShellCommand: *credentials
       - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
-            bash -c "
-            source /root/.aws/exports &> /dev/null
             set -ex
             bash wait_for_local_port.bash 8000 40
-            yarn run test_utapi_v2"
+            yarn run test_utapi_v2
           <<: *follow-s3-log
           env:
             ENABLE_UTAPI_V2: t
