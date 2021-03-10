@@ -34,6 +34,7 @@
     "http-proxy": "^1.17.0",
     "http-proxy-agent": "^4.0.1",
     "https-proxy-agent": "^2.2.0",
+    "level-mem": "^5.0.1",
     "moment": "^2.26.0",
     "mongodb": "^2.2.31",
     "node-fetch": "^2.6.0",
@@ -58,6 +59,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-scality": "scality/Guidelines#28e73a2",
     "eslint-plugin-import": "^2.14.0",
+    "express": "^4.17.1",
     "ioredis": "4.9.5",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
@@ -66,6 +68,7 @@
     "mocha-junit-reporter": "^1.23.1",
     "mocha-multi-reporters": "^1.1.7",
     "node-mocks-http": "1.5.2",
+    "sinon": "^9.2.4",
     "tv4": "^1.2.7"
   },
   "scripts": {
@@ -106,6 +109,7 @@
     "management_agent": "node managementAgent.js",
     "test": "CI=true S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit",
     "test_legacy_location": "CI=true S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit",
+    "test_utapi_v2": "mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/utapi",
     "multiple_backend_test": "CI=true S3BACKEND=mem S3DATA=multiple mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 20000 --recursive tests/multipleBackend",
     "unit_coverage": "CI=true mkdir -p coverage/unit/ && S3BACKEND=mem istanbul cover --dir coverage/unit _mocha -- --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit",
     "unit_coverage_legacy_location": "CI=true mkdir -p coverage/unitlegacylocation/ && S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem istanbul cover --dir coverage/unitlegacylocation _mocha -- --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --reporter mocha-junit-reporter --recursive tests/unit"
