@@ -172,6 +172,7 @@ stages:
             - mongo-ft-tests
             - ceph-backend-tests
             - kmip-ft-tests
+            - utapi-v2-tests
           waitForFinish: true
           haltOnFailure: true
 
@@ -426,6 +427,40 @@ stages:
           env:
             <<: *file-mem-mpu
             <<: *global-env
+      - ShellCommand: *setup-junit-upload
+      - Upload: *upload-artifacts
+      - Upload: *upload-junits
+
+  utapi-v2-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMem: "2Gi"
+        s3Mem: "2Gi"
+        env:
+          ENABLE_UTAPI_V2: t
+          S3BACKEND: mem
+    steps:
+      - Git: *clone
+      - ShellCommand: *setup-github-ssh
+      - ShellCommand: *credentials
+      - ShellCommand: *yarn-install
+      - ShellCommand:
+          command: |
+            bash -c "
+            source /root/.aws/exports &> /dev/null
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            yarn run test_utapi_v2"
+          <<: *follow-s3-log
+          env:
+            ENABLE_UTAPI_V2: t
+            S3BACKEND: mem
+      - ShellCommand: *check-s3-action-logs
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
       - Upload: *upload-junits
