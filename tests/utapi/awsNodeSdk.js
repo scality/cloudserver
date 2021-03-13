@@ -382,7 +382,7 @@ describe('utapi v2 metrics incoming and outgoing bytes', function t() {
             next => enableVersioning(bucket, true, next),
             next => objectMPU(bucket, key, parts, partSize, next),
             next => wait(WAIT_MS, () => {
-                checkMetrics(partSize * parts * 2, 0, 2);
+                checkMetrics(partSize * parts, 0, 1);
                 next();
             }),
             next => removeVersions([bucket], next),
