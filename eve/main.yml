@@ -172,7 +172,6 @@ stages:
             - mongo-ft-tests
             - ceph-backend-tests
             - kmip-ft-tests
-            - utapi-v2-tests
           waitForFinish: true
           haltOnFailure: true
 
@@ -431,49 +430,9 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  utapi-v2-tests:
+  post-merge:
     worker:
-      type: kube_pod
-      path: eve/workers/pod.yaml
-      images:
-        aggressor: eve/workers/build
-        s3: "."
-      vars:
-        aggressorMem: "2Gi"
-        s3Mem: "2Gi"
-        env:
-          ENABLE_UTAPI_V2: t
-          S3BACKEND: mem
-    steps:
-      - Git: *clone
-      - ShellCommand: *credentials
-      - ShellCommand: *yarn-install
-      - ShellCommand:
-          command: |
-            bash -c "
-            source /root/.aws/exports &> /dev/null
-            set -ex
-            bash wait_for_local_port.bash 8000 40
-            yarn run test_utapi_v2"
-          <<: *follow-s3-log
-          env:
-            ENABLE_UTAPI_V2: t
-            S3BACKEND: mem
-      - ShellCommand: *check-s3-action-logs
-      - ShellCommand: *setup-junit-upload
-      - Upload: *upload-artifacts
-      - Upload: *upload-junits
-
-  # The docker-build stage ensures that your images are built on every commit
-  # and also hosted on the registry to help you pull it up and
-  # test it in a real environment if needed.
-  # It also allows us to pull and rename it when performing a release.
-  docker-build:
-    worker: &docker_worker
-      type: kube_pod
-      path: eve/workers/docker/pod.yaml
-      images:
-        worker: eve/workers/docker
+      type: local
     steps:
       - Git: *clone
       - ShellCommand: *wait_docker_daemon
