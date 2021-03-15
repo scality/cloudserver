@@ -430,9 +430,7 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  post-merge:
     worker:
-      type: local
     steps:
       - Git: *clone
       - ShellCommand: *wait_docker_daemon
