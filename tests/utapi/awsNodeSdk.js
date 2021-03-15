@@ -372,4 +372,68 @@ describe('utapi v2 metrics incoming and outgoing bytes', function t() {
             next => deleteBucket(bucket, next),
         ], done);
     });
+    it('should set metrics for multipartUpload in a versioned bucket', done => {
+        const bucket = 'bucket8';
+        const partSize = 1024 * 1024 * 6;
+        const parts = 2;
+        const key = '8.txt';
+        async.series([
+            next => createBucket(bucket, next),
+            next => enableVersioning(bucket, true, next),
+            next => objectMPU(bucket, key, parts, partSize, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(partSize * parts, 0, 1);
+                next();
+            }),
+            next => removeVersions([bucket], next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(0, 0, 0);
+                next();
+            }),
+            next => deleteBucket(bucket, next),
+        ], done);
+    });
+    it('should set metrics for multipartUpload overwrite in a versioned bucket', done => {
+        const bucket = 'bucket9';
+        const partSize = 1024 * 1024 * 6;
+        const parts = 2;
+        const key = '9.txt';
+        async.series([
+            next => createBucket(bucket, next),
+            next => enableVersioning(bucket, true, next),
+            next => objectMPU(bucket, key, parts, partSize, next),
+            next => objectMPU(bucket, key, parts, partSize, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(partSize * parts * 2, 0, 2);
+                next();
+            }),
+            next => removeVersions([bucket], next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(0, 0, 0);
+                next();
+            }),
+            next => deleteBucket(bucket, next),
+        ], done);
+    });
+    it('should set metrics for multiPartUpload overwrite', done => {
+        const bucket = 'bucket10';
+        const partSize = 1024 * 1024 * 6;
+        const parts = 2;
+        const key = '10.txt';
+        async.series([
+            next => createBucket(bucket, next),
+            next => objectMPU(bucket, key, parts, partSize, next),
+            next => objectMPU(bucket, key, parts, partSize, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(partSize * parts, 0, 1);
+                next();
+            }),
+            next => deleteObject(bucket, key, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(0, 0, 0);
+                next();
+            }),
+            next => deleteBucket(bucket, next),
+        ], done);
+    });
 });
