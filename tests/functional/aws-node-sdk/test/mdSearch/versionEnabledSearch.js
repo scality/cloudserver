@@ -6,7 +6,9 @@ const userMetadata = { food: 'pizza' };
 const updatedMetadata = { food: 'salad' };
 const masterKey = 'master';
 
-runIfMongo('Search in version enabled bucket', () => {
+console.log('process.env.CI_CEPH', process.env.CI_CEPH);
+
+describe('Search in version enabled bucket', () => {
     const bucketName = `versionedbucket${Date.now()}`;
     const VersioningConfiguration = {
         MFADelete: 'Disabled',
