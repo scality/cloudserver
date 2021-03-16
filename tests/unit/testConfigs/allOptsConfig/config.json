@@ -91,5 +91,19 @@
         "caBundle": "tests/unit/testConfigs/allOptsConfig/caBundle.txt",
         "key": "tests/unit/testConfigs/allOptsConfig/key.txt",
         "cert": "tests/unit/testConfigs/allOptsConfig/cert.txt"
+    },
+    "localCache": {
+        "name": "zenko",
+        "sentinels": "localhost:6379"
+    },
+    "redis": {
+        "name": "zenko",
+        "sentinels": "localhost:6379"
+    },
+    "utapi": {
+        "redis": {
+            "host": "localhost",
+            "port": 6379
+        }
     }
 }
