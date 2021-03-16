@@ -36,7 +36,7 @@ imagesize==1.1.0 \
     --hash=sha256:3f349de3eb99145973fefb7dbe38554414e5c30abd0c8e4b970a7c9d09f3a1d8 \
     --hash=sha256:f3832918bc3c66617f92e35f5d70729187676313caa60c187eb0f28b8fe5e3b5 \
     # via sphinx
-jinja2==2.10 \
+jinja2==2.11.3 \
     --hash=sha256:74c935a1b8bb9a3947c50a54766a969d4846290e1e788ea44c1392163723c3bd \
     --hash=sha256:f84be1bb0040caca4cea721fcbbbbd61f9be9464ca236387158b0feea01914a4 \
     # via sphinx
@@ -101,7 +101,7 @@ snowballstemmer==1.2.1 \
     --hash=sha256:919f26a68b2c17a7634da993d91339e288964f93c274f1343e3bbbe2096e1128 \
     --hash=sha256:9f3bcd3c401c3e862ec0ebe6d2c069ebc012ce142cce209c098ccb5b09136e89 \
     # via sphinx
-sphinx==1.8.2 \
+sphinx==3.0.4 \
     --hash=sha256:120732cbddb1b2364471c3d9f8bfd4b0c5b550862f99a65736c77f970b142aea \
     --hash=sha256:b348790776490894e0424101af9c8413f2a86831524bd55c5f379d3e3e12ca64
 sphinxcontrib-websupport==1.1.0 \
@@ -113,7 +113,7 @@ typing==3.6.6 \
     --hash=sha256:57dcf675a99b74d64dacf6fba08fb17cf7e3d5fdff53d4a30ea2a5e7e52543d4 \
     --hash=sha256:a4c8473ce11a65999c8f59cb093e70686b6c84c98df58c1dae9b3b196089858a \
     # via sphinx
-urllib3==1.24.1 \
+urllib3==1.25.9 \
     --hash=sha256:61bf29cada3fc2fbefad4fdf059ea4bd1b4a86d2b6d15e1c7c0b582b9752fe39 \
     --hash=sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22 \
     # via requests
