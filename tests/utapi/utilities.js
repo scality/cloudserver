@@ -100,7 +100,7 @@ const testEvents = [{
     },
     expected: {
         objectDelta: undefined,
-        sizeDelta: undefined,
+        sizeDelta: -26,
         incomingBytes: undefined,
         outgoingBytes: 0,
     },
