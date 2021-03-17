@@ -322,10 +322,11 @@ const testEvents = [{
         keys: [undefined],
         byteLength: 3,
         numberOfObjects: 1,
+        removedDeleteMarkers: 1,
         isDelete: true,
     },
     expected: {
-        objectDelta: -1,
+        objectDelta: -2,
         sizeDelta: -3,
         incomingBytes: undefined,
         outgoingBytes: 0,
