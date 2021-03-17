@@ -364,6 +364,11 @@ describe('utapi v2 metrics incoming and outgoing bytes', function t() {
                 checkMetrics(objectSize * 2, 0, 2);
                 next();
             }),
+            next => deleteObject(bucket, key, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(objectSize * 2, 0, 3);
+                next();
+            }),
             next => removeVersions([bucket], next),
             next => wait(WAIT_MS, () => {
                 checkMetrics(0, 0, 0);
@@ -429,6 +434,36 @@ describe('utapi v2 metrics incoming and outgoing bytes', function t() {
                 next();
             }),
             next => deleteObject(bucket, key, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(0, 0, 0);
+                next();
+            }),
+            next => deleteBucket(bucket, next),
+        ], done);
+    });
+    it('should set metrics for multiObjectDelete in a versioned bucket', done => {
+        const bucket = 'bucket11';
+        const objectSize = 1024 * 1024;
+        const obj1Size = objectSize * 2;
+        const obj2Size = objectSize * 1;
+        const key1 = '1.txt';
+        const key2 = '2.txt';
+        async.series([
+            next => createBucket(bucket, next),
+            next => enableVersioning(bucket, true, next),
+            next => putObject(bucket, key1, obj1Size, next),
+            next => wait(WAIT_MS, next),
+            next => putObject(bucket, key2, obj2Size, next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(obj1Size + obj2Size, 0, 2);
+                next();
+            }),
+            next => deleteObjects(bucket, [key1, key2], next),
+            next => wait(WAIT_MS, () => {
+                checkMetrics(obj1Size + obj2Size, 0, 4);
+                next();
+            }),
+            next => removeVersions([bucket], next),
             next => wait(WAIT_MS, () => {
                 checkMetrics(0, 0, 0);
                 next();
