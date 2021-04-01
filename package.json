@@ -21,10 +21,9 @@
   "dependencies": {
     "@hapi/joi": "^17.1.0",
     "agentkeepalive": "^4.1.3",
-    "arsenal": "github:scality/Arsenal#c703ba6",
+    "arsenal": "github:scality/Arsenal#349b07ed7ee7c039aae29baf948bedf29d44cade",
     "async": "~2.5.0",
     "aws-sdk": "2.831.0",
-    "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#949f11a",
     "bufferutil": "^3.0.5",
     "commander": "^2.9.0",
@@ -54,6 +53,7 @@
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
+    "azure-storage": "~2.1.0",
     "bluebird": "^3.3.1",
     "eslint": "^5.3.0",
     "eslint-config-airbnb-base": "^13.1.0",
