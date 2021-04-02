@@ -522,10 +522,10 @@ describe('put and get object with versioning', function testSuite() {
                 const keycount = 50;
                 const versioncount = 20;
                 const value = '{"foo":"bar"}';
-                async.times(keycount, (i, next1) => {
+                async.timesLimit(keycount, 10, (i, next1) => {
                     const key = `foo${i}`;
                     const params = { Bucket: bucket, Key: key, Body: value };
-                    async.times(versioncount, (j, next2) =>
+                    async.timesLimit(versioncount, 10, (j, next2) =>
                         s3.putObject(params, (err, data) => {
                             assert.strictEqual(err, null);
                             assert(data.VersionId, 'invalid versionId');
