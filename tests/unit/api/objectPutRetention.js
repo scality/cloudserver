@@ -1,5 +1,7 @@
 const assert = require('assert');
+const moment = require('moment');
 
+const { errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutRetention = require('../../../lib/api/objectPutRetention');
@@ -31,17 +33,43 @@ const putObjectRequest = new DummyRequest({
     url: `/${bucketName}/${objectName}`,
 }, postBody);
 
-const objectRetentionXml = '<Retention ' +
+const objectRetentionXmlGovernance = '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${date.toISOString()}</RetainUntilDate>` +
     '</Retention>';
 
-const putObjRetRequest = {
+const objectRetentionXmlCompliance = '<Retention ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<Mode>COMPLIANCE</Mode>' +
+    `<RetainUntilDate>${moment().add(2, 'days').toISOString()}</RetainUntilDate>` +
+    '</Retention>';
+
+const objectRetentionXmlComplianceShorter = '<Retention ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<Mode>COMPLIANCE</Mode>' +
+    `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
+    '</Retention>';
+
+const putObjRetRequestGovernance = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
-    post: objectRetentionXml,
+    post: objectRetentionXmlGovernance,
+};
+
+const putObjRetRequestCompliance = {
+    bucketName,
+    objectKey: objectName,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post: objectRetentionXmlCompliance,
+};
+
+const putObjRetRequestComplianceShorter = {
+    bucketName,
+    objectKey: objectName,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post: objectRetentionXmlComplianceShorter,
 };
 
 const expectedMode = 'GOVERNANCE';
@@ -60,7 +88,7 @@ describe('putObjectRetention API', () => {
         afterEach(() => cleanup());
 
         it('should return InvalidRequest error', done => {
-            objectPutRetention(authInfo, putObjRetRequest, log, err => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.strictEqual(err.InvalidRequest, true);
                 done();
             });
@@ -80,7 +108,7 @@ describe('putObjectRetention API', () => {
         afterEach(() => cleanup());
 
         it('should update an object\'s metadata with retention info', done => {
-            objectPutRetention(authInfo, putObjRetRequest, log, err => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
                 (err, objMD) => {
@@ -88,6 +116,26 @@ describe('putObjectRetention API', () => {
                     assert.strictEqual(objMD.retentionMode, expectedMode);
                     assert.strictEqual(objMD.retentionDate, expectedDate);
                     return done();
+                });
+            });
+        });
+
+        it('should disallow COMPLIANCE => GOVERNANCE', done => {
+            objectPutRetention(authInfo, putObjRetRequestCompliance, log, err => {
+                assert.ifError(err);
+                return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
+                });
+            });
+        });
+
+        it('should disallow shortening of COMPLIANCE retention', done => {
+            objectPutRetention(authInfo, putObjRetRequestCompliance, log, err => {
+                assert.ifError(err);
+                return objectPutRetention(authInfo, putObjRetRequestComplianceShorter, log, err => {
+                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
                 });
             });
         });
