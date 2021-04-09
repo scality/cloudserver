@@ -1,7 +1,10 @@
 FROM python:3-alpine
 
+ADD https://sh.rustup.rs /tmp/rustup.sh
 
-RUN apk add --no-cache \
+RUN sh /tmp/rustup.sh -y && \
+    source $HOME/.cargo/env && \
+    apk add --no-cache \
         libressl && \
     apk add --no-cache --virtual .build-deps \
         python3-dev \
