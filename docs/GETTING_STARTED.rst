@@ -91,6 +91,17 @@ This starts a Zenko CloudServer on port 8000.
 
 The default access key is accessKey1. The secret key is verySecretKey1.
 
+Run CloudServer with Vault User Management
+------------------------------------------
+
+.. code:: shell
+
+   export S3VAULT=vault
+   yarn start
+
+Note: Vault is proprietary and must be accessed separately.
+This starts a Zenko CloudServer using Vault for user management.
+
 Run CloudServer for Continuous Integration Testing or in Production with Docker
 -------------------------------------------------------------------------------
 
