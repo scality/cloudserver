@@ -1,5 +1,8 @@
 FROM python:3-alpine
 
+ADD https://sh.rustup.rs /tmp/rustup.sh
+
+RUN sh /tmp/rustup.sh
 
 RUN apk add --no-cache \
         libressl && \
