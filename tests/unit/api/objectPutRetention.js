@@ -58,6 +58,16 @@ const putObjRetRequestGovernance = {
     post: objectRetentionXmlGovernance,
 };
 
+const putObjRetRequestGovernanceWithHeader = {
+    bucketName,
+    objectKey: objectName,
+    headers: {
+        'host': `${bucketName}.s3.amazonaws.com`,
+        'x-amz-bypass-governance-retention': 'true',
+    },
+    post: objectRetentionXmlGovernance,
+};
+
 const putObjRetRequestCompliance = {
     bucketName,
     objectKey: objectName,
@@ -135,6 +145,29 @@ describe('putObjectRetention API', () => {
                 assert.ifError(err);
                 return objectPutRetention(authInfo, putObjRetRequestComplianceShorter, log, err => {
                     assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
+                });
+            });
+        });
+
+        it('should disallow update if the x-amz-bypass-governance-retention header is missing and'
+            + 'GOVERNANCE mode is enabled', done => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                assert.ifError(err);
+                return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
+                });
+            });
+        });
+
+
+        it('should allow update if the x-amz-bypass-governance-retention header is present and'
+            + 'GOVERNANCE mode is enabled', done => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                assert.ifError(err);
+                return objectPutRetention(authInfo, putObjRetRequestGovernanceWithHeader, log, err => {
+                    assert.ifError(err);
                     done();
                 });
             });
