@@ -53,11 +53,11 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         const keycount = 20;
         const versioncount = 20;
         const value = '{"foo":"bar"}';
-        async.times(keycount, (i, next1) => {
+        async.timesLimit(keycount, 10, (i, next1) => {
             const key = `foo${i}`;
             masterVersions.push(key);
             const params = { Bucket: bucket, Key: key, Body: value };
-            async.times(versioncount, (j, next2) =>
+            async.timesLimit(versioncount, 10, (j, next2) =>
                 s3.putObject(params, (err, data) => {
                     assert.strictEqual(err, null);
                     assert(data.VersionId, 'invalid versionId');

@@ -1,6 +1,5 @@
 FROM python:3-alpine
 
-
 RUN apk add --no-cache \
         libressl && \
     apk add --no-cache --virtual .build-deps \
@@ -8,7 +7,9 @@ RUN apk add --no-cache \
         libffi-dev \
         libressl-dev \
         sqlite-dev \
-        build-base && \
+        build-base \
+        rust \
+        cargo && \
     pip install pykmip requests && \
     apk del .build-deps && \
     mkdir /pykmip
