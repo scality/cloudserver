@@ -176,96 +176,111 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
         assert.strictEqual(retainUntilDate.slice(0, 16),
             expectedRetainUntilDate.toISOString().slice(0, 16));
     });
+});
 
-    describe('objectLockHelpers: validateObjectLockUpdate', () => {
-        it('should allow GOVERNANCE => COMPLIANCE', () => {
-            const objMD = {
-                retentionMode: 'GOVERNANCE',
-                retentionDate: moment().add(1, 'days').toISOString(),
-            };
+describe('objectLockHelpers: validateObjectLockUpdate', () => {
+    it('should allow GOVERNANCE => COMPLIANCE if bypassGovernanceRetention is true', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'COMPLIANCE',
-                date: moment().add(1, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.strictEqual(error, null);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo, true);
+        assert.strictEqual(error, null);
+    });
 
-        it('should disallow COMPLIANCE => GOVERNANCE if retention is not expired', () => {
-            const objMD = {
-                retentionMode: 'COMPLIANCE',
-                retentionDate: moment().add(1, 'days').toISOString(),
-            };
+    it('should disallow GOVERNANCE => COMPLIANCE if bypassGovernanceRetention is false', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'GOVERNANCE',
-                date: moment().add(1, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.deepStrictEqual(error, errors.AccessDenied);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo, false);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
 
-        it('should allow COMPLIANCE => GOVERNANCE if retention is expired', () => {
-            const objMD = {
-                retentionMode: 'COMPLIANCE',
-                retentionDate: moment().subtract(1, 'days').toISOString(),
-            };
+    it('should disallow COMPLIANCE => GOVERNANCE if retention is not expired', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'GOVERNANCE',
-                date: moment().add(1, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.strictEqual(error, null);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
 
-        it('should allow extending retention period if in COMPLIANCE', () => {
-            const objMD = {
-                retentionMode: 'COMPLIANCE',
-                retentionDate: moment().add(1, 'days').toISOString(),
-            };
+    it('should allow COMPLIANCE => GOVERNANCE if retention is expired', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().subtract(1, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'COMPLIANCE',
-                date: moment().add(2, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.strictEqual(error, null);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.strictEqual(error, null);
+    });
 
-        it('should disallow shortening retention period if in COMPLIANCE', () => {
-            const objMD = {
-                retentionMode: 'COMPLIANCE',
-                retentionDate: moment().add(2, 'days').toISOString(),
-            };
+    it('should allow extending retention period if in COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'COMPLIANCE',
-                date: moment().add(1, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.deepStrictEqual(error, errors.AccessDenied);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.strictEqual(error, null);
+    });
 
-        it('should allow shortening retention period if in GOVERNANCE', () => {
-            const objMD = {
-                retentionMode: 'GOVERNANCE',
-                retentionDate: moment().add(2, 'days').toISOString(),
-            };
+    it('should disallow shortening retention period if in COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(2, 'days').toISOString(),
+        };
 
-            const retentionInfo = {
-                mode: 'GOVERNANCE',
-                date: moment().add(1, 'days').toISOString(),
-            };
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
 
-            const error = validateObjectLockUpdate(objMD, retentionInfo);
-            assert.strictEqual(error, null);
-        });
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
+
+    it('should allow shortening retention period if in GOVERNANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(2, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, true);
+        assert.strictEqual(error, null);
     });
 });
