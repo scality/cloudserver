@@ -656,9 +656,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#6eacd79":
+"arsenal@github:scality/Arsenal#faab234":
   version "7.7.0"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/6eacd79f079cbdff752fac0db88256b380716dd7"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/faab2347f98dbe195a7bff34b561fb070ae3162b"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -672,6 +672,7 @@ arraybuffer.slice@~0.0.7:
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
+    prom-client "10.2.3"
     simple-glob "^0.2"
     socket.io "~2.3.0"
     socket.io-client "~2.3.0"
@@ -713,7 +714,6 @@ arsenal@scality/Arsenal#65966f5:
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
-    agentkeepalive "^4.1.3"
     ajv "6.12.2"
     async "~2.1.5"
     debug "~2.6.9"
