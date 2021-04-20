@@ -87,7 +87,6 @@ const constants = {
     unsupportedQueries: [
         'accelerate',
         'analytics',
-        'encryption',
         'inventory',
         'logging',
         'metrics',
