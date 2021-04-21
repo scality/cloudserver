@@ -3,9 +3,8 @@ const { S3 } = require('aws-sdk');
 
 const checkError = require('../../lib/utility/checkError');
 const getConfig = require('../support/config');
-const BucketUtility = require('../../lib/utility/bucket-util');
 const metadata = require('../../../../../lib/metadata/wrapper');
-const { DummyRequestLogger, makeAuthInfo } = require('../../../../unit/helpers');
+const { DummyRequestLogger } = require('../../../../unit/helpers');
 
 const bucketName = 'encrypted-bucket';
 const log = new DummyRequestLogger();
@@ -39,26 +38,26 @@ describe('aws-sdk test get bucket encryption', () => {
     });
 
     it('should return ServerSideEncryptionConfigurationNotFoundError if no sse configured', done => {
-        s3.getBucketEncryption({Bucket: bucketName}, err => {
+        s3.getBucketEncryption({ Bucket: bucketName }, err => {
             checkError(err, 'ServerSideEncryptionConfigurationNotFoundError', 404);
             done();
-        })
+        });
     });
 
     it('should return ServerSideEncryptionConfigurationNotFoundError `mandatory` flag not set', done => {
         setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: false }, err => {
             assert.ifError(err);
-            s3.getBucketEncryption({Bucket: bucketName}, err => {
+            s3.getBucketEncryption({ Bucket: bucketName }, err => {
                 checkError(err, 'ServerSideEncryptionConfigurationNotFoundError', 404);
                 done();
-            })
+            });
         });
     });
 
     it('should include KMSMasterKeyID if algo is aws:kms', done => {
         setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345', mandatory: true }, err => {
             assert.ifError(err);
-            s3.getBucketEncryption({Bucket: bucketName}, (err, res) => {
+            s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res, {
                     ServerSideEncryptionConfiguration: {
@@ -66,22 +65,22 @@ describe('aws-sdk test get bucket encryption', () => {
                             {
                                 ApplyServerSideEncryptionByDefault: {
                                     SSEAlgorithm: 'aws:kms',
-                                    KMSMasterKeyID: '12345'
+                                    KMSMasterKeyID: '12345',
                                 },
-                                BucketKeyEnabled: false
-                            }
-                        ]
-                    }
+                                BucketKeyEnabled: false,
+                            },
+                        ],
+                    },
                 });
                 done();
-            })
+            });
         });
     });
 
     it('should not include KMSMasterKeyID if algo is AES256', done => {
         setEncryptionInfo({ cryptoScheme: 1, algorithm: 'AES256', masterKeyId: '12345', mandatory: true }, err => {
             assert.ifError(err);
-            s3.getBucketEncryption({Bucket: bucketName}, (err, res) => {
+            s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(res, {
                     ServerSideEncryptionConfiguration: {
@@ -90,13 +89,13 @@ describe('aws-sdk test get bucket encryption', () => {
                                 ApplyServerSideEncryptionByDefault: {
                                     SSEAlgorithm: 'AES256',
                                 },
-                                BucketKeyEnabled: false
-                            }
-                        ]
-                    }
+                                BucketKeyEnabled: false,
+                            },
+                        ],
+                    },
                 });
                 done();
-            })
+            });
         });
     });
 });
