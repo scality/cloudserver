@@ -283,6 +283,7 @@ stages:
         env:
           <<: *multiple-backend-vars
           <<: *global-env
+          S3METADATA: mongodb
           CI_CEPH: "true"
           MPU_TESTING: "yes"
           S3_LOCATION_FILE: tests/locationConfig/locationConfigCeph.json
@@ -296,11 +297,13 @@ stages:
             source /root/.aws/exports &> /dev/null
             set -ex
             bash eve/workers/ceph/wait_for_ceph.sh
+            bash wait_for_local_port.bash 27018 40
             bash wait_for_local_port.bash 8000 40
             yarn run multiple_backend_test"
           env:
             <<: *multiple-backend-vars
             <<: *global-env
+            S3METADATA: mem
           <<: *follow-s3-ceph-logs
       - ShellCommand:
           command: mvn test
@@ -321,6 +324,7 @@ stages:
           env:
             <<: *file-mem-mpu
             <<: *global-env
+            S3METADATA: mongodb
             S3_LOCATION_FILE: "/kube_pod-prod-cloudserver-backend-0/\
               build/tests/locationConfig/locationConfigCeph.json"
           <<: *follow-s3-ceph-logs

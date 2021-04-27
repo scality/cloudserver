@@ -76,10 +76,10 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: "2"
+          cpu: "1750m"
           memory: {{ vars.s3Mem }}
         limits:
-          cpu: "2"
+          cpu: "1750m"
           memory: {{ vars.s3Mem }}
       volumeMounts:
         - name: creds
