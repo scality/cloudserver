@@ -30,16 +30,18 @@ RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
 #
 
 # Install RVM and gems
-ENV RUBY_VERSION="2.4.1"
+ENV RUBY_VERSION="2.5.0"
+
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+   && curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION \
+   && usermod -a -G rvm eve
+
 COPY ./gems.list /tmp/
-RUN cat /tmp/gems.list | xargs gem install
-#RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 \
-#    && curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION \
-#    && usermod -a -G rvm eve
-#RUN /bin/bash -l -c "\
-#    source /usr/local/rvm/scripts/rvm \
-#    && cat /tmp/gems.list | xargs gem install \
-#    && rm /tmp/gems.list"
+
+RUN /bin/bash -l -c "\
+   source /usr/local/rvm/scripts/rvm \
+   && cat /tmp/gems.list | xargs gem install \
+   && rm /tmp/gems.list"
 
 # Install Pip packages
 COPY ./pip_packages.list /tmp/
