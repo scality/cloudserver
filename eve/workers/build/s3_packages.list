@@ -6,6 +6,6 @@ lsof
 maven
 netcat
 redis-server
-ruby-full
 yarn
 zlib1g-dev
+jq
