@@ -105,5 +105,6 @@
             "host": "localhost",
             "port": 6379
         }
-    }
+    },
+    "overlayVersion": 4
 }

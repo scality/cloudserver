@@ -61,4 +61,9 @@ describe('Config', () => {
             );
         });
     });
+
+    it('should have a default overlay version', () => {
+        const { config } = require('../../lib/Config');
+        assert.strictEqual(config.overlayVersion, 0);
+    });
 });

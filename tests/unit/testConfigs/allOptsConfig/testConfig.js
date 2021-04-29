@@ -37,4 +37,8 @@ describe('Config with all possible options', () => {
         };
         assert.deepStrictEqual(expectedObj, config.outboundProxy);
     });
+
+    it('should read overlay version', () => {
+        assert.strictEqual(config.overlayVersion, 4);
+    });
 });
