@@ -181,7 +181,7 @@ describe('bucketPutEncryption API', () => {
                     const { masterKeyId } = sseInfo;
                     return bucketPutEncryption(authInfo, templateRequest({ post }), log, err => {
                         assert.ifError(err);
-                            assert.deepStrictEqual(sseInfo, {
+                        assert.deepStrictEqual(sseInfo, {
                             mandatory: true,
                             algorithm: 'AES256',
                             cryptoScheme: 1,
