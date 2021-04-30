@@ -48,12 +48,14 @@ function templateRequest({ post }) {
 
 function getSSEConfig(cb) {
     return metadata.getBucket(bucketName, log, (err, md) => {
-        if (err) return cb(err);
+        if (err) {
+            return cb(err);
+        }
         return cb(null, md.getServerSideEncryption());
     });
 }
 
-describe.only('bucketPutEncryption API', () => {
+describe('bucketPutEncryption API', () => {
     before(() => cleanup());
 
     beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
@@ -115,15 +117,13 @@ describe.only('bucketPutEncryption API', () => {
         });
     });
 
-    describe('test setting config without a prvious one', () => {
+    describe('test setting config without a previous one', () => {
         it('should apply a config with SSEAlgorithm == AES256', done => {
             const post = templateSSEConfig({ algorithm: 'AES256' });
             bucketPutEncryption(authInfo, templateRequest({ post }), log, err => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
-                    assert.notStrictEqual(sseInfo.masterKeyId, undefined);
                     assert.deepStrictEqual(sseInfo, {
                         mandatory: true,
                         algorithm: 'AES256',
@@ -141,8 +141,6 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
-                    assert.notStrictEqual(sseInfo.masterKeyId, undefined);
                     assert.deepStrictEqual(sseInfo, {
                         mandatory: true,
                         algorithm: 'aws:kms',
@@ -160,8 +158,6 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
-                    assert.notStrictEqual(sseInfo.masterKeyId, undefined);
                     assert.deepStrictEqual(sseInfo, {
                         mandatory: true,
                         algorithm: 'aws:kms',
@@ -182,12 +178,10 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
                     const { masterKeyId } = sseInfo;
                     return bucketPutEncryption(authInfo, templateRequest({ post }), log, err => {
                         assert.ifError(err);
-                        assert.notStrictEqual(sseInfo, null);
-                        assert.deepStrictEqual(sseInfo, {
+                            assert.deepStrictEqual(sseInfo, {
                             mandatory: true,
                             algorithm: 'AES256',
                             cryptoScheme: 1,
@@ -208,13 +202,11 @@ describe.only('bucketPutEncryption API', () => {
                     assert.ifError(err);
                     return getSSEConfig((err, sseInfo) => {
                         assert.ifError(err);
-                        assert.notStrictEqual(sseInfo, null);
                         const { masterKeyId } = sseInfo;
                         const newConf = templateSSEConfig({ algorithm: 'aws:kms' });
                         return bucketPutEncryption(authInfo, templateRequest({ post: newConf }), log, err => {
                             assert.ifError(err);
                             return getSSEConfig((err, updatedSSEInfo) => {
-                                assert.notStrictEqual(updatedSSEInfo, null);
                                 assert.deepStrictEqual(updatedSSEInfo, {
                                     mandatory: true,
                                     algorithm: 'aws:kms',
@@ -234,13 +226,11 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
                     const { masterKeyId } = sseInfo;
                     const newConf = templateSSEConfig({ algorithm: 'aws:kms', keyId: '12345' });
                     return bucketPutEncryption(authInfo, templateRequest({ post: newConf }), log, err => {
                         assert.ifError(err);
                         return getSSEConfig((err, updatedSSEInfo) => {
-                            assert.notStrictEqual(updatedSSEInfo, null);
                             assert.deepStrictEqual(updatedSSEInfo, {
                                 mandatory: true,
                                 algorithm: 'aws:kms',
@@ -261,13 +251,11 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
                     const { masterKeyId } = sseInfo;
                     const newConf = templateSSEConfig({ algorithm: 'AES256' });
                     return bucketPutEncryption(authInfo, templateRequest({ post: newConf }), log, err => {
                         assert.ifError(err);
                         return getSSEConfig((err, updatedSSEInfo) => {
-                            assert.notStrictEqual(updatedSSEInfo, null);
                             assert.deepStrictEqual(updatedSSEInfo, {
                                 mandatory: true,
                                 algorithm: 'AES256',
@@ -287,13 +275,11 @@ describe.only('bucketPutEncryption API', () => {
                 assert.ifError(err);
                 return getSSEConfig((err, sseInfo) => {
                     assert.ifError(err);
-                    assert.notStrictEqual(sseInfo, null);
                     const { masterKeyId } = sseInfo;
                     const newConf = templateSSEConfig({ algorithm: 'AES256' });
                     return bucketPutEncryption(authInfo, templateRequest({ post: newConf }), log, err => {
                         assert.ifError(err);
                         return getSSEConfig((err, updatedSSEInfo) => {
-                            assert.notStrictEqual(updatedSSEInfo, null);
                             assert.deepStrictEqual(updatedSSEInfo, {
                                 mandatory: true,
                                 algorithm: 'AES256',
