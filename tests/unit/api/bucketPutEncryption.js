@@ -171,7 +171,7 @@ describe('bucketPutEncryption API', () => {
         });
     });
 
-    describe('test overwriting and existing config', () => {
+    describe('test overwriting an existing config', () => {
         it('should perform a no-op if SSEAlgorithm is already set to AES256', done => {
             const post = templateSSEConfig({ algorithm: 'AES256' });
             bucketPutEncryption(authInfo, templateRequest({ post }), log, err => {
