@@ -1,5 +1,6 @@
 const assert = require('assert');
 const KMS = require('../../../lib/kms/wrapper');
+const { parseBucketEncryptionHeaders } = require('../../../lib/api/apiUtils/bucket/bucketEncryption');
 const Common = require('../../../lib/kms/common');
 const { cleanup, DummyRequestLogger } = require('../helpers');
 
@@ -15,8 +16,9 @@ describe('KMS unit tests', () => {
         const headers = {
             'x-amz-scal-server-side-encryption': algorithm,
         };
+        const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo.cryptoScheme, 1);
@@ -35,14 +37,15 @@ describe('KMS unit tests', () => {
             'x-amz-scal-server-side-encryption': algorithm,
             'x-amz-scal-server-side-encryption-aws-kms-key-id': masterKeyId,
         };
+        const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo.cryptoScheme, 1);
                 assert.strictEqual(sseInfo.mandatory, true);
                 assert.strictEqual(sseInfo.algorithm, 'aws:kms');
-                assert.strictEqual(sseInfo.masterKeyId, masterKeyId);
+                assert.strictEqual(sseInfo.configuredMasterKeyId, masterKeyId);
                 done();
             });
     });
@@ -56,8 +59,9 @@ describe('KMS unit tests', () => {
             'x-amz-scal-server-side-encryption': algorithm,
             'x-amz-scal-server-side-encryption-aws-kms-key-id': masterKeyId,
         };
+        const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(sseInfo, null);
@@ -68,8 +72,9 @@ describe('KMS unit tests', () => {
     it('should not construct a sse info object if no ' +
         'x-amz-scal-server-side-encryption header included with request',
         done => {
+            const sseConfig = parseBucketEncryptionHeaders({});
             KMS.bucketLevelEncryption(
-                'dummyBucket', {}, log,
+                'dummyBucket', sseConfig, log,
                 (err, sseInfo) => {
                     assert.strictEqual(err, null);
                     assert.strictEqual(sseInfo, null);
@@ -82,8 +87,9 @@ describe('KMS unit tests', () => {
         const headers = {
             'x-amz-scal-server-side-encryption': algorithm,
         };
+        const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
@@ -105,8 +111,9 @@ describe('KMS unit tests', () => {
             'x-amz-scal-server-side-encryption': 'AES256',
         };
         let masterKeyId;
+        let sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 assert.strictEqual(err, null);
                 masterKeyId = sseInfo.bucketKeyId;
@@ -115,8 +122,9 @@ describe('KMS unit tests', () => {
         headers['x-amz-scal-server-side-encryption'] = 'aws:kms';
         headers['x-amz-scal-server-side-encryption-aws-kms-key-id'] =
             masterKeyId;
+        sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
@@ -139,8 +147,9 @@ describe('KMS unit tests', () => {
         const headers = {
             'x-amz-scal-server-side-encryption': algorithm,
         };
+        const sseConfig = parseBucketEncryptionHeaders(headers);
         KMS.bucketLevelEncryption(
-            'dummyBucket', headers, log,
+            'dummyBucket', sseConfig, log,
             (err, sseInfo) => {
                 if (err) {
                     cb(err);
