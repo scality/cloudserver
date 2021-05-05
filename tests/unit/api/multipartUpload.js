@@ -1682,6 +1682,67 @@ describe('Multipart Upload API', () => {
             });
         });
     });
+
+    it('should not delete data locations on completeMultipartUpload retry',
+    done => {
+        const partBody = Buffer.from('foo', 'utf8');
+        let origDeleteObject;
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, err => next(err)),
+            next =>
+                initiateMultipartUpload(authInfo, initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = _createPutPartRequest(testUploadId, 1,
+                    partBody);
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, eTag) => next(err, eTag, testUploadId));
+            },
+            (eTag, testUploadId, next) => {
+                origDeleteObject = metadataBackend.deleteObject;
+                metadataBackend.deleteObject = (
+                    bucketName, objName, params, log, cb) => {
+                        // prevent deletions from MPU bucket only
+                    if (bucketName === mpuBucket) {
+                        return process.nextTick(
+                            () => cb(errors.InternalError));
+                    }
+                    return origDeleteObject(
+                        bucketName, objName, params, log, cb);
+                };
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    // expect a failure here because we could not
+                    // remove the overview key
+                    assert.strictEqual(err, errors.InternalError);
+                    next(null, eTag, testUploadId);
+                });
+            },
+            (eTag, testUploadId, next) => {
+                // allow MPU bucket metadata deletions to happen again
+                metadataBackend.deleteObject = origDeleteObject;
+                // retry the completeMultipartUpload with the same
+                // metadata, as an application would normally do after
+                // a failure
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ], err => {
+            assert.ifError(err);
+            // check that the original data has not been deleted
+            // during the replay
+            assert.strictEqual(ds[0], undefined);
+            assert.notStrictEqual(ds[1], undefined);
+            assert.deepStrictEqual(ds[1].value, partBody);
+            done();
+        });
+    });
 });
 
 describe('complete mpu with versioning', () => {
