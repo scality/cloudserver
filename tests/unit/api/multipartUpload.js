@@ -1688,7 +1688,8 @@ describe('Multipart Upload API', () => {
         const partBody = Buffer.from('foo', 'utf8');
         let origDeleteObject;
         async.waterfall([
-            next => bucketPut(authInfo, bucketPutRequest, log, err => next(err)),
+            next =>
+                bucketPut(authInfo, bucketPutRequest, log, err => next(err)),
             next =>
                 initiateMultipartUpload(authInfo, initiateRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
