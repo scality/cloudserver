@@ -1,5 +1,5 @@
 const assert = require('assert');
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 
@@ -82,7 +82,7 @@ describe('Abort MPU - No Such Upload', () => {
             s3.abortMultipartUpload({
                 Bucket: bucket,
                 Key: key,
-                UploadId: uuid().replace(/-/g, '') },
+                UploadId: uuidv4().replace(/-/g, '') },
             err => {
                 assert.notEqual(err, null, 'Expected failure but got success');
                 assert.strictEqual(err.code, 'NoSuchUpload');
