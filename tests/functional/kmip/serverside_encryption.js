@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const uuid4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
 const { auth } = require('arsenal');
 const http = require('http');
