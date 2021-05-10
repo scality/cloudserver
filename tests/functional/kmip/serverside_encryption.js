@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const uuid4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const config = require('../config.json');
 const { auth } = require('arsenal');
 const http = require('http');
@@ -130,8 +130,8 @@ describe('KMIP backed server-side encryption', () => {
         = 'The encryption method specified is not supported';
 
     beforeEach(() => {
-        bucketName = uuid4();
-        objectName = uuid4();
+        bucketName = uuidv4();
+        objectName = uuidv4();
     });
 
     it('should create an encrypted bucket', done => {
