@@ -151,7 +151,7 @@ stages:
             yarn run --silent lint -- --max-warnings 0
             yarn run --silent lint_md
             flake8 $(git ls-files "*.py")
-            yamllint $(git ls-files "*.yml")
+            yamllint -c yamllint.yml $(git ls-files "*.yml")
       - ShellCommand:
           name: Unit Coverage
           command: |
