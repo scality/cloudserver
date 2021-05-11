@@ -32,4 +32,10 @@ describe('Sanity check for location keys', () => {
         const curr = [{ key: 'ddd' }, { key: 'eee' }, { key: 'fff' }];
         assert.strictEqual(locationKeysSanityCheck(prev, curr), true);
     });
+
+    it('should return true if prev location is null', () => {
+        const prev = null;
+        const curr = [{ key: 'ddd' }, { key: 'eee' }, { key: 'fff' }];
+        assert.strictEqual(locationKeysSanityCheck(prev, curr), true);
+    });
 });

@@ -20,6 +20,7 @@ const getObjectRetention = require('../../../lib/api/objectGetRetention');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const metadataBackend = require('../../../lib/metadata/in_memory/backend');
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
@@ -1720,6 +1721,68 @@ describe('Multipart Upload API', () => {
             });
         });
     });
+
+    it('should not delete data locations on completeMultipartUpload retry',
+    done => {
+        const partBody = Buffer.from('foo', 'utf8');
+        let origDeleteObject;
+        async.waterfall([
+            next =>
+                bucketPut(authInfo, bucketPutRequest, log, err => next(err)),
+            next =>
+                initiateMultipartUpload(authInfo, initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = _createPutPartRequest(testUploadId, 1,
+                    partBody);
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, eTag) => next(err, eTag, testUploadId));
+            },
+            (eTag, testUploadId, next) => {
+                origDeleteObject = metadataBackend.deleteObject;
+                metadataBackend.deleteObject = (
+                    bucketName, objName, params, log, cb) => {
+                        // prevent deletions from MPU bucket only
+                    if (bucketName === mpuBucket) {
+                        return process.nextTick(
+                            () => cb(errors.InternalError));
+                    }
+                    return origDeleteObject(
+                        bucketName, objName, params, log, cb);
+                };
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    // expect a failure here because we could not
+                    // remove the overview key
+                    assert.strictEqual(err, errors.InternalError);
+                    next(null, eTag, testUploadId);
+                });
+            },
+            (eTag, testUploadId, next) => {
+                // allow MPU bucket metadata deletions to happen again
+                metadataBackend.deleteObject = origDeleteObject;
+                // retry the completeMultipartUpload with the same
+                // metadata, as an application would normally do after
+                // a failure
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ], err => {
+            assert.ifError(err);
+            // check that the original data has not been deleted
+            // during the replay
+            assert.strictEqual(ds[0], undefined);
+            assert.notStrictEqual(ds[1], undefined);
+            assert.deepStrictEqual(ds[1].value, partBody);
+            done();
+        });
+    });
 });
 
 describe('complete mpu with versioning', () => {
@@ -1734,28 +1797,9 @@ describe('complete mpu with versioning', () => {
         versioningTestUtils.createPutObjectRequest(bucketName, objectKey,
             data));
 
-    before(done => {
+    beforeEach(done => {
         cleanup();
-        async.series([
-            callback => bucketPut(authInfo, bucketPutRequest, log,
-                callback),
-            // putting null version: put obj before versioning configured
-            callback => objectPut(authInfo, testPutObjectRequests[0],
-                undefined, log, callback),
-            callback => bucketPutVersioning(authInfo,
-                enableVersioningRequest, log, callback),
-            // put another version:
-            callback => objectPut(authInfo, testPutObjectRequests[1],
-                undefined, log, callback),
-            callback => bucketPutVersioning(authInfo,
-                suspendVersioningRequest, log, callback),
-        ], err => {
-            if (err) {
-                return done(err);
-            }
-            versioningTestUtils.assertDataStoreValues(ds, objData.slice(0, 2));
-            return done();
-        });
+        bucketPut(authInfo, bucketPutRequest, log, done);
     });
 
     after(done => {
@@ -1766,8 +1810,21 @@ describe('complete mpu with versioning', () => {
     it('should delete null version when creating new null version, ' +
     'even when null version is not the latest version', done => {
         async.waterfall([
-            next =>
-                initiateMultipartUpload(authInfo, initiateRequest, log, next),
+            // putting null version: put obj before versioning configured
+            next => objectPut(authInfo, testPutObjectRequests[0],
+                undefined, log, err => next(err)),
+            next => bucketPutVersioning(authInfo,
+                enableVersioningRequest, log, err => next(err)),
+            // put another version:
+            next => objectPut(authInfo, testPutObjectRequests[1],
+                undefined, log, err => next(err)),
+            next => bucketPutVersioning(authInfo,
+                suspendVersioningRequest, log, err => next(err)),
+            next => {
+                versioningTestUtils.assertDataStoreValues(
+                    ds, objData.slice(0, 2));
+                initiateMultipartUpload(authInfo, initiateRequest, log, next);
+            },
             (result, corsHeaders, next) => parseString(result, next),
             (json, next) => {
                 const partBody = objData[2];
@@ -1791,6 +1848,76 @@ describe('complete mpu with versioning', () => {
                     objData[1], objData[2]]);
                 done(err);
             });
+        });
+    });
+
+    it('should finish deleting metadata on completeMultipartUpload retry',
+    done => {
+        let origDeleteObject;
+        async.waterfall([
+            next => bucketPutVersioning(authInfo,
+                enableVersioningRequest, log, err => next(err)),
+            next =>
+                initiateMultipartUpload(authInfo, initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const partBody = objData[2];
+                const testUploadId =
+                    json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = _createPutPartRequest(testUploadId, 1,
+                    partBody);
+                objectPutPart(authInfo, partRequest, undefined, log,
+                    (err, eTag) => next(err, eTag, testUploadId));
+            },
+            (eTag, testUploadId, next) => {
+                origDeleteObject = metadataBackend.deleteObject;
+                metadataBackend.deleteObject = (
+                    bucketName, objName, params, log, cb) => {
+                        // prevent deletions from MPU bucket only
+                    if (bucketName === mpuBucket) {
+                        return process.nextTick(
+                            () => cb(errors.InternalError));
+                    }
+                    return origDeleteObject(
+                        bucketName, objName, params, log, cb);
+                };
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, err => {
+                    // expect a failure here because we could not
+                    // remove the overview key
+                    assert.strictEqual(err, errors.InternalError);
+                    next(null, eTag, testUploadId);
+                });
+            },
+            (eTag, testUploadId, next) => {
+                // allow MPU bucket metadata deletions to happen again
+                metadataBackend.deleteObject = origDeleteObject;
+                // retry the completeMultipartUpload with the same
+                // metadata, as an application would normally do after
+                // a failure
+                const parts = [{ partNumber: 1, eTag }];
+                const completeRequest = _createCompleteMpuRequest(
+                    testUploadId, parts);
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+        ], err => {
+            assert.ifError(err);
+            let nbVersions = 0;
+            for (const key of metadata.keyMaps.get(bucketName).keys()) {
+                if (key !== objectKey && key.startsWith(objectKey)) {
+                    nbVersions += 1;
+                }
+            }
+            // There should be only one version of the object, since
+            // the second call should not have created a new version
+            assert.strictEqual(nbVersions, 1);
+            for (const key of metadata.keyMaps.get(mpuBucket).keys()) {
+                assert.fail('There should be no more keys in MPU bucket, ' +
+                            `found "${key}"`);
+            }
+            done();
         });
     });
 });
