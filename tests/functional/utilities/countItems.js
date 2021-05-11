@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 const BucketUtility =
     require('../aws-node-sdk/lib/utility/bucket-util');
@@ -18,7 +18,7 @@ const bodySize = Math.floor(Math.random() * 100) + 10;
 const outBucketCnt = Math.floor(Math.random() * 5) + 1;
 const body = Buffer.alloc(bodySize);
 
-const genUniqID = () => uuid().replace(/-/g, '');
+const genUniqID = () => uuidv4().replace(/-/g, '');
 const testBuckets = [
     {
         bucketName: `non-version-bucket-${genUniqID()}`,
