@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { errors, storage } = require('arsenal');
 const AWS = require('aws-sdk');
 AWS.config.logger = console;
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 const async = require('async');
 const azure = require('azure-storage');
@@ -95,7 +95,7 @@ const utils = {
     itSkipCeph,
 };
 
-utils.genUniqID = () => uuid().replace(/-/g, '');
+utils.genUniqID = () => uuidv4().replace(/-/g, '');
 
 utils.getOwnerInfo = account => {
     let ownerID;

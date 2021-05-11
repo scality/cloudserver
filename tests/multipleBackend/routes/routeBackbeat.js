@@ -2,7 +2,7 @@ const assert = require('assert');
 const AWS = require('aws-sdk');
 const async = require('async');
 const crypto = require('crypto');
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
 
@@ -408,7 +408,7 @@ describeSkipIfAWS('backbeat routes', () => {
             const bucket = NONVERSIONED_BUCKET;
             const awsBucket =
                   config.locationConstraints[awsLocation].details.bucketName;
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             async.waterfall([
                 next =>
                     makeBackbeatRequest({
@@ -673,7 +673,7 @@ describeSkipIfAWS('backbeat routes', () => {
         'provided when initiating the multipart upload', done => {
             const awsBucket =
                 config.locationConstraints[awsLocation].details.bucketName;
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             const multipleBackendPath =
                 `/_/backbeat/multiplebackenddata/${awsBucket}/${awsKey}`;
             let uploadId;
@@ -761,10 +761,10 @@ describeSkipIfAWS('backbeat routes', () => {
         it('should put tags if the source is Azure and tags are provided ' +
         'when completing the multipart upload', done => {
             const containerName = getAzureContainerName(azureLocation);
-            const blob = uuid();
+            const blob = uuidv4();
             const multipleBackendPath =
                 `/_/backbeat/multiplebackenddata/${containerName}/${blob}`;
-            const uploadId = uuid().replace(/-/g, '');
+            const uploadId = uuidv4().replace(/-/g, '');
             let partData;
             async.series([
                 next =>
@@ -983,7 +983,7 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should not put delete tags if the source is not Azure and ' +
         'if-unmodified-since header is not provided', done => {
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             async.series([
                 next =>
                     awsClient.putObject({
@@ -1026,7 +1026,7 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should not put tags if the source is not Azure and ' +
         'if-unmodified-since condition is not met', done => {
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             async.series([
                 next =>
                     awsClient.putObject({
@@ -1071,7 +1071,7 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should put tags if the source is not Azure and ' +
         'if-unmodified-since condition is met', done => {
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             let lastModified;
             async.series([
                 next =>
@@ -1141,7 +1141,7 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should not delete the object if the source is Azure and ' +
         'if-unmodified-since condition is not met', done => {
-            const blob = uuid();
+            const blob = uuidv4();
             async.series([
                 next =>
                     azureClient.createBlockBlobFromText(
@@ -1190,7 +1190,7 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should delete the object if the source is Azure and ' +
         'if-unmodified-since condition is met', done => {
-            const blob = uuid();
+            const blob = uuidv4();
             let lastModified;
             async.series([
                 next =>

@@ -1,4 +1,4 @@
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 class DummyService {
     constructor(config = {}) {
@@ -23,11 +23,11 @@ class DummyService {
         const retObj = {
             Bucket: params.Bucket,
             Key: params.Key,
-            ETag: `"${uuid().replace(/-/g, '')}"`,
+            ETag: `"${uuidv4().replace(/-/g, '')}"`,
             ContentLength: `${1024 * 1024 * 1024}`,
         };
         if (this.versioning) {
-            retObj.VersionId = uuid().replace(/-/g, '');
+            retObj.VersionId = uuidv4().replace(/-/g, '');
         }
         return callback(null, retObj);
     }
@@ -36,23 +36,23 @@ class DummyService {
     }
     putObject(params, callback) {
         const retObj = {
-            ETag: `"${uuid().replace(/-/g, '')}"`,
+            ETag: `"${uuidv4().replace(/-/g, '')}"`,
         };
         if (this.versioning) {
-            retObj.VersionId = uuid().replace(/-/g, '');
+            retObj.VersionId = uuidv4().replace(/-/g, '');
         }
         return callback(null, retObj);
     }
     copyObject(params, callback) {
         const retObj = {
             CopyObjectResult: {
-                ETag: `"${uuid().replace(/-/g, '')}"`,
+                ETag: `"${uuidv4().replace(/-/g, '')}"`,
                 LastModified: new Date().toISOString(),
             },
             VersionId: null,
         };
         if (this.versioning) {
-            retObj.VersionId = uuid().replace(/-/g, '');
+            retObj.VersionId = uuidv4().replace(/-/g, '');
         }
         return callback(null, retObj);
     }
