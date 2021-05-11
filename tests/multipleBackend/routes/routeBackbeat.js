@@ -408,7 +408,7 @@ describeSkipIfAWS('backbeat routes', () => {
             const bucket = NONVERSIONED_BUCKET;
             const awsBucket =
                   config.locationConstraints[awsLocation].details.bucketName;
-            const awsKey = uuid();
+            const awsKey = uuidv4();
             async.waterfall([
                 next =>
                     makeBackbeatRequest({
