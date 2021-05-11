@@ -1,10 +1,10 @@
 const assert = require('assert');
 const arsenal = require('arsenal');
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const { createMpuKey, createMpuList } = arsenal.storage.data.external.GcpUtils;
 
 const key = `somekey${Date.now()}`;
-const uploadId = uuid().replace(/-/g, '');
+const uploadId = uuidv4().replace(/-/g, '');
 const phase = 'createMpulist';
 const size = 2;
 const correctMpuList = [
