@@ -125,5 +125,19 @@ describe('PUT object retention', () => {
                     { bucket: bucketName, key: objectName, versionId }], '', done);
             });
         });
+
+        it('should support request with versionId parameter', done => {
+            s3.putObjectRetention({
+                Bucket: bucketName,
+                Key: objectName,
+                Retention: retentionConfig,
+                VersionId: versionId,
+            }, err => {
+                assert.ifError(err);
+                changeObjectLock([
+                    { bucket: bucketName, key: objectName, versionId },
+                ], '', done);
+            });
+        });
     });
 });
