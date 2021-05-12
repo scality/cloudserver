@@ -28,3 +28,12 @@ node_modules
 
 # Junit directory
 junit
+
+# yarn ignore list
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
