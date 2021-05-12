@@ -23,7 +23,7 @@
     "agentkeepalive": "^4.1.3",
     "arsenal": "github:scality/Arsenal#a8df2b7",
     "async": "~2.5.0",
-    "aws-sdk": "2.831.0",
+    "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#949f11a",
     "bufferutil": "^3.0.5",
