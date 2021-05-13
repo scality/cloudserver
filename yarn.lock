@@ -4159,7 +4159,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-gyp@npm:latest":
+"node-gyp@npm:^8.0.0, node-gyp@npm:latest":
   version: 8.0.0
   resolution: "node-gyp@npm:8.0.0"
   dependencies:
@@ -4995,6 +4995,7 @@ resolve@^1.10.0:
     mocha: ^2.3.4
     mocha-junit-reporter: ^1.23.1
     mocha-multi-reporters: ^1.1.7
+    node-gyp: ^8.0.0
     node-mocks-http: 1.5.2
     npm-run-all: ~4.1.5
     sproxydclient: "scality/sproxydclient#77a2de0"
