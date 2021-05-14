@@ -18,17 +18,26 @@ const mockLegalHold = {
     on: { Status: 'ON' },
 };
 
-function createLegalHoldParams(bucket, key, status) {
+function createLegalHoldParams(bucket, key, status, versionId) {
+    const params = { Bucket: bucket, Key: key };
     if (!status) {
-        return { Bucket: bucket, Key: key };
+        return params;
     }
-    return {
-        Bucket: bucket,
-        Key: key,
+    if (versionId) {
+        Object.assign(params, {
+            VersionId: versionId,
+            LegalHold: {
+                Status: status,
+            },
+        });
+        return params;
+    }
+    Object.assign(params, {
         LegalHold: {
             Status: status,
         },
-    };
+    });
+    return params;
 }
 
 const isCEPH = process.env.CI_CEPH !== undefined;
@@ -168,6 +177,14 @@ describeSkipIfCeph('PUT object legal hold', () => {
             const params = createLegalHoldParams(bucket, key, 'on');
             s3.putObjectLegalHold(params, err => {
                 checkError(err, 'MalformedXML', 400);
+                changeObjectLock([{ bucket, key, versionId }], '', done);
+            });
+        });
+
+        it('should support request with versionId parameter', done => {
+            const params = createLegalHoldParams(bucket, key, 'ON', versionId);
+            s3.putObjectLegalHold(params, err => {
+                assert.ifError(err);
                 changeObjectLock([{ bucket, key, versionId }], '', done);
             });
         });

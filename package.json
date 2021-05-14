@@ -20,8 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "agentkeepalive": "^4.1.3",
-    "arsenal": "github:scality/Arsenal#a8df2b7",
+    "arsenal": "github:scality/Arsenal#048e8b0",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
