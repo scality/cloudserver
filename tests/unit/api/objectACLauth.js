@@ -207,3 +207,110 @@ describe('object authorization for objectPutACL and objectGetACL', () => {
         assert.strictEqual(authorizedResult, true);
     });
 });
+
+describe('without object metadata', () => {
+    afterEach(() => {
+        bucket.setFullAcl({
+            Canned: 'private',
+            FULL_CONTROL: [],
+            WRITE: [],
+            WRITE_ACP: [],
+            READ: [],
+            READ_ACP: [],
+        });
+    });
+
+    const requestTypes = [
+        'objectGet',
+        'objectHead',
+        'objectPutACL',
+        'objectGetACL',
+    ];
+
+    const allowedAccess = [true, true, true, true];
+    const deniedAccess = [false, false, false, false];
+
+    const tests = [
+        {
+            it: 'should allow bucket owner',
+            canned: 'private', id: bucketOwnerCanonicalId,
+            aclParam: null,
+            response: allowedAccess,
+        },
+        {
+            it: 'should not allow public if canned private',
+            canned: 'private', id: constants.publicId,
+            aclParam: null,
+            response: deniedAccess,
+        },
+        {
+            it: 'should not other accounts if canned private',
+            canned: 'private', id: accountToVet,
+            aclParam: null,
+            response: deniedAccess,
+        },
+        {
+            it: 'should allow public if bucket is canned public-read',
+            canned: 'public-read', id: constants.publicId,
+            aclParam: null,
+            response: allowedAccess,
+        },
+        {
+            it: 'should allow public if bucket is canned public-read-write',
+            canned: 'public-read-write', id: constants.publicId,
+            aclParam: null,
+            response: allowedAccess,
+        },
+        {
+            it: 'should not allow public if bucket is canned ' +
+            'authenticated-read',
+            canned: 'authenticated-read', id: constants.publicId,
+            aclParam: null,
+            response: deniedAccess,
+        },
+        {
+            it: 'should allow authenticated users if bucket is canned ' +
+            'authenticated-read',
+            canned: 'authenticated-read', id: accountToVet,
+            aclParam: null,
+            response: allowedAccess,
+        },
+        {
+            it: 'should allow account if granted bucket READ',
+            canned: '', id: accountToVet,
+            aclParam: ['READ', accountToVet],
+            response: allowedAccess,
+        },
+        {
+            it: 'should allow account if granted bucket FULL_CONTROL',
+            canned: '', id: accountToVet,
+            aclParam: ['FULL_CONTROL', accountToVet],
+            response: allowedAccess,
+        },
+    ];
+
+    tests.forEach(value => {
+        it(value.it, done => {
+            if (value.aclParam) {
+                bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
+            }
+            bucket.setCannedAcl(value.canned);
+            const results = requestTypes.map(type =>
+                isObjAuthorized(bucket, null, type, value.id));
+            assert.deepStrictEqual(results, value.response);
+            done();
+        });
+    });
+
+
+    it('should allow access to anyone since checks ' +
+        'are done at bucket level', () => {
+        const requestTypes = ['objectPut', 'objectDelete'];
+        const results = requestTypes.map(type =>
+            isObjAuthorized(bucket, null, type, accountToVet));
+        assert.deepStrictEqual(results, [true, true]);
+        const publicUserResults = requestTypes.map(type =>
+            isObjAuthorized(bucket, null, type, constants.publicId));
+        assert.deepStrictEqual(publicUserResults, [true, true]);
+    });
+});
