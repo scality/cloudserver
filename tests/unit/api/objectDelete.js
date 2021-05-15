@@ -27,7 +27,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     bucketPut(bucketOwner, bucketPutReq, log, () => {
         bucketPutACL(bucketOwner, bucketPutReq, log, err => {
             assert.strictEqual(err, undefined);
-            objectPut(bucketOwner, objPutReq, undefined, log, err => {
+            objectPut(authUser, objPutReq, undefined, log, err => {
                 assert.strictEqual(err, null);
                 objectDelete(authUser, objDelReq, log, err => {
                     assert.strictEqual(err, null);
@@ -106,7 +106,7 @@ describe('objectDelete API', () => {
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
                                 const expected =
-                                Object.assign({}, errors.NoSuchKey);
+                                    Object.assign({}, errors.NoSuchKey);
                                 const received = Object.assign({}, err);
                                 assert.deepStrictEqual(received, expected);
                                 done();
@@ -118,9 +118,11 @@ describe('objectDelete API', () => {
 
     it('should prevent anonymous user deleteObject API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
-        objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
-            assert.deepStrictEqual(err, errors.AccessDenied);
-            done();
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
+                assert.deepStrictEqual(err, errors.AccessDenied);
+                done();
+            });
         });
     });
 
