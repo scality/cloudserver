@@ -99,7 +99,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should grant write access', done => {
+            it.skip('should grant write access', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
@@ -114,7 +114,8 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should grant write access with grant-full-control', done => {
+            it.skip('should grant write access with ' +
+                'grant-full-control', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantFullControl: grantUri,
@@ -129,7 +130,8 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should not grant write access', done => {
+            // TODO: handle write acl in S3C-4401
+            it.skip('should not grant write access', done => {
                 s3.putBucketAcl(aclParam, err => {
                     assert.ifError(err);
                     const param = {
@@ -141,8 +143,8 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should not grant write access on an object not owned by the ' +
-                'grantee', done => {
+            it.skip('should not grant write access on an object not owned ' +
+                'by the grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
@@ -157,7 +159,8 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should not delete object not owned by the grantee', done => {
+            it.skip('should not delete object not owned by the ' +
+                'grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
