@@ -695,17 +695,16 @@ arraybuffer.slice@~0.0.7:
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
-    agentkeepalive "^4.1.3"
     ajv "6.12.2"
     async "~2.6.1"
     aws-sdk "2.80.0"
-    azure-storage "~2.1.0"
+    azure-storage "^2.1.0"
     backo "^1.1.0"
     bson "4.0.0"
     debug "~4.1.0"
     diskusage "^1.1.1"
     fcntl "github:scality/node-fcntl"
-    hdclient scality/hdclient#489db2106570b9ea41bdacdf56131324d0db6a58
+    hdclient scality/hdclient#5145e04e5ed33e85106765b1caa90cd245ef482b
     https-proxy-agent "^2.2.0"
     ioredis "4.9.5"
     ipaddr.js "1.9.1"
@@ -1298,9 +1297,9 @@ bucketclient@scality/bucketclient:
   version "8.1.0"
   resolved "https://codeload.github.com/scality/bucketclient/tar.gz/07d5a3813878b2746ed00e41c177bc2a0460e243"
   dependencies:
-    agentkeepalive "^4.1.3"
-    arsenal scality/Arsenal#8ed8478
+    arsenal scality/Arsenal#c57cde8
     werelogs scality/werelogs#351a2a3
+    yarn "^1.17.3"
 
 bucketclient@scality/bucketclient#949f11a:
   version "8.1.0"
