@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/Arsenal#048e8b0",
+    "arsenal": "github:scality/Arsenal#e1a3b05",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -46,7 +46,7 @@
     "utf-8-validate": "^4.0.2",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
-    "vaultclient": "scality/vaultclient#e1c0044",
+    "vaultclient": "scality/vaultclient#77f3069",
     "werelogs": "scality/werelogs#22bca9c",
     "ws": "^5.1.0",
     "xml2js": "~0.4.16"
