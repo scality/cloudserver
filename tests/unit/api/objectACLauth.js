@@ -286,6 +286,7 @@ describe('without object metadata', () => {
             READ: [],
             READ_ACP: [],
         });
+        bucket.setBucketPolicy(null);
     });
 
     const requestTypes = [
@@ -355,6 +356,76 @@ describe('without object metadata', () => {
             aclParam: ['FULL_CONTROL', accountToVet],
             response: allowedAccess,
         },
+        {
+            it: 'should allow public if granted bucket read action in policy',
+            canned: 'private', id: constants.publicId,
+            aclParam: null,
+            policy: {
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Allow',
+                        Resource: 'arn:aws:s3:::niftybucket',
+                        Principal: '*',
+                        Action: ['s3:ListBucket'],
+                    },
+                ],
+            },
+            response: allowedAccess,
+        },
+        {
+            it: 'should not allow public if denied bucket read action in policy',
+            canned: 'public-read', id: constants.publicId,
+            aclParam: null,
+            policy: {
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Deny',
+                        Resource: 'arn:aws:s3:::niftybucket',
+                        Principal: '*',
+                        Action: ['s3:ListBucket'],
+                    },
+                ],
+            },
+            response: deniedAccess,
+        },
+        {
+            it: 'should allow account if granted bucket read action in policy',
+            canned: 'private', id: accountToVet,
+            aclParam: null,
+            policy: {
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Allow',
+                        Resource: 'arn:aws:s3:::niftybucket',
+                        Principal: { AWS: [altAcctAuthInfo.getArn()] },
+                        Action: ['s3:ListBucket'],
+                    },
+                ],
+            },
+            response: allowedAccess,
+            authInfo: altAcctAuthInfo,
+        },
+        {
+            it: 'should not allow account if denied bucket read action in policy',
+            canned: 'public-read', id: accountToVet,
+            aclParam: null,
+            policy: {
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Deny',
+                        Resource: 'arn:aws:s3:::niftybucket',
+                        Principal: { CanonicalUser: [altAcctAuthInfo.getCanonicalID()] },
+                        Action: ['s3:ListBucket'],
+                    },
+                ],
+            },
+            response: deniedAccess,
+            authInfo: altAcctAuthInfo,
+        },
     ];
 
     tests.forEach(value => {
@@ -363,6 +434,10 @@ describe('without object metadata', () => {
 
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
+            }
+
+            if (value.policy) {
+                bucket.setBucketPolicy(value.policy);
             }
 
             bucket.setCannedAcl(value.canned);
