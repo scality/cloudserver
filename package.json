@@ -48,7 +48,7 @@
     "uuid": "^8.3.2",
     "vaultclient": "scality/vaultclient#77f3069",
     "werelogs": "scality/werelogs#22bca9c",
-    "ws": "^5.1.0",
+    "ws": "^7.4.6",
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
