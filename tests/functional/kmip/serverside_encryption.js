@@ -126,8 +126,6 @@ function _initiateMultipartUpload(bucketName, objectName, encrypt, cb) {
 describe('KMIP backed server-side encryption', () => {
     let bucketName;
     let objectName;
-    const encryptionErrorMessage
-        = 'The encryption method specified is not supported';
 
     beforeEach(() => {
         bucketName = uuidv4();
@@ -164,22 +162,6 @@ describe('KMIP backed server-side encryption', () => {
         });
     });
 
-    it('should not allow object PUT with SSE header ' +
-        'in bucket with no SSE', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, false, err => {
-                assert.equal(err, null, 'Expected success, ' +
-                `got error ${JSON.stringify(err)}`);
-                return next();
-            }),
-            next => _putObject(bucketName, objectName, true, err => next(err)),
-        ], err => {
-            assert.strictEqual(err.statusCode, 400);
-            assert.strictEqual(err.message, encryptionErrorMessage);
-            done();
-        });
-    });
-
     it('should allow object copy with SSE header in encrypted bucket', done => {
         async.waterfall([
             next => _createBucket(bucketName, false, err => next(err)),
@@ -194,33 +176,6 @@ describe('KMIP backed server-side encryption', () => {
         });
     });
 
-    it('should not allow object copy with SSE header ' +
-        'in bucket with no SSE', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, false, err => {
-                assert.equal(err, null, 'Expected success, ' +
-                `got error ${JSON.stringify(err)}`);
-                return next();
-            }),
-            next => _putObject(bucketName, objectName, false, err => {
-                assert.equal(err, null, 'Expected success, ' +
-                `got error ${JSON.stringify(err)}`);
-                return next();
-            }),
-            next => _createBucket(`${bucketName}2`, false, err => {
-                assert.equal(err, null, 'Expected success, ' +
-                `got error ${JSON.stringify(err)}`);
-                return next();
-            }),
-            next => _copyObject(bucketName, objectName, `${bucketName}2`,
-                `${objectName}2`, true, err => next(err)),
-        ], err => {
-            assert.strictEqual(err.statusCode, 400);
-            assert.strictEqual(err.message, encryptionErrorMessage);
-            done();
-        });
-    });
-
     it('should allow creating mpu with SSE header ' +
         'in encrypted bucket', done => {
         async.waterfall([
@@ -230,23 +185,6 @@ describe('KMIP backed server-side encryption', () => {
         ], err => {
             assert.equal(err, null, 'Expected success, ' +
             `got error ${JSON.stringify(err)}`);
-            done();
-        });
-    });
-
-    it('should not allow mpu creation with SSE header ' +
-        'in bucket with no SSE', done => {
-        async.waterfall([
-            next => _createBucket(bucketName, false, err => {
-                assert.equal(err, null, 'Expected success, ' +
-                `got error ${JSON.stringify(err)}`);
-                return next();
-            }),
-            next => _initiateMultipartUpload(bucketName, objectName,
-                true, err => next(err)),
-        ], err => {
-            assert.strictEqual(err.statusCode, 400);
-            assert.strictEqual(err.message, encryptionErrorMessage);
             done();
         });
     });

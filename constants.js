@@ -100,7 +100,6 @@ const constants = {
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
         'x-amz-server-side-encryption-customer-algorithm',
-        'x-amz-server-side-encryption-aws-kms-key-id',
         'x-amz-server-side-encryption-context',
         'x-amz-server-side-encryption-customer-key',
         'x-amz-server-side-encryption-customer-key-md5',

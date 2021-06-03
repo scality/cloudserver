@@ -113,6 +113,14 @@ class BucketUtility {
             );
     }
 
+    emptyMany(bucketNames) {
+        const promises = bucketNames.map(
+            bucketName => this.empty(bucketName)
+        );
+
+        return Promise.all(promises);
+    }
+
     getOwner() {
         return this.s3
             .listBuckets().promise()
