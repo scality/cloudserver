@@ -94,16 +94,6 @@ describe('PUT object', () => {
                 });
             });
 
-        it('should return InvalidArgument error for obj. encryption using ' +
-            'AWS-managed encryption keys', done => {
-            const params = { Bucket: bucket, Key: 'key',
-                ServerSideEncryption: 'AES256' };
-            s3.putObject(params, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
-        });
-
         it('should return InvalidRequest error if putting object with ' +
             'object lock retention date and mode when object lock is not ' +
             'enabled on the bucket', done => {
