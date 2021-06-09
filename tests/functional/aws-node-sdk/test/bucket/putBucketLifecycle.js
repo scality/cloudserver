@@ -339,5 +339,111 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     assertError(err, null, done));
             });
         });
+
+        describe('with NoncurrentVersionTransitions', () => {
+            it('should return NotImplemented if NoncurrentVersionTransitions rule', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'test',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            NoncurrentVersionTransitions: [{
+                                NoncurrentDays: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+
+            it('should return NotImplemented if rules include NoncurrentVersionTransitions', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'id2',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Expiration: {
+                                Days: 1,
+                            },
+                        }, {
+                            ID: 'id1',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            NoncurrentVersionTransitions: [{
+                                NoncurrentDays: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+        });
+
+        describe('with Transitions', () => {
+            it('should return NotImplemented if Transitions rule', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'test',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Transitions: [{
+                                Days: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+
+            it('should return NotImplemented if rules include Transitions', done => {
+                const params = {
+                    Bucket: bucket,
+                    LifecycleConfiguration: {
+                        Rules: [{
+                            ID: 'id2',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Expiration: {
+                                Days: 1,
+                            },
+                        }, {
+                            ID: 'id1',
+                            Status: 'Enabled',
+                            Prefix: '',
+                            Transitions: [{
+                                Days: 2,
+                                StorageClass: 'us-east-2',
+                            }],
+                        }],
+                    },
+                };
+                s3.putBucketLifecycleConfiguration(params, err => {
+                    assert.strictEqual(err.statusCode, 501);
+                    assert.strictEqual(err.code, 'NotImplemented');
+                    done();
+                });
+            });
+        });
     });
 });
