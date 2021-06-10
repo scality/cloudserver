@@ -208,6 +208,7 @@ stages:
             unset http_proxy https_proxy no_proxy
             mkdir -p $CIRCLE_TEST_REPORTS/unit
             yarn test
+            yarn run test_versionid_base62
             yarn run test_legacy_location
           env: &shared-vars
             <<: *global-env
