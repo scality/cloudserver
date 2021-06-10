@@ -8,6 +8,8 @@ const { checkOneVersion } = require('../../lib/utility/versioning-util');
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
 
+const invalidId = 'invalidIdWithMoreThan40BytesAndThatIsNotLongEnoughYet';
+
 const {
     removeAllVersions,
     versioningEnabled,
@@ -121,7 +123,7 @@ describe('Delete object tagging with versioning', () => {
                 next => s3.deleteObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
-                    VersionId: 'notexisting',
+                    VersionId: invalidId,
                 }, (err, data) => next(err, data)),
             ], err => {
                 _checkError(err, 'InvalidArgument', 400);

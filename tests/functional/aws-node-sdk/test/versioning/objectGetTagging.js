@@ -12,6 +12,8 @@ const {
 const bucketName = 'testtaggingbucket';
 const objectName = 'testtaggingobject';
 
+const invalidId = 'invalidIdWithMoreThan40BytesAndThatIsNotLongEnoughYet';
+
 function _checkError(err, code, statusCode) {
     assert(err, 'Expected error but found none');
     assert.strictEqual(err.code, code);
@@ -94,7 +96,7 @@ describe('Get object tagging with versioning', () => {
                 next => s3.getObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
-                    VersionId: 'notexisting',
+                    VersionId: invalidId,
                 }, (err, data) => next(err, data)),
             ], err => {
                 _checkError(err, 'InvalidArgument', 400);
