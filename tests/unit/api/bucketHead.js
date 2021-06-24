@@ -52,7 +52,7 @@ describe('bucketHead API', () => {
             bucketHead(authInfo, testRequest, log, (err, headers) => {
                 assert.strictEqual(headers['x-amz-bucket-region'], 'us-east-1');
                 done();
-            })
+            });
         });
     });
 });
