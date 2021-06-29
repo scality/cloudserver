@@ -222,6 +222,23 @@ spec:
           cpu: 100m
           memory: 128Mi
     {%- endif %}
+    {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" and vars.env.CI_CEPH is not defined -%}
+    - name: azurite
+      image: mcr.microsoft.com/azure-storage/azurite:3.13.0
+      env:
+      - name: AZURITE_ACCOUNTS
+        value: "fakeaccountname:Fake00Key001;fakeaccountname2:Fake00Key002"
+      volumeMounts:
+        - name: azurite
+          mountPath: /data
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
+    {% endif %}
   volumes:
     - name: creds
       emptyDir: {}
@@ -230,4 +247,6 @@ spec:
     - name: artifacts
       emptyDir: {}
     - name: kmip-certs
+      emptyDir: {}
+    - name: azurite
       emptyDir: {}
