@@ -7,31 +7,19 @@ branches:
 
 models:
   - env: &global-env
-      azurebackend_AZURE_STORAGE_ACCESS_KEY: >-
-        %(secret:azure_storage_access_key)s
-      azurebackend_AZURE_STORAGE_ACCOUNT_NAME: >-
-        %(secret:azure_storage_account_name)s
-      azurebackend_AZURE_STORAGE_ENDPOINT: >-
-        %(secret:azure_storage_endpoint)s
-      azurebackend2_AZURE_STORAGE_ACCESS_KEY: >-
-        %(secret:azure_storage_access_key_2)s
-      azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: >-
-        %(secret:azure_storage_account_name_2)s
-      azurebackend2_AZURE_STORAGE_ENDPOINT: >-
-        %(secret:azure_storage_endpoint_2)s
-      azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: >-
-        %(secret:azure_storage_access_key)s
-      azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: >-
-        %(secret:azure_storage_account_name)s
-      azurebackendmismatch_AZURE_STORAGE_ENDPOINT: >-
-        %(secret:azure_storage_endpoint)s
-      azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: >-
-        %(secret:azure_storage_access_key)s
-      azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: >-
-        %(secret:azure_storage_account_name)s
-      azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: >-
-        %(secret:azure_storage_endpoint)s
-      azuretest_AZURE_BLOB_ENDPOINT: "%(secret:azure_storage_endpoint)s"
+      azurebackend_AZURE_STORAGE_ACCESS_KEY: Fake00Key001
+      azurebackend_AZURE_STORAGE_ACCOUNT_NAME: fakeaccountname
+      azurebackend_AZURE_STORAGE_ENDPOINT: http://localhost:10000/fakeaccountname
+      azurebackend2_AZURE_STORAGE_ACCESS_KEY: Fake00Key002
+      azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: fakeaccountname2
+      azurebackend2_AZURE_STORAGE_ENDPOINT: http://localhost:10000/fakeaccountname2
+      azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: Fake00Key001
+      azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: fakeaccountname
+      azurebackendmismatch_AZURE_STORAGE_ENDPOINT: http://localhost:10000/fakeaccountname
+      azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: Fake00Key123
+      azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: fakeaccountname
+      azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: http://localhost:10000/fakeaccountname
+      azuretest_AZURE_BLOB_ENDPOINT: http://localhost:10000
       b2backend_B2_ACCOUNT_ID: "%(secret:b2backend_b2_account_id)s"
       b2backend_B2_STORAGE_ACCESS_KEY: >-
         %(secret:b2backend_b2_storage_access_key)s
