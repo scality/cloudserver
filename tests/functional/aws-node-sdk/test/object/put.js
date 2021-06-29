@@ -7,6 +7,7 @@ const { taggingTests, generateMultipleTagQuery }
     = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
     = require('../../lib/utility/genMaxSizeMetaHeaders');
+const changeObjectLock = require('../../../../utilities/objectLock-util');
 
 const bucket = 'bucket2putstuffin4324242';
 const object = 'object2putstuffin';
@@ -93,12 +94,31 @@ describe('PUT object', () => {
                 });
             });
 
-        it('should return Not Implemented error for obj. encryption using ' +
+        it('should return InvalidArgument error for obj. encryption using ' +
             'AWS-managed encryption keys', done => {
             const params = { Bucket: bucket, Key: 'key',
                 ServerSideEncryption: 'AES256' };
             s3.putObject(params, err => {
-                assert.strictEqual(err.code, 'NotImplemented');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                done();
+            });
+        });
+
+        it('should return InvalidRequest error if putting object with ' +
+            'object lock retention date and mode when object lock is not ' +
+            'enabled on the bucket', done => {
+            const date = new Date(2050, 10, 10);
+            const params = {
+                Bucket: bucket,
+                Key: 'key',
+                ObjectLockRetainUntilDate: date,
+                ObjectLockMode: 'GOVERNANCE',
+            };
+            s3.putObject(params, err => {
+                const expectedErrMessage
+                    = 'Bucket is missing ObjectLockConfiguration';
+                assert.strictEqual(err.code, 'InvalidRequest');
+                assert.strictEqual(err.message, expectedErrMessage);
                 done();
             });
         });
@@ -124,6 +144,7 @@ describe('PUT object', () => {
                 done();
             });
         });
+
         describe('Put object with tag set', () => {
             taggingTests.forEach(taggingTest => {
                 it(taggingTest.it, done => {
@@ -151,6 +172,7 @@ describe('PUT object', () => {
                     });
                 });
             });
+
             it('should be able to put object with 10 tags',
             done => {
                 const taggingConfig = generateMultipleTagQuery(10);
@@ -234,6 +256,7 @@ describe('PUT object', () => {
                     done();
                 });
             });
+
             it('should return InvalidArgument putting object tag with ' +
             'invalid characters: %', done => {
                 const value = 'value1%';
@@ -242,6 +265,160 @@ describe('PUT object', () => {
                     _checkError(err, 'InvalidArgument', 400);
                     done();
                 });
+            });
+        });
+    });
+});
+
+describe('PUT object with object lock', () => {
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+
+        beforeEach(() => {
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+            return s3.createBucket({
+                Bucket: bucket,
+                ObjectLockEnabledForBucket: true,
+            }).promise()
+            .catch(err => {
+                process.stdout.write(`Error creating bucket: ${err}\n`);
+                throw err;
+            });
+        });
+
+        afterEach(() => {
+            process.stdout.write('Emptying bucket');
+            return bucketUtil.empty(bucket)
+            .then(() => {
+                process.stdout.write('Deleting bucket');
+                return bucketUtil.deleteOne(bucket);
+            })
+            .catch(err => {
+                process.stdout.write('Error in afterEach');
+                throw err;
+            });
+        });
+
+        it('should put object with valid object lock retention date and ' +
+            'mode when object lock is enabled on the bucket', done => {
+            const date = new Date(2050, 10, 10);
+            const params = {
+                Bucket: bucket,
+                Key: 'key1',
+                ObjectLockRetainUntilDate: date,
+                ObjectLockMode: 'COMPLIANCE',
+            };
+            s3.putObject(params, (err, res) => {
+                assert.ifError(err);
+                changeObjectLock(
+                    [{ bucket, key: 'key1', versionId: res.VersionId }], '', done);
+            });
+        });
+
+        it('should put object with valid object lock retention date and ' +
+            'mode when object lock is enabled on the bucket', done => {
+            const date = new Date(2050, 10, 10);
+            const params = {
+                Bucket: bucket,
+                Key: 'key2',
+                ObjectLockRetainUntilDate: date,
+                ObjectLockMode: 'GOVERNANCE',
+            };
+            s3.putObject(params, (err, res) => {
+                assert.ifError(err);
+                changeObjectLock(
+                    [{ bucket, key: 'key2', versionId: res.VersionId }], '', done);
+            });
+        });
+
+        it('should error with invalid object lock mode header', done => {
+            const date = new Date(2050, 10, 10);
+            const params = {
+                Bucket: bucket,
+                Key: 'key3',
+                ObjectLockMode: 'Governance',
+                ObjectLockRetainUntilDate: date,
+            };
+            s3.putObject(params, err => {
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.message, 'Unknown wormMode directive');
+                done();
+            });
+        });
+
+        it('should put object with valid legal hold status ON', done => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key4',
+                ObjectLockLegalHoldStatus: 'ON',
+            };
+            s3.putObject(params, (err, res) => {
+                assert.ifError(err);
+                changeObjectLock(
+                    [{ bucket, key: 'key4', versionId: res.VersionId }], '', done);
+            });
+        });
+
+        it('should put object with valid legal hold status OFF', done => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key5',
+                ObjectLockLegalHoldStatus: 'OFF',
+            };
+            s3.putObject(params, err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should error with invalid legal hold status', done => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key6',
+                ObjectLockLegalHoldStatus: 'on',
+            };
+            s3.putObject(params, err => {
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.message,
+                    'Legal hold status must be one of "ON", "OFF"');
+                done();
+            });
+        });
+
+        it('should return error when object lock retain until date header is ' +
+            'provided but object lock mode header is missing', done => {
+            const date = new Date(2050, 10, 10);
+            const params = {
+                Bucket: bucket,
+                Key: 'key7',
+                ObjectLockRetainUntilDate: date,
+            };
+            s3.putObject(params, err => {
+                const expectedErrMessage
+                    = 'x-amz-object-lock-retain-until-date and ' +
+                    'x-amz-object-lock-mode must both be supplied';
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.message, expectedErrMessage);
+                done();
+            });
+        });
+
+        it('should return error when object lock mode header is provided ' +
+            'but object lock retain until date header is missing', done => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key8',
+                ObjectLockMode: 'GOVERNANCE',
+            };
+            s3.putObject(params, err => {
+                const expectedErrMessage
+                    = 'x-amz-object-lock-retain-until-date and ' +
+                    'x-amz-object-lock-mode must both be supplied';
+                assert.strictEqual(err.code, 'InvalidArgument');
+                assert.strictEqual(err.message, expectedErrMessage);
+                done();
             });
         });
     });

@@ -6,6 +6,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const objectHead = require('../../../lib/api/objectHead');
 const DummyRequest = require('../DummyRequest');
+const changeObjectLock = require('../../utilities/objectLock-util');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -252,6 +253,62 @@ describe('objectHead API', () => {
                         assert
                         .strictEqual(res.ETag, `"${correctMD5}"`);
                         done();
+                    });
+                });
+        });
+    });
+
+    it('should get the object metadata with object lock', done => {
+        const testPutBucketRequestLock = {
+            bucketName,
+            namespace,
+            headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
+            url: `/${bucketName}`,
+        };
+        const testPutObjectRequestLock = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-object-lock-retain-until-date': '2050-10-10',
+                'x-amz-object-lock-mode': 'GOVERNANCE',
+                'x-amz-object-lock-legal-hold': 'ON',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: correctMD5,
+        }, postBody);
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+
+        bucketPut(authInfo, testPutBucketRequestLock, log, () => {
+            objectPut(authInfo, testPutObjectRequestLock, undefined, log,
+                (err, resHeaders) => {
+                    assert.ifError(err);
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectHead(authInfo, testGetRequest, log, (err, res) => {
+                        assert.ifError(err);
+                        const expectedDate = testPutObjectRequestLock
+                        .headers['x-amz-object-lock-retain-until-date'];
+                        const expectedMode = testPutObjectRequestLock
+                        .headers['x-amz-object-lock-mode'];
+                        assert.ifError(err);
+                        assert.strictEqual(
+                            res['x-amz-object-lock-retain-until-date'],
+                            expectedDate);
+                        assert.strictEqual(res['x-amz-object-lock-mode'],
+                            expectedMode);
+                        assert.strictEqual(res['x-amz-object-lock-legal-hold'],
+                            'ON');
+                        changeObjectLock([{
+                            bucket: bucketName,
+                            key: objectName,
+                            versionId: res['x-amz-version-id'],
+                        }], '', done);
                     });
                 });
         });

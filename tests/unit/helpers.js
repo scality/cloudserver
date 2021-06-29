@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const assert = require('assert');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
+const { RequestContext } = require('arsenal').policies;
 const constants = require('../../constants');
 const { metadata } = require('../../lib/metadata/in_memory/metadata');
 const { resetCount, ds } = require('../../lib/data/in_memory/backend');
@@ -63,7 +64,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey) {
+function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -72,13 +73,26 @@ function makeAuthInfo(accessKey) {
         default: crypto.randomBytes(32).toString('hex'),
     };
     canIdMap[constants.publicId] = constants.publicId;
-
-    return new AuthInfo({
+    const acctIdMap = {
+        accessKey1: '123456789098',
+        accessKey2: '234567890987',
+        default: 'shortid',
+    };
+    const shortid = acctIdMap[accessKey] || acctIdMap.default;
+    const params = {
         canonicalID: canIdMap[accessKey] || canIdMap.default,
-        shortid: 'shortid',
+        shortid,
         email: `${accessKey}@l.com`,
         accountDisplayName: `${accessKey}displayName`,
-    });
+        arn: `arn:aws:iam::${shortid}:root`,
+    };
+
+    if (userName) {
+        params.IAMdisplayName = `${accessKey}-${userName}-userDisplayName`;
+        params.arn = `arn:aws:iam::${shortid}:user/${userName}`;
+    }
+
+    return new AuthInfo(params);
 }
 
 class WebsiteConfig {
@@ -329,6 +343,18 @@ class CorsConfigTester {
     }
 }
 
+const objectLockTestUtils = {
+    generateXml: (mode, num, daysOrYears) =>
+        '<ObjectLockConfiguration ' +
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+        '<ObjectLockEnabled>Enabled</ObjectLockEnabled>' +
+        '<Rule><DefaultRetention>' +
+        `<Mode>${mode}</Mode>` +
+        `<${daysOrYears}>${num}</${daysOrYears}>` +
+        '</DefaultRetention></Rule>' +
+        '</ObjectLockConfiguration>',
+};
+
 const versioningTestUtils = {
     createPutObjectRequest: (bucketName, keyName, body) => {
         const params = {
@@ -461,6 +487,12 @@ class AccessControlPolicy {
     }
 }
 
+function createRequestContext(apiMethod, request) {
+    return new RequestContext(request.headers,
+        request.query, request.bucketName, request.objectKey,
+        '127.0.0.1', false, apiMethod, 's3');
+}
+
 module.exports = {
     testsRangeOnEmptyFile,
     makeid,
@@ -472,7 +504,9 @@ module.exports = {
     makeAuthInfo,
     WebsiteConfig,
     CorsConfigTester,
+    objectLockTestUtils,
     versioningTestUtils,
     TaggingConfigTester,
     AccessControlPolicy,
+    createRequestContext,
 };

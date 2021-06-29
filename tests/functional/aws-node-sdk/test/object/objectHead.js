@@ -1,10 +1,14 @@
 const assert = require('assert');
 const async = require('async');
 const { errors } = require('arsenal');
+const moment = require('moment');
+const Promise = require('bluebird');
 
-
+const changeObjectLock = require('../../../../utilities/objectLock-util');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
+
+const changeLockPromise = Promise.promisify(changeObjectLock);
 
 const bucketName = 'alexbucketnottaken';
 const objectName = 'someObject';
@@ -435,6 +439,27 @@ describe('HEAD object, conditions', () => {
             });
         });
 
+        it('Accept-Ranges header should appear in the response', done => {
+            const objectName = 'mock-obj';
+            const mockPutObjectParams = {
+                Bucket: bucketName,
+                Key: objectName,
+                Body: 'hello',
+            };
+            const mockHeadObjectParams = {
+                Bucket: bucketName,
+                Key: objectName,
+            };
+            s3.putObject(mockPutObjectParams, err => {
+                checkNoError(err);
+                s3.headObject(mockHeadObjectParams, (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.AcceptRanges, 'bytes');
+                    done();
+                });
+            });
+        });
+
         it('WebsiteRedirectLocation is not set & is absent', done => {
             requestHead({}, (err, data) => {
                 checkNoError(err);
@@ -505,6 +530,83 @@ describe('HEAD object, conditions', () => {
                     assert.strictEqual(data.PartsCount, 2);
                     done();
                 });
+            });
+        });
+    });
+});
+
+describe('HEAD object with object lock', () => {
+    withV4(sigCfg => {
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
+        const bucket = 'bucket-with-lock';
+        const key = 'object-with-lock';
+        const formatDate = date => date.toString().slice(0, 20);
+        const mockDate = moment().add(1, 'days').toISOString();
+        const mockMode = 'GOVERNANCE';
+        let versionId;
+
+        beforeEach(() => {
+            const params = {
+                Bucket: bucket,
+                Key: key,
+                ObjectLockRetainUntilDate: mockDate,
+                ObjectLockMode: mockMode,
+                ObjectLockLegalHoldStatus: 'ON',
+            };
+            return s3.createBucket({
+                Bucket: bucket,
+                ObjectLockEnabledForBucket: true,
+            }).promise()
+            .then(() => s3.putObject(params).promise())
+            .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
+            /* eslint-disable no-return-assign */
+            .then(res => versionId = res.VersionId)
+            .catch(err => {
+                process.stdout.write('Error in before\n');
+                throw err;
+            });
+        });
+
+        afterEach(() => changeLockPromise([{ bucket, key, versionId }], '')
+            .then(() => s3.listObjectVersions({ Bucket: bucket }).promise())
+            .then(res => res.Versions.forEach(object => {
+                const params = [
+                    {
+                        bucket,
+                        key: object.Key,
+                        versionId: object.VersionId,
+                    },
+                ];
+                changeLockPromise(params, '');
+            }))
+            .then(() => {
+                process.stdout.write('Emptying and deleting buckets\n');
+                return bucketUtil.empty(bucket);
+            })
+            .then(() => s3.deleteBucket({ Bucket: bucket }).promise())
+            .catch(err => {
+                process.stdout.write('Error in afterEach');
+                throw err;
+            }));
+
+        it('should return object lock headers if set on the object', done => {
+            s3.headObject({ Bucket: bucket, Key: key }, (err, res) => {
+                assert.ifError(err);
+                assert.strictEqual(res.ObjectLockMode, mockMode);
+                const responseDate
+                    = formatDate(res.ObjectLockRetainUntilDate.toISOString());
+                const expectedDate = formatDate(mockDate);
+                assert.strictEqual(responseDate, expectedDate);
+                assert.strictEqual(res.ObjectLockLegalHoldStatus, 'ON');
+                const objectWithLock = [
+                    {
+                        bucket,
+                        key,
+                        versionId: res.VersionId,
+                    },
+                ];
+                changeObjectLock(objectWithLock, '', done);
             });
         });
     });

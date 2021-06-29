@@ -87,25 +87,18 @@ const constants = {
     unsupportedQueries: [
         'accelerate',
         'analytics',
-        'encryption',
         'inventory',
-        'legal-hold',
         'logging',
         'metrics',
-        'notification',
-        'object-lock',
-        'policy',
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
         'restore',
-        'retention',
         'torrent',
     ],
 
     // Headers supported by AWS that we do not currently support.
     unsupportedHeaders: [
-        'x-amz-server-side-encryption',
         'x-amz-server-side-encryption-customer-algorithm',
         'x-amz-server-side-encryption-aws-kms-key-id',
         'x-amz-server-side-encryption-context',
@@ -135,6 +128,29 @@ const constants = {
         '(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'),
     // user metadata applied on zenko objects
     zenkoIDHeader: 'x-amz-meta-zenko-instance-id',
+    bucketOwnerActions: [
+        'bucketDeleteCors',
+        'bucketDeleteLifecycle',
+        'bucketDeletePolicy',
+        'bucketDeleteReplication',
+        'bucketDeleteWebsite',
+        'bucketGetCors',
+        'bucketGetLifecycle',
+        'bucketGetLocation',
+        'bucketGetPolicy',
+        'bucketGetReplication',
+        'bucketGetVersioning',
+        'bucketGetWebsite',
+        'bucketPutCors',
+        'bucketPutLifecycle',
+        'bucketPutPolicy',
+        'bucketPutReplication',
+        'bucketPutVersioning',
+        'bucketPutWebsite',
+        'objectDeleteTagging',
+        'objectGetTagging',
+        'objectPutTagging',
+    ],
     // response header to be sent when there are invalid
     // user metadata in the object's metadata
     invalidObjectUserMetadataHeader: 'x-amz-missing-meta',
@@ -142,6 +158,11 @@ const constants = {
     // these queries may or may not be supported at object level
     unsupportedBucketQueries: [
         'tagging',
+    ],
+    suppressedUtapiEventFields: [
+        'object',
+        'location',
+        'versionId',
     ],
 };
 
