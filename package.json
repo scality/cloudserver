@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "bluebird": "^3.3.1",
-    "eslint": "^2.4.0",
+    "eslint": "^7.29.0",
     "eslint-config-airbnb": "^6.0.0",
     "eslint-config-scality": "scality/Guidelines#71a059ad",
     "ioredis": "4.9.5",
