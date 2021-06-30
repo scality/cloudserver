@@ -196,10 +196,10 @@ spec:
       imagePullPolicy: IfNotPresent
       resources:
         requests:
-          cpu: 500m
+          cpu: 400m
           memory: 1536Mi
         limits:
-          cpu: 500m
+          cpu: 400m
           memory: 1536Mi
       volumeMounts:
         - name: artifacts
