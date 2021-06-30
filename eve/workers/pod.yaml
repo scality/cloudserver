@@ -222,7 +222,7 @@ spec:
           cpu: 100m
           memory: 128Mi
     {%- endif %}
-    {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" and vars.env.CI_CEPH is not defined -%}
+    {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" -%}
     - name: azurite
       image: mcr.microsoft.com/azure-storage/azurite:3.13.0
       command: ['azurite']
