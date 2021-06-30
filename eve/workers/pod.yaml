@@ -225,12 +225,16 @@ spec:
     {% if vars.env.S3DATA is defined and vars.env.S3DATA == "multiple" and vars.env.CI_CEPH is not defined -%}
     - name: azurite
       image: mcr.microsoft.com/azure-storage/azurite:3.13.0
+      command: ['azurite']
+      args: ['--blobHost', '0.0.0.0', '--debug', '/artifacts/azurite.log']
       env:
       - name: AZURITE_ACCOUNTS
         value: "fakeaccountname:Fake00Key001;fakeaccountname2:Fake00Key002"
       volumeMounts:
         - name: azurite
           mountPath: /data
+        - name: artifacts
+          mountPath: /artifacts
       resources:
         requests:
           cpu: 100m
