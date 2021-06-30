@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/Arsenal#e1a3b05",
+    "arsenal": "github:scality/Arsenal#16a5e6a",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -106,6 +106,7 @@
     "utapi_reindex": "node lib/utapi/utapiReindex.js",
     "management_agent": "node managementAgent.js",
     "test": "CI=true S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit",
+    "test_versionid_base62": "VERSION_ID_ENC_TYPE=1 CI=true S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit/api",
     "test_legacy_location": "CI=true S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/unit",
     "test_utapi_v2": "mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --recursive tests/utapi",
     "multiple_backend_test": "CI=true S3BACKEND=mem S3DATA=multiple mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 20000 --recursive tests/multipleBackend",
