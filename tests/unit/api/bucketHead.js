@@ -46,4 +46,13 @@ describe('bucketHead API', () => {
             });
         });
     });
+
+    it('should return expected header value for x-amz-bucket-region', done => {
+        bucketPut(authInfo, testRequest, log, () => {
+            bucketHead(authInfo, testRequest, log, (err, headers) => {
+                assert.strictEqual(headers['x-amz-bucket-region'], 'us-east-1');
+                done();
+            });
+        });
+    });
 });
