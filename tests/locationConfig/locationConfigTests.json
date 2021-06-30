@@ -147,7 +147,7 @@
         "details": {
             "azureStorageEndpoint": "http://localhost:10000/fakeaccountname",
             "azureStorageAccountName": "fakeaccountname",
-            "azureStorageAccessKey": "Fake00Key123",
+            "azureStorageAccessKey": "Fake00Key001",
             "bucketMatch": true,
             "azureContainerName": "s3createbucketonfly"
         }
