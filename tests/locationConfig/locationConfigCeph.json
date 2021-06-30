@@ -137,7 +137,7 @@
         "objectId": "azurebackend",
         "legacyAwsBehavior": true,
         "details": {
-            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageEndpoint": "http://localhost:10000/fakeaccountname",
             "azureStorageAccountName": "fakeaccountname",
             "azureStorageAccessKey": "Fake00Key001",
             "bucketMatch": true,
@@ -149,7 +149,7 @@
         "objectId": "azurebackend2",
         "legacyAwsBehavior": true,
         "details": {
-            "azureStorageEndpoint": "https://fakeaccountname2.blob.core.fake.net/",
+            "azureStorageEndpoint": "http://localhost:10000/fakeaccountname2",
             "azureStorageAccountName": "fakeaccountname2",
             "azureStorageAccessKey": "Fake00Key002",
             "bucketMatch": true,
@@ -161,7 +161,7 @@
         "objectId": "azurebackendmismatch",
         "legacyAwsBehavior": true,
         "details": {
-            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageEndpoint": "http://localhost:10000/fakeaccountname",
             "azureStorageAccountName": "fakeaccountname",
             "azureStorageAccessKey": "Fake00Key001",
             "bucketMatch": false,
@@ -173,9 +173,9 @@
         "objectId": "azurenonexistcontainer",
         "legacyAwsBehavior": true,
         "details": {
-            "azureStorageEndpoint": "https://fakeaccountname.blob.core.fake.net/",
+            "azureStorageEndpoint": "http://localhost:10000/fakeaccountname",
             "azureStorageAccountName": "fakeaccountname",
-            "azureStorageAccessKey": "Fake00Key123",
+            "azureStorageAccessKey": "Fake00Key001",
             "bucketMatch": true,
             "azureContainerName": "s3createbucketonfly"
         }
