@@ -14,7 +14,7 @@ let sourceBucket;
 let destBucket;
 const sourceKey = 'sourceobjectkey';
 const destKey = 'destobjectkey';
-const invalidId = 'invalidId';
+const invalidId = 'invalidIdWithMoreThan40BytesAndThatIsNotLongEnoughYet';
 
 function _assertNoError(err, desc) {
     assert.strictEqual(err, null, `Unexpected err ${desc}: ${err}`);

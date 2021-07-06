@@ -110,12 +110,11 @@
   integrity sha512-7XHoRB61hxsz8lBQrjC1tq/3OEIgpvGWg6DKAdwi7WRzruwkmsdwmOoUXbU4Dtd4RSOMDwed0SkP3y8UlMt1Bg==
 
 "@senx/warp10@^1.0.14":
-  version "1.0.14"
-  resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-1.0.14.tgz#9a25007786b3dbc050f9a545a88291a6180fff8f"
-  integrity sha512-dfYDNLoOiRx8crnO/y39wNSjEVkiBRdWO2Vj2ClTXBz2b/4ozI0xfThN3bPZuX27oiLIJQRno2lJ73DZ00Gutg==
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@senx/warp10/-/warp10-1.1.2.tgz#b12ff40a203bf52b560a944e62ea4e992658119f"
+  integrity sha512-7ooeoNwbqAeaq+dxgQwM9PvEsFsC0VEfnKxTt634Q7287wf3J2ErtbFtW+BmivuOL1AyDR5rBfHz4MhvX2I04Q==
   dependencies:
-    dayjs "^1.10.1"
-    got "^11.8.1"
+    dayjs "^1.10.5"
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
@@ -126,11 +125,6 @@
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-2.1.1.tgz#ceff6a28a5b4867c2dd4a1ba513de278ccbe8bb1"
   integrity sha512-/aPsuoj/1Dw/kzhkgz+ES6TxG0zfTMGLwuK2ZG00k/iJzYHTLCE8mVU8EPqEOp/lmxPoq1C1C9RYToRKb2KEfg==
-
-"@sindresorhus/is@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-4.0.0.tgz#2ff674e9611b45b528896d820d3d7a812de2f0e4"
-  integrity sha512-FyD2meJpDPjyNQejSjvnhpgI/azsQkA4lGbuu5BQZfjvJ9cbRZXzeWL2HceCekW4lixO9JPesIIQkSoLjeJHNQ==
 
 "@sinonjs/commons@^1.6.0", "@sinonjs/commons@^1.7.0", "@sinonjs/commons@^1.8.1":
   version "1.8.2"
@@ -689,9 +683,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#e1a3b05":
-  version "8.2.1"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/e1a3b05330598a656806e888a760b65711fbfd76"
+"arsenal@github:scality/Arsenal#16a5e6a":
+  version "8.2.2"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/16a5e6a550af0a1879620d75e26b94b8f39c9afa"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -701,6 +695,8 @@ arraybuffer.slice@~0.0.7:
     aws-sdk "2.80.0"
     azure-storage "~2.1.0"
     backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "2.0.1"
     bson "4.0.0"
     debug "~4.1.0"
     diskusage "^1.1.1"
@@ -759,6 +755,8 @@ arsenal@scality/Arsenal#65966f5:
     agentkeepalive "^4.1.3"
     ajv "6.12.2"
     async "~2.1.5"
+    base-x "3.0.8"
+    base62 "2.0.1"
     debug "~2.6.9"
     diskusage "^1.1.1"
     ioredis "4.9.5"
@@ -766,6 +764,7 @@ arsenal@scality/Arsenal#65966f5:
     level "~5.0.1"
     level-sublevel "~6.6.5"
     node-forge "^0.7.1"
+    prom-client "10.2.3"
     simple-glob "^0.2"
     socket.io "~2.3.0"
     socket.io-client "~2.3.0"
@@ -1107,6 +1106,18 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
   integrity sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
 
+base-x@3.0.8:
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/base-x/-/base-x-3.0.8.tgz#1e1106c2537f0162e8b52474a557ebb09000018d"
+  integrity sha512-Rl/1AWP4J/zRrk54hhlxH4drNxPJXYUaKffODVI53/dAsV4t9fBxyxYKAVPU1XBHxYwOWP9h9H0hM2MVw4YfJA==
+  dependencies:
+    safe-buffer "^5.0.1"
+
+base62@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/base62/-/base62-2.0.1.tgz#729cfe179ed34c61e4a489490105b44ce4ea1197"
+  integrity sha512-4t4WQK7mdbcWzqEBiq6tfo2qDCeIZGXvjifJZyxHIVcjQkZJxpFtu/pa2Va69OouCkg6izZ08hKnPxroeDyzew==
+
 base64-arraybuffer@0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/base64-arraybuffer/-/base64-arraybuffer-0.1.4.tgz#9818c79e059b1355f97e0428a017c838e90ba812"
@@ -1308,7 +1319,6 @@ bucketclient@scality/bucketclient#949f11a:
   dependencies:
     arsenal scality/Arsenal#c57cde8
     werelogs scality/werelogs#351a2a3
-    yarn "^1.17.3"
 
 buffer-alloc-unsafe@^1.1.0:
   version "1.1.0"
@@ -1852,10 +1862,10 @@ data-uri-to-buffer@1:
   resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-1.2.0.tgz#77163ea9c20d8641b4707e8f18abdf9a78f34835"
   integrity sha512-vKQ9DTQPN1FLYiiEEOQ6IBGFqvjCa5rSK3cWMy/Nespm5d/x3dGFT9UBZnkLxCwua/IXBi2TYnwTEpsOvhC4UQ==
 
-dayjs@^1.10.1:
-  version "1.10.4"
-  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.10.4.tgz#8e544a9b8683f61783f570980a8a80eaf54ab1e2"
-  integrity sha512-RI/Hh4kqRc1UKLOAf/T5zdMMX5DQIlDxwUe3wSyMMnEbGunnpENCdbUgM+dW7kXidZqCttBrmw7BhN4TMddkCw==
+dayjs@^1.10.5:
+  version "1.10.5"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.10.5.tgz#5600df4548fc2453b3f163ebb2abbe965ccfb986"
+  integrity sha512-BUFis41ikLz+65iH6LHQCDm4YPMj5r1YFLdupPIyM4SGcXMmtiLQ7U37i+hGS8urIuqe7I/ou3IS1jVc4nbN4g==
 
 debug@2, debug@2.6.9, debug@^2.2.0, debug@^2.6.8, debug@^2.6.9, debug@~2.6.9:
   version "2.6.9"
@@ -3061,23 +3071,6 @@ got@11.4.0:
     p-cancelable "^2.0.0"
     responselike "^2.0.0"
 
-got@^11.8.1:
-  version "11.8.1"
-  resolved "https://registry.yarnpkg.com/got/-/got-11.8.1.tgz#df04adfaf2e782babb3daabc79139feec2f7e85d"
-  integrity sha512-9aYdZL+6nHmvJwHALLwKSUZ0hMwGaJGYv3hoPLPgnT8BoBXm1SjnZeky+91tfwJaDzun2s4RsBRy48IEYv2q2Q==
-  dependencies:
-    "@sindresorhus/is" "^4.0.0"
-    "@szmarczak/http-timer" "^4.0.5"
-    "@types/cacheable-request" "^6.0.1"
-    "@types/responselike" "^1.0.0"
-    cacheable-lookup "^5.0.3"
-    cacheable-request "^7.0.1"
-    decompress-response "^6.0.0"
-    http2-wrapper "^1.0.0-beta.5.2"
-    lowercase-keys "^2.0.0"
-    p-cancelable "^2.0.0"
-    responselike "^2.0.0"
-
 got@^9.6.0:
   version "9.6.0"
   resolved "https://registry.yarnpkg.com/got/-/got-9.6.0.tgz#edf45e7d67f99545705de1f7bbeeeb121765ed85"
@@ -3350,7 +3343,7 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
-http2-wrapper@^1.0.0-beta.4.5, http2-wrapper@^1.0.0-beta.5.2:
+http2-wrapper@^1.0.0-beta.4.5:
   version "1.0.0-beta.5.2"
   resolved "https://registry.yarnpkg.com/http2-wrapper/-/http2-wrapper-1.0.0-beta.5.2.tgz#8b923deb90144aea65cf834b016a340fc98556f3"
   integrity sha512-xYz9goEyBnC8XwXDTuC/MZ6t+MrKVQZOk4s7+PaDkwIsQd8IwqvM+0M6bA/2lvG8GHXcPdf+MejTUeO2LCPCeQ==

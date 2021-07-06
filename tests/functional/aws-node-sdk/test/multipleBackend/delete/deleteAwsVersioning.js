@@ -168,8 +168,8 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     err => next(err)),
                 next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
-                    key, versionId: 'awsVerId', resultError:
-                    'InvalidArgument' }, err => next(err, awsVerId)),
+                    key, versionId: 'awsVerIdWhichIsLongerThan40BytesButNotLongEnough',
+                     resultError: 'InvalidArgument' }, err => next(err, awsVerId)),
                 (awsVerId, next) => awsGetLatestVerId(key, someBody,
                     (err, resultVid) => {
                         assert.strictEqual(resultVid, awsVerId);
