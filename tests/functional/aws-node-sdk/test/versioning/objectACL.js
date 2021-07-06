@@ -14,7 +14,7 @@ const {
 const counter = 100;
 let bucket;
 const key = '/';
-const invalidId = 'invalidId';
+const invalidId = 'invalidIdWithMoreThan40BytesAndThatIsNotLongEnoughYet';
 // formats differ for AWS and S3, use respective sample ids to obtain
 // correct error response in tests
 const nonExistingId = process.env.AWS_ON_AIR ?
