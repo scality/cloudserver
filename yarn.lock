@@ -689,9 +689,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#e1a3b05":
-  version "8.2.1"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/e1a3b05330598a656806e888a760b65711fbfd76"
+"arsenal@github:scality/Arsenal#w/8.1/bugfix/ARSN-1/remove-contentmd5-check-azure":
+  version "8.2.2"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/0f63de2f05a0dd7f73e9a5356d930211893beb58"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -701,6 +701,8 @@ arraybuffer.slice@~0.0.7:
     aws-sdk "2.80.0"
     azure-storage "~2.1.0"
     backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "2.0.1"
     bson "4.0.0"
     debug "~4.1.0"
     diskusage "^1.1.1"
@@ -1106,6 +1108,18 @@ balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
   integrity sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
+
+base-x@3.0.8:
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/base-x/-/base-x-3.0.8.tgz#1e1106c2537f0162e8b52474a557ebb09000018d"
+  integrity sha512-Rl/1AWP4J/zRrk54hhlxH4drNxPJXYUaKffODVI53/dAsV4t9fBxyxYKAVPU1XBHxYwOWP9h9H0hM2MVw4YfJA==
+  dependencies:
+    safe-buffer "^5.0.1"
+
+base62@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/base62/-/base62-2.0.1.tgz#729cfe179ed34c61e4a489490105b44ce4ea1197"
+  integrity sha512-4t4WQK7mdbcWzqEBiq6tfo2qDCeIZGXvjifJZyxHIVcjQkZJxpFtu/pa2Va69OouCkg6izZ08hKnPxroeDyzew==
 
 base64-arraybuffer@0.1.4:
   version "0.1.4"
