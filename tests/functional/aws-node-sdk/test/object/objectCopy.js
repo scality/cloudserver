@@ -663,17 +663,6 @@ describe('Object Copy', () => {
                 });
         });
 
-        it('should return InvalidArgument error for obj. encryption using ' +
-            'AWS-managed encryption keys', done => {
-            const params = { Bucket: destBucketName, Key: 'key',
-                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                ServerSideEncryption: 'AES256' };
-            s3.copyObject(params, err => {
-                assert.strictEqual(err.code, 'InvalidArgument');
-                done();
-            });
-        });
-
         it('should return Not Implemented error for obj. encryption using ' +
             'customer-provided encryption keys', done => {
             const params = { Bucket: destBucketName, Key: 'key',
