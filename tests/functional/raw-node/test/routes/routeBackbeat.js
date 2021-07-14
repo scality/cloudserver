@@ -16,6 +16,7 @@ const backbeatAuthCredentials = {
 };
 
 const TEST_BUCKET = 'backbeatbucket';
+const TEST_ENCRYPTED_BUCKET = 'backbeatbucket-encrypted';
 const TEST_KEY = 'fookey';
 const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
 
@@ -59,17 +60,6 @@ const testMd = {
     },
 };
 
-function checkObjectData(s3, objectKey, dataValue, done) {
-    s3.getObject({
-        Bucket: TEST_BUCKET,
-        Key: objectKey,
-    }, (err, data) => {
-        assert.ifError(err);
-        assert.strictEqual(data.Body.toString(), dataValue);
-        done();
-    });
-}
-
 /** makeBackbeatRequest - utility function to generate a request going
  * through backbeat route
  * @param {object} params - params for making request
@@ -103,6 +93,20 @@ function makeBackbeatRequest(params, callback) {
     makeRequest(options, callback);
 }
 
+function getMetadataToPut(putDataResponse) {
+    const mdToPut = Object.assign({}, testMd);
+    // Reproduce what backbeat does to update target metadata
+    mdToPut.location = JSON.parse(putDataResponse.body);
+    ['x-amz-server-side-encryption',
+     'x-amz-server-side-encryption-aws-kms-key-id',
+     'x-amz-server-side-encryption-customer-algorithm'].forEach(headerName => {
+         if (putDataResponse.headers[headerName]) {
+             mdToPut[headerName] = putDataResponse.headers[headerName];
+         }
+     });
+    return mdToPut;
+}
+
 describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
     let s3;
@@ -120,6 +124,25 @@ describeSkipIfAWS('backbeat routes', () => {
             .then(() => s3.createBucket({
                 Bucket: NONVERSIONED_BUCKET,
             }).promise())
+            .then(() => s3.createBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
+            .then(() => s3.putBucketVersioning(
+                {
+                    Bucket: TEST_ENCRYPTED_BUCKET,
+                    VersioningConfiguration: { Status: 'Enabled' },
+                }).promise())
+            .then(() => s3.putBucketEncryption(
+                {
+                    Bucket: TEST_ENCRYPTED_BUCKET,
+                    ServerSideEncryptionConfiguration: {
+                        Rules: [
+                            {
+                                ApplyServerSideEncryptionByDefault: {
+                                    SSEAlgorithm: 'AES256',
+                                },
+                            },
+                        ],
+                    },
+                }).promise())
             .then(() => done())
             .catch(err => {
                 process.stdout.write(`Error creating bucket: ${err}\n`);
@@ -129,6 +152,8 @@ describeSkipIfAWS('backbeat routes', () => {
     after(done => {
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
+            .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
+            .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
             .then(() =>
                 s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
             .then(() => done());
@@ -149,6 +174,22 @@ describeSkipIfAWS('backbeat routes', () => {
                 caption: 'with percents and spaces encoded as \'+\' in key',
                 key: '50% full or 50% empty',
                 encodedKey: '50%25+full+or+50%25+empty',
+            },
+            {
+                caption: 'with legacy API v1',
+                key: testKey, encodedKey: testKey,
+                legacyAPI: true,
+            },
+            {
+                caption: 'with encryption configuration',
+                key: testKey, encodedKey: testKey,
+                encryption: true,
+            },
+            {
+                caption: 'with encryption configuration and legacy API v1',
+                key: testKey, encodedKey: testKey,
+                encryption: true,
+                legacyAPI: true,
             }].concat([
                 `${testKeyUTF8}/${testKeyUTF8}/%42/mykey`,
                 'Pâtisserie=中文-español-English',
@@ -168,10 +209,13 @@ describeSkipIfAWS('backbeat routes', () => {
             .forEach(testCase => {
                 it(testCase.caption, done => {
                     async.waterfall([next => {
+                        const queryObj = testCase.legacyAPI ? {} : { v2: '' };
                         makeBackbeatRequest({
-                            method: 'PUT', bucket: TEST_BUCKET,
+                            method: 'PUT', bucket: testCase.encryption ?
+                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
                             objectKey: testCase.encodedKey,
                             resourceType: 'data',
+                            queryObj,
                             headers: {
                                 'content-length': testData.length,
                                 'content-md5': testDataMd5,
@@ -181,10 +225,18 @@ describeSkipIfAWS('backbeat routes', () => {
                             requestBody: testData }, next);
                     }, (response, next) => {
                         assert.strictEqual(response.statusCode, 200);
-                        const newMd = Object.assign({}, testMd);
-                        newMd.location = JSON.parse(response.body);
+                        const newMd = getMetadataToPut(response);
+                        if (testCase.encryption && !testCase.legacyAPI) {
+                            assert.strictEqual(typeof newMd.location[0].cryptoScheme, 'number');
+                            assert.strictEqual(typeof newMd.location[0].cipheredDataKey, 'string');
+                        } else {
+                            // if no encryption or legacy API, data should not be encrypted
+                            assert.strictEqual(newMd.location[0].cryptoScheme, undefined);
+                            assert.strictEqual(newMd.location[0].cipheredDataKey, undefined);
+                        }
                         makeBackbeatRequest({
-                            method: 'PUT', bucket: TEST_BUCKET,
+                            method: 'PUT', bucket: testCase.encryption ?
+                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
                             objectKey: testCase.encodedKey,
                             resourceType: 'metadata',
                             queryObj: {
@@ -196,7 +248,15 @@ describeSkipIfAWS('backbeat routes', () => {
                         }, next);
                     }, (response, next) => {
                         assert.strictEqual(response.statusCode, 200);
-                        checkObjectData(s3, testCase.key, testData, next);
+                        s3.getObject({
+                            Bucket: testCase.encryption ?
+                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
+                            Key: testCase.key,
+                        }, (err, data) => {
+                            assert.ifError(err);
+                            assert.strictEqual(data.Body.toString(), testData);
+                            next();
+                        });
                     }], err => {
                         assert.ifError(err);
                         done();
@@ -209,9 +269,10 @@ describeSkipIfAWS('backbeat routes', () => {
         'header should replicate metadata only', done => {
             async.waterfall([next => {
                 makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
+                    method: 'PUT', bucket: TEST_ENCRYPTED_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'data',
+                    queryObj: { v2: '' },
                     headers: {
                         'content-length': testData.length,
                         'content-md5': testDataMd5,
@@ -222,10 +283,9 @@ describeSkipIfAWS('backbeat routes', () => {
                 }, next);
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
-                const newMd = Object.assign({}, testMd);
-                newMd.location = JSON.parse(response.body);
+                const newMd = getMetadataToPut(response);
                 makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
+                    method: 'PUT', bucket: TEST_ENCRYPTED_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
                     queryObj: {
@@ -236,9 +296,13 @@ describeSkipIfAWS('backbeat routes', () => {
                 }, next);
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
+                // Don't update the sent metadata since it is sent by
+                // backbeat as received from the replication queue,
+                // without updated data location or encryption info
+                // (since that info is not known by backbeat)
                 const newMd = Object.assign({}, testMd);
                 makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
+                    method: 'PUT', bucket: TEST_ENCRYPTED_BUCKET,
                     objectKey: 'test-updatemd-key',
                     resourceType: 'metadata',
                     queryObj: {
@@ -250,7 +314,14 @@ describeSkipIfAWS('backbeat routes', () => {
                 }, next);
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
-                checkObjectData(s3, 'test-updatemd-key', testData, next);
+                s3.getObject({
+                    Bucket: TEST_ENCRYPTED_BUCKET,
+                    Key: 'test-updatemd-key',
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                });
             }], err => {
                 assert.ifError(err);
                 done();
@@ -261,6 +332,7 @@ describeSkipIfAWS('backbeat routes', () => {
         done => makeBackbeatRequest({
             method: 'PUT', bucket: NONVERSIONED_BUCKET,
             objectKey: testKey, resourceType: 'data',
+            queryObj: { v2: '' },
             headers: {
                 'content-length': testData.length,
                 'content-md5': testDataMd5,
@@ -293,6 +365,7 @@ describeSkipIfAWS('backbeat routes', () => {
            'is provided', done => makeBackbeatRequest({
                method: 'PUT', bucket: TEST_BUCKET,
                objectKey: testKey, resourceType: 'data',
+               queryObj: { v2: '' },
                headers: {
                    'content-length': testData.length,
                    'content-md5': testDataMd5,
@@ -309,6 +382,7 @@ describeSkipIfAWS('backbeat routes', () => {
         done => makeBackbeatRequest({
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: testKey, resourceType: 'data',
+            queryObj: { v2: '' },
             headers: {
                 'content-length': testData.length,
                 'x-scal-canonical-id': testArn,
@@ -345,12 +419,14 @@ describeSkipIfAWS('backbeat routes', () => {
     describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
          { method: 'PUT', resourceType: 'data' }].forEach(test => {
+             const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
              it(`${test.method} ${test.resourceType} should respond with ` +
              '403 Forbidden if no credentials are provided',
              done => {
                  makeBackbeatRequest({
                      method: test.method, bucket: TEST_BUCKET,
                      objectKey: TEST_KEY, resourceType: test.resourceType,
+                     queryObj,
                  },
                  err => {
                      assert(err);
@@ -365,6 +441,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
+                        queryObj,
                         authCredentials: {
                             accessKey: 'wrong',
                             secretKey: 'still wrong',
@@ -384,6 +461,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
+                        queryObj,
                         authCredentials: {
                             accessKey: 'accessKey2',
                             secretKey: 'verySecretKey2',
@@ -402,6 +480,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     makeBackbeatRequest({
                         method: test.method, bucket: TEST_BUCKET,
                         objectKey: TEST_KEY, resourceType: test.resourceType,
+                        queryObj,
                         authCredentials: {
                             accessKey: backbeatAuthCredentials.accessKey,
                             secretKey: 'hastalavista',
