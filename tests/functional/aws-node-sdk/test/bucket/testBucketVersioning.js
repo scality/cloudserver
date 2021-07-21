@@ -127,7 +127,6 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
 
     it('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
-        // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
             assert.strictEqual(error, null);
             assert.deepStrictEqual(data, { MFADelete: 'Disabled',
@@ -159,7 +158,6 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
 
     it('should retrieve the valid versioning configuration', done => {
         const params = { Bucket: bucket };
-        // s3.getBucketVersioning(params, done);
         s3.getBucketVersioning(params, (error, data) => {
             assert.strictEqual(error, null);
             assert.deepStrictEqual(data, { Status: 'Enabled' });
@@ -190,3 +188,34 @@ describe('bucket versioning for ingestion buckets', () => {
         });
     });
 });
+
+describe('aws-node-sdk test bucket versioning with object lock', () => {
+    let s3;
+
+    // setup test
+    before(done => {
+        const config = getConfig('default', { signatureVersion: 'v4' });
+        s3 = new S3(config);
+        s3.createBucket({
+            Bucket: bucket,
+            ObjectLockEnabledForBucket: true,
+        }, done);
+    });
+
+    // delete bucket after testing
+    after(done => s3.deleteBucket({ Bucket: bucket }, done));
+
+    it('should not accept suspending version when object lock is enabled', done => {
+        const params = {
+            Bucket: bucket,
+            VersioningConfiguration: {
+                Status: 'Suspended',
+            },
+        };
+        s3.putBucketVersioning(params, error => {
+            assert.strictEqual(error.code, 'InvalidBucketState');
+            done();
+        });
+    });
+});
+
