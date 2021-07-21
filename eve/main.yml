@@ -63,10 +63,12 @@ models:
       S3BACKEND: "mem"
       MPU_TESTING: "yes"
       S3METADATA: mongodb
+      S3KMS: "file"
   - env: &multiple-backend-vars
       S3BACKEND: "mem"
       S3DATA: "multiple"
       MPU_TESTING: "yes"
+      S3KMS: "file"
   - env: &file-mem-mpu
       S3BACKEND: "file"
       S3VAULT: "mem"
