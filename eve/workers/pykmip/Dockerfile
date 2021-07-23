@@ -8,9 +8,13 @@ RUN apk add --no-cache \
         libressl-dev \
         sqlite-dev \
         build-base \
-        rust \
-        cargo && \
-    pip install pykmip requests && \
+        curl
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN pip3 install -U pip && \
+    pip3 install pykmip requests && \
     apk del .build-deps && \
     mkdir /pykmip
 
