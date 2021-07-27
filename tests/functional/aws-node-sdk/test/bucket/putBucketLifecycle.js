@@ -80,6 +80,33 @@ describe('aws-sdk test put bucket lifecycle', () => {
                 assertError(err, null, done));
         });
 
+        it('should not allow lifecycle configuration with duplicated rule id ' +
+        'and with Origin header set', done => {
+            const origin = 'http://www.allowedwebsite.com';
+
+            const lifecycleConfig = {
+                Rules: [basicRule, basicRule],
+            };
+            const params = {
+                Bucket: bucket,
+                LifecycleConfiguration: lifecycleConfig,
+            };
+            const request = s3.putBucketLifecycleConfiguration(params);
+            // modify underlying http request object created by aws sdk to add
+            // origin header
+            request.on('build', () => {
+                request.httpRequest.headers.origin = origin;
+            });
+            request.on('success', response => {
+                assert(!response, 'expected error but got success');
+                return done();
+            });
+            request.on('error', err => {
+                assertError(err, 'InvalidRequest', done);
+            });
+            request.send();
+        });
+
         it('should not allow lifecycle config with no Status', done => {
             const params = getLifecycleParams({ key: 'Status', value: '' });
             s3.putBucketLifecycleConfiguration(params, err =>
