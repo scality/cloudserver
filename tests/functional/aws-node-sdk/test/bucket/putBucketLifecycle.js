@@ -85,7 +85,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             const origin = 'http://www.allowedwebsite.com';
 
             const lifecycleConfig = {
-                Rules: [basicRule, basicRule],
+                Rules: [expirationRule, expirationRule],
             };
             const params = {
                 Bucket: bucket,
