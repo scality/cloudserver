@@ -16,12 +16,12 @@ const mockCreationDate = new Date().toJSON();
 
 const bucketInfo = new BucketInfo(
     mockName, mockOwner, mockOwnerDisplayName, mockCreationDate,
-    null, null, null, null, null, null, null, null, null, null,
+    null, null, null, null, null, null, null, null, null, null, null,
     null, null, true);
 
 const objLockDisabledBucketInfo = new BucketInfo(
     mockName, mockOwner, mockOwnerDisplayName, mockCreationDate,
-    null, null, null, null, null, null, null, null, null, null,
+    null, null, null, null, null, null, null, null, null, null, null,
     null, null, false);
 
 const log = new DummyRequestLogger();
