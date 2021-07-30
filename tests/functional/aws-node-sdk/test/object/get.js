@@ -658,13 +658,19 @@ describe('GET object', () => {
             it('If-None-Match & If-Modified-Since: returns NotModified when ' +
                 'Etag does not match and lastModified is greater',
                 done => {
-                    requestGet({
+                    const req = s3.getObject({
+                        Bucket: bucketName,
+                        Key: objectName,
                         IfNoneMatch: etagTrim,
                         IfModifiedSince: dateFromNow(-1),
                     }, err => {
                         checkError(err, 'NotModified');
                         done();
                     });
+                    req.on('httpHeaders', (code, headers, response, status) => {
+                        assert(!headers.hasOwnProperty('content-type'));
+                        assert(!headers.hasOwnProperty('content-length'));
+                    })
                 });
 
             it('If-None-Match not match & If-Modified-Since not match',
