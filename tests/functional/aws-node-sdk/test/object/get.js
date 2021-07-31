@@ -662,15 +662,15 @@ describe('GET object', () => {
                         Bucket: bucketName,
                         Key: objectName,
                         IfNoneMatch: etagTrim,
-                        IfModifiedSince: dateFromNow(-1),
+                        IfModifiedSince: dateFromNow(1),
                     }, err => {
                         checkError(err, 'NotModified');
                         done();
                     });
-                    req.on('httpHeaders', (code, headers, response, status) => {
-                        assert(!headers.hasOwnProperty('content-type'));
-                        assert(!headers.hasOwnProperty('content-length'));
-                    })
+                    req.on('httpHeaders', (code, headers) => {
+                        assert(!headers['content-type']);
+                        assert(!headers['content-length']);
+                    });
                 });
 
             it('If-None-Match not match & If-Modified-Since not match',
