@@ -301,6 +301,20 @@ describe('without object metadata', () => {
 
     const tests = [
         {
+            it: 'should allow user if part of the bucket owner account',
+            canned: 'private', id: objectOwnerCanonicalId,
+            authInfo: userAuthInfo,
+            aclParam: null,
+            response: allowedAccess,
+        },
+        {
+            it: 'should not allow user if not part of the bucket owner account',
+            canned: 'private', id: accountToVet,
+            authInfo: altAcctAuthInfo,
+            aclParam: null,
+            response: deniedAccess,
+        },
+        {
             it: 'should allow bucket owner',
             canned: 'private', id: bucketOwnerCanonicalId,
             aclParam: null,
