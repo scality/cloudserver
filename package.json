@@ -40,7 +40,7 @@
     "utf8": "~2.1.1",
     "uuid": "^3.0.1",
     "vaultclient": "scality/vaultclient#75beb2a",
-    "werelogs": "scality/werelogs#0a4c576",
+    "werelogs": "scality/werelogs#8.1.0",
     "xml2js": "~0.4.16"
   },
   "devDependencies": {
