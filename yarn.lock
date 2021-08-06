@@ -7718,6 +7718,12 @@ werelogs@scality/werelogs#4e0d97c:
   dependencies:
     safe-json-stringify "1.0.3"
 
+werelogs@scality/werelogs#8.1.0:
+  version "8.1.0"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/e8f828725642c54c511cdbe580b18f43d3589313"
+  dependencies:
+    safe-json-stringify "1.0.3"
+
 werelogs@scality/werelogs#GA7.2.0.5:
   version "7.2.0"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/bc034589ebf7810d6e6d61932f94327976de6eef"
