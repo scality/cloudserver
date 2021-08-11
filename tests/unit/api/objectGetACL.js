@@ -64,8 +64,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -77,7 +76,7 @@ describe('objectGetACL API', () => {
     });
 
     it('should return an error if try to get an ACL ' +
-        'for a nonexistent object', done => {
+    'for a nonexistent object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectGetACL(authInfo, testGetACLRequest, log, err => {
                 assert.deepStrictEqual(err, errors.NoSuchKey);
@@ -103,8 +102,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -139,8 +137,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -182,8 +179,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -223,8 +219,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -263,8 +258,7 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -313,12 +307,11 @@ describe('objectGetACL API', () => {
                 objectGetACL(authInfo, testGetACLRequest, log, next);
             },
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
-                'eacf8f8d5218e7cd47ef2be');
+            'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .DisplayName[0], 'sampleaccount1@sampling.com');
@@ -328,7 +321,7 @@ describe('objectGetACL API', () => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
-                'eacf8f8d5218e7cd47ef2bf');
+            'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .DisplayName[0], 'sampleaccount2@sampling.com');
@@ -338,7 +331,7 @@ describe('objectGetACL API', () => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
-                'eacf8f8d5218e7cd47ef2bf');
+            'eacf8f8d5218e7cd47ef2bf');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
                 .DisplayName[0], 'sampleaccount2@sampling.com');
@@ -348,7 +341,7 @@ describe('objectGetACL API', () => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
-                'eacf8f8d5218e7cd47ef2be');
+            'eacf8f8d5218e7cd47ef2be');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
                 .DisplayName[0], 'sampleaccount1@sampling.com');
@@ -365,6 +358,52 @@ describe('objectGetACL API', () => {
                 AccessControlList[0].Grant[5],
                 undefined);
             done();
+        });
+    });
+
+    const grantsByURI = [
+        constants.publicId,
+        constants.allAuthedUsersId,
+    ];
+
+    grantsByURI.forEach(uri => {
+        it('should get all ACLs when predefined group - ' +
+        `${uri} is used for multiple grants`, done => {
+            const testPutObjectRequest = new DummyRequest({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: {
+                    'x-amz-grant-full-control': `uri=${uri}`,
+                    'x-amz-grant-read': `uri=${uri}`,
+                    'x-amz-grant-write': `uri=${uri}`,
+                    'x-amz-grant-read-acp': `uri=${uri}`,
+                    'x-amz-grant-write-acp': `uri=${uri}`,
+                },
+                url: `/${bucketName}/${objectName}`,
+            }, postBody);
+            async.waterfall([
+                next => bucketPut(authInfo, testBucketPutRequest,
+                    log, next),
+                (corsHeaders, next) => objectPut(authInfo,
+                    testPutObjectRequest, undefined, log, next),
+                (resHeaders, next) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectGetACL(authInfo, testGetACLRequest, log, next);
+                },
+                (result, corsHeaders, next) => parseString(result, next),
+            ], (err, result) => {
+                assert.ifError(err);
+                const grants =
+                    result.AccessControlPolicy.AccessControlList[0].Grant;
+                grants.forEach(grant => {
+                    assert.strictEqual(grant.Permission.length, 1);
+                    assert.strictEqual(grant.Grantee.length, 1);
+                    assert.strictEqual(grant.Grantee[0].URI.length, 1);
+                    assert.strictEqual(grant.Grantee[0].URI[0], `${uri}`);
+                });
+                done();
+            });
         });
     });
 });
