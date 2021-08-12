@@ -53,8 +53,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo,
                 testGetACLRequest, log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -86,8 +85,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -130,8 +128,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -168,8 +165,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -207,8 +203,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalID);
@@ -266,8 +261,7 @@ describe('bucketGetACL API', () => {
             (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
                 log, next),
             (result, corsHeaders, next) => parseString(result, next),
-        ],
-        (err, result) => {
+        ], (err, result) => {
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Grantee[0]
                 .ID[0], canonicalIDforSample1);
@@ -321,4 +315,97 @@ describe('bucketGetACL API', () => {
             done();
         });
     });
+
+    const grantsByURI = [
+        constants.publicId,
+        constants.allAuthedUsersId,
+        constants.logId,
+    ];
+
+    grantsByURI.forEach(uri => {
+        it('should get all ACLs when predefined group - ' +
+            `${uri} is used for multiple grants`, done => {
+                const testPutACLRequest = {
+                    bucketName,
+                    namespace,
+                    headers: {
+                        'host': `${bucketName}.s3.amazonaws.com`,
+                        'x-amz-grant-full-control': `uri = ${uri}`,
+                        'x-amz-grant-read': `uri = ${uri}`,
+                        'x-amz-grant-write': `uri = ${uri}`,
+                        'x-amz-grant-read-acp': `uri = ${uri}`,
+                        'x-amz-grant-write-acp': `uri = ${uri}`,
+                    },
+                    url: '/?acl',
+                    query: { acl: '' },
+                };
+
+                async.waterfall([
+                    next => bucketPut(authInfo, testBucketPutRequest,
+                        log, next), (corsHeaders, next) =>
+                        bucketPutACL(authInfo, testPutACLRequest, log, next),
+                    (corsHeaders, next) => bucketGetACL(authInfo,
+                        testGetACLRequest, log, next),
+                    (result, corsHeaders, next) => parseString(result, next),
+                ], (err, result) => {
+                    assert.ifError(err);
+                    const grants =
+                        result.AccessControlPolicy.AccessControlList[0].Grant;
+                    grants.forEach(grant => {
+                        assert.strictEqual(grant.Permission.length, 1);
+                        assert.strictEqual(grant.Grantee.length, 1);
+                        assert.strictEqual(grant.Grantee[0].URI.length, 1);
+                        assert.strictEqual(grant.Grantee[0].URI[0], `${uri}`);
+                    });
+                    done();
+                });
+            });
+    });
+
+    it('should get all ACLs when predefined groups are used for ' +
+        'more than one grant', done => {
+            const { allAuthedUsersId, publicId } = constants;
+            const testPutACLRequest = {
+                bucketName,
+                namespace,
+                headers: {
+                    'host': `${bucketName}.s3.amazonaws.com`,
+                    'x-amz-grant-write': `uri = ${allAuthedUsersId} `,
+                    'x-amz-grant-write-acp': `uri = ${allAuthedUsersId} `,
+                    'x-amz-grant-read': `uri = ${publicId} `,
+                    'x-amz-grant-read-acp': `uri = ${publicId} `,
+                },
+                url: '/?acl',
+                query: { acl: '' },
+            };
+
+            async.waterfall([
+                next => bucketPut(authInfo, testBucketPutRequest, log, next),
+                (corsHeaders, next) =>
+                    bucketPutACL(authInfo, testPutACLRequest, log, next),
+                (corsHeaders, next) => bucketGetACL(authInfo, testGetACLRequest,
+                    log, next),
+                (result, corsHeaders, next) => parseString(result, next),
+            ], (err, result) => {
+                assert.ifError(err);
+                const grants =
+                    result.AccessControlPolicy.AccessControlList[0].Grant;
+                grants.forEach(grant => {
+                    const permissions = grant.Permission;
+                    assert.strictEqual(permissions.length, 1);
+                    const permission = permissions[0];
+                    assert.strictEqual(grant.Grantee.length, 1);
+                    const grantees = grant.Grantee[0].URI;
+                    assert.strictEqual(grantees.length, 1);
+                    const grantee = grantees[0];
+                    if (['WRITE', 'WRITE_ACP'].includes(permission)) {
+                        assert.strictEqual(grantee, constants.allAuthedUsersId);
+                    }
+                    if (['READ', 'READ_ACP'].includes(permission)) {
+                        assert.strictEqual(grantee, constants.publicId);
+                    }
+                });
+                done();
+            });
+        });
 });
