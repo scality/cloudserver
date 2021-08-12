@@ -376,7 +376,6 @@ describe('objectGetACL API', () => {
                 headers: {
                     'x-amz-grant-full-control': `uri=${uri}`,
                     'x-amz-grant-read': `uri=${uri}`,
-                    'x-amz-grant-write': `uri=${uri}`,
                     'x-amz-grant-read-acp': `uri=${uri}`,
                     'x-amz-grant-write-acp': `uri=${uri}`,
                 },
