@@ -38,6 +38,7 @@ withV4(sigCfg => {
 
     function cbWithError(done) {
         return err => {
+            assert.notStrictEqual(err, null);
             assert.strictEqual(err.statusCode, errors.AccessDenied.code);
             done();
         };
@@ -99,7 +100,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it.skip('should grant write access', done => {
+            it('should grant write access', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
@@ -114,7 +115,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it.skip('should grant write access with ' +
+            it('should grant write access with ' +
                 'grant-full-control', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
@@ -130,8 +131,7 @@ withV4(sigCfg => {
                 });
             });
 
-            // TODO: handle write acl in S3C-4401
-            it.skip('should not grant write access', done => {
+            it('should not grant write access', done => {
                 s3.putBucketAcl(aclParam, err => {
                     assert.ifError(err);
                     const param = {
@@ -143,7 +143,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it.skip('should not grant write access on an object not owned ' +
+            it('should not grant write access on an object not owned ' +
                 'by the grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
@@ -159,7 +159,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it.skip('should not delete object not owned by the ' +
+            it('should not delete object not owned by the ' +
                 'grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
