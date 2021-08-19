@@ -143,7 +143,7 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should not grant write access on an object not owned ' +
+            it('should grant write access on an object not owned ' +
                 'by the grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
@@ -155,12 +155,12 @@ withV4(sigCfg => {
                         Body: testBody,
                         Key: ownerObjKey,
                     };
-                    awsRequest(auth, 'putObject', param, cbWithError(done));
+                    awsRequest(auth, 'putObject', param, cbNoError(done));
                 });
             });
 
-            it('should not delete object not owned by the ' +
-                'grantee', done => {
+            it(`should ${auth ? '' : 'not '}delete object not owned by the` +
+            'grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
                     GrantWrite: grantUri,
@@ -170,7 +170,18 @@ withV4(sigCfg => {
                         Bucket: testBucket,
                         Key: ownerObjKey,
                     };
-                    awsRequest(auth, 'deleteObject', param, cbWithError(done));
+                    awsRequest(auth, 'deleteObject', param, err => {
+                        if (auth) {
+                            assert.ifError(err);
+                        } else {
+                            assert.notStrictEqual(err, null);
+                            assert.strictEqual(
+                                err.statusCode,
+                                errors.AccessDenied.code
+                            );
+                        }
+                        done();
+                    });
                 });
             });
 
