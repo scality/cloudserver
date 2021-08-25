@@ -309,6 +309,31 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "2.0.0"
 
+arsenal@scality/Arsenal#918a1d7:
+  version "7.5.0"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/918a1d7c899a7ecddcd1d6e7bbdd49b5becc5bd0"
+  dependencies:
+    "@hapi/joi" "^15.1.0"
+    JSONStream "^1.0.0"
+    ajv "6.12.2"
+    async "~2.1.5"
+    debug "~2.6.9"
+    diskusage "^1.1.1"
+    ioredis "4.9.5"
+    ipaddr.js "1.9.1"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    node-forge "^0.7.1"
+    simple-glob "^0.2"
+    socket.io "~2.3.0"
+    socket.io-client "~2.3.0"
+    utf8 "2.1.2"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#0ff7ec82
+    xml2js "~0.4.23"
+  optionalDependencies:
+    ioctl "2.0.0"
+
 arsenal@scality/Arsenal#9f2e74e:
   version "7.4.3"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/9f2e74ec6972527c2a9ca6ecb4155618f123fc19"
@@ -351,31 +376,6 @@ arsenal@scality/Arsenal#dd6fde6:
     level "~5.0.1"
     level-sublevel "~6.6.5"
     mongodb "^3.0.1"
-    node-forge "^0.7.1"
-    simple-glob "^0.1"
-    socket.io "~1.7.3"
-    socket.io-client "~1.7.3"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
-  optionalDependencies:
-    ioctl "2.0.0"
-
-arsenal@scality/Arsenal#f8bf038:
-  version "7.4.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/f8bf038b81d352dbe9637c49d09df9e548461792"
-  dependencies:
-    "@hapi/joi" "^15.1.0"
-    JSONStream "^1.0.0"
-    ajv "4.10.0"
-    async "~2.1.5"
-    debug "~2.3.3"
-    diskusage "^1.1.1"
-    ioredis "4.9.5"
-    ipaddr.js "1.2.0"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
     node-forge "^0.7.1"
     simple-glob "^0.1"
     socket.io "~1.7.3"
@@ -4088,13 +4088,14 @@ validator@~9.4.1:
   resolved "https://registry.yarnpkg.com/validator/-/validator-9.4.1.tgz#abf466d398b561cd243050112c6ff1de6cc12663"
   integrity sha512-YV5KjzvRmSyJ1ee/Dm5UED0G+1L4GZnLN3w6/T+zZm8scVua4sOhYKWTUrKa0H/tMiJyO9QLHMPN+9mB/aMunA==
 
-vaultclient@scality/vaultclient#4636126:
-  version "8.0.3"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/4636126dc1da53bf2ca3c211ba4572bbca00d504"
+vaultclient@scality/vaultclient#62e8d4a:
+  version "7.4.0"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/62e8d4a55eea8f94f6e1b8f942a0df7f2ae9c2fb"
   dependencies:
-    arsenal scality/Arsenal#f8bf038
+    agentkeepalive "^4.1.3"
+    arsenal scality/Arsenal#918a1d7
     commander "2.20.0"
-    werelogs scality/werelogs#0a4c576
+    werelogs scality/werelogs#8.1.0
     xml2js "0.4.19"
 
 vaultclient@scality/vaultclient#cc9ba34:
@@ -4114,12 +4115,6 @@ verror@1.10.0:
     assert-plus "^1.0.0"
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
-
-werelogs@scality/werelogs#0a4c576:
-  version "7.4.1"
-  resolved "https://codeload.github.com/scality/werelogs/tar.gz/0a4c57658f9cf56838628f3a328cdee5f5b5adc3"
-  dependencies:
-    safe-json-stringify "1.0.3"
 
 werelogs@scality/werelogs#0ff7ec82:
   version "7.4.0"
