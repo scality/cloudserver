@@ -7,6 +7,7 @@ const {
     calculateRetainUntilDate,
     validateHeaders,
     validateObjectLockUpdate,
+    compareObjectLockInformation,
 } = require('../../../../lib/api/apiUtils/object/objectLockHelpers');
 
 const mockName = 'testbucket';
@@ -282,5 +283,95 @@ describe('objectLockHelpers: validateObjectLockUpdate', () => {
 
         const error = validateObjectLockUpdate(objMD, retentionInfo, true);
         assert.strictEqual(error, null);
+    });
+});
+
+describe('objectLockHelpers: compareObjectLockInformation', () => {
+    const mockDate = new Date();
+    let origNow = null;
+    let someDateInFuture = null;
+
+    before(() => {
+        origNow = moment.now;
+        moment.now = () => mockDate;
+        someDateInFuture = moment().add(100, 'days').toISOString();
+    });
+
+    after(() => {
+        moment.now = origNow;
+        origNow = null;
+    });
+
+    it('should return empty object when both headers and default lock config are not set', () => {
+        const headers = {
+            'x-amz-object-lock-mode': '',
+            'x-amz-object-lock-retain-until-date': '',
+        };
+        const defaultRetention = {};
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {});
+    });
+
+    it('should not use default retention if mode property is missing', () => {
+        const headers = {};
+        const defaultRetention = { rule: { days: 1 } };
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {});
+    });
+
+    it('should not use default retention if both days/years properties are missing', () => {
+        const headers = {};
+        const defaultRetention = { rule: { mode: 'GOVERNANCE' } };
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {});
+    });
+
+    it('should use default retention config (days)', () => {
+        const headers = {
+            'x-amz-object-lock-mode': '',
+            'x-amz-object-lock-retain-until-date': '',
+        };
+        const defaultRetention = { rule: { mode: 'GOVERNANCE', days: 1 } };
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {
+            retentionInfo: {
+                mode: 'GOVERNANCE',
+                date: moment().add(1, 'days').toISOString(),
+            },
+        });
+    });
+
+    it('should use default retention config (years)', () => {
+        const headers = {
+            'x-amz-object-lock-mode': '',
+            'x-amz-object-lock-retain-until-date': '',
+        };
+        const defaultRetention = { rule: { mode: 'GOVERNANCE', years: 1 } };
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {
+            retentionInfo: {
+                mode: 'GOVERNANCE',
+                date: moment().add(365, 'days').toISOString(),
+            },
+        });
+    });
+
+    it('should use header-defined lock config', () => {
+        const headers = {
+            'x-amz-object-lock-mode': 'COMPLIANCE',
+            'x-amz-object-lock-retain-until-date': someDateInFuture,
+        };
+        const defaultRetention = { rule: { mode: 'GOVERNANCE', years: 1 } };
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, {
+            retentionInfo: { mode: 'COMPLIANCE', date: someDateInFuture },
+        });
+    });
+
+    it('should use legal-hold config', () => {
+        const headers = { 'x-amz-object-lock-legal-hold': 'ON' };
+        const defaultRetention = {};
+        const res = compareObjectLockInformation(headers, defaultRetention);
+        assert.deepStrictEqual(res, { legalHold: true });
     });
 });
