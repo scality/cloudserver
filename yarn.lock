@@ -7134,14 +7134,14 @@ vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-vaultclient@scality/vaultclient#75beb2a:
-  version "7.10.0"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/75beb2ad5ec37a3ee33412d2737a97db0f5bfaa5"
+vaultclient@scality/vaultclient#17b52918bd10d748ffe51a3bc05657fe83b81f54:
+  version "7.10.1"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/17b52918bd10d748ffe51a3bc05657fe83b81f54"
   dependencies:
     agentkeepalive "^4.1.3"
     arsenal scality/Arsenal#ed446c5
     commander "2.20.0"
-    werelogs scality/werelogs#4e0d97c
+    werelogs scality/werelogs#8.1.0
     xml2js "0.4.19"
 
 vaultclient@scality/vaultclient#ff9e92f:
@@ -7189,6 +7189,12 @@ werelogs@scality/werelogs#351a2a3:
 werelogs@scality/werelogs#4e0d97c:
   version "7.4.1"
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/4e0d97cf69ea7ed60bea90756278513e7e7ea9b1"
+  dependencies:
+    safe-json-stringify "1.0.3"
+
+werelogs@scality/werelogs#8.1.0:
+  version "8.1.0"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/e8f828725642c54c511cdbe580b18f43d3589313"
   dependencies:
     safe-json-stringify "1.0.3"
 
