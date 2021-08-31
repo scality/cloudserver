@@ -24,7 +24,7 @@
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#949f11a",
+    "bucketclient": "scality/bucketclient#8.1.0",
     "bufferutil": "^3.0.5",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
