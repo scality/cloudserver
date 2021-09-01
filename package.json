@@ -48,7 +48,7 @@
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",
     "lolex": "^1.4.0",
-    "mocha": "^2.3.4",
+    "mocha": "^9.1.1",
     "mocha-junit-reporter": "^1.23.1",
     "mocha-multi-reporters": "^1.1.7",
     "node-mocks-http": "1.5.2",
