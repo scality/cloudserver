@@ -3819,12 +3819,12 @@ sprintf-js@~1.0.2:
     async "^3.1.0"
     werelogs scality/werelogs#351a2a3
 
-sproxydclient@scality/sproxydclient#77a2de0:
-  version "7.4.7"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/77a2de096cdc9cca1e4038714890dfb004f6a9c4"
+sproxydclient@scality/sproxydclient#8.0.2:
+  version "8.0.2"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/e45c547833f03b1fa0409e0499433dcb386442f5"
   dependencies:
     async "^3.1.0"
-    werelogs scality/werelogs#4e0d97c
+    werelogs scality/werelogs#8.1.0
 
 sshpk@^1.7.0:
   version "1.16.1"
