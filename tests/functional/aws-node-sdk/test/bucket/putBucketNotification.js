@@ -1,3 +1,4 @@
+const assert = require('assert');
 const { S3 } = require('aws-sdk');
 
 const checkError = require('../../lib/utility/checkError');
@@ -104,5 +105,44 @@ describe('aws-sdk test put notification configuration', () => {
                     done();
                 });
             });
+    });
+
+    describe('cross origin requests', () => {
+        beforeEach(done => s3.createBucket({
+            Bucket: bucket,
+        }, done));
+
+        afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
+
+        const corsTests = [
+            {
+                it: 'return valid error with invalid arn',
+                param: getNotificationParams(null, 'invalidArn'),
+                fail: true,
+            }, {
+                it: 'return valid error with unknown destination',
+                param: getNotificationParams(null, 'arn:scality:bucketnotif:::target100'),
+                fail: true,
+            }, {
+                it: 'save notification configuration with correct arn',
+                param: getNotificationParams(),
+                fail: false,
+            },
+        ];
+
+        corsTests.forEach(test => {
+            it(`should ${test.it}`, done => {
+                const req = s3.putBucketNotificationConfiguration(test.param);
+                req.httpRequest.headers.origin = 'http://localhost:3000';
+                req.send(err => {
+                    if (test.fail) {
+                        checkError(err, 'MalformedXML', 400);
+                    } else {
+                        assert.ifError(err);
+                    }
+                    done();
+                });
+            });
+        });
     });
 });
