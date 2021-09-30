@@ -105,6 +105,15 @@ describe('aws-sdk test put notification configuration', () => {
                     done();
                 });
             });
+
+        it('should not allow notification config request with unsupported destination',
+            done => {
+                const params = getNotificationParams(null, 'arn:scality:bucketnotif:::target100');
+                s3.putBucketNotificationConfiguration(params, err => {
+                    checkError(err, 'InvalidArgument', 400);
+                    done();
+                });
+            });
     });
 
     describe('cross origin requests', () => {
@@ -118,15 +127,14 @@ describe('aws-sdk test put notification configuration', () => {
             {
                 it: 'return valid error with invalid arn',
                 param: getNotificationParams(null, 'invalidArn'),
-                fail: true,
+                error: 'MalformedXML',
             }, {
-                it: 'return valid error with unknown destination',
+                it: 'return valid error with unknown/unsupported destination',
                 param: getNotificationParams(null, 'arn:scality:bucketnotif:::target100'),
-                fail: true,
+                error: 'InvalidArgument',
             }, {
                 it: 'save notification configuration with correct arn',
                 param: getNotificationParams(),
-                fail: false,
             },
         ];
 
@@ -135,8 +143,8 @@ describe('aws-sdk test put notification configuration', () => {
                 const req = s3.putBucketNotificationConfiguration(test.param);
                 req.httpRequest.headers.origin = 'http://localhost:3000';
                 req.send(err => {
-                    if (test.fail) {
-                        checkError(err, 'MalformedXML', 400);
+                    if (test.error) {
+                        checkError(err, test.error, 400);
                     } else {
                         assert.ifError(err);
                     }
