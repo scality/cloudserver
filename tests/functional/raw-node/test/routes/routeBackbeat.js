@@ -419,6 +419,46 @@ describeSkipIfAWS('backbeat routes', () => {
                 done();
             });
         });
+        it('should not remove data locations on replayed metadata PUT',
+        done => {
+            let serializedNewMd;
+            async.waterfall([next => {
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                serializedNewMd = JSON.stringify(newMd);
+                async.timesSeries(2, (i, putDone) => makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: serializedNewMd,
+                }, (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    putDone(err);
+                }), () => next());
+            }, next => {
+                // check that the object is still readable to make
+                // sure we did not remove the data keys
+                checkObjectData(s3, testKey, testData, next);
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
     });
     describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
