@@ -519,18 +519,17 @@ stages:
       - Git: *clone
       - ShellCommand: *wait_docker_daemon
       - ShellCommand: *docker_login
-      - EvePropertyFromCommand:
-          name: get tag short revision
-          property: tag_revision
-          command: |
-            git checkout refs/tags/%(prop:tag)s 2&> /dev/null
-            git rev-parse --short HEAD
+      - ShellCommand:
+          name: Checkout tag
+          command: git checkout refs/tags/%(prop:tag)s
           haltOnFailure: true
       - ShellCommand:
+          name: docker build
+          command: >-
+            docker build .
+            --tag=${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
+          env: *docker_env
+      - ShellCommand:
           name: publish docker image to Scality Production OCI registry
-          command: |
-            docker pull ${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:tag_revision)s
-            docker tag ${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:tag_revision)s \
-            ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
-            docker push ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
+          command: docker push ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
           env: *docker_env
