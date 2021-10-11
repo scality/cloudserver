@@ -19,7 +19,7 @@ const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
 const objectName = 'objectName';
 const date = new Date();
 const laterDate = date.setMinutes(date.getMinutes() + 30);
-const earlierDate = date.setMinutes(date.getMinutes() - 30);
+const earlierDate = date.setMinutes(date.getMinutes() - 60);
 const testPutBucketRequest = {
     bucketName,
     namespace,
