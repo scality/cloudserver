@@ -227,6 +227,8 @@ function getMetadataToPut(putDataResponse) {
 describeSkipIfAWS('backbeat routes', () => {
     let bucketUtil;
     let s3;
+    // console.log('environment variables---------->', process.env);
+    // console.log('config.json----------->', JSON.stringify(config));
 
     before(done => {
         bucketUtil = new BucketUtility(
@@ -1154,12 +1156,16 @@ describeSkipIfAWS('backbeat routes', () => {
                     awsClient.putObject({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, next),
+                    }, (err, data) => {
+                        console.log('#1', err);
+                        return next(err, data);
+                    }),
                 next =>
                     awsClient.headObject({
                         Bucket: awsBucket,
                         Key: awsKey,
                     }, (err, data) => {
+                        console.log('#2', err);
                         if (err) {
                             return next(err);
                         }
@@ -1188,7 +1194,10 @@ describeSkipIfAWS('backbeat routes', () => {
                             }],
                         }),
                         jsonResponse: true,
-                    }, next),
+                    }, (err, data) => {
+                        console.log('#3', err);
+                        return next(err, data);
+                    }),
                 next =>
                     awsClient.getObjectTagging({
                         Bucket: awsBucket,
