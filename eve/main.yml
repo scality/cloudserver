@@ -246,7 +246,7 @@ stages:
             bash -c "
             source /root/.aws/exports &> /dev/null
             set -ex
-            bash wait_for_local_port.bash 8000 40
+            bash wait_for_local_port.bash 8000 600
             yarn run multiple_backend_test
             yarn run ft_awssdk_external_backends"
           <<: *follow-s3-log
