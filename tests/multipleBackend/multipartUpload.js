@@ -281,7 +281,7 @@ function mpuSetup(location, key, cb) {
     };
     initiateMultipartUpload(authInfo, initiateRequest, log,
     (err, result) => {
-        assert.strictEqual(err, null, 'Error initiating MPU');
+        assert.strictEqual(err, null, `Error initiating MPU, ${err}`);
         assertMpuInitResults(result, key, uploadId => {
             putParts(uploadId, key, () => {
                 cb(uploadId);
