@@ -169,12 +169,12 @@ stages:
           stage_names:
             - docker-build
             - linting-coverage
-            - file-ft-tests
+            # - file-ft-tests
             - multiple-backend-test
-            - mongo-ft-tests
-            - ceph-backend-tests
-            - kmip-ft-tests
-            - utapi-v2-tests
+            # - mongo-ft-tests
+            # - ceph-backend-tests
+            # - kmip-ft-tests
+            # - utapi-v2-tests
           waitForFinish: true
           haltOnFailure: true
 
