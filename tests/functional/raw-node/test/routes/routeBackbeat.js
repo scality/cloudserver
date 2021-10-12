@@ -491,8 +491,14 @@ describeSkipIfAWS('backbeat routes', () => {
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
-                setTimeout(() => checkObjectData(s3, testKey, testData, next),
-                           1000);
+                setTimeout(() => s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                }), 1000);
             }, next => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
@@ -544,7 +550,14 @@ describeSkipIfAWS('backbeat routes', () => {
             }, next => {
                 // check that the object is still readable to make
                 // sure we did not remove the data keys
-                checkObjectData(s3, testKey, testData, next);
+                s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                });
             }], err => {
                 assert.ifError(err);
                 done();
