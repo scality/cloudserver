@@ -1156,16 +1156,12 @@ describeSkipIfAWS('backbeat routes', () => {
                     awsClient.putObject({
                         Bucket: awsBucket,
                         Key: awsKey,
-                    }, (err, data) => {
-                        console.log('#1', err);
-                        return next(err, data);
-                    }),
+                    }, next),
                 next =>
                     awsClient.headObject({
                         Bucket: awsBucket,
                         Key: awsKey,
                     }, (err, data) => {
-                        console.log('#2', err);
                         if (err) {
                             return next(err);
                         }
@@ -1194,10 +1190,7 @@ describeSkipIfAWS('backbeat routes', () => {
                             }],
                         }),
                         jsonResponse: true,
-                    }, (err, data) => {
-                        console.log('#3', err);
-                        return next(err, data);
-                    }),
+                    }, next),
                 next =>
                     awsClient.getObjectTagging({
                         Bucket: awsBucket,
