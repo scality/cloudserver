@@ -567,6 +567,154 @@ describeSkipIfAWS('backbeat routes', () => {
                 done();
             });
         });
+
+        it('should remove old object data locations if version is overwritten',
+        done => {
+            let oldLocation;
+            const testKeyOldData = `${testKey}-old-data`;
+            async.waterfall([next => {
+                // put object's data locations
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // put object metadata
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                oldLocation = newMd.location;
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(newMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // put another object which metadata reference the
+                // same data locations, we will attempt to retrieve
+                // this object at the end of the test to confirm that
+                // its locations have been deleted
+                const oldDataMd = Object.assign({}, testMd);
+                oldDataMd.location = oldLocation;
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKeyOldData,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(oldDataMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // create new data locations
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // overwrite the original object version, now
+                // with references to the new data locations
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(newMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // give some time for the async deletes to complete
+                setTimeout(() => s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                }), 1000);
+            }, next => {
+                // check that the object copy referencing the old data
+                // locations is unreadable, confirming that the old
+                // data locations have been deleted
+                s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKeyOldData,
+                }, err => {
+                    assert(err, 'expected error to get object with old data ' +
+                           'locations, got success');
+                    next();
+                });
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+        it('should not remove data locations on replayed metadata PUT',
+        done => {
+            let serializedNewMd;
+            async.waterfall([next => {
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                serializedNewMd = JSON.stringify(newMd);
+                async.timesSeries(2, (i, putDone) => makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: serializedNewMd,
+                }, (err, response) => {
+                    assert.ifError(err);
+                    assert.strictEqual(response.statusCode, 200);
+                    putDone(err);
+                }), () => next());
+            }, next => {
+                // check that the object is still readable to make
+                // sure we did not remove the data keys
+                s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                });
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
     });
     describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
