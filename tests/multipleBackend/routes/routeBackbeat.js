@@ -1059,7 +1059,7 @@ describeSkipIfAWS('backbeat routes', () => {
             ], done);
         });
 
-        it.skip('should not put delete tags if the source is not Azure and ' +
+        it('should not put delete tags if the source is not Azure and ' +
         'if-unmodified-since header is not provided', done => {
             const awsKey = uuidv4();
             async.series([
