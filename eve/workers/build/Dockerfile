@@ -1,4 +1,4 @@
-FROM buildpack-deps:xenial-curl
+FROM buildpack-deps:bionic-curl
 
 #
 # Install packages needed by the buildchain
@@ -10,6 +10,7 @@ RUN curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && apt-get update \
     && apt-get install -y yarn \
     && cat /tmp/*packages.list | xargs apt-get install -y \
+    && update-ca-certificates \
     && git clone https://github.com/tj/n.git \
     && make -C ./n \
     && n 10.22.0 \

@@ -1,6 +1,8 @@
 build-essential
+ca-certificates
 curl
 default-jdk
+gnupg2
 libdigest-hmac-perl
 lsof
 maven
