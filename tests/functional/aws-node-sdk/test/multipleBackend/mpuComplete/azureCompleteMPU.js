@@ -28,6 +28,8 @@ const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(maxSubPartSize + 10);
 const s3MD5 = 'bd43a393937412d119abcdbbc9bd363a-2';
 const expectedContentLength = '104857621';
+const millSec = 1000;
+const minute = 60 * millSec;
 
 let s3;
 let bucketUtil;
@@ -42,6 +44,8 @@ function getCheck(key, bucketMatch, cb) {
         if (!bucketMatch) {
             azureKey = `${azureContainerName}/${key}`;
         }
+        azureClient.defaultClientRequestTimeoutInMs = 2 * minute;
+        azureClient.defaultTimeoutIntervalInMs = 2 * minute;
         azureClient.getBlobProperties(azureContainerName, azureKey,
         (err, azureRes) => {
             assert.equal(err, null, `Err getting object from Azure: ${err}`);
