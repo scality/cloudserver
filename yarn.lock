@@ -309,6 +309,33 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "2.0.0"
 
+arsenal@scality/Arsenal#7.4.10:
+  version "7.4.10"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/36f6ca47e940c7cc17ac607e1f2ae1d3cb5d1c62"
+  dependencies:
+    "@hapi/joi" "^15.1.0"
+    JSONStream "^1.0.0"
+    agentkeepalive "^4.1.3"
+    ajv "6.12.2"
+    async "~2.1.5"
+    debug "~2.6.9"
+    diskusage "^1.1.1"
+    ioredis "4.9.5"
+    ipaddr.js "1.9.1"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    node-forge "^0.7.1"
+    prom-client "10.2.3"
+    simple-glob "^0.2"
+    socket.io "~2.3.0"
+    socket.io-client "~2.3.0"
+    utf8 "2.1.2"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#8.1.0
+    xml2js "~0.4.23"
+  optionalDependencies:
+    ioctl "2.0.0"
+
 arsenal@scality/Arsenal#8ed8478:
   version "8.2.1"
   resolved "https://codeload.github.com/scality/Arsenal/tar.gz/8ed84786fce31f603b1e8cd641b3b44b8f715b0b"
@@ -352,7 +379,7 @@ arsenal@scality/Arsenal#918a1d7:
     JSONStream "^1.0.0"
     ajv "6.12.2"
     async "~2.1.5"
-    debug "~2.6.9"
+    debug "~2.3.3"
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.9.1"
@@ -383,34 +410,6 @@ arsenal@scality/Arsenal#9f2e74e:
     joi "^10.6"
     level "~5.0.1"
     level-sublevel "~6.6.5"
-    node-forge "^0.7.1"
-    simple-glob "^0.1"
-    socket.io "~1.7.3"
-    socket.io-client "~1.7.3"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#0ff7ec82
-    xml2js "~0.4.16"
-  optionalDependencies:
-    ioctl "2.0.0"
-
-arsenal@scality/Arsenal#dd6fde6:
-  version "8.0.6"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/dd6fde61bbb7a799c822b8095c67f455c7c55e8f"
-  dependencies:
-    JSONStream "^1.0.0"
-    ajv "4.10.0"
-    async "~2.1.5"
-    bson "2.0.4"
-    debug "~2.3.3"
-    diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl"
-    ioredis "4.9.5"
-    ipaddr.js "1.2.0"
-    joi "^10.6"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^3.0.1"
     node-forge "^0.7.1"
     simple-glob "^0.1"
     socket.io "~1.7.3"
@@ -727,11 +726,6 @@ browserify-mime@~1.2.9:
   version "1.2.9"
   resolved "https://registry.yarnpkg.com/browserify-mime/-/browserify-mime-1.2.9.tgz#aeb1af28de6c0d7a6a2ce40adb68ff18422af31f"
   integrity sha1-rrGvKN5sDXpqLOQK22j/GEIq8x8=
-
-bson@2.0.4:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/bson/-/bson-2.0.4.tgz#5b8e40f80d3d1b96a2ae55311c6612c25e586e50"
-  integrity sha512-e/GPy6CE0xL7MOYYRMIEwPGKF21WNaQdPIpV0YvaQDoR7oc47KUZ8c2P/TlRJVQP8RZ4CEsArGBC1NbkCRvl1w==
 
 bson@4.0.0:
   version "4.0.0"
@@ -4146,17 +4140,17 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#45d7e26:
-  version "7.4.5"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/45d7e26afbe3867b6a1e8dcd261f7082ef8ea178"
+utapi@scality/utapi#7.4.11:
+  version "7.4.11"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/fa4c353b67fe7ce7bb8eeea0cc8cfcc7235b3a85"
   dependencies:
-    arsenal scality/Arsenal#dd6fde6
+    arsenal scality/Arsenal#7.4.10
     async "^2.0.1"
     ioredis "^4.9.5"
     node-schedule "1.2.0"
     uuid "^3.3.2"
     vaultclient scality/vaultclient#cc9ba34
-    werelogs scality/werelogs#4e0d97c
+    werelogs scality/werelogs#8.1.0
 
 utf8@2.1.2, utf8@~2.1.1:
   version "2.1.2"
