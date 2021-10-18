@@ -10,7 +10,7 @@ const credentialOne = 'gcpbackend';
 const bucketName = `somebucket-${genUniqID()}`;
 
 describe('GCP: GET Object', function testSuite() {
-    this.timeout(30000);
+    this.timeout(60000);
     const config = getRealAwsConfig(credentialOne);
     const gcpClient = new GCP(config);
 
