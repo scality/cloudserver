@@ -17,15 +17,27 @@ describe('report handler', () => {
         assert.strictEqual(c.secureChannelOptimizedPath, true);
         assert.strictEqual(c.s3cIngestLocation, true);
     });
-    it('should allow configure local file system capability', () => {
-        const OLD_ENV = process.env;
 
-        process.env.LOCAL_VOLUME_CAPABILITY = 'true';
-        assert.strictEqual(getCapabilities().locationTypeLocal, true);
+    [
+        { value: 'true',    result: true  },
+        { value: 'TRUE',    result: true  },
+        { value: 'tRuE',    result: true  },
+        { value: '1',       result: true  },
+        { value: 'false',   result: false },
+        { value: 'FALSE',   result: false },
+        { value: 'FaLsE',   result: false },
+        { value: '0',       result: false },
+        { value: 'foo',     result: false },
+        { value: '',        result: true },
+        { value: undefined, result: true },
+    ].forEach(param =>
+        it(`should allow set local file system capability ${param.value}`, () => {
+            const OLD_ENV = process.env;
 
-        process.env.LOCAL_VOLUME_CAPABILITY = 'false';
-        assert.strictEqual(getCapabilities().locationTypeLocal, false);
+            if (param.value !== undefined) process.env.LOCAL_VOLUME_CAPABILITY = param.value;
+            assert.strictEqual(getCapabilities().locationTypeLocal, param.result);
 
-        process.env = OLD_ENV;
-    });
+            process.env = OLD_ENV;
+        })
+    );
 });
