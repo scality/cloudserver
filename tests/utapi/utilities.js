@@ -438,6 +438,44 @@ const testEvents = [{
         incomingBytes: 26,
         outgoingBytes: 0,
     },
+}, {
+    action: 'replicateObject',
+    metrics: {
+        bucket: 'source-bucket',
+        keys: ['mykey'],
+        newByteLength: 26,
+        oldByteLength: null,
+    },
+    expected: {
+        objectDelta: 1,
+        sizeDelta: 26,
+        incomingBytes: 26,
+        outgoingBytes: 0,
+    },
+}, {
+    action: 'replicateDelete',
+    metrics: {
+        bucket: 'source-bucket',
+        keys: ['mykey'],
+    },
+    expected: {
+        objectDelta: 1,
+        sizeDelta: undefined,
+        incomingBytes: undefined,
+        outgoingBytes: 0,
+    },
+}, {
+    action: 'replicateTags',
+    metrics: {
+        bucket: 'source-bucket',
+        keys: ['mykey'],
+    },
+    expected: {
+        objectDelta: undefined,
+        sizeDelta: undefined,
+        incomingBytes: undefined,
+        outgoingBytes: 0,
+    },
 }];
 
 describe('utapi v2 pushmetrics utility', () => {
