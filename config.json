@@ -1,6 +1,8 @@
 {
     "port": 8000,
     "listenOn": [],
+    "metricsPort": 9090,
+    "metricsListenOn": [],
     "replicationGroupId": "RG001",
     "restEndpoints": {
         "localhost": "us-east-1",
