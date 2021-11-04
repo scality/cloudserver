@@ -5,6 +5,7 @@ ENV NO_PROXY localhost,127.0.0.1
 ENV no_proxy localhost,127.0.0.1
 
 EXPOSE 8000
+EXPOSE 9090
 
 COPY ./package.json /usr/src/app/
 COPY ./yarn.lock /usr/src/app/
