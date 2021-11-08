@@ -728,7 +728,6 @@ arsenal@scality/Arsenal#ed446c5:
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
-    agentkeepalive "^4.1.3"
     ajv "6.12.2"
     async "~2.1.5"
     debug "~2.6.9"
@@ -1168,7 +1167,7 @@ bucketclient@scality/bucketclient#8.1.0:
   dependencies:
     agentkeepalive "^4.1.3"
     arsenal scality/Arsenal#8ed8478
-    werelogs scality/werelogs#351a2a3
+    werelogs scality/werelogs#8.1.0
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -6785,9 +6784,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#7.10.3:
-  version "7.10.3"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/8358eb716604286360969cb668d6ea187185eb9b"
+utapi@scality/utapi#7.10.5:
+  version "7.10.5"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/5e68e14d0205f506bd0da7c00befdb3a5eb0967f"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
