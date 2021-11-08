@@ -56,13 +56,8 @@ function resetConfig() {
 
 function assertConfig(actualConf, expectedConf) {
     Object.keys(expectedConf).forEach(key => {
-        assert.deepEqual(actualConf[key], expectedConf[key]);
+        assert.deepStrictEqual(actualConf[key], expectedConf[key]);
     });
-}
-
-function checkNoError(err) {
-    assert.strictEqual(err, null, 'Expected success ' +
-        `but got error ${err}`);
 }
 
 describe('patchConfiguration', () => {
@@ -75,6 +70,7 @@ describe('patchConfiguration', () => {
     beforeEach(() => {
         resetConfig();
     });
+
     it('should modify config using the new config', done => {
         const newConf = {
             version: 1,
@@ -94,12 +90,6 @@ describe('patchConfiguration', () => {
                 },
             ],
             locations: {
-                'legacy': {
-                    name: 'legacy',
-                    objectId: 'legacy',
-                    locationType: 'location-mem-v1',
-                    details: {},
-                },
                 'us-east-1': {
                     name: 'us-east-1',
                     objectId: 'us-east-1',
@@ -107,107 +97,13 @@ describe('patchConfiguration', () => {
                     legacyAwsBehavior: true,
                     details: {},
                 },
-                'azurebackendtest': {
-                    name: 'azurebackendtest',
-                    objectId: 'azurebackendtest',
-                    locationType: 'location-azure-v1',
-                    details: {
-                        bucketMatch: 'azurebucketmatch',
-                        endpoint: 'azure.end.point',
-                        accessKey: 'azureaccesskey',
-                        secretKey,
-                        bucketName: 'azurebucketname',
-                    },
-                },
-                'awsbackendtest': {
-                    name: 'awsbackendtest',
-                    objectId: 'awsbackendtest',
-                    locationType: 'location-aws-s3-v1',
-                    details: {
-                        bucketMatch: 'awsbucketmatch',
-                        endpoint: 'aws.end.point',
-                        accessKey: 'awsaccesskey',
-                        secretKey,
-                        bucketName: 'awsbucketname',
-                        region: 'us-west-1',
-                    },
-                },
-                'gcpbackendtest': {
-                    name: 'gcpbackendtest',
-                    objectId: 'gcpbackendtest',
-                    locationType: 'location-gcp-v1',
-                    details: {
-                        bucketMatch: 'gcpbucketmatch',
-                        endpoint: 'gcp.end.point',
-                        accessKey: 'gcpaccesskey',
-                        secretKey,
-                        bucketName: 'gcpbucketname',
-                    },
-                },
-                'sproxydbackendtest': {
-                    name: 'sproxydbackendtest',
-                    objectId: 'sproxydbackendtest',
-                    locationType: 'location-scality-sproxyd-v1',
-                    details: {
-                        chordCos: 3,
-                        bootstrapList: ['localhost:8001', 'localhost:8002'],
-                        proxyPath: '/proxy/path',
-                    },
-                },
-                'transienttest': {
-                    name: 'transienttest',
-                    objectId: 'transienttest',
-                    locationType: 'location-file-v1',
-                    isTransient: true,
-                    details: {},
-                },
-                'sizelimitedtest': {
-                    name: 'sizelimitedtest',
-                    objectId: 'sizelimitedtest',
-                    locationType: 'location-file-v1',
-                    sizeLimitGB: 1024,
-                    details: {},
-                },
-                'sizezerotest': {
-                    name: 'sizezerotest',
-                    objectId: 'sizezerotest',
-                    locationType: 'location-file-v1',
-                    sizeLimitGB: 0,
-                    details: {},
-                },
-                'httpsawsbackendtest': {
-                    name: 'httpsawsbackendtest',
-                    objectId: 'httpsawsbackendtest',
-                    locationType: 'location-scality-ring-s3-v1',
-                    details: {
-                        bucketMatch: 'rings3bucketmatch',
-                        endpoint: 'https://secure.ring.end.point',
-                        accessKey: 'rings3accesskey',
-                        secretKey,
-                        bucketName: 'rings3bucketname',
-                        region: 'us-west-1',
-                    },
-                },
-                'cephbackendtest': {
-                    name: 'cephbackendtest',
-                    objectId: 'cephbackendtest',
-                    locationType: 'location-ceph-radosgw-s3-v1',
-                    details: {
-                        bucketMatch: 'cephbucketmatch',
-                        endpoint: 'https://secure.ceph.end.point',
-                        accessKey: 'cephs3accesskey',
-                        secretKey,
-                        bucketName: 'cephbucketname',
-                        region: 'us-west-1',
-                    },
-                },
             },
             browserAccess: {
                 enabled: true,
             },
         };
         return patchConfiguration(newConf, log, err => {
-            checkNoError(err);
+            assert.ifError(err);
             const actualConf = getConfig();
             const expectedConf = {
                 overlayVersion: 1,
@@ -227,14 +123,6 @@ describe('patchConfiguration', () => {
                     }],
                 },
                 locationConstraints: {
-                    'legacy': {
-                        type: 'mem',
-                        objectId: 'legacy',
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        details: { supportsVersioning: true },
-                    },
                     'us-east-1': {
                         type: 'file',
                         objectId: 'us-east-1',
@@ -242,145 +130,8 @@ describe('patchConfiguration', () => {
                         isTransient: false,
                         sizeLimitGB: null,
                         details: { supportsVersioning: true },
-                    },
-                    'azurebackendtest': {
-                        details: {
-                            azureContainerName: 'azurebucketname',
-                            azureStorageAccessKey: decryptedSecretKey,
-                            azureStorageAccountName: 'azureaccesskey',
-                            azureStorageEndpoint: 'azure.end.point',
-                            bucketMatch: 'azurebucketmatch',
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'azure',
-                        objectId: 'azurebackendtest',
-                    },
-                    'awsbackendtest': {
-                        details: {
-                            awsEndpoint: 'aws.end.point',
-                            bucketMatch: 'awsbucketmatch',
-                            bucketName: 'awsbucketname',
-                            credentials: {
-                                accessKey: 'awsaccesskey',
-                                secretKey: decryptedSecretKey,
-                            },
-                            https: true,
-                            pathStyle: false,
-                            region: 'us-west-1',
-                            serverSideEncryption: false,
-                            supportsVersioning: true,
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'aws_s3',
-                        objectId: 'awsbackendtest',
-                    },
-                    'gcpbackendtest': {
-                        details: {
-                            bucketMatch: 'gcpbucketmatch',
-                            bucketName: 'gcpbucketname',
-                            credentials: {
-                                accessKey: 'gcpaccesskey',
-                                secretKey: decryptedSecretKey,
-                            },
-                            gcpEndpoint: 'gcp.end.point',
-                            mpuBucketName: undefined,
-                            https: true,
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'gcp',
-                        objectId: 'gcpbackendtest',
-                    },
-                    'sproxydbackendtest': {
-                        details: {
-                            connector: {
-                                sproxyd: {
-                                    chordCos: 3,
-                                    bootstrap: [
-                                        'localhost:8001',
-                                        'localhost:8002',
-                                    ],
-                                    path: '/proxy/path',
-                                },
-                            },
-                            supportsVersioning: true,
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'scality',
-                        objectId: 'sproxydbackendtest',
-                    },
-                    'transienttest': {
-                        type: 'file',
-                        objectId: 'transienttest',
-                        legacyAwsBehavior: false,
-                        isTransient: true,
-                        sizeLimitGB: null,
-                        details: { supportsVersioning: true },
-                    },
-                    'sizelimitedtest': {
-                        type: 'file',
-                        objectId: 'sizelimitedtest',
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: 1024,
-                        details: { supportsVersioning: true },
-                    },
-                    'sizezerotest': {
-                        type: 'file',
-                        objectId: 'sizezerotest',
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        details: { supportsVersioning: true },
-                    },
-                    'httpsawsbackendtest': {
-                        details: {
-                            awsEndpoint: 'secure.ring.end.point',
-                            bucketMatch: 'rings3bucketmatch',
-                            bucketName: 'rings3bucketname',
-                            credentials: {
-                                accessKey: 'rings3accesskey',
-                                secretKey: decryptedSecretKey,
-                            },
-                            https: true,
-                            pathStyle: true,
-                            region: 'us-west-1',
-                            serverSideEncryption: false,
-                            supportsVersioning: true,
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'aws_s3',
-                        objectId: 'httpsawsbackendtest',
-                    },
-                    'cephbackendtest': {
-                        details: {
-                            awsEndpoint: 'secure.ceph.end.point',
-                            bucketMatch: 'cephbucketmatch',
-                            bucketName: 'cephbucketname',
-                            credentials: {
-                                accessKey: 'cephs3accesskey',
-                                secretKey: decryptedSecretKey,
-                            },
-                            https: true,
-                            pathStyle: true,
-                            region: 'us-west-1',
-                            serverSideEncryption: false,
-                            supportsVersioning: true,
-                        },
-                        legacyAwsBehavior: false,
-                        isTransient: false,
-                        sizeLimitGB: null,
-                        type: 'aws_s3',
-                        objectId: 'cephbackendtest',
+                        name: 'us-east-1',
+                        locationType: 'location-file-v1',
                     },
                 },
             };
@@ -391,7 +142,7 @@ describe('patchConfiguration', () => {
         });
     });
 
-    it('should apply second configuration if version (2) is grater than ' +
+    it('should apply second configuration if version (2) is greater than ' +
     'overlayVersion (1)', done => {
         const newConf1 = {
             version: 1,
@@ -405,9 +156,9 @@ describe('patchConfiguration', () => {
             },
         };
         patchConfiguration(newConf1, log, err => {
-            checkNoError(err);
+            assert.ifError(err);
             return patchConfiguration(newConf2, log, err => {
-                checkNoError(err);
+                assert.ifError(err);
                 const actualConf = getConfig();
                 const expectedConf = {
                     overlayVersion: 2,
@@ -433,9 +184,9 @@ describe('patchConfiguration', () => {
             },
         };
         patchConfiguration(newConf1, log, err => {
-            checkNoError(err);
+            assert.ifError(err);
             return patchConfiguration(newConf2, log, err => {
-                checkNoError(err);
+                assert.ifError(err);
                 const actualConf = getConfig();
                 const expectedConf = {
                     overlayVersion: 1,
