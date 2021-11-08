@@ -113,6 +113,10 @@ if [[ "$RECORDLOG_ENABLED" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .recordLog.enabled=true"
 fi
 
+if [[ -n "$BUCKET_DENY_FILTER" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.filter.deny.bucket=[\"$BUCKET_DENY_FILTER\"]"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
