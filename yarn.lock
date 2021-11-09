@@ -282,9 +282,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#7.4.11":
-  version "7.4.11"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/f941132c8a0e0e435ea1bac6ed0c22be93cda21d"
+"arsenal@github:scality/Arsenal#7.4.12":
+  version "7.4.12"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/04581abbf68d041b8a1d4a35239809ac707673f0"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -379,7 +379,7 @@ arsenal@scality/Arsenal#918a1d7:
     JSONStream "^1.0.0"
     ajv "6.12.2"
     async "~2.1.5"
-    debug "~2.3.3"
+    debug "~2.6.9"
     diskusage "^1.1.1"
     ioredis "4.9.5"
     ipaddr.js "1.9.1"
