@@ -57,7 +57,19 @@ describe('Config', () => {
             );
             assert.deepStrictEqual(
                 config.utapi.redis,
-                { host: 'localhost', port: 6379 },
+                {
+                    host: 'localhost',
+                    port: 6379,
+                    retry: {
+                        connectBackoff: {
+                            min: 10,
+                            max: 1000,
+                            factor: 1.5,
+                            jitter: 0.1,
+                            deadline: 10000,
+                        },
+                    },
+                },
             );
         });
     });
