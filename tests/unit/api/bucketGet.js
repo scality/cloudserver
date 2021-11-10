@@ -12,7 +12,6 @@ const DummyRequest = require('../DummyRequest');
 
 const { errors } = require('arsenal');
 
-
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
@@ -23,7 +22,7 @@ const prefix = 'sub';
 
 const objectName1 = `${prefix}${delimiter}objectName1`;
 const objectName2 = `${prefix}${delimiter}objectName2`;
-const objectName3 = 'notURIvalid$$';
+const objectName3 = 'invalidURI~~~b';
 const objectName4 = `${objectName1}&><"\'`;
 const testPutBucketRequest = new DummyRequest({
     bucketName,
@@ -106,6 +105,25 @@ const tests = [
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
                 objectName3);
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+        },
+    },
+    {
+        name: 'next token is not url encoded',
+        request: Object.assign(
+            {
+                query: { 'encoding-type': 'url', 'max-keys': '1' },
+                url: baseUrl,
+            },
+            baseGetRequest
+        ),
+        assertion: result => {
+            assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
+                objectName3);
+            assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
+            assert.strictEqual(
+                result.ListBucketResult.NextContinuationToken[0],
+                'aW52YWxpZFVSSX5+fmI='
+            );
         },
     },
     {
