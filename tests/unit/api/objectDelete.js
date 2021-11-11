@@ -1,7 +1,8 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
-const { errors } = require('arsenal');
+const { errors, storage } = require('arsenal');
+const metadataBackend = storage.metadata.inMemory.metastore;
 const xml2js = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -16,7 +17,6 @@ const initiateMultipartUpload
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const completeMultipartUpload
     = require('../../../lib/api/completeMultipartUpload');
-const metadataBackend = require('../../../lib/metadata/in_memory/backend');
 const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
