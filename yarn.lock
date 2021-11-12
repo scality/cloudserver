@@ -6785,9 +6785,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#7.10.3:
-  version "7.10.3"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/8358eb716604286360969cb668d6ea187185eb9b"
+utapi@scality/utapi#feature/UTAPI-43/event_allow_deny_filter:
+  version "7.10.2"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/b6856cad2722c48c3345c430b3d901f17ec3a6cb"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
