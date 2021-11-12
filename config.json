@@ -1,7 +1,7 @@
 {
     "port": 8000,
     "listenOn": [],
-    "metricsPort": 9090,
+    "metricsPort": 8002,
     "metricsListenOn": [],
     "replicationGroupId": "RG001",
     "restEndpoints": {
