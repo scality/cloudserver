@@ -451,6 +451,7 @@ stages:
         env:
           ENABLE_UTAPI_V2: t
           S3BACKEND: mem
+          BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
     steps:
       - Git: *clone
       - ShellCommand: *credentials
