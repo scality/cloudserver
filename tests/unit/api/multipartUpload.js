@@ -537,6 +537,14 @@ describe('Multipart Upload API', () => {
                 };
                 const awsVerifiedETag =
                     '"953e9e776f285afc0bfcf1ab4668299d-1"';
+                const origPutObject = metadataBackend.putObject;
+                metadataBackend.putObject =
+                    (bucketName, objName, objVal, params, log, cb) => {
+                        assert.strictEqual(params.replayId, testUploadId);
+                        metadataBackend.putObject = origPutObject;
+                        metadataBackend.putObject(
+                            bucketName, objName, objVal, params, log, cb);
+                    };
                 completeMultipartUpload(authInfo,
                     completeRequest, log, (err, result) => {
                         parseString(result, (err, json) => {
@@ -558,6 +566,7 @@ describe('Multipart Upload API', () => {
                             assert(MD);
                             assert.strictEqual(MD['x-amz-meta-stuff'],
                                 'I am some user metadata');
+                            assert.strictEqual(MD.uploadId, testUploadId);
                             done();
                         });
                     });
@@ -1376,7 +1385,7 @@ describe('Multipart Upload API', () => {
     });
 
     it('should return no error if attempt to abort/delete ' +
-        'a multipart upload that does not exist and not using' +
+        'a multipart upload that does not exist and not using ' +
         'legacyAWSBehavior', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, log, next),
@@ -1630,7 +1639,7 @@ describe('Multipart Upload API', () => {
         });
     });
 
-    it('should throw an error on put of an object part with an invalid' +
+    it('should throw an error on put of an object part with an invalid ' +
     'uploadId', done => {
         const testUploadId = 'invalidUploadID';
         const partRequest = new DummyRequest({

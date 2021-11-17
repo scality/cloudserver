@@ -1,5 +1,9 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
+const async = require('async');
+const crypto = require('crypto');
+const { errors, storage } = require('arsenal');
+const metadataBackend = storage.metadata.inMemory.metastore;
+const xml2js = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
@@ -8,6 +12,11 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
+const initiateMultipartUpload
+    = require('../../../lib/api/initiateMultipartUpload');
+const objectPutPart = require('../../../lib/api/objectPutPart');
+const completeMultipartUpload
+    = require('../../../lib/api/completeMultipartUpload');
 const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
@@ -73,6 +82,14 @@ describe('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
+    const initiateMPURequest = {
+        bucketName,
+        namespace,
+        objectKey,
+        headers: { host: `${bucketName}.s3.amazonaws.com` },
+        url: `/${objectKey}?uploads`,
+    };
+
     it('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest,
@@ -114,6 +131,68 @@ describe('objectDelete API', () => {
                     });
                 });
         });
+    });
+
+    it('should delete a multipart upload', done => {
+        const partBody = Buffer.from('I am a part\n', 'utf8');
+        let testUploadId;
+        let calculatedHash;
+        async.waterfall([
+            next => bucketPut(authInfo, testBucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateMPURequest, log, next),
+            (result, corsHeaders, next) => xml2js.parseString(result, next),
+            (json, next) => {
+                testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const md5Hash = crypto.createHash('md5').update(partBody);
+                calculatedHash = md5Hash.digest('hex');
+                const partRequest = new DummyRequest({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId: testUploadId,
+                    },
+                    calculatedHash,
+                }, partBody);
+                objectPutPart(authInfo, partRequest, undefined, log, next);
+            },
+            (hexDigest, corsHeaders, next) => {
+                const completeBody = '<CompleteMultipartUpload>' +
+                      '<Part>' +
+                      '<PartNumber>1</PartNumber>' +
+                      `<ETag>"${calculatedHash}"</ETag>` +
+                      '</Part>' +
+                      '</CompleteMultipartUpload>';
+                const completeRequest = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                };
+                completeMultipartUpload(authInfo, completeRequest, log, next);
+            },
+            (result, resHeaders, next) => {
+                const origDeleteObject = metadataBackend.deleteObject;
+                metadataBackend.deleteObject =
+                    (bucketName, objName, params, log, cb) => {
+                        assert.strictEqual(params.replayId, testUploadId);
+                        cb();
+                    };
+                objectDelete(authInfo, testDeleteRequest, log, err => {
+                    assert.ifError(err);
+                    metadataBackend.deleteObject = origDeleteObject;
+                    next();
+                });
+            },
+        ], done);
     });
 
     it('should prevent anonymous user deleteObject API access', done => {
