@@ -193,6 +193,9 @@ fi
 
 if [[ "$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .externalBackends.gcp.httpAgent.maxFreeSockets=$GCP_HTTPAGENT_KEEPALIVE_MAX_FREE_SOCKETS"
+
+if [[ -n "$BUCKET_DENY_FILTER" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .utapi.filter.deny.bucket=[\"$BUCKET_DENY_FILTER\"]"
 fi
 
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
