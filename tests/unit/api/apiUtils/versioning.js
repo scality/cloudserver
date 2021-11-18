@@ -1,10 +1,11 @@
 const assert = require('assert');
 
+const { errors, versioning } = require('arsenal');
 const { config } = require('../../../../lib/Config');
-const { versioning } = require('arsenal');
 const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 
-const { processVersioningState, getMasterState } =
+const { processVersioningState, getMasterState,
+        preprocessingVersioningDelete } =
       require('../../../../lib/api/apiUtils/object/versioning');
 
 describe('versioning helpers', () => {
@@ -131,5 +132,97 @@ describe('versioning helpers', () => {
                       testCase[`versioning${versioningStatus}ExpectedRes`];
                 assert.deepStrictEqual(res, expectedRes);
             })));
+    });
+
+    describe('preprocessingVersioningDelete', () => {
+        [
+            {
+                objMD: {
+                    versionId: 'v1',
+                },
+                // no reqVersionId: no delete action
+                expectedRes: {},
+            },
+            {
+                // delete non-null object version
+                objMD: {
+                    versionId: 'v1',
+                },
+                reqVersionId: 'v1',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'v1',
+                },
+            },
+            {
+                // delete null object version
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                },
+            },
+            {
+                // delete object put before versioning was first enabled
+                objMD: {},
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                },
+            },
+            {
+                // delete non-null object version with ref to null version
+                objMD: {
+                    versionId: 'v1',
+                    nullVersionId: 'vnull',
+                },
+                reqVersionId: 'v1',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'v1',
+                },
+            },
+            {
+                // delete null object version from ref to null version
+                objMD: {
+                    versionId: 'v1',
+                    nullVersionId: 'vnull',
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                },
+            },
+            {
+                // delete null version that does not exist
+                objMD: {
+                    versionId: 'v1',
+                },
+                reqVersionId: 'null',
+                expectedError: errors.NoSuchKey,
+            },
+        ].forEach(testCase => it(
+        `with objMD ${JSON.stringify(testCase.objMD)} and ` +
+        `reqVersionId="${testCase.reqVersionId}"`, done => {
+            const mockBucketMD = {
+                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+            };
+            preprocessingVersioningDelete(
+                'foobucket', mockBucketMD, testCase.objMD,
+                testCase.reqVersionId, null, (err, options) => {
+                    if (testCase.expectedError) {
+                        assert.strictEqual(err, testCase.expectedError);
+                    } else {
+                        assert.ifError(err);
+                        assert.deepStrictEqual(options, testCase.expectedRes);
+                    }
+                    done();
+                });
+        }));
     });
 });
