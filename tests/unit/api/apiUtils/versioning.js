@@ -44,6 +44,24 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                // prior MPU object non-null version exists
+                objMD: {
+                    versionId: 'v1',
+                    uploadId: 'fooUploadId',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+            },
+            {
                 // prior null object version exists
                 objMD: {
                     versionId: 'vnull',
@@ -72,8 +90,64 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                // prior MPU object null version exists
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    uploadId: 'fooUploadId',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                        nullVersionId: 'vnull',
+                        nullUploadId: 'fooUploadId',
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    storeOptions: {
+                        isNull: true,
+                        versionId: 'vnull',
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        versionId: 'vnull',
+                        replayId: 'fooUploadId',
+                    },
+                },
+            },
+            {
                 // prior object exists, put before versioning was first enabled
                 objMD: {},
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                        nullVersionId: INF_VID,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key as the oldest version
+                    storeOptions: {
+                        isNull: true,
+                        versionId: INF_VID,
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+            },
+            {
+                // prior MPU object exists, put before versioning was
+                // first enabled
+                objMD: {
+                    uploadId: 'fooUploadId',
+                },
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
@@ -112,6 +186,56 @@ describe('versioning helpers', () => {
                     },
                     delOptions: {
                         versionId: 'vnull',
+                    },
+                },
+            },
+            {
+                // prior MPU object non-null version exists with ref
+                // to null version
+                objMD: {
+                    versionId: 'v1',
+                    uploadId: 'fooUploadId',
+                    nullVersionId: 'vnull',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                        nullVersionId: 'vnull',
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
+                },
+            },
+            {
+                // prior object non-null version exists with ref to
+                // MPU null version
+                objMD: {
+                    versionId: 'v1',
+                    nullVersionId: 'vnull',
+                    nullUploadId: 'nullFooUploadId',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                        nullVersionId: 'vnull',
+                        nullUploadId: 'nullFooUploadId',
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        versionId: 'vnull',
+                        replayId: 'nullFooUploadId',
                     },
                 },
             },
@@ -155,6 +279,19 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                // delete MPU object non-null version
+                objMD: {
+                    versionId: 'v1',
+                    uploadId: 'fooUploadId',
+                },
+                reqVersionId: 'v1',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'v1',
+                    replayId: 'fooUploadId',
+                },
+            },
+            {
                 // delete null object version
                 objMD: {
                     versionId: 'vnull',
@@ -167,8 +304,32 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                // delete MPU object null version
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    uploadId: 'fooUploadId',
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    replayId: 'fooUploadId',
+                },
+            },
+            {
                 // delete object put before versioning was first enabled
                 objMD: {},
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                },
+            },
+            {
+                // delete MPU object put before versioning was first enabled
+                objMD: {
+                    uploadId: 'fooUploadId',
+                },
                 reqVersionId: 'null',
                 expectedRes: {
                     deleteData: true,
@@ -187,6 +348,33 @@ describe('versioning helpers', () => {
                 },
             },
             {
+                // delete MPU object non-null version with ref to null version
+                objMD: {
+                    versionId: 'v1',
+                    uploadId: 'fooUploadId',
+                    nullVersionId: 'vnull',
+                },
+                reqVersionId: 'v1',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'v1',
+                    replayId: 'fooUploadId',
+                },
+            },
+            {
+                // delete non-null object version with ref to MPU null version
+                objMD: {
+                    versionId: 'v1',
+                    nullVersionId: 'vnull',
+                    nullUploadId: 'nullFooUploadId',
+                },
+                reqVersionId: 'v1',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'v1',
+                },
+            },
+            {
                 // delete null object version from ref to null version
                 objMD: {
                     versionId: 'v1',
@@ -196,6 +384,20 @@ describe('versioning helpers', () => {
                 expectedRes: {
                     deleteData: true,
                     versionId: 'vnull',
+                },
+            },
+            {
+                // delete MPU object null version from ref to null version
+                objMD: {
+                    versionId: 'v1',
+                    nullVersionId: 'vnull',
+                    nullUploadId: 'nullFooUploadId',
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    replayId: 'nullFooUploadId',
                 },
             },
             {
