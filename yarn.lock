@@ -6784,9 +6784,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utapi@scality/utapi#7.10.3:
-  version "7.10.3"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/8358eb716604286360969cb668d6ea187185eb9b"
+utapi@scality/utapi#7.10.5:
+  version "7.10.5"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/5e68e14d0205f506bd0da7c00befdb3a5eb0967f"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
