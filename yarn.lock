@@ -629,9 +629,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#7.10.3":
-  version "7.10.3"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/8c2db870c7c372d7b4193954fb2c84db57758a46"
+"arsenal@github:scality/arsenal#7.10.5":
+  version "7.10.4"
+  resolved "https://codeload.github.com/scality/arsenal/tar.gz/8aa0f9d0305149b8a946e8a20b5837dc2be80bbc"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -6179,7 +6179,7 @@ sprintf-js@~1.0.2:
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/30e7115668bc7e10b4ec3cfdbaa7a124cdc21cc5"
   dependencies:
     async "^3.1.0"
-    werelogs scality/werelogs#351a2a3
+    werelogs scality/werelogs#8.1.0
 
 sproxydclient@scality/sproxydclient#8.0.2:
   version "8.0.2"
