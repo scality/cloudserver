@@ -8,7 +8,6 @@ describe('Monitoring: endpoint', () => {
     const sandbox = sinon.createSandbox();
     const res = {
         writeHead(/* result, headers */) { return this; },
-        setHeader(/* header */) { return this; },
         write(/* body */) { return this; },
         end(/* body */) {},
     };

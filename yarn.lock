@@ -5544,6 +5544,13 @@ prom-client@^13.1.0:
   dependencies:
     tdigest "^0.1.1"
 
+prom-client@^14.0.1:
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-14.0.1.tgz#bdd9583e02ec95429677c0e013712d42ef1f86a8"
+  integrity sha512-HxTArb6fkOntQHoRGvv4qd/BkorjliiuO2uSWC2KC17MUTKYttWdDoXX/vxOhQdkoECEM9BBH0pj2l8G8kev6w==
+  dependencies:
+    tdigest "^0.1.1"
+
 promise-fs@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/promise-fs/-/promise-fs-2.1.1.tgz#0b725a592c165ff16157d1f13640ba390637e557"
