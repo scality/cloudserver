@@ -163,6 +163,14 @@ const constants = {
         'location',
         'versionId',
     ],
+    allowedUtapiEventFilterFields: [
+        'operationId',
+        'location',
+        'account',
+        'user',
+        'bucket',
+    ],
+    allowedUtapiEventFilterStates: ['allow', 'deny'],
 };
 
 module.exports = constants;
