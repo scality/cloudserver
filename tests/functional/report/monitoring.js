@@ -81,24 +81,24 @@ describe('Monitoring - getting metrics', () => {
                 assert.strictEqual(c - count, i);
             }
         });
-    });
 
-    it('should measure http requests duration metrics', async () => {
-        const initialDuration = parseDuration(await getMetrics());
-        let previousDuration = initialDuration;
-        for (let i = 0; i < 1000; i++) { /* eslint no-await-in-loop: "off" */
-            await query('/_/healthcheck');
+        it(`should measure http ${labels.method} requests duration metrics on ${path}`, async () => {
+            const initialDuration = parseDuration(await getMetrics(), labels);
+            let previousDuration = initialDuration;
+            for (let i = 0; i < 1000; i++) { /* eslint no-await-in-loop: "off" */
+                await query(path, labels.method);
 
-            const duration = parseDuration(await getMetrics());
-            assert(duration >= previousDuration); // May be equal, if host is too fast...
+                const duration = parseDuration(await getMetrics(), labels);
+                assert(duration >= previousDuration); // May be equal, if host is too fast...
 
-            // Early exit as soon as we are sure it increases somewhat. We don't expect to reach the
-            // end of the main loop (i = 1000)
-            if (i > 10 && duration > initialDuration) {
-                break;
+                // Early exit as soon as we are sure it increases somewhat. We don't expect to reach the
+                // end of the main loop (i = 1000)
+                if (i > 10 && duration > initialDuration) {
+                    break;
+                }
+                previousDuration = duration;
             }
-            previousDuration = duration;
-        }
-        assert(previousDuration > initialDuration); // Expect it will increase, over a few calls...
+            assert(previousDuration > initialDuration); // Expect it will increase, over a few calls...
+        });
     });
 });
