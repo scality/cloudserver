@@ -42,7 +42,7 @@ describe('Monitoring: endpoint', () => {
 
     it('it should return some metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
-        assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
+        assert(res.writeHead.calledOnceWith(200));
         assert(res.end.calledOnce);
 
         // Check that some "system" metrics is present
