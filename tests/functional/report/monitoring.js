@@ -20,9 +20,9 @@ describe('Monitoring - getting metrics', () => {
             http.get({ host: conf.ipAddress, path: '/metrics', port: 8002 }, res => {
                 assert.strictEqual(res.statusCode, 200);
 
-                let body = '';
-                res.on('data', chunk => { body += chunk; });
-                res.on('end', () => resolve(body));
+                const body = [];
+                res.on('data', chunk => { body.push(chunk); });
+                res.on('end', () => resolve(body.join('')));
             });
         });
     }
@@ -71,10 +71,8 @@ describe('Monitoring - getting metrics', () => {
         ['/_/metadata',     { method: 'GET', code: '403', route: 'routeMetadata' }],
         ['/_/workflow-engine-operator',
                             { method: 'GET', code: '405', route: 'routeWorkflowEngineOperator' }],
-    ].forEach(testcase => {
-        const path = testcase[0];
-        const labels = testcase[1];
-        it(`it should count http ${labels.method} requests metrics on ${path}`, async () => {
+    ].forEach(([path, labels]) => {
+        it(`should count http ${labels.method} requests metrics on ${path}`, async () => {
             const count = parseRequestsCount(await getMetrics(), labels);
             for (let i = 1; i <= 3; i++) { /* eslint no-await-in-loop: "off" */
                 await query(path, labels.method);
@@ -85,7 +83,7 @@ describe('Monitoring - getting metrics', () => {
         });
     });
 
-    it('it should measure http requests duration metrics', async () => {
+    it('should measure http requests duration metrics', async () => {
         const initialDuration = parseDuration(await getMetrics());
         let previousDuration = initialDuration;
         for (let i = 0; i < 1000; i++) { /* eslint no-await-in-loop: "off" */
