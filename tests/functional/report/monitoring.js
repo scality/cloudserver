@@ -29,7 +29,7 @@ describe('Monitoring - getting metrics', () => {
 
     function parseMetric(metrics, name, labels) {
         const labelsString = Object.entries(labels !== undefined ? labels : {
-            method: 'GET', code: '200', route: 'healthcheck',
+            method: 'GET', code: '200', action: 'healthcheck',
         }).map(e => `${e[0]}="${e[1]}"`).join(',');
         const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
         return metric ? metric[1] : null;
@@ -58,19 +58,19 @@ describe('Monitoring - getting metrics', () => {
         ['/_/fooooo',       { method: 'DELETE', code: '400' }],
 
         // S3/api routes
-        ['/',               { method: 'GET', code: '403', route: 'serviceGet' }],
-        ['/foo',            { method: 'GET', code: '404', route: 'bucketGet' }],
-        ['/foo/bar',        { method: 'GET', code: '404', route: 'objectGet' }],
+        ['/',               { method: 'GET', code: '403', action: 'serviceGet' }],
+        ['/foo',            { method: 'GET', code: '404', action: 'bucketGet' }],
+        ['/foo/bar',        { method: 'GET', code: '404', action: 'objectGet' }],
 
         // Internal handlers
-        ['/_/healthcheck',  { method: 'GET', code: '200', route: 'healthcheck' }],
+        ['/_/healthcheck',  { method: 'GET', code: '200', action: 'healthcheck' }],
         ['/_/healthcheck/deep',
-                            { method: 'GET', code: '200', route: 'deepHealthcheck' }],
-        ['/_/report',       { method: 'GET', code: '200', route: 'report' }],
-        ['/_/backbeat',     { method: 'GET', code: '405', route: 'routeBackbeat' }],
-        ['/_/metadata',     { method: 'GET', code: '403', route: 'routeMetadata' }],
+                            { method: 'GET', code: '200', action: 'deepHealthcheck' }],
+        ['/_/report',       { method: 'GET', code: '200', action: 'report' }],
+        ['/_/backbeat',     { method: 'GET', code: '405', action: 'routeBackbeat' }],
+        ['/_/metadata',     { method: 'GET', code: '403', action: 'routeMetadata' }],
         ['/_/workflow-engine-operator',
-                            { method: 'GET', code: '405', route: 'routeWorkflowEngineOperator' }],
+                            { method: 'GET', code: '405', action: 'routeWorkflowEngineOperator' }],
     ].forEach(([path, labels]) => {
         it(`should count http ${labels.method} requests metrics on ${path}`, async () => {
             const count = parseRequestsCount(await getMetrics(), labels);
