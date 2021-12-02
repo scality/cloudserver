@@ -16,7 +16,6 @@ const initiateMultipartUpload
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const completeMultipartUpload
     = require('../../../lib/api/completeMultipartUpload');
-const metadataBackend = require('../../../lib/metadata/in_memory/backend');
 const DummyRequest = require('../DummyRequest');
 
 const log = new DummyRequestLogger();
@@ -175,19 +174,8 @@ describe('objectDelete API', () => {
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
-            (result, resHeaders, next) => {
-                const origDeleteObject = metadataBackend.deleteObject;
-                metadataBackend.deleteObject =
-                    (bucketName, objName, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        cb();
-                    };
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.ifError(err);
-                    metadataBackend.deleteObject = origDeleteObject;
-                    next();
-                });
-            },
+            (result, resHeaders, next) =>
+                objectDelete(authInfo, testDeleteRequest, log, next),
         ], done);
     });
 
