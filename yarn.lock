@@ -6781,7 +6781,7 @@ sprintf-js@~1.0.2:
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/e45c547833f03b1fa0409e0499433dcb386442f5"
   dependencies:
     async "^3.1.0"
-    werelogs scality/werelogs#8.1.0
+    werelogs scality/werelogs#351a2a3
 
 sql-where-parser@~2.2.1:
   version "2.2.1"
