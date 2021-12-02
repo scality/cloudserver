@@ -1,8 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
-const { errors, storage } = require('arsenal');
-const metadataBackend = storage.metadata.inMemory.metastore;
+const { errors } = require('arsenal');
 const xml2js = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -179,19 +178,8 @@ describe('objectDelete API', () => {
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
-            (result, resHeaders, next) => {
-                const origDeleteObject = metadataBackend.deleteObject;
-                metadataBackend.deleteObject =
-                    (bucketName, objName, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        cb();
-                    };
-                objectDelete(authInfo, testDeleteRequest, log, err => {
-                    assert.ifError(err);
-                    metadataBackend.deleteObject = origDeleteObject;
-                    next();
-                });
-            },
+            (result, resHeaders, next) =>
+                objectDelete(authInfo, testDeleteRequest, log, next),
         ], done);
     });
 
