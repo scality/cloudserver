@@ -12,7 +12,7 @@ describe('versioning helpers', () => {
     describe('getMasterState+processVersioningState', () => {
         [
             {
-                // no prior version exists
+                description: 'no prior version exists',
                 objMD: null,
                 versioningEnabledExpectedRes: {
                     options: {
@@ -27,7 +27,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior non-null object version exists
+                description: 'prior non-null object version exists',
                 objMD: {
                     versionId: 'v1',
                 },
@@ -44,7 +44,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior MPU object non-null version exists
+                description: 'prior MPU object non-null version exists',
                 objMD: {
                     versionId: 'v1',
                     uploadId: 'fooUploadId',
@@ -62,7 +62,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior null object version exists
+                description: 'prior null object version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -90,7 +90,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior MPU object null version exists
+                description: 'prior MPU object null version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -121,7 +121,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior object exists, put before versioning was first enabled
+                description:
+                'prior object exists, put before versioning was first enabled',
                 objMD: {},
                 versioningEnabledExpectedRes: {
                     options: {
@@ -143,8 +144,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior MPU object exists, put before versioning was
-                // first enabled
+                description: 'prior MPU object exists, put before versioning ' +
+                    'was first enabled',
                 objMD: {
                     uploadId: 'fooUploadId',
                 },
@@ -168,7 +169,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior non-null object version exists with ref to null version
+                description:
+                'prior non-null object version exists with ref to null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -190,8 +192,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior MPU object non-null version exists with ref
-                // to null version
+                description: 'prior MPU object non-null version exists with ' +
+                    'ref to null version',
                 objMD: {
                     versionId: 'v1',
                     uploadId: 'fooUploadId',
@@ -214,8 +216,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // prior object non-null version exists with ref to
-                // MPU null version
+                description: 'prior object non-null version exists with ' +
+                    'ref to MPU null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -241,8 +243,8 @@ describe('versioning helpers', () => {
             },
         ].forEach(testCase =>
             ['Enabled', 'Suspended'].forEach(versioningStatus => it(
-            `with objMD ${JSON.stringify(testCase.objMD)} and versioning ` +
-            `Status=${versioningStatus}`, () => {
+            `${testCase.description}, versioning Status=${versioningStatus}`,
+            () => {
                 const mst = getMasterState(testCase.objMD);
                 // stringify and parse to get rid of the "undefined"
                 // properties, artifacts of how the function builds the
@@ -261,14 +263,14 @@ describe('versioning helpers', () => {
     describe('preprocessingVersioningDelete', () => {
         [
             {
+                description: 'no reqVersionId: no delete action',
                 objMD: {
                     versionId: 'v1',
                 },
-                // no reqVersionId: no delete action
                 expectedRes: {},
             },
             {
-                // delete non-null object version
+                description: 'delete non-null object version',
                 objMD: {
                     versionId: 'v1',
                 },
@@ -279,7 +281,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete MPU object non-null version
+                description: 'delete MPU object non-null version',
                 objMD: {
                     versionId: 'v1',
                     uploadId: 'fooUploadId',
@@ -292,7 +294,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete null object version
+                description: 'delete null object version',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -304,7 +306,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete MPU object null version
+                description: 'delete MPU object null version',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -318,7 +320,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete object put before versioning was first enabled
+                description:
+                'delete object put before versioning was first enabled',
                 objMD: {},
                 reqVersionId: 'null',
                 expectedRes: {
@@ -326,7 +329,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete MPU object put before versioning was first enabled
+                description:
+                'delete MPU object put before versioning was first enabled',
                 objMD: {
                     uploadId: 'fooUploadId',
                 },
@@ -336,7 +340,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete non-null object version with ref to null version
+                description:
+                'delete non-null object version with ref to null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -348,7 +353,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete MPU object non-null version with ref to null version
+                description:
+                'delete MPU object non-null version with ref to null version',
                 objMD: {
                     versionId: 'v1',
                     uploadId: 'fooUploadId',
@@ -362,7 +368,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete non-null object version with ref to MPU null version
+                description:
+                'delete non-null object version with ref to MPU null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -375,7 +382,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete null object version from ref to null version
+                description:
+                'delete null object version from ref to null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -387,7 +395,8 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete MPU object null version from ref to null version
+                description:
+                'delete MPU object null version from ref to null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -401,16 +410,14 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                // delete null version that does not exist
+                description: 'delete null version that does not exist',
                 objMD: {
                     versionId: 'v1',
                 },
                 reqVersionId: 'null',
                 expectedError: errors.NoSuchKey,
             },
-        ].forEach(testCase => it(
-        `with objMD ${JSON.stringify(testCase.objMD)} and ` +
-        `reqVersionId="${testCase.reqVersionId}"`, done => {
+        ].forEach(testCase => it(testCase.description, done => {
             const mockBucketMD = {
                 getVersioningConfiguration: () => ({ Status: 'Enabled' }),
             };
