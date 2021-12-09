@@ -6767,7 +6767,7 @@ sprintf-js@~1.0.2:
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/30e7115668bc7e10b4ec3cfdbaa7a124cdc21cc5"
   dependencies:
     async "^3.1.0"
-    werelogs scality/werelogs#351a2a3
+    werelogs scality/werelogs#8.1.0
 
 "sproxydclient@github:scality/sproxydclient#8.0.2":
   version "8.0.2"
