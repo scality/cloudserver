@@ -28,19 +28,19 @@ describe('Monitoring: endpoint', () => {
         }, null));
     }
 
-    it('it should return an error is method is not GET', async () => {
+    it('should return an error is method is not GET', async () => {
         await fetchMetrics({ method: 'PUT', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(405));
         assert(res.end.calledOnce);
     });
 
-    it('it should return an error is path is not /metrics', async () => {
+    it('should return an error is path is not /metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/foo' }, res);
         assert(res.writeHead.calledOnceWith(405));
         assert(res.end.calledOnce);
     });
 
-    it('it should return some metrics', async () => {
+    it('should return some metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
         assert(res.end.calledOnce);
@@ -49,19 +49,19 @@ describe('Monitoring: endpoint', () => {
         assert(res.end.args[0][0].includes('\nnodejs_active_handles_total '));
     });
 
-    it('it should have http duration histogram metrics', async () => {
+    it('should have http duration histogram metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
         assert(res.end.args[0][0].includes('\n# TYPE http_request_duration_seconds histogram'));
     });
 
-    it('it should have http requests counter metrics', async () => {
+    it('should have http requests counter metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
         assert(res.end.args[0][0].includes('\n# TYPE http_requests_total counter'));
     });
 
-    it('it should have http active requests gauge metrics', async () => {
+    it('should have http active requests gauge metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
         assert(res.end.args[0][0].includes('\n# TYPE http_active_requests gauge'));
