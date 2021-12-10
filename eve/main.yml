@@ -498,6 +498,19 @@ stages:
           command: docker push ${DEVELOPMENT_DOCKER_IMAGE_NAME}
           haltOnFailure: true
           env: *docker_env
+      - ShellCommand:
+          name: Oras login
+          command: |
+            oras login --username "${HARBOR_LOGIN}" --password "${HARBOR_PASSWORD}" registry.scality.com
+          env:
+            HARBOR_LOGIN: '%(secret:harbor_login)s'
+            HARBOR_PASSWORD: '%(secret:harbor_password)s'
+      - ShellCommand:
+          name: push dashboards to the development namespace
+          command: |
+            ./push-to-registry.sh cloudserver-dashboard:latest dashboard.json "application/grafana-dashboard+json"
+          workdir: build/monitoring/
+
 
   # This stage can be used to release your Docker image.
   # To use this stage:
