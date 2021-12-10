@@ -66,4 +66,56 @@ describe('Monitoring: endpoint', () => {
         assert(res.writeHead.calledOnceWith(200));
         assert(res.end.args[0][0].includes('\n# TYPE http_active_requests gauge'));
     });
+
+    it('should have http requests size metrics', async () => {
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        assert(res.writeHead.calledOnceWith(200));
+        assert(res.end.args[0][0].includes('\n# TYPE http_request_size_bytes summary'));
+    });
+
+    it('should have http response size metrics', async () => {
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        assert(res.writeHead.calledOnceWith(200));
+        assert(res.end.args[0][0].includes('\n# TYPE http_response_size_bytes summary'));
+    });
+
+    function parseMetric(metrics, name, labels) {
+        const labelsString = Object.entries(labels).map(e => `${e[0]}="${e[1]}"`).join(',');
+        const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
+        return metric ? metric[1] : null;
+    }
+
+    function parseHttpRequestSize(metrics, action = 'putObject') {
+        const value = parseMetric(metrics, 'http_request_size_bytes_sum',
+            { method: 'PUT', action, code: '200' });
+        return value ? parseInt(value, 10) : 0;
+    }
+
+    function parseHttpResponseSize(metrics, action = 'getObject') {
+        const value = parseMetric(metrics, 'http_response_size_bytes_sum',
+            { method: 'GET', action, code: '200' });
+        return value ? parseInt(value, 10) : 0;
+    }
+
+    it('should measure http requests size on putObject', async () => {
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        const requestSize = parseHttpRequestSize(res.end.args[0][0]);
+
+        monitoring.promMetrics('PUT', 'stuff', '200',
+            'putObject', 2357, 3572, false, null, 5723);
+
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        assert(parseHttpRequestSize(res.end.args[1][0]) === requestSize + 2357);
+    });
+
+    it('should measure http response size on getObject', async () => {
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        const responseSize = parseHttpResponseSize(res.end.args[0][0]);
+
+        monitoring.promMetrics('GET', 'stuff', '200',
+            'getObject', 7532);
+
+        await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
+        assert(parseHttpResponseSize(res.end.args[1][0]) === responseSize + 7532);
+    });
 });
