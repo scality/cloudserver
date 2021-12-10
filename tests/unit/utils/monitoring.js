@@ -51,19 +51,19 @@ describe('Monitoring: endpoint', () => {
 
     it('should have http duration histogram metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
-        assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
+        assert(res.writeHead.calledOnceWith(200));
         assert(res.end.args[0][0].includes('\n# TYPE http_request_duration_seconds histogram'));
     });
 
     it('should have http requests counter metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
-        assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
+        assert(res.writeHead.calledOnceWith(200));
         assert(res.end.args[0][0].includes('\n# TYPE http_requests_total counter'));
     });
 
     it('should have http active requests gauge metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
-        assert(res.writeHead.calledOnceWith(200) || !res.writeHead.called);
+        assert(res.writeHead.calledOnceWith(200));
         assert(res.end.args[0][0].includes('\n# TYPE http_active_requests gauge'));
     });
 });
