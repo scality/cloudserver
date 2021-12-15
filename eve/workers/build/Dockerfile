@@ -35,14 +35,14 @@ ENV RUBY_VERSION="2.5.0"
 
 RUN gpg2 --keyserver hkp://pgp.mit.edu --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
     && curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION \
-   && usermod -a -G rvm eve
+    && usermod -a -G rvm eve
 
 COPY ./gems.list /tmp/
 
 RUN /bin/bash -l -c "\
-   source /usr/local/rvm/scripts/rvm \
-   && cat /tmp/gems.list | xargs gem install \
-   && rm /tmp/gems.list"
+    source /usr/local/rvm/scripts/rvm \
+    && cat /tmp/gems.list | xargs gem install \
+    && rm /tmp/gems.list"
 
 # Install Pip packages
 COPY ./pip_packages.list /tmp/
