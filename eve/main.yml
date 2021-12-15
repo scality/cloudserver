@@ -73,6 +73,9 @@ models:
       S3BACKEND: "file"
       S3VAULT: "mem"
       MPU_TESTING: "yes"
+  - env: &oras
+      REGISTRY: 'registry.scality.com'
+      PROJECT: '%(prop:git_slug)s'
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -498,17 +501,24 @@ stages:
           command: docker push ${DEVELOPMENT_DOCKER_IMAGE_NAME}
           haltOnFailure: true
           env: *docker_env
-      - ShellCommand:
+      - ShellCommand: &oras_login
           name: Oras login
-          command: |
-            oras login --username "${HARBOR_LOGIN}" --password "${HARBOR_PASSWORD}" registry.scality.com
+          command:
+            oras login --username "${HARBOR_LOGIN}" --password "${HARBOR_PASSWORD}" ${REGISTRY}
           env:
+            <<: *oras
             HARBOR_LOGIN: '%(secret:harbor_login)s'
             HARBOR_PASSWORD: '%(secret:harbor_password)s'
       - ShellCommand:
           name: push dashboards to the development namespace
           command: |
-            ./push-to-registry.sh cloudserver-dashboard:latest dashboard.json "application/grafana-dashboard+json"
+            for revision in %(prop:commit_short_revision)s latest ; do
+              oras push \
+                ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision \
+                dashboard.json:application/grafana-dashboard+json \
+                alerts.yaml:application/prometheus-alerts+yaml
+            done
+          env: *oras
           workdir: build/monitoring/
 
 
@@ -547,3 +557,11 @@ stages:
           name: publish docker image to Scality Production OCI registry
           command: docker push ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
           env: *docker_env
+      - ShellCommand: *oras_login
+      - ShellCommand:
+          name: push dashboards to the production namespace
+          command: |
+            oras push \
+              ${REGISTRY}/${PROJECT}/${PROJECT}-dashboards:%(prop:tag)s \
+              dashboard.json:application/grafana-dashboard+json \
+              alerts.yaml:application/prometheus-alerts+yaml
