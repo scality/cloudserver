@@ -6,10 +6,30 @@ x-inputs:
   - name: service
     type: constant
     value: artesca-data-connector-s3api-metrics
+  - name: replicas
+    type: constant
 
 groups:
 - name: CloudServer
   rules:
+
+  - alert: DataAccessS3EndpointDegraded
+    Expr: sum(up{namespace="${namespace}", service="${service}"}) < ${replicas}
+    For:   "30s"
+    Labels:
+      severity: warning
+    Annotations:
+      description: "Less than 100% of S3 endpoints are up and healthy"
+      summary: "Data Access service is degraded"
+
+  - alert: DataAccessS3EndpointCritical
+    Expr: sum(up{namespace="${namespace}", service="${service}"}) * 2 < ${replicas}
+    For:   "30s"
+    Labels:
+      severity: critical
+    Annotations:
+      description: "Less than 50% of S3 endpoints are up and healthy"
+      summary: "Data Access service is critical"
 
   # As a platform admin I want to be alerted (warning) when the system errors are more than 3% of
   # all the response codes
