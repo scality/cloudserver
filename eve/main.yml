@@ -509,6 +509,7 @@ stages:
           name: push dashboards to the development namespace
           command: |
             ./push-to-registry.sh cloudserver-dashboard:latest dashboard.json "application/grafana-dashboard+json"
+            ./push-to-registry.sh cloudserver-alerts:latest alerts.yaml "application/prometheus-alerts+yaml"
           workdir: build/monitoring/
 
 
