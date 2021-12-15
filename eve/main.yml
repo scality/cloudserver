@@ -157,6 +157,13 @@ models:
         echo "Could not reach Docker daemon from buildbot worker" >&2
         exit 1'
       haltOnFailure: true
+  - ShellCommand: &oras_login
+      name: Oras login
+      command: |
+        oras login --username "${HARBOR_LOGIN}" --password "${HARBOR_PASSWORD}" registry.scality.com
+      env:
+        HARBOR_LOGIN: '%(secret:harbor_login)s'
+        HARBOR_PASSWORD: '%(secret:harbor_password)s'
 
 
 stages:
@@ -498,13 +505,7 @@ stages:
           command: docker push ${DEVELOPMENT_DOCKER_IMAGE_NAME}
           haltOnFailure: true
           env: *docker_env
-      - ShellCommand:
-          name: Oras login
-          command: |
-            oras login --username "${HARBOR_LOGIN}" --password "${HARBOR_PASSWORD}" registry.scality.com
-          env:
-            HARBOR_LOGIN: '%(secret:harbor_login)s'
-            HARBOR_PASSWORD: '%(secret:harbor_password)s'
+      - ShellCommand: *oras_login
       - ShellCommand:
           name: push dashboards to the development namespace
           command: |
@@ -534,6 +535,7 @@ stages:
       - Git: *clone
       - ShellCommand: *wait_docker_daemon
       - ShellCommand: *docker_login
+      - ShellCommand: *oras_login
       - ShellCommand:
           name: Checkout tag
           command: git checkout refs/tags/%(prop:tag)s
@@ -548,3 +550,11 @@ stages:
           name: publish docker image to Scality Production OCI registry
           command: docker push ${PRODUCTION_DOCKER_IMAGE_NAME}:%(prop:tag)s
           env: *docker_env
+      - ShellCommand:
+          name: push dashboards
+          command: |
+            ./push-to-registry.sh cloudserver-dashboard:%(prop:tag)s dashboard.json "application/grafana-dashboard+json"
+            ./push-to-registry.sh cloudserver-alerts:%(prop:tag)s alerts.yaml "application/prometheus-alerts+yaml"
+          workdir: build/monitoring/
+          env:
+            PROJECT: %(prop:git_slug)s
