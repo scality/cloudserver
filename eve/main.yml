@@ -562,3 +562,4 @@ stages:
           name: push dashboards to the production namespace
           command: |
             oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
+          env: *oras
