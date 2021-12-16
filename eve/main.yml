@@ -76,6 +76,9 @@ models:
   - env: &oras
       REGISTRY: 'registry.scality.com'
       PROJECT: '%(prop:git_slug)s'
+      LAYERS: >-
+        dashboard.json:application/grafana-dashboard+json
+        alerts.yaml:application/prometheus-alerts+yaml
   - Git: &clone
       name: Pull repo
       repourl: '%(prop:git_reference)s'
@@ -513,10 +516,7 @@ stages:
           name: push dashboards to the development namespace
           command: |
             for revision in %(prop:commit_short_revision)s latest ; do
-              oras push \
-                ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision \
-                dashboard.json:application/grafana-dashboard+json \
-                alerts.yaml:application/prometheus-alerts+yaml
+              oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
             done
           env: *oras
           workdir: build/monitoring/
@@ -561,7 +561,4 @@ stages:
       - ShellCommand:
           name: push dashboards to the production namespace
           command: |
-            oras push \
-              ${REGISTRY}/${PROJECT}/${PROJECT}-dashboards:%(prop:tag)s \
-              dashboard.json:application/grafana-dashboard+json \
-              alerts.yaml:application/prometheus-alerts+yaml
+            oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
