@@ -55,7 +55,7 @@ git push --tags
       * name: `'tag'`, value: `[release version]`, in this example`'8.3.0'`
 
 * Once the docker image is present on [registry.scality.com](registry.scality.com),
-  update Vault's `package.json`
+  update CloudServers' `package.json`
   by bumping it to the relevant next version in a new PR.
   In this case, `8.3.1` .
 
