@@ -563,3 +563,4 @@ stages:
           command: |
             oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
           env: *oras
+          workdir: build/monitoring/
