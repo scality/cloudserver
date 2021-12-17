@@ -23,7 +23,7 @@
     "arsenal": "github:scality/Arsenal#7.4.13",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
-    "azure-storage": "^2.1.0",
+    "azure-storage": "^2.10.6",
     "bucketclient": "scality/bucketclient#8.1.0",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
