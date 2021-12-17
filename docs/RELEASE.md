@@ -26,18 +26,55 @@ docker pull registry.scality.com/cloudserver/cloudserver:<tag>
 
 To release a production image:
 
-* Name the tag for the repository and Docker image.
+* Checkout the relevant branch. In this example,
+  we are working on development/8.3, and we want to release version `8.3.0`.
 
-* Use the `yarn version` command with the same tag to update `package.json`.
+```sh
+git checkout development/8.3
+```
 
-* Create a PR and merge the `package.json` change.
+* Tag the branch with the release version. In this example, `8.3.0`
 
-* Tag the repository using the same tag.
+```sh
+git tag -a 8.3.0
+# The message should be 'v<version>'
+v8.3.0
+```
 
-* [Force a build] using:
-  * A given branch that ideally matches the tag.
-  * The `release` stage.
-  * An extra property with the name `tag` and its value being the actual tag.
+* Push the tags to GitHub.
 
-[Force a build]:
-https://eve.devsca.com/github/scality/cloudserver/#/builders/bootstrap/force/force
+```sh
+git push --tags
+```
+
+* With the following parameters, [force a build here](https://eve.devsca.com/github/scality/cloudserver/#/builders/3/force/force)
+
+    * Branch Name: The one used for the tag earlier. In this example 'development/8.3'
+    * Override Stage: 'release'
+    * Extra properties:
+      * name: `'tag'`, value: `[release version]`, in this example`'8.3.0'`
+
+* Once the docker image is present on [registry.scality.com](registry.scality.com),
+  update Vault's `package.json`
+  by bumping it to the relevant next version in a new PR.
+  In this case, `8.3.1` .
+
+```js
+{
+  "name": "@zenko/cloudserver",
+  "version": "8.3.1", <--- Here
+  [...]
+}
+```
+
+* Finally, once your PR has been reviewed, release the release version on Jira,
+  set up the next version, and approve your PR.
+
+  * Go to the [CloudServer release page](https://scality.atlassian.net/projects/CLDSRV?selectedItem=com.atlassian.jira.jira-projects-plugin:release-page)
+  * Create a new version if necessary
+    * Name: `[next version]`, in this example `8.3.1`
+    * Start Date: `[date of the release]`
+  * Click `...` and select `Release` on the release version
+  * Return to the release ticket,
+    change the fix version of the ticket to the new version
+  * Return to your PR and type `/approve`
