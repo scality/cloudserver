@@ -561,6 +561,6 @@ stages:
       - ShellCommand:
           name: push dashboards to the production namespace
           command: |
-            oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
+            oras push ${REGISTRY}/${PROJECT}/${PROJECT}-dashboards:%(prop:tag)s ${LAYERS}
           env: *oras
           workdir: build/monitoring/
