@@ -61,8 +61,8 @@ groups:
   # version listing operation latency is more than 300ms
   - alert: ListingLatencyWarning
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
+      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m])
+          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m])
         >= 0.300
     for: 5m
     labels:
@@ -74,8 +74,8 @@ groups:
   # version listing operation latency is more than 500ms
   - alert: ListingLatencyCritical
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
+      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m])
+          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m])
         >= 0.500
     for: 5m
     labels:
