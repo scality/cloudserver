@@ -87,8 +87,8 @@ groups:
   # 500ms
   - alert: DeleteLatencyWarning
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
+      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m])
+          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m])
         >= 500
     for: 5m
     labels:
@@ -100,8 +100,8 @@ groups:
   # than 1s
   - alert: DeleteLatencyCritical
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
+      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m])
+          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m])
         >= 1.000
     for: 5m
     labels:
