@@ -35,77 +35,82 @@ groups:
   # all the response codes
   - alert: SystemErrorsWarning
     expr: |
-      sum by(pod) (rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
-          / sum by(pod) (rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
+      sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
+          / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
         >= 0.03
     for: 5m
     labels:
       severity: warning
     annotations:
-      summary: "High ratio of system erors on {{ $labels.pod }}"
+      description: "System errors represent more than 3% of all the response codes"
+      summary: "High ratio of system erors"
 
   # As a platform admin I want to be alerted (critical) when the system errors are more than 5% of
   # all the response codes
   - alert: SystemErrorsCritical
     expr: |
-      sum by(pod) (rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
-          / sum by(pod) (rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
+      sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
+          / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
         >= 0.05
     for: 5m
     labels:
       severity: critical
     annotations:
-      summary: "Very high ratio of system erors on {{ $labels.pod }}"
+      description: "System errors represent more than 5% of all the response codes"
+      summary: "Very high ratio of system erors"
 
   # As a platform admin I want to be alerted (warning) when a listing operation latency or a
   # version listing operation latency is more than 300ms
   - alert: ListingLatencyWarning
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
+      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
         >= 0.300
     for: 5m
     labels:
       severity: warning
     annotations:
-      summary: "High listing latency on {{ $labels.pod }}"
+      description: "Latency of listing or version listing operations is more than 300ms"
+      summary: "High listing latency"
 
   # As a platform admin I want to be alerted (critical) when a listing operation latency or a
   # version listing operation latency is more than 500ms
   - alert: ListingLatencyCritical
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="getService|listBucket"}[1m])
+      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
         >= 0.500
     for: 5m
     labels:
       severity: critical
     annotations:
-      summary: "Very high listing latency on {{ $labels.pod }}"
+      description: "Latency of listing or version listing operations is more than 500ms"
+      summary: "Very high listing latency"
 
   # As a platform admin I want to be alerted (warning) when a delete operation latency is more than
   # 500ms
   - alert: DeleteLatencyWarning
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
+      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
         >= 500
     for: 5m
     labels:
       severity: warning
     annotations:
-      summary: "High delete latency on {{ $labels.pod }}"
+      description: "Latency of delete object operations is more than 500ms"
+      summary: "High delete latency"
 
   # As a platform admin I want to be alerted (critical) when a delete operation latency is more
   # than 1s
   - alert: DeleteLatencyCritical
     expr: |
-      rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
-          / rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject|deleteBucket|multiObjectDelete"}[1m])
+      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
         >= 1.000
     for: 5m
     labels:
       severity: critical
     annotations:
-      summary: "Very high delete latency on {{ $labels.pod }}"
-
+      description: "Latency of delete object operations is more than 1s"
+      summary: "Very high delete latency"
