@@ -42,6 +42,7 @@ groups:
     labels:
       severity: warning
     annotations:
+      description: "System errors represent more than 3% of all the response codes"
       summary: "High ratio of system erors"
 
   # As a platform admin I want to be alerted (critical) when the system errors are more than 5% of
@@ -55,6 +56,7 @@ groups:
     labels:
       severity: critical
     annotations:
+      description: "System errors represent more than 5% of all the response codes"
       summary: "Very high ratio of system erors"
 
   # As a platform admin I want to be alerted (warning) when a listing operation latency or a
@@ -68,6 +70,7 @@ groups:
     labels:
       severity: warning
     annotations:
+      description: "Latency of listing or version listing operations is more than 300ms"
       summary: "High listing latency"
 
   # As a platform admin I want to be alerted (critical) when a listing operation latency or a
@@ -81,6 +84,7 @@ groups:
     labels:
       severity: critical
     annotations:
+      description: "Latency of listing or version listing operations is more than 500ms"
       summary: "Very high listing latency"
 
   # As a platform admin I want to be alerted (warning) when a delete operation latency is more than
@@ -94,6 +98,7 @@ groups:
     labels:
       severity: warning
     annotations:
+      description: "Latency of delete object operations is more than 500ms"
       summary: "High delete latency"
 
   # As a platform admin I want to be alerted (critical) when a delete operation latency is more
@@ -107,5 +112,5 @@ groups:
     labels:
       severity: critical
     annotations:
+      description: "Latency of delete object operations is more than 1s"
       summary: "Very high delete latency"
-
