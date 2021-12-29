@@ -1040,7 +1040,7 @@
                             "tooltip": false,
                             "viz": false
                         },
-                        "lineInterpolation": "linear",
+                        "lineInterpolation": "smooth",
                         "lineWidth": 1,
                         "pointSize": 5,
                         "scaleDistribution": {
@@ -1095,13 +1095,124 @@
                 {
                     "exemplar": true,
                     "expr": "(sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))) / (sum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval])))",
+                    "hide": false,
                     "interval": "",
-                    "legendFormat": "Requests latency",
+                    "legendFormat": "Overall",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))",
+                    "interval": "",
+                    "legendFormat": "Upload",
+                    "refId": "B"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectDelete\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectDelete\"}[$__rate_interval]))",
+                    "hide": false,
+                    "interval": "",
+                    "legendFormat": "Delete",
+                    "refId": "C"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectGet\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectGet\"}[$__rate_interval]))",
+                    "hide": false,
+                    "interval": "",
+                    "legendFormat": "Download",
+                    "refId": "D"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))",
+                    "hide": false,
+                    "interval": "",
+                    "legendFormat": "Multi-delete",
+                    "refId": "E"
+                }
+            ],
+            "title": "Average latencies",
+            "type": "timeseries"
+        },
+        {
+            "cards": {
+                "cardPadding": null,
+                "cardRound": null
+            },
+            "color": {
+                "cardColor": "#b4ff00",
+                "colorScale": "sqrt",
+                "colorScheme": "interpolateOranges",
+                "exponent": 0.5,
+                "mode": "opacity"
+            },
+            "dataFormat": "tsbuckets",
+            "datasource": "${DS_PROMETHEUS}",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 18
+            },
+            "heatmap": {},
+            "hideZeroBuckets": false,
+            "highlightCards": true,
+            "id": 28,
+            "interval": null,
+            "legend": {
+                "show": false
+            },
+            "maxDataPoints": 25,
+            "reverseYBuckets": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(increase(http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=\"${job}\"}[$__interval])) by (le)",
+                    "format": "heatmap",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{ le }}",
                     "refId": "A"
                 }
             ],
-            "title": "Global latency",
-            "type": "timeseries"
+            "title": "Request time",
+            "tooltip": {
+                "show": true,
+                "showHistogram": true
+            },
+            "type": "heatmap",
+            "xAxis": {
+                "show": true
+            },
+            "xBucketNumber": null,
+            "xBucketSize": null,
+            "yAxis": {
+                "decimals": null,
+                "format": "dtdurations",
+                "logBase": 1,
+                "max": null,
+                "min": null,
+                "show": true,
+                "splitFactor": null
+            },
+            "yBucketBound": "auto",
+            "yBucketNumber": null,
+            "yBucketSize": null
+        },
+        {
+            "collapsed": false,
+            "datasource": null,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 26
+            },
+            "id": 16,
+            "panels": [],
+            "title": "Data rate",
+            "type": "row"
         },
         {
             "datasource": "${DS_PROMETHEUS}",
@@ -1330,5 +1441,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 3
+    "version": 4
 }
