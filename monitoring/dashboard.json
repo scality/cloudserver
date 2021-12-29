@@ -9,6 +9,14 @@
             "pluginName": "Prometheus"
         },
         {
+            "name": "DS_LOKI",
+            "label": "Loki",
+            "description": "",
+            "type": "datasource",
+            "pluginId": "loki",
+            "pluginName": "Loki"
+        },
+        {
             "name": "namespace",
             "type": "constant",
             "label": "namespace",
@@ -21,6 +29,13 @@
             "label": "job",
             "description": "Name of the Cloudserver job, used to filter only the Cloudserver instances.",
             "value": "artesca-data-connector-s3api-metrics"
+        },
+        {
+            "name": "pod",
+            "type": "constant",
+            "label": "pod",
+            "description": "Prefix of the Cloudserver pod names, used to filter only the Cloudserver instances.",
+            "value": "artesca-data-connector-cloudserver"
         }
     ],
     "editable": true,
@@ -1416,6 +1431,254 @@
             ],
             "title": "Download chunk size",
             "type": "bargauge"
+        },
+        {
+            "collapsed": false,
+            "datasource": null,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 35
+            },
+            "id": 51,
+            "panels": [],
+            "title": "Error",
+            "type": "row"
+        },
+        {
+            "datasource": "${DS_LOKI}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 36
+            },
+            "id": 53,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==404 [$__interval])))",
+                    "refId": "A"
+                }
+            ],
+            "title": "404 : Top10 by Bucket",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "${DS_LOKI}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 36
+            },
+            "id": 54,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==500 [$__interval])))",
+                    "refId": "A"
+                }
+            ],
+            "title": "500 : Top10 by Bucket",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "${DS_LOKI}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 36
+            },
+            "id": 55,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "targets": [
+                {
+                    "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode=~\"5..\" [$__interval])))",
+                    "refId": "A"
+                }
+            ],
+            "title": "5xx : Top10 by Bucket",
+            "type": "timeseries"
         }
     ],
     "refresh": "30s",
@@ -1433,5 +1696,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 5
+    "version": 6
 }
