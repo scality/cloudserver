@@ -794,14 +794,14 @@
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
+                        "fillOpacity": 30,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
                         },
-                        "lineInterpolation": "linear",
+                        "lineInterpolation": "smooth",
                         "lineWidth": 1,
                         "pointSize": 5,
                         "scaleDistribution": {
@@ -830,7 +830,8 @@
                                 "value": 80
                             }
                         ]
-                    }
+                    },
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -848,20 +849,147 @@
                     "placement": "bottom"
                 },
                 "tooltip": {
-                    "mode": "single"
+                    "mode": "multi"
                 }
             },
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum (rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval]))",
+                    "expr": "sum by(code) (increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "format": "time_series",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "{{code}}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Http status code over time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "${DS_DATASOURCE}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 39,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "log": 2,
+                            "type": "log"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "normal"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Success"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "User errors"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "System errors"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 9
+            },
+            "id": 32,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi"
+                }
+            },
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum (increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval]))",
                     "interval": "",
                     "legendFormat": "Success",
                     "refId": "A"
                 },
                 {
                     "exemplar": true,
-                    "expr": "sum (rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"4..\"}[$__rate_interval]))",
+                    "expr": "sum (increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"4..\"}[$__rate_interval]))",
                     "hide": false,
                     "interval": "",
                     "legendFormat": "User errors",
@@ -869,14 +997,14 @@
                 },
                 {
                     "exemplar": true,
-                    "expr": "sum (rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"5..\"}[$__rate_interval]))",
+                    "expr": "sum (increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"5..\"}[$__rate_interval]))",
                     "hide": false,
                     "interval": "",
                     "legendFormat": "System errors",
                     "refId": "C"
                 }
             ],
-            "title": "Grouped response codes",
+            "title": "Aggregated status over time",
             "type": "timeseries"
         },
         {
@@ -1202,5 +1330,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 2
+    "version": 3
 }
