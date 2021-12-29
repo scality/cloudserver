@@ -1264,7 +1264,7 @@
                             }
                         ]
                     },
-                    "unit": "s"
+                    "unit": "binBps"
                 },
                 "overrides": []
             },
@@ -1288,129 +1288,9 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))",
-                    "interval": "",
-                    "legendFormat": "Upload",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectDelete\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectDelete\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Single delete",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectGet\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"objectGet\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Download",
-                    "refId": "C"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval])) /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Multiple delete",
-                    "refId": "D"
-                }
-            ],
-            "title": "Latencies",
-            "type": "timeseries"
-        },
-        {
-            "collapsed": false,
-            "datasource": null,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 18
-            },
-            "id": 16,
-            "panels": [],
-            "title": "Data rate",
-            "type": "row"
-        },
-        {
-            "datasource": "${DS_PROMETHEUS}",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "Bps"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 19
-            },
-            "id": 18,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "single"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
                     "expr": "sum(rate(http_response_size_bytes_sum{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
                     "interval": "",
-                    "legendFormat": "out",
+                    "legendFormat": "Out",
                     "refId": "A"
                 },
                 {
@@ -1424,6 +1304,118 @@
             ],
             "title": "Bandwidth",
             "type": "timeseries"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "bytes"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 27
+            },
+            "id": 35,
+            "options": {
+                "displayMode": "gradient",
+                "orientation": "vertical",
+                "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+                    "format": "heatmap",
+                    "interval": "",
+                    "legendFormat": "{{ le }}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Upload chunk size",
+            "type": "bargauge"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "noValue": "0",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "bytes"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 27
+            },
+            "id": 34,
+            "options": {
+                "displayMode": "gradient",
+                "orientation": "vertical",
+                "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "text": {}
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+                    "format": "heatmap",
+                    "interval": "",
+                    "legendFormat": "{{ le }}",
+                    "refId": "A"
+                }
+            ],
+            "title": "Download chunk size",
+            "type": "bargauge"
         }
     ],
     "refresh": "30s",
@@ -1441,5 +1433,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 4
+    "version": 5
 }
