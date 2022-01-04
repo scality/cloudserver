@@ -8,6 +8,24 @@ x-inputs:
     value: artesca-data-connector-s3api-metrics
   - name: replicas
     type: constant
+  - name: systemErrorsWarningThreshold
+    type: constant
+    value: 0.03
+  - name: systemErrorsCriticalThreshold
+    type: constant
+    value: 0.05
+  - name: listingLatencyWarningThreshold
+    type: constant
+    value: 0.300
+  - name: listingLatencyCriticalThreshold
+    type: constant
+    value: 0.500
+  - name: deleteLatencyWarningThreshold
+    type: constant
+    value: 0.500
+  - name: deleteLatencyCriticalThreshold
+    type: constant
+    value: 1.000
 
 groups:
 - name: CloudServer
@@ -37,7 +55,7 @@ groups:
     expr: |
       sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
           / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
-        >= 0.03
+        >= ${systemErrorsWarningThreshold}
     for: 5m
     labels:
       severity: warning
@@ -51,7 +69,7 @@ groups:
     expr: |
       sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
           / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
-        >= 0.05
+        >= ${systemErrorsCriticalThreshold}
     for: 5m
     labels:
       severity: critical
@@ -65,7 +83,7 @@ groups:
     expr: |
       sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
           / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
-        >= 0.300
+        >= ${listingLatencyWarningThreshold}
     for: 5m
     labels:
       severity: warning
@@ -79,7 +97,7 @@ groups:
     expr: |
       sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
           / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
-        >= 0.500
+        >= ${listingLatencyCriticalThreshold}
     for: 5m
     labels:
       severity: critical
@@ -93,7 +111,7 @@ groups:
     expr: |
       sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
           / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
-        >= 500
+        >= ${deleteLatencyWarningThreshold}
     for: 5m
     labels:
       severity: warning
@@ -107,7 +125,7 @@ groups:
     expr: |
       sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
           / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
-        >= 1.000
+        >= ${deleteLatencyCriticalThreshold}
     for: 5m
     labels:
       severity: critical
