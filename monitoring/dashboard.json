@@ -152,7 +152,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(http_requests_total{namespace=\"${namespace}\", job=\"${job}\"})",
+                    "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
                     "format": "time_series",
                     "instant": false,
                     "interval": "",
@@ -161,7 +161,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Total requests",
+            "title": "Http requests",
             "type": "stat"
         },
         {
@@ -486,7 +486,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(http_requests_total{namespace=\"${namespace}\",job=\"${job}\",code=\"200\"})",
+                    "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\",job=\"${job}\",code=\"200\"}[$__rate_interval]))",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -544,7 +544,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(http_requests_total{namespace=\"${namespace}\", job=\"${job}\",code=~\"4..\"})",
+                    "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\",code=~\"4..\"}[$__rate_interval]))",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -602,7 +602,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(http_requests_total{namespace=\"${namespace}\", job=\"${job}\",code=~\"5..\"})",
+                    "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=\"${job}\",code=~\"5..\"}[$__rate_interval]))",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
