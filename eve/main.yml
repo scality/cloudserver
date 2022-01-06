@@ -2,7 +2,7 @@
 version: 0.2
 
 branches:
-  feature/*, documentation/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*, dependabot/*:
+  feature/*, documentation/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*, dependabot/*, user/*:
     stage: pre-merge
 
 models:

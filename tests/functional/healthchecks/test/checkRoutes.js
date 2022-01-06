@@ -21,8 +21,8 @@ const transportStr = conf.transport;
 const transport = transportStr === 'http' ? http : https;
 const options = {
     host: conf.ipAddress,
-    path: '/_/healthcheck',
-    port: 8000,
+    path: '/healthcheck',
+    port: 8002,
 };
 
 function checkResult(expectedStatus, res) {
@@ -54,6 +54,7 @@ function makeDummyS3Request(cb) {
     const getOptions = deepCopy(options);
     getOptions.path = '/foo/bar';
     getOptions.method = 'GET';
+    getOptions.port = 8000;
     getOptions.agent = makeAgent();
     const req = transport.request(getOptions);
     req.end(() => cb());
@@ -97,7 +98,7 @@ describe('Healthcheck routes', () => {
     it('should return 200 on deep GET request', done => {
         const deepOptions = deepCopy(options);
         deepOptions.method = 'GET';
-        deepOptions.path = '/_/healthcheck/deep';
+        deepOptions.path = '/healthcheck/deep';
         deepOptions.agent = makeAgent();
         const req = transport.request(deepOptions, makeChecker(200, done));
         req.end();

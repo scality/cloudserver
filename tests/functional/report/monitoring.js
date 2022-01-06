@@ -28,9 +28,7 @@ describe('Monitoring - getting metrics', () => {
     }
 
     function parseMetric(metrics, name, labels) {
-        const labelsString = Object.entries(labels !== undefined ? labels : {
-            method: 'GET', code: '200', action: 'healthcheck',
-        }).map(e => `${e[0]}="${e[1]}"`).join(',');
+        const labelsString = Object.entries(labels).map(e => `${e[0]}="${e[1]}"`).join(',');
         const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
         return metric ? metric[1] : null;
     }
@@ -63,9 +61,6 @@ describe('Monitoring - getting metrics', () => {
         ['/foo/bar',        { method: 'GET', code: '404', action: 'objectGet' }],
 
         // Internal handlers
-        ['/_/healthcheck',  { method: 'GET', code: '200', action: 'healthcheck' }],
-        ['/_/healthcheck/deep',
-                            { method: 'GET', code: '200', action: 'deepHealthcheck' }],
         ['/_/report',       { method: 'GET', code: '200', action: 'report' }],
         ['/_/backbeat',     { method: 'GET', code: '405', action: 'routeBackbeat' }],
         ['/_/metadata',     { method: 'GET', code: '403', action: 'routeMetadata' }],
