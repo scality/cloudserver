@@ -1,6 +1,7 @@
 # S3 Healthcheck
 
-Scality S3 exposes a healthcheck route `/live` which returns a
+Scality S3 exposes a healthcheck route `/live` on the port used
+for the metrics (defaults to port 8002) which returns a
 response with HTTP code
 
 - 200 OK
