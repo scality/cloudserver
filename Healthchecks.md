@@ -1,6 +1,6 @@
 # S3 Healthcheck
 
-Scality S3 exposes a healthcheck route `/healthcheck` which returns a
+Scality S3 exposes a healthcheck route `/live` which returns a
 response with HTTP code
 
 - 200 OK

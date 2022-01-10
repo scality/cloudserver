@@ -21,7 +21,7 @@ const transportStr = conf.transport;
 const transport = transportStr === 'http' ? http : https;
 const options = {
     host: conf.ipAddress,
-    path: '/healthcheck',
+    path: '/live',
     port: 8002,
 };
 
@@ -98,7 +98,7 @@ describe('Healthcheck routes', () => {
     it('should return 200 on deep GET request', done => {
         const deepOptions = deepCopy(options);
         deepOptions.method = 'GET';
-        deepOptions.path = '/healthcheck/deep';
+        deepOptions.path = '/ready';
         deepOptions.agent = makeAgent();
         const req = transport.request(deepOptions, makeChecker(200, done));
         req.end();
