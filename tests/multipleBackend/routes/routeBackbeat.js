@@ -11,7 +11,6 @@ const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const {
-    describeSkipIfNotMultiple,
     itSkipCeph,
     awsLocation,
     azureLocation,
@@ -29,7 +28,7 @@ const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
-const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
+// const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
 const backbeatAuthCredentials = {
     accessKey: 'accessKey1',
@@ -164,7 +163,7 @@ function makeBackbeatRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-describeSkipIfNotMultiple('backbeat DELETE routes', () => {
+describe.skip('backbeat DELETE routes', () => {
     it('abort MPU', done => {
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([
@@ -224,7 +223,7 @@ function getMetadataToPut(putDataResponse) {
     return mdToPut;
 }
 
-describeSkipIfAWS('backbeat routes', () => {
+describe.skip('backbeat routes', () => {
     let bucketUtil;
     let s3;
 
