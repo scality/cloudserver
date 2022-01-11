@@ -11,7 +11,7 @@ const { uniqName, getAzureClient, azureLocation, azureLocationMismatch,
   = require('../utils');
 
 const describeSkipIfNotMultipleOrCeph = config.backends.data !== 'multiple'
-    ? describe.skip : describe;
+    ? describe.skip : describe.skip;
 
 let azureContainerName;
 
