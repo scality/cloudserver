@@ -72,7 +72,7 @@ function copySetup(params, cb) {
     ], err => cb(err));
 }
 
-describe('ObjectCopy API with multiple backends', () => {
+describe.skip('ObjectCopy API with multiple backends', () => {
     before(() => {
         cleanup();
     });

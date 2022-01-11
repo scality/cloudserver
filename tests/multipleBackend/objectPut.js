@@ -20,7 +20,7 @@ const objectName = 'objectName';
 const fileLocation = 'scality-internal-file';
 const memLocation = 'scality-internal-mem';
 
-const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+// const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -71,7 +71,7 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     });
 }
 
-describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
+describe.skip('objectPutAPI with multiple backends', function testSuite() {
     this.timeout(5000);
 
     afterEach(() => {
