@@ -27,6 +27,7 @@ const testPutBucketRequest = new DummyRequest({
     url: '/',
 });
 
+const originalputObjectMD = metadata.putObjectMD;
 const objectName = 'objectName';
 
 let testPutObjectRequest;
@@ -92,6 +93,9 @@ describe('objectPut API', () => {
         }, postBody);
     });
 
+    after(() => {
+        metadata.putObjectMD = originalputObjectMD;
+    });
 
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
@@ -266,6 +270,32 @@ describe('objectPut API', () => {
                             done();
                         });
                     });
+                });
+        });
+    });
+
+    it('should forward a 400 back to client on metadata 408 response', () => {
+        metadata.putObjectMD =
+            (bucketName, objName, objVal, params, log, cb) =>
+                cb({ httpCode: 408 });
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => {
+                    assert.strictEqual(err.code, 400);
+                });
+        });
+    });
+
+    it('should forward a 502 to the client for 4xx != 408', () => {
+        metadata.putObjectMD =
+            (bucketName, objName, objVal, params, log, cb) =>
+                cb({ httpCode: 412 });
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => {
+                    assert.strictEqual(err.code, 502);
                 });
         });
     });
