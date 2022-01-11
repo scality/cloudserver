@@ -4,7 +4,6 @@ const BucketUtility = require('../../../lib/utility/bucket-util');
 const withV4 = require('../../support/withV4');
 
 const {
-    describeSkipIfNotMultipleOrCeph,
     uniqName,
     getAzureClient,
     getAzureContainerName,
@@ -21,7 +20,7 @@ const normalBody = Buffer.from('I am a body', 'utf8');
 
 const azureTimeout = 10000;
 
-describeSkipIfNotMultipleOrCeph('Multiple backend get object from Azure',
+describe.skip('Multiple backend get object from Azure',
 function testSuite() {
     this.timeout(30000);
     withV4(sigCfg => {
