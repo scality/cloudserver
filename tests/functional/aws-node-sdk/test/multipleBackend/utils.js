@@ -41,12 +41,12 @@ let gcpBucket;
 let gcpBucketMPU;
 
 const isCEPH = process.env.CI_CEPH !== undefined;
-const itSkipCeph = isCEPH ? it.skip : it;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+const itSkipCeph = isCEPH ? it.skip : it.skip;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe.skip; // always skip
 
 if (config.backends.data === 'multiple') {
-    describeSkipIfNotMultiple = describe;
-    describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe;
+    describeSkipIfNotMultiple = describe.skip;
+    describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe.skip; // always skip
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
     awsBucket = config.locationConstraints[awsLocation].details.bucketName;
