@@ -882,7 +882,7 @@
             "type": "timeseries"
         },
         {
-            "datasource": "${DS_DATASOURCE}",
+            "datasource": "${DS_PROMETHEUS}",
             "fieldConfig": {
                 "defaults": {
                     "color": {
