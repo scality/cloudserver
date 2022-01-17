@@ -9,22 +9,22 @@ x-inputs:
   - name: replicas
     type: constant
   - name: systemErrorsWarningThreshold
-    type: constant
+    type: config
     value: 0.03
   - name: systemErrorsCriticalThreshold
-    type: constant
+    type: config
     value: 0.05
   - name: listingLatencyWarningThreshold
-    type: constant
+    type: config
     value: 0.300
   - name: listingLatencyCriticalThreshold
-    type: constant
+    type: config
     value: 0.500
   - name: deleteLatencyWarningThreshold
-    type: constant
+    type: config
     value: 0.500
   - name: deleteLatencyCriticalThreshold
-    type: constant
+    type: config
     value: 1.000
 
 groups:
