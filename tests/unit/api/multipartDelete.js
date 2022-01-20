@@ -91,8 +91,6 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
         (deleteMpuRequest, uploadId, next) =>
             multipartDelete(authInfo, deleteMpuRequest, log,
                 err => next(err, uploadId)),
-        (uploadId, next) => metadata.getObjectMD(bucketName, objectKey, {},
-            log, (err, res) => next(err, res, uploadId)),
     ], callback);
 }
 
@@ -142,11 +140,13 @@ describe('Multipart Delete API', () => {
     });
 
     it('should create an AbortMarker when called', done => {
-        _createAndAbortMpu(true, false, eastLocation, (err, res, uploadId) => {
+        _createAndAbortMpu(true, false, eastLocation, (err, uploadId) => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
-            assert.strictEqual(res.isAborted, true);
-            assert.strictEqual(res.uploadId, uploadId);
-            done();
+            metadata.getObjectMD(bucketName, objectKey, {}, log, (err, res) => {
+                assert.strictEqual(res.isAborted, true);
+                assert.strictEqual(res.uploadId, uploadId);
+                done();
+            });
         });
     });
 });
