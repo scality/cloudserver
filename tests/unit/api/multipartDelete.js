@@ -13,6 +13,7 @@ const initiateMultipartUpload
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { makeAuthInfo } = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
 
 const bucketName = 'multipartdeletebucket';
 const log = new DummyRequestLogger();
@@ -78,17 +79,18 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
                 url: `/${objectKey}?uploadId=${testUploadId}`,
                 query: { uploadId: testUploadId },
             };
-            next(null, partRequest, deleteMpuRequest);
+            next(null, partRequest, deleteMpuRequest, uploadId);
         },
-        (partRequest, deleteMpuRequest, next) =>
+        (partRequest, deleteMpuRequest, uploadId, next) =>
             objectPutPart(authInfo, partRequest, undefined, log, err => {
                 if (err) {
                     return next(err);
                 }
-                return next(null, deleteMpuRequest);
+                return next(null, deleteMpuRequest, uploadId);
             }),
-        (deleteMpuRequest, next) =>
-            multipartDelete(authInfo, deleteMpuRequest, log, next),
+        (deleteMpuRequest, uploadId, next) =>
+            multipartDelete(authInfo, deleteMpuRequest, log, err => next(err, uploadId)),
+        (uploadId, next) => metadata.getObjectMD(bucketName, objectKey, {}, log, (err, res) => next(err, res, uploadId)),
     ], callback);
 }
 
@@ -136,4 +138,13 @@ describe('Multipart Delete API', () => {
             done();
         });
     });
+
+    it('should create an AbortMarker when called', done => {
+        _createAndAbortMpu(true, false, eastLocation, (err, res, uploadId) => {
+            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            assert.strictEqual(res.isAborted, true);
+            assert.strictEqual(res.uploadId, uploadId);
+            done();
+        });
+    })
 });
