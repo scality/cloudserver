@@ -89,8 +89,10 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
                 return next(null, deleteMpuRequest, uploadId);
             }),
         (deleteMpuRequest, uploadId, next) =>
-            multipartDelete(authInfo, deleteMpuRequest, log, err => next(err, uploadId)),
-        (uploadId, next) => metadata.getObjectMD(bucketName, objectKey, {}, log, (err, res) => next(err, res, uploadId)),
+            multipartDelete(authInfo, deleteMpuRequest, log,
+                err => next(err, uploadId)),
+        (uploadId, next) => metadata.getObjectMD(bucketName, objectKey, {},
+            log, (err, res) => next(err, res, uploadId)),
     ], callback);
 }
 
@@ -146,5 +148,5 @@ describe('Multipart Delete API', () => {
             assert.strictEqual(res.uploadId, uploadId);
             done();
         });
-    })
+    });
 });
