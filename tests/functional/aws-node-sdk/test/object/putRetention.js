@@ -12,7 +12,7 @@ const objectName = 'putobjectretentionobject';
 
 const retentionConfig = {
     Mode: 'GOVERNANCE',
-    RetainUntilDate: moment().add(1, 'Days').toISOString(),
+    RetainUntilDate: moment().add(1, 'd').add(123, 'ms').toISOString(),
 };
 
 const isCEPH = process.env.CI_CEPH !== undefined;

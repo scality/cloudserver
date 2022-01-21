@@ -675,9 +675,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#8.1.19":
-  version "8.1.19"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/6a529e066f1c7d7c3d81f7de19431d8515a2874e"
+"arsenal@github:scality/Arsenal#8.1.21":
+  version "8.1.20"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/faf5701248b944e37cbb27f7085f1fe541d10629"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -692,7 +692,7 @@ arraybuffer.slice@~0.0.7:
     bson "4.0.0"
     debug "~4.1.0"
     diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl"
+    fcntl "github:scality/node-fcntl#9108603d8881d7762dcadfde1db927a1653dfda5"
     hdclient scality/hdclient#489db2106570b9ea41bdacdf56131324d0db6a58
     https-proxy-agent "^2.2.0"
     ioredis "4.9.5"
@@ -2669,7 +2669,7 @@ fast-safe-stringify@^2.0.4:
   resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.0.7.tgz#124aa885899261f68aedb42a7c080de9da608743"
   integrity sha512-Utm6CdzT+6xsDk2m8S6uL8VHxNwI6Jub+e9NYTcAms28T84pTa25GJQV9j0CY0N1rM8hK4x6grpF2BQf+2qwVA==
 
-"fcntl@github:scality/node-fcntl":
+"fcntl@github:scality/node-fcntl", "fcntl@github:scality/node-fcntl#9108603d8881d7762dcadfde1db927a1653dfda5":
   version "0.1.0"
   resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/9108603d8881d7762dcadfde1db927a1653dfda5"
   dependencies:
@@ -6787,7 +6787,7 @@ sprintf-js@~1.0.2:
   resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/30e7115668bc7e10b4ec3cfdbaa7a124cdc21cc5"
   dependencies:
     async "^3.1.0"
-    werelogs scality/werelogs#8.1.0
+    werelogs scality/werelogs#351a2a3
 
 "sproxydclient@github:scality/sproxydclient#8.0.2":
   version "8.0.2"
