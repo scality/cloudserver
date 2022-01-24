@@ -84,7 +84,7 @@ models:
       command: node -v
   - ShellCommand: &yarn-install
       name: install modules
-      command: yarn install --frozen-lockfile
+      command: yarn install --ignore-engines --frozen-lockfile
       haltOnFailure: true
   - ShellCommand: &check-s3-action-logs
       name: Check s3 action logs
