@@ -19,12 +19,35 @@ RUN apt-get update \
 RUN curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb http://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 
+ENV PYTHON=python3.9
+ENV PY_VERSION=3.9.7
+
 RUN apt-get update \
-    && apt-get install -y jq python git build-essential ssh --no-install-recommends yarn \
+    && apt-get install -y --no-install-recommends \
+    jq \
+    python \
+    git \
+    build-essential \
+    ssh \
+    ca-certificates \
+    yarn \
+    wget \
+    libffi-dev \
+    zlib1g-dev \
     && mkdir -p /root/ssh \
-    && ssh-keyscan -H github.com > /root/ssh/known_hosts \
-    && yarn cache clean \
-    && yarn install --frozen-lockfile --production --ignore-optional \
+    && ssh-keyscan -H github.com > /root/ssh/known_hosts
+
+RUN cd /tmp \
+    && wget https://www.python.org/ftp/python/$PY_VERSION/Python-$PY_VERSION.tgz \
+    && tar -C /usr/local/bin -xzvf Python-$PY_VERSION.tgz \
+    && cd /usr/local/bin/Python-$PY_VERSION \
+    && ./configure --enable-optimizations \
+    && make \
+    && make altinstall \
+    && rm -rf /tmp/Python-$PY_VERSION.tgz
+
+RUN yarn cache clean \
+    && yarn install --production --ignore-optional --ignore-engines  \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \

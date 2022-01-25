@@ -86,6 +86,9 @@ const constants = {
     // In testing, AWS seems to allow up to 88 more bytes, so we do the same.
     maximumMetaHeadersSize: 2136,
 
+    // Maximum HTTP headers size allowed
+    maxHttpHeadersSize: 14122,
+
     // hex digest of sha256 hash of empty string:
     emptyStringHash: crypto.createHash('sha256')
         .update('', 'binary').digest('hex'),
