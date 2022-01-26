@@ -4,7 +4,7 @@
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
-    "node": ">=10.19.0"
+    "node": ">=16"
   },
   "repository": "scality/S3",
   "keywords": [
@@ -20,11 +20,11 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/arsenal#7.4.14",
+    "arsenal": "github:scality/arsenal#feature/ARSN-21/UpgradeToNode16",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#8.1.0",
+    "bucketclient": "scality/bucketclient#improvement/BKTCLT-3-upgrade-to-node-16",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
@@ -32,10 +32,10 @@
     "http-proxy": "^1.17.0",
     "npm-run-all": "~4.1.5",
     "sproxydclient": "scality/sproxydclient#8.0.2",
-    "utapi": "scality/utapi#7.4.11",
+    "utapi": "scality/utapi#feature/UTAPI-59/UpgradeToNode16",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
-    "vaultclient": "scality/vaultclient#62e8d4a",
+    "vaultclient": "scality/vaultclient#feature/VLTCLT-7/UpgradeToNode16",
     "werelogs": "scality/werelogs#8.1.0",
     "xml2js": "~0.4.16"
   },
