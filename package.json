@@ -1,10 +1,10 @@
 {
   "name": "s3",
-  "version": "7.4.10",
+  "version": "7.4.11",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
-    "node": ">=10.19.0"
+    "node": ">=16"
   },
   "repository": "scality/S3",
   "keywords": [
@@ -20,22 +20,22 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/arsenal#7.4.15",
+    "arsenal": "github:scality/arsenal#7.4.16",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#8.1.0",
+    "bucketclient": "scality/bucketclient#7.4.11",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
     "google-auto-auth": "^0.9.1",
     "http-proxy": "^1.17.0",
     "npm-run-all": "~4.1.5",
-    "sproxydclient": "scality/sproxydclient#8.0.2",
-    "utapi": "scality/utapi#7.4.11",
+    "sproxydclient": "scality/sproxydclient#7.4.11",
+    "utapi": "scality/utapi#7.4.12",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
-    "vaultclient": "scality/vaultclient#62e8d4a",
+    "vaultclient": "scality/vaultclient#7.4.11",
     "werelogs": "scality/werelogs#8.1.0",
     "xml2js": "~0.4.16"
   },
@@ -43,7 +43,7 @@
     "bluebird": "^3.3.1",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.0.0",
-    "eslint-config-scality": "scality/Guidelines#71a059ad",
+    "eslint-config-scality": "scality/Guidelines#7.4.11",
     "ioredis": "4.9.5",
     "istanbul": "1.0.0-alpha.2",
     "istanbul-api": "1.0.0-alpha.13",

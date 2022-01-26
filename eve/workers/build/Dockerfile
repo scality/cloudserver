@@ -12,7 +12,7 @@ RUN curl -sS http://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && update-ca-certificates \
     && git clone https://github.com/tj/n.git \
     && make -C ./n \
-    && n 10.22.0 \
+    && n 16.13.2 \
     && pip install pip==9.0.1 \
     && rm -rf ./n \
     && rm -rf /var/lib/apt/lists/* \
@@ -31,6 +31,7 @@ RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
 
 # Install RVM and gems
 ENV RUBY_VERSION="2.4.1"
+RUN gem update --system
 COPY ./gems.list /tmp/
 RUN cat /tmp/gems.list | xargs gem install
 #RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 \

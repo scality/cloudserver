@@ -1,4 +1,4 @@
-FROM node:10.22.0-slim
+FROM node:16.13.2-slim
 MAINTAINER Giorgio Regni <gr@scality.com>
 
 WORKDIR /usr/src/app
