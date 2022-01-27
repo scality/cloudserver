@@ -31,6 +31,7 @@ RUN adduser -u 1042 --home /home/eve --disabled-password --gecos "" eve \
 
 # Install RVM and gems
 ENV RUBY_VERSION="2.4.1"
+RUN gem update --system
 COPY ./gems.list /tmp/
 RUN cat /tmp/gems.list | xargs gem install
 #RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 \
