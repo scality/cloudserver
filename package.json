@@ -95,6 +95,3 @@
     "unit_coverage_legacy_location": "CI=true mkdir -p coverage/unitlegacylocation/ && S3_LOCATION_FILE=tests/locationConfig/locationConfigLegacy.json S3BACKEND=mem istanbul cover --dir coverage/unitlegacylocation _mocha -- --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json --reporter mocha-junit-reporter --recursive tests/unit"
   }
  }
-  
- 
- 
