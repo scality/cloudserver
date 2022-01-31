@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM python:3.10-alpine
 
 RUN apk add --no-cache \
         libressl && \
@@ -8,8 +8,7 @@ RUN apk add --no-cache \
         libressl-dev \
         sqlite-dev \
         build-base \
-        curl \
-        openssl
+        curl
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
