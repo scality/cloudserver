@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/arsenal#7.10.7",
+    "arsenal": "github:scality/arsenal#7.10.8",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -57,6 +57,11 @@
     "mocha-multi-reporters": "^1.1.7",
     "node-mocks-http": "1.5.2",
     "tv4": "^1.2.7"
+  },
+  "resolutions": {
+    "ioctl": "^2.0.2",
+    "npmlog": "4.1.2",
+    "@npmcli/fs": "1.0.0"
   },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
