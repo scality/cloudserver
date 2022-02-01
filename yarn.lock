@@ -419,7 +419,7 @@ arraybuffer.slice@~0.0.7:
 
 "arsenal@github:scality/Arsenal#w/8.1/feature/ARSN-21/UpgradeToNode16", arsenal@scality/Arsenal#w/8.1/feature/ARSN-21/UpgradeToNode16:
   version "8.1.22"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/f5b0f1e08294232369efe937e80867c6a41acdf4"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/1e334924f92cdc6b15d2a8a59a1da3b2287b98f9"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -4779,9 +4779,9 @@ smart-buffer@^4.1.0:
   integrity sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==
 
 snyk@^1.342.2:
-  version "1.840.0"
-  resolved "https://registry.yarnpkg.com/snyk/-/snyk-1.840.0.tgz#f3e829f15f0f4e4056ba4e6f73124daf39b5c27a"
-  integrity sha512-yA74ZvbptsB88RWVN8sBdZRJIAFeRBNYxuASs3JNwTh77Am3LeWoxrLvCZ2TEwMlwKR/uQEyrqFXzNG/ss/5ig==
+  version "1.842.0"
+  resolved "https://registry.yarnpkg.com/snyk/-/snyk-1.842.0.tgz#24f3d9b0e862fc0c8418e4e82f398543f69f94b6"
+  integrity sha512-eyB80R6bSR9Sa78/c/dygUMp244WZXYScEn9EEJL3oCHzp+5PpCS5qQLh+bdPZFOI3kGRHACvwmdVKGtVPg7rQ==
 
 socket.io-adapter@~1.1.0:
   version "1.1.2"
@@ -5622,9 +5622,9 @@ winston-transport@^4.4.2:
     triple-beam "^1.2.0"
 
 winston@^3.2.1:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/winston/-/winston-3.5.0.tgz#b1ef4dbc6d1a7c1b462650070f171abc7ce9eac0"
-  integrity sha512-OQMbmLsIdVHvm2hSurrYZs+iZNIImXneYJ6pX7LseSMEq20HdTETXiNnNX3FDwN4LB/xDRZLF6JYOY+AI112Kw==
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/winston/-/winston-3.5.1.tgz#b25cc899d015836dbf8c583dec8c4c4483a0da2e"
+  integrity sha512-tbRtVy+vsSSCLcZq/8nXZaOie/S2tPXPFt4be/Q3vI/WtYwm7rrwidxVw2GRa38FIXcJ1kUM6MOZ9Jmnk3F3UA==
   dependencies:
     "@dabh/diagnostics" "^2.0.2"
     async "^3.2.3"
