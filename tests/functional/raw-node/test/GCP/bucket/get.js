@@ -152,7 +152,18 @@ describe('GCP: GET Bucket', function testSuite() {
             });
 
             describe('with MaxKeys at 1001', () => {
-                it('should list at max 1000, ignoring MaxKeys', done => {
+                // S3C-5445
+                // Note: this test is testing GCP behaviour, not the Cloudserver one.
+                // It tests that GET https://<GCP_BUCKET_NAME>.storage.googleapis.com/?max-keys=1001
+                // returns only the first 1000 objects.
+                //
+                // Expected behavior: the GCP XML API should not return a list longer
+                // than 1000 objects, even if max-keys is greater than 1000:
+                // https://cloud.google.com/storage/docs/xml-api/reference-headers#maxkeys
+                //
+                // Actual behavior: it returns a list longer than 1000 objects when
+                // max-keys is greater than 1000
+                it.skip('should list at max 1000, ignoring MaxKeys', done => {
                     gcpClient.listObjects({
                         Bucket: bucketName,
                         MaxKeys: 1001,
