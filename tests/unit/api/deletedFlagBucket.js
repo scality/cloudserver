@@ -3,7 +3,7 @@ const assert = require('assert');
 const { errors } = require('arsenal');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
-const bucketGet = require('../../../lib/api/bucketGet');
+const { bucketGet } = require('../../../lib/api/bucketGet');
 const bucketGetACL = require('../../../lib/api/bucketGetACL');
 const bucketGetCors = require('../../../lib/api/bucketGetCors');
 const bucketGetWebsite = require('../../../lib/api/bucketGetWebsite');
