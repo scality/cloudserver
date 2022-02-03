@@ -58,6 +58,11 @@
     "node-mocks-http": "1.5.2",
     "tv4": "^1.2.7"
   },
+  "resolutions": {
+    "ioctl": "^2.0.2",
+    "npmlog": "4.1.2",
+    "@npmcli/fs": "1.0.0"
+  },
   "scripts": {
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
