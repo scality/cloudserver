@@ -1281,7 +1281,20 @@
                     },
                     "unit": "binBps"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Out"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
                 "h": 8,
@@ -1696,5 +1709,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 7
+    "version": 8
 }
