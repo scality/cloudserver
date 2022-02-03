@@ -165,7 +165,7 @@
             "type": "stat"
         },
         {
-            "datasource": "Prometheus",
+            "datasource": "${DS_PROMETHEUS}",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1696,5 +1696,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 6
+    "version": 7
 }
