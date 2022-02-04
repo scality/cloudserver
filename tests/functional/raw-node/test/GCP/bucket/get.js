@@ -152,7 +152,7 @@ describe('GCP: GET Bucket', function testSuite() {
             });
 
             describe('with MaxKeys at 1001', () => {
-                // S3C-5445
+                // TODO: S3C-5445
                 // Note: this test is testing GCP behaviour, not the Cloudserver one.
                 // It tests that GET https://<GCP_BUCKET_NAME>.storage.googleapis.com/?max-keys=1001
                 // returns only the first 1000 objects.
