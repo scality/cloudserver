@@ -11,3 +11,5 @@ redis-server
 yarn
 zlib1g-dev
 jq
+openssl
+ruby-full

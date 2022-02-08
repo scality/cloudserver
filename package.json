@@ -4,7 +4,7 @@
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
-    "node": ">=10.19.0"
+    "node": ">=16"
   },
   "repository": "scality/S3",
   "keywords": [
@@ -20,12 +20,12 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/Arsenal#8.1.26",
+    "arsenal": "github:scality/Arsenal#8.1.27",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#8.1.0",
-    "bufferutil": "^3.0.5",
+    "bucketclient": "scality/bucketclient#8.1.1",
+    "bufferutil": "^4.0.6",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
@@ -42,11 +42,11 @@
     "prom-client": "^14.0.1",
     "request": "^2.81.0",
     "sql-where-parser": "~2.2.1",
-    "utapi": "github:scality/utapi#8.1.4",
-    "utf-8-validate": "^4.0.2",
+    "utapi": "github:scality/utapi#8.1.5",
+    "utf-8-validate": "^5.0.8",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
-    "vaultclient": "scality/vaultclient#b9452a526daf5627ecae9528c941375a208e79f3",
+    "vaultclient": "scality/vaultclient#8.3.0",
     "werelogs": "scality/werelogs#8.1.0",
     "ws": "^5.1.0",
     "xml2js": "~0.4.16"
@@ -55,7 +55,7 @@
     "bluebird": "^3.3.1",
     "eslint": "^5.3.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-config-scality": "scality/Guidelines#28e73a2",
+    "eslint-config-scality": "scality/Guidelines#8.2.0",
     "eslint-plugin-import": "^2.14.0",
     "express": "^4.17.1",
     "ioredis": "4.9.5",
@@ -68,11 +68,6 @@
     "node-mocks-http": "1.5.2",
     "sinon": "^9.2.4",
     "tv4": "^1.2.7"
-  },
-  "resolutions": {
-    "ioctl": "^2.0.2",
-    "npmlog": "4.1.2",
-    "@npmcli/fs": "1.0.0"
   },
   "scripts": {
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",

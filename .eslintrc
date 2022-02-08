@@ -1,6 +1,7 @@
 {
     "extends": "scality",
     "rules": {
+        "import/extensions": "off",
         "lines-around-directive": "off",
         "no-underscore-dangle": "off",
         "indent": "off",
