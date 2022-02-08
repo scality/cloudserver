@@ -3438,9 +3438,10 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=
 
-sproxydclient@scality/sproxydclient#7.4.11:
-  version "7.4.11"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/3d3c111c0b17ce5dcc72726292f71bc83d99d0f9"
+sproxydclient@scality/sproxydclient#8.0.3:
+  version "8.0.3"
+  uid "1377ae00e2fd6fff322bc604648abe8971f8a800"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/1377ae00e2fd6fff322bc604648abe8971f8a800"
   dependencies:
     async "^3.2.0"
     werelogs scality/werelogs#8.1.0
