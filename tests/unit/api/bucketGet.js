@@ -4,7 +4,7 @@ const querystring = require('querystring');
 const async = require('async');
 const { parseString } = require('xml2js');
 
-const bucketGet = require('../../../lib/api/bucketGet');
+const { bucketGet } = require('../../../lib/api/bucketGet');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
