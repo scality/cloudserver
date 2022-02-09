@@ -15,6 +15,7 @@ function _performSearch(host,
                         query,
                         accessKey,
                         secretKey,
+                        sessionToken,
                         verbose, ssl) {
     const escapedSearch = encodeURIComponent(query);
     const options = {
@@ -27,6 +28,9 @@ function _performSearch(host,
         },
         rejectUnauthorized: false,
     };
+    if (sessionToken) {
+        options.headers['x-amz-security-token'] = sessionToken;
+    }
     const transport = ssl ? https : http;
     const request = transport.request(options, response => {
         if (verbose) {
@@ -76,6 +80,7 @@ function searchBucket() {
         .version('0.0.1')
         .option('-a, --access-key <accessKey>', 'Access key id')
         .option('-k, --secret-key <secretKey>', 'Secret access key')
+        .option('-t --session-token <sessionToken>', 'Session token')
         .option('-b, --bucket <bucket>', 'Name of the bucket')
         .option('-q, --query <query>', 'Search query')
         .option('-h, --host <host>', 'Host of the server')
@@ -84,7 +89,7 @@ function searchBucket() {
         .option('-v, --verbose')
         .parse(process.argv);
 
-    const { host, port, accessKey, secretKey, bucket, query, verbose, ssl } =
+    const { host, port, accessKey, secretKey, sessionToken, bucket, query, verbose, ssl } =
         commander;
 
     if (!host || !port || !accessKey || !secretKey || !bucket || !query) {
@@ -93,7 +98,7 @@ function searchBucket() {
         process.exit(1);
     }
 
-    _performSearch(host, port, bucket, query, accessKey, secretKey, verbose,
+    _performSearch(host, port, bucket, query, accessKey, secretKey, sessionToken, verbose,
         ssl);
 }
 
