@@ -80,7 +80,7 @@ function searchBucket() {
         .version('0.0.1')
         .option('-a, --access-key <accessKey>', 'Access key id')
         .option('-k, --secret-key <secretKey>', 'Secret access key')
-        .option('-t --session-token <sessionToken>', 'Session token')
+        .option('-t, --session-token <sessionToken>', 'Session token')
         .option('-b, --bucket <bucket>', 'Name of the bucket')
         .option('-q, --query <query>', 'Search query')
         .option('-h, --host <host>', 'Host of the server')
