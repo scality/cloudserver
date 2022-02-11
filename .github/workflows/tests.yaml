@@ -1,0 +1,117 @@
+---
+name: tests
+
+on:
+  push:
+    branches-ignore:
+      - 'development/**'
+      - 'q/*/**'
+
+env:
+  azurebackend_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurebackend_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurebackend_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azurebackend2_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY_2 }}
+  azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_2 }}
+  azurebackend2_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT_2 }}
+  azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurebackendmismatch_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azuretest_AZURE_BLOB_ENDPOINT: "${{ secrets.AZURE_STORAGE_ENDPOINT }}"
+  b2backend_B2_ACCOUNT_ID: "${{ secrets.B2BACKEND_B2_ACCOUNT_ID }}"
+  b2backend_B2_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.B2BACKEND_B2_STORAGE_ACCESS_KEY }}
+  GOOGLE_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
+  GOOGLE_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
+  AWS_S3_BACKEND_ACCESS_KEY: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }}"
+  AWS_S3_BACKEND_SECRET_KEY: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY }}"
+  AWS_S3_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY_2 }}"
+  AWS_S3_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY_2 }}"
+  AWS_GCP_BACKEND_ACCESS_KEY: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}"
+  AWS_GCP_BACKEND_SECRET_KEY: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}"
+  AWS_GCP_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY_2 }}"
+  AWS_GCP_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY_2 }}"
+  b2backend_B2_STORAGE_ENDPOINT: "${{ secrets.B2BACKEND_B2_STORAGE_ENDPOINT }}"
+  gcpbackend2_GCP_SERVICE_EMAIL: "${{ secrets.GCP2_SERVICE_EMAIL }}"
+  gcpbackend2_GCP_SERVICE_KEY: "${{ secrets.GCP2_SERVICE_KEY }}"
+  gcpbackend2_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackend_GCP_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
+  gcpbackend_GCP_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
+  gcpbackendmismatch_GCP_SERVICE_EMAIL: >-
+    ${{ secrets.GCPBACKENDMISMATCH_GCP_SERVICE_EMAIL }}
+  gcpbackendmismatch_GCP_SERVICE_KEY: >-
+    ${{ secrets.GCPBACKENDMISMATCH_GCP_SERVICE_KEY }}
+  gcpbackend_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendmismatch_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+
+jobs:
+  linting-coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        cache: 'yarn'
+    - name: install dependencies
+      run: yarn install --ignore-engines --frozen-lockfile
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+    - name: Install python deps
+      run: pip install flake8
+    - name: Linting
+      run: |
+        yarn run --silent lint -- --max-warnings 0
+        yarn run --silent lint_md
+        flake8 $(git ls-files "*.py")
+        yamllint -c yamllint.yml $(git ls-files "*.yml")
+    - name: Unit Coverage
+      run: |
+        set -ex
+        mkdir -p $CIRCLE_TEST_REPORTS/unit
+        yarn test
+        yarn run test_legacy_location
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+        CIRCLE_TEST_REPORTS: /tmp
+        CIRCLE_ARTIFACTS: /tmp
+        CI_REPORTS: /tmp
+    - name: Unit Coverage logs
+      run: find /tmp/unit -exec cat {} \;
+    - name: preparing junit files for upload
+      run: |
+        mkdir -p artifacts/junit
+        find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
+      if: always()
+    - name: Upload files to artifacts
+      uses: scality/action-artifacts@v2
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: artifacts
+      if: always()
