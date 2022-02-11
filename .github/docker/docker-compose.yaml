@@ -1,0 +1,52 @@
+services:
+  cloudserver:
+    image: ${CLOUDSERVER_IMAGE}
+    ports:
+      - "8000:8000"
+      - "9990:9990"
+      - "9991:9991"
+    volumes:
+      - /tmp/ssl:/tmp/ # TODO find proper path
+      - ${HOME}/.aws/credentials:/root/.aws/credentials
+      - /tmp/artifacts:/artifacts
+    environment:
+      - CI=true
+      - ENABLE_LOCAL_CACHE=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REPORT_TOKEN=report-token-1
+      - REMOTE_MANAGEMENT_DISABLE=1
+      - HEALTHCHECKS_ALLOWFROM=0.0.0.0/0
+      - DATA_HOST=0.0.0.0
+      - METADATA_HOST=0.0.0.0
+      - S3BACKEND
+      - S3DATA
+      - MPU_TESTING
+      - S3VAULT
+      - S3_LOCATION_FILE # TODO: set accordingly on action
+    env_file:
+      - creds.env
+    links:
+      - redis
+    depends_on:
+      - redis
+    extra_hosts:
+      - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com:127.0.0.1"
+  redis:
+    image: redis:alpine
+  squid:
+    profiles: ['ci-proxy']
+    image: scality/ci-squid
+    command: >-
+      sh -c 'mkdir -p /ssl &&
+            openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 \
+              -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy" \
+              -keyout /ssl/myca.pem  -out /ssl/myca.pem &&
+            cp /ssl/myca.pem /ssl/CA.pem &&
+            squid -f /etc/squid/squid.conf -N -z &&
+            squid -f /etc/squid/squid.conf -NYCd 1'
+    volumes:
+      - /tmp/ssl:/ssl
+# volumes:
+#   logvolume01: {}
+

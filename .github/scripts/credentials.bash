@@ -2,9 +2,9 @@
 set -x #echo on
 set -e #exit at the first error
 
-mkdir -p ~/.aws
+mkdir -p $HOME/.aws
 
-cat >>/root/.aws/credentials <<EOF
+cat >>$HOME/.aws/credentials <<EOF
 [default]
 aws_access_key_id = $AWS_S3_BACKEND_ACCESS_KEY
 aws_secret_access_key = $AWS_S3_BACKEND_SECRET_KEY
