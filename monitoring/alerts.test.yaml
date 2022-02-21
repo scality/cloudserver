@@ -1,0 +1,194 @@
+# These tests are meant to go hand-in-hand with the rendered alert rule.
+# Use github.com/scality/action-prom-render-test@python-renderer python module
+#
+# Render the alerts file with
+# gen-alert render alerts.yaml --value replicas:3
+
+evaluation_interval: 1m
+rule_files:
+  - alerts.rendered.yaml
+
+tests:
+  # SystemErrorsWarning and SystemErrorsCritical
+  ##################################################################################################
+  - name: System Errors
+    interval: 1m
+    input_series:
+      # 1% error rate for 5m, then 4% error rate for 5m, then 6% error rate
+      - series: http_requests_total{namespace="zenko", service="artesca-data-connector-s3api-metrics", code="500"}
+        values: 1+1x3 5+4x4 25+6x6
+      - series: http_requests_total{namespace="zenko", service="artesca-data-connector-s3api-metrics"}
+        values: 100+100x15
+    alert_rule_test:
+      - alertname: SystemErrorsWarning
+        eval_time: 5m
+        exp_alerts: []
+      - alertname: SystemErrorsCritical
+        eval_time: 5m
+        exp_alerts: []
+
+      - alertname: SystemErrorsWarning
+        eval_time: 9m
+        exp_alerts: []
+      - alertname: SystemErrorsCritical
+        eval_time: 9m
+        exp_alerts: []
+
+      - alertname: SystemErrorsWarning
+        eval_time: 10m
+        exp_alerts:
+          - exp_annotations:
+              description: System errors represent more than 3% of all the response codes
+              summary: High ratio of system erors
+            exp_labels:
+              severity: warning
+      - alertname: SystemErrorsCritical
+        eval_time: 10m
+        exp_alerts: []
+
+      - alertname: SystemErrorsWarning
+        eval_time: 14m
+        exp_alerts:
+          - exp_annotations:
+              description: System errors represent more than 3% of all the response codes
+              summary: High ratio of system erors
+            exp_labels:
+              severity: warning
+      - alertname: SystemErrorsCritical
+        eval_time: 14m
+        exp_alerts: []
+
+      - alertname: SystemErrorsWarning
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: System errors represent more than 3% of all the response codes
+              summary: High ratio of system erors
+            exp_labels:
+              severity: warning
+      - alertname: SystemErrorsCritical
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: System errors represent more than 5% of all the response codes
+              summary: Very high ratio of system erors
+            exp_labels:
+              severity: critical
+
+  # ListingLatencyWarning and ListingLatencyCritical
+  ##################################################################################################
+  - name: Listing Latency
+    interval: 1m
+    input_series:
+      # Requests last 50ms for 5 min, then up to 300ms for 5 min, then 500ms for 5min
+      - series: http_request_duration_seconds_sum{namespace="zenko",service="artesca-data-connector-s3api-metrics",action="listBucket"}
+        values: 50+50x4 300+300x4 1800+500x6
+      - series: http_request_duration_seconds_count{namespace="zenko",service="artesca-data-connector-s3api-metrics",action="listBucket"}
+        values: 1000+1000x16
+    alert_rule_test:
+      - alertname: ListingLatencyWarning
+        eval_time: 6m
+        exp_alerts: []
+      - alertname: ListingLatencyCritical
+        eval_time: 6m
+        exp_alerts: []
+
+      - alertname: ListingLatencyWarning
+        eval_time: 11m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of listing or version listing operations is more than 300ms
+              summary: High listing latency
+            exp_labels:
+              severity: warning
+      - alertname: ListingLatencyCritical
+        eval_time: 11m
+        exp_alerts: []
+
+      - alertname: ListingLatencyWarning
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of listing or version listing operations is more than 300ms
+              summary: High listing latency
+            exp_labels:
+              severity: warning
+      - alertname: ListingLatencyCritical
+        eval_time: 15m
+        exp_alerts: []
+
+      - alertname: ListingLatencyWarning
+        eval_time: 16m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of listing or version listing operations is more than 300ms
+              summary: High listing latency
+            exp_labels:
+              severity: warning
+      - alertname: ListingLatencyCritical
+        eval_time: 16m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of listing or version listing operations is more than 500ms
+              summary: Very high listing latency
+            exp_labels:
+              severity: critical
+
+  # DeleteLatencyWarning and DeleteLatencyCritical
+  ##################################################################################################
+  - name: Listing Latency
+    interval: 1m
+    input_series:
+      # Requests last 100ms for 5 min, then up to 500ms for 5 min, then 1s for 5min
+      - series: http_request_duration_seconds_sum{namespace="zenko",service="artesca-data-connector-s3api-metrics",action="deleteObject"}
+        values: 100+100x4 600+500x4 3100+1000x6
+      - series: http_request_duration_seconds_count{namespace="zenko",service="artesca-data-connector-s3api-metrics",action="deleteObject"}
+        values: 1000+1000x16
+    alert_rule_test:
+      - alertname: DeleteLatencyWarning
+        eval_time: 6m
+        exp_alerts: []
+      - alertname: DeleteLatencyCritical
+        eval_time: 6m
+        exp_alerts: []
+
+      - alertname: DeleteLatencyWarning
+        eval_time: 11m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of delete object operations is more than 500ms
+              summary: High delete latency
+            exp_labels:
+              severity: warning
+      - alertname: DeleteLatencyCritical
+        eval_time: 11m
+        exp_alerts: []
+
+      - alertname: DeleteLatencyWarning
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of delete object operations is more than 500ms
+              summary: High delete latency
+            exp_labels:
+              severity: warning
+      - alertname: DeleteLatencyCritical
+        eval_time: 15m
+        exp_alerts: []
+
+      - alertname: DeleteLatencyWarning
+        eval_time: 16m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of delete object operations is more than 500ms
+              summary: High delete latency
+            exp_labels:
+              severity: warning
+      - alertname: DeleteLatencyCritical
+        eval_time: 16m
+        exp_alerts:
+          - exp_annotations:
+              description: Latency of delete object operations is more than 1s
+              summary: Very high delete latency
+            exp_labels:
+              severity: critical

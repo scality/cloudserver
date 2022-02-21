@@ -32,20 +32,20 @@ groups:
   rules:
 
   - alert: DataAccessS3EndpointDegraded
-    Expr: sum(up{namespace="${namespace}", service="${service}"}) < ${replicas}
-    For:   "30s"
-    Labels:
+    expr: sum(up{namespace="${namespace}", service="${service}"}) < ${replicas}
+    for:   "30s"
+    labels:
       severity: warning
-    Annotations:
+    annotations:
       description: "Less than 100% of S3 endpoints are up and healthy"
       summary: "Data Access service is degraded"
 
   - alert: DataAccessS3EndpointCritical
-    Expr: sum(up{namespace="${namespace}", service="${service}"}) * 2 < ${replicas}
-    For:   "30s"
-    Labels:
+    expr: sum(up{namespace="${namespace}", service="${service}"}) * 2 < ${replicas}
+    for:   "30s"
+    labels:
       severity: critical
-    Annotations:
+    annotations:
       description: "Less than 50% of S3 endpoints are up and healthy"
       summary: "Data Access service is critical"
 

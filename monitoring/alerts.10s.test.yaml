@@ -1,0 +1,81 @@
+# These tests are meant to go hand-in-hand with the rendered alert rule.
+# Use github.com/scality/action-prom-render-test@python-renderer python module
+#
+# Render the alerts file with
+# gen-alert render alerts.yaml --value replicas:3
+
+evaluation_interval: 10s
+rule_files:
+  - alerts.rendered.yaml
+
+tests:
+  # DataAccessS3EndpointDegraded and DataAccessS3EndpointCritical
+  ##################################################################################################
+  - name: Data Access S3 Endpoint
+    interval: 10s
+    input_series:
+      - series: up{namespace="zenko", service="artesca-data-connector-s3api-metrics", pod="one"}
+        values: 1 1 1 1   0 0 0   1 1 1
+      - series: up{namespace="zenko", service="artesca-data-connector-s3api-metrics", pod="two"}
+        values: 1 1 1 1   1 1 1   0 0 0
+      - series: up{namespace="zenko", service="artesca-data-connector-s3api-metrics", pod="three"}
+        values: 1 1 1 1   1 1 1   0 0 0
+      #  service up ^
+      #           pending ^
+      #            degrated ^     ^ ^
+      #                    critical ^
+    alert_rule_test:
+      - alertname: DataAccessS3EndpointDegraded
+        eval_time: 40s
+        exp_alerts: []
+      - alertname: DataAccessS3EndpointCritical
+        eval_time: 40s
+        exp_alerts: []
+
+      - alertname: DataAccessS3EndpointDegraded
+        eval_time: 60s
+        exp_alerts: []
+      - alertname: DataAccessS3EndpointCritical
+        eval_time: 60s
+        exp_alerts: []
+
+      - alertname: DataAccessS3EndpointDegraded
+        eval_time: 70s
+        exp_alerts:
+          - exp_annotations:
+              description: Less than 100% of S3 endpoints are up and healthy
+              summary: Data Access service is degraded
+            exp_labels:
+              severity: warning
+      - alertname: DataAccessS3EndpointCritical
+        eval_time: 70s
+        exp_alerts: []
+
+      - alertname: DataAccessS3EndpointDegraded
+        eval_time: 90s
+        exp_alerts:
+          - exp_annotations:
+              description: Less than 100% of S3 endpoints are up and healthy
+              summary: Data Access service is degraded
+            exp_labels:
+              severity: warning
+      - alertname: DataAccessS3EndpointCritical
+        eval_time: 90s
+        exp_alerts: []
+
+      - alertname: DataAccessS3EndpointDegraded
+        eval_time: 100s
+        exp_alerts:
+          - exp_annotations:
+              description: Less than 100% of S3 endpoints are up and healthy
+              summary: Data Access service is degraded
+            exp_labels:
+              severity: warning
+      - alertname: DataAccessS3EndpointCritical
+        eval_time: 100s
+        exp_alerts:
+          - exp_annotations:
+              description: Less than 50% of S3 endpoints are up and healthy
+              summary: Data Access service is critical
+            exp_labels:
+              severity: critical
