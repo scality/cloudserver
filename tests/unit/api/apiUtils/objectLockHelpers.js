@@ -255,6 +255,21 @@ describe('objectLockHelpers: validateObjectLockUpdate', () => {
         assert.strictEqual(error, null);
     });
 
+    it('should allow extending retention period if in GOVERNANCE if bypassGovernanceRetention is false', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, false);
+        assert.strictEqual(error, null);
+    });
+
     it('should disallow shortening retention period if in COMPLIANCE', () => {
         const objMD = {
             retentionMode: 'COMPLIANCE',
