@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');

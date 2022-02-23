@@ -1,6 +1,6 @@
 const assert = require('assert');
-const arsenal = require('arsenal');
-const utils = arsenal.storage.data.external.backendUtils;
+const armory = require('armory');
+const utils = armory.storage.data.external.backendUtils;
 const BucketInfo = require('arsenal').models.BucketInfo;
 
 const { config } = require('../../../lib/Config');

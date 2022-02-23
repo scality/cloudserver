@@ -1,5 +1,6 @@
 const assert = require('assert');
-const { errors, storage } = require('arsenal');
+const { errors } = require('arsenal');
+const { storage } = require('armory');
 const { gcpTaggingPrefix } = require('../../../constants');
 const { genPutTagObj } =
     require('../../../tests/functional/raw-node/utils/gcpUtils');

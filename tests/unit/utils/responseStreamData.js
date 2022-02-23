@@ -1,7 +1,8 @@
 const assert = require('assert');
 const httpMocks = require('node-mocks-http');
 const { EventEmitter } = require('events');
-const { errors, storage, s3routes } = require('arsenal');
+const { errors, s3routes } = require('arsenal');
+const { storage } = require('armory');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { config } = require('../../../lib/Config');

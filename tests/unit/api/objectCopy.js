@@ -1,6 +1,6 @@
 const assert = require('assert');
 const async = require('async');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
