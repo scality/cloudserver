@@ -5,7 +5,7 @@ const extensions = require('arsenal').algorithms.list;
 const { config } = require('../../../../lib/Config');
 
 const BucketFileInterface =
-    require('arsenal').storage.metadata.file.BucketFileInterface;
+    require('armory').storage.metadata.file.BucketFileInterface;
 
 const KEY_LENGTH = 15;
 const KEY_COUNT = 1000;

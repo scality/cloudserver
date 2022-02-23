@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { parseLC } = require('arsenal').storage.data;
+const { parseLC } = require('armory').storage.data;
 
 const { config } = require('../../../lib/Config');
 

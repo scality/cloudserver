@@ -3,7 +3,7 @@ const async = require('async');
 const crypto = require('crypto');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 
 const { config } = require('../../lib/Config');
 const { cleanup, DummyRequestLogger, makeAuthInfo }

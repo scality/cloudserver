@@ -1,5 +1,6 @@
 const assert = require('assert');
-const { errors, storage } = require('arsenal');
+const { errors } = require('arsenal');
+const { storage } = require('armory');
 
 const AwsClient = storage.data.external.AwsClient;
 const { config } = require('../../../lib/Config');

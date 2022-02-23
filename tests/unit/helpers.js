@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const assert = require('assert');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const { RequestContext } = require('arsenal').policies;

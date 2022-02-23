@@ -1,6 +1,6 @@
 const assert = require('assert');
-const arsenal = require('arsenal');
-const { checkExternalBackend } = arsenal.storage.data.external.backendUtils;
+const armory = require('armory');
+const { checkExternalBackend } = armory.storage.data.external.backendUtils;
 const awsLocations = [
     'awsbackend',
 ];
