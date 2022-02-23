@@ -1,6 +1,7 @@
 const assert = require('assert');
 const crypto = require('crypto');
-const { errors, storage } = require('arsenal');
+const { errors } = require('arsenal');
+const { storage } = require('armory');
 const AWS = require('aws-sdk');
 AWS.config.logger = console;
 const { v4: uuidv4 } = require('uuid');

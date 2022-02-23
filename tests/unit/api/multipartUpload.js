@@ -1,4 +1,5 @@
-const { errors, storage } = require('arsenal');
+const { errors } = require('arsenal');
+const { storage } = require('armory');
 
 const assert = require('assert');
 const async = require('async');

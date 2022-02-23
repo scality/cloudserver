@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');

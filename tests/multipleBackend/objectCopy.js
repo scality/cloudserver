@@ -4,7 +4,7 @@ const async = require('async');
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
 const objectCopy = require('../../lib/api/objectCopy');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata } = require('armory').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../unit/DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');

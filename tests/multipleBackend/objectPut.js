@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { storage } = require('arsenal');
+const { storage } = require('armory');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');

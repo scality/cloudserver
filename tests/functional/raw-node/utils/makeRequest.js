@@ -1,4 +1,5 @@
-const { auth, storage } = require('arsenal');
+const { auth } = require('arsenal');
+const { storage } = require('armory');
 
 const http = require('http');
 const https = require('https');

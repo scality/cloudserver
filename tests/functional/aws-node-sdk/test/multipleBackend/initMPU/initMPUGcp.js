@@ -1,12 +1,12 @@
 const async = require('async');
 const assert = require('assert');
-const arsenal = require('arsenal');
+const armory = require('armory');
 
 const withV4 = require('../../support/withV4');
 const BucketUtility = require('../../../lib/utility/bucket-util');
 const { describeSkipIfNotMultipleOrCeph, gcpClient, gcpBucketMPU, gcpLocation,
     genUniqID } = require('../utils');
-const { createMpuKey } = arsenal.storage.data.external.GcpUtils;
+const { createMpuKey } = armory.storage.data.external.GcpUtils;
 
 const bucket = `initmpugcp${genUniqID()}`;
 const keyName = `somekey-${genUniqID()}`;

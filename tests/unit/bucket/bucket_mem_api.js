@@ -6,7 +6,7 @@ const { errors } = require('arsenal');
 const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { isKeyInContents }
-    = require('arsenal').storage.metadata.inMemory.bucketUtilities;
+    = require('armory').storage.metadata.inMemory.bucketUtilities;
 const metadata = require('../metadataswitch');
 const { makeid, shuffle, timeDiff } = require('../helpers');
 

@@ -4,7 +4,7 @@ const async = require('async');
 const MongoClient = require('mongodb').MongoClient;
 const {
     MongoClientInterface,
-} = require('arsenal').storage.metadata.mongoclient;
+} = require('armory').storage.metadata.mongoclient;
 const { errors } = require('arsenal');
 
 const log = require('./utils/fakeLogger');

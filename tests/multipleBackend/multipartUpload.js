@@ -11,7 +11,7 @@ const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils } =
     require('../unit/helpers');
 const DummyRequest = require('../unit/DummyRequest');
 const { config } = require('../../lib/Config');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata } = require('armory').storage.metadata.inMemory.metadata;
 
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
