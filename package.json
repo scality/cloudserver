@@ -21,7 +21,7 @@
   "dependencies": {
     "@hapi/joi": "^17.1.0",
     "armory": "github:scality/armory#2.0.4",
-    "arsenal": "github:scality/Arsenal#8.1.27",
+    "arsenal": "github:scality/Arsenal#8.1.31",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
