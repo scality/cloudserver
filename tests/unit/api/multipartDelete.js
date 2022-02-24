@@ -1,11 +1,13 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
+const sinon = require('sinon');
 
 const { errors } = require('arsenal');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { config } = require('../../../lib/Config');
+const services = require('../../../lib/services');
 const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const initiateMultipartUpload
@@ -40,6 +42,7 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
     callback) {
     config.locationConstraints['us-east-1'].legacyAwsBehavior =
         usEastSetting;
+    let uploadId;
     const post = '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -54,7 +57,7 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
         (json, next) => {
             // use uploadId parsed from initiateMpu request to construct
             // uploadPart and deleteMpu requests
-            const uploadId =
+            uploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
             const partBody = Buffer.from('I am a part\n', 'utf8');
             const partRequest = new DummyRequest({
@@ -89,7 +92,7 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
             }),
         (deleteMpuRequest, next) =>
             multipartDelete(authInfo, deleteMpuRequest, log, next),
-    ], callback);
+    ], err => callback(err, uploadId));
 }
 
 describe('Multipart Delete API', () => {
@@ -133,6 +136,17 @@ describe('Multipart Delete API', () => {
     'if uploadId does not exist and legacyAwsBehavior set to false', done => {
         _createAndAbortMpu(false, true, eastLocation, err => {
             assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            done();
+        });
+    });
+
+    it('should send a PUT to bucketd with `isAbort` and `replayId`', done => {
+        const spy = sinon.spy(services, 'sendAbortMPUPut');
+        _createAndAbortMpu(true, false, eastLocation, (err, uploadId) => {
+            assert.ifError(err);
+            assert.strictEqual(spy.calledOnce, true);
+            assert.strictEqual(
+                spy.calledOnceWith(bucketName, objectKey, uploadId), true);
             done();
         });
     });
