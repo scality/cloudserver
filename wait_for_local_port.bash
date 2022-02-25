@@ -6,7 +6,7 @@ wait_for_local_port() {
     local ret=1
     echo "waiting for S3:$port"
     while [[ "$ret" -eq "1" && "$count" -lt "$timeout" ]] ; do
-        nc -z -w 1 localhost $port
+        nc -z -w 1 127.0.0.1 $port
         ret=$?
         if [ ! "$ret" -eq "0" ]; then
             echo -n .
