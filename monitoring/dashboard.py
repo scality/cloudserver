@@ -12,7 +12,6 @@ from grafanalib.core import (
 )
 from grafanalib import formatunits as UNITS
 from scalgrafanalib import layout, Tooltip, Target, TimeSeries, Dashboard
-import string
 
 up = Stat(
     title="Up",
@@ -22,7 +21,7 @@ up = Stat(
         expr='sum(up{namespace="${namespace}", job="${job}"})',
     )],
     thresholds=[
-        Threshold("red",   0, 0.0),
+        Threshold("red", 0, 0.0),
         Threshold("green", 1, 1.0),
     ],
 )
@@ -34,7 +33,7 @@ httpRequests = Stat(
     format=UNITS.SHORT,
     reduceCalc="last",
     targets=[Target(
-        expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+        expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
@@ -50,9 +49,9 @@ successRate = GaugePanel(
     max=100,
     targets=[Target(
         expr="\n".join([
-            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}", code=~"2.."}[$__rate_interval])) * 100',
+            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}", code=~"2.."}[$__rate_interval])) * 100',  # noqa: E501
             "   /",
-            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
         ]),
         instant=True,
         legendFormat="Success rate",
@@ -70,7 +69,7 @@ bucketsCounter = Stat(
     colorMode="background",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${job}"})',
+        expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${job}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -84,7 +83,7 @@ objectsCounter = Stat(
     format=UNITS.SHORT,
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${job}"})',
+        expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${job}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -98,19 +97,20 @@ dataDiskStorage = TimeSeries(
     lineInterpolation="smooth",
     targets=[
         Target(
-            expr='sum(delta(cloud_server_data_disk_total{namespace="${namespace}",job="${job}"}[$__rate_interval]))',
+            expr='sum(delta(cloud_server_data_disk_total{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat='Total',
         ),
         Target(
-            expr='sum(delta(cloud_server_data_disk_free{namespace="${namespace}",job="${job}"}[$__rate_interval]))',
+            expr='sum(delta(cloud_server_data_disk_free{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat='Free',
         ),
         Target(
-            expr='sum(delta(cloud_server_data_disk_available{namespace="${namespace}",job="${job}"}[$__rate_interval]))',
+            expr='sum(delta(cloud_server_data_disk_available{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat='Available',
         )
     ],
 )
+
 
 def http_status_panel(title: str, code: str) -> Stat:
     return Stat(
@@ -122,10 +122,12 @@ def http_status_panel(title: str, code: str) -> Stat:
         noValue="0",
         reduceCalc="lastNotNull",
         targets=[Target(
-            expr='sum(increase(http_requests_total{namespace="${namespace}",job="${job}",code=' + code + "}[$__rate_interval]))",
+            expr='sum(increase(http_requests_total{namespace="${namespace}",job="${job}",code=' + code + "}[$__rate_interval]))",  # noqa: E501
         )],
         thresholds=[Threshold("semi-dark-blue", 0, 0.)],
     )
+
+
 status200 = http_status_panel(title="Status 200", code='"200"')
 status403 = http_status_panel(title="Status 4xx", code='~"4.."')
 status5xx = http_status_panel(title="Status 5xx", code='~"5.."')
@@ -135,11 +137,11 @@ activeRequests = Stat(
     dataSource="${DS_PROMETHEUS}",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(http_active_requests{namespace="${namespace}", job="${job}"})',
+        expr='sum(http_active_requests{namespace="${namespace}", job="${job}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
-        Threshold("red",   1, 80.0),
+        Threshold("red", 1, 80.0),
     ],
 )
 
@@ -150,7 +152,7 @@ dataIngestionRate = Stat(
     format="binBps",
     reduceCalc="last",
     targets=[Target(
-        expr='sum(deriv(cloud_server_data_ingested{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+        expr='sum(deriv(cloud_server_data_ingested{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("purple", 0, 0.0),
@@ -164,7 +166,7 @@ objectIngestionRate = Stat(
     format="O/s",
     reduceCalc="last",
     targets=[Target(
-        expr='sum(deriv(cloud_server_number_of_ingested_objects{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+        expr='sum(deriv(cloud_server_number_of_ingested_objects{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("purple", 0, 0.0),
@@ -179,24 +181,29 @@ httpStatusCodes = TimeSeries(
     lineInterpolation="smooth",
     unit=UNITS.SHORT,
     targets=[Target(
-        expr='sum by (code) (increase(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+        expr='sum by (code) (increase(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
         legendFormat="{{code}}",
     )],
 )
 
+
 def http_aggregated_request_target(title: str, code: str) -> Target:
     return Target(
-        expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}", code=' + code + "}[$__rate_interval]))",
+        expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}", code=' + code + "}[$__rate_interval]))",  # noqa: E501
         legendFormat=title,
     )
+
+
 def color_override(name: str, color: str):
     return {
         "matcher": {"id": "byName", "options": name},
         "properties": [{
-            "id": "color", 
+            "id": "color",
             "value": {"fixedColor": color, "mode": "fixed"}
         }],
     }
+
+
 httpAggregatedStatus = TimeSeries(
     title="Aggregated status over time",
     dataSource="${DS_PROMETHEUS}",
@@ -218,16 +225,19 @@ httpAggregatedStatus = TimeSeries(
     ],
 )
 
+
 def average_latency_target(title: str, action: str = "") -> Target:
     extra = ', action=' + action if action else ""
     return Target(
         expr="\n".join([
-            'sum(rate(http_request_duration_seconds_sum{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))",
+            'sum(rate(http_request_duration_seconds_sum{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))",  # noqa: E501
             "   /",
-            'sum(rate(http_request_duration_seconds_count{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))",
+            'sum(rate(http_request_duration_seconds_count{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))",  # noqa: E501
         ]),
         legendFormat=title,
     )
+
+
 averageLatencies = TimeSeries(
     title="Average latencies",
     dataSource="${DS_PROMETHEUS}",
@@ -235,10 +245,15 @@ averageLatencies = TimeSeries(
     unit=UNITS.SECONDS,
     targets=[
         average_latency_target(title="Overall"),
-        average_latency_target(title="Upload", action='~"objectPut|objectPutPart|objectCopy|objectPutCopyPart"'),
+        average_latency_target(
+            title="Upload",
+            action='~"objectPut|objectPutPart|objectCopy|objectPutCopyPart"'
+        ),
         average_latency_target(title="Delete", action='"objectDelete"'),
         average_latency_target(title="Download", action='"objectGet"'),
-        average_latency_target(title="Multi-delete", action='~"multiObjectDelete|multipartDelete"'),
+        average_latency_target(
+            title="Multi-delete", action='~"multiObjectDelete|multipartDelete"'
+        ),
     ],
 )
 
@@ -251,31 +266,34 @@ requestTime = Heatmap(
     yAxis=YAxis(format=UNITS.DURATION_SECONDS),
     color=HeatmapColor(mode="opacity"),
     targets=[Target(
-        expr='sum by(le) (increase(http_request_duration_seconds_bucket{namespace="${namespace}", job="${job}"}[$__interval]))',
+        expr='sum by(le) (increase(http_request_duration_seconds_bucket{namespace="${namespace}", job="${job}"}[$__interval]))',  # noqa: E501
         format="heatmap",
         legendFormat="{{ le }}",
     )],
 )
 
+
 def axisPlacement_override(name: str, mode: str):
     return {
         "matcher": {"id": "byName", "options": name},
         "properties": [{
-            "id": "custom.axisPlacement", 
+            "id": "custom.axisPlacement",
             "value": mode,
         }],
     }
+
+
 bandWidth = TimeSeries(
     title="Bandwidth",
     dataSource="${DS_PROMETHEUS}",
     unit="binBps",
     targets=[
         Target(
-            expr='sum(rate(http_response_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+            expr='sum(rate(http_response_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat="Out"
         ),
         Target(
-            expr='sum(rate(http_request_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',
+            expr='sum(rate(http_request_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat="In"
         )
     ],
@@ -294,12 +312,12 @@ uploadChunkSize = BarGauge(
     calc="last",
     displayMode="gradient",
     format="bytes",
-    max = None,
-    min = None,
-    #TODO: noValue=0,
+    max=None,
+    min=None,
+    # TODO: noValue=0,
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',
+        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
@@ -314,12 +332,12 @@ downloadChunkSize = BarGauge(
     calc="last",
     displayMode="gradient",
     format="bytes",
-    max = None,
-    min = None,
-    #TODO: noValue=0,
+    max=None,
+    min=None,
+    # TODO: noValue=0,
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',
+        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
@@ -328,6 +346,7 @@ downloadChunkSize = BarGauge(
     ]
 )
 
+
 def top10_errors_by_bucket(title: str, code: str) -> TimeSeries:
     return TimeSeries(
         title=title,
@@ -335,16 +354,24 @@ def top10_errors_by_bucket(title: str, code: str) -> TimeSeries:
         targets=[Target(
             expr="\n".join([
                 "topk(10, sum by(bucketName) (",
-                '    count_over_time({namespace="${namespace}", pod=~"${pod}-.*"}',
-                '                    | json | bucketName!="" and httpCode=' + code,
+                '    count_over_time({namespace="${namespace}", pod=~"${pod}-.*"}',  # noqa: E501
+                '                    | json | bucketName!="" and httpCode=' + code,  # noqa: E501
                 "                    [$__interval])",
                 "))",
             ]),
         )],
     )
-top10Error404ByBucket = top10_errors_by_bucket(title="404 : Top10 by Bucket", code='"404"')
-top10Error500ByBucket = top10_errors_by_bucket(title="500 : Top10 by Bucket", code='"500"')
-top10Error5xxByBucket = top10_errors_by_bucket(title="5xx : Top10 by Bucket", code='~"5.."')
+
+
+top10Error404ByBucket = top10_errors_by_bucket(
+    title="404 : Top10 by Bucket", code='"404"'
+)
+top10Error500ByBucket = top10_errors_by_bucket(
+    title="500 : Top10 by Bucket", code='"500"'
+)
+top10Error5xxByBucket = top10_errors_by_bucket(
+    title="5xx : Top10 by Bucket", code='~"5.."'
+)
 
 dashboard = (
     Dashboard(
@@ -382,7 +409,8 @@ dashboard = (
             ConstantInput(
                 name="pod",
                 label="pod",
-                description="Prefix of the Cloudserver pod names, used to filter only the Cloudserver instances.",
+                description="Prefix of the Cloudserver pod names, used to "
+                            "filter only the Cloudserver instances.",
                 value="artesca-data-connector-cloudserver",
             )
         ],
@@ -392,7 +420,9 @@ dashboard = (
                 + layout.resize([dataDiskStorage], width=9, height=8),
                 height=4),
             layout.row(
-                [status200] + layout.resize([status403, status5xx, activeRequests], width=2)
+                [status200]
+                + layout.resize([status403, status5xx, activeRequests],
+                                width=2)
                 + [dataIngestionRate, objectIngestionRate],
                 width=3, height=4),
             RowPanel(title="Response codes"),
@@ -400,14 +430,17 @@ dashboard = (
             RowPanel(title="Latency"),
             layout.row([averageLatencies, requestTime], height=8),
             RowPanel(title="Data rate"),
-            layout.row(layout.resize([bandWidth], width=12) + [uploadChunkSize, downloadChunkSize],
+            layout.row(layout.resize([bandWidth], width=12)
+                       + [uploadChunkSize, downloadChunkSize],
                        height=8),
             RowPanel(title="Errors"),
-            layout.row([top10Error404ByBucket, top10Error500ByBucket, top10Error5xxByBucket],
-                        height=8),
+            layout.row([
+                top10Error404ByBucket,
+                top10Error500ByBucket,
+                top10Error5xxByBucket
+            ], height=8),
         ]),
     )
     .auto_panel_ids()
     .verify_datasources()
 )
-
