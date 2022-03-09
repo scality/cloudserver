@@ -112,7 +112,8 @@ dataDiskStorage = TimeSeries(
 )
 
 
-def http_status_panel(title: str, code: str) -> Stat:
+def http_status_panel(title, code):
+    # type: (str, str) -> Stat
     return Stat(
         title=title,
         dataSource="${DS_PROMETHEUS}",
@@ -187,14 +188,16 @@ httpStatusCodes = TimeSeries(
 )
 
 
-def http_aggregated_request_target(title: str, code: str) -> Target:
+def http_aggregated_request_target(title, code):
+    # type: (str, str) -> Target
     return Target(
         expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}", code=' + code + "}[$__rate_interval]))",  # noqa: E501
         legendFormat=title,
     )
 
 
-def color_override(name: str, color: str):
+def color_override(name, color):
+    # type: (str, str) -> dict
     return {
         "matcher": {"id": "byName", "options": name},
         "properties": [{
@@ -226,7 +229,8 @@ httpAggregatedStatus = TimeSeries(
 )
 
 
-def average_latency_target(title: str, action: str = "") -> Target:
+def average_latency_target(title, action=""):
+    # type: (str, str) -> Target
     extra = ', action=' + action if action else ""
     return Target(
         expr="\n".join([
@@ -273,7 +277,8 @@ requestTime = Heatmap(
 )
 
 
-def axisPlacement_override(name: str, mode: str):
+def axisPlacement_override(name, mode):
+    # type: (str, str) -> None
     return {
         "matcher": {"id": "byName", "options": name},
         "properties": [{
@@ -347,7 +352,8 @@ downloadChunkSize = BarGauge(
 )
 
 
-def top10_errors_by_bucket(title: str, code: str) -> TimeSeries:
+def top10_errors_by_bucket(title, code):
+    # type: (str, str) -> TimeSeries
     return TimeSeries(
         title=title,
         dataSource="${DS_LOKI}",
