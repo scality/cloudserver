@@ -332,9 +332,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/arsenal#7.10.9":
-  version "7.10.9"
-  resolved "https://codeload.github.com/scality/arsenal/tar.gz/2f40ff388327b17728926bf99fe82b0e6a14a01d"
+"arsenal@git+https://scality@github.com/scality/arsenal.git#d50ba76793de6ddfd28316b29b47ca18ce910aa8":
+  version "7.10.13"
+  resolved "git+https://scality@github.com/scality/arsenal.git#d50ba76793de6ddfd28316b29b47ca18ce910aa8"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
@@ -345,7 +345,7 @@ arraybuffer.slice@~0.0.7:
     base62 "2.0.1"
     debug "~2.6.9"
     diskusage "^1.1.1"
-    ioredis "4.9.5"
+    ioredis "^4.28.5"
     ipaddr.js "1.9.1"
     level "~5.0.1"
     level-sublevel "~6.6.5"
@@ -2193,7 +2193,7 @@ ioredis@4.9.5:
     redis-parser "^3.0.0"
     standard-as-callback "^2.0.1"
 
-ioredis@^4.28.0:
+ioredis@^4.28.0, ioredis@^4.28.5:
   version "4.28.5"
   resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-4.28.5.tgz#5c149e6a8d76a7f8fa8a504ffc85b7d5b6797f9f"
   integrity sha512-3GYo0GJtLqgNXj4YhrisLaNNvWSNwSS2wS4OELGfGxH8I69+XfNdnmV1AyN+ZqMh0i7eX+SWjrwFKDBDgfBC1A==
