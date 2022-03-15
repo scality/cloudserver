@@ -4,7 +4,7 @@ MAINTAINER Giorgio Regni <gr@scality.com>
 WORKDIR /usr/src/app
 
 # Keep the .git directory in order to properly report version
-COPY ./package.json yarn.lock ./
+COPY ./package.json ./yarn.lock ./
 
 ENV PYTHON=python3.9
 ENV PY_VERSION=3.9.7
@@ -33,7 +33,7 @@ RUN cd /tmp \
     && rm -rf /tmp/Python-$PY_VERSION.tgz
 
 RUN yarn cache clean \
-    && yarn install --production --ignore-optional --ignore-engines  \
+    && yarn install --production --ignore-optional --ignore-engines --frozen-lockfile \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \
