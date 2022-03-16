@@ -177,7 +177,8 @@ stages:
             - linting-coverage
             - file-ft-tests
             - multiple-backend-test
-            - mongo-ft-tests
+            - mongo-v0-ft-tests
+            - mongo-v1-ft-tests
             - ceph-backend-tests
             - kmip-ft-tests
             - utapi-v2-tests
@@ -341,8 +342,8 @@ stages:
       - Upload: *upload-artifacts
       - Upload: *upload-junits
 
-  mongo-ft-tests:
-    worker: &s3-pod
+  mongo-v0-ft-tests:
+    worker:
       type: kube_pod
       path: eve/workers/pod.yaml
       images:
@@ -355,6 +356,7 @@ stages:
         env:
           <<: *mongo-vars
           <<: *global-env
+          DEFAULT_BUCKET_KEY_FORMAT: "v0"
     steps:
       - Git: *clone
       - ShellCommand: *credentials
@@ -368,6 +370,43 @@ stages:
           env:
             <<: *mongo-vars
             <<: *global-env
+            DEFAULT_BUCKET_KEY_FORMAT: "v0"
+      - ShellCommand: *setup-junit-upload
+      - Upload: *upload-artifacts
+      - Upload: *upload-junits
+
+  mongo-v1-ft-tests:
+    worker:
+      type: kube_pod
+      path: eve/workers/pod.yaml
+      images:
+        aggressor: eve/workers/build
+        s3: "."
+      vars:
+        aggressorMem: "2Gi"
+        s3Mem: "1664Mi"
+        redis: enabled
+        env:
+          <<: *mongo-vars
+          <<: *global-env
+          DEFAULT_BUCKET_KEY_FORMAT: "v1"
+          METADATA_MAX_CACHED_BUCKETS: "1"
+    steps:
+      - Git: *clone
+      - ShellCommand: *credentials
+      - ShellCommand: *yarn-install
+      - ShellCommand:
+          command: |
+            set -ex
+            bash wait_for_local_port.bash 8000 40
+            yarn run ft_test
+            yarn run ft_mixed_bucket_format_version
+          <<: *follow-s3-log
+          env:
+            <<: *mongo-vars
+            <<: *global-env
+            DEFAULT_BUCKET_KEY_FORMAT: "v1"
+            METADATA_MAX_CACHED_BUCKETS: "1"
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
       - Upload: *upload-junits
