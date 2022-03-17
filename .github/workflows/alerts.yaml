@@ -25,5 +25,5 @@ jobs:
           alert_file_path: monitoring/alerts.yaml
           test_file_path: ${{ matrix.tests.file }}
           alert_inputs: >-
-            namespace=zenko,service=artesca-data-connector-s3api-metrics,replicas=3,systemErrorsWarningThreshold=0.03,systemErrorsCriticalThreshold=0.05,listingLatencyWarningThreshold=0.300,listingLatencyCriticalThreshold=0.500,deleteLatencyWarningThreshold=0.500,deleteLatencyCriticalThreshold=1.000
+            namespace=zenko,service=artesca-data-connector-s3api-metrics,replicas=3
           github_token: ${{ secrets.GITHUB_TOKEN }}
