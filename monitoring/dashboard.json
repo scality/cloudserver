@@ -36,6 +36,13 @@
             "label": "pod",
             "description": "Prefix of the Cloudserver pod names, used to filter only the Cloudserver instances.",
             "value": "artesca-data-connector-cloudserver"
+        },
+        {
+            "name": "reportJob",
+            "type": "constant",
+            "label": "report job",
+            "description": "Name of the Cloudserver Report job, used to filter only the Report Handler instances.",
+            "value": "artesca-data-ops-report-handler"
         }
     ],
     "editable": true,
@@ -278,7 +285,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${job}\"})",
+                    "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${reportJob}\"})",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -335,7 +342,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${job}\"})",
+                    "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${reportJob}\"})",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -1633,5 +1640,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 10
+    "version": 11
 }
