@@ -1469,47 +1469,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1521,11 +1488,17 @@
             },
             "id": 53,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1533,11 +1506,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==404 [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "404 : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         },
         {
             "datasource": "${DS_LOKI}",
@@ -1547,47 +1521,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1599,11 +1540,17 @@
             },
             "id": 54,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1611,11 +1558,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==500 [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "500 : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         },
         {
             "datasource": "${DS_LOKI}",
@@ -1625,47 +1573,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1677,11 +1592,17 @@
             },
             "id": 55,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1689,11 +1610,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode=~\"5..\" [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "5xx : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         }
     ],
     "refresh": "30s",
@@ -1711,5 +1633,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 9
+    "version": 10
 }
