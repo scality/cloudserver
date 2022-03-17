@@ -239,6 +239,122 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
+            "description": "Rate of data ingested : cumulative amount of data created (>0) or deleted (<0) per second.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 1,
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "dark-purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "binBps"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 9,
+                "y": 0
+            },
+            "id": 56,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "-sum(delta(cloud_server_data_disk_available{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Ingestion Data Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "description": "Rate of object ingestion : cumulative count of object created (>0) or deleted (<0) per second.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 1,
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "dark-purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "O/s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 12,
+                "y": 0
+            },
+            "id": 57,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(deriv(cloud_server_number_of_objects{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Ingestion Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
             "description": "Number of S3 buckets available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
             "fieldConfig": {
                 "defaults": {
@@ -250,7 +366,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "dark-purple",
+                                "color": "blue",
                                 "value": null
                             }
                         ]
@@ -261,13 +377,13 @@
             },
             "gridPos": {
                 "h": 4,
-                "w": 3,
-                "x": 9,
+                "w": 9,
+                "x": 15,
                 "y": 0
             },
             "id": 43,
             "options": {
-                "colorMode": "background",
+                "colorMode": "value",
                 "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
@@ -307,7 +423,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "dark-purple",
+                                "color": "blue",
                                 "value": null
                             }
                         ]
@@ -318,13 +434,13 @@
             },
             "gridPos": {
                 "h": 4,
-                "w": 3,
-                "x": 12,
-                "y": 0
+                "w": 9,
+                "x": 15,
+                "y": 4
             },
             "id": 44,
             "options": {
-                "colorMode": "background",
+                "colorMode": "value",
                 "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
@@ -350,99 +466,6 @@
             ],
             "title": "Objects",
             "type": "stat"
-        },
-        {
-            "datasource": "${DS_PROMETHEUS}",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 30,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 9,
-                "x": 15,
-                "y": 0
-            },
-            "id": 49,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
-                },
-                "tooltip": {
-                    "mode": "single"
-                }
-            },
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_total{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-                    "interval": "",
-                    "legendFormat": "Total",
-                    "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_free{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Free",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_available{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Available",
-                    "refId": "C"
-                }
-            ],
-            "title": "Data disk storage",
-            "type": "timeseries"
         },
         {
             "datasource": "${DS_PROMETHEUS}",
@@ -680,7 +703,7 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
-            "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or freed (<0) per second.",
+            "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or deleted (<0) per second.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -738,7 +761,7 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
-            "description": "Rate of object ingested out-of-band (OOB) : cumulative count of OOB object created (>0) or freed (<0) per second.",
+            "description": "Rate of object ingested out-of-band (OOB) : cumulative count of OOB object created (>0) or deleted (<0) per second.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -1642,5 +1665,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 12
+    "version": 13
 }
