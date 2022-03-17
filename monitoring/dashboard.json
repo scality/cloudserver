@@ -686,6 +686,7 @@
                     "color": {
                         "mode": "thresholds"
                     },
+                    "decimals": 1,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -714,7 +715,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "last"
+                        "mean"
                     ],
                     "fields": "",
                     "values": false
@@ -743,6 +744,7 @@
                     "color": {
                         "mode": "thresholds"
                     },
+                    "decimals": 1,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -771,7 +773,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "last"
+                        "mean"
                     ],
                     "fields": "",
                     "values": false
@@ -1640,5 +1642,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 11
+    "version": 12
 }
