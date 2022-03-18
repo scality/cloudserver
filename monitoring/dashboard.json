@@ -849,7 +849,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
-          "decimals": null,
+          "decimals": 1,
           "mappings": [],
           "noValue": "none",
           "thresholds": {
@@ -886,7 +886,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -922,7 +922,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {},
-          "decimals": null,
+          "decimals": 1,
           "mappings": [],
           "noValue": "none",
           "thresholds": {
@@ -959,7 +959,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -2039,5 +2039,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 12
+  "version": 13
 }

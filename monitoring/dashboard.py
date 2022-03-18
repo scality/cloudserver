@@ -171,8 +171,9 @@ oobDataIngestionRate = Stat(
     ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
+    decimals=1,
     format="binBps",
-    reduceCalc="last",
+    reduceCalc="mean",
     targets=[Target(
         expr='sum(deriv(cloud_server_data_ingested{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
@@ -189,8 +190,9 @@ oobObjectIngestionRate = Stat(
     ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
+    decimals=1,
     format="O/s",
-    reduceCalc="last",
+    reduceCalc="mean",
     targets=[Target(
         expr='sum(deriv(cloud_server_number_of_ingested_objects{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
