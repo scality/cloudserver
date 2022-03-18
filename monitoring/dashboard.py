@@ -81,7 +81,7 @@ bucketsCounter = Stat(
     colorMode="background",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${job}"})',  # noqa: E501
+        expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -100,7 +100,7 @@ objectsCounter = Stat(
     format=UNITS.SHORT,
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${job}"})',  # noqa: E501
+        expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -450,6 +450,13 @@ dashboard = (
                 description="Prefix of the Cloudserver pod names, used to "
                             "filter only the Cloudserver instances.",
                 value="artesca-data-connector-cloudserver",
+            ),
+            ConstantInput(
+                name="reportJob",
+                label="report job",
+                description="Name of the Cloudserver Report job, used to "
+                            "filter only the Report Handler instances.",
+                value="artesca-data-ops-report-handler",
             )
         ],
         panels=layout.column([

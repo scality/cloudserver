@@ -36,6 +36,13 @@
       "name": "pod",
       "type": "constant",
       "value": "artesca-data-connector-cloudserver"
+    },
+    {
+      "description": "Name of the Cloudserver Report job, used to filter only the Report Handler instances.",
+      "label": "report job",
+      "name": "reportJob",
+      "type": "constant",
+      "value": "artesca-data-ops-report-handler"
     }
   ],
   "annotations": {
@@ -337,7 +344,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${job}\"})",
+          "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${reportJob}\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -410,7 +417,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${job}\"})",
+          "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${reportJob}\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2032,5 +2039,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 11
+  "version": 12
 }
