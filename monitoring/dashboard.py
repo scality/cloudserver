@@ -70,6 +70,44 @@ successRate = GaugePanel(
     ],
 )
 
+dataIngestionRate = Stat(
+    title="Injection Data Rate",
+    description=(
+        "Rate of data ingested : cumulative amount of data created (>0) or "
+        "deleted (<0) per second."
+    ),
+    dataSource="${DS_PROMETHEUS}",
+    colorMode="background",
+    decimals=1,
+    format="binBps",
+    reduceCalc="mean",
+    targets=[Target(
+        expr='-sum(deriv(cloud_server_data_disk_available{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
+    )],
+    thresholds=[
+        Threshold("dark-purple", 0, 0.0),
+    ],
+)
+
+objectIngestionRate = Stat(
+    title="Injection Rate",
+    description=(
+        "Rate of object ingestion : cumulative count of object created (>0) "
+        "or deleted (<0) per second."
+    ),
+    dataSource="${DS_PROMETHEUS}",
+    colorMode="background",
+    decimals=1,
+    format="O/s",
+    reduceCalc="mean",
+    targets=[Target(
+        expr='sum(deriv(cloud_server_number_of_objects{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
+    )],
+    thresholds=[
+        Threshold("dark-purple", 0, 0.0),
+    ],
+)
+
 bucketsCounter = Stat(
     title="Buckets",
     description=(
@@ -78,13 +116,14 @@ bucketsCounter = Stat(
         "may be delayed up to 1h."
     ),
     dataSource="${DS_PROMETHEUS}",
-    colorMode="background",
+    colorMode="value",
+    format=UNITS.SHORT,
     reduceCalc="lastNotNull",
     targets=[Target(
         expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
-        Threshold("dark-purple", 0, 0.0),
+        Threshold("blue", 0, 0.0),
     ],
 )
 
@@ -96,35 +135,14 @@ objectsCounter = Stat(
         "may be delayed up to 1h."
     ),
     dataSource="${DS_PROMETHEUS}",
-    colorMode="background",
+    colorMode="value",
     format=UNITS.SHORT,
     reduceCalc="lastNotNull",
     targets=[Target(
         expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
-        Threshold("dark-purple", 0, 0.0),
-    ],
-)
-
-dataDiskStorage = TimeSeries(
-    title="Data disk storage",
-    dataSource="${DS_PROMETHEUS}",
-    fillOpacity=30,
-    lineInterpolation="smooth",
-    targets=[
-        Target(
-            expr='sum(delta(cloud_server_data_disk_total{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
-            legendFormat='Total',
-        ),
-        Target(
-            expr='sum(delta(cloud_server_data_disk_free{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
-            legendFormat='Free',
-        ),
-        Target(
-            expr='sum(delta(cloud_server_data_disk_available{namespace="${namespace}",job="${job}"}[$__rate_interval]))',  # noqa: E501
-            legendFormat='Available',
-        )
+        Threshold("blue", 0, 0.0),
     ],
 )
 
@@ -167,7 +185,7 @@ oobDataIngestionRate = Stat(
     title="OOB Inject. Data Rate",
     description=(
         "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB "
-        "data created (>0) or freed (<0) per second."
+        "data created (>0) or deleted (<0) per second."
     ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
@@ -186,7 +204,7 @@ oobObjectIngestionRate = Stat(
     title="OOB Inject. Rate",
     description=(
         "Rate of object ingested out-of-band (OOB) : cumulative count of OOB "
-        "object created (>0) or freed (<0) per second."
+        "object created (>0) or deleted (<0) per second."
     ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
@@ -463,15 +481,16 @@ dashboard = (
         ],
         panels=layout.column([
             layout.row(
-                [up, httpRequests, successRate, bucketsCounter, objectsCounter]
-                + layout.resize([dataDiskStorage], width=9, height=8),
+                [up, httpRequests, successRate, dataIngestionRate, objectIngestionRate]
+                + layout.resize([bucketsCounter], width=9),
                 height=4),
             layout.row(
                 [status200]
                 + layout.resize([status403, status5xx, activeRequests],
                                 width=2)
-                + [oobDataIngestionRate, oobObjectIngestionRate],
-                width=3, height=4),
+                + [oobDataIngestionRate, oobObjectIngestionRate]
+                + layout.resize([objectsCounter], width=9),
+                height=4),
             RowPanel(title="Response codes"),
             layout.row([httpStatusCodes, httpAggregatedStatus], height=8),
             RowPanel(title="Latency"),

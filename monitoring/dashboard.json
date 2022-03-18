@@ -291,13 +291,13 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of S3 buckets available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
+      "description": "Rate of data ingested : cumulative amount of data created (>0) or deleted (<0) per second.",
       "editable": true,
       "error": false,
       "fieldConfig": {
         "defaults": {
           "custom": {},
-          "decimals": null,
+          "decimals": 1,
           "mappings": [],
           "noValue": "none",
           "thresholds": {
@@ -313,7 +313,7 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -329,6 +329,152 @@
       "maxDataPoints": 100,
       "options": {
         "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "-sum(deriv(cloud_server_data_disk_available{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Injection Data Rate",
+      "transformations": [],
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Rate of object ingestion : cumulative count of object created (>0) or deleted (<0) per second.",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": 1,
+          "mappings": [],
+          "noValue": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-purple",
+                "index": 0,
+                "line": true,
+                "op": "gt",
+                "value": "null",
+                "yaxis": "left"
+              }
+            ]
+          },
+          "unit": "O/s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 0
+      },
+      "hideTimeOverride": false,
+      "id": 5,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(deriv(cloud_server_number_of_objects{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Injection Rate",
+      "transformations": [],
+      "transparent": false,
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of S3 buckets available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": null,
+          "mappings": [],
+          "noValue": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "index": 0,
+                "line": true,
+                "op": "gt",
+                "value": "null",
+                "yaxis": "left"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 0
+      },
+      "hideTimeOverride": false,
+      "id": 6,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -364,189 +510,6 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of S3 objects available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "decimals": null,
-          "mappings": [],
-          "noValue": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "dark-purple",
-                "index": 0,
-                "line": true,
-                "op": "gt",
-                "value": "null",
-                "yaxis": "left"
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 12,
-        "y": 0
-      },
-      "hideTimeOverride": false,
-      "id": 5,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": null,
-          "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${reportJob}\"})",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        }
-      ],
-      "title": "Objects",
-      "transformations": [],
-      "transparent": false,
-      "type": "stat"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 30,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {}
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
-          "unit": ""
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 9,
-        "x": 15,
-        "y": 0
-      },
-      "hideTimeOverride": false,
-      "id": 6,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "datasource": null,
-          "expr": "sum(delta(cloud_server_data_disk_total{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Total",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(delta(cloud_server_data_disk_free{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Free",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(delta(cloud_server_data_disk_available{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Available",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        }
-      ],
-      "title": "Data disk storage",
-      "transformations": [],
-      "transparent": false,
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -576,7 +539,7 @@
         "h": 4,
         "w": 3,
         "x": 0,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 7,
@@ -648,7 +611,7 @@
         "h": 4,
         "w": 2,
         "x": 3,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 8,
@@ -720,7 +683,7 @@
         "h": 4,
         "w": 2,
         "x": 5,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 9,
@@ -800,7 +763,7 @@
         "h": 4,
         "w": 2,
         "x": 7,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 10,
@@ -843,7 +806,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or freed (<0) per second.",
+      "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or deleted (<0) per second.",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -873,7 +836,7 @@
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 11,
@@ -946,7 +909,7 @@
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 8
+        "y": 4
       },
       "hideTimeOverride": false,
       "id": 12,
@@ -988,6 +951,79 @@
       "type": "stat"
     },
     {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of S3 objects available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": null,
+          "mappings": [],
+          "noValue": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "index": 0,
+                "line": true,
+                "op": "gt",
+                "value": "null",
+                "yaxis": "left"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 15,
+        "y": 4
+      },
+      "hideTimeOverride": false,
+      "id": 13,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${reportJob}\"})",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Objects",
+      "transformations": [],
+      "transparent": false,
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "editable": true,
       "error": false,
@@ -995,10 +1031,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 8
       },
       "hideTimeOverride": false,
-      "id": 13,
+      "id": 14,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -1053,10 +1089,10 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 9
       },
       "hideTimeOverride": false,
-      "id": 14,
+      "id": 15,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1184,10 +1220,10 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 9
       },
       "hideTimeOverride": false,
-      "id": 15,
+      "id": 16,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1257,10 +1293,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 17
       },
       "hideTimeOverride": false,
-      "id": 16,
+      "id": 17,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -1315,10 +1351,10 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 18
       },
       "hideTimeOverride": false,
-      "id": 17,
+      "id": 18,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1430,13 +1466,13 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 18
       },
       "heatmap": {},
       "hideTimeOverride": false,
       "hideZeroBuckets": false,
       "highlightCards": true,
-      "id": 18,
+      "id": 19,
       "legend": {
         "show": false
       },
@@ -1491,10 +1527,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 26
       },
       "hideTimeOverride": false,
-      "id": 19,
+      "id": 20,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -1579,10 +1615,10 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 27
       },
       "hideTimeOverride": false,
-      "id": 20,
+      "id": 21,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1638,10 +1674,10 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 31
+        "y": 27
       },
       "hideTimeOverride": false,
-      "id": 21,
+      "id": 22,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1706,10 +1742,10 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 31
+        "y": 27
       },
       "hideTimeOverride": false,
-      "id": 22,
+      "id": 23,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1774,10 +1810,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 35
       },
       "hideTimeOverride": false,
-      "id": 23,
+      "id": 24,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -1806,10 +1842,10 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 40
+        "y": 36
       },
       "hideTimeOverride": false,
-      "id": 24,
+      "id": 25,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1875,10 +1911,10 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 40
+        "y": 36
       },
       "hideTimeOverride": false,
-      "id": 25,
+      "id": 26,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1944,10 +1980,10 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 40
+        "y": 36
       },
       "hideTimeOverride": false,
-      "id": 26,
+      "id": 27,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2039,5 +2075,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 13
+  "version": 14
 }
