@@ -284,6 +284,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of S3 buckets available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -356,6 +357,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of S3 objects available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -834,6 +836,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or freed (<0) per second.",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -899,13 +902,14 @@
           "target": ""
         }
       ],
-      "title": "Data Injection Rate",
+      "title": "OOB Inject. Data Rate",
       "transformations": [],
       "transparent": false,
       "type": "stat"
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Rate of object ingested out-of-band (OOB) : cumulative count of OOB object created (>0) or freed (<0) per second.",
       "editable": true,
       "error": false,
       "fieldConfig": {
@@ -971,7 +975,7 @@
           "target": ""
         }
       ],
-      "title": "Object Injection Rate",
+      "title": "OOB Inject. Rate",
       "transformations": [],
       "transparent": false,
       "type": "stat"
@@ -2067,5 +2071,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 9
+  "version": 10
 }

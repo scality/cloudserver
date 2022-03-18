@@ -65,6 +65,11 @@ successRate = GaugePanel(
 
 bucketsCounter = Stat(
     title="Buckets",
+    description=(
+        "Number of S3 buckets available in the cluster.\n"
+        "This value is computed asynchronously, and update "
+        "may be delayed up to 1h."
+    ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
     reduceCalc="lastNotNull",
@@ -78,6 +83,11 @@ bucketsCounter = Stat(
 
 objectsCounter = Stat(
     title="Objects",
+    description=(
+        "Number of S3 objects available in the cluster.\n"
+        "This value is computed asynchronously, and update "
+        "may be delayed up to 1h."
+    ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
     format=UNITS.SHORT,
@@ -146,8 +156,12 @@ activeRequests = Stat(
     ],
 )
 
-dataIngestionRate = Stat(
-    title="Data Injection Rate",
+oobDataIngestionRate = Stat(
+    title="OOB Inject. Data Rate",
+    description=(
+        "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB "
+        "data created (>0) or freed (<0) per second."
+    ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
     format="binBps",
@@ -160,8 +174,12 @@ dataIngestionRate = Stat(
     ],
 )
 
-objectIngestionRate = Stat(
-    title="Object Injection Rate",
+oobObjectIngestionRate = Stat(
+    title="OOB Inject. Rate",
+    description=(
+        "Rate of object ingested out-of-band (OOB) : cumulative count of OOB "
+        "object created (>0) or freed (<0) per second."
+    ),
     dataSource="${DS_PROMETHEUS}",
     colorMode="background",
     format="O/s",
@@ -429,7 +447,7 @@ dashboard = (
                 [status200]
                 + layout.resize([status403, status5xx, activeRequests],
                                 width=2)
-                + [dataIngestionRate, objectIngestionRate],
+                + [oobDataIngestionRate, oobObjectIngestionRate],
                 width=3, height=4),
             RowPanel(title="Response codes"),
             layout.row([httpStatusCodes, httpAggregatedStatus], height=8),
