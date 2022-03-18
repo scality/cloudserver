@@ -1789,35 +1789,9 @@
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {}
-          },
+          "custom": {},
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
-          "unit": ""
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1832,10 +1806,23 @@
       "links": [],
       "maxDataPoints": 100,
       "options": {
+        "displayLabels": [
+          "name"
+        ],
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
         "tooltip": {
           "mode": "single"
@@ -1850,7 +1837,7 @@
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "{{bucketName}}",
           "metric": "",
           "refId": "",
           "step": 10,
@@ -1860,7 +1847,7 @@
       "title": "404 : Top10 by Bucket",
       "transformations": [],
       "transparent": false,
-      "type": "timeseries"
+      "type": "piechart"
     },
     {
       "datasource": "${DS_LOKI}",
@@ -1871,35 +1858,9 @@
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {}
-          },
+          "custom": {},
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
-          "unit": ""
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1914,10 +1875,23 @@
       "links": [],
       "maxDataPoints": 100,
       "options": {
+        "displayLabels": [
+          "name"
+        ],
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
         "tooltip": {
           "mode": "single"
@@ -1932,7 +1906,7 @@
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "{{bucketName}}",
           "metric": "",
           "refId": "",
           "step": 10,
@@ -1942,7 +1916,7 @@
       "title": "500 : Top10 by Bucket",
       "transformations": [],
       "transparent": false,
-      "type": "timeseries"
+      "type": "piechart"
     },
     {
       "datasource": "${DS_LOKI}",
@@ -1953,35 +1927,9 @@
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {}
-          },
+          "custom": {},
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
-          "unit": ""
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1996,10 +1944,23 @@
       "links": [],
       "maxDataPoints": 100,
       "options": {
+        "displayLabels": [
+          "name"
+        ],
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
         "tooltip": {
           "mode": "single"
@@ -2014,7 +1975,7 @@
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "{{bucketName}}",
           "metric": "",
           "refId": "",
           "step": 10,
@@ -2024,7 +1985,7 @@
       "title": "5xx : Top10 by Bucket",
       "transformations": [],
       "transparent": false,
-      "type": "timeseries"
+      "type": "piechart"
     }
   ],
   "refresh": "30s",
@@ -2071,5 +2032,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 10
+  "version": 11
 }

@@ -11,7 +11,14 @@ from grafanalib.core import (
     YAxis,
 )
 from grafanalib import formatunits as UNITS
-from scalgrafanalib import layout, Tooltip, Target, TimeSeries, Dashboard
+from scalgrafanalib import (
+    layout,
+    Dashboard,
+    PieChart,
+    Tooltip,
+    Target,
+    TimeSeries
+)
 
 up = Stat(
     title="Up",
@@ -371,10 +378,16 @@ downloadChunkSize = BarGauge(
 
 
 def top10_errors_by_bucket(title, code):
-    # type: (str, str) -> TimeSeries
-    return TimeSeries(
+    # type: (str, str) -> PieChart
+    return PieChart(
         title=title,
         dataSource="${DS_LOKI}",
+        displayLabels=['name'],
+        legendDisplayMode='table',
+        legendPlacement='right',
+        legendValues=['value'],
+        pieType='donut',
+        unit=UNITS.SHORT,
         targets=[Target(
             expr="\n".join([
                 "topk(10, sum by(bucketName) (",
@@ -383,6 +396,7 @@ def top10_errors_by_bucket(title, code):
                 "                    [$__interval])",
                 "))",
             ]),
+            legendFormat='{{bucketName}}',
         )],
     )
 
