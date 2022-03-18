@@ -118,12 +118,14 @@ bucketsCounter = Stat(
     dataSource="${DS_PROMETHEUS}",
     colorMode="value",
     format=UNITS.SHORT,
+    noValue="-",
     reduceCalc="lastNotNull",
     targets=[Target(
         expr='sum(cloud_server_number_of_buckets{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
-        Threshold("blue", 0, 0.0),
+        Threshold("#808080", 0, 0.0),
+        Threshold("blue", 1, 0.0),
     ],
 )
 
@@ -137,12 +139,50 @@ objectsCounter = Stat(
     dataSource="${DS_PROMETHEUS}",
     colorMode="value",
     format=UNITS.SHORT,
+    noValue="-",
     reduceCalc="lastNotNull",
     targets=[Target(
         expr='sum(cloud_server_number_of_objects{namespace="${namespace}",job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
-        Threshold("blue", 0, 0.0),
+        Threshold("#808080", 0, 0.0),
+        Threshold("blue", 1, 0.0),
+    ],
+)
+
+reporterUp = Stat(
+    title="Up",
+    description="Status of the reports-handler pod.",
+    dataSource="${DS_PROMETHEUS}",
+    reduceCalc="lastNotNull",
+    targets=[Target(
+        expr='sum(up{namespace="${namespace}", job="${reportJob}"})',
+    )],
+    thresholds=[
+        Threshold("red", 0, 0.0),
+        Threshold("green", 1, 1.0),
+    ],
+)
+
+lastReport = Stat(
+    title="Last Report",
+    description=(
+        "Time elapsed since the last report, when object/bucket count was "
+        "updated."
+    ),
+    dataSource="${DS_PROMETHEUS}",
+    format=UNITS.MILLI_SECONDS,
+    noValue="-",
+    reduceCalc="lastNotNull",
+    targets=[Target(
+        expr='time() - cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}',  # noqa: E501
+    )],
+    thresholds=[
+        Threshold("#808080", 0, 0.0),
+        Threshold("green", 1, 0.0),
+        Threshold("super-light-yellow", 2, 1800000.),
+        Threshold("orange", 3, 3600000.),
+        Threshold("red", 4, 3700000.),
     ],
 )
 
@@ -481,15 +521,18 @@ dashboard = (
         ],
         panels=layout.column([
             layout.row(
-                [up, httpRequests, successRate, dataIngestionRate, objectIngestionRate]
-                + layout.resize([bucketsCounter], width=9),
+                [up, httpRequests, successRate, dataIngestionRate,
+                 objectIngestionRate]
+                + layout.resize([bucketsCounter], width=7)
+                + layout.resize([reporterUp], width=2),
                 height=4),
             layout.row(
                 [status200]
                 + layout.resize([status403, status5xx, activeRequests],
                                 width=2)
                 + [oobDataIngestionRate, oobObjectIngestionRate]
-                + layout.resize([objectsCounter], width=9),
+                + layout.resize([objectsCounter], width=7)
+                + layout.resize([lastReport], width=2),
                 height=4),
             RowPanel(title="Response codes"),
             layout.row([httpStatusCodes, httpAggregatedStatus], height=8),
