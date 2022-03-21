@@ -286,7 +286,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "-sum(delta(cloud_server_data_disk_available{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "expr": "-sum(deriv(cloud_server_data_disk_available{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
