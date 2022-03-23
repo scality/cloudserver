@@ -151,7 +151,7 @@ objectsCounter = Stat(
 )
 
 reporterUp = Stat(
-    title="Up",
+    title="Reporter",
     description="Status of the reports-handler pod.",
     dataSource="${DS_PROMETHEUS}",
     reduceCalc="last",
