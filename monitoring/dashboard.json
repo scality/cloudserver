@@ -36,6 +36,13 @@
             "label": "pod",
             "description": "Prefix of the Cloudserver pod names, used to filter only the Cloudserver instances.",
             "value": "artesca-data-connector-cloudserver"
+        },
+        {
+            "name": "reportJob",
+            "type": "constant",
+            "label": "report job",
+            "description": "Name of the Cloudserver Report job, used to filter only the Report Handler instances.",
+            "value": "artesca-data-ops-report-handler"
         }
     ],
     "editable": true,
@@ -232,12 +239,13 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
-            "description": "",
+            "description": "Rate of data ingested : cumulative amount of data created (>0) or deleted (<0) per second.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
                         "mode": "thresholds"
                     },
+                    "decimals": 1,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -248,7 +256,7 @@
                             }
                         ]
                     },
-                    "unit": "short"
+                    "unit": "binBps"
                 },
                 "overrides": []
             },
@@ -258,9 +266,129 @@
                 "x": 9,
                 "y": 0
             },
-            "id": 43,
+            "id": 56,
             "options": {
                 "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "-sum(deriv(cloud_server_data_disk_available{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Ingestion Data Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "description": "Rate of object ingestion : cumulative count of object created (>0) or deleted (<0) per second.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 1,
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "dark-purple",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "O/s"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 3,
+                "x": 12,
+                "y": 0
+            },
+            "id": 57,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(deriv(cloud_server_number_of_objects{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Ingestion Rate",
+            "type": "stat"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "description": "Number of S3 buckets available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "noValue": "-",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#808080",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 7,
+                "x": 15,
+                "y": 0
+            },
+            "id": 43,
+            "options": {
+                "colorMode": "value",
                 "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
@@ -278,7 +406,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${job}\"})",
+                    "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\",job=\"${reportJob}\"})",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -289,7 +417,7 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
-            "description": "",
+            "description": "Status of the reports-handler pod.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -300,24 +428,27 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "dark-purple",
+                                "color": "red",
                                 "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
                             }
                         ]
-                    },
-                    "unit": "short"
+                    }
                 },
                 "overrides": []
             },
             "gridPos": {
                 "h": 4,
-                "w": 3,
-                "x": 12,
+                "w": 2,
+                "x": 22,
                 "y": 0
             },
-            "id": 44,
+            "id": 58,
             "options": {
-                "colorMode": "background",
+                "colorMode": "value",
                 "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
@@ -335,7 +466,70 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${job}\"})",
+                    "expr": "sum(up{namespace=\"${namespace}\", job=\"${reportJob}\"})",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Reporter",
+            "type": "stat"
+        },
+        {
+            "datasource": "${DS_PROMETHEUS}",
+            "description": "Number of S3 objects available in the cluster.\nThis value is computed asynchronously, and update may be delayed up to 1h.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "noValue": "-",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#808080",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 7,
+                "x": 15,
+                "y": 4
+            },
+            "id": 44,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto"
+            },
+            "pluginVersion": "8.0.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\",job=\"${reportJob}\"})",
                     "interval": "",
                     "legendFormat": "",
                     "refId": "A"
@@ -346,96 +540,78 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
+            "description": "Time elapsed since the last report, when object/bucket count was updated.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 30,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineInterpolation": "smooth",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "mode": "thresholds"
                     },
                     "mappings": [],
+                    "noValue": "-",
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
+                                "color": "#808080",
                                 "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "super-light-yellow",
+                                "value": 1800000
+                            },
+                            {
+                                "color": "orange",
+                                "value": 3600000
+                            },
+                            {
+                                "color": "red",
+                                "value": 3700000
                             }
                         ]
-                    }
+                    },
+                    "unit": "ms"
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 9,
-                "x": 15,
-                "y": 0
+                "h": 4,
+                "w": 2,
+                "x": 22,
+                "y": 4
             },
-            "id": 49,
+            "id": 59,
             "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
-                "tooltip": {
-                    "mode": "single"
-                }
+                "text": {},
+                "textMode": "auto"
             },
+            "pluginVersion": "8.0.6",
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_total{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
+                    "expr": "time() - cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}",
+                    "instant": false,
                     "interval": "",
-                    "legendFormat": "Total",
+                    "legendFormat": "",
                     "refId": "A"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_free{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Free",
-                    "refId": "B"
-                },
-                {
-                    "exemplar": true,
-                    "expr": "sum(delta(cloud_server_data_disk_available{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval]))",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Available",
-                    "refId": "C"
                 }
             ],
-            "title": "Data disk storage",
-            "type": "timeseries"
+            "title": "Last Report",
+            "type": "stat"
         },
         {
             "datasource": "${DS_PROMETHEUS}",
@@ -673,11 +849,13 @@
         },
         {
             "datasource": "${DS_PROMETHEUS}",
+            "description": "Rate of data ingested out-of-band (OOB) : cumulative amount of OOB data created (>0) or deleted (<0) per second.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
                         "mode": "thresholds"
                     },
+                    "decimals": 1,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -706,7 +884,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "last"
+                        "mean"
                     ],
                     "fields": "",
                     "values": false
@@ -724,16 +902,18 @@
                     "refId": "A"
                 }
             ],
-            "title": "Data Injestion Rate",
+            "title": "OOB Ingest. Data Rate",
             "type": "stat"
         },
         {
             "datasource": "${DS_PROMETHEUS}",
+            "description": "Rate of object ingested out-of-band (OOB) : cumulative count of OOB object created (>0) or deleted (<0) per second.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
                         "mode": "thresholds"
                     },
+                    "decimals": 1,
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -762,7 +942,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "last"
+                        "mean"
                     ],
                     "fields": "",
                     "values": false
@@ -780,7 +960,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Object Injection Rate",
+            "title": "OOB Ingest. Rate",
             "type": "stat"
         },
         {
@@ -1467,47 +1647,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1519,11 +1666,17 @@
             },
             "id": 53,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1531,11 +1684,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==404 [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "404 : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         },
         {
             "datasource": "${DS_LOKI}",
@@ -1545,47 +1699,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1597,11 +1718,17 @@
             },
             "id": 54,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1609,11 +1736,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode==500 [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "500 : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         },
         {
             "datasource": "${DS_LOKI}",
@@ -1623,47 +1751,14 @@
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
                     "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "unit": "short"
                 },
                 "overrides": []
             },
@@ -1675,11 +1770,17 @@
             },
             "id": 55,
             "options": {
+                "displayLabels": [
+                    "name"
+                ],
                 "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom"
+                    "displayMode": "table",
+                    "placement": "right",
+                    "values": [
+                        "value"
+                    ]
                 },
+                "pieType": "donut",
                 "tooltip": {
                     "mode": "single"
                 }
@@ -1687,11 +1788,12 @@
             "targets": [
                 {
                     "expr": "topk(10, sum by(bucketName) (count_over_time({namespace=\"${namespace}\", pod=~\"${pod}-.*\"} | json | bucketName!=\"\" and httpCode=~\"5..\" [$__interval])))",
-                    "refId": "A"
+                    "refId": "A",
+                    "legendFormat": "{{bucketName}}"
                 }
             ],
             "title": "5xx : Top10 by Bucket",
-            "type": "timeseries"
+            "type": "piechart"
         }
     ],
     "refresh": "30s",
@@ -1709,5 +1811,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 8
+    "version": 14
 }
