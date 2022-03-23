@@ -23,7 +23,7 @@ from scalgrafanalib import (
 up = Stat(
     title="Up",
     dataSource="${DS_PROMETHEUS}",
-    reduceCalc="lastNotNull",
+    reduceCalc="last",
     targets=[Target(
         expr='sum(up{namespace="${namespace}", job="${job}"})',
     )],
@@ -154,7 +154,7 @@ reporterUp = Stat(
     title="Up",
     description="Status of the reports-handler pod.",
     dataSource="${DS_PROMETHEUS}",
-    reduceCalc="lastNotNull",
+    reduceCalc="last",
     targets=[Target(
         expr='sum(up{namespace="${namespace}", job="${reportJob}"})',
     )],
