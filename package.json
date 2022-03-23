@@ -98,7 +98,7 @@
     "start_mdserver": "node mdserver.js",
     "start_dataserver": "node dataserver.js",
     "start_pfsserver": "node pfsserver.js",
-    "start_s3server": "node index.js",
+    "start_s3server": "DEFAULT_BUCKET_KEY_FORMAT=v0 node index.js",
     "start_dmd": "npm-run-all --parallel start_mdserver start_dataserver",
     "start_utapi": "node lib/utapi/utapi.js",
     "start_secure_channel_proxy": "node bin/secure_channel_proxy.js",
