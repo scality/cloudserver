@@ -43,6 +43,13 @@
       "name": "reportJob",
       "type": "constant",
       "value": "artesca-data-ops-report-handler"
+    },
+    {
+      "description": "Name of the Count-Items cronjob, used to filter only the Count-Items instances.",
+      "label": "count-items job",
+      "name": "countItemsJob",
+      "type": "constant",
+      "value": "artesca-data-ops-count-items"
     }
   ],
   "annotations": {
@@ -107,7 +114,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -569,7 +576,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -592,7 +599,7 @@
           "target": ""
         }
       ],
-      "title": "Up",
+      "title": "Reporter",
       "transformations": [],
       "transparent": false,
       "type": "stat"
@@ -1155,7 +1162,7 @@
                 "index": 2,
                 "line": true,
                 "op": "gt",
-                "value": 1800000.0,
+                "value": 1800.0,
                 "yaxis": "left"
               },
               {
@@ -1163,7 +1170,7 @@
                 "index": 3,
                 "line": true,
                 "op": "gt",
-                "value": 3600000.0,
+                "value": 3600.0,
                 "yaxis": "left"
               },
               {
@@ -1171,12 +1178,12 @@
                 "index": 4,
                 "line": true,
                 "op": "gt",
-                "value": 3700000.0,
+                "value": 3700.0,
                 "yaxis": "left"
               }
             ]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -1197,7 +1204,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "last"
           ],
           "fields": "",
           "values": false
@@ -1207,7 +1214,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "time() - cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}",
+          "expr": "time()\n- max by() (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}\n   - on() kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"}\n   > 0 or vector(0))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2277,5 +2284,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 15
+  "version": 16
 }
