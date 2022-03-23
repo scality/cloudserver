@@ -171,18 +171,24 @@ lastReport = Stat(
         "updated."
     ),
     dataSource="${DS_PROMETHEUS}",
-    format=UNITS.MILLI_SECONDS,
+    format=UNITS.SECONDS,
     noValue="-",
-    reduceCalc="lastNotNull",
+    reduceCalc="last",
     targets=[Target(
-        expr='time() - cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}',  # noqa: E501
+        expr="\n".join([
+            'time()',
+            '- max by() (cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+            '+ (cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"}',  # noqa: E501
+            '   - on() kube_cronjob_status_last_schedule_time{namespace="${namespace}", cronjob="${countItemsJob}"}',  # noqa: E501
+            '   > 0 or vector(0))',
+        ])
     )],
     thresholds=[
         Threshold("#808080", 0, 0.0),
         Threshold("green", 1, 0.0),
-        Threshold("super-light-yellow", 2, 1800000.),
-        Threshold("orange", 3, 3600000.),
-        Threshold("red", 4, 3700000.),
+        Threshold("super-light-yellow", 2, 1800.),
+        Threshold("orange", 3, 3600.),
+        Threshold("red", 4, 3700.),
     ],
 )
 
@@ -517,6 +523,13 @@ dashboard = (
                 description="Name of the Cloudserver Report job, used to "
                             "filter only the Report Handler instances.",
                 value="artesca-data-ops-report-handler",
+            ),
+            ConstantInput(
+                name="countItemsJob",
+                label="count-items job",
+                description="Name of the Count-Items cronjob, used to filter "
+                            "only the Count-Items instances.",
+                value="artesca-data-ops-count-items",
             )
         ],
         panels=layout.column([
