@@ -98,7 +98,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "fields": "",
                     "values": false
@@ -462,7 +462,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "fields": "",
                     "values": false
