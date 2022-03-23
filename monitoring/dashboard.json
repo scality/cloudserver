@@ -43,7 +43,15 @@
             "label": "report job",
             "description": "Name of the Cloudserver Report job, used to filter only the Report Handler instances.",
             "value": "artesca-data-ops-report-handler"
+        },
+        {
+            "name": "countItemsJob",
+            "type": "constant",
+            "label": "count-items job",
+            "description": "Name of the Count-Items cronjob, used to filter only the Count-Items instances.",
+            "value": "artesca-data-ops-count-items"
         }
+        
     ],
     "editable": true,
     "gnetId": null,
@@ -561,19 +569,19 @@
                             },
                             {
                                 "color": "super-light-yellow",
-                                "value": 1800000
+                                "value": 1800
                             },
                             {
                                 "color": "orange",
-                                "value": 3600000
+                                "value": 3600
                             },
                             {
                                 "color": "red",
-                                "value": 3700000
+                                "value": 3700
                             }
                         ]
                     },
-                    "unit": "ms"
+                    "unit": "s"
                 },
                 "overrides": []
             },
@@ -591,7 +599,7 @@
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
-                        "lastNotNull"
+                        "last"
                     ],
                     "fields": "",
                     "values": false
@@ -603,7 +611,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "time() - cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}",
+                    "expr": "time()\n- max by() (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"} - on() kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"} > 0 or vector(0))",
                     "instant": false,
                     "interval": "",
                     "legendFormat": "",
