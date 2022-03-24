@@ -13,6 +13,7 @@ function _performSearch(host,
                         port,
                         bucketName,
                         query,
+                        listVersions,
                         accessKey,
                         secretKey,
                         sessionToken,
@@ -22,11 +23,12 @@ function _performSearch(host,
         host,
         port,
         method: 'GET',
-        path: `/${bucketName}/?search=${escapedSearch}`,
+        path: `/${bucketName}/?search=${escapedSearch}${listVersions ? '&&versions' : ''}`,
         headers: {
             'Content-Length': 0,
         },
         rejectUnauthorized: false,
+        versions: '',
     };
     if (sessionToken) {
         options.headers['x-amz-security-token'] = sessionToken;
@@ -59,9 +61,9 @@ function _performSearch(host,
     // generateV4Headers exepects request object with path that does not
     // include query
     request.path = `/${bucketName}`;
-    auth.client.generateV4Headers(request, { search: query },
-        accessKey, secretKey, 's3');
-    request.path = `/${bucketName}?search=${escapedSearch}`;
+    const requestData = listVersions ? { search: query, versions: '' } : { search: query };
+    auth.client.generateV4Headers(request, requestData, accessKey, secretKey, 's3');
+    request.path = `/${bucketName}?search=${escapedSearch}${listVersions ? '&&versions' : ''}`;
     if (verbose) {
         logger.info('request headers', { headers: request._headers });
     }
@@ -86,10 +88,11 @@ function searchBucket() {
         .option('-h, --host <host>', 'Host of the server')
         .option('-p, --port <port>', 'Port of the server')
         .option('-s', '--ssl', 'Enable ssl')
+        .option('-l, --list-versions', 'List all versions of the objects that meet the search query, ' +
+            'otherwise only list the latest version')
         .option('-v, --verbose')
         .parse(process.argv);
-
-    const { host, port, accessKey, secretKey, sessionToken, bucket, query, verbose, ssl } =
+    const { host, port, accessKey, secretKey, sessionToken, bucket, query, listVersions, verbose, ssl } =
         commander;
 
     if (!host || !port || !accessKey || !secretKey || !bucket || !query) {
@@ -98,7 +101,7 @@ function searchBucket() {
         process.exit(1);
     }
 
-    _performSearch(host, port, bucket, query, accessKey, secretKey, sessionToken, verbose,
+    _performSearch(host, port, bucket, query, listVersions, accessKey, secretKey, sessionToken, verbose,
         ssl);
 }
 
