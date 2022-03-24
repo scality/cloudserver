@@ -1559,7 +1559,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+                    "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__rate_interval])) by (le)",
                     "format": "heatmap",
                     "interval": "",
                     "legendFormat": "{{ le }}",
@@ -1615,7 +1615,7 @@
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+                    "expr": "sum(increase(http_response_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__rate_interval])) by (le)",
                     "format": "heatmap",
                     "interval": "",
                     "legendFormat": "{{ le }}",
@@ -1811,5 +1811,5 @@
     "timezone": "",
     "title": "CloudServer",
     "uid": null,
-    "version": 14
+    "version": 15
 }
