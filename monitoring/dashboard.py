@@ -413,7 +413,7 @@ uploadChunkSize = BarGauge(
     # TODO: noValue=0,
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
+        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__rate_interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
@@ -433,7 +433,7 @@ downloadChunkSize = BarGauge(
     # TODO: noValue=0,
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
+        expr='sum(increase(http_response_size_bytes{namespace="${namespace}",service="${job}"}[$__rate_interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
