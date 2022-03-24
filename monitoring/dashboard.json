@@ -1900,6 +1900,7 @@
             "links": [],
             "max": null,
             "min": null,
+            "noValue": "0",
             "title": null,
             "unit": "bytes"
           },
@@ -1968,6 +1969,7 @@
             "links": [],
             "max": null,
             "min": null,
+            "noValue": "0",
             "title": null,
             "unit": "bytes"
           },
@@ -2284,5 +2286,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 17
+  "version": 18
 }
