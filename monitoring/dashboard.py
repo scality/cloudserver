@@ -1,5 +1,4 @@
 from grafanalib.core import (
-    BarGauge,
     ConstantInput,
     DataSourceInput,
     GaugePanel,
@@ -13,6 +12,7 @@ from grafanalib.core import (
 from grafanalib import formatunits as UNITS
 from scalgrafanalib import (
     layout,
+    BarGauge,
     Dashboard,
     PieChart,
     Tooltip,
@@ -410,10 +410,10 @@ uploadChunkSize = BarGauge(
     format="bytes",
     max=None,
     min=None,
-    # TODO: noValue=0,
+    noValue="0",
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
+        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__rate_interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
@@ -430,10 +430,10 @@ downloadChunkSize = BarGauge(
     format="bytes",
     max=None,
     min=None,
-    # TODO: noValue=0,
+    noValue="0",
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}",service="${job}"}[$__interval])) by (le)',  # noqa: E501
+        expr='sum(increase(http_response_size_bytes{namespace="${namespace}",service="${job}"}[$__rate_interval])) by (le)',  # noqa: E501
         format='heatmap',
         legendFormat='{{ le }}',
     )],
