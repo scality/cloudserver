@@ -1900,6 +1900,7 @@
             "links": [],
             "max": null,
             "min": null,
+            "noValue": "0",
             "title": null,
             "unit": "bytes"
           },
@@ -1925,7 +1926,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+          "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -1968,6 +1969,7 @@
             "links": [],
             "max": null,
             "min": null,
+            "noValue": "0",
             "title": null,
             "unit": "bytes"
           },
@@ -1993,7 +1995,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__interval])) by (le)",
+          "expr": "sum(increase(http_response_size_bytes{namespace=\"${namespace}\",service=\"${job}\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -2284,5 +2286,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 16
+  "version": 18
 }

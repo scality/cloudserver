@@ -417,9 +417,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@github:scality/Arsenal#8.1.37":
-  version "8.1.37"
-  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/de17f221bf1238830c6b6914cf53dc9ba3f1c71d"
+"arsenal@github:scality/Arsenal#bugfix/ARSN-124-fix-missing-vformat-param":
+  version "8.1.38"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/d18f4d10bdfec6c3d211036490c9de5f5e97219c"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
