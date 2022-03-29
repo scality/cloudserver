@@ -6,6 +6,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const constants = require('../../../../../constants');
 const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
+const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
 
 withV4(sigCfg => {
     const ownerAccountBucketUtil = new BucketUtility('default', sigCfg);
@@ -143,7 +144,8 @@ withV4(sigCfg => {
                 });
             });
 
-            it('should grant write access on an object not owned ' +
+            // TODO: S3C-5656
+            itSkipIfE2E('should grant write access on an object not owned ' +
                 'by the grantee', done => {
                 s3.putBucketAcl({
                     Bucket: testBucket,
