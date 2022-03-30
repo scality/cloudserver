@@ -38,7 +38,8 @@ httpRequests = Stat(
     dataSource="${DS_PROMETHEUS}",
     decimals=0,
     format=UNITS.SHORT,
-    reduceCalc="last",
+    noValue="0",
+    reduceCalc="sum",
     targets=[Target(
         expr='sum(increase(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
@@ -203,7 +204,7 @@ def http_status_panel(title, code):
         decimals=0,
         format=UNITS.SHORT,
         noValue="0",
-        reduceCalc="lastNotNull",
+        reduceCalc="sum",
         targets=[Target(
             expr='sum(increase(http_requests_total{namespace="${namespace}",job="${job}",code=' + code + "}[$__rate_interval]))",  # noqa: E501
         )],

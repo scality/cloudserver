@@ -151,7 +151,7 @@
           "custom": {},
           "decimals": 0,
           "mappings": [],
-          "noValue": "none",
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -186,7 +186,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -657,7 +657,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -729,7 +729,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -801,7 +801,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -2295,5 +2295,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 19
+  "version": 20
 }
