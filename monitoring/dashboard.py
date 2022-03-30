@@ -1,7 +1,6 @@
 from grafanalib.core import (
     ConstantInput,
     DataSourceInput,
-    GaugePanel,
     Heatmap,
     HeatmapColor,
     RowPanel,
@@ -14,6 +13,7 @@ from scalgrafanalib import (
     layout,
     BarGauge,
     Dashboard,
+    GaugePanel,
     PieChart,
     Tooltip,
     Target,
@@ -50,23 +50,24 @@ httpRequests = Stat(
 successRate = GaugePanel(
     title="Success rate",
     dataSource="${DS_PROMETHEUS}",
-    calc="lastNotNull",
+    calc="mean",
     format=UNITS.PERCENT_FORMAT,
     min=0,
     max=100,
+    noValue="-",
     targets=[Target(
         expr="\n".join([
             'sum(rate(http_requests_total{namespace="${namespace}", job="${job}", code=~"2.."}[$__rate_interval])) * 100',  # noqa: E501
             "   /",
-            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
+            'sum(rate(http_requests_total{namespace="${namespace}", job="${job}"}[$__rate_interval]) > 0)',  # noqa: E501
         ]),
-        instant=True,
         legendFormat="Success rate",
     )],
     thresholds=[
-        Threshold("red",    0, 0.0),
-        Threshold("orange", 1, 80.0),
-        Threshold("green",  2, 90.0),
+        Threshold("#808080", 0, 0.0),
+        Threshold("red",     1, 0.0),
+        Threshold("orange",  2, 80.0),
+        Threshold("green",   3, 90.0),
     ],
 )
 

@@ -231,13 +231,14 @@
       "options": {
         "fieldOptions": {
           "calcs": [
-            "lastNotNull"
+            "mean"
           ],
           "defaults": {
             "decimals": null,
             "links": [],
             "max": 100,
             "min": 0,
+            "noValue": "-",
             "title": null,
             "unit": "percent"
           },
@@ -246,7 +247,7 @@
           "override": {},
           "thresholds": [
             {
-              "color": "red",
+              "color": "#808080",
               "index": 0,
               "line": true,
               "op": "gt",
@@ -254,8 +255,16 @@
               "yaxis": "left"
             },
             {
-              "color": "orange",
+              "color": "red",
               "index": 1,
+              "line": true,
+              "op": "gt",
+              "value": 0.0,
+              "yaxis": "left"
+            },
+            {
+              "color": "orange",
+              "index": 2,
               "line": true,
               "op": "gt",
               "value": 80.0,
@@ -263,7 +272,7 @@
             },
             {
               "color": "green",
-              "index": 2,
+              "index": 3,
               "line": true,
               "op": "gt",
               "value": 90.0,
@@ -278,10 +287,10 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) * 100\n   /\nsum(rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) * 100\n   /\nsum(rate(http_requests_total{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]) > 0)",
           "format": "time_series",
           "hide": false,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Success rate",
@@ -2286,5 +2295,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 18
+  "version": 19
 }
