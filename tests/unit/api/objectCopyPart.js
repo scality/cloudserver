@@ -52,7 +52,6 @@ function _createObjectCopyPartRequest(destBucketName, uploadId, headers) {
             uploadId,
         },
     };
-    console.log('create params', params);
     return new DummyRequest(params);
 }
 

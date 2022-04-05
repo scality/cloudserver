@@ -68,7 +68,7 @@ describe('objectHead API', () => {
         });
     });
 
-    it.only('should return PreconditionFailed if request header ' +
+    it('should return PreconditionFailed if request header ' +
        'includes "if-unmodified-since" and object has ' +
        'been modified since specified time', done => {
         const testGetRequest = {
