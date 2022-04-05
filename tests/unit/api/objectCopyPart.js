@@ -1,12 +1,13 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
+const { storage } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload
 = require('../../../lib/api/initiateMultipartUpload');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { metadata } = storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
@@ -51,6 +52,7 @@ function _createObjectCopyPartRequest(destBucketName, uploadId, headers) {
             uploadId,
         },
     };
+    console.log('create params', params);
     return new DummyRequest(params);
 }
 
@@ -91,16 +93,12 @@ describe('objectCopyPart', () => {
     it('should copy part even if legacy metadata without dataStoreName',
     done => {
         // force metadata for dataStoreName to be undefined
-        metadata.keyMaps.get(sourceBucketName)
-            .get(objectKey).dataStoreName = undefined;
-        const testObjectCopyRequest =
-            _createObjectCopyPartRequest(destBucketName, uploadId);
-        objectPutCopyPart(authInfo, testObjectCopyRequest,
-            sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert.ifError(err, `Unexpected err: ${err}`);
-                done();
-            });
+        metadata.keyMaps.get(sourceBucketName).get(objectKey).dataStoreName = undefined;
+        const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
+        objectPutCopyPart(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err, `Unexpected err: ${err}`);
+            done();
+        });
     });
 
     it('should return InvalidArgument error given invalid range', done => {
