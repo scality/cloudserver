@@ -1,5 +1,5 @@
 const assert = require('assert');
-const utils = require('../../../lib/data/external/utils');
+const utils = require('arsenal').storage.data.external.backendUtils;
 const BucketInfo = require('arsenal').models.BucketInfo;
 
 const userBucketOwner = 'Bart';

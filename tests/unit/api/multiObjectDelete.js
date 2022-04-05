@@ -4,8 +4,8 @@ const { errors } = require('arsenal');
 const { getObjMetadataAndDelete }
     = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
-const { ds } = require('../../../lib/data/in_memory/backend');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');

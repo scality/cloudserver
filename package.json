@@ -20,7 +20,7 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "github:scality/arsenal#7.10.9",
+    "arsenal": "file:../Arsenal",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
@@ -34,6 +34,7 @@
     "level-mem": "^5.0.1",
     "moment": "^2.26.0",
     "npm-run-all": "~4.1.5",
+    "prom-client": "^14.0.1",
     "sproxydclient": "scality/sproxydclient#7.10.2",
     "utapi": "scality/utapi#7.10.6",
     "utf8": "~2.1.1",

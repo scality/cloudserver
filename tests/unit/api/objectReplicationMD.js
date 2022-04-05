@@ -7,7 +7,7 @@ const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger, makeAuthInfo, TaggingConfigTester } =
     require('../helpers');
 const constants = require('../../../constants');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const DummyRequest = require('../DummyRequest');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectPut = require('../../../lib/api/objectPut');

@@ -14,13 +14,15 @@ const completeMultipartUpload
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
+
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+
 const getObjectLegalHold = require('../../../lib/api/objectGetLegalHold');
 const getObjectRetention = require('../../../lib/api/objectGetRetention');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
-const { metadata } = require('../../../lib/metadata/in_memory/metadata');
-const metadataBackend = require('../../../lib/metadata/in_memory/backend');
+const metadataBackend = require('arsenal').storage.metadata.inMemory.metastore;
 const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');

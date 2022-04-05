@@ -1,12 +1,14 @@
 const crypto = require('crypto');
 const assert = require('assert');
+const { storage } = require('arsenal');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const { RequestContext } = require('arsenal').policies;
 const constants = require('../../constants');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
-const { resetCount, ds } = require('../../lib/data/in_memory/backend');
 const DummyRequest = require('./DummyRequest');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { resetCount, ds } = storage.data.inMemory.datastore;
 
 const testsRangeOnEmptyFile = [
     { range: 'bytes=0-9', valid: true },

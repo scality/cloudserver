@@ -1,7 +1,7 @@
 const assert = require('assert');
 const http = require('http');
 const BucketClientInterface =
-    require('../../../../lib/metadata/bucketclient/backend');
+    require('arsenal').storage.metadata.bucketclient.BucketClientInterface;
 const { DummyRequestLogger } =
     require('../../helpers.js');
 

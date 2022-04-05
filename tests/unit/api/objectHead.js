@@ -81,6 +81,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
+                    assert.ifError(err);
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
