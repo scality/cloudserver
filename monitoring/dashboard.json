@@ -1902,7 +1902,7 @@
         "displayMode": "gradient",
         "fieldOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "defaults": {
             "decimals": null,
@@ -1971,7 +1971,7 @@
         "displayMode": "gradient",
         "fieldOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "defaults": {
             "decimals": null,
@@ -2350,5 +2350,5 @@
   "timezone": "",
   "title": "CloudServer",
   "uid": null,
-  "version": 21
+  "version": 22
 }
