@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const { maximumAllowedPartCount } = require('../../../../../constants');
 
 const canonicalObjectConfig = {
