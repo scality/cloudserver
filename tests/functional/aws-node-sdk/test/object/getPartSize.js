@@ -19,7 +19,7 @@ function generateContent(size, bodyContent) {
     return Buffer.alloc(size, bodyContent);
 }
 
-describe.only('Part size tests with object head', () => {
+describe('Part size tests with object head', () => {
     objectConfigs.forEach(config => {
         describe(config.signature, () => {
             let ETags = [];
