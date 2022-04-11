@@ -210,5 +210,31 @@ describe('Complete MPU', () => {
                 });
             });
         });
+
+        describe('with re-upload of part during CompleteMPU execution', () => {
+            let uploadId;
+            let eTag;
+
+            beforeEach(() => _initiateMpuAndPutOnePart()
+                .then(result => {
+                    uploadId = result.uploadId;
+                    eTag = result.eTag;
+                })
+            );
+
+            it('should complete the MPU successfully and leave a readable object', done => {
+                async.parallel([
+                    doneReUpload => s3.uploadPart({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: 1,
+                        UploadId: uploadId,
+                        Body: 'foo',
+                    }, err => doneReUpload(err)),
+                    doneComplete => _completeMpuAndCheckVid(
+                        uploadId, eTag, undefined, doneComplete),
+                ], done);
+            });
+        });
     });
 });
