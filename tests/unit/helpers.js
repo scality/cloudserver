@@ -66,7 +66,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey, userName) {
+function makeAuthInfo(accessKey, userName, sessionName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -92,6 +92,11 @@ function makeAuthInfo(accessKey, userName) {
     if (userName) {
         params.IAMdisplayName = `${accessKey}-${userName}-userDisplayName`;
         params.arn = `arn:aws:iam::${shortid}:user/${userName}`;
+    }
+
+    if (sessionName) {
+        params.IAMdisplayName = `[assumedRole] rolename:${sessionName}`;
+        params.arn = `arn:aws:sts::${shortid}:assumed-role/rolename/${sessionName}`;
     }
 
     return new AuthInfo(params);
