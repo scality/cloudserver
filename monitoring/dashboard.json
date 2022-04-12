@@ -2348,7 +2348,7 @@
     ]
   },
   "timezone": "",
-  "title": "CloudServer",
+  "title": "S3 service",
   "uid": null,
-  "version": 22
+  "version": 23
 }

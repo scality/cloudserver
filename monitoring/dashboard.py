@@ -484,7 +484,7 @@ top10Error5xxByBucket = top10_errors_by_bucket(
 
 dashboard = (
     Dashboard(
-        title="CloudServer",
+        title="S3 service",
         editable=True,
         refresh="30s",
         tags=["CloudServer"],
