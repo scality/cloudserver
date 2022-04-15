@@ -159,7 +159,6 @@ const constants = {
     // Bucket specific queries supported by AWS that we do not currently support
     // these queries may or may not be supported at object level
     unsupportedBucketQueries: [
-        'tagging',
     ],
     suppressedUtapiEventFields: [
         'object',
