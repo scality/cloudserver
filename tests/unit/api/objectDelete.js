@@ -116,10 +116,7 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
-                                const expected =
-                                    Object.assign({}, errors.NoSuchKey);
-                                const received = Object.assign({}, err);
-                                assert.deepStrictEqual(received, expected);
+                                assert.strictEqual(err.is.NoSuchKey);
                                 done();
                             });
                     });
