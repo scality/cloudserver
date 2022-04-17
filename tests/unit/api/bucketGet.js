@@ -10,8 +10,6 @@ const objectPut = require('../../../lib/api/objectPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 
-const { errors } = require('arsenal');
-
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
@@ -199,7 +197,7 @@ describe('bucketGet API', () => {
         const testGetRequest = Object.assign({ query: { 'max-keys': '-1' } },
             baseGetRequest);
         bucketGet(authInfo, testGetRequest, log, err => {
-            assert.deepStrictEqual(err, errors.InvalidArgument);
+            assert(err.is.InvalidArgument);
             done();
         });
     });

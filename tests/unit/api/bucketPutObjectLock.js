@@ -48,7 +48,7 @@ describe('putBucketObjectLock API', () => {
 
         it('should return InvalidBucketState error', done => {
             bucketPutObjectLock(authInfo, putObjLockRequest, log, err => {
-                assert.strictEqual(err.InvalidBucketState, true);
+                assert.strictEqual(err.is.InvalidBucketState, true);
                 done();
             });
         });

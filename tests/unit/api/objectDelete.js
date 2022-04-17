@@ -1,7 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
-const { errors } = require('arsenal');
 const xml2js = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -93,8 +92,7 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
-                                assert.deepStrictEqual(err,
-                                    errors.NoSuchKey);
+                                assert.strictEqual(err.is.NoSuchKey, true);
                                 done();
                             });
                     });
@@ -117,10 +115,7 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
-                                const expected =
-                                    Object.assign({}, errors.NoSuchKey);
-                                const received = Object.assign({}, err);
-                                assert.deepStrictEqual(received, expected);
+                                assert.strictEqual(err.is.NoSuchKey);
                                 done();
                             });
                     });
@@ -183,7 +178,7 @@ describe('objectDelete API', () => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
+                assert.strictEqual(err.is.AccessDenied, true);
                 done();
             });
         });

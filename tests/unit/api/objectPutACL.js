@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const constants = require('../../../constants');
@@ -63,8 +62,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert
-                            .deepStrictEqual(err, errors.InvalidArgument);
+                        assert.strictEqual(err.is.InvalidArgument, true);
                         done();
                     });
                 });
@@ -208,8 +206,8 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        assert.strictEqual(
+                            err.is.UnresolvableGrantByEmailAddress, true);
                         done();
                     });
                 });
@@ -274,8 +272,7 @@ describe('putObjectACL API', () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 () => {
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.deepStrictEqual(err,
-                            errors.AccessDenied);
+                        assert.strictEqual(err.is.AccessDenied, true);
                         done();
                     });
                 });
@@ -342,8 +339,8 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        assert.strictEqual(
+                            err.is.UnresolvableGrantByEmailAddress, true);
                         done();
                     });
                 });
@@ -371,8 +368,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.deepStrictEqual(err,
-                            errors.MalformedACLError);
+                        assert.strictEqual(err.is.MalformedACLError, true);
                         done();
                     });
                 });
@@ -400,7 +396,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.MalformedXML);
+                        assert.strictEqual(err.is.MalformedXML, true);
                         done();
                     });
                 });
@@ -427,7 +423,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.InvalidArgument);
+                        assert.strictEqual(err.is.InvalidArgument, true);
                         done();
                     });
                 });
@@ -455,7 +451,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.InvalidArgument);
+                        assert.strictEqual(err.is.InvalidArgument, true);
                         done();
                     });
                 });
