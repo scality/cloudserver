@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const AWS = require('aws-sdk');
 const { parseString } = require('xml2js');
-const { errors, models } = require('arsenal');
+const { models } = require('arsenal');
 
 const BucketInfo = models.BucketInfo;
 const { getRealAwsConfig } =
@@ -462,7 +462,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 listParts(authInfo, listParams, log, err => {
                     // TODO
                     assert.strictEqual(err.is.ServiceUnavailable, true);
-                    assert.strictEqual(err.description, 
+                    assert.strictEqual(err.description,
                         'Error returned from AWS: ' +
                         'The specified upload does not exist. The upload ID ' +
                         'may be invalid, or the upload may have been aborted ' +

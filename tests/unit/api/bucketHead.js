@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 
 const bucketHead = require('../../../lib/api/bucketHead');
 const { bucketPut } = require('../../../lib/api/bucketPut');

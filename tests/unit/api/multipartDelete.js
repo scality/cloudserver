@@ -3,8 +3,6 @@ const async = require('async');
 const { parseString } = require('xml2js');
 const sinon = require('sinon');
 
-const { errors } = require('arsenal');
-
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { config } = require('../../../lib/Config');
 const services = require('../../../lib/services');

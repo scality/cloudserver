@@ -1,7 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
-const { errors } = require('arsenal');
 const xml2js = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');

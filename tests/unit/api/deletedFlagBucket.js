@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const assert = require('assert');
-const { errors } = require('arsenal');
 
 const BucketInfo = require('arsenal').models.BucketInfo;
 const bucketGet = require('../../../lib/api/bucketGet');

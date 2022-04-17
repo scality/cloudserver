@@ -1,7 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const constants = require('../../../constants');

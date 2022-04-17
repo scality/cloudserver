@@ -1,7 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
 
-const { errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutRetention = require('../../../lib/api/objectPutRetention');

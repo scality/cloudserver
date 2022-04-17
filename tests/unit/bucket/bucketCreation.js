@@ -1,5 +1,3 @@
-const { errors } = require('arsenal');
-
 const assert = require('assert');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');

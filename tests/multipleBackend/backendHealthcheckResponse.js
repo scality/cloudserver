@@ -1,6 +1,5 @@
 'use strict'; // eslint-disable-line strict
 const assert = require('assert');
-const { errors } = require('arsenal');
 const DummyRequestLogger = require('../unit/helpers').DummyRequestLogger;
 const clientCheck
     = require('../../lib/utilities/healthcheckHandler').clientCheck;

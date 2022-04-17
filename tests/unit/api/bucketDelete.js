@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
 
 const bucketDelete = require('../../../lib/api/bucketDelete');
 const { bucketPut } = require('../../../lib/api/bucketPut');

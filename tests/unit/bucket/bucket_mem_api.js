@@ -1,8 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 
-const { errors } = require('arsenal');
-
 const BucketInfo = require('arsenal').models.BucketInfo;
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { isKeyInContents }

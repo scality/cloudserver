@@ -10,8 +10,6 @@ const objectPut = require('../../../lib/api/objectPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 
-const { errors } = require('arsenal');
-
 const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const delimiter = '/';
