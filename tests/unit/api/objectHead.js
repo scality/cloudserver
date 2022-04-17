@@ -169,16 +169,15 @@ describe('objectHead API', () => {
                 partNumber: '1',
             },
         };
-        const customizedInvalidRequestError = errors.InvalidRequest
-            .customizeDescription('Cannot specify both Range header and ' +
-                'partNumber query parameter.');
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
-                    assert.deepStrictEqual(err, customizedInvalidRequestError);
-                    assert.deepStrictEqual(err.InvalidRequest, true);
+                    assert.strictEqual(err.is.InvalidRequest, true);
+                    assert.strictEqual(err.description,
+                        'Cannot specify both Range header and ' +
+                        'partNumber query parameter.');
                     done();
                 });
             });
@@ -196,15 +195,14 @@ describe('objectHead API', () => {
                 partNumber: 'nan',
             },
         };
-        const customizedInvalidArgumentError = errors.InvalidArgument
-            .customizeDescription('Part number must be a number.');
-
+        
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidArgumentError);
-                    assert.deepStrictEqual(err.InvalidArgument, true);
+                    assert.strictEqual(err.is.InvalidArgument, true);
+                    assert.strictEqual(err.description, 'Part number must be a number.');
                     done();
                 });
             });

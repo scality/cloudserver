@@ -451,9 +451,8 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidRequest
-                    .customizeDescription(
-                        'Bucket is missing ObjectLockConfiguration'));
+                assert.strictEqual(err.is.InvalidRequest, true)
+                assert.strictEqual(err.description, 'Bucket is missing ObjectLockConfiguration');
                 done();
             });
         });

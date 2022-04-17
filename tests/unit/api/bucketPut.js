@@ -367,11 +367,10 @@ describe('bucketPut API', () => {
 
         it('should return error if location constraint config is not updated',
             done => bucketPut(authInfo, req, log, err => {
-                const expectedError = errors.InvalidLocationConstraint;
-                expectedError.description = 'value of the location you are ' +
+                assert.strictEqual(err.is.InvalidLocationConstraint);
+                assert.strictEqual(err.description, 'value of the location you are ' +
                     `attempting to set - ${newLCKey} - is not listed in the ` +
-                    'locationConstraint config';
-                assert.deepStrictEqual(err, expectedError);
+                    'locationConstraint config');
                 done();
             }));
 
