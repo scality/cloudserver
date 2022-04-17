@@ -96,7 +96,7 @@ function confirmDeleted(done) {
         process.nextTick(() => {
             process.nextTick(() => {
                 metadata.getBucket(bucketName, log, err => {
-                    assert.deepStrictEqual(err, errors.NoSuchBucket);
+                    assert.strictEqual(err.is.NoSuchBucket, true);
                     return checkBucketListing(authInfo, bucketName, 0, done);
                 });
             });
@@ -138,7 +138,7 @@ describe('deleted flag bucket handling', () => {
         'different account sends put bucket request for bucket with ' +
         'deleted flag', done => {
         bucketPut(otherAccountAuthInfo, baseTestRequest, log, err => {
-            assert.deepStrictEqual(err, errors.BucketAlreadyExists);
+            assert.strictEqual(err.is.BucketAlreadyExists, true);
             metadata.getBucket(bucketName, log, (err, data) => {
                 assert.strictEqual(data._transient, false);
                 assert.strictEqual(data._deleted, true);
@@ -193,7 +193,7 @@ describe('deleted flag bucket handling', () => {
                 'x-amz-acl': 'public-read' }, 'headers',
                 baseTestRequest, baseTestRequest.headers);
             bucketPutACL(otherAccountAuthInfo, putACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._deleted, true);
                     assert.strictEqual(data._transient, false);
@@ -212,7 +212,7 @@ describe('deleted flag bucket handling', () => {
                 baseTestRequest, baseTestRequest.headers);
             const unauthorizedAccount = makeAuthInfo('keepMeOut');
             bucketPutACL(unauthorizedAccount, putACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
+                assert.strictEqual(err.is.AccessDenied, true);
                 metadata.getBucket(bucketName, log, (err, data) => {
                     assert.strictEqual(data._deleted, true);
                     assert.strictEqual(data._transient, false);
@@ -266,7 +266,7 @@ describe('deleted flag bucket handling', () => {
         const postBody = Buffer.from('I am a body', 'utf8');
         const putObjRequest = new DummyRequest(setUpRequest, postBody);
         objectPut(otherAccountAuthInfo, putObjRequest, undefined, log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
@@ -314,7 +314,7 @@ describe('deleted flag bucket handling', () => {
         initiateRequest.objectKey = 'objectName';
         initiateMultipartUpload(otherAccountAuthInfo, initiateRequest, log,
             err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 done();
             });
     });
@@ -331,7 +331,7 @@ describe('deleted flag bucket handling', () => {
         'authorized', done => {
         bucketDelete(otherAccountAuthInfo, baseTestRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
+                assert.strictEqual(err.is.AccessDenied, true);
                 done();
             });
     });
@@ -340,7 +340,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         bucketDeleteWebsite(authInfo, baseTestRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 confirmDeleted(done);
             });
     });
@@ -349,7 +349,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         bucketGet(authInfo, baseTestRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 confirmDeleted(done);
             });
     });
@@ -358,7 +358,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         bucketGetACL(authInfo, baseTestRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 confirmDeleted(done);
             });
     });
@@ -367,7 +367,7 @@ describe('deleted flag bucket handling', () => {
     'NoSuchBucket error and complete deletion', done => {
         bucketGetCors(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -383,7 +383,7 @@ describe('deleted flag bucket handling', () => {
         bucketPutCorsRequest.headers['content-md5'] = crypto.createHash('md5')
             .update(bucketPutCorsRequest.post, 'utf8').digest('base64');
         bucketPutCors(authInfo, bucketPutCorsRequest, log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -391,7 +391,7 @@ describe('deleted flag bucket handling', () => {
     it('bucketDeleteCors request on bucket with delete flag should return ' +
         'NoSuchBucket error and complete deletion', done => {
         bucketDeleteCors(authInfo, baseTestRequest, log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -400,7 +400,7 @@ describe('deleted flag bucket handling', () => {
     'NoSuchBucket error and complete deletion', done => {
         bucketGetWebsite(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -414,7 +414,7 @@ describe('deleted flag bucket handling', () => {
         '</WebsiteConfiguration>';
         bucketPutWebsite(authInfo, bucketPutWebsiteRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -423,7 +423,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         bucketHead(authInfo, baseTestRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 confirmDeleted(done);
             });
     });
@@ -438,13 +438,13 @@ describe('deleted flag bucket handling', () => {
         if (extraArgNeeded) {
             return apiAction(authInfo, mpuRequest, undefined,
                 log, err => {
-                    assert.deepStrictEqual(err, errors.NoSuchUpload);
+                    assert.strictEqual(err.is.NoSuchUpload, true);
                     return done();
                 });
         }
         return apiAction(authInfo, mpuRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchUpload);
+                assert.strictEqual(err.is.NoSuchUpload, true);
                 return done();
             });
     }
@@ -495,7 +495,7 @@ describe('deleted flag bucket handling', () => {
         listRequest.query = {};
         listMultipartUploads(authInfo, listRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 done();
             });
     });
@@ -505,7 +505,7 @@ describe('deleted flag bucket handling', () => {
         done => {
             objectGet(authInfo, baseTestRequest, false,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 confirmDeleted(done);
             });
         });
@@ -514,7 +514,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         objectGetACL(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -523,7 +523,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         objectHead(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -532,7 +532,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error and complete deletion', done => {
         objectPutACL(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });
@@ -541,7 +541,7 @@ describe('deleted flag bucket handling', () => {
         'NoSuchBucket error', done => {
         objectDelete(authInfo, baseTestRequest,
         log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             confirmDeleted(done);
         });
     });

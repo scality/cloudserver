@@ -79,7 +79,7 @@ describe('serviceGet API', () => {
     it('should prevent anonymous user from accessing getService API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         serviceGet(publicAuthInfo, serviceGetRequest, log, err => {
-            assert.deepStrictEqual(err, errors.AccessDenied);
+            assert.strictEqual(err.is.AccessDenied, true);
             done();
         });
     });

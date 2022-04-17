@@ -44,7 +44,7 @@ describe('getBucketPolicy API', () => {
     it('should return NoSuchBucketPolicy error if ' +
     'bucket has no policy', done => {
         bucketGetPolicy(authInfo, testBasicRequest, log, err => {
-            assert.strictEqual(err.NoSuchBucketPolicy, true);
+            assert.strictEqual(err.is.NoSuchBucketPolicy, true);
             done();
         });
     });

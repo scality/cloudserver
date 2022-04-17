@@ -64,7 +64,7 @@ describe('getObjectRetention API', () => {
 
         it('should return InvalidRequest error', done => {
             objectGetRetention(authInfo, getObjRetRequest, log, err => {
-                assert.strictEqual(err.InvalidRequest, true);
+                assert.strictEqual(err.is.InvalidRequest, true);
                 done();
             });
         });
@@ -85,7 +85,7 @@ describe('getObjectRetention API', () => {
         it('should return NoSuchObjectLockConfiguration if no retention set',
         done => {
             objectGetRetention(authInfo, getObjRetRequest, log, err => {
-                assert.strictEqual(err.NoSuchObjectLockConfiguration, true);
+                assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
                 done();
             });
         });

@@ -168,7 +168,7 @@ describe('Multipart Upload API', () => {
         'no destination bucket', done => {
         initiateMultipartUpload(authInfo, initiateRequest,
             log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchBucket);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 done();
             });
     });
@@ -315,7 +315,7 @@ describe('Multipart Upload API', () => {
             }, postBody);
             objectPutPart(authInfo, partRequest, undefined, log,
                 (err, result) => {
-                    assert.deepStrictEqual(err, errors.TooManyParts);
+                    assert.strictEqual(err.is.TooManyParts, true);
                     assert.strictEqual(result, undefined);
                     done();
                 });
@@ -351,7 +351,7 @@ describe('Multipart Upload API', () => {
             }, postBody);
             objectPutPart(authInfo, partRequest, undefined, log,
                 (err, result) => {
-                    assert.deepStrictEqual(err, errors.InvalidArgument);
+                    assert.strictEqual(err.is.InvalidArgument, true);
                     assert.strictEqual(result, undefined);
                     done();
                 });
@@ -394,7 +394,7 @@ describe('Multipart Upload API', () => {
             }, postBody);
             objectPutPart(authInfo, partRequest, undefined,
                 log, (err, result) => {
-                    assert.deepStrictEqual(err, errors.EntityTooLarge);
+                    assert.strictEqual(err.is.EntityTooLarge, true);
                     assert.strictEqual(result, undefined);
                     done();
                 });
@@ -691,7 +691,7 @@ describe('Multipart Upload API', () => {
                 };
                 completeMultipartUpload(authInfo,
                     completeRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.MalformedXML);
+                        assert.strictEqual(err.is.MalformedXML, true);
                         assert.strictEqual(metadata.keyMaps.get(mpuBucket).size,
                                            2);
                         done();
@@ -745,7 +745,7 @@ describe('Multipart Upload API', () => {
                     calculatedHash,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.MalformedXML);
+                    assert.strictEqual(err.is.MalformedXML, true);
                     done();
                 });
             });
@@ -818,8 +818,7 @@ describe('Multipart Upload API', () => {
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                errors.InvalidPartOrder);
+                            assert.strictEqual(err.is.InvalidPartOrder, true);
                             assert.strictEqual(metadata.keyMaps
                                                        .get(mpuBucket).size, 3);
                             done();
@@ -876,8 +875,7 @@ describe('Multipart Upload API', () => {
                     calculatedHash,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
-                    assert.deepStrictEqual(err,
-                        errors.InvalidPart);
+                    assert.strictEqual(err.is.InvalidPart, true);
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                     done();
                 });
@@ -950,7 +948,7 @@ describe('Multipart Upload API', () => {
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
-                            assert.deepStrictEqual(err, errors.InvalidPart);
+                            assert.strictEqual(err.is.InvalidPart, true);
                             done();
                         });
                 });
@@ -1032,8 +1030,7 @@ describe('Multipart Upload API', () => {
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
-                            assert.deepStrictEqual(err,
-                                                   errors.EntityTooSmall);
+                            assert.strictEqual(err.is.EntityTooSmall, true);
                             done();
                         });
                 });
@@ -1716,7 +1713,7 @@ describe('Multipart Upload API', () => {
 
         bucketPut(authInfo, bucketPutRequest, log, () =>
           objectPutPart(authInfo, partRequest, undefined, log, err => {
-              assert.strictEqual(err, errors.NoSuchUpload);
+              assert.strictEqual(err.is.NoSuchUpload, true);
               done();
           })
         );
@@ -1831,7 +1828,7 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     // expect a failure here because we could not
                     // remove the overview key
-                    assert.strictEqual(err, errors.InternalError);
+                    assert.strictEqual(err.is.InternalError, true);
                     next(null, eTag, testUploadId);
                 });
             },
@@ -2054,7 +2051,7 @@ describe('complete mpu with versioning', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     // expect a failure here because we could not
                     // remove the overview key
-                    assert.strictEqual(err, errors.InternalError);
+                    assert.strictEqual(err.is.InternalError, true);
                     next(null, eTag, testUploadId);
                 });
             },

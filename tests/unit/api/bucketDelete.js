@@ -112,7 +112,7 @@ describe('bucketDelete API', () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                 assert.strictEqual(err, null);
                 bucketDelete(authInfo, testRequest, log, err => {
-                    assert.deepStrictEqual(err, errors.BucketNotEmpty);
+                    assert(err.is.BucketNotEmpty);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getName(), bucketName);
                         metadata.listObject(usersBucket,
@@ -146,7 +146,7 @@ describe('bucketDelete API', () => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.deepStrictEqual(err, errors.NoSuchBucket);
+                    assert(err.is.NoSuchBucket);
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, { prefix: canonicalID },
                         log, (err, listResponse) => {
@@ -169,7 +169,7 @@ describe('bucketDelete API', () => {
     it('should prevent anonymous user delete bucket API access', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketDelete(publicAuthInfo, testRequest, log, err => {
-            assert.deepStrictEqual(err, errors.AccessDenied);
+            assert(err.is.AccessDenied);
             done();
         });
     });
