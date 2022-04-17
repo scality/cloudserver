@@ -79,7 +79,7 @@ describe('objectGetACL API', () => {
     'for a nonexistent object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectGetACL(authInfo, testGetACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchKey);
+                assert.strictEqual(err.is.NoSuchKey, true);
                 done();
             });
         });

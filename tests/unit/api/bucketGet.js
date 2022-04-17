@@ -199,7 +199,7 @@ describe('bucketGet API', () => {
         const testGetRequest = Object.assign({ query: { 'max-keys': '-1' } },
             baseGetRequest);
         bucketGet(authInfo, testGetRequest, log, err => {
-            assert.deepStrictEqual(err, errors.InvalidArgument);
+            assert(err.is.InvalidArgument);
             done();
         });
     });

@@ -126,7 +126,7 @@ describe('Multipart Delete API', () => {
     'exist and legacyAwsBehavior set to true',
     done => {
         _createAndAbortMpu(true, true, eastLocation, err => {
-            assert.strictEqual(err, errors.NoSuchUpload,
+            assert.strictEqual(err.is.NoSuchUpload, true,
                 `Expected NoSuchUpload, got ${err}`);
             done();
         });

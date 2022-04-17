@@ -81,7 +81,7 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
             }),
             next => deleteReplicationAndCheckResponse(bucket, next),
             next => s3.getBucketReplication({ Bucket: bucket }, err => {
-                assert(errors.ReplicationConfigurationNotFoundError[err.code]);
+                assert(errors.is.ReplicationConfigurationNotFoundError);
                 return next();
             }),
         ], done));

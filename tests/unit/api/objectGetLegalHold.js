@@ -61,7 +61,7 @@ describe('getObjectLegalHold API', () => {
         it('should return InvalidRequest error', done => {
             objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
                 err => {
-                    assert.strictEqual(err.InvalidRequest, true);
+                    assert.strictEqual(err.is.InvalidRequest, true);
                     done();
                 });
         });

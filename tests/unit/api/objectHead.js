@@ -60,7 +60,7 @@ describe('objectHead API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.NotModified);
+                        assert.strictEqual(err.is.NotModified, true);
                         done();
                     });
                 });
@@ -83,8 +83,7 @@ describe('objectHead API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
-                        assert.deepStrictEqual(err,
-                            errors.PreconditionFailed);
+                        assert.strictEqual(err.is.PreconditionFailed, true);
                         done();
                     });
                 });
@@ -107,8 +106,7 @@ describe('objectHead API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
-                        assert.deepStrictEqual(err,
-                            errors.PreconditionFailed);
+                        assert.strictEqual(err.is.PreconditionFailed, true);
                         done();
                     });
                 });
@@ -131,7 +129,7 @@ describe('objectHead API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
-                        assert.deepStrictEqual(err, errors.NotModified);
+                        assert.strictEqual(err.is.NotModified, true);
                         done();
                     });
                 });
