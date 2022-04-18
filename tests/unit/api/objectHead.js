@@ -182,7 +182,7 @@ describe('objectHead API', () => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidRequestError);
-                    assert.deepStrictEqual(err.InvalidRequest, true);
+                    assert.deepStrictEqual(err.is.InvalidRequest, true);
                     done();
                 });
             });
@@ -208,7 +208,7 @@ describe('objectHead API', () => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidArgumentError);
-                    assert.deepStrictEqual(err.InvalidArgument, true);
+                    assert.deepStrictEqual(err.is.InvalidArgument, true);
                     done();
                 });
             });

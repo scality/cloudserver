@@ -3,8 +3,6 @@ const async = require('async');
 const { parseString } = require('xml2js');
 const sinon = require('sinon');
 
-const { errors } = require('arsenal');
-
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { config } = require('../../../lib/Config');
 const services = require('../../../lib/services');
@@ -109,7 +107,7 @@ describe('Multipart Delete API', () => {
     it('should not return error if mpu exists with uploadId and at least ' +
     'one part', done => {
         _createAndAbortMpu(true, false, eastLocation, err => {
-            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            assert.ifError(err);
             done(err);
         });
     });
@@ -117,7 +115,7 @@ describe('Multipart Delete API', () => {
     it('should still not return error if uploadId does not exist on ' +
     'multipart abort call, in region other than us-east-1', done => {
         _createAndAbortMpu(true, true, westLocation, err => {
-            assert.strictEqual(err, null, `Expected no error, got ${err}`);
+            assert.ifError(err);
             done(err);
         });
     });
@@ -126,8 +124,7 @@ describe('Multipart Delete API', () => {
     'exist and legacyAwsBehavior set to true',
     done => {
         _createAndAbortMpu(true, true, eastLocation, err => {
-            assert.strictEqual(err, errors.NoSuchUpload,
-                `Expected NoSuchUpload, got ${err}`);
+            assert.strictEqual(err.is.NoSuchUpload, true);
             done();
         });
     });

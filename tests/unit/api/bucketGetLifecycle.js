@@ -28,7 +28,7 @@ describe('getBucketLifecycle API', () => {
     'bucket has no lifecycle', done => {
         const lifecycleRequest = getLifecycleRequest(bucketName);
         bucketGetLifecycle(authInfo, lifecycleRequest, log, err => {
-            assert.strictEqual(err.NoSuchLifecycleConfiguration, true);
+            assert.strictEqual(err.is.NoSuchLifecycleConfiguration, true);
             done();
         });
     });

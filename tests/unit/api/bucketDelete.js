@@ -146,7 +146,7 @@ describe('bucketDelete API', () => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.deepStrictEqual(err, errors.NoSuchBucket);
+                    assert.strictEqual(err.is.NoSuchBucket, true);
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, { prefix: canonicalID },
                         log, (err, listResponse) => {

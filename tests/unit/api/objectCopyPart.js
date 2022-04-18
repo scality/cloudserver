@@ -95,7 +95,7 @@ describe('objectCopyPart', () => {
         metadata.keyMaps.get(sourceBucketName).get(objectKey).dataStoreName = undefined;
         const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
         objectPutCopyPart(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
-            assert.ifError(err, `Unexpected err: ${err}`);
+            assert.ifError(err);
             done();
         });
     });
@@ -106,7 +106,7 @@ describe('objectCopyPart', () => {
             _createObjectCopyPartRequest(destBucketName, uploadId, headers);
         objectPutCopyPart(
             authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                assert(err.InvalidArgument);
+                assert(err.is.InvalidArgument);
                 assert.strictEqual(err.description,
                     'The x-amz-copy-source-range value must be of the form ' +
                     'bytes=first-last where first and last are the ' +
