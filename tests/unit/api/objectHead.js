@@ -16,9 +16,9 @@ const postBody = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
 const objectName = 'objectName';
-const date = new Date();
-const laterDate = date.setMinutes(date.getMinutes() + 30);
-const earlierDate = date.setMinutes(date.getMinutes() - 30);
+const masterDate = new Date();
+const laterDate = new Date().setMinutes(masterDate.getMinutes() + 30);
+const earlierDate = new Date().setMinutes(masterDate.getMinutes() - 30);
 const testPutBucketRequest = {
     bucketName,
     namespace,
