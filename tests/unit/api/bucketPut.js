@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 
 const { checkLocationConstraint } = require('../../../lib/api/bucketPut');
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -83,8 +82,8 @@ describe('checkLocationConstraint function', () => {
             if (testCheck.isError) {
                 assert.notEqual(checkLocation.error, null,
                   'Expected failure but got success');
-                assert.strictEqual(checkLocation.error.
-                  InvalidLocationConstraint, true);
+                assert.strictEqual(
+                    checkLocation.error.is.InvalidLocationConstraint, true);
             } else {
                 assert.ifError(checkLocation.error);
                 assert.strictEqual(checkLocation.locationConstraint,
@@ -105,7 +104,7 @@ describe('bucketPut API', () => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketPut(otherAuthInfo, testRequest,
                 log, err => {
-                    assert.strictEqual(err.is.BucketAlreadyExists);
+                    assert.strictEqual(err.is.BucketAlreadyExists, true);
                     done();
                 });
         });
@@ -233,7 +232,7 @@ describe('bucketPut API', () => {
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err.is.UnresolvableGrantByEmailAddress, true);
             metadata.getBucket(bucketName, log, err => {
-                assert.deepStrictEqual(err, errors.is.NoSuchBucket, true);
+                assert.strictEqual(err.is.NoSuchBucket, true);
                 done();
             });
         });
@@ -367,7 +366,7 @@ describe('bucketPut API', () => {
 
         it('should return error if location constraint config is not updated',
             done => bucketPut(authInfo, req, log, err => {
-                assert.strictEqual(err.is.InvalidLocationConstraint);
+                assert.strictEqual(err.is.InvalidLocationConstraint, true);
                 assert.strictEqual(err.description, 'value of the location you are ' +
                     `attempting to set - ${newLCKey} - is not listed in the ` +
                     'locationConstraint config');

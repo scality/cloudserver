@@ -37,8 +37,8 @@ const testPutObjectRequest = new DummyRequest({
 
 function _checkError(err, code, errorName) {
     assert(err, 'Expected error but found none');
+    assert.strictEqual(err.is[errorName], true);
     assert.strictEqual(err.code, code);
-    assert(err[errorName]);
 }
 
 function _generateSampleXml(key, value) {
