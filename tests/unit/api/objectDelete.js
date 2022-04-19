@@ -115,7 +115,7 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
-                                assert.strictEqual(err.is.NoSuchKey);
+                                assert.strictEqual(err.is.NoSuchKey, true);
                                 done();
                             });
                     });

@@ -84,7 +84,7 @@ describe('parseTagFromQuery', () => {
         it(`should ${behavior} if tag set: "${test.tagging}"`, done => {
             const result = parseTagFromQuery(test.tagging);
             if (test.error) {
-                assert(result[test.error.status]);
+                assert.strictEqual(result.is[test.error.status], true);
                 assert.strictEqual(result.code, test.error.statusCode);
             } else {
                 assert.deepStrictEqual(result, test.result);

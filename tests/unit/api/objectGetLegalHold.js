@@ -84,8 +84,7 @@ describe('getObjectLegalHold API', () => {
             done => {
                 objectGetLegalHold(authInfo, getObjectLegalHoldRequest, log,
                     err => {
-                        const error = err.NoSuchObjectLockConfiguration;
-                        assert.strictEqual(error, true);
+                        assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
                         done();
                     });
             });
