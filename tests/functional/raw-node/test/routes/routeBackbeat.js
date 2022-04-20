@@ -61,6 +61,17 @@ const testMd = {
     },
 };
 
+function checkObjectData(s3, objectKey, dataValue, done) {
+    s3.getObject({
+        Bucket: TEST_BUCKET,
+        Key: objectKey,
+    }, (err, data) => {
+        assert.ifError(err);
+        assert.strictEqual(data.Body.toString(), dataValue);
+        done();
+    });
+}
+
 /** makeBackbeatRequest - utility function to generate a request going
  * through backbeat route
  * @param {object} params - params for making request
@@ -492,14 +503,8 @@ describeSkipIfAWS('backbeat routes', () => {
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
-                setTimeout(() => s3.getObject({
-                    Bucket: TEST_BUCKET,
-                    Key: testKey,
-                }, (err, data) => {
-                    assert.ifError(err);
-                    assert.strictEqual(data.Body.toString(), testData);
-                    next();
-                }), 1000);
+                setTimeout(() => checkObjectData(s3, testKey, testData, next),
+                           1000);
             }, next => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
