@@ -68,7 +68,7 @@ describe('putObjectTagging API', () => {
 
     afterEach(cleanup);
 
-    it('should update an object\'s metadata with tags resource', done => {
+    it('should update an object\'s metadata with tags resource and update originOp', done => {
         const taggingUtil = new TaggingConfigTester();
         const testObjectPutTaggingRequest = taggingUtil
             .createObjectTaggingRequest('PUT', bucketName, objectName);
@@ -85,6 +85,7 @@ describe('putObjectTagging API', () => {
                 }
                 const uploadedTags = objectMD.tags;
                 assert.deepStrictEqual(uploadedTags, taggingUtil.getTags());
+                assert.strictEqual(objectMD.originOp, 's3:ObjectTagging:Put');
                 return done();
             });
         });
