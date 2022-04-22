@@ -22,7 +22,7 @@ describe('Healthcheck response', () => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                assert(resultKeys.includes(constraint));
+                assert(resultKeys.includes(constraint), `constraint: ${constraint} not in results: ${resultKeys}`);
             });
             done();
         });
