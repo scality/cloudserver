@@ -461,4 +461,116 @@ describe('putObjectACL API', () => {
                 });
         });
     });
+
+    [
+        { headers: { 'x-amz-acl': 'public-read-write' }, type: 'ACL' },
+        { headers: { 'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"' }, type: 'FULL_CONTROL' },
+        { headers: { 'x-amz-grant-read': `uri=${constants.logId}` }, type: 'READ' },
+        { headers: { 'x-amz-grant-read-acp': `id=${ownerID}` }, type: 'READ_ACP' },
+        { headers: { 'x-amz-grant-write-acp': `id=${anotherID}` }, type: 'WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'ALL' },
+        { headers: {
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'READ/READ_ACP/WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'FULL/READ_ACP/WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'FULL/READ/WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+        }, type: 'FULL/READ/READ_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read': `uri=${constants.logId}`,
+        }, type: 'FULL/READ' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+        }, type: 'FULL/READ_ACP' },
+        { headers: {
+            'x-amz-grant-full-control': 'emailaddress="sampleaccount1@sampling.com"',
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'FULL/WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+        }, type: 'READ/READ_ACP' },
+        { headers: {
+            'x-amz-grant-read': `uri=${constants.logId}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'READ/WRITE_ACP' },
+        { headers: {
+            'x-amz-grant-read-acp': `id=${ownerID}`,
+            'x-amz-grant-write-acp': `id=${anotherID}`,
+        }, type: 'READ_ACP/WRITE_ACP' },
+    ].forEach(params => {
+        const { headers, type } = params;
+        it(`should set originOp to s3:ObjectAcl:Put when ACL is changed (${type})`, done => {
+            const testObjACLRequest = {
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers,
+                url: `/${bucketName}/${objectName}?acl`,
+                query: { acl: '' },
+            };
+            bucketPut(authInfo, testPutBucketRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    (err, resHeaders) => {
+                        assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                        objectPutACL(authInfo, testObjACLRequest, log, err => {
+                            assert.strictEqual(err, null);
+                            metadata.getObjectMD(bucketName, objectName, {},
+                            log, (err, md) => {
+                                assert.strictEqual(md.originOp,
+                                's3:ObjectAcl:Put');
+                                done();
+                            });
+                        });
+                    });
+            });
+        });
+    });
+
+    it('should keep original originOp when ACL request do not produce change', done => {
+        const testObjACLRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { 'x-amz-acl': 'private' }, // keeping the default value
+            url: `/${bucketName}/${objectName}?acl`,
+            query: { acl: '' },
+        };
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    objectPutACL(authInfo, testObjACLRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        metadata.getObjectMD(bucketName, objectName, {},
+                        log, (err, md) => {
+                            assert.strictEqual(md.originOp,
+                            's3:ObjectCreated:Put');
+                            done();
+                        });
+                    });
+                });
+        });
+    });
 });
