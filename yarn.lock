@@ -298,6 +298,9 @@ ajv@^4.7.0:
   version "4.11.8"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-4.11.8.tgz#82ffb02b29e662ae53bdc20af15947706739c536"
   integrity sha1-gv+wKynmYq5TvcIK8VlHcGc5xTY=
+  dependencies:
+    co "^4.6.0"
+    json-stable-stringify "^1.0.1"
 
 ajv@^6.12.3:
   version "6.12.6"
@@ -388,9 +391,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-150/export-http-utils-for-cloudserver":
+"arsenal@git+https://github.com/scality/Arsenal#3c6742b60753fa2d7dfeefb79ef14538bec7ae36":
   version "7.10.18"
-  resolved "git+https://github.com/scality/Arsenal#1f1fd401c15aba79d459eb44f0d1620fa69c81e5"
+  resolved "git+https://github.com/scality/Arsenal#3c6742b60753fa2d7dfeefb79ef14538bec7ae36"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"

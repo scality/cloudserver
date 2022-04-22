@@ -19,6 +19,11 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
+    "us-west-1": {
+        "type": "mem",
+        "legacyAwsBehavior": false,
+        "details": {}
+    },
     "scality-us-west-1": {
         "type": "mem",
         "legacyAwsBehavior": false,

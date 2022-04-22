@@ -233,7 +233,6 @@ stages:
         env:
           <<: *file-mem-mpu
           <<: *global-env
-          S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
     steps:
       - Git: *clone
       - ShellCommand: *setup-github-ssh
@@ -250,6 +249,7 @@ stages:
           env:
             <<: *file-mem-mpu
             <<: *global-env
+            S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
       - ShellCommand: *check-s3-action-logs
       - ShellCommand: *setup-junit-upload
       - Upload: *upload-artifacts
