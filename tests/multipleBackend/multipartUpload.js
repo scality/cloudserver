@@ -46,7 +46,7 @@ const mpuBucket = `${constants.mpuBucketPrefix}${bucketName}`;
 const awsBucket = config.locationConstraints[awsLocation].details.bucketName;
 const smallBody = Buffer.from('I am a body', 'utf8');
 const bigBody = Buffer.alloc(10485760);
-const locMetaHeader = 'x-amz-meta-scal-location-constraint';
+const locMetaHeader = 'scal-location-constraint';
 const bucketPutRequest = {
     bucketName,
     namespace,
@@ -233,13 +233,12 @@ function assertObjOnBackend(expectedBackend, objectKey, cb) {
     return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
     (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
-        assert.strictEqual(metaHeaders[locMetaHeader], expectedBackend);
+        assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`], expectedBackend);
         if (expectedBackend === awsLocation) {
             return s3.headObject({ Bucket: awsBucket, Key: objectKey },
             (err, result) => {
                 assert.equal(err, null, 'Error on headObject call to AWS: ' +
                     `${err}`);
-                console.log('result!!!', result);
                 assert.strictEqual(result.Metadata[locMetaHeader], awsLocation);
                 return cb();
             });
@@ -825,7 +824,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     (uploadId, next) => {
                         const listParams = getListParams(objectKey, uploadId);
                         listParts(authInfo, listParams, log, err => {
-                            assert(err.NoSuchUpload);
+                            assert(err.is.NoSuchUpload);
                             next();
                         });
                     },

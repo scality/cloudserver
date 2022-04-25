@@ -148,7 +148,7 @@ errorPutCopyPart) {
             bucketName, sourceObjName, undefined, log, (err, copyResult) => {
                 if (errorPutCopyPart) {
                     assert.strictEqual(err.code, errorPutCopyPart.statusCode);
-                    assert(err[errorPutCopyPart.code]);
+                    assert(err.is[errorPutCopyPart.code]);
                     return cb();
                 }
                 assert.strictEqual(err, null);
