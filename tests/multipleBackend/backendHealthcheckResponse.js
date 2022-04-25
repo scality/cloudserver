@@ -71,8 +71,7 @@ describe('Healthcheck response', () => {
                 const azureLocationNonExistContainerError =
                     results[azureLocationNonExistContainer].error;
                 if (err) {
-                    assert.strictEqual(err, errors.InternalError,
-                        `got unexpected err in clientCheck: ${err}`);
+                    assert(err.is.InternalError, `got unexpected err in clientCheck: ${err}`);
                     assert(azureLocationNonExistContainerError.startsWith(
                         'The specified container is being deleted.'));
                     return done();

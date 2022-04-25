@@ -239,6 +239,7 @@ function assertObjOnBackend(expectedBackend, objectKey, cb) {
             (err, result) => {
                 assert.equal(err, null, 'Error on headObject call to AWS: ' +
                     `${err}`);
+                console.log('result!!!', result);
                 assert.strictEqual(result.Metadata[locMetaHeader], awsLocation);
                 return cb();
             });
@@ -513,8 +514,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const fakeKey = `key-${Date.now()}`;
         const delParams = getDeleteParams(fakeKey, fakeUploadId);
         multipartDelete(authInfo, delParams, log, err => {
-            assert.equal(err, errors.NoSuchUpload,
-                `Error aborting MPU: ${err}`);
+            assert(err.is.NoSuchUpload, `Error aborting MPU: ${err}`);
             done();
         });
     });
