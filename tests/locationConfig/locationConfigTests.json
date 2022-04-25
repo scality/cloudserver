@@ -132,7 +132,7 @@
         "details": {
             "gcpEndpoint": "storage.googleapis.com",
             "bucketName": "zenko-gcp-bucket-2",
-            "mpuBucketName": "zenko-gcp-mpu",
+            "mpuBucketName": "zenko-gcp-mpu-2",
             "overflowBucketName": "zenko-gcp-overflow",
             "bucketMatch": true,
             "credentialsProfile": "google_2",
