@@ -73,7 +73,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 bucketUtil.s3.createBucket({
                     Bucket: bucketName,
                     CreateBucketConfiguration: {
-                        LocationConstraint: 'us-west-1',
+                        LocationConstraint: 'scality-us-west-1',
                     },
                 }, error => {
                     assert.notEqual(error, null,
