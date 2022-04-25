@@ -393,7 +393,7 @@ arraybuffer.slice@~0.0.7:
 
 "arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-150/export-http-utils-for-cloudserver-n2b":
   version "7.10.18"
-  resolved "git+https://github.com/scality/Arsenal#dcb2c46a5cfab42f7e03f28af6c7cfcf82a6b619"
+  resolved "git+https://github.com/scality/Arsenal#4c3098c13ed675a08d236109d494e46860176b80"
   dependencies:
     "@hapi/joi" "^15.1.0"
     JSONStream "^1.0.0"
