@@ -4,6 +4,7 @@ const { series } = require('async');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { errors } = require('arsenal');
 
 const bucket = 'source-bucket';
 
@@ -44,7 +45,7 @@ describe('aws-node-sdk test getBucketReplication', () => {
     it("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
     'not have a replication configuration', done =>
         s3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(err.is.ReplicationConfigurationNotFoundError);
+            assert(errors.ReplicationConfigurationNotFoundError.is[err.code]);
             return done();
         }));
 

@@ -4,6 +4,7 @@ const { series } = require('async');
 
 const getConfig = require('../support/config');
 const BucketUtility = require('../../lib/utility/bucket-util');
+const { errors } = require('arsenal');
 
 const bucket = 'source-bucket';
 const replicationConfig = {
@@ -80,7 +81,7 @@ describe('aws-node-sdk test deleteBucketReplication', () => {
             }),
             next => deleteReplicationAndCheckResponse(bucket, next),
             next => s3.getBucketReplication({ Bucket: bucket }, err => {
-                assert(err.is.ReplicationConfigurationNotFoundError);
+                assert(errors.ReplicationConfigurationNotFoundError.is[err.code]);
                 return next();
             }),
         ], done));
