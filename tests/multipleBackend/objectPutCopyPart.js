@@ -5,14 +5,14 @@ const AWS = require('aws-sdk');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const { bucketPut } = require('../../lib/api/bucketPut');
 const initiateMultipartUpload
     = require('../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const constants = require('../../constants');
 
 const s3 = new AWS.S3();
@@ -148,7 +148,7 @@ errorPutCopyPart) {
             bucketName, sourceObjName, undefined, log, (err, copyResult) => {
                 if (errorPutCopyPart) {
                     assert.strictEqual(err.code, errorPutCopyPart.statusCode);
-                    assert(err[errorPutCopyPart.code]);
+                    assert(err.is[errorPutCopyPart.code]);
                     return cb();
                 }
                 assert.strictEqual(err, null);

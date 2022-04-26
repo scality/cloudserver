@@ -174,10 +174,6 @@ const constants = {
         'bucket',
     ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
-    // The AWS assumed Role resource type
-    assumedRoleArnResourceType: 'assumed-role',
-    // Session name of the backbeat lifecycle assumed role session.
-    backbeatLifecycleSessionName: 'backbeat-lifecycle',
 };
 
 module.exports = constants;

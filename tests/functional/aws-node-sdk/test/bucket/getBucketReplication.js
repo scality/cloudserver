@@ -45,7 +45,7 @@ describe('aws-node-sdk test getBucketReplication', () => {
     it("should return 'ReplicationConfigurationNotFoundError' if bucket does " +
     'not have a replication configuration', done =>
         s3.getBucketReplication({ Bucket: bucket }, err => {
-            assert(errors.ReplicationConfigurationNotFoundError[err.code]);
+            assert(errors.ReplicationConfigurationNotFoundError.is[err.code]);
             return done();
         }));
 

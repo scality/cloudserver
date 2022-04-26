@@ -328,10 +328,10 @@ describe('objectGet API', () => {
                 },
             ],
             (err, calculatedHash) => {
-                assert.strictEqual(err, null);
+                assert.ifError(err);
                 objectGet(authInfo, testGetRequest, false, log,
                 (err, dataGetInfo) => {
-                    assert.strictEqual(err, null);
+                    assert.ifError(err);
                     assert.deepStrictEqual(dataGetInfo,
                         [{
                             key: 1,

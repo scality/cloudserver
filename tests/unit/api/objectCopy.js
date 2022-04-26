@@ -5,7 +5,7 @@ const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const objectCopy = require('../../../lib/api/objectCopy');
-const { ds } = require('../../../lib/data/in_memory/backend');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
