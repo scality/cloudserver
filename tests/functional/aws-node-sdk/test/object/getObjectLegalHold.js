@@ -86,7 +86,7 @@ describe('GET object legal hold', () => {
             s3.getObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '000000000000',
+                VersionId: '012345678901234567890123456789012',
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();
