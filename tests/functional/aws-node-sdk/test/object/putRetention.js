@@ -79,7 +79,7 @@ describe('PUT object retention', () => {
             s3.putObjectRetention({
                 Bucket: bucketName,
                 Key: objectName,
-                VersionId: '000000000000',
+                VersionId: '012345678901234567890123456789012',
                 Retention: retentionConfig,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
