@@ -5,8 +5,8 @@ const { errors } = require('arsenal');
 const routesUtils = require('arsenal').s3routes.routesUtils;
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
-const data = require('../../../lib/data/wrapper');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
+const { data } = require('../../../lib/data/wrapper');
 
 const responseStreamData = routesUtils.responseStreamData;
 const log = new DummyRequestLogger();

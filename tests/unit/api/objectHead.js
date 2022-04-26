@@ -18,8 +18,9 @@ const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const incorrectMD5 = 'fkjwelfjlslfksdfsdfsdfsdfsdfsdj';
 const objectName = 'objectName';
 const date = new Date();
-const laterDate = date.setMinutes(date.getMinutes() + 30);
-const earlierDate = date.setMinutes(date.getMinutes() - 30);
+const laterDate = new Date().setMinutes(date.getMinutes() + 30);
+const earlierDate = new Date().setMinutes(date.getMinutes() - 30);
+
 const testPutBucketRequest = {
     bucketName,
     namespace,
@@ -81,6 +82,7 @@ describe('objectHead API', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
                 (err, resHeaders) => {
+                    assert.ifError(err);
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectHead(authInfo, testGetRequest, log, err => {
                         assert.deepStrictEqual(err,
@@ -180,7 +182,7 @@ describe('objectHead API', () => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidRequestError);
-                    assert.deepStrictEqual(err.InvalidRequest, true);
+                    assert.deepStrictEqual(err.is.InvalidRequest, true);
                     done();
                 });
             });
@@ -206,7 +208,7 @@ describe('objectHead API', () => {
                 assert.strictEqual(err, null, `Error objectPut: ${err}`);
                 objectHead(authInfo, testGetRequest, log, err => {
                     assert.deepStrictEqual(err, customizedInvalidArgumentError);
-                    assert.deepStrictEqual(err.InvalidArgument, true);
+                    assert.deepStrictEqual(err.is.InvalidArgument, true);
                     done();
                 });
             });

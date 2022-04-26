@@ -70,7 +70,7 @@ describe('putBucketPolicy API', () => {
         expectedBucketPolicy.Statement[0].Resource = 'arn:aws::s3:::badname';
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy),
         log, err => {
-            assert.strictEqual(err.MalformedPolicy, true);
+            assert.strictEqual(err.is.MalformedPolicy, true);
             assert.strictEqual(err.description, 'Policy has invalid resource');
             return done();
         });
@@ -81,7 +81,7 @@ describe('putBucketPolicy API', () => {
             { StringEquals: { 's3:x-amz-acl': ['public-read'] } };
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
         err => {
-            assert.strictEqual(err.NotImplemented, true);
+            assert.strictEqual(err.is.NotImplemented, true);
             done();
         });
     });
@@ -90,7 +90,7 @@ describe('putBucketPolicy API', () => {
         expectedBucketPolicy.Statement[0].Principal = { Service: ['test.com'] };
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
         err => {
-            assert.strictEqual(err.NotImplemented, true);
+            assert.strictEqual(err.is.NotImplemented, true);
             done();
         });
     });
@@ -100,7 +100,7 @@ describe('putBucketPolicy API', () => {
             { Federated: 'www.test.com' };
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
         err => {
-            assert.strictEqual(err.NotImplemented, true);
+            assert.strictEqual(err.is.NotImplemented, true);
             done();
         });
     });

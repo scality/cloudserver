@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const { errors, versioning } = require('arsenal');
+const { versioning } = require('arsenal');
 const { config } = require('../../../../lib/Config');
 const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 
@@ -415,7 +415,7 @@ describe('versioning helpers', () => {
                     versionId: 'v1',
                 },
                 reqVersionId: 'null',
-                expectedError: errors.NoSuchKey,
+                expectedError: 'NoSuchKey',
             },
         ].forEach(testCase => it(testCase.description, done => {
             const mockBucketMD = {
@@ -425,7 +425,7 @@ describe('versioning helpers', () => {
                 'foobucket', mockBucketMD, testCase.objMD,
                 testCase.reqVersionId, null, (err, options) => {
                     if (testCase.expectedError) {
-                        assert.strictEqual(err, testCase.expectedError);
+                        assert.strictEqual(err.is[testCase.expectedError], true);
                     } else {
                         assert.ifError(err);
                         assert.deepStrictEqual(options, testCase.expectedRes);

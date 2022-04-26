@@ -1,6 +1,8 @@
 const assert = require('assert');
-const utils = require('../../../lib/data/external/utils');
+const utils = require('arsenal').storage.data.external.backendUtils;
 const BucketInfo = require('arsenal').models.BucketInfo;
+
+const { config } = require('../../../lib/Config');
 
 const userBucketOwner = 'Bart';
 const creationDate = new Date().toJSON();
@@ -136,7 +138,7 @@ describe('Testing Config.js function: ', () => {
         'and destination location constraint ===' +
         ` ${result.destLocationConstraintName} and ${result.description}`,
         done => {
-            const isCopy = utils.externalBackendCopy(
+            const isCopy = utils.externalBackendCopy(config,
               result.sourceLocationConstraintName,
               result.destLocationConstraintName, result.sourceBucketMD,
               result.destBucketMD);

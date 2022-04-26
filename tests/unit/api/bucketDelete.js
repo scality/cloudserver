@@ -10,7 +10,7 @@ const constants = require('../../../constants');
 const initiateMultipartUpload
     = require('../../../lib/api/initiateMultipartUpload');
 const metadata = require('../metadataswitch');
-const metadataMem = require('../../../lib/metadata/in_memory/metadata');
+const metadataMem = require('arsenal').storage.metadata.inMemory.metadata;
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
@@ -146,7 +146,7 @@ describe('bucketDelete API', () => {
         bucketPut(authInfo, testRequest, log, () => {
             bucketDelete(authInfo, testRequest, log, () => {
                 metadata.getBucket(bucketName, log, (err, md) => {
-                    assert.deepStrictEqual(err, errors.NoSuchBucket);
+                    assert.strictEqual(err.is.NoSuchBucket, true);
                     assert.strictEqual(md, undefined);
                     metadata.listObject(usersBucket, { prefix: canonicalID },
                         log, (err, listResponse) => {
