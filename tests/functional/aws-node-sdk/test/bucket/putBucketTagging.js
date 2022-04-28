@@ -174,4 +174,27 @@ describe('aws-sdk test put bucket tagging', () => {
             done(err);
         });
     });
+
+    it('should return accessDenied if expected bucket owner does not match', done => {
+        async.waterfall([
+            next => s3.putBucketTagging({ AccountId: s3.AccountId,
+                Tagging: validEmptyTagging, Bucket: bucket, ExpectedBucketOwner: '944690102203' }, (err, res) => {
+                next(err, res);
+            }), //TODO when getBucketTagging is done
+        ], (err) => {
+            assertError(err, 'AccessDenied', done);
+        });
+    });
+
+    it('should not return accessDenied if expected bucket owner matches', done => {
+        async.waterfall([
+            next => s3.putBucketTagging({ AccountId: s3.AccountId,
+                Tagging: validEmptyTagging, Bucket: bucket, ExpectedBucketOwner: s3.AccountId }, (err, res) => {
+                next(err, res);
+            }), //TODO when getBucketTagging is done
+        ], (err) => {
+            assert.ifError(err);
+            done(err);
+        });
+    });
 });
