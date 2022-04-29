@@ -208,8 +208,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        assert(err.is.UnresolvableGrantByEmailAddress);
                         done();
                     });
                 });
@@ -342,8 +341,7 @@ describe('putObjectACL API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectPutACL(authInfo, testObjACLRequest, log, err => {
-                        assert.strictEqual(err,
-                            errors.UnresolvableGrantByEmailAddress);
+                        assert(err.is.UnresolvableGrantByEmailAddress);
                         done();
                     });
                 });

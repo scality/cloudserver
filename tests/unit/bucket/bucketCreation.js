@@ -1,5 +1,3 @@
-const { errors } = require('arsenal');
-
 const assert = require('assert');
 
 const { cleanup, DummyRequestLogger } = require('../helpers');
@@ -45,7 +43,7 @@ describe('bucket creation', () => {
         it('should return 409 if try to recreate in non-us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
             normalBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err, errors.BucketAlreadyOwnedByYou);
+                assert(err.is.BucketAlreadyOwnedByYou);
                 done();
             });
         });
@@ -64,7 +62,7 @@ describe('bucket creation', () => {
         it('should return 409 if try to recreate in us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
             specialBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err, errors.BucketAlreadyOwnedByYou);
+                assert(err.is.BucketAlreadyOwnedByYou);
                 done();
             });
         });

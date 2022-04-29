@@ -1716,7 +1716,7 @@ describe('Multipart Upload API', () => {
 
         bucketPut(authInfo, bucketPutRequest, log, () =>
           objectPutPart(authInfo, partRequest, undefined, log, err => {
-              assert.strictEqual(err, errors.NoSuchUpload);
+              assert(err.is.NoSuchUpload);
               done();
           })
         );
@@ -1831,7 +1831,7 @@ describe('Multipart Upload API', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     // expect a failure here because we could not
                     // remove the overview key
-                    assert.strictEqual(err, errors.InternalError);
+                    assert(err.is.InternalError);
                     next(null, eTag, testUploadId);
                 });
             },
@@ -2054,7 +2054,7 @@ describe('complete mpu with versioning', () => {
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     // expect a failure here because we could not
                     // remove the overview key
-                    assert.strictEqual(err, errors.InternalError);
+                    assert(err.is.InternalError);
                     next(null, eTag, testUploadId);
                 });
             },
