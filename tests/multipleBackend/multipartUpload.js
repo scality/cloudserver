@@ -513,7 +513,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const fakeKey = `key-${Date.now()}`;
         const delParams = getDeleteParams(fakeKey, fakeUploadId);
         multipartDelete(authInfo, delParams, log, err => {
-            assert.equal(err, errors.NoSuchUpload,
+            assert(err.is.NoSuchUpload,
                 `Error aborting MPU: ${err}`);
             done();
         });
