@@ -37,7 +37,7 @@ describe('objectLockHelpers: validateHeaders', () => {
             = validateHeaders(objLockDisabledBucketInfo, headers, log);
         const expectedError = errors.InvalidRequest.customizeDescription(
             'Bucket is missing ObjectLockConfiguration');
-        assert.strictEqual(objectLockValidationError.InvalidRequest, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidRequest, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -90,7 +90,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         const expectedError = errors.InvalidArgument.customizeDescription(
             'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' +
             'must both be supplied');
-        assert.strictEqual(objectLockValidationError.InvalidArgument, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -104,7 +104,7 @@ describe('objectLockHelpers: validateHeaders', () => {
         const expectedError = errors.InvalidArgument.customizeDescription(
             'x-amz-object-lock-retain-until-date and x-amz-object-lock-mode ' +
             'must both be supplied');
-        assert.strictEqual(objectLockValidationError.InvalidArgument, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -118,7 +118,7 @@ describe('objectLockHelpers: validateHeaders', () => {
             'The retain until date must be in the future!');
         const objectLockValidationError
             = validateHeaders(bucketInfo, headers, log);
-        assert.strictEqual(objectLockValidationError.InvalidArgument, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -131,7 +131,7 @@ describe('objectLockHelpers: validateHeaders', () => {
             = validateHeaders(bucketInfo, headers, log);
         const expectedError = errors.InvalidArgument.customizeDescription(
             'Legal hold status must be one of "ON", "OFF"');
-        assert.strictEqual(objectLockValidationError.InvalidArgument, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -145,7 +145,7 @@ describe('objectLockHelpers: validateHeaders', () => {
             = validateHeaders(bucketInfo, headers, log);
         const expectedError = errors.InvalidArgument.customizeDescription(
             'Unknown wormMode directive');
-        assert.strictEqual(objectLockValidationError.InvalidArgument, true);
+        assert.strictEqual(objectLockValidationError.is.InvalidArgument, true);
         assert.strictEqual(objectLockValidationError.description,
             expectedError.description);
     });
@@ -207,7 +207,7 @@ describe('objectLockHelpers: validateObjectLockUpdate', () => {
         };
 
         const error = validateObjectLockUpdate(objMD, retentionInfo, false);
-        assert.deepStrictEqual(error, errors.AccessDenied);
+        assert.strictEqual(error.is.AccessDenied, true);
     });
 
     it('should disallow COMPLIANCE => GOVERNANCE if retention is not expired', () => {
@@ -222,7 +222,7 @@ describe('objectLockHelpers: validateObjectLockUpdate', () => {
         };
 
         const error = validateObjectLockUpdate(objMD, retentionInfo);
-        assert.deepStrictEqual(error, errors.AccessDenied);
+        assert.strictEqual(error.is.AccessDenied, true);
     });
 
     it('should allow COMPLIANCE => GOVERNANCE if retention is expired', () => {
@@ -267,7 +267,7 @@ describe('objectLockHelpers: validateObjectLockUpdate', () => {
         };
 
         const error = validateObjectLockUpdate(objMD, retentionInfo);
-        assert.deepStrictEqual(error, errors.AccessDenied);
+        assert.strictEqual(error.is.AccessDenied, true);
     });
 
     it('should allow shortening retention period if in GOVERNANCE', () => {

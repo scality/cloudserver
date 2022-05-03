@@ -425,7 +425,7 @@ describe('versioning helpers', () => {
                 'foobucket', mockBucketMD, testCase.objMD,
                 testCase.reqVersionId, null, (err, options) => {
                     if (testCase.expectedError) {
-                        assert.strictEqual(err, testCase.expectedError);
+                        assert.strictEqual(err.is[testCase.expectedError.type], true);
                     } else {
                         assert.ifError(err);
                         assert.deepStrictEqual(options, testCase.expectedRes);

@@ -1,7 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const constants = require('../../../constants');
@@ -79,7 +78,7 @@ describe('objectGetACL API', () => {
     'for a nonexistent object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectGetACL(authInfo, testGetACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.NoSuchKey);
+                assert.strictEqual(err.is.NoSuchKey, true);
                 done();
             });
         });

@@ -93,8 +93,7 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         objectGet(authInfo, testGetObjectRequest, false,
                             log, err => {
-                                assert.deepStrictEqual(err,
-                                    errors.NoSuchKey);
+                                assert.strictEqual(err.is.NoSuchKey, true);
                                 done();
                             });
                     });
@@ -183,7 +182,7 @@ describe('objectDelete API', () => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectDelete(publicAuthInfo, testDeleteRequest, log, err => {
-                assert.deepStrictEqual(err, errors.AccessDenied);
+                assert.strictEqual(err.is.AccessDenied, true);
                 done();
             });
         });

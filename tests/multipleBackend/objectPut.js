@@ -58,7 +58,7 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
             resHeaders) => {
             if (errorDescription) {
                 assert.strictEqual(err.code, 400);
-                assert(err.InvalidArgument);
+                assert(err.is.InvalidArgument);
                 assert(err.description.indexOf(errorDescription) > -1);
             } else {
                 assert.strictEqual(err, null, `Error putting object: ${err}`);

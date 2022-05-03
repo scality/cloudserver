@@ -1,7 +1,6 @@
 const assert = require('assert');
 const moment = require('moment');
 
-const { errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutRetention = require('../../../lib/api/objectPutRetention');
@@ -99,7 +98,7 @@ describe('putObjectRetention API', () => {
 
         it('should return InvalidRequest error', done => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
-                assert.strictEqual(err.InvalidRequest, true);
+                assert.strictEqual(err.is.InvalidRequest, true);
                 done();
             });
         });
@@ -134,7 +133,7 @@ describe('putObjectRetention API', () => {
             objectPutRetention(authInfo, putObjRetRequestCompliance, log, err => {
                 assert.ifError(err);
                 return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
-                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    assert.strictEqual(err.is.AccessDenied, true);
                     done();
                 });
             });
@@ -144,7 +143,7 @@ describe('putObjectRetention API', () => {
             objectPutRetention(authInfo, putObjRetRequestCompliance, log, err => {
                 assert.ifError(err);
                 return objectPutRetention(authInfo, putObjRetRequestComplianceShorter, log, err => {
-                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    assert.strictEqual(err.is.AccessDenied, true);
                     done();
                 });
             });
@@ -155,7 +154,7 @@ describe('putObjectRetention API', () => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.ifError(err);
                 return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
-                    assert.deepStrictEqual(err, errors.AccessDenied);
+                    assert.strictEqual(err.is.AccessDenied, true);
                     done();
                 });
             });
