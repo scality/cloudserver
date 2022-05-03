@@ -15,7 +15,7 @@ function checkError(xml, expectedErr, cb) {
         if (expectedErr === null) {
             assert.strictEqual(err, null, `expected no error but got '${err}'`);
         } else {
-            assert(err[expectedErr], 'incorrect error response: should be ' +
+            assert(err.is[expectedErr], 'incorrect error response: should be ' +
                 `'Error: ${expectedErr}' but got '${err}'`);
         }
         return cb();

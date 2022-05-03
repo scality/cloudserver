@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const AWS = require('aws-sdk');
 const { parseString } = require('xml2js');
-const { errors, models } = require('arsenal');
+const { models } = require('arsenal');
 
 const BucketInfo = models.BucketInfo;
 const { getRealAwsConfig } =
@@ -475,8 +475,8 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     if (isCEPH) {
                         wantedDesc = 'Error returned from AWS: null';
                     }
-                    assert.deepStrictEqual(err, errors.ServiceUnavailable
-                      .customizeDescription(wantedDesc));
+                    assert.strictEqual(err.is.ServiceUnavailable, true);
+                    assert.deepStrictEqual(err.description, wantedDesc);
                     done();
                 });
             });
@@ -527,7 +527,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const fakeKey = `key-${Date.now()}`;
         const delParams = getDeleteParams(fakeKey, fakeUploadId);
         multipartDelete(authInfo, delParams, log, err => {
-            assert.equal(err, errors.NoSuchUpload,
+            assert.strictEqual(err.is.NoSuchUpload, true,
                 `Error aborting MPU: ${err}`);
             done();
         });
@@ -653,7 +653,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const compParams = getCompleteParams(objectKey, uploadId);
             compParams.post = errorBody;
             completeMultipartUpload(authInfo, compParams, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidPart);
+                assert.strictEqual(err.is.InvalidPart, true);
                 done();
             });
         });
@@ -675,7 +675,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             const compParams = getCompleteParams(objectKey, uploadId);
             compParams.post = errorBody;
             completeMultipartUpload(authInfo, compParams, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidPartOrder);
+                assert.strictEqual(err.is.InvalidPartOrder, true);
                 done();
             });
         });
@@ -704,7 +704,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 const compParams = getCompleteParams(objectKey, uploadId);
                 compParams.post = errorBody;
                 completeMultipartUpload(authInfo, compParams, log, err => {
-                    assert.deepStrictEqual(err, errors.EntityTooSmall);
+                    assert.strictEqual(err.is.EntityTooSmall, true);
                     done();
                 });
             });
@@ -842,7 +842,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     (uploadId, next) => {
                         const listParams = getListParams(objectKey, uploadId);
                         listParts(authInfo, listParams, log, err => {
-                            assert(err.NoSuchUpload);
+                            assert.strictEqual(err.is.NoSuchUpload, true);
                             next();
                         });
                     },

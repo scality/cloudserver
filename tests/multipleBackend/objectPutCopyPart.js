@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
-const { storage } = require('arsenal');
+const { storage, errors } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
@@ -154,8 +154,7 @@ errorPutCopyPart) {
         return objectPutCopyPart(authInfo, copyPartReq,
             bucketName, sourceObjName, undefined, log, (err, copyResult) => {
                 if (errorPutCopyPart) {
-                    assert.strictEqual(err.code, errorPutCopyPart.statusCode);
-                    assert(err[errorPutCopyPart.code]);
+                    assert.strictEqual(err.is[errorPutCopyPart.type], true);
                     return cb();
                 }
                 assert.strictEqual(err, null);
@@ -300,9 +299,8 @@ function testSuite() {
     itSkipCeph('should return error 403 AccessDenied copying part to a ' +
     'different AWS location without object READ access',
     done => {
-        const errorPutCopyPart = { code: 'AccessDenied', statusCode: 403 };
         copyPutPart(null, awsLocation, awsLocation2, 'localhost', done,
-        errorPutCopyPart);
+            errors.AccessDenied);
     });
 
 

@@ -1,7 +1,6 @@
 const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
-const { errors } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const constants = require('../../../constants');
@@ -79,7 +78,7 @@ describe('serviceGet API', () => {
     it('should prevent anonymous user from accessing getService API', done => {
         const publicAuthInfo = makeAuthInfo(constants.publicId);
         serviceGet(publicAuthInfo, serviceGetRequest, log, err => {
-            assert.deepStrictEqual(err, errors.AccessDenied);
+            assert.strictEqual(err.is.AccessDenied, true);
             done();
         });
     });

@@ -43,5 +43,8 @@
         "new-parens": "off",
         "no-multi-spaces": "off",
         "quote-props": "off"
+    },
+    "parserOptions": {
+        "ecmaVersion": 2020
     }
 }

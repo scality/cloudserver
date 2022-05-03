@@ -30,7 +30,7 @@ describe('Replication Backend Compare', () => {
     it('should return error if no match in replication backends', () => {
         const repBackendResult =
             getReplicationBackendDataLocator(locCheckResult, repNoMatch);
-        assert(repBackendResult.error.InvalidLocationConstraint);
+        assert.strictEqual(repBackendResult.error.is.InvalidLocationConstraint, true);
     });
     it('should return a status and reason if backend status is PENDING', () => {
         const repBackendResult =

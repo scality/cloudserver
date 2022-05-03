@@ -2,8 +2,6 @@ const assert = require('assert');
 const async = require('async');
 const { parseString } = require('xml2js');
 
-const { errors } = require('arsenal');
-
 const { cleanup, DummyRequestLogger } = require('../helpers');
 const { config } = require('../../../lib/Config');
 const DummyRequest = require('../DummyRequest');
@@ -123,7 +121,7 @@ describe('Multipart Delete API', () => {
     'exist and legacyAwsBehavior set to true',
     done => {
         _createAndAbortMpu(true, true, eastLocation, err => {
-            assert.strictEqual(err, errors.NoSuchUpload,
+            assert.strictEqual(err.is.NoSuchUpload, true,
                 `Expected NoSuchUpload, got ${err}`);
             done();
         });

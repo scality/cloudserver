@@ -9,6 +9,9 @@ const changeObjectLock = require('../../../../utilities/objectLock-util');
 const bucketName = 'lockenabledputbucket';
 const unlockedBucket = 'locknotenabledputbucket';
 const objectName = 'putobjectretentionobject';
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
 
 const retentionConfig = {
     Mode: 'GOVERNANCE',
@@ -82,7 +85,7 @@ describeSkipIfCeph('PUT object retention', () => {
             s3.putObjectRetention({
                 Bucket: bucketName,
                 Key: objectName,
-                VersionId: '000000000000',
+                VersionId: nonExistingId,
                 Retention: retentionConfig,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);

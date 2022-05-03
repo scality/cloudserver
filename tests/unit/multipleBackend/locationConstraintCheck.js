@@ -40,7 +40,7 @@ describe('Location Constraint Check', () => {
             createTestRequest('fail-region'), null, testBucket, log);
         assert.strictEqual(backendInfoObj.err.code, 400,
             'Expected "Invalid Argument" code error');
-        assert(backendInfoObj.err.InvalidArgument, 'Expected "Invalid ' +
+        assert(backendInfoObj.err.is.InvalidArgument, 'Expected "Invalid ' +
         'Argument" error');
         done();
     });

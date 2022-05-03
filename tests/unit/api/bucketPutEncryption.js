@@ -25,7 +25,7 @@ describe('bucketPutEncryption API', () => {
     describe('test invalid sse configs', () => {
         it('should reject an empty config', done => {
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post: '' }), log, err => {
-                assert.strictEqual(err.MalformedXML, true);
+                assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
         });
@@ -36,7 +36,7 @@ describe('bucketPutEncryption API', () => {
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 </ServerSideEncryptionConfiguration>`,
             }), log, err => {
-                assert.strictEqual(err.MalformedXML, true);
+                assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
         });
@@ -48,7 +48,7 @@ describe('bucketPutEncryption API', () => {
                 <Rule></Rule>
                 </ServerSideEncryptionConfiguration>`,
             }), log, err => {
-                assert.strictEqual(err.MalformedXML, true);
+                assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
         });
@@ -56,7 +56,7 @@ describe('bucketPutEncryption API', () => {
         it('should reject a config with no SSEAlgorithm', done => {
             const post = templateSSEConfig({});
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
-                assert.strictEqual(err.MalformedXML, true);
+                assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
         });
@@ -64,7 +64,7 @@ describe('bucketPutEncryption API', () => {
         it('should reject a config with an invalid SSEAlgorithm', done => {
             const post = templateSSEConfig({ algorithm: 'InvalidAlgo' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
-                assert.strictEqual(err.MalformedXML, true);
+                assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
         });
@@ -72,7 +72,7 @@ describe('bucketPutEncryption API', () => {
         it('should reject a config with SSEAlgorithm == AES256 and a provided KMSMasterKeyID', done => {
             const post = templateSSEConfig({ algorithm: 'AES256', keyId: '12345' });
             bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
-                assert.strictEqual(err.InvalidArgument, true);
+                assert.strictEqual(err.is.InvalidArgument, true);
                 done();
             });
         });

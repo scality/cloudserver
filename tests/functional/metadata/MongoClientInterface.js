@@ -221,7 +221,7 @@ runIfMongo('MongoClientInterface', () => {
                 // new version entry should not have been created
                 (id, next) => getObject({ versionId: id }, err => {
                     assert(err);
-                    assert(err.NoSuchKey);
+                    assert(err.is.NoSuchKey);
                     return next();
                 }),
             ], done);

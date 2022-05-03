@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const moment = require('moment');
-const { errors, s3middleware, storage } = require('arsenal');
+const { s3middleware, storage } = require('arsenal');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
@@ -86,7 +86,7 @@ describe('parseTagFromQuery', () => {
         it(`should ${behavior} if tag set: "${test.tagging}"`, done => {
             const result = parseTagFromQuery(test.tagging);
             if (test.error) {
-                assert(result[test.error.status]);
+                assert.strictEqual(result.is[test.error.status], true);
                 assert.strictEqual(result.code, test.error.statusCode);
             } else {
                 assert.deepStrictEqual(result, test.result);
@@ -114,7 +114,7 @@ describe('objectPut API', () => {
 
     it('should return an error if the bucket does not exist', done => {
         objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-            assert.deepStrictEqual(err, errors.NoSuchBucket);
+            assert.strictEqual(err.is.NoSuchBucket, true);
             done();
         });
     });
@@ -125,7 +125,7 @@ describe('objectPut API', () => {
             log, () => {
                 objectPut(authInfo, testPutObjectRequest,
                     undefined, log, err => {
-                        assert.deepStrictEqual(err, errors.AccessDenied);
+                        assert.strictEqual(err.is.AccessDenied, true);
                         done();
                     });
             });
@@ -136,7 +136,7 @@ describe('objectPut API', () => {
         testPutObjectRequest.parsedContentLength = maximumAllowedUploadSize + 1;
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.deepStrictEqual(err, errors.EntityTooLarge);
+                assert.strictEqual(err.is.EntityTooLarge, true);
                 done();
             });
         });
@@ -464,9 +464,8 @@ describe('objectPut API', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
-                assert.deepStrictEqual(err, errors.InvalidRequest
-                    .customizeDescription(
-                        'Bucket is missing ObjectLockConfiguration'));
+                assert.strictEqual(err.is.InvalidRequest, true);
+                assert.strictEqual(err.description, 'Bucket is missing ObjectLockConfiguration');
                 done();
             });
         });
@@ -605,7 +604,7 @@ describe('objectPut API with versioning', () => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
             err => {
-                assert.deepStrictEqual(err, errors.BadDigest);
+                assert.strictEqual(err.is.BadDigest, true);
                 // orphan objects don't get deleted
                 // until the next tick
                 // in memory

@@ -117,7 +117,7 @@ describe('Part size tests with object head', () => {
                 partNumbers.forEach(part => {
                     it(`should return the size of part ${part + 1} ` +
                         `when --part-number is set to ${part + 1}`, done => {
-                        const partNumber = Number.parseInt(part, 0) + 1;
+                        const partNumber = Number.parseInt(part, 10) + 1;
                         const partSize = bodySize + partNumber;
 
                         s3.headObject({ Bucket: bucket, Key: object, PartNumber: partNumber }, (err, data) => {

@@ -138,7 +138,7 @@ describe('bucketPutVersioning API', () => {
                 next => {
                     const request = _putVersioningRequest(xmlSuspendVersioning);
                     bucketPutVersioning(authInfo, request, log, err => {
-                        assert(err.InvalidBucketState);
+                        assert(err.is.InvalidBucketState);
                         next();
                     });
                 },

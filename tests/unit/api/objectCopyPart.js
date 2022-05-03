@@ -110,7 +110,7 @@ describe('objectCopyPart', () => {
             _createObjectCopyPartRequest(destBucketName, uploadId, headers);
         objectPutCopyPart(
             authInfo, req, sourceBucketName, objectKey, undefined, log, err => {
-                assert(err.InvalidArgument);
+                assert.strictEqual(err.is.InvalidArgument, true);
                 assert.strictEqual(err.description,
                     'The x-amz-copy-source-range value must be of the form ' +
                     'bytes=first-last where first and last are the ' +

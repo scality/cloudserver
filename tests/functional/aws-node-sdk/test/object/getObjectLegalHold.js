@@ -12,6 +12,10 @@ const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
 const key = 'mock-object-legalhold';
 const keyNoHold = 'mock-object-no-legalhold';
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
+
 
 const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe;
@@ -89,7 +93,7 @@ describeSkipIfCeph('GET object legal hold', () => {
             s3.getObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '000000000000',
+                VersionId: nonExistingId,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();

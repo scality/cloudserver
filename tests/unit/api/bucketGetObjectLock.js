@@ -74,7 +74,7 @@ describe('bucketGetObjectLock API', () => {
         'object lock is not enabled on the bucket', done => {
         const objectLockRequest = getObjectLockConfigRequest(bucketName);
         bucketGetObjectLock(authInfo, objectLockRequest, log, err => {
-            assert.strictEqual(err.ObjectLockConfigurationNotFoundError, true);
+            assert.strictEqual(err.is.ObjectLockConfigurationNotFoundError, true);
             done();
         });
     });
