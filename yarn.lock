@@ -418,9 +418,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#7.10.21":
-  version "7.10.21"
-  resolved "git+https://github.com/scality/Arsenal#c80887399699f14edc52aa69bdbe6d37a53f0883"
+"arsenal@git+https://github.com/scality/Arsenal#7.10.24":
+  version "7.10.24"
+  resolved "git+https://github.com/scality/Arsenal#d97a218170820fa3e20d4276f90fcf7f0f6df077"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -438,6 +438,7 @@ arraybuffer.slice@~0.0.7:
     diskusage "^1.1.1"
     fcntl "github:scality/node-fcntl#0.2.0"
     hdclient scality/hdclient#1.1.0
+    https-proxy-agent "^2.2.0"
     ioredis "^4.28.5"
     ipaddr.js "1.9.1"
     joi "^17.6.0"
@@ -2389,7 +2390,7 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
-https-proxy-agent@^2.2.1:
+https-proxy-agent@^2.2.0, https-proxy-agent@^2.2.1:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-2.2.4.tgz#4ee7a737abd92678a293d9b34a1af4d0d08c787b"
   integrity sha512-OmvfoQ53WLjtA9HeYP9RNrWMJzzAz1JGaSFr1nijg0PVR1JaD/xbJq1mdEIIlxGpXp9eSe/O2LgU9DJmTPd0Eg==
