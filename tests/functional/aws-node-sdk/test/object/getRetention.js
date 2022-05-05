@@ -13,6 +13,9 @@ const bucketName = 'lockenabledbucket';
 const unlockedBucket = 'locknotenabledbucket';
 const objectName = 'putobjectretentionobject';
 const noRetentionObject = 'objectwithnoretention';
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
 
 const retainDate = moment().add(1, 'days').toISOString();
 
@@ -106,7 +109,7 @@ describe('GET object retention', () => {
             s3.getObjectRetention({
                 Bucket: bucketName,
                 Key: objectName,
-                VersionId: '000000000000',
+                VersionId: nonExistingId,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();

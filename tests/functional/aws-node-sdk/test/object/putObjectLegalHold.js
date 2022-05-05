@@ -8,6 +8,9 @@ const changeObjectLock = require('../../../../utilities/objectLock-util');
 const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
 const key = 'mock-object';
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
 
 const mockLegalHold = {
     empty: {},
@@ -98,7 +101,7 @@ describe('PUT object legal hold', () => {
             s3.putObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '000000000000',
+                VersionId: nonExistingId,
                 LegalHold: mockLegalHold.on,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);

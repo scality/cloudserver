@@ -12,6 +12,10 @@ const bucket = 'mock-bucket-lock';
 const unlockedBucket = 'mock-bucket-no-lock';
 const key = 'mock-object-legalhold';
 const keyNoHold = 'mock-object-no-legalhold';
+const nonExistingId = process.env.AWS_ON_AIR ?
+    'MhhyTHhmZ4cxSi4Y9SMe5P7UJAz7HLJ9' :
+    '3939393939393939393936493939393939393939756e6437';
+
 
 describe('GET object legal hold', () => {
     withV4(sigCfg => {
@@ -82,11 +86,11 @@ describe('GET object legal hold', () => {
             });
         });
 
-        it('should return NoSuchVersion error if version does not exist', done => {
+        it('should return NoSuchVersion error if version does not exist1', done => {
             s3.getObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '000000000000',
+                VersionId: nonExistingId,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();
