@@ -86,7 +86,7 @@ describe('GET object legal hold', () => {
             });
         });
 
-        it('should return NoSuchVersion error if version does not exist1', done => {
+        it('should return NoSuchVersion error if version does not exist', done => {
             s3.getObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
