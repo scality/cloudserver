@@ -77,6 +77,25 @@ describe('PUT object', () => {
                 });
             });
 
+        it.only('should put an object with key slash',
+            done => {
+                const params = { Bucket: bucket, Key: 'okok' };
+                const request = s3.putBucketLifecycleConfiguration(params);
+                // modify underlying http request object created by aws sdk to add
+                // origin header
+                request.on('build', () => {
+                    request.httpRequest.headers['x-scal-s3-version-id'] = 'qtJlDTD';
+                });
+                request.on('success', response => {
+                    assert(!response, 'expected error but got success');
+                    return done();
+                });
+                request.on('error', err => {
+                    assert.strictEqual(err, null, `expected no error but got '${err}'`);
+                });
+                request.send();
+            });
+
         it('should return error if putting object w/ > 2KB user-defined md',
             done => {
                 const metadata = genMaxSizeMetaHeaders();
