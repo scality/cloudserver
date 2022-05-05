@@ -12,7 +12,7 @@ const partCount = 10000;
 const eTag = require('crypto').createHash('md5').update(body).digest('hex');
 const finalETag = require('crypto').createHash('md5')
     .update(Buffer.from(eTag.repeat(partCount), 'hex').toString('binary'),
-            'binary').digest('hex');
+        'binary').digest('hex');
 
 function uploadPart(n, uploadId, s3, next) {
     const params = {
@@ -84,8 +84,8 @@ describe('large mpu', function tester() {
                 process.stdout.write('putting parts');
                 return timesLimit(partCount, 20, (n, cb) =>
                     uploadPart(n, uploadId, s3, cb), err =>
-                        next(err)
-                    );
+                    next(err),
+                );
             },
             next => {
                 const parts = [];
@@ -119,7 +119,7 @@ describe('large mpu', function tester() {
                             return next(err);
                         }
                         assert.strictEqual(data.ETag,
-                                `"${finalETag}-${partCount}"`);
+                            `"${finalETag}-${partCount}"`);
                         return next();
                     });
             },

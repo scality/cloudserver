@@ -172,7 +172,7 @@ describe('objectPut API', () => {
                         {}, log, (err, md) => {
                             assert(md);
                             assert
-                            .strictEqual(md['content-md5'], correctMD5);
+                                .strictEqual(md['content-md5'], correctMD5);
                             done();
                         });
                 });
@@ -354,11 +354,11 @@ describe('objectPut API', () => {
                         (err, md) => {
                             assert(md);
                             assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
+                                'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
-                                        'some more metadata');
+                                'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
-                                        'even more metadata');
+                                'even more metadata');
                             done();
                         });
                 });
@@ -393,11 +393,11 @@ describe('objectPut API', () => {
                             assert(md);
                             assert.strictEqual(md.location, null);
                             assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
+                                'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
+                                'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
+                                'even more metadata');
                             done();
                         });
                 });
@@ -418,19 +418,19 @@ describe('objectPut API', () => {
                 undefined, log, () => {
                     objectPut(authInfo, testPutObjectRequest2, undefined,
                         log,
-                    () => {
+                        () => {
                         // orphan objects don't get deleted
                         // until the next tick
                         // in memory
-                        setImmediate(() => {
+                            setImmediate(() => {
                             // Data store starts at index 1
-                            assert.strictEqual(ds[0], undefined);
-                            assert.strictEqual(ds[1], undefined);
-                            assert.deepStrictEqual(ds[2].value,
-                                Buffer.from('I am another body', 'utf8'));
-                            done();
+                                assert.strictEqual(ds[0], undefined);
+                                assert.strictEqual(ds[1], undefined);
+                                assert.deepStrictEqual(ds[2].value,
+                                    Buffer.from('I am another body', 'utf8'));
+                                done();
+                            });
                         });
-                    });
                 });
         });
     });
@@ -562,19 +562,19 @@ describe('objectPut API with versioning', () => {
         });
 
         it('should still delete null version when creating new null version',
-        done => {
-            objectPut(authInfo, testPutObjectRequests[2], undefined,
-                log, err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
-                    setImmediate(() => {
+            done => {
+                objectPut(authInfo, testPutObjectRequests[2], undefined,
+                    log, err => {
+                        assert.ifError(err, `Unexpected err: ${err}`);
+                        setImmediate(() => {
                         // old null version should be deleted after putting
                         // new null version
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, objData[1], objData[2]]);
-                        done(err);
+                            versioningTestUtils.assertDataStoreValues(ds,
+                                [undefined, objData[1], objData[2]]);
+                            done(err);
+                        });
                     });
-                });
-        });
+            });
     });
 
     it('should return BadDigest error and not leave orphans in data when ' +
@@ -590,18 +590,18 @@ describe('objectPut API with versioning', () => {
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
-            err => {
-                assert.strictEqual(err.is.BadDigest, true);
-                // orphan objects don't get deleted
-                // until the next tick
-                // in memory
-                setImmediate(() => {
+                err => {
+                    assert.strictEqual(err.is.BadDigest, true);
+                    // orphan objects don't get deleted
+                    // until the next tick
+                    // in memory
+                    setImmediate(() => {
                     // Data store starts at index 1
-                    assert.strictEqual(ds[0], undefined);
-                    assert.strictEqual(ds[1], undefined);
-                    done();
+                        assert.strictEqual(ds[0], undefined);
+                        assert.strictEqual(ds[1], undefined);
+                        done();
+                    });
                 });
-            });
         });
     });
 });

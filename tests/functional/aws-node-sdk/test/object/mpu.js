@@ -86,19 +86,19 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             s3 = bucketUtil.s3;
 
             return s3.createBucket({ Bucket: bucket }).promise()
-            .then(() => bucketUtil.getOwner())
-            .then(res => {
+                .then(() => bucketUtil.getOwner())
+                .then(res => {
                 // The owner of the bucket will also be the MPU upload owner.
-                data.displayName = res.DisplayName;
-                data.userId = res.ID;
-            })
-            .then(() => s3.createMultipartUpload({
-                Bucket: bucket,
-                Key: objectKey,
-            }).promise())
-            .then(res => {
-                data.uploadId = res.UploadId;
-            });
+                    data.displayName = res.DisplayName;
+                    data.userId = res.ID;
+                })
+                .then(() => s3.createMultipartUpload({
+                    Bucket: bucket,
+                    Key: objectKey,
+                }).promise())
+                .then(res => {
+                    data.uploadId = res.UploadId;
+                });
         });
 
         afterEach(() =>
@@ -107,13 +107,13 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
                 Key: objectKey,
                 UploadId: data.uploadId,
             }).promise()
-            .then(() => bucketUtil.empty(bucket))
-            .then(() => bucketUtil.deleteOne(bucket))
+                .then(() => bucketUtil.empty(bucket))
+                .then(() => bucketUtil.deleteOne(bucket)),
         );
 
         it('should list ongoing multipart uploads', () =>
             s3.listMultipartUploads({ Bucket: bucket }).promise()
-            .then(res => checkValues(res, data))
+                .then(res => checkValues(res, data)),
         );
 
         it('should list ongoing multipart uploads with params', () => {
@@ -127,7 +127,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
                 Delimiter: 'test-delimiter',
                 MaxUploads: 1,
             }).promise()
-            .then(res => checkValues(res, data));
+                .then(res => checkValues(res, data));
         });
 
         it('should list 0 multipart uploads when MaxUploads is 0', () => {
@@ -137,7 +137,7 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
                 Bucket: bucket,
                 MaxUploads: 0,
             }).promise()
-            .then(res => checkValues(res, data));
+                .then(res => checkValues(res, data));
         });
-    })
+    }),
 );

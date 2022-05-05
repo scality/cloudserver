@@ -55,21 +55,21 @@ function getAwsError(key, expectedError, cb) {
 function awsGetCheck(objectKey, s3MD5, awsMD5, location, cb) {
     process.stdout.write('Getting object\n');
     s3.getObject({ Bucket: bucket, Key: objectKey },
-    function s3GetCallback(err, res) {
-        if (err && err.code === 'NetworkingError') {
-            return setTimeout(() => {
-                process.stdout.write('Getting object retry\n');
-                s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
-            }, retryTimeout);
-        }
-        assert.strictEqual(err, null, 'Expected success, got error ' +
+        function s3GetCallback(err, res) {
+            if (err && err.code === 'NetworkingError') {
+                return setTimeout(() => {
+                    process.stdout.write('Getting object retry\n');
+                    s3.getObject({ Bucket: bucket, Key: objectKey }, s3GetCallback);
+                }, retryTimeout);
+            }
+            assert.strictEqual(err, null, 'Expected success, got error ' +
         `on call to AWS through S3: ${err}`);
-        assert.strictEqual(res.ETag, `"${s3MD5}"`);
-        assert.strictEqual(res.Metadata['scal-location-constraint'],
-            location);
-        process.stdout.write('Getting object from AWS\n');
-        return getAwsSuccess(objectKey, awsMD5, location, cb);
-    });
+            assert.strictEqual(res.ETag, `"${s3MD5}"`);
+            assert.strictEqual(res.Metadata['scal-location-constraint'],
+                location);
+            process.stdout.write('Getting object from AWS\n');
+            return getAwsSuccess(objectKey, awsMD5, location, cb);
+        });
 }
 
 describe('MultipleBackend put object', function testSuite() {
@@ -84,37 +84,37 @@ describe('MultipleBackend put object', function testSuite() {
                 s3.createBucketPromise = createEncryptedBucketPromise;
             }
             return s3.createBucketPromise({ Bucket: bucket })
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         it.skip('should return an error to put request without a valid ' +
         'bucket name',
-            done => {
-                const key = `somekey-${Date.now()}`;
-                s3.putObject({ Bucket: '', Key: key }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 'MethodNotAllowed');
-                    done();
-                });
+        done => {
+            const key = `somekey-${Date.now()}`;
+            s3.putObject({ Bucket: '', Key: key }, err => {
+                assert.notEqual(err, null,
+                    'Expected failure but got success');
+                assert.strictEqual(err.code, 'MethodNotAllowed');
+                done();
             });
+        });
 
         describeSkipIfNotMultiple('with set location from "x-amz-meta-scal-' +
             'location-constraint" header', function describe() {
@@ -163,12 +163,12 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     s3.getObject({ Bucket: bucket, Key: key },
-                    (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
+                        (err, res) => {
+                            assert.strictEqual(err, null, 'Expected success, ' +
                         `got error ${err}`);
-                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                        done();
-                    });
+                            assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                            done();
+                        });
                 });
             });
 
@@ -181,7 +181,7 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected success, ' +
                     `got error ${err}`);
                     return awsGetCheck(key, emptyMD5, emptyMD5, awsLocation,
-                      () => done());
+                        () => done());
                 });
             });
 
@@ -212,7 +212,7 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     return awsGetCheck(key, correctMD5, correctMD5, awsLocation,
-                      () => done());
+                        () => done());
                 });
             });
 
@@ -241,7 +241,7 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected success, ' +
                         `got error ${err}`);
                     return awsGetCheck(key, correctMD5, correctMD5,
-                      awsLocationEncryption, () => done());
+                        awsLocationEncryption, () => done());
                 });
             });
 
@@ -275,7 +275,7 @@ describe('MultipleBackend put object', function testSuite() {
                     assert.equal(err, null, 'Expected sucess, ' +
                         `got error ${err}`);
                     return awsGetCheck(key, bigS3MD5, bigAWSMD5, awsLocation,
-                      () => done());
+                        () => done());
                 });
             });
 
@@ -294,14 +294,14 @@ describe('MultipleBackend put object', function testSuite() {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
                         return s3.getObject({ Bucket: bucket, Key: key },
-                        (err, res) => {
-                            assert.equal(err, null, 'Expected success, ' +
+                            (err, res) => {
+                                assert.equal(err, null, 'Expected success, ' +
                                 `got error ${err}`);
-                            assert.strictEqual(
-                                res.Metadata['scal-location-constraint'],
-                                fileLocation);
-                            return getAwsError(key, 'NoSuchKey', done);
-                        });
+                                assert.strictEqual(
+                                    res.Metadata['scal-location-constraint'],
+                                    fileLocation);
+                                return getAwsError(key, 'NoSuchKey', done);
+                            });
                     });
                 });
             });
@@ -342,11 +342,11 @@ describe('MultipleBackend put object', function testSuite() {
                         assert.equal(err, null, 'Expected success, ' +
                             `got error ${err}`);
                         return awsGetCheck(key, correctMD5, correctMD5,
-                        awsLocation, result => {
-                            assert.strictEqual(result.Metadata
-                                ['unique-header'], 'second object');
-                            done();
-                        });
+                            awsLocation, result => {
+                                assert.strictEqual(result.Metadata
+                                    ['unique-header'], 'second object');
+                                done();
+                            });
                     });
                 });
             });
@@ -355,96 +355,96 @@ describe('MultipleBackend put object', function testSuite() {
 });
 
 describeSkipIfNotMultiple('MultipleBackend put object based on bucket location',
-() => {
-    withV4(sigCfg => {
-        beforeEach(() => {
-            bucketUtil = new BucketUtility('default', sigCfg);
-            s3 = bucketUtil.s3;
-        });
-
-        afterEach(() => {
-            process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
+    () => {
+        withV4(sigCfg => {
+            beforeEach(() => {
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
             });
-        });
 
-        it('should put an object to mem with no location header',
-        done => {
-            process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
-                CreateBucketConfiguration: {
-                    LocationConstraint: memLocation,
-                },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${Date.now()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
+            afterEach(() => {
+                process.stdout.write('Emptying bucket\n');
+                return bucketUtil.empty(bucket)
+                    .then(() => {
+                        process.stdout.write('Deleting bucket\n');
+                        return bucketUtil.deleteOne(bucket);
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error in afterEach: ${err}\n`);
+                        throw err;
+                    });
+            });
+
+            it('should put an object to mem with no location header',
+                done => {
+                    process.stdout.write('Creating bucket\n');
+                    return s3.createBucket({ Bucket: bucket,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: memLocation,
+                        },
+                    }, err => {
+                        assert.equal(err, null, `Error creating bucket: ${err}`);
+                        process.stdout.write('Putting object\n');
+                        const key = `somekey-${Date.now()}`;
+                        const params = { Bucket: bucket, Key: key, Body: body };
+                        return s3.putObject(params, err => {
+                            assert.equal(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
+                            s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                                assert.strictEqual(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
+                                assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                                done();
+                            });
+                        });
+                    });
+                });
+
+            it('should put an object to file with no location header', done => {
+                process.stdout.write('Creating bucket\n');
+                return s3.createBucket({ Bucket: bucket,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: fileLocation,
+                    },
+                }, err => {
+                    assert.equal(err, null, `Error creating bucket: ${err}`);
+                    process.stdout.write('Putting object\n');
+                    const key = `somekey-${Date.now()}`;
+                    const params = { Bucket: bucket, Key: key, Body: body };
+                    return s3.putObject(params, err => {
+                        assert.equal(err, null, 'Expected success, ' +
+                        `got error ${JSON.stringify(err)}`);
+                        s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
+                            assert.strictEqual(err, null, 'Expected success, ' +
+                        `got error ${JSON.stringify(err)}`);
+                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                            done();
+                        });
                     });
                 });
             });
-        });
 
-        it('should put an object to file with no location header', done => {
-            process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
-                CreateBucketConfiguration: {
-                    LocationConstraint: fileLocation,
-                },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${Date.now()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                    s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
-                        assert.strictEqual(err, null, 'Expected success, ' +
-                        `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                        done();
+            it('should put an object to AWS with no location header', done => {
+                process.stdout.write('Creating bucket\n');
+                return s3.createBucket({ Bucket: bucket,
+                    CreateBucketConfiguration: {
+                        LocationConstraint: awsLocation,
+                    },
+                }, err => {
+                    assert.equal(err, null, `Error creating bucket: ${err}`);
+                    process.stdout.write('Putting object\n');
+                    const key = `somekey-${Date.now()}`;
+                    const params = { Bucket: bucket, Key: key, Body: body };
+                    return s3.putObject(params, err => {
+                        assert.equal(err, null,
+                            `Expected success, got error ${err}`);
+                        return awsGetCheck(key, correctMD5, correctMD5, undefined,
+                            () => done());
                     });
-                });
-            });
-        });
-
-        it('should put an object to AWS with no location header', done => {
-            process.stdout.write('Creating bucket\n');
-            return s3.createBucket({ Bucket: bucket,
-                CreateBucketConfiguration: {
-                    LocationConstraint: awsLocation,
-                },
-            }, err => {
-                assert.equal(err, null, `Error creating bucket: ${err}`);
-                process.stdout.write('Putting object\n');
-                const key = `somekey-${Date.now()}`;
-                const params = { Bucket: bucket, Key: key, Body: body };
-                return s3.putObject(params, err => {
-                    assert.equal(err, null,
-                        `Expected success, got error ${err}`);
-                    return awsGetCheck(key, correctMD5, correctMD5, undefined,
-                        () => done());
                 });
             });
         });
     });
-});
 
 describe('MultipleBackend put based on request endpoint', () => {
     withV4(sigCfg => {
@@ -455,14 +455,14 @@ describe('MultipleBackend put based on request endpoint', () => {
         after(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in after: ${err}\n`);
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in after: ${err}\n`);
+                    throw err;
+                });
         });
 
         it('should create bucket in corresponding backend', done => {
@@ -488,12 +488,12 @@ describe('MultipleBackend put based on request endpoint', () => {
                             `got error ${JSON.stringify(err)}`);
                         assert.strictEqual(data.LocationConstraint, endpoint);
                         s3.getObject({ Bucket: bucket, Key: key },
-                        (err, res) => {
-                            assert.strictEqual(err, null, 'Expected succes, ' +
+                            (err, res) => {
+                                assert.strictEqual(err, null, 'Expected succes, ' +
                                 `got error ${JSON.stringify(err)}`);
-                            assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                            done();
-                        });
+                                assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                                done();
+                            });
                     });
                 });
             });

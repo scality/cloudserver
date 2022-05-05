@@ -48,10 +48,10 @@ describe('aws-sdk test get bucket notification', () => {
 
         it('should return AccessDenied if user is not bucket owner', done => {
             otherAccountS3.getBucketNotificationConfiguration({ Bucket: bucket },
-            err => {
-                assertError(err, 'AccessDenied');
-                done();
-            });
+                err => {
+                    assertError(err, 'AccessDenied');
+                    done();
+                });
         });
 
         it('should not return an error if no notification configuration ' +
@@ -69,11 +69,11 @@ describe('aws-sdk test get bucket notification', () => {
             }, err => {
                 assert.equal(err, null, `Err putting notification config: ${err}`);
                 s3.getBucketNotificationConfiguration({ Bucket: bucket },
-                (err, res) => {
-                    assert.equal(err, null, `Error getting notification config: ${err}`);
-                    assert.deepStrictEqual(res.QueueConfigurations, notificationConfig.QueueConfigurations);
-                    done();
-                });
+                    (err, res) => {
+                        assert.equal(err, null, `Error getting notification config: ${err}`);
+                        assert.deepStrictEqual(res.QueueConfigurations, notificationConfig.QueueConfigurations);
+                        done();
+                    });
             });
         });
     });

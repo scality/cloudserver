@@ -42,14 +42,14 @@ describe('DELETE object taggings', () => {
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucketName)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucketName);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucketName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should delete tag set', done => {
@@ -60,33 +60,33 @@ describe('DELETE object taggings', () => {
             }, err => {
                 assert.ifError(err, `putObjectTagging error: ${err}`);
                 s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
-                (err, data) => {
-                    assert.ifError(err, `Found unexpected err ${err}`);
-                    assert.strictEqual(Object.keys(data).length, 0);
-                    done();
-                });
+                    (err, data) => {
+                        assert.ifError(err, `Found unexpected err ${err}`);
+                        assert.strictEqual(Object.keys(data).length, 0);
+                        done();
+                    });
             });
         });
 
         it('should delete a non-existing tag set', done => {
             s3.deleteObjectTagging({ Bucket: bucketName, Key: objectName },
-            (err, data) => {
-                assert.ifError(err, `Found unexpected err ${err}`);
-                assert.strictEqual(Object.keys(data).length, 0);
-                done();
-            });
+                (err, data) => {
+                    assert.ifError(err, `Found unexpected err ${err}`);
+                    assert.strictEqual(Object.keys(data).length, 0);
+                    done();
+                });
         });
 
         it('should return NoSuchKey deleting tag set to a non-existing object',
-        done => {
-            s3.deleteObjectTagging({
-                Bucket: bucketName,
-                Key: 'nonexisting',
-            }, err => {
-                _checkError(err, 'NoSuchKey', 404);
-                done();
+            done => {
+                s3.deleteObjectTagging({
+                    Bucket: bucketName,
+                    Key: 'nonexisting',
+                }, err => {
+                    _checkError(err, 'NoSuchKey', 404);
+                    done();
+                });
             });
-        });
         it('should return 403 AccessDenied deleting tag set with another ' +
         'account', done => {
             otherAccountS3.deleteObjectTagging({ Bucket: bucketName, Key:

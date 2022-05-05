@@ -322,33 +322,33 @@ describe('objectGet API', () => {
                         post: completeBody,
                     };
                     completeMultipartUpload(authInfo, completeRequest,
-                                            log, err => {
-                                                next(err, calculatedHash);
-                                            });
+                        log, err => {
+                            next(err, calculatedHash);
+                        });
                 },
             ],
             (err, calculatedHash) => {
                 assert.strictEqual(err, null);
                 objectGet(authInfo, testGetRequest, false, log,
-                (err, dataGetInfo) => {
-                    assert.strictEqual(err, null);
-                    assert.deepStrictEqual(dataGetInfo,
-                        [{
-                            key: 1,
-                            dataStoreName: 'mem',
-                            dataStoreETag: `1:${calculatedHash}`,
-                            size: 5242880,
-                            start: 0,
-                        },
-                        {
-                            key: 2,
-                            dataStoreName: 'mem',
-                            dataStoreETag: `2:${calculatedHash}`,
-                            size: 12,
-                            start: 5242880,
-                        }]);
-                    done();
-                });
+                    (err, dataGetInfo) => {
+                        assert.strictEqual(err, null);
+                        assert.deepStrictEqual(dataGetInfo,
+                            [{
+                                key: 1,
+                                dataStoreName: 'mem',
+                                dataStoreETag: `1:${calculatedHash}`,
+                                size: 5242880,
+                                start: 0,
+                            },
+                            {
+                                key: 2,
+                                dataStoreName: 'mem',
+                                dataStoreETag: `2:${calculatedHash}`,
+                                size: 12,
+                                start: 5242880,
+                            }]);
+                        done();
+                    });
             });
         });
 
@@ -372,15 +372,15 @@ describe('objectGet API', () => {
                 (err, resHeaders) => {
                     assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
                     objectGet(authInfo, testGetRequest, false,
-                    log, (err, result, responseMetaHeaders) => {
-                        assert.strictEqual(result, null);
-                        assert.strictEqual(
-                            responseMetaHeaders[userMetadataKey],
-                            userMetadataValue);
-                        assert.strictEqual(responseMetaHeaders.ETag,
-                            `"${correctMD5}"`);
-                        done();
-                    });
+                        log, (err, result, responseMetaHeaders) => {
+                            assert.strictEqual(result, null);
+                            assert.strictEqual(
+                                responseMetaHeaders[userMetadataKey],
+                                userMetadataValue);
+                            assert.strictEqual(responseMetaHeaders.ETag,
+                                `"${correctMD5}"`);
+                            done();
+                        });
                 });
         });
     });

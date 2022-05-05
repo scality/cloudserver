@@ -25,11 +25,11 @@ describe('Put object with same key as prior object', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+                .then(created => {
+                    bucketName = created;
+                    done();
+                })
+                .catch(done);
         });
 
         beforeEach(() => s3.putObject({
@@ -38,7 +38,7 @@ describe('Put object with same key as prior object', () => {
             Body: 'I am the best content ever',
             Metadata: firstPutMetadata,
         }).promise().then(() =>
-            s3.headObject({ Bucket: bucketName, Key: objectName }).promise()
+            s3.headObject({ Bucket: bucketName, Key: objectName }).promise(),
         ).then(res => {
             assert.deepStrictEqual(res.Metadata, firstPutMetadata);
         }));
@@ -54,7 +54,7 @@ describe('Put object with same key as prior object', () => {
                 Body: 'Much different',
                 Metadata: secondPutMetadata,
             }).promise().then(() =>
-                s3.getObject({ Bucket: bucketName, Key: objectName }).promise()
+                s3.getObject({ Bucket: bucketName, Key: objectName }).promise(),
             ).then(res => {
                 assert.deepStrictEqual(res.Metadata, secondPutMetadata);
                 assert.deepStrictEqual(res.Body.toString(),

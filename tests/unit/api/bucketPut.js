@@ -70,7 +70,7 @@ describe('checkLocationConstraint function', () => {
     });
     testChecks.forEach(testCheck => {
         const returnText = testCheck.isError ? 'InvalidLocationConstraint error'
-        : 'the appropriate location constraint';
+            : 'the appropriate location constraint';
         it(`with data backend: "${testCheck.data}", ` +
         `location: "${testCheck.locationSent}",` +
         ` and host: "${testCheck.parsedHost}", should return ${returnText} `,
@@ -78,16 +78,16 @@ describe('checkLocationConstraint function', () => {
             config.backends.data = testCheck.data;
             request.parsedHost = testCheck.parsedHost;
             const checkLocation = checkLocationConstraint(request,
-              testCheck.locationSent, log);
+                testCheck.locationSent, log);
             if (testCheck.isError) {
                 assert.notEqual(checkLocation.error, null,
-                  'Expected failure but got success');
+                    'Expected failure but got success');
                 assert.strictEqual(
                     checkLocation.error.is.InvalidLocationConstraint, true);
             } else {
                 assert.ifError(checkLocation.error);
                 assert.strictEqual(checkLocation.locationConstraint,
-                  testCheck.locationReturn);
+                    testCheck.locationReturn);
             }
             done();
         });
@@ -293,13 +293,13 @@ describe('bucketPut API', () => {
                 assert.strictEqual(md.getAcl().READ[0], constants.logId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.publicId);
                 assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
+                    .FULL_CONTROL.indexOf(canonicalIDforSample1) > -1);
                 assert(md.getAcl()
-                       .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
+                    .FULL_CONTROL.indexOf(canonicalIDforSample2) > -1);
                 assert(md.getAcl()
-                       .READ_ACP.indexOf(canonicalIDforSample1) > -1);
+                    .READ_ACP.indexOf(canonicalIDforSample1) > -1);
                 assert(md.getAcl()
-                       .WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
+                    .WRITE_ACP.indexOf(canonicalIDforSample2) > -1);
                 done();
             });
         });

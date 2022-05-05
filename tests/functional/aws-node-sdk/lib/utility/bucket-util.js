@@ -25,12 +25,12 @@ class BucketUtility {
             Bucket: bucketName,
             ObjectLockEnabledForBucket: true,
         }).promise()
-        .then(() => bucketName);
+            .then(() => bucketName);
     }
 
     createMany(bucketNames) {
         const promises = bucketNames.map(
-            bucketName => this.createOne(bucketName)
+            bucketName => this.createOne(bucketName),
         );
 
         return Promise.all(promises);
@@ -57,7 +57,7 @@ class BucketUtility {
 
     deleteMany(bucketNames) {
         const promises = bucketNames.map(
-            bucketName => this.deleteOne(bucketName)
+            bucketName => this.deleteOne(bucketName),
         );
 
         return Promise.all(promises);
@@ -87,7 +87,7 @@ class BucketUtility {
                                 Key: object.Key,
                                 VersionId: object.VersionId,
                             }).promise()
-                              .then(() => object)
+                                .then(() => object),
                         )
                         .concat(data.Versions
                             .filter(object => object.Key.endsWith('/'))
@@ -98,24 +98,24 @@ class BucketUtility {
                                     Key: object.Key,
                                     VersionId: object.VersionId,
                                 }).promise()
-                                .then(() => object)
-                            )
+                                    .then(() => object),
+                            ),
                         )
                         .concat(data.DeleteMarkers
                             .map(object =>
-                                 this.s3.deleteObject({
-                                     Bucket: bucketName,
-                                     Key: object.Key,
-                                     VersionId: object.VersionId,
-                                 }).promise()
-                                 .then(() => object)))
-                )
+                                this.s3.deleteObject({
+                                    Bucket: bucketName,
+                                    Key: object.Key,
+                                    VersionId: object.VersionId,
+                                }).promise()
+                                    .then(() => object))),
+                ),
             );
     }
 
     emptyMany(bucketNames) {
         const promises = bucketNames.map(
-            bucketName => this.empty(bucketName)
+            bucketName => this.empty(bucketName),
         );
 
         return Promise.all(promises);

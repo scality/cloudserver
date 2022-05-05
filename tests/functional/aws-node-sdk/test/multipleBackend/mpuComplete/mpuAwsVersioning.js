@@ -93,84 +93,84 @@ function completeAndAssertMpu(s3, params, cb) {
 }
 
 describeSkipIfNotMultiple('AWS backend complete mpu with versioning',
-function testSuite() {
-    this.timeout(120000);
-    withV4(sigCfg => {
-        const bucketUtil = new BucketUtility('default', sigCfg);
-        const s3 = bucketUtil.s3;
-        beforeEach(done => s3.createBucket({
-            Bucket: bucket,
-            CreateBucketConfiguration: {
-                LocationConstraint: awsLocation,
-            },
-        }, done));
-        afterEach(done => {
-            removeAllVersions({ Bucket: bucket }, err => {
-                if (err) {
-                    return done(err);
-                }
-                return s3.deleteBucket({ Bucket: bucket }, done);
+    function testSuite() {
+        this.timeout(120000);
+        withV4(sigCfg => {
+            const bucketUtil = new BucketUtility('default', sigCfg);
+            const s3 = bucketUtil.s3;
+            beforeEach(done => s3.createBucket({
+                Bucket: bucket,
+                CreateBucketConfiguration: {
+                    LocationConstraint: awsLocation,
+                },
+            }, done));
+            afterEach(done => {
+                removeAllVersions({ Bucket: bucket }, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return s3.deleteBucket({ Bucket: bucket }, done);
+                });
             });
-        });
 
-        it('versioning not configured: should not return version id ' +
+            it('versioning not configured: should not return version id ' +
         'completing mpu', done => {
-            const key = `somekey-${Date.now()}`;
-            mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
-                completeAndAssertMpu(s3, { bucket, key, uploadId, partArray,
-                    expectVersionId: false }, done);
+                const key = `somekey-${Date.now()}`;
+                mpuSetup(s3, key, awsLocation, (err, uploadId, partArray) => {
+                    completeAndAssertMpu(s3, { bucket, key, uploadId, partArray,
+                        expectVersionId: false }, done);
+                });
             });
-        });
 
-        it('versioning not configured: if complete mpu on already-existing ' +
+            it('versioning not configured: if complete mpu on already-existing ' +
         'object, metadata should be overwritten but data of previous version' +
         'in AWS should not be deleted', function itF(done) {
-            const key = `somekey-${Date.now()}`;
-            async.waterfall([
-                next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
-                next => awsGetLatestVerId(key, '', next),
-                (awsVerId, next) => {
-                    this.test.awsVerId = awsVerId;
-                    next();
-                },
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId:
+                const key = `somekey-${Date.now()}`;
+                async.waterfall([
+                    next => putToAwsBackend(s3, bucket, key, '', err => next(err)),
+                    next => awsGetLatestVerId(key, '', next),
+                    (awsVerId, next) => {
+                        this.test.awsVerId = awsVerId;
+                        next();
+                    },
+                    next => mpuSetup(s3, key, awsLocation, next),
+                    (uploadId, partArray, next) => completeAndAssertMpu(s3,
+                        { bucket, key, uploadId, partArray, expectVersionId:
                         false }, next),
-                next => s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
+                    next => s3.deleteObject({ Bucket: bucket, Key: key, VersionId:
                     'null' }, next),
-                (delData, next) => getAndAssertResult(s3, { bucket, key,
-                    expectedError: 'NoSuchKey' }, next),
-                next => awsGetLatestVerId(key, '', next),
-                (awsVerId, next) => {
-                    assert.strictEqual(awsVerId, this.test.awsVerId);
-                    next();
-                },
-            ], done);
-        });
+                    (delData, next) => getAndAssertResult(s3, { bucket, key,
+                        expectedError: 'NoSuchKey' }, next),
+                    next => awsGetLatestVerId(key, '', next),
+                    (awsVerId, next) => {
+                        assert.strictEqual(awsVerId, this.test.awsVerId);
+                        next();
+                    },
+                ], done);
+            });
 
-        it('versioning suspended: should not return version id completing mpu',
-        done => {
-            const key = `somekey-${Date.now()}`;
-            async.waterfall([
-                next => suspendVersioning(s3, bucket, next),
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId: false,
-                    expectedGetVersionId: 'null' }, next),
-            ], done);
-        });
+            it('versioning suspended: should not return version id completing mpu',
+                done => {
+                    const key = `somekey-${Date.now()}`;
+                    async.waterfall([
+                        next => suspendVersioning(s3, bucket, next),
+                        next => mpuSetup(s3, key, awsLocation, next),
+                        (uploadId, partArray, next) => completeAndAssertMpu(s3,
+                            { bucket, key, uploadId, partArray, expectVersionId: false,
+                                expectedGetVersionId: 'null' }, next),
+                    ], done);
+                });
 
-        it('versioning enabled: should return version id completing mpu',
-        done => {
-            const key = `somekey-${Date.now()}`;
-            async.waterfall([
-                next => enableVersioning(s3, bucket, next),
-                next => mpuSetup(s3, key, awsLocation, next),
-                (uploadId, partArray, next) => completeAndAssertMpu(s3,
-                    { bucket, key, uploadId, partArray, expectVersionId: true },
-                    next),
-            ], done);
+            it('versioning enabled: should return version id completing mpu',
+                done => {
+                    const key = `somekey-${Date.now()}`;
+                    async.waterfall([
+                        next => enableVersioning(s3, bucket, next),
+                        next => mpuSetup(s3, key, awsLocation, next),
+                        (uploadId, partArray, next) => completeAndAssertMpu(s3,
+                            { bucket, key, uploadId, partArray, expectVersionId: true },
+                            next),
+                    ], done);
+                });
         });
     });
-});

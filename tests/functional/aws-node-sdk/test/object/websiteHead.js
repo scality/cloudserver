@@ -119,16 +119,16 @@ describe('Head request on bucket website endpoint', () => {
                             test: 'value',
                         },
                     },
-                        err => {
-                            assert.strictEqual(err, null);
-                            done();
-                        });
+                    err => {
+                        assert.strictEqual(err, null);
+                        done();
+                    });
                 });
             });
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should return indexDocument headers if no key ' +
@@ -170,17 +170,17 @@ describe('Head request on bucket website endpoint', () => {
             });
 
             it('should serve indexDocument if path request without key',
-            done => {
-                WebsiteConfigTester.makeHeadRequest(undefined,
-                    `${endpoint}/pathprefix/`, 200, indexExpectedHeaders, done);
-            });
+                done => {
+                    WebsiteConfigTester.makeHeadRequest(undefined,
+                        `${endpoint}/pathprefix/`, 200, indexExpectedHeaders, done);
+                });
 
             it('should serve indexDocument if path request with key',
-            done => {
-                WebsiteConfigTester.makeHeadRequest(undefined,
-                    `${endpoint}/pathprefix/index.html`, 200,
-                    indexExpectedHeaders, done);
-            });
+                done => {
+                    WebsiteConfigTester.makeHeadRequest(undefined,
+                        `${endpoint}/pathprefix/index.html`, 200,
+                        indexExpectedHeaders, done);
+                });
         });
 
         describe('with private key', () => {
@@ -236,7 +236,7 @@ describe('Head request on bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
-                  redirectAllTo);
+                    redirectAllTo);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
@@ -269,7 +269,7 @@ describe('Head request on bucket website endpoint', () => {
                     Protocol: 'https',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
-                  redirectAllTo);
+                    redirectAllTo);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
@@ -294,7 +294,7 @@ describe('Head request on bucket website endpoint', () => {
         describe('with custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
-                'error.html');
+                    'error.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
                     assert.strictEqual(err,
@@ -372,30 +372,30 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect to hostname with prefix and error condition',
-        () => {
-            beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                    HttpErrorCodeReturnedEquals: '403',
-                };
-                const redirect = {
-                    HostName: 'www.google.com',
-                };
-                webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
-            });
+            () => {
+                beforeEach(done => {
+                    const webConfig = new WebsiteConfigTester('index.html');
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                        HttpErrorCodeReturnedEquals: '403',
+                    };
+                    const redirect = {
+                        HostName: 'www.google.com',
+                    };
+                    webConfig.addRoutingRule(redirect, condition);
+                    s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, done);
+                });
 
-            it(`should redirect to ${redirectEndpoint} if ` +
+                it(`should redirect to ${redirectEndpoint} if ` +
             'key prefix is equal to "about" AND error code 403', done => {
-                const expectedHeaders = {
-                    location: `${redirectEndpoint}about/`,
-                };
-                WebsiteConfigTester.makeHeadRequest(undefined,
-                    `${endpoint}/about/`, 301, expectedHeaders, done);
+                    const expectedHeaders = {
+                        location: `${redirectEndpoint}about/`,
+                    };
+                    WebsiteConfigTester.makeHeadRequest(undefined,
+                        `${endpoint}/about/`, 301, expectedHeaders, done);
+                });
             });
-        });
 
         describe('redirect with multiple redirect rules', () => {
             beforeEach(done => {
@@ -425,30 +425,30 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect with protocol',
-        () => {
-            beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                };
-                const redirect = {
-                    Protocol: 'https',
-                    HostName: 'www.google.com',
-                };
-                webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
-            });
+            () => {
+                beforeEach(done => {
+                    const webConfig = new WebsiteConfigTester('index.html');
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                    };
+                    const redirect = {
+                        Protocol: 'https',
+                        HostName: 'www.google.com',
+                    };
+                    webConfig.addRoutingRule(redirect, condition);
+                    s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, done);
+                });
 
-            it('should redirect to https://www.google.com/about if ' +
+                it('should redirect to https://www.google.com/about if ' +
             'https protocol specified', done => {
-                const expectedHeaders = {
-                    location: 'https://www.google.com/about/',
-                };
-                WebsiteConfigTester.makeHeadRequest(undefined,
-                    `${endpoint}/about/`, 301, expectedHeaders, done);
+                    const expectedHeaders = {
+                        location: 'https://www.google.com/about/',
+                    };
+                    WebsiteConfigTester.makeHeadRequest(undefined,
+                        `${endpoint}/about/`, 301, expectedHeaders, done);
+                });
             });
-        });
 
         describe('redirect to key using ReplaceKeyWith', () => {
             beforeEach(done => {
@@ -466,7 +466,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'redirect.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should redirect to specified file if 403 error ' +
@@ -505,34 +505,34 @@ describe('Head request on bucket website endpoint', () => {
         });
 
         describe('redirect requests with prefix /about to redirect/',
-        () => {
-            beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                };
-                const redirect = {
-                    ReplaceKeyPrefixWith: 'redirect/',
-                };
-                webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
-            });
+            () => {
+                beforeEach(done => {
+                    const webConfig = new WebsiteConfigTester('index.html');
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                    };
+                    const redirect = {
+                        ReplaceKeyPrefixWith: 'redirect/',
+                    };
+                    webConfig.addRoutingRule(redirect, condition);
+                    s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, done);
+                });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
-            });
+                afterEach(done => {
+                    s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
+                        err => done(err));
+                });
 
-            it('should redirect to "redirect/" object if key prefix is equal ' +
+                it('should redirect to "redirect/" object if key prefix is equal ' +
                 'to "about/"', done => {
-                const expectedHeaders = {
-                    location: `${endpoint}/redirect/`,
-                };
-                WebsiteConfigTester.makeHeadRequest(undefined,
-                    `${endpoint}/about/`, 301, expectedHeaders, done);
+                    const expectedHeaders = {
+                        location: `${endpoint}/redirect/`,
+                    };
+                    WebsiteConfigTester.makeHeadRequest(undefined,
+                        `${endpoint}/about/`, 301, expectedHeaders, done);
+                });
             });
-        });
 
         describe('redirect requests, with both prefix and error code ' +
             'condition', () => {
@@ -552,7 +552,7 @@ describe('Head request on bucket website endpoint', () => {
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should redirect to "redirect" object if key prefix is equal ' +

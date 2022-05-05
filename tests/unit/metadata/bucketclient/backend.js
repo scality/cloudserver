@@ -68,7 +68,7 @@ describe('BucketFileInteraface::listMultipartUploads', () => {
                     'Expected an error, but got success');
                 assert.strictEqual(data, undefined, 'Data should be undefined');
                 done();
-            }
+            },
         );
     });
 
@@ -83,7 +83,7 @@ describe('BucketFileInteraface::listMultipartUploads', () => {
                 assert.deepStrictEqual(data, dataJSON,
                     'Expected some data, but got empty');
                 done();
-            }
+            },
         );
     });
 });

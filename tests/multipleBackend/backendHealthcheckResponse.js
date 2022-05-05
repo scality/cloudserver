@@ -27,13 +27,13 @@ describe('Healthcheck response', () => {
         });
     });
     it('should return no error with flightCheckOnStartUp set to false',
-    done => {
-        clientCheck(false, log, err => {
-            assert.strictEqual(err, null,
-                `Expected success but got error ${err}`);
-            done();
+        done => {
+            clientCheck(false, log, err => {
+                assert.strictEqual(err, null,
+                    `Expected success but got error ${err}`);
+                done();
+            });
         });
-    });
     it('should return result for every location constraint in ' +
     'locationConfig and at least one of every external locations with ' +
     'flightCheckOnStartUp set to false', done => {
@@ -44,7 +44,7 @@ describe('Healthcheck response', () => {
                     const locationType = config
                         .locationConstraints[constraint].type;
                     assert(Object.keys(results).some(result =>
-                      config.locationConstraints[result].type
+                        config.locationConstraints[result].type
                         === locationType));
                 }
             });

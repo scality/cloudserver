@@ -58,20 +58,20 @@ describe('PUT object taggings', () => {
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucketName)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucketName);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucketName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         taggingTests.forEach(taggingTest => {
             it(taggingTest.it, done => {
                 const taggingConfig = generateTaggingConfig(taggingTest.tag.key,
-                  taggingTest.tag.value);
+                    taggingTest.tag.value);
                 s3.putObjectTagging({ Bucket: bucketName, Key: objectName,
                     Tagging: taggingConfig }, (err, data) => {
                     if (taggingTest.error) {
@@ -154,14 +154,14 @@ describe('PUT object taggings', () => {
         });
 
         it('should return 403 AccessDenied putting tag with another account',
-        done => {
-            otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
+            done => {
+                otherAccountS3.putObjectTagging({ Bucket: bucketName, Key:
               objectName, Tagging: taggingConfig,
-            }, err => {
-                _checkError(err, 'AccessDenied', 403);
-                done();
+                }, err => {
+                    _checkError(err, 'AccessDenied', 403);
+                    done();
+                });
             });
-        });
 
         it('should return 403 AccessDenied putting tag with a different ' +
         'account to an object with ACL "public-read-write"',

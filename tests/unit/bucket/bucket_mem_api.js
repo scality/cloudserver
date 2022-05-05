@@ -27,10 +27,10 @@ describe('bucket API for getting, putting and deleting ' +
        'and get the object by key', done => {
         metadata.putObjectMD(bucketName, 'sampleKey', objMD, {}, log, () => {
             metadata.getObjectMD(bucketName, 'sampleKey', {}, log,
-            (err, value) => {
-                assert.deepStrictEqual(value, objMD);
-                done();
-            });
+                (err, value) => {
+                    assert.deepStrictEqual(value, objMD);
+                    done();
+                });
         });
     });
 
@@ -45,17 +45,17 @@ describe('bucket API for getting, putting and deleting ' +
 
     it('should be able to delete an object from a bucket', done => {
         metadata.putObjectMD(bucketName, 'objectToDelete', '{}', {}, log,
-        () => {
-            metadata.deleteObjectMD(bucketName, 'objectToDelete', {}, log,
             () => {
-                metadata.getObjectMD(bucketName, 'objectToDelete', {}, log,
-                    (err, value) => {
-                        assert.strictEqual(err.is.NoSuchKey, true);
-                        assert.strictEqual(value, undefined);
-                        done();
+                metadata.deleteObjectMD(bucketName, 'objectToDelete', {}, log,
+                    () => {
+                        metadata.getObjectMD(bucketName, 'objectToDelete', {}, log,
+                            (err, value) => {
+                                assert.strictEqual(err.is.NoSuchKey, true);
+                                assert.strictEqual(value, undefined);
+                                done();
+                            });
                     });
             });
-        });
     });
 });
 
@@ -116,7 +116,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
                 metadata.putObjectMD(bucketName, 'key1', '{}', {}, log, next),
             (data, next) =>
                 metadata.putObjectMD(bucketName, 'noMatchKey', '{}', {}, log,
-                next),
+                    next),
             (data, next) =>
                 metadata.putObjectMD(bucketName, 'key1/', '{}', {}, log, next),
             (data, next) =>
@@ -129,7 +129,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
             assert(response.CommonPrefixes.indexOf('key1/') > -1);
             assert.strictEqual(isKeyInContents(response, 'noMatchKey'), false);
             assert.strictEqual(response.CommonPrefixes.indexOf('noMatchKey'),
-                               -1);
+                -1);
             done();
         });
     });
@@ -139,13 +139,13 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
         async.waterfall([
             next =>
                 metadata.putObjectMD(bucketName, 'key/one', '{}', {}, log,
-                next),
+                    next),
             (data, next) =>
                 metadata.putObjectMD(bucketName, 'key/two', '{}', {}, log,
-                next),
+                    next),
             (data, next) =>
                 metadata.putObjectMD(bucketName, 'key/three', '{}', {}, log,
-                next),
+                    next),
             (data, next) =>
                 metadata.listObject(bucketName, { prefix: 'ke', delimiter,
                     maxKeys: defaultLimit }, log, next),
@@ -160,16 +160,16 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
        'given and keys match before delimiter', done => {
         metadata.putObjectMD(bucketName, 'noPrefix/one', '{}', {}, log, () => {
             metadata.putObjectMD(bucketName, 'noPrefix/two', '{}', {}, log,
-            () => {
-                metadata.listObject(bucketName, { delimiter,
-                    maxKeys: defaultLimit }, log, (err, response) => {
+                () => {
+                    metadata.listObject(bucketName, { delimiter,
+                        maxKeys: defaultLimit }, log, (err, response) => {
                         assert(response.CommonPrefixes.indexOf('noPrefix/')
                                > -1);
                         assert.strictEqual(isKeyInContents(response,
-                                                           'noPrefix'), false);
+                            'noPrefix'), false);
                         done();
                     });
-            });
+                });
         });
     });
 
@@ -192,7 +192,7 @@ describe('bucket API for getting a subset of objects from a bucket', () => {
                     log, (err, response) => {
                         assert(isKeyInContents(response, 'b'));
                         assert.strictEqual(isKeyInContents(response, 'a'),
-                                           false);
+                            false);
                         done();
                     });
             });
@@ -318,7 +318,7 @@ describe('stress test for bucket API', function describe() {
                         assert(diff < maxMilliseconds);
                         prefixes.forEach(prefix => {
                             assert(response.CommonPrefixes
-                                   .indexOf(prefix + delimiter) > -1);
+                                .indexOf(prefix + delimiter) > -1);
                         });
                         done();
                     });
@@ -344,7 +344,7 @@ describe('stress test for bucket API', function describe() {
         metadata.listObject(bucketName, { marker: testMarker, delimiter }, log,
             (err, res) => {
                 assert.strictEqual(res.CommonPrefixes.length,
-                                   prefixes.length - 1);
+                    prefixes.length - 1);
                 assert.strictEqual(res.CommonPrefixes.indexOf(testPrefix), -1);
                 assert.strictEqual(res.Contents.length, 0);
                 assert.strictEqual(res.IsTruncated, false);

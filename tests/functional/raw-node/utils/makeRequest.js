@@ -52,7 +52,7 @@ function _decodeURI(uri) {
  */
 function makeRequest(params, callback) {
     const { hostname, port, method, queryObj, headers, path,
-            authCredentials, requestBody, jsonResponse } = params;
+        authCredentials, requestBody, jsonResponse } = params;
     const options = {
         hostname,
         port,

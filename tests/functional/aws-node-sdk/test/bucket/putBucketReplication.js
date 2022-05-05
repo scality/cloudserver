@@ -104,12 +104,12 @@ describe('aws-node-sdk test putBucketReplication bucket status', () => {
 
         it('should return AccessDenied if user is not bucket owner', done =>
             otherAccountS3.putBucketReplication(replicationParams,
-            err => {
-                assert(err);
-                assert.strictEqual(err.code, 'AccessDenied');
-                assert.strictEqual(err.statusCode, 403);
-                return done();
-            }));
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.code, 'AccessDenied');
+                    assert.strictEqual(err.statusCode, 403);
+                    return done();
+                }));
 
         it('should not put configuration on bucket without versioning', done =>
             s3.putBucketReplication(replicationParams, err => {
@@ -161,13 +161,13 @@ describe('aws-node-sdk test putBucketReplication configuration rules', () => {
 
     it('should not accept configuration when \'Role\' is a comma-separated ' +
         'list of more than two valid Amazon Resource Names',
-        done => {
-            const Role = 'arn:aws:iam::account-id:role/resource-1,' +
+    done => {
+        const Role = 'arn:aws:iam::account-id:role/resource-1,' +
                 'arn:aws:iam::account-id:role/resource-2,' +
                 'arn:aws:iam::account-id:role/resource-3';
-            const config = Object.assign({}, replicationConfig, { Role });
-            checkError(config, 'InvalidArgument', done);
-        });
+        const config = Object.assign({}, replicationConfig, { Role });
+        checkError(config, 'InvalidArgument', done);
+    });
 
     replicationUtils.validRoleARNs.forEach(ARN => {
         const config = setConfigRules({

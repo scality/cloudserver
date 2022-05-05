@@ -40,7 +40,7 @@ describe('deleteObjectTagging API', () => {
                 return done(err);
             }
             return objectPut(authInfo, testPutObjectRequest, undefined, log,
-              done);
+                done);
         });
     });
 
@@ -54,11 +54,11 @@ describe('deleteObjectTagging API', () => {
             .createObjectTaggingRequest('DELETE', bucketName, objectName);
         async.waterfall([
             next => objectPutTagging(authInfo, testObjectPutTaggingRequest, log,
-              err => next(err)),
+                err => next(err)),
             next => objectDeleteTagging(authInfo,
-              testObjectDeleteTaggingRequest, log, err => next(err)),
+                testObjectDeleteTaggingRequest, log, err => next(err)),
             next => metadata.getObjectMD(bucketName, objectName, {}, log,
-            (err, objectMD) => next(err, objectMD)),
+                (err, objectMD) => next(err, objectMD)),
         ], (err, objectMD) => {
             const uploadedTags = objectMD.tags;
             assert.deepStrictEqual(uploadedTags, {});

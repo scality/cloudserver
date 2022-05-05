@@ -21,28 +21,28 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: azureContainerName }).promise()
-            .then(() => s3.createMultipartUpload({
-                Bucket: azureContainerName, Key: this.currentTest.key,
-                Metadata: { 'scal-location-constraint': azureLocation },
-            }).promise())
-            .then(res => {
-                this.currentTest.uploadId = res.UploadId;
-                return s3.uploadPart({ Bucket: azureContainerName,
-                    Key: this.currentTest.key, PartNumber: 1,
-                    UploadId: this.currentTest.uploadId, Body: bodyFirstPart,
-                }).promise();
-            }).then(res => {
-                this.currentTest.firstEtag = res.ETag;
-            }).then(() => s3.uploadPart({ Bucket: azureContainerName,
-                Key: this.currentTest.key, PartNumber: 2,
-                UploadId: this.currentTest.uploadId, Body: bodySecondPart,
-            }).promise()).then(res => {
-                this.currentTest.secondEtag = res.ETag;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => s3.createMultipartUpload({
+                    Bucket: azureContainerName, Key: this.currentTest.key,
+                    Metadata: { 'scal-location-constraint': azureLocation },
+                }).promise())
+                .then(res => {
+                    this.currentTest.uploadId = res.UploadId;
+                    return s3.uploadPart({ Bucket: azureContainerName,
+                        Key: this.currentTest.key, PartNumber: 1,
+                        UploadId: this.currentTest.uploadId, Body: bodyFirstPart,
+                    }).promise();
+                }).then(res => {
+                    this.currentTest.firstEtag = res.ETag;
+                }).then(() => s3.uploadPart({ Bucket: azureContainerName,
+                    Key: this.currentTest.key, PartNumber: 2,
+                    UploadId: this.currentTest.uploadId, Body: bodySecondPart,
+                }).promise()).then(res => {
+                    this.currentTest.secondEtag = res.ETag;
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(function afterEachFn() {
@@ -51,15 +51,15 @@ describeSkipIfNotMultiple('List parts of MPU on Azure data backend', () => {
                 Bucket: azureContainerName, Key: this.currentTest.key,
                 UploadId: this.currentTest.uploadId,
             }).promise()
-            .then(() => bucketUtil.empty(azureContainerName))
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => bucketUtil.empty(azureContainerName))
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should list both parts', function itFn(done) {

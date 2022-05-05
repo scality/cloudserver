@@ -32,10 +32,10 @@ describe('GET bucket website', () => {
         describe('with existing bucket configuration', () => {
             before(() =>
                 s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => s3.putBucketWebsite({
-                    Bucket: bucketName,
-                    WebsiteConfiguration: config,
-                }).promise()));
+                    .then(() => s3.putBucketWebsite({
+                        Bucket: bucketName,
+                        WebsiteConfiguration: config,
+                    }).promise()));
 
             it('should return bucket website xml successfully', done => {
                 s3.getBucketWebsite({ Bucket: bucketName }, (err, data) => {

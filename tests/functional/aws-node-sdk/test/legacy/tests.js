@@ -183,11 +183,11 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
             assert.strictEqual(data.IsTruncated, false);
             assert.strictEqual(data.Parts[0].PartNumber, 1);
             assert.strictEqual(data.Parts[0].ETag,
-              `"${calculatedFirstPartHash}"`);
+                `"${calculatedFirstPartHash}"`);
             assert.strictEqual(data.Parts[0].Size, 5242880);
             assert.strictEqual(data.Parts[1].PartNumber, 2);
             assert.strictEqual(data.Parts[1].ETag,
-              `"${calculatedSecondPartHash}"`);
+                `"${calculatedSecondPartHash}"`);
             assert.strictEqual(data.Parts[1].Size, 5242880);
             // Must disable for now when running with Vault
             // since will need to pull actual ARN and canonicalId
@@ -269,42 +269,42 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
     const mpuRangeGetTests = [
         { it: 'should get a range from the first part of an object ' +
             'put by multipart upload',
-            range: 'bytes=0-9',
-            contentLength: 10,
-            contentRange: 'bytes 0-9/10485760',
-            // Uploaded object is 5MB of 0 in the first part and
-            // 5 MB of 1 in the second part so a range from the
-            // first part should just contain 0
-            expectedBuff: Buffer.alloc(10, 0),
+        range: 'bytes=0-9',
+        contentLength: 10,
+        contentRange: 'bytes 0-9/10485760',
+        // Uploaded object is 5MB of 0 in the first part and
+        // 5 MB of 1 in the second part so a range from the
+        // first part should just contain 0
+        expectedBuff: Buffer.alloc(10, 0),
         },
         { it: 'should get a range from the second part of an object ' +
             'put by multipart upload',
-            // The completed MPU byte count starts at 0, so the first part ends
-            // at byte 5242879 and the second part begins at byte 5242880
-            range: 'bytes=5242880-5242889',
-            contentLength: 10,
-            contentRange: 'bytes 5242880-5242889/10485760',
-            // A range from the second part should just contain 1
-            expectedBuff: Buffer.alloc(10, 1),
+        // The completed MPU byte count starts at 0, so the first part ends
+        // at byte 5242879 and the second part begins at byte 5242880
+        range: 'bytes=5242880-5242889',
+        contentLength: 10,
+        contentRange: 'bytes 5242880-5242889/10485760',
+        // A range from the second part should just contain 1
+        expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get a range that spans both parts of an object put ' +
             'by multipart upload',
-            range: 'bytes=5242875-5242884',
-            contentLength: 10,
-            contentRange: 'bytes 5242875-5242884/10485760',
-            // Range that spans the two parts should contain 5 bytes
-            // of 0 and 5 bytes of 1
-            expectedBuff: Buffer.allocUnsafe(10).fill(0, 0, 5).fill(1, 5, 10),
+        range: 'bytes=5242875-5242884',
+        contentLength: 10,
+        contentRange: 'bytes 5242875-5242884/10485760',
+        // Range that spans the two parts should contain 5 bytes
+        // of 0 and 5 bytes of 1
+        expectedBuff: Buffer.allocUnsafe(10).fill(0, 0, 5).fill(1, 5, 10),
         },
         { it: 'should get a range from the second part of an object put by ' +
             'multipart upload and include the end even if the range ' +
             'requested goes beyond the actual object end',
-            // End is actually 10485759 since size is 10485760
-            range: 'bytes=10485750-10485790',
-            contentLength: 10,
-            contentRange: 'bytes 10485750-10485759/10485760',
-            // Range from the second part should just contain 1
-            expectedBuff: Buffer.alloc(10, 1),
+        // End is actually 10485759 since size is 10485760
+        range: 'bytes=10485750-10485790',
+        contentLength: 10,
+        contentRange: 'bytes 10485750-10485759/10485760',
+        // Range from the second part should just contain 1
+        expectedBuff: Buffer.alloc(10, 1),
         },
         {
             it: 'should get entire object if range is invalid',
@@ -454,17 +454,17 @@ describe('aws-node-sdk test suite as registered user', function testSuite() {
         },
         { it: 'should get a range for an object using only an end ' +
             'offset in the request',
-            range: 'bytes=-10',
-            contentLength: 10,
-            contentRange: 'bytes 190-199/200',
-            expectedBuff: Buffer.alloc(10, 1),
+        range: 'bytes=-10',
+        contentLength: 10,
+        contentRange: 'bytes 190-199/200',
+        expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get a range for an object using only a start offset ' +
             'in the request',
-            range: 'bytes=190-',
-            contentLength: 10,
-            contentRange: 'bytes 190-199/200',
-            expectedBuff: Buffer.alloc(10, 1),
+        range: 'bytes=190-',
+        contentLength: 10,
+        contentRange: 'bytes 190-199/200',
+        expectedBuff: Buffer.alloc(10, 1),
         },
         { it: 'should get full object if range header is invalid',
             range: 'bytes=-',

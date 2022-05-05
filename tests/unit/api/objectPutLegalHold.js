@@ -77,11 +77,11 @@ describe('putObjectLegalHold API', () => {
             objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.legalHold, true);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.legalHold, true);
+                        return done();
+                    });
             });
         });
 
@@ -89,11 +89,11 @@ describe('putObjectLegalHold API', () => {
             objectPutLegalHold(authInfo, putLegalHoldReq('OFF'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.legalHold, false);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.legalHold, false);
+                        return done();
+                    });
             });
         });
     });

@@ -59,15 +59,15 @@ describe('DELETE bucket website', () => {
                 });
 
                 it('should return AccessDenied if user is not bucket owner',
-                done => {
-                    otherAccountS3.deleteBucketWebsite({ Bucket: bucketName },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.code, 'AccessDenied');
-                        assert.strictEqual(err.statusCode, 403);
-                        return done();
+                    done => {
+                        otherAccountS3.deleteBucketWebsite({ Bucket: bucketName },
+                            err => {
+                                assert(err);
+                                assert.strictEqual(err.code, 'AccessDenied');
+                                assert.strictEqual(err.statusCode, 403);
+                                return done();
+                            });
                     });
-                });
             });
         });
     });

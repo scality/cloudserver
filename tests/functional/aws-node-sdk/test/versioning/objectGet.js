@@ -49,11 +49,11 @@ describe('get behavior after delete with versioning', () => {
         describe('behavior when only version put is a delete marker', () => {
             beforeEach(function beforeEachF(done) {
                 s3.deleteObject({ Bucket: bucket, Key: key },
-                  (err, data) => {
-                      _assertNoError(err, 'deleteObject');
-                      this.currentTest.deleteVersionId = data.VersionId;
-                      done(err);
-                  });
+                    (err, data) => {
+                        _assertNoError(err, 'deleteObject');
+                        this.currentTest.deleteVersionId = data.VersionId;
+                        done(err);
+                    });
             });
 
             it('should not be able to get a delete marker', function itF(done) {
@@ -86,11 +86,11 @@ describe('get behavior after delete with versioning', () => {
                     _assertNoError(err, 'putObject');
                     this.currentTest.versionId = data.VersionId;
                     s3.deleteObject({ Bucket: bucket, Key: key },
-                      (err, data) => {
-                          _assertNoError(err, 'deleteObject');
-                          this.currentTest.deleteVersionId = data.VersionId;
-                          done(err);
-                      });
+                        (err, data) => {
+                            _assertNoError(err, 'deleteObject');
+                            this.currentTest.deleteVersionId = data.VersionId;
+                            done(err);
+                        });
                 });
             });
 

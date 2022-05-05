@@ -31,33 +31,33 @@ describe('Testing _checkExternalBackend', function describeF() {
     beforeEach(done => {
         const clients = getClients(true);
         return checkExternalBackend(clients, awsLocations, 'aws_s3', false,
-        externalBackendHealthCheckInterval, done);
+            externalBackendHealthCheckInterval, done);
     });
     it('should not refresh response before externalBackendHealthCheckInterval',
-    done => {
-        const clients = getClients(false);
-        return checkExternalBackend(clients, awsLocations, 'aws_s3',
-        false, externalBackendHealthCheckInterval, (err, res) => {
-            if (err) {
-                return done(err);
-            }
-            assert.strictEqual(res[0].awsbackend, statusSuccess);
-            return done();
+        done => {
+            const clients = getClients(false);
+            return checkExternalBackend(clients, awsLocations, 'aws_s3',
+                false, externalBackendHealthCheckInterval, (err, res) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(res[0].awsbackend, statusSuccess);
+                    return done();
+                });
         });
-    });
 
     it('should refresh response after externalBackendHealthCheckInterval',
-    done => {
-        const clients = getClients(false);
-        setTimeout(() => {
-            checkExternalBackend(clients, awsLocations, 'aws_s3',
-            false, externalBackendHealthCheckInterval, (err, res) => {
-                if (err) {
-                    return done(err);
-                }
-                assert.strictEqual(res[0].awsbackend, statusFailure);
-                return done();
-            });
-        }, externalBackendHealthCheckInterval + 1);
-    });
+        done => {
+            const clients = getClients(false);
+            setTimeout(() => {
+                checkExternalBackend(clients, awsLocations, 'aws_s3',
+                    false, externalBackendHealthCheckInterval, (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res[0].awsbackend, statusFailure);
+                        return done();
+                    });
+            }, externalBackendHealthCheckInterval + 1);
+        });
 });

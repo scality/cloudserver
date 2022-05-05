@@ -56,44 +56,44 @@ const dummyBucketMD = {
 const objectList = {
     Contents: [
         { key: 'testobject1',
-        value: JSON.stringify({
-            'owner-display-name': 'test_1518720219',
-            'owner-id':
+            value: JSON.stringify({
+                'owner-display-name': 'test_1518720219',
+                'owner-id':
             '94224c921648ada653f584f3caf42654ccf3f1cbd2e569a24e88eb460f2f84d8',
-            'content-length': 0,
-            'content-md5': 'd41d8cd98f00b204e9800998ecf8427e',
-            'x-amz-version-id': 'null',
-            'x-amz-server-version-id': '',
-            'x-amz-storage-class': 'STANDARD',
-            'x-amz-server-side-encryption': '',
-            'x-amz-server-side-encryption-aws-kms-key-id': '',
-            'x-amz-server-side-encryption-customer-algorithm': '',
-            'x-amz-website-redirect-location': '',
-            'acl': {
-                Canned: 'private',
-                FULL_CONTROL: [],
-                WRITE_ACP: [],
-                READ: [],
-                READ_ACP: [],
-            },
-            'key': '',
-            'location': null,
-            'isDeleteMarker': false,
-            'tags': {},
-            'replicationInfo': {
-                status: '',
-                backends: [],
-                content: [],
-                destination: '',
-                storageClass: '',
-                role: '',
-                storageType: '',
-                dataStoreVersionId: '',
-            },
-            'dataStoreName': 'us-east-1',
-            'last-modified': '2018-02-16T22:43:37.174Z',
-            'md-model-version': 3,
-        }) },
+                'content-length': 0,
+                'content-md5': 'd41d8cd98f00b204e9800998ecf8427e',
+                'x-amz-version-id': 'null',
+                'x-amz-server-version-id': '',
+                'x-amz-storage-class': 'STANDARD',
+                'x-amz-server-side-encryption': '',
+                'x-amz-server-side-encryption-aws-kms-key-id': '',
+                'x-amz-server-side-encryption-customer-algorithm': '',
+                'x-amz-website-redirect-location': '',
+                'acl': {
+                    Canned: 'private',
+                    FULL_CONTROL: [],
+                    WRITE_ACP: [],
+                    READ: [],
+                    READ_ACP: [],
+                },
+                'key': '',
+                'location': null,
+                'isDeleteMarker': false,
+                'tags': {},
+                'replicationInfo': {
+                    status: '',
+                    backends: [],
+                    content: [],
+                    destination: '',
+                    storageClass: '',
+                    role: '',
+                    storageType: '',
+                    dataStoreVersionId: '',
+                },
+                'dataStoreName': 'us-east-1',
+                'last-modified': '2018-02-16T22:43:37.174Z',
+                'md-model-version': 3,
+            }) },
     ],
 };
 
@@ -224,7 +224,7 @@ class MetadataMock {
                 bucketMd._lifeCycle);
             return res.end(dummyBucketMdObj.serialize());
         } else if
-            (/\/default\/bucket\/.*?listingType=Delimiter/.test(req.url)) {
+        (/\/default\/bucket\/.*?listingType=Delimiter/.test(req.url)) {
             return res.end(JSON.stringify(objectList));
         } else if (/\/default\/bucket\/.*\/.*?/.test(req.url)) {
             return res.end(JSON.stringify({

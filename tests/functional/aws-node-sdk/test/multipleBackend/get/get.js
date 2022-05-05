@@ -35,37 +35,37 @@ describe('Multiple backend get object', function testSuite() {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         after(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error emptying/deleting bucket: ' +
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error emptying/deleting bucket: ' +
                 `${err}\n`);
-                throw err;
-            });
+                    throw err;
+                });
         });
 
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         it.skip('should return an error to get request without a valid ' +
         'bucket name',
-            done => {
-                s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 'MethodNotAllowed');
-                    done();
-                });
+        done => {
+            s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
+                assert.notEqual(err, null,
+                    'Expected failure but got success');
+                assert.strictEqual(err.code, 'MethodNotAllowed');
+                done();
             });
+        });
         it('should return NoSuchKey error when no such object',
             done => {
                 s3.getObject({ Bucket: bucket, Key: 'nope' }, err => {
@@ -87,7 +87,7 @@ describe('Multiple backend get object', function testSuite() {
                     next => s3.createMultipartUpload({
                         Bucket: bucket, Key: this.currentTest.key,
                         Metadata: { 'scal-location-constraint': awsLocation,
-                    } }, (err, res) => next(err, res.UploadId)),
+                        } }, (err, res) => next(err, res.UploadId)),
                     (uploadId, next) => s3.uploadPart({
                         Bucket: bucket,
                         Key: this.currentTest.key,
@@ -121,7 +121,7 @@ describe('Multiple backend get object', function testSuite() {
                     assert.strictEqual(res.ContentLength, '10');
                     assert.strictEqual(res.Body.toString(), 'helloworld');
                     assert.deepStrictEqual(res.Metadata,
-                      { 'scal-location-constraint': awsLocation });
+                        { 'scal-location-constraint': awsLocation });
                     return done(err);
                 });
             });
@@ -139,7 +139,7 @@ describe('Multiple backend get object', function testSuite() {
                         Bucket: bucket, Key: this.currentTest.key,
                         Metadata: { 'scal-location-constraint':
                         awsLocationMismatch,
-                    } }, (err, res) => next(err, res.UploadId)),
+                        } }, (err, res) => next(err, res.UploadId)),
                     (uploadId, next) => s3.uploadPart({
                         Bucket: bucket,
                         Key: this.currentTest.key,
@@ -173,7 +173,7 @@ describe('Multiple backend get object', function testSuite() {
                     assert.strictEqual(res.ContentLength, '10');
                     assert.strictEqual(res.Body.toString(), 'helloworld');
                     assert.deepStrictEqual(res.Metadata,
-                      { 'scal-location-constraint': awsLocationMismatch });
+                        { 'scal-location-constraint': awsLocationMismatch });
                     return done(err);
                 });
             });
@@ -187,51 +187,51 @@ describe('Multiple backend get object', function testSuite() {
                     Body: body,
                     Metadata: { 'scal-location-constraint': memLocation },
                 }).promise()
-                .then(() => {
-                    process.stdout.write('Putting object to file\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: fileObject,
-                        Body: body,
-                        Metadata:
+                    .then(() => {
+                        process.stdout.write('Putting object to file\n');
+                        return s3.putObject({ Bucket: bucket,
+                            Key: fileObject,
+                            Body: body,
+                            Metadata:
                         { 'scal-location-constraint': fileLocation },
-                    }).promise();
-                })
-                .then(() => {
-                    process.stdout.write('Putting object to AWS\n');
-                    return s3.putObject({ Bucket: bucket, Key: awsObject,
-                        Body: body,
-                        Metadata: {
-                            'scal-location-constraint': awsLocation },
-                    }).promise();
-                })
-                .then(() => {
-                    process.stdout.write('Putting 0-byte object to mem\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: emptyObject,
-                        Metadata:
+                        }).promise();
+                    })
+                    .then(() => {
+                        process.stdout.write('Putting object to AWS\n');
+                        return s3.putObject({ Bucket: bucket, Key: awsObject,
+                            Body: body,
+                            Metadata: {
+                                'scal-location-constraint': awsLocation },
+                        }).promise();
+                    })
+                    .then(() => {
+                        process.stdout.write('Putting 0-byte object to mem\n');
+                        return s3.putObject({ Bucket: bucket,
+                            Key: emptyObject,
+                            Metadata:
                         { 'scal-location-constraint': memLocation },
-                    }).promise();
-                })
-                .then(() => {
-                    process.stdout.write('Putting 0-byte object to AWS\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: emptyAwsObject,
-                        Metadata: {
-                            'scal-location-constraint': awsLocation },
-                    }).promise();
-                })
-                .then(() => {
-                    process.stdout.write('Putting large object to AWS\n');
-                    return s3.putObject({ Bucket: bucket,
-                        Key: bigObject, Body: bigBody,
-                        Metadata: {
-                            'scal-location-constraint': awsLocation },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(`Error putting objects: ${err}\n`);
-                    throw err;
-                });
+                        }).promise();
+                    })
+                    .then(() => {
+                        process.stdout.write('Putting 0-byte object to AWS\n');
+                        return s3.putObject({ Bucket: bucket,
+                            Key: emptyAwsObject,
+                            Metadata: {
+                                'scal-location-constraint': awsLocation },
+                        }).promise();
+                    })
+                    .then(() => {
+                        process.stdout.write('Putting large object to AWS\n');
+                        return s3.putObject({ Bucket: bucket,
+                            Key: bigObject, Body: bigBody,
+                            Metadata: {
+                                'scal-location-constraint': awsLocation },
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error putting objects: ${err}\n`);
+                        throw err;
+                    });
             });
             it('should get an object from mem', done => {
                 s3.getObject({ Bucket: bucket, Key: memObject }, (err, res) => {
@@ -243,21 +243,21 @@ describe('Multiple backend get object', function testSuite() {
             });
             it('should get a 0-byte object from mem', done => {
                 s3.getObject({ Bucket: bucket, Key: emptyObject },
-                (err, res) => {
-                    assert.equal(err, null, 'Expected success but got ' +
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got ' +
                         `error ${err}`);
-                    assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                    done();
-                });
+                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                        done();
+                    });
             });
             it('should get a 0-byte object from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: emptyAwsObject },
-                (err, res) => {
-                    assert.equal(err, null, 'Expected success but got error ' +
+                    (err, res) => {
+                        assert.equal(err, null, 'Expected success but got error ' +
                         `error ${err}`);
-                    assert.strictEqual(res.ETag, `"${emptyMD5}"`);
-                    done();
-                });
+                        assert.strictEqual(res.ETag, `"${emptyMD5}"`);
+                        done();
+                    });
             });
             it('should get an object from file', done => {
                 s3.getObject({ Bucket: bucket, Key: fileObject },
@@ -289,22 +289,22 @@ describe('Multiple backend get object', function testSuite() {
             it('should get an object using range query from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: bigObject,
                     Range: 'bytes=0-9' },
-                    (err, res) => {
-                        assert.equal(err, null, 'Expected success but got ' +
+                (err, res) => {
+                    assert.equal(err, null, 'Expected success but got ' +
                             `error ${err}`);
-                        assert.strictEqual(res.ContentLength, '10');
-                        assert.strictEqual(res.ContentRange,
-                            `bytes 0-9/${bigBodyLen}`);
-                        assert.strictEqual(res.ETag, `"${bigMD5}"`);
-                        done();
-                    });
+                    assert.strictEqual(res.ContentLength, '10');
+                    assert.strictEqual(res.ContentRange,
+                        `bytes 0-9/${bigBodyLen}`);
+                    assert.strictEqual(res.ETag, `"${bigMD5}"`);
+                    done();
+                });
             });
         });
 
         describeSkipIfNotMultiple('with bucketMatch set to false', () => {
             beforeEach(done => {
                 s3.putObject({ Bucket: bucket, Key: mismatchObject, Body: body,
-                Metadata: { 'scal-location-constraint': awsLocationMismatch } },
+                    Metadata: { 'scal-location-constraint': awsLocationMismatch } },
                 err => {
                     assert.equal(err, null, `Err putting object: ${err}`);
                     done();
@@ -313,11 +313,11 @@ describe('Multiple backend get object', function testSuite() {
 
             it('should get an object from AWS', done => {
                 s3.getObject({ Bucket: bucket, Key: mismatchObject },
-                (err, res) => {
-                    assert.equal(err, null, `Error getting object: ${err}`);
-                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
-                    done();
-                });
+                    (err, res) => {
+                        assert.equal(err, null, `Error getting object: ${err}`);
+                        assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                        done();
+                    });
             });
         });
     });

@@ -38,7 +38,7 @@ function putBucketWebsiteAndPutObjectRedirect(redirect, condition, key, done) {
             Key: key,
             ACL: 'public-read',
             Body: fs.readFileSync(path.join(__dirname,
-            '/websiteFiles/redirect.html')),
+                '/websiteFiles/redirect.html')),
             ContentType: 'text/html' }, done);
     });
 }
@@ -77,16 +77,16 @@ describe('User visits bucket website endpoint', () => {
                         Body: fs.readFileSync(path.join(__dirname,
                             '/websiteFiles/index.html')),
                         ContentType: 'text/html' },
-                        err => {
-                            assert.strictEqual(err, null);
-                            done();
-                        });
+                    err => {
+                        assert.strictEqual(err, null);
+                        done();
+                    });
                 });
             });
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should return 405 when user requests method other than get ' +
@@ -143,22 +143,22 @@ describe('User visits bucket website endpoint', () => {
             });
 
             it('should serve indexDocument if path request without key',
-            done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: `${endpoint}/pathprefix/`,
-                    responseType: 'index-user',
-                }, done);
-            });
+                done => {
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: `${endpoint}/pathprefix/`,
+                        responseType: 'index-user',
+                    }, done);
+                });
 
             it('should serve indexDocument if path request with key',
-            done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: `${endpoint}/pathprefix/index.html`,
-                    responseType: 'index-user',
-                }, done);
-            });
+                done => {
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: `${endpoint}/pathprefix/index.html`,
+                        responseType: 'index-user',
+                    }, done);
+                });
         });
 
         describe('with private key', () => {
@@ -212,7 +212,7 @@ describe('User visits bucket website endpoint', () => {
                     HostName: 'www.google.com',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
-                  redirectAllTo);
+                    redirectAllTo);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
@@ -247,7 +247,7 @@ describe('User visits bucket website endpoint', () => {
                     Protocol: 'https',
                 };
                 const webConfig = new WebsiteConfigTester(null, null,
-                  redirectAllTo);
+                    redirectAllTo);
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
@@ -274,7 +274,7 @@ describe('User visits bucket website endpoint', () => {
         describe('with custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
-                'error.html');
+                    'error.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, err => {
                     assert.strictEqual(err,
@@ -293,19 +293,19 @@ describe('User visits bucket website endpoint', () => {
             });
 
             it('should serve custom error document if an error occurred',
-            done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: endpoint,
-                    responseType: 'error-user',
-                }, done);
-            });
+                done => {
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: endpoint,
+                        responseType: 'error-user',
+                    }, done);
+                });
         });
 
         describe('unfound custom error document', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html',
-                'error.html');
+                    'error.html');
                 s3.putBucketWebsite({ Bucket: bucket,
                     WebsiteConfiguration: webConfig }, done);
             });
@@ -371,31 +371,31 @@ describe('User visits bucket website endpoint', () => {
         });
 
         describe.skip('redirect to hostname with prefix and error condition',
-        () => {
-            beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                    HttpErrorCodeReturnedEquals: '403',
-                };
-                const redirect = {
-                    HostName: 'www.google.com',
-                };
-                webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
-            });
+            () => {
+                beforeEach(done => {
+                    const webConfig = new WebsiteConfigTester('index.html');
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                        HttpErrorCodeReturnedEquals: '403',
+                    };
+                    const redirect = {
+                        HostName: 'www.google.com',
+                    };
+                    webConfig.addRoutingRule(redirect, condition);
+                    s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, done);
+                });
 
-            it(`should redirect to ${redirectEndpoint} if ` +
+                it(`should redirect to ${redirectEndpoint} if ` +
             'key prefix is equal to "about" AND error code 403', done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: `${endpoint}/about/`,
-                    responseType: 'redirect',
-                    redirectUrl: `${redirectEndpoint}/about/`,
-                }, done);
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: `${endpoint}/about/`,
+                        responseType: 'redirect',
+                        redirectUrl: `${redirectEndpoint}/about/`,
+                    }, done);
+                });
             });
-        });
 
         describe.skip('redirect with multiple redirect rules', () => {
             beforeEach(done => {
@@ -426,31 +426,31 @@ describe('User visits bucket website endpoint', () => {
         });
 
         describe.skip('redirect with protocol',
-        () => {
-            beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                };
-                const redirect = {
-                    Protocol: 'https',
-                    HostName: 'www.google.com',
-                };
-                webConfig.addRoutingRule(redirect, condition);
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, done);
-            });
+            () => {
+                beforeEach(done => {
+                    const webConfig = new WebsiteConfigTester('index.html');
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                    };
+                    const redirect = {
+                        Protocol: 'https',
+                        HostName: 'www.google.com',
+                    };
+                    webConfig.addRoutingRule(redirect, condition);
+                    s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, done);
+                });
 
-            it('should redirect to https://www.google.com/about if ' +
+                it('should redirect to https://www.google.com/about if ' +
             'https protocols', done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: `${endpoint}/about/`,
-                    responseType: 'redirect',
-                    redirectUrl: 'https://www.google.com/about/',
-                }, done);
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: `${endpoint}/about/`,
+                        responseType: 'redirect',
+                        redirectUrl: 'https://www.google.com/about/',
+                    }, done);
+                });
             });
-        });
 
         describe('redirect to key using ReplaceKeyWith', () => {
             beforeEach(done => {
@@ -461,23 +461,23 @@ describe('User visits bucket website endpoint', () => {
                     ReplaceKeyWith: 'redirect.html',
                 };
                 putBucketWebsiteAndPutObjectRedirect(redirect, condition,
-                  'redirect.html', done);
+                    'redirect.html', done);
             });
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'redirect.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should serve redirect file if error 403 error occured',
-            done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: endpoint,
-                    responseType: 'redirect-user',
-                    redirectUrl: `${endpoint}/redirect.html`,
-                }, done);
-            });
+                done => {
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: endpoint,
+                        responseType: 'redirect-user',
+                        redirectUrl: `${endpoint}/redirect.html`,
+                    }, done);
+                });
         });
 
         describe.skip('redirect using ReplaceKeyPrefixWith', () => {
@@ -507,33 +507,33 @@ describe('User visits bucket website endpoint', () => {
         });
 
         describe.skip('redirect requests with prefix /about to redirect/',
-        () => {
-            beforeEach(done => {
-                const condition = {
-                    KeyPrefixEquals: 'about/',
-                };
-                const redirect = {
-                    ReplaceKeyPrefixWith: 'redirect/',
-                };
-                putBucketWebsiteAndPutObjectRedirect(redirect, condition,
-                  'redirect/index.html', done);
-            });
+            () => {
+                beforeEach(done => {
+                    const condition = {
+                        KeyPrefixEquals: 'about/',
+                    };
+                    const redirect = {
+                        ReplaceKeyPrefixWith: 'redirect/',
+                    };
+                    putBucketWebsiteAndPutObjectRedirect(redirect, condition,
+                        'redirect/index.html', done);
+                });
 
-            afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
-            });
+                afterEach(done => {
+                    s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
+                        err => done(err));
+                });
 
-            it('should serve redirect file if key prefix is equal to "about"',
-            done => {
-                WebsiteConfigTester.checkHTML({
-                    method: 'GET',
-                    url: `${endpoint}/about/`,
-                    responseType: 'redirect-user',
-                    redirectUrl: `${endpoint}/redirect/`,
-                }, done);
+                it('should serve redirect file if key prefix is equal to "about"',
+                    done => {
+                        WebsiteConfigTester.checkHTML({
+                            method: 'GET',
+                            url: `${endpoint}/about/`,
+                            responseType: 'redirect-user',
+                            redirectUrl: `${endpoint}/redirect/`,
+                        }, done);
+                    });
             });
-        });
 
         describe.skip('redirect requests, with prefix /about and that return ' +
         '403 error, to prefix redirect/', () => {
@@ -546,12 +546,12 @@ describe('User visits bucket website endpoint', () => {
                     ReplaceKeyPrefixWith: 'redirect/',
                 };
                 putBucketWebsiteAndPutObjectRedirect(redirect, condition,
-                  'redirect/index.html', done);
+                    'redirect/index.html', done);
             });
 
             afterEach(done => {
                 s3.deleteObject({ Bucket: bucket, Key: 'redirect/index.html' },
-                err => done(err));
+                    err => done(err));
             });
 
             it('should serve redirect file if key prefix is equal to ' +

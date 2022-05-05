@@ -66,7 +66,7 @@ describe('PUT bucket website', () => {
                 Protocol: 'http',
             };
             const config = new WebsiteConfigTester(null, null,
-            redirectAllTo);
+                redirectAllTo);
             config.addRoutingRule({ Protocol: 'http' });
             _testPutBucketWebsite(config, 400, 'InvalidRequest', done);
         });

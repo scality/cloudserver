@@ -72,13 +72,13 @@ class HttpRequestAuthV4 extends stream.Writable {
     getSigningKey() {
         const signingDate = this._timestamp.slice(0, 8);
         const dateKey = crypto.createHmac('sha256', `AWS4${this._secretKey}`)
-              .update(signingDate, 'binary').digest();
+            .update(signingDate, 'binary').digest();
         const dateRegionKey = crypto.createHmac('sha256', dateKey)
-              .update(REGION, 'binary').digest();
+            .update(REGION, 'binary').digest();
         const dateRegionServiceKey = crypto.createHmac('sha256', dateRegionKey)
-              .update(SERVICE, 'binary').digest();
+            .update(SERVICE, 'binary').digest();
         this._signingKey = crypto.createHmac('sha256', dateRegionServiceKey)
-              .update('aws4_request', 'binary').digest();
+            .update('aws4_request', 'binary').digest();
     }
 
     createSignature(stringToSign) {
@@ -98,17 +98,17 @@ class HttpRequestAuthV4 extends stream.Writable {
         });
         const canonicalQueryString =
               qsParams
-              .sort((a, b) => {
-                  if (a.key !== b.key) {
-                      return a.key < b.key ? -1 : 1;
-                  }
-                  return a.value < b.value ? -1 : 1;
-              })
-              .map(param => `${encodeURI(param.key)}=${encodeURI(param.value)}`)
-              .join('&');
+                  .sort((a, b) => {
+                      if (a.key !== b.key) {
+                          return a.key < b.key ? -1 : 1;
+                      }
+                      return a.value < b.value ? -1 : 1;
+                  })
+                  .map(param => `${encodeURI(param.key)}=${encodeURI(param.value)}`)
+                  .join('&');
         const canonicalSignedHeaders = signedHeadersList
-              .map(header => `${header}:${signedHeaders[header]}\n`)
-              .join('');
+            .map(header => `${header}:${signedHeaders[header]}\n`)
+            .join('');
         const canonicalRequest = [
             method,
             urlObj.pathname,
@@ -145,16 +145,16 @@ class HttpRequestAuthV4 extends stream.Writable {
         const signedHeadersList = Object.keys(signedHeaders).sort();
 
         return ['AWS4-HMAC-SHA256',
-                `Credential=${this._accessKey}/${this.getCredentialScope()},`,
-                `SignedHeaders=${signedHeadersList.join(';')},`,
-                `Signature=${authorizationSignature}`,
-               ].join(' ');
+            `Credential=${this._accessKey}/${this.getCredentialScope()},`,
+            `SignedHeaders=${signedHeadersList.join(';')},`,
+            `Signature=${authorizationSignature}`,
+        ].join(' ');
     }
 
     constructChunkStringToSign(chunkData) {
         const currentChunkHash =
               crypto.createHash('sha256').update(chunkData.toString())
-              .digest('hex');
+                  .digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${this._lastSignature}\n` +
               `${EMPTY_STRING_HASH}\n${currentChunkHash}`;
@@ -174,12 +174,12 @@ class HttpRequestAuthV4 extends stream.Writable {
         }
         const chunkSignature = this.getChunkSignature(chunkData);
         return [chunkData.length.toString(16),
-                ';chunk-signature=',
-                chunkSignature,
-                '\r\n',
-                chunkData,
-                '\r\n',
-               ].join('');
+            ';chunk-signature=',
+            chunkSignature,
+            '\r\n',
+            chunkData,
+            '\r\n',
+        ].join('');
     }
 
     _constructRequest(hasDataToSend) {
@@ -207,7 +207,7 @@ class HttpRequestAuthV4 extends stream.Writable {
                 contentLengthHeader = header;
             }
             if (!['connection',
-                  'transfer-encoding'].includes(lowerHeader)) {
+                'transfer-encoding'].includes(lowerHeader)) {
                 signedHeaders[lowerHeader] = httpHeaders[header];
             }
         });

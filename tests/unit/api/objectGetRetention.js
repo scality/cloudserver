@@ -83,22 +83,22 @@ describe('getObjectRetention API', () => {
         afterEach(cleanup);
 
         it('should return NoSuchObjectLockConfiguration if no retention set',
-        done => {
-            objectGetRetention(authInfo, getObjRetRequest, log, err => {
-                assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
-                done();
+            done => {
+                objectGetRetention(authInfo, getObjRetRequest, log, err => {
+                    assert.strictEqual(err.is.NoSuchObjectLockConfiguration, true);
+                    done();
+                });
             });
-        });
 
         it('should get an object\'s retention info', done => {
             objectPutRetention(authInfo, putObjRetRequest, log, err => {
                 assert.ifError(err);
                 objectGetRetention(authInfo, getObjRetRequest, log,
-                (err, xml) => {
-                    assert.ifError(err);
-                    assert.strictEqual(xml, objectRetentionXml);
-                    done();
-                });
+                    (err, xml) => {
+                        assert.ifError(err);
+                        assert.strictEqual(xml, objectRetentionXml);
+                        done();
+                    });
             });
         });
     });

@@ -48,11 +48,11 @@ function _comparePutGetXml(sampleXml, done) {
             return done(err);
         }
         return bucketGetCors(authInfo, testGetCorsRequest, log,
-        (err, res) => {
-            assert.strictEqual(err, null, `Unexpected err ${err}`);
-            assert.strictEqual(res, fullXml);
-            done();
-        });
+            (err, res) => {
+                assert.strictEqual(err, null, `Unexpected err ${err}`);
+                assert.strictEqual(res, fullXml);
+                done();
+            });
     });
 }
 

@@ -31,38 +31,38 @@ describe('GET object legal hold', () => {
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
             }).promise()
-            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
-            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: keyNoHold }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                versionId = res.VersionId;
-                process.stdout.write('Putting object legal hold\n');
-                return s3.putObjectLegalHold({
-                    Bucket: bucket,
-                    Key: key,
-                    LegalHold: { Status: 'ON' },
-                }).promise();
-            })
-            .catch(err => {
-                process.stdout.write('Error in beforeEach\n');
-                throw err;
-            });
+                .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
+                .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
+                .then(() => s3.putObject({ Bucket: bucket, Key: keyNoHold }).promise())
+                .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
+                .then(res => {
+                    versionId = res.VersionId;
+                    process.stdout.write('Putting object legal hold\n');
+                    return s3.putObjectLegalHold({
+                        Bucket: bucket,
+                        Key: key,
+                        LegalHold: { Status: 'ON' },
+                    }).promise();
+                })
+                .catch(err => {
+                    process.stdout.write('Error in beforeEach\n');
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
             return changeLockPromise([{ bucket, key, versionId }], '')
-            .then(() => {
-                process.stdout.write('Emptying and deleting buckets\n');
-                return bucketUtil.empty(bucket);
-            })
-            .then(() => bucketUtil.empty(unlockedBucket))
-            .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]))
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Emptying and deleting buckets\n');
+                    return bucketUtil.empty(bucket);
+                })
+                .then(() => bucketUtil.empty(unlockedBucket))
+                .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]))
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should return AccessDenied getting legal hold with another account',

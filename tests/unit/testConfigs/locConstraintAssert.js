@@ -119,7 +119,7 @@ describe('locationConstraintAssert', () => {
             getAzureDetails());
         assert.doesNotThrow(() => {
             locationConstraintAssert({ 'azurefaketest': locationConstraint,
-            'us-east-1': usEast1 });
+                'us-east-1': usEast1 });
         },
         '/should not throw for a valid azure location constraint/');
     });

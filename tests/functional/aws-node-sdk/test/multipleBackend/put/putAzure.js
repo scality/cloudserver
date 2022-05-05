@@ -36,14 +36,14 @@ let s3;
 
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
     azureClient.getBlobProperties(azureContainerName, objectKey,
-    (err, res) => {
-        assert.strictEqual(err, null, 'Expected success, got error ' +
+        (err, res) => {
+            assert.strictEqual(err, null, 'Expected success, got error ' +
         `on call to Azure: ${err}`);
-        const resMD5 = convertMD5(res.contentSettings.contentMD5);
-        assert.strictEqual(resMD5, azureMD5);
-        assert.deepStrictEqual(res.metadata, azureMetadata);
-        return cb();
-    });
+            const resMD5 = convertMD5(res.contentSettings.contentMD5);
+            assert.strictEqual(resMD5, azureMD5);
+            assert.deepStrictEqual(res.metadata, azureMetadata);
+            return cb();
+        });
 }
 
 describeSkipIfNotMultiple('MultipleBackend put object to AZURE', function
@@ -59,14 +59,14 @@ describeF() {
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(azureContainerName)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(azureContainerName);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
         describe('with bucket location header', () => {
             beforeEach(done =>
@@ -99,65 +99,65 @@ describeF() {
                 };
                 async.waterfall([
                     next => s3.putObject(params, err => setTimeout(() =>
-                      next(err), azureTimeout)),
+                        next(err), azureTimeout)),
                     next => azureGetCheck(this.test.keyName, normalMD5, {},
-                      next),
+                        next),
                 ], done);
             });
         });
 
         describe('with no bucket location header', () => {
             beforeEach(() =>
-              s3.createBucket({ Bucket: azureContainerName }).promise()
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket: ${err}\n`);
-                    throw err;
-                }));
+                s3.createBucket({ Bucket: azureContainerName }).promise()
+                    .catch(err => {
+                        process.stdout.write(`Error creating bucket: ${err}\n`);
+                        throw err;
+                    }));
 
             keys.forEach(key => {
                 it(`should put a ${key.describe} object to Azure`,
+                    function itF(done) {
+                        const params = {
+                            Bucket: azureContainerName,
+                            Key: this.test.keyName,
+                            Metadata: { 'scal-location-constraint': azureLocation },
+                            Body: key.body,
+                        };
+                        s3.putObject(params, err => {
+                            assert.equal(err, null, 'Expected success, ' +
+                        `got error ${err}`);
+                            setTimeout(() =>
+                                azureGetCheck(this.test.keyName,
+                                    key.MD5, azureMetadata,
+                                    () => done()), azureTimeout);
+                        });
+                    });
+            });
+
+            it('should put a object to Azure location with bucketMatch=false',
                 function itF(done) {
                     const params = {
                         Bucket: azureContainerName,
                         Key: this.test.keyName,
-                        Metadata: { 'scal-location-constraint': azureLocation },
-                        Body: key.body,
+                        Metadata: { 'scal-location-constraint':
+                    azureLocationMismatch },
+                        Body: normalBody,
+                    };
+                    const azureMetadataMismatch = {
+                    /* eslint-disable camelcase */
+                        scal_location_constraint: azureLocationMismatch,
+                    /* eslint-enable camelcase */
                     };
                     s3.putObject(params, err => {
                         assert.equal(err, null, 'Expected success, ' +
-                        `got error ${err}`);
+                    `got error ${err}`);
                         setTimeout(() =>
-                            azureGetCheck(this.test.keyName,
-                              key.MD5, azureMetadata,
-                            () => done()), azureTimeout);
+                            azureGetCheck(
+                                `${azureContainerName}/${this.test.keyName}`,
+                                normalMD5, azureMetadataMismatch,
+                                () => done()), azureTimeout);
                     });
                 });
-            });
-
-            it('should put a object to Azure location with bucketMatch=false',
-            function itF(done) {
-                const params = {
-                    Bucket: azureContainerName,
-                    Key: this.test.keyName,
-                    Metadata: { 'scal-location-constraint':
-                    azureLocationMismatch },
-                    Body: normalBody,
-                };
-                const azureMetadataMismatch = {
-                    /* eslint-disable camelcase */
-                    scal_location_constraint: azureLocationMismatch,
-                    /* eslint-enable camelcase */
-                };
-                s3.putObject(params, err => {
-                    assert.equal(err, null, 'Expected success, ' +
-                    `got error ${err}`);
-                    setTimeout(() =>
-                        azureGetCheck(
-                          `${azureContainerName}/${this.test.keyName}`,
-                          normalMD5, azureMetadataMismatch,
-                        () => done()), azureTimeout);
-                });
-            });
 
             it('should return error ServiceUnavailable putting an invalid ' +
             'key name to Azure', done => {
@@ -205,12 +205,12 @@ describeF() {
                     next => {
                         params.Body = normalBody;
                         s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                            next(err), azureTimeout));
                     },
                     next => {
                         setTimeout(() => {
                             azureGetCheck(this.test.keyName, normalMD5,
-                              azureMetadata, next);
+                                azureMetadata, next);
                         }, azureTimeout);
                     },
                 ], done);
@@ -230,7 +230,7 @@ describeF() {
                         params.Metadata = { 'scal-location-constraint':
                         fileLocation };
                         s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                            next(err), azureTimeout));
                     },
                     next => s3.getObject({
                         Bucket: azureContainerName,
@@ -244,10 +244,10 @@ describeF() {
                         next();
                     }),
                     next => azureClient.getBlobProperties(azureContainerName,
-                    this.test.keyName, err => {
-                        assert.strictEqual(err.code, 'NotFound');
-                        next();
-                    }),
+                        this.test.keyName, err => {
+                            assert.strictEqual(err.code, 'NotFound');
+                            next();
+                        }),
                 ], done);
             });
 
@@ -256,8 +256,8 @@ describeF() {
             function itF(done) {
                 const params = { Bucket: azureContainerName, Key:
                     this.test.keyName,
-                    Body: normalBody,
-                    Metadata: { 'scal-location-constraint': fileLocation } };
+                Body: normalBody,
+                Metadata: { 'scal-location-constraint': fileLocation } };
                 async.waterfall([
                     next => s3.putObject(params, err => next(err)),
                     next => {
@@ -265,10 +265,10 @@ describeF() {
                             'scal-location-constraint': azureLocation,
                         };
                         s3.putObject(params, err => setTimeout(() =>
-                          next(err), azureTimeout));
+                            next(err), azureTimeout));
                     },
                     next => azureGetCheck(this.test.keyName, normalMD5,
-                      azureMetadata, next),
+                        azureMetadata, next),
                 ], done);
             });
 

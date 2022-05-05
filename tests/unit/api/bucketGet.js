@@ -112,7 +112,7 @@ const tests = [
                 query: { 'max-keys': '1' },
                 url: baseUrl,
             },
-            baseGetRequest
+            baseGetRequest,
         ),
         assertion: result => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
@@ -120,7 +120,7 @@ const tests = [
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
             assert.strictEqual(
                 result.ListBucketResult.NextContinuationToken[0],
-                'aW52YWxpZFVSSX5+fmI='
+                'aW52YWxpZFVSSX5+fmI=',
             );
         },
     },
@@ -131,7 +131,7 @@ const tests = [
                 query: { 'encoding-type': 'url', 'max-keys': '1' },
                 url: baseUrl,
             },
-            baseGetRequest
+            baseGetRequest,
         ),
         assertion: result => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
@@ -139,7 +139,7 @@ const tests = [
             assert.strictEqual(result.ListBucketResult.Contents[1], undefined);
             assert.strictEqual(
                 result.ListBucketResult.NextContinuationToken[0],
-                'aW52YWxpZFVSSX5+fmI='
+                'aW52YWxpZFVSSX5+fmI=',
             );
         },
     },
@@ -177,9 +177,9 @@ describe('bucketGet API', () => {
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
                 (corsHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest1, undefined, log, next),
+                    testPutObjectRequest1, undefined, log, next),
                 (resHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest2, undefined, log, next),
+                    testPutObjectRequest2, undefined, log, next),
                 (resHeaders, next) => objectPut(authInfo,
                     testPutObjectRequest3, undefined, log, next),
                 (resHeaders, next) =>
@@ -216,7 +216,7 @@ describe('bucketGet API', () => {
         ],
         (err, result) => {
             assert.strictEqual(result.ListBucketResult.Contents[0].Key[0],
-                              testPutObjectRequest4.objectKey);
+                testPutObjectRequest4.objectKey);
             done();
         });
     });
@@ -293,9 +293,9 @@ describe('bucketGet API V2', () => {
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
                 (corsHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest1, undefined, log, next),
+                    testPutObjectRequest1, undefined, log, next),
                 (resHeaders, next) => objectPut(authInfo,
-                        testPutObjectRequest2, undefined, log, next),
+                    testPutObjectRequest2, undefined, log, next),
                 (resHeaders, next) => objectPut(authInfo,
                     testPutObjectRequest3, undefined, log, next),
                 (resHeaders, next) =>

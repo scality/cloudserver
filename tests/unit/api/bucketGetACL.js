@@ -59,7 +59,7 @@ describe('bucketGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1], undefined);
             done();
@@ -93,13 +93,13 @@ describe('bucketGetACL API', () => {
                 AccessControlList[0].Grant[0].Permission[0], 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0].URI[0],
-                constants.publicId);
+            constants.publicId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1]
                 .Permission[0], 'READ');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0].URI[0],
-                constants.publicId);
+            constants.publicId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2]
                 .Permission[0], 'WRITE');
@@ -136,7 +136,7 @@ describe('bucketGetACL API', () => {
                 AccessControlList[0].Grant[0].Permission[0], 'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0].URI[0],
-                constants.publicId);
+            constants.publicId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1]
                 .Permission[0], 'READ');
@@ -171,7 +171,7 @@ describe('bucketGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .URI[0], constants.allAuthedUsersId);
@@ -209,7 +209,7 @@ describe('bucketGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .URI[0], constants.logId);
@@ -270,7 +270,7 @@ describe('bucketGetACL API', () => {
                 .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .ID[0], canonicalIDforSample2);
@@ -279,7 +279,7 @@ describe('bucketGetACL API', () => {
                 .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
                 .ID[0], canonicalIDforSample2);
@@ -288,7 +288,7 @@ describe('bucketGetACL API', () => {
                 .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Permission[0],
-                'WRITE_ACP');
+            'WRITE_ACP');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
                 .ID[0], canonicalIDforSample1);
@@ -297,7 +297,7 @@ describe('bucketGetACL API', () => {
                 .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Permission[0],
-                'READ_ACP');
+            'READ_ACP');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[4].Grantee[0]
                 .URI[0], constants.publicId);

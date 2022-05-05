@@ -126,23 +126,23 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
                 assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                    authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0],
                     'false');
                 assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '1');
+                    '1');
                 assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
+                    sixMBObjectETag);
                 assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
+                    '6000000');
                 assert.strictEqual(json.ListPartsResult.Part[4].PartNumber[0],
-                                   '5');
+                    '5');
                 assert.strictEqual(json.ListPartsResult.Part[4].ETag[0],
-                                   lastPieceETag);
+                    lastPieceETag);
                 assert.strictEqual(json.ListPartsResult.Part[4].Size[0], '18');
                 assert.strictEqual(json.ListPartsResult.Part.length, 5);
                 done();
@@ -168,7 +168,7 @@ describe('List Parts API', () => {
             assert.strictEqual(err, null);
             parseString(xml, (err, json) => {
                 assert.strictEqual(json.ListPartsResult.Key[0],
-                                   urlEncodedObjectKey);
+                    urlEncodedObjectKey);
                 done();
             });
         });
@@ -197,18 +197,18 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '4');
                 assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                    authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
                 assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
+                    '4');
                 assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
+                    '3');
                 assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
+                    sixMBObjectETag);
                 assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
+                    '6000000');
                 assert.strictEqual(json.ListPartsResult.Part.length, 4);
                 done();
             });
@@ -238,19 +238,19 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '6');
                 assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                    authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0],
                     'false');
                 assert.strictEqual(json.ListPartsResult.PartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '3');
+                    '3');
                 assert.strictEqual(json.ListPartsResult.Part[2].ETag[0],
-                                   sixMBObjectETag);
+                    sixMBObjectETag);
                 assert.strictEqual(json.ListPartsResult.Part[2].Size[0],
-                                   '6000000');
+                    '6000000');
                 assert.strictEqual(json.ListPartsResult.Part.length, 5);
                 done();
             });
@@ -279,21 +279,21 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '1000');
                 assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                    authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0],
                     'false');
                 assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
+                    '2');
                 assert.strictEqual(json.ListPartsResult.NextPartNumberMarker,
-                                   undefined);
+                    undefined);
                 assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
+                    '3');
                 assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
+                    sixMBObjectETag);
                 assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
+                    '6000000');
                 assert.strictEqual(json.ListPartsResult.Part[2].PartNumber[0],
-                                   '5');
+                    '5');
                 assert.strictEqual(json.ListPartsResult.Part.length, 3);
                 done();
             });
@@ -324,20 +324,20 @@ describe('List Parts API', () => {
                 assert.strictEqual(json.ListPartsResult.UploadId[0], uploadId);
                 assert.strictEqual(json.ListPartsResult.MaxParts[0], '2');
                 assert.strictEqual(json.ListPartsResult.Initiator[0].ID[0],
-                                   authInfo.getCanonicalID());
+                    authInfo.getCanonicalID());
                 assert.strictEqual(json.ListPartsResult.IsTruncated[0], 'true');
                 assert.strictEqual(json.ListPartsResult.PartNumberMarker[0],
-                                   '2');
+                    '2');
                 assert.strictEqual(json.ListPartsResult.NextPartNumberMarker[0],
-                                   '4');
+                    '4');
                 assert.strictEqual(json.ListPartsResult.Part[0].PartNumber[0],
-                                   '3');
+                    '3');
                 assert.strictEqual(json.ListPartsResult.Part[0].ETag[0],
-                                   sixMBObjectETag);
+                    sixMBObjectETag);
                 assert.strictEqual(json.ListPartsResult.Part[0].Size[0],
-                                   '6000000');
+                    '6000000');
                 assert.strictEqual(json.ListPartsResult.Part[1].PartNumber[0],
-                                   '4');
+                    '4');
                 assert.strictEqual(json.ListPartsResult.Part.length, 2);
                 done();
             });

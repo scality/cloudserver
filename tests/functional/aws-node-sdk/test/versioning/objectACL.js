@@ -40,7 +40,7 @@ class _Utils {
             },
             (data, next) => {
                 const responseHeaders = request.response
-                .httpResponse.headers;
+                    .httpResponse.headers;
                 const dataObj = Object.assign({
                     VersionId: responseHeaders['x-amz-version-id'],
                 }, data);
@@ -259,111 +259,53 @@ describe('versioned put and get object acl ::', () => {
         });
 
         describe('on a version-enabled bucket with non-versioned object :: ',
-        () => {
-            const versionIds = [];
+            () => {
+                const versionIds = [];
 
-            beforeEach(done => {
-                const params = { Bucket: bucket, Key: key };
-                async.waterfall([
-                    callback => s3.putObject(params, err => callback(err)),
-                    callback => s3.putBucketVersioning({
-                        Bucket: bucket,
-                        VersioningConfiguration: versioningEnabled,
-                    }, err => callback(err)),
-                ], done);
-            });
-
-            afterEach(done => {
-                // cleanup versionIds just in case
-                versionIds.length = 0;
-                done();
-            });
-
-            describe('before putting new versions :: ', () => {
-                it('non-version specific put and get ACL should now ' +
-                'return version ID ("null") in response headers', done => {
-                    const expectedRes = { versionId: 'null' };
-                    utils.putAndGetAcl('public-read', undefined, expectedRes,
-                    done);
-                });
-            });
-
-            describe('after putting new versions :: ', () => {
                 beforeEach(done => {
                     const params = { Bucket: bucket, Key: key };
-                    async.timesSeries(counter, (i, next) =>
-                        s3.putObject(params, (err, data) => {
-                            _Utils.assertNoError(err, `putting version #${i}`);
-                            versionIds.push(data.VersionId);
-                            next(err);
-                        }), done);
+                    async.waterfall([
+                        callback => s3.putObject(params, err => callback(err)),
+                        callback => s3.putBucketVersioning({
+                            Bucket: bucket,
+                            VersioningConfiguration: versioningEnabled,
+                        }, err => callback(err)),
+                    ], done);
                 });
 
-                _testBehaviorVersioningEnabledOrSuspended(utils, versionIds);
+                afterEach(done => {
+                // cleanup versionIds just in case
+                    versionIds.length = 0;
+                    done();
+                });
+
+                describe('before putting new versions :: ', () => {
+                    it('non-version specific put and get ACL should now ' +
+                'return version ID ("null") in response headers', done => {
+                        const expectedRes = { versionId: 'null' };
+                        utils.putAndGetAcl('public-read', undefined, expectedRes,
+                            done);
+                    });
+                });
+
+                describe('after putting new versions :: ', () => {
+                    beforeEach(done => {
+                        const params = { Bucket: bucket, Key: key };
+                        async.timesSeries(counter, (i, next) =>
+                            s3.putObject(params, (err, data) => {
+                                _Utils.assertNoError(err, `putting version #${i}`);
+                                versionIds.push(data.VersionId);
+                                next(err);
+                            }), done);
+                    });
+
+                    _testBehaviorVersioningEnabledOrSuspended(utils, versionIds);
+                });
             });
-        });
 
         describe('on a version-enabled bucket - version non-specified :: ',
-        () => {
-            let versionId;
-            beforeEach(done => {
-                const params = { Bucket: bucket, Key: key };
-                async.waterfall([
-                    callback => s3.putBucketVersioning({
-                        Bucket: bucket,
-                        VersioningConfiguration: versioningEnabled,
-                    }, err => callback(err)),
-                    callback => s3.putObject(params, (err, data) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        versionId = data.VersionId;
-                        return callback();
-                    }),
-                ], done);
-            });
-
-            it('should not create version putting ACL on a' +
-            'version-enabled bucket where no version id is specified',
-            done => {
-                const params = { Bucket: bucket, Key: key, ACL: 'public-read' };
-                utils.putObjectAcl(params, () => {
-                    checkOneVersion(s3, bucket, versionId, done);
-                });
-            });
-        });
-
-        describe('on version-suspended bucket with non-versioned object :: ',
-        () => {
-            const versionIds = [];
-
-            beforeEach(done => {
-                const params = { Bucket: bucket, Key: key };
-                async.waterfall([
-                    callback => s3.putObject(params, err => callback(err)),
-                    callback => s3.putBucketVersioning({
-                        Bucket: bucket,
-                        VersioningConfiguration: versioningSuspended,
-                    }, err => callback(err)),
-                ], done);
-            });
-
-            afterEach(done => {
-                // cleanup versionIds just in case
-                versionIds.length = 0;
-                done();
-            });
-
-            describe('before putting new versions :: ', () => {
-                it('non-version specific put and get ACL should still ' +
-                'return version ID ("null") in response headers', done => {
-                    const expectedRes = { versionId: 'null' };
-                    utils.putAndGetAcl('public-read', undefined, expectedRes,
-                    done);
-                });
-            });
-
-            describe('after putting new versions :: ', () => {
+            () => {
+                let versionId;
                 beforeEach(done => {
                     const params = { Bucket: bucket, Key: key };
                     async.waterfall([
@@ -371,13 +313,34 @@ describe('versioned put and get object acl ::', () => {
                             Bucket: bucket,
                             VersioningConfiguration: versioningEnabled,
                         }, err => callback(err)),
-                        callback => async.timesSeries(counter, (i, next) =>
-                            s3.putObject(params, (err, data) => {
-                                _Utils.assertNoError(err,
-                                    `putting version #${i}`);
-                                versionIds.push(data.VersionId);
-                                next(err);
-                            }), err => callback(err)),
+                        callback => s3.putObject(params, (err, data) => {
+                            if (err) {
+                                return callback(err);
+                            }
+                            versionId = data.VersionId;
+                            return callback();
+                        }),
+                    ], done);
+                });
+
+                it('should not create version putting ACL on a' +
+            'version-enabled bucket where no version id is specified',
+                done => {
+                    const params = { Bucket: bucket, Key: key, ACL: 'public-read' };
+                    utils.putObjectAcl(params, () => {
+                        checkOneVersion(s3, bucket, versionId, done);
+                    });
+                });
+            });
+
+        describe('on version-suspended bucket with non-versioned object :: ',
+            () => {
+                const versionIds = [];
+
+                beforeEach(done => {
+                    const params = { Bucket: bucket, Key: key };
+                    async.waterfall([
+                        callback => s3.putObject(params, err => callback(err)),
                         callback => s3.putBucketVersioning({
                             Bucket: bucket,
                             VersioningConfiguration: versioningSuspended,
@@ -385,8 +348,45 @@ describe('versioned put and get object acl ::', () => {
                     ], done);
                 });
 
-                _testBehaviorVersioningEnabledOrSuspended(utils, versionIds);
+                afterEach(done => {
+                // cleanup versionIds just in case
+                    versionIds.length = 0;
+                    done();
+                });
+
+                describe('before putting new versions :: ', () => {
+                    it('non-version specific put and get ACL should still ' +
+                'return version ID ("null") in response headers', done => {
+                        const expectedRes = { versionId: 'null' };
+                        utils.putAndGetAcl('public-read', undefined, expectedRes,
+                            done);
+                    });
+                });
+
+                describe('after putting new versions :: ', () => {
+                    beforeEach(done => {
+                        const params = { Bucket: bucket, Key: key };
+                        async.waterfall([
+                            callback => s3.putBucketVersioning({
+                                Bucket: bucket,
+                                VersioningConfiguration: versioningEnabled,
+                            }, err => callback(err)),
+                            callback => async.timesSeries(counter, (i, next) =>
+                                s3.putObject(params, (err, data) => {
+                                    _Utils.assertNoError(err,
+                                        `putting version #${i}`);
+                                    versionIds.push(data.VersionId);
+                                    next(err);
+                                }), err => callback(err)),
+                            callback => s3.putBucketVersioning({
+                                Bucket: bucket,
+                                VersioningConfiguration: versioningSuspended,
+                            }, err => callback(err)),
+                        ], done);
+                    });
+
+                    _testBehaviorVersioningEnabledOrSuspended(utils, versionIds);
+                });
             });
-        });
     });
 });

@@ -7,7 +7,7 @@ function templateSSEConfig({ algorithm, keyId }) {
     <?xml version="1.0" encoding="UTF-8"?>
     <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
         <Rule>
-            <ApplyServerSideEncryptionByDefault>`
+            <ApplyServerSideEncryptionByDefault>`,
     );
 
     if (algorithm) {

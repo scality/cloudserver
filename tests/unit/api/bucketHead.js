@@ -37,14 +37,14 @@ describe('bucketHead API', () => {
     });
 
     it('should return no error if bucket exists and user is authorized',
-    done => {
-        bucketPut(authInfo, testRequest, log, () => {
-            bucketHead(authInfo, testRequest, log, err => {
-                assert.strictEqual(err, null);
-                done();
+        done => {
+            bucketPut(authInfo, testRequest, log, () => {
+                bucketHead(authInfo, testRequest, log, err => {
+                    assert.strictEqual(err, null);
+                    done();
+                });
             });
         });
-    });
 
     it('should return expected header value for x-amz-bucket-region', done => {
         bucketPut(authInfo, testRequest, log, () => {

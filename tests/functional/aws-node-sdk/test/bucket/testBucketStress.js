@@ -36,6 +36,6 @@ describe('aws-node-sdk stress test bucket', function testSuite() {
             next => putObjects(s3, loopId, err => next(err)),
             next => deleteObjects(s3, loopId, err => next(err)),
             next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
-        ], err => next(err)), done)
+        ], err => next(err)), done),
     );
 });

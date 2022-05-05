@@ -92,21 +92,21 @@ function _assertResponseHtml404(method, response, type) {
     if (method === 'HEAD') {
         if (type === '404-no-such-bucket') {
             assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchBucket');
+                'NoSuchBucket');
             // Need arsenal fixed to remove period at the end
             // so compatible with aws
             assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not exist.');
+                'The specified bucket does not exist.');
         } else if (type === '404-no-such-website-configuration') {
             assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchWebsiteConfiguration');
+                'NoSuchWebsiteConfiguration');
             assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified bucket does not have a website configuration');
+                'The specified bucket does not have a website configuration');
         } else if (type === '404-not-found') {
             assert.strictEqual(response.headers['x-amz-error-code'],
-            'NoSuchKey');
+                'NoSuchKey');
             assert.strictEqual(response.headers['x-amz-error-message'],
-            'The specified key does not exist.');
+                'The specified key does not exist.');
         } else {
             throw new Error(`'${type}' is not a recognized 404 ` +
             'error checked in the WebsiteConfigTester.checkHTML function');
@@ -146,9 +146,9 @@ function _assertResponseHtml403(method, response, type) {
     if (method === 'HEAD') {
         if (type === '403-access-denied') {
             assert.strictEqual(response.headers['x-amz-error-code'],
-            'AccessDenied');
+                'AccessDenied');
             assert.strictEqual(response.headers['x-amz-error-message'],
-            'Access Denied');
+                'Access Denied');
         } else if (type !== '403-retrieve-error-document') {
             throw new Error(`'${type}' is not a recognized 403 ` +
             'error checked in the WebsiteConfigTester.checkHTML function');
@@ -163,17 +163,17 @@ function _assertResponseHtml403(method, response, type) {
         ]);
         if (type === '403-retrieve-error-document') {
             _assertResponseHtml(response.body, 'h3',
-            'An Error Occurred While Attempting to ' +
+                'An Error Occurred While Attempting to ' +
             'Retrieve a Custom Error Document');
             // start searching for second `ul` element after `h3` element
             const startingTag = '</h3>';
             const startIndex = response.body.indexOf(startingTag)
                 + startingTag.length;
             _assertResponseHtml(response.body.slice(startIndex),
-            'ul', [
-                'Code: AccessDenied',
-                'Message: Access Denied',
-            ]);
+                'ul', [
+                    'Code: AccessDenied',
+                    'Message: Access Denied',
+                ]);
         } else if (type !== '403-access-denied') {
             throw new Error(`'${type}' is not a recognized 403 ` +
             'error checked in the WebsiteConfigTester.checkHTML function');
@@ -213,9 +213,9 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method) {
             // no need to check HTML
         }
         _assertResponseHtml(response.body, 'title',
-        'Best redirect link ever');
+            'Best redirect link ever');
         _assertResponseHtml(response.body, 'h1',
-        'Welcome to your redirection file');
+            'Welcome to your redirection file');
     } else {
         throw new Error(`'${type}' is not a recognized redirect type ` +
         'checked in the WebsiteConfigTester.checkHTML function');
@@ -327,29 +327,29 @@ class WebsiteConfigTester {
 
     static createPutBucketWebsite(s3, bucket, bucketACL, objects, done) {
         s3.createBucket({ Bucket: bucket, ACL: bucketACL },
-        err => {
-            if (err) {
-                return done(err);
-            }
-            const webConfig = new WebsiteConfigTester('index.html',
-              'error.html');
-            return s3.putBucketWebsite({ Bucket: bucket,
-                WebsiteConfiguration: webConfig }, err => {
+            err => {
                 if (err) {
                     return done(err);
                 }
-                return async.forEachOf(objects,
-                (acl, object, next) => {
-                    s3.putObject({ Bucket: bucket,
-                        Key: `${object}.html`,
-                        ACL: acl,
-                        Body: fs.readFileSync(path.join(__dirname,
-                            `/../../test/object/websiteFiles/${object}.html`)),
-                    },
-                        next);
-                }, done);
+                const webConfig = new WebsiteConfigTester('index.html',
+                    'error.html');
+                return s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return async.forEachOf(objects,
+                        (acl, object, next) => {
+                            s3.putObject({ Bucket: bucket,
+                                Key: `${object}.html`,
+                                ACL: acl,
+                                Body: fs.readFileSync(path.join(__dirname,
+                                    `/../../test/object/websiteFiles/${object}.html`)),
+                            },
+                            next);
+                        }, done);
+                });
             });
-        });
     }
 
     static deleteObjectsThenBucket(s3, bucket, objects, done) {

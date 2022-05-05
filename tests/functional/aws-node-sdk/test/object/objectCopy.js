@@ -78,25 +78,25 @@ describe('Object Copy', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return bucketUtil.empty(sourceBucketName)
-            .then(() =>
-                bucketUtil.empty(destBucketName)
-            )
-            .then(() =>
-                bucketUtil.deleteMany([sourceBucketName, destBucketName])
-            )
-            .catch(err => {
-                if (err.code !== 'NoSuchBucket') {
-                    process.stdout.write(`${err}\n`);
+                .then(() =>
+                    bucketUtil.empty(destBucketName),
+                )
+                .then(() =>
+                    bucketUtil.deleteMany([sourceBucketName, destBucketName]),
+                )
+                .catch(err => {
+                    if (err.code !== 'NoSuchBucket') {
+                        process.stdout.write(`${err}\n`);
+                        throw err;
+                    }
+                })
+                .then(() => bucketUtil.createOne(sourceBucketName),
+                )
+                .then(() => bucketUtil.createOne(destBucketName),
+                )
+                .catch(err => {
                     throw err;
-                }
-            })
-            .then(() => bucketUtil.createOne(sourceBucketName)
-            )
-            .then(() => bucketUtil.createOne(destBucketName)
-            )
-            .catch(err => {
-                throw err;
-            });
+                });
         });
 
         beforeEach(() => s3.putObject({
@@ -121,7 +121,7 @@ describe('Object Copy', () => {
         }));
 
         afterEach(() => bucketUtil.empty(sourceBucketName)
-            .then(() => bucketUtil.empty(destBucketName))
+            .then(() => bucketUtil.empty(destBucketName)),
         );
 
         after(() => bucketUtil.deleteMany([sourceBucketName, destBucketName]));
@@ -155,21 +155,21 @@ describe('Object Copy', () => {
 
         function checkSuccessTagging(key, value, cb) {
             s3.getObjectTagging({ Bucket: destBucketName, Key: destObjName },
-            (err, data) => {
-                checkNoError(err);
-                assert.strictEqual(data.TagSet[0].Key, key);
-                assert.strictEqual(data.TagSet[0].Value, value);
-                cb();
-            });
+                (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.TagSet[0].Key, key);
+                    assert.strictEqual(data.TagSet[0].Value, value);
+                    cb();
+                });
         }
 
         function checkNoTagging(cb) {
             s3.getObjectTagging({ Bucket: destBucketName, Key: destObjName },
-            (err, data) => {
-                checkNoError(err);
-                assert.strictEqual(data.TagSet.length, 0);
-                cb();
-            });
+                (err, data) => {
+                    checkNoError(err);
+                    assert.strictEqual(data.TagSet.length, 0);
+                    cb();
+                });
         }
 
         it('should copy an object from a source bucket to a different ' +
@@ -177,10 +177,10 @@ describe('Object Copy', () => {
             'header provided', done => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}` },
-                (err, res) =>
-                    successCopyCheck(err, res, originalMetadata,
-                        destBucketName, destObjName, done)
-                );
+            (err, res) =>
+                successCopyCheck(err, res, originalMetadata,
+                    destBucketName, destObjName, done),
+            );
         });
 
         it('should copy an object from a source bucket to a different ' +
@@ -188,10 +188,10 @@ describe('Object Copy', () => {
             'header provided', done => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}` },
-                err => {
-                    checkNoError(err);
-                    checkSuccessTagging(originalTagKey, originalTagValue, done);
-                });
+            err => {
+                checkNoError(err);
+                checkSuccessTagging(originalTagKey, originalTagValue, done);
+            });
         });
 
         it('should return 400 InvalidArgument if invalid tagging ' +
@@ -199,10 +199,10 @@ describe('Object Copy', () => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 TaggingDirective: 'COCO' },
-                err => {
-                    checkError(err, 'InvalidArgument');
-                    done();
-                });
+            err => {
+                checkError(err, 'InvalidArgument');
+                done();
+            });
         });
 
         it('should copy an object from a source bucket to a different ' +
@@ -211,10 +211,10 @@ describe('Object Copy', () => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 TaggingDirective: 'COPY' },
-                err => {
-                    checkNoError(err);
-                    checkSuccessTagging(originalTagKey, originalTagValue, done);
-                });
+            err => {
+                checkNoError(err);
+                checkSuccessTagging(originalTagKey, originalTagValue, done);
+            });
         });
 
         it('should copy an object and tag set if COPY ' +
@@ -225,53 +225,13 @@ describe('Object Copy', () => {
                 TaggingDirective: 'COPY',
                 Tagging: newTagging,
             },
-                err => {
-                    checkNoError(err);
-                    s3.getObject({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
-                        assert.deepStrictEqual(res.Metadata, originalMetadata);
-                        done();
-                    });
-                });
-        });
-
-        it('should copy an object from a source to the same destination ' +
-        'updating tag if REPLACE tagging directive header provided',
-        done => {
-            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                TaggingDirective: 'REPLACE', Tagging: newTagging },
-                err => {
-                    checkNoError(err);
-                    checkSuccessTagging(newTagKey, newTagValue, done);
-                });
-        });
-
-        it('should copy an object from a source to the same destination ' +
-        'return no tag if REPLACE tagging directive header provided but ' +
-        '"x-amz-tagging" header is not specified', done => {
-            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                CopySource: `${sourceBucketName}/${sourceObjName}`,
-                TaggingDirective: 'REPLACE' },
-                err => {
-                    checkNoError(err);
-                    checkNoTagging(done);
-                });
-        });
-
-        it('should copy an object from a source to the same destination ' +
-        'return no tag if COPY tagging directive header but provided from ' +
-        'an empty object', done => {
-            s3.putObject({ Bucket: sourceBucketName, Key: 'emptyobject' },
             err => {
                 checkNoError(err);
-                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                    CopySource: `${sourceBucketName}/emptyobject`,
-                    TaggingDirective: 'COPY' },
-                    err => {
-                        checkNoError(err);
-                        checkNoTagging(done);
-                    });
+                s3.getObject({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    assert.deepStrictEqual(res.Metadata, originalMetadata);
+                    done();
+                });
             });
         });
 
@@ -281,10 +241,50 @@ describe('Object Copy', () => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 TaggingDirective: 'REPLACE', Tagging: newTagging },
+            err => {
+                checkNoError(err);
+                checkSuccessTagging(newTagKey, newTagValue, done);
+            });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'return no tag if REPLACE tagging directive header provided but ' +
+        '"x-amz-tagging" header is not specified', done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'REPLACE' },
+            err => {
+                checkNoError(err);
+                checkNoTagging(done);
+            });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'return no tag if COPY tagging directive header but provided from ' +
+        'an empty object', done => {
+            s3.putObject({ Bucket: sourceBucketName, Key: 'emptyobject' },
                 err => {
                     checkNoError(err);
-                    checkSuccessTagging(newTagKey, newTagValue, done);
+                    s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                        CopySource: `${sourceBucketName}/emptyobject`,
+                        TaggingDirective: 'COPY' },
+                    err => {
+                        checkNoError(err);
+                        checkNoTagging(done);
+                    });
                 });
+        });
+
+        it('should copy an object from a source to the same destination ' +
+        'updating tag if REPLACE tagging directive header provided',
+        done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                TaggingDirective: 'REPLACE', Tagging: newTagging },
+            err => {
+                checkNoError(err);
+                checkSuccessTagging(newTagKey, newTagValue, done);
+            });
         });
 
         describe('Copy object updating tag set', () => {
@@ -304,7 +304,7 @@ describe('Object Copy', () => {
                         assert.equal(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
                         return checkSuccessTagging(taggingTest.tag.key,
-                          taggingTest.tag.value, done);
+                            taggingTest.tag.value, done);
                     });
                 });
             });
@@ -313,90 +313,90 @@ describe('Object Copy', () => {
         it('should also copy additional headers (CacheControl, ' +
         'ContentDisposition, ContentEncoding, Expires) when copying an ' +
         'object from a source bucket to a different destination bucket',
-          done => {
-              s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                  CopySource: `${sourceBucketName}/${sourceObjName}` },
-                  err => {
-                      checkNoError(err);
-                      s3.getObject({ Bucket: destBucketName, Key: destObjName },
-                        (err, res) => {
-                            if (err) {
-                                done(err);
-                            }
-                            assert.strictEqual(res.CacheControl,
-                              originalCacheControl);
-                            assert.strictEqual(res.ContentDisposition,
-                              originalContentDisposition);
-                            // Should remove V4 streaming value 'aws-chunked'
-                            // to be compatible with AWS behavior
-                            assert.strictEqual(res.ContentEncoding,
-                              'base64,'
-                            );
-                            assert.strictEqual(res.Expires.toGMTString(),
-                                originalExpires.toGMTString());
-                            done();
-                        });
-                  });
-          });
+        done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}` },
+            err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                    (err, res) => {
+                        if (err) {
+                            done(err);
+                        }
+                        assert.strictEqual(res.CacheControl,
+                            originalCacheControl);
+                        assert.strictEqual(res.ContentDisposition,
+                            originalContentDisposition);
+                        // Should remove V4 streaming value 'aws-chunked'
+                        // to be compatible with AWS behavior
+                        assert.strictEqual(res.ContentEncoding,
+                            'base64,',
+                        );
+                        assert.strictEqual(res.Expires.toGMTString(),
+                            originalExpires.toGMTString());
+                        done();
+                    });
+            });
+        });
 
         it('should copy an object from a source bucket to a different ' +
             'key in the same bucket',
-            done => {
-                s3.copyObject({ Bucket: sourceBucketName, Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}` },
-                    (err, res) =>
-                        successCopyCheck(err, res, originalMetadata,
-                            sourceBucketName, destObjName, done)
-                    );
-            });
+        done => {
+            s3.copyObject({ Bucket: sourceBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}` },
+            (err, res) =>
+                successCopyCheck(err, res, originalMetadata,
+                    sourceBucketName, destObjName, done),
+            );
+        });
 
         // TODO: see S3C-3482, figure out why this test fails in Integration builds
         itSkipIfE2E('should not return error if copying object w/ > ' +
         '2KB user-defined md and COPY directive',
-            done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = {
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    MetadataDirective: 'COPY',
-                    Metadata: metadata,
-                };
+        done => {
+            const metadata = genMaxSizeMetaHeaders();
+            const params = {
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'COPY',
+                Metadata: metadata,
+            };
+            s3.copyObject(params, err => {
+                assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                // add one more byte to be over the limit
+                metadata.header0 = `${metadata.header0}${'0'}`;
                 s3.copyObject(params, err => {
                     assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    // add one more byte to be over the limit
-                    metadata.header0 = `${metadata.header0}${'0'}`;
-                    s3.copyObject(params, err => {
-                        assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                        done();
-                    });
+                    done();
                 });
             });
+        });
 
         // TODO: see S3C-3482, figure out why this test fails in Integration builds
         itSkipIfE2E('should return error if copying object w/ > 2KB ' +
         'user-defined md and REPLACE directive',
-            done => {
-                const metadata = genMaxSizeMetaHeaders();
-                const params = {
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    MetadataDirective: 'REPLACE',
-                    Metadata: metadata,
-                };
+        done => {
+            const metadata = genMaxSizeMetaHeaders();
+            const params = {
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                MetadataDirective: 'REPLACE',
+                Metadata: metadata,
+            };
+            s3.copyObject(params, err => {
+                assert.strictEqual(err, null, `Unexpected err: ${err}`);
+                // add one more byte to be over the limit
+                metadata.header0 = `${metadata.header0}${'0'}`;
                 s3.copyObject(params, err => {
-                    assert.strictEqual(err, null, `Unexpected err: ${err}`);
-                    // add one more byte to be over the limit
-                    metadata.header0 = `${metadata.header0}${'0'}`;
-                    s3.copyObject(params, err => {
-                        assert(err, 'Expected err but did not find one');
-                        assert.strictEqual(err.code, 'MetadataTooLarge');
-                        assert.strictEqual(err.statusCode, 400);
-                        done();
-                    });
+                    assert(err, 'Expected err but did not find one');
+                    assert.strictEqual(err.code, 'MetadataTooLarge');
+                    assert.strictEqual(err.statusCode, 400);
+                    done();
                 });
             });
+        });
 
         it('should copy an object from a source to the same destination ' +
             '(update metadata)', done => {
@@ -404,10 +404,10 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 MetadataDirective: 'REPLACE',
                 Metadata: newMetadata },
-                (err, res) =>
-                    successCopyCheck(err, res, newMetadata,
-                        sourceBucketName, sourceObjName, done)
-                );
+            (err, res) =>
+                successCopyCheck(err, res, newMetadata,
+                    sourceBucketName, sourceObjName, done),
+            );
         });
 
         it('should copy an object and replace the metadata if replace ' +
@@ -417,10 +417,10 @@ describe('Object Copy', () => {
                 MetadataDirective: 'REPLACE',
                 Metadata: newMetadata,
             },
-                (err, res) =>
-                    successCopyCheck(err, res, newMetadata,
-                        destBucketName, destObjName, done)
-                );
+            (err, res) =>
+                successCopyCheck(err, res, newMetadata,
+                    destBucketName, destObjName, done),
+            );
         });
 
         it('should copy an object and replace ContentType if replace ' +
@@ -480,7 +480,7 @@ describe('Object Copy', () => {
                     }
                     assert.strictEqual(res.CacheControl, newCacheControl);
                     assert.strictEqual(res.ContentDisposition,
-                      newContentDisposition);
+                        newContentDisposition);
                     // Should remove V4 streaming value 'aws-chunked'
                     // to be compatible with AWS behavior
                     assert.strictEqual(res.ContentEncoding, 'gzip,');
@@ -499,14 +499,14 @@ describe('Object Copy', () => {
                 MetadataDirective: 'COPY',
                 Metadata: newMetadata,
             },
-                err => {
-                    checkNoError(err);
-                    s3.getObject({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
-                        assert.deepStrictEqual(res.Metadata, originalMetadata);
-                        done();
-                    });
+            err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    assert.deepStrictEqual(res.Metadata, originalMetadata);
+                    done();
                 });
+            });
         });
 
         it('should copy an object and its additional headers if copy ' +
@@ -523,20 +523,20 @@ describe('Object Copy', () => {
             }, err => {
                 checkNoError(err);
                 s3.getObject({ Bucket: destBucketName, Key: destObjName },
-                  (err, res) => {
-                      if (err) {
-                          done(err);
-                      }
-                      assert.strictEqual(res.CacheControl,
-                        originalCacheControl);
-                      assert.strictEqual(res.ContentDisposition,
-                        originalContentDisposition);
-                      assert.strictEqual(res.ContentEncoding,
-                        'base64,');
-                      assert.strictEqual(res.Expires.toGMTString(),
-                        originalExpires.toGMTString());
-                      done();
-                  });
+                    (err, res) => {
+                        if (err) {
+                            done(err);
+                        }
+                        assert.strictEqual(res.CacheControl,
+                            originalCacheControl);
+                        assert.strictEqual(res.ContentDisposition,
+                            originalContentDisposition);
+                        assert.strictEqual(res.ContentEncoding,
+                            'base64,');
+                        assert.strictEqual(res.Expires.toGMTString(),
+                            originalExpires.toGMTString());
+                        done();
+                    });
             });
         });
 
@@ -547,18 +547,18 @@ describe('Object Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                 },
-                    (err, res) => {
+                (err, res) => {
+                    checkNoError(err);
+                    assert.strictEqual(res.ETag, emptyFileETag);
+                    s3.getObject({ Bucket: destBucketName,
+                        Key: destObjName }, (err, res) => {
                         checkNoError(err);
+                        assert.deepStrictEqual(res.Metadata,
+                            originalMetadata);
                         assert.strictEqual(res.ETag, emptyFileETag);
-                        s3.getObject({ Bucket: destBucketName,
-                            Key: destObjName }, (err, res) => {
-                            checkNoError(err);
-                            assert.deepStrictEqual(res.Metadata,
-                                originalMetadata);
-                            assert.strictEqual(res.ETag, emptyFileETag);
-                            done();
-                        });
+                        done();
                     });
+                });
             });
         });
 
@@ -570,19 +570,19 @@ describe('Object Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     StorageClass: 'REDUCED_REDUNDANCY',
                 },
-                    (err, res) => {
-                        checkNoError(err);
+                (err, res) => {
+                    checkNoError(err);
+                    assert.strictEqual(res.ETag, emptyFileETag);
+                    s3.getObject({ Bucket: sourceBucketName,
+                        Key: sourceObjName }, (err, res) => {
+                        assert.deepStrictEqual(res.Metadata,
+                            {});
+                        assert.deepStrictEqual(res.StorageClass,
+                            'REDUCED_REDUNDANCY');
                         assert.strictEqual(res.ETag, emptyFileETag);
-                        s3.getObject({ Bucket: sourceBucketName,
-                            Key: sourceObjName }, (err, res) => {
-                            assert.deepStrictEqual(res.Metadata,
-                                {});
-                            assert.deepStrictEqual(res.StorageClass,
-                                'REDUCED_REDUNDANCY');
-                            assert.strictEqual(res.ETag, emptyFileETag);
-                            done();
-                        });
+                        done();
                     });
+                });
             });
         });
 
@@ -592,15 +592,15 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 StorageClass: 'REDUCED_REDUNDANCY',
             },
-                err => {
-                    checkNoError(err);
-                    s3.getObject({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
-                        assert.strictEqual(res.StorageClass,
-                            'REDUCED_REDUNDANCY');
-                        done();
-                    });
+            err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    assert.strictEqual(res.StorageClass,
+                        'REDUCED_REDUNDANCY');
+                    done();
                 });
+            });
         });
 
         it('should copy an object to the same destination and change the ' +
@@ -609,16 +609,16 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 StorageClass: 'REDUCED_REDUNDANCY',
             },
-                err => {
+            err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: sourceBucketName,
+                    Key: sourceObjName }, (err, res) => {
                     checkNoError(err);
-                    s3.getObject({ Bucket: sourceBucketName,
-                        Key: sourceObjName }, (err, res) => {
-                        checkNoError(err);
-                        assert.strictEqual(res.StorageClass,
-                            'REDUCED_REDUNDANCY');
-                        done();
-                    });
+                    assert.strictEqual(res.StorageClass,
+                        'REDUCED_REDUNDANCY');
+                    done();
                 });
+            });
         });
 
         it('should copy an object to a new bucket and overwrite an already ' +
@@ -630,18 +630,18 @@ describe('Object Copy', () => {
                     MetadataDirective: 'REPLACE',
                     Metadata: newMetadata,
                 },
-                    (err, res) => {
-                        checkNoError(err);
+                (err, res) => {
+                    checkNoError(err);
+                    assert.strictEqual(res.ETag, etag);
+                    s3.getObject({ Bucket: destBucketName,
+                        Key: destObjName }, (err, res) => {
+                        assert.deepStrictEqual(res.Metadata,
+                            newMetadata);
                         assert.strictEqual(res.ETag, etag);
-                        s3.getObject({ Bucket: destBucketName,
-                            Key: destObjName }, (err, res) => {
-                            assert.deepStrictEqual(res.Metadata,
-                                newMetadata);
-                            assert.strictEqual(res.ETag, etag);
-                            assert.strictEqual(res.Body.toString(), content);
-                            done();
-                        });
+                        assert.strictEqual(res.Body.toString(), content);
+                        done();
                     });
+                });
             });
         });
 
@@ -652,15 +652,15 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 ServerSideEncryption: 'AES256',
             },
-                err => {
-                    checkNoError(err);
-                    s3.getObject({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
-                        assert.strictEqual(res.ServerSideEncryption,
-                            'AES256');
-                        done();
-                    });
+            err => {
+                checkNoError(err);
+                s3.getObject({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    assert.strictEqual(res.ServerSideEncryption,
+                        'AES256');
+                    done();
                 });
+            });
         });
 
         it('should return Not Implemented error for obj. encryption using ' +
@@ -679,25 +679,25 @@ describe('Object Copy', () => {
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
                 ACL: 'authenticated-read',
             },
-                err => {
-                    checkNoError(err);
-                    s3.getObjectAcl({ Bucket: destBucketName,
-                        Key: destObjName }, (err, res) => {
-                        // With authenticated-read ACL, there are two
-                        // grants:
-                        // (1) FULL_CONTROL to the object owner
-                        // (2) READ to the authenticated-read
-                        assert.strictEqual(res.Grants.length, 2);
-                        assert.strictEqual(res.Grants[0].Permission,
-                            'FULL_CONTROL');
-                        assert.strictEqual(res.Grants[1].Permission,
-                            'READ');
-                        assert.strictEqual(res.Grants[1].Grantee.URI,
-                            'http://acs.amazonaws.com/groups/' +
+            err => {
+                checkNoError(err);
+                s3.getObjectAcl({ Bucket: destBucketName,
+                    Key: destObjName }, (err, res) => {
+                    // With authenticated-read ACL, there are two
+                    // grants:
+                    // (1) FULL_CONTROL to the object owner
+                    // (2) READ to the authenticated-read
+                    assert.strictEqual(res.Grants.length, 2);
+                    assert.strictEqual(res.Grants[0].Permission,
+                        'FULL_CONTROL');
+                    assert.strictEqual(res.Grants[1].Permission,
+                        'READ');
+                    assert.strictEqual(res.Grants[1].Grantee.URI,
+                        'http://acs.amazonaws.com/groups/' +
                             'global/AuthenticatedUsers');
-                        done();
-                    });
+                    done();
                 });
+            });
         });
 
         it('should copy an object and default the acl on the new object ' +
@@ -708,17 +708,17 @@ describe('Object Copy', () => {
                 s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                 },
-                    () => {
-                        s3.getObjectAcl({ Bucket: destBucketName,
-                            Key: destObjName }, (err, res) => {
-                            // With private ACL, there is only one grant
-                            // of FULL_CONTROL to the object owner
-                            assert.strictEqual(res.Grants.length, 1);
-                            assert.strictEqual(res.Grants[0].Permission,
-                                'FULL_CONTROL');
-                            done();
-                        });
+                () => {
+                    s3.getObjectAcl({ Bucket: destBucketName,
+                        Key: destObjName }, (err, res) => {
+                        // With private ACL, there is only one grant
+                        // of FULL_CONTROL to the object owner
+                        assert.strictEqual(res.Grants.length, 1);
+                        assert.strictEqual(res.Grants[0].Permission,
+                            'FULL_CONTROL');
+                        done();
                     });
+                });
             });
         });
 
@@ -727,10 +727,10 @@ describe('Object Copy', () => {
             s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
             },
-                err => {
-                    checkError(err, 'InvalidRequest');
-                    done();
-                });
+            err => {
+                checkError(err, 'InvalidRequest');
+                done();
+            });
         });
 
         it('should return an error if attempt to copy from nonexistent bucket',
@@ -758,33 +758,33 @@ describe('Object Copy', () => {
 
         it('should return an error if copy request has object lock legal ' +
             'hold header but object lock is not enabled on destination bucket',
-            done => {
-                s3.copyObject({ Bucket: destBucketName, Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    ObjectLockLegalHoldStatus: 'ON',
-                },
-                err => {
-                    checkError(err, 'InvalidRequest');
-                    done();
-                });
+        done => {
+            s3.copyObject({ Bucket: destBucketName, Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ObjectLockLegalHoldStatus: 'ON',
+            },
+            err => {
+                checkError(err, 'InvalidRequest');
+                done();
             });
+        });
 
         it('should return an error if copy request has retention headers ' +
             'but object lock is not enabled on destination bucket',
-            done => {
-                const mockDate = new Date(2050, 10, 12);
-                s3.copyObject({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    ObjectLockMode: 'GOVERNANCE',
-                    ObjectLockRetainUntilDate: mockDate,
-                },
-                err => {
-                    checkError(err, 'InvalidRequest');
-                    done();
-                });
+        done => {
+            const mockDate = new Date(2050, 10, 12);
+            s3.copyObject({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ObjectLockMode: 'GOVERNANCE',
+                ObjectLockRetainUntilDate: mockDate,
+            },
+            err => {
+                checkError(err, 'InvalidRequest');
+                done();
             });
+        });
 
         it('should return an error if attempt to copy to nonexistent bucket',
             done => {
@@ -824,12 +824,12 @@ describe('Object Copy', () => {
             const otherAccountBucket = 'otheraccountbucket42342342342';
             const otherAccountKey = 'key';
             beforeEach(() => otherAccountBucketUtility
-                .createOne(otherAccountBucket)
+                .createOne(otherAccountBucket),
             );
 
             afterEach(() => otherAccountBucketUtility.empty(otherAccountBucket)
                 .then(() => otherAccountBucketUtility
-                .deleteOne(otherAccountBucket))
+                    .deleteOne(otherAccountBucket)),
             );
 
             it('should not allow an account without read persmission on the ' +
@@ -838,10 +838,10 @@ describe('Object Copy', () => {
                     Key: otherAccountKey,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                 },
-                    err => {
-                        checkError(err, 'AccessDenied');
-                        done();
-                    });
+                err => {
+                    checkError(err, 'AccessDenied');
+                    done();
+                });
             });
 
             it('should not allow an account without write persmission on the ' +
@@ -852,10 +852,10 @@ describe('Object Copy', () => {
                         Key: destObjName,
                         CopySource: `${otherAccountBucket}/${otherAccountKey}`,
                     },
-                        err => {
-                            checkError(err, 'AccessDenied');
-                            done();
-                        });
+                    err => {
+                        checkError(err, 'AccessDenied');
+                        done();
+                    });
                 });
             });
 
@@ -868,51 +868,51 @@ describe('Object Copy', () => {
                         Key: otherAccountKey,
                         CopySource: `${sourceBucketName}/${sourceObjName}`,
                     },
-                        err => {
-                            checkNoError(err);
-                            done();
-                        });
+                    err => {
+                        checkNoError(err);
+                        done();
+                    });
                 });
             });
         });
 
         it('If-Match: returns no error when ETag match, with double quotes ' +
             'around ETag',
-            done => {
-                requestCopy({ CopySourceIfMatch: etag }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        done => {
+            requestCopy({ CopySourceIfMatch: etag }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
         it('If-Match: returns no error when one of ETags match, with double ' +
             'quotes around ETag',
-            done => {
-                requestCopy({ CopySourceIfMatch:
+        done => {
+            requestCopy({ CopySourceIfMatch:
                     `non-matching,${etag}` }, err => {
-                    checkNoError(err);
-                    done();
-                });
+                checkNoError(err);
+                done();
             });
+        });
 
         it('If-Match: returns no error when ETag match, without double ' +
             'quotes around ETag',
-            done => {
-                requestCopy({ CopySourceIfMatch: etagTrim }, err => {
-                    checkNoError(err);
-                    done();
-                });
+        done => {
+            requestCopy({ CopySourceIfMatch: etagTrim }, err => {
+                checkNoError(err);
+                done();
             });
+        });
 
         it('If-Match: returns no error when one of ETags match, without ' +
             'double quotes around ETag',
-            done => {
-                requestCopy({ CopySourceIfMatch:
+        done => {
+            requestCopy({ CopySourceIfMatch:
                     `non-matching,${etagTrim}` }, err => {
-                    checkNoError(err);
-                    done();
-                });
+                checkNoError(err);
+                done();
             });
+        });
 
         it('If-Match: returns no error when ETag match with *', done => {
             requestCopy({ CopySourceIfMatch: '*' }, err => {
@@ -948,119 +948,119 @@ describe('Object Copy', () => {
 
         it('If-None-Match: returns PreconditionFailed when ETag match, with' +
             'double quotes around ETag',
-            done => {
-                requestCopy({ CopySourceIfNoneMatch: etag }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
-                });
+        done => {
+            requestCopy({ CopySourceIfNoneMatch: etag }, err => {
+                checkError(err, 'PreconditionFailed');
+                done();
             });
+        });
 
         it('If-None-Match: returns PreconditionFailed when one of ETags ' +
             'match, with double quotes around ETag',
-            done => {
-                requestCopy({
-                    CopySourceIfNoneMatch: `non-matching,${etag}`,
-                }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
-                });
+        done => {
+            requestCopy({
+                CopySourceIfNoneMatch: `non-matching,${etag}`,
+            }, err => {
+                checkError(err, 'PreconditionFailed');
+                done();
             });
+        });
 
         it('If-None-Match: returns PreconditionFailed when ETag match, ' +
             'without double quotes around ETag',
-            done => {
-                requestCopy({ CopySourceIfNoneMatch: etagTrim }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
-                });
+        done => {
+            requestCopy({ CopySourceIfNoneMatch: etagTrim }, err => {
+                checkError(err, 'PreconditionFailed');
+                done();
             });
+        });
 
         it('If-None-Match: returns PreconditionFailed when one of ETags ' +
             'match, without double quotes around ETag',
-            done => {
-                requestCopy({
-                    CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
-                }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
-                });
+        done => {
+            requestCopy({
+                CopySourceIfNoneMatch: `non-matching,${etagTrim}`,
+            }, err => {
+                checkError(err, 'PreconditionFailed');
+                done();
             });
+        });
 
         it('If-Modified-Since: returns no error if Last modified date is ' +
             'greater',
-            done => {
-                requestCopy({ CopySourceIfModifiedSince: dateFromNow(-1) },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    });
-            });
+        done => {
+            requestCopy({ CopySourceIfModifiedSince: dateFromNow(-1) },
+                err => {
+                    checkNoError(err);
+                    done();
+                });
+        });
 
         // Skipping this test, because real AWS does not provide error as
         // expected
         it.skip('If-Modified-Since: returns PreconditionFailed if Last ' +
             'modified date is lesser',
-            done => {
-                requestCopy({ CopySourceIfModifiedSince: dateFromNow(1) },
-                    err => {
-                        checkError(err, 'PreconditionFailed');
-                        done();
-                    });
-            });
-
-        it('If-Modified-Since: returns PreconditionFailed if Last modified ' +
-            'date is equal',
-            done => {
-                requestCopy({ CopySourceIfModifiedSince:
-                    dateConvert(lastModified) },
-                    err => {
-                        checkError(err, 'PreconditionFailed');
-                        done();
-                    });
-            });
-
-        it('If-Unmodified-Since: returns no error when lastModified date is ' +
-            'greater',
-            done => {
-                requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(1) },
-                err => {
-                    checkNoError(err);
-                    done();
-                });
-            });
-
-        it('If-Unmodified-Since: returns no error when lastModified ' +
-            'date is equal',
-            done => {
-                requestCopy({ CopySourceIfUnmodifiedSince:
-                    dateConvert(lastModified) },
-                    err => {
-                        checkNoError(err);
-                        done();
-                    });
-            });
-
-        it('If-Unmodified-Since: returns PreconditionFailed when ' +
-            'lastModified date is lesser',
-            done => {
-                requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(-1) },
+        done => {
+            requestCopy({ CopySourceIfModifiedSince: dateFromNow(1) },
                 err => {
                     checkError(err, 'PreconditionFailed');
                     done();
                 });
-            });
+        });
 
-        it('If-Match & If-Unmodified-Since: returns no error when match Etag ' +
-            'and lastModified is greater',
-            done => {
-                requestCopy({
-                    CopySourceIfMatch: etagTrim,
-                    CopySourceIfUnmodifiedSince: dateFromNow(-1),
-                }, err => {
+        it('If-Modified-Since: returns PreconditionFailed if Last modified ' +
+            'date is equal',
+        done => {
+            requestCopy({ CopySourceIfModifiedSince:
+                    dateConvert(lastModified) },
+            err => {
+                checkError(err, 'PreconditionFailed');
+                done();
+            });
+        });
+
+        it('If-Unmodified-Since: returns no error when lastModified date is ' +
+            'greater',
+        done => {
+            requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(1) },
+                err => {
                     checkNoError(err);
                     done();
                 });
+        });
+
+        it('If-Unmodified-Since: returns no error when lastModified ' +
+            'date is equal',
+        done => {
+            requestCopy({ CopySourceIfUnmodifiedSince:
+                    dateConvert(lastModified) },
+            err => {
+                checkNoError(err);
+                done();
             });
+        });
+
+        it('If-Unmodified-Since: returns PreconditionFailed when ' +
+            'lastModified date is lesser',
+        done => {
+            requestCopy({ CopySourceIfUnmodifiedSince: dateFromNow(-1) },
+                err => {
+                    checkError(err, 'PreconditionFailed');
+                    done();
+                });
+        });
+
+        it('If-Match & If-Unmodified-Since: returns no error when match Etag ' +
+            'and lastModified is greater',
+        done => {
+            requestCopy({
+                CopySourceIfMatch: etagTrim,
+                CopySourceIfUnmodifiedSince: dateFromNow(-1),
+            }, err => {
+                checkNoError(err);
+                done();
+            });
+        });
 
         it('If-Match match & If-Unmodified-Since match', done => {
             requestCopy({
@@ -1136,15 +1136,15 @@ describe('Object Copy', () => {
 
         it('If-None-Match & If-Modified-Since: returns PreconditionFailed ' +
             'when Etag does not match and lastModified is greater',
-            done => {
-                requestCopy({
-                    CopySourceIfNoneMatch: etagTrim,
-                    CopySourceIfModifiedSince: dateFromNow(-1),
-                }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
-                });
+        done => {
+            requestCopy({
+                CopySourceIfNoneMatch: etagTrim,
+                CopySourceIfModifiedSince: dateFromNow(-1),
+            }, err => {
+                checkError(err, 'PreconditionFailed');
+                done();
             });
+        });
 
         it('If-None-Match not match & If-Modified-Since not match', done => {
             requestCopy({
@@ -1269,102 +1269,102 @@ describe('Object Copy with object lock enabled on both destination ' +
 
         it('should not copy default retention info of the destination ' +
             'bucket if legal hold header is passed with copy object request',
-            done => {
-                s3.copyObject({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    ObjectLockLegalHoldStatus: 'ON',
-                },
-                err => {
-                    assert.ifError(err);
-                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
-                        (err, res) => {
-                            assert.ifError(err);
-                            assert.strictEqual(res.ObjectLockMode, undefined);
-                            assert.strictEqual(res.ObjectLockRetainUntilDate,
-                                undefined);
-                            assert.strictEqual(res.ObjectLockLegalHoldStatus,
-                                'ON');
-                            const removeLockObjs = [
-                                {
-                                    bucket: sourceBucketName,
-                                    key: sourceObjName,
-                                    versionId,
-                                }, {
-                                    bucket: destBucketName,
-                                    key: destObjName,
-                                    versionId: res.VersionId,
-                                },
-                            ];
-                            changeObjectLock(removeLockObjs, '', done);
-                        });
-                });
+        done => {
+            s3.copyObject({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ObjectLockLegalHoldStatus: 'ON',
+            },
+            err => {
+                assert.ifError(err);
+                s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                    (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.ObjectLockMode, undefined);
+                        assert.strictEqual(res.ObjectLockRetainUntilDate,
+                            undefined);
+                        assert.strictEqual(res.ObjectLockLegalHoldStatus,
+                            'ON');
+                        const removeLockObjs = [
+                            {
+                                bucket: sourceBucketName,
+                                key: sourceObjName,
+                                versionId,
+                            }, {
+                                bucket: destBucketName,
+                                key: destObjName,
+                                versionId: res.VersionId,
+                            },
+                        ];
+                        changeObjectLock(removeLockObjs, '', done);
+                    });
             });
+        });
 
         it('should not copy default retention info of the destination ' +
             'bucket if legal hold header is passed with copy object request',
-            done => {
-                s3.copyObject({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    ObjectLockLegalHoldStatus: 'on',
-                },
-                err => {
-                    assert.ifError(err);
-                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
-                        (err, res) => {
-                            assert.ifError(err);
-                            assert.strictEqual(res.ObjectLockMode, undefined);
-                            assert.strictEqual(res.ObjectLockRetainUntilDate,
-                                undefined);
-                            assert.strictEqual(res.ObjectLockLegalHoldStatus,
-                                'OFF');
-                            const removeLockObjs = [
-                                {
-                                    bucket: sourceBucketName,
-                                    key: sourceObjName,
-                                    versionId,
-                                },
-                            ];
-                            changeObjectLock(removeLockObjs, '', done);
-                        });
-                });
+        done => {
+            s3.copyObject({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ObjectLockLegalHoldStatus: 'on',
+            },
+            err => {
+                assert.ifError(err);
+                s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                    (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.ObjectLockMode, undefined);
+                        assert.strictEqual(res.ObjectLockRetainUntilDate,
+                            undefined);
+                        assert.strictEqual(res.ObjectLockLegalHoldStatus,
+                            'OFF');
+                        const removeLockObjs = [
+                            {
+                                bucket: sourceBucketName,
+                                key: sourceObjName,
+                                versionId,
+                            },
+                        ];
+                        changeObjectLock(removeLockObjs, '', done);
+                    });
             });
+        });
 
         it('should overwrite default retention info of the destination ' +
             'bucket if retention headers passed with copy object request',
-            done => {
-                s3.copyObject({
-                    Bucket: destBucketName,
-                    Key: destObjName,
-                    CopySource: `${sourceBucketName}/${sourceObjName}`,
-                    ObjectLockMode: 'COMPLIANCE',
-                    ObjectLockRetainUntilDate: new Date(2055, 2, 3),
-                },
-                err => {
-                    assert.ifError(err);
-                    s3.getObject({ Bucket: destBucketName, Key: destObjName },
-                        (err, res) => {
-                            assert.ifError(err);
-                            assert.strictEqual(res.ObjectLockMode, 'COMPLIANCE');
-                            assert.strictEqual(res.ObjectLockRetainUntilDate.toGMTString(),
-                                new Date(2055, 2, 3).toGMTString());
-                            const removeLockObjs = [
-                                {
-                                    bucket: sourceBucketName,
-                                    key: sourceObjName,
-                                    versionId,
-                                }, {
-                                    bucket: destBucketName,
-                                    key: destObjName,
-                                    versionId: res.VersionId,
-                                },
-                            ];
-                            changeObjectLock(removeLockObjs, '', done);
-                        });
-                });
+        done => {
+            s3.copyObject({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                ObjectLockMode: 'COMPLIANCE',
+                ObjectLockRetainUntilDate: new Date(2055, 2, 3),
+            },
+            err => {
+                assert.ifError(err);
+                s3.getObject({ Bucket: destBucketName, Key: destObjName },
+                    (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.ObjectLockMode, 'COMPLIANCE');
+                        assert.strictEqual(res.ObjectLockRetainUntilDate.toGMTString(),
+                            new Date(2055, 2, 3).toGMTString());
+                        const removeLockObjs = [
+                            {
+                                bucket: sourceBucketName,
+                                key: sourceObjName,
+                                versionId,
+                            }, {
+                                bucket: destBucketName,
+                                key: destObjName,
+                                versionId: res.VersionId,
+                            },
+                        ];
+                        changeObjectLock(removeLockObjs, '', done);
+                    });
             });
+        });
     });
 });

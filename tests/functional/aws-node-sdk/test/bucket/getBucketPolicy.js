@@ -55,15 +55,15 @@ describe('aws-sdk test get bucket policy', () => {
 
         it('should return MethodNotAllowed if user is not bucket owner', done => {
             otherAccountS3.getBucketPolicy({ Bucket: bucket },
-            err => assertError(err, 'MethodNotAllowed', done));
+                err => assertError(err, 'MethodNotAllowed', done));
         });
 
         it('should return NoSuchBucketPolicy error if no policy put to bucket',
-        done => {
-            s3.getBucketPolicy({ Bucket: bucket }, err => {
-                assertError(err, 'NoSuchBucketPolicy', done);
+            done => {
+                s3.getBucketPolicy({ Bucket: bucket }, err => {
+                    assertError(err, 'NoSuchBucketPolicy', done);
+                });
             });
-        });
 
         it('should get bucket policy', done => {
             s3.putBucketPolicy({
@@ -72,13 +72,13 @@ describe('aws-sdk test get bucket policy', () => {
             }, err => {
                 assert.equal(err, null, `Err putting bucket policy: ${err}`);
                 s3.getBucketPolicy({ Bucket: bucket },
-                (err, res) => {
-                    const parsedRes = JSON.parse(res.Policy);
-                    assert.equal(err, null, 'Error getting bucket policy: ' +
+                    (err, res) => {
+                        const parsedRes = JSON.parse(res.Policy);
+                        assert.equal(err, null, 'Error getting bucket policy: ' +
                         `${err}`);
-                    assert.deepStrictEqual(parsedRes.Statement[0], expectedPolicy);
-                    done();
-                });
+                        assert.deepStrictEqual(parsedRes.Statement[0], expectedPolicy);
+                        done();
+                    });
             });
         });
     });

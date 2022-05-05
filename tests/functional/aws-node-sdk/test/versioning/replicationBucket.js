@@ -62,19 +62,19 @@ describe('Versioning on a replication source bucket', () => {
         afterEach(done => s3.deleteBucket({ Bucket: bucketName }, done));
 
         it('should not be able to disable versioning if replication enabled',
-        done => {
-            testVersioning(s3, 'Suspended', 'Enabled', err => {
-                checkError(err, 'InvalidBucketState');
-                done();
+            done => {
+                testVersioning(s3, 'Suspended', 'Enabled', err => {
+                    checkError(err, 'InvalidBucketState');
+                    done();
+                });
             });
-        });
 
         it('should be able to disable versioning if replication disabled',
-        done => {
-            testVersioning(s3, 'Suspended', 'Disabled', err => {
-                checkNoError(err);
-                done();
+            done => {
+                testVersioning(s3, 'Suspended', 'Disabled', err => {
+                    checkNoError(err);
+                    done();
+                });
             });
-        });
     });
 });

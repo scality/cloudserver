@@ -48,11 +48,11 @@ describe('PUT Object ACL', () => {
 
         before(done => {
             bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+                .then(created => {
+                    bucketName = created;
+                    done();
+                })
+                .catch(done);
         });
 
         afterEach(() => {

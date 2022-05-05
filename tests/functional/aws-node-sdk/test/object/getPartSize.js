@@ -97,7 +97,7 @@ describe('Part size tests with object head', () => {
                 afterEach(done => {
                     async.waterfall([
                         next => s3.deleteObject({ Bucket: bucket, Key: object },
-                        err => next(err)),
+                            err => next(err)),
                         next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
                     ], done);
                 });
@@ -117,7 +117,7 @@ describe('Part size tests with object head', () => {
                 partNumbers.forEach(part => {
                     it(`should return the size of part ${part + 1} ` +
                         `when --part-number is set to ${part + 1}`, done => {
-                        const partNumber = Number.parseInt(part, 0) + 1;
+                        const partNumber = Number.parseInt(part, 10) + 1;
                         const partSize = bodySize + partNumber;
 
                         s3.headObject({ Bucket: bucket, Key: object, PartNumber: partNumber }, (err, data) => {
@@ -133,34 +133,34 @@ describe('Part size tests with object head', () => {
 
                 invalidPartNumbers.forEach(part => {
                     it(`should return an error when --part-number is set to ${part}`,
-                    done => {
-                        s3.headObject({ Bucket: bucket, Key: object, PartNumber: part }, (err, data) => {
-                            checkError(err, 400, 'BadRequest');
-                            assert.strictEqual(data, null);
-                            done();
+                        done => {
+                            s3.headObject({ Bucket: bucket, Key: object, PartNumber: part }, (err, data) => {
+                                checkError(err, 400, 'BadRequest');
+                                assert.strictEqual(data, null);
+                                done();
+                            });
                         });
-                    });
                 });
 
                 it('when incorrect --part-number is used', done => {
                     bucketUtil = new BucketUtility('default', sigCfg);
                     s3 = bucketUtil.s3;
                     s3.headObject({ Bucket: bucket, Key: object, PartNumber: partNumbers.length + 1 },
-                    (err, data) => {
-                        if (config.meta.objectIsEmpty) {
+                        (err, data) => {
+                            if (config.meta.objectIsEmpty) {
                             // returns metadata for the only empty part
-                            checkNoError(err);
-                            assert.strictEqual(data.ContentLength, 0);
-                            done();
-                        } else {
+                                checkNoError(err);
+                                assert.strictEqual(data.ContentLength, 0);
+                                done();
+                            } else {
                             // returns a 416 error
                             // the error response does not contain the actual
                             // statusCode instead it has '416'
-                            checkError(err, 416, 416);
-                            assert.strictEqual(data, null);
-                            done();
-                        }
-                    });
+                                checkError(err, 416, 416);
+                                assert.strictEqual(data, null);
+                                done();
+                            }
+                        });
                 });
             });
         });

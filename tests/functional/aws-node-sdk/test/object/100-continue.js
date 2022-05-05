@@ -135,7 +135,7 @@ describeSkipIfE2E('PUT public object with 100-continue header', () => {
 
         afterEach(() =>
             bucketUtil.empty(bucket)
-            .then(() => bucketUtil.deleteOne(bucket)));
+                .then(() => bucketUtil.deleteOne(bucket)));
 
         it('should return 200 status code', done =>
             continueRequest.hasStatusCode(200, done));

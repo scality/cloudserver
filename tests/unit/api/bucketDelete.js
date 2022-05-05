@@ -118,7 +118,7 @@ describe('bucketDelete API', () => {
                             { prefix: authInfo.getCanonicalID() },
                             log, (err, listResponse) => {
                                 assert.strictEqual(listResponse.Contents.length,
-                                                   1);
+                                    1);
                                 done();
                             });
                     });
@@ -128,18 +128,18 @@ describe('bucketDelete API', () => {
     });
 
     it('should not return an error if the bucket has an initiated mpu',
-    done => {
-        bucketPut(authInfo, testRequest, log, err => {
-            assert.strictEqual(err, null);
-            initiateMultipartUpload(authInfo, initiateRequest, log, err => {
+        done => {
+            bucketPut(authInfo, testRequest, log, err => {
                 assert.strictEqual(err, null);
-                bucketDelete(authInfo, testRequest, log, err => {
+                initiateMultipartUpload(authInfo, initiateRequest, log, err => {
                     assert.strictEqual(err, null);
-                    done();
+                    bucketDelete(authInfo, testRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        done();
+                    });
                 });
             });
         });
-    });
 
     it('should delete a bucket', done => {
         bucketPut(authInfo, testRequest, log, () => {

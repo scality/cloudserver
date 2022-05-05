@@ -76,7 +76,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         s3.listObjects(params, (err, data) => {
             const keys = data.Contents.map(entry => entry.Key);
             assert.deepStrictEqual(keys.sort(), masterVersions.sort(),
-                    'not same keys');
+                'not same keys');
             done();
         });
     });
@@ -100,7 +100,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
         s3.listObjects(params, (err, data) => {
             const keys = data.Contents.map(entry => entry.Key);
             assert.deepStrictEqual(keys.sort(), masterVersions.sort().slice(15),
-                    'not same keys');
+                'not same keys');
             done();
         });
     });
@@ -121,7 +121,7 @@ describe('aws-node-sdk test bucket versioning listing', function testSuite() {
             return done();
         }), () => {
             assert.deepStrictEqual(versions.sort(comp), allVersions.sort(comp),
-                    'not same versions');
+                'not same versions');
             const params = { Bucket: bucket, Delete: { Objects: allVersions } };
             s3.deleteObjects(params, done);
         });

@@ -29,44 +29,44 @@ describe('aws-node-sdk range test of large end position', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucketName }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            }).then(() =>
-                s3.putObject({
-                    Bucket: bucketName,
-                    Key: objName,
-                    Body: Buffer.allocUnsafe(2890).fill(0, 0, 2800)
-                                                  .fill(1, 2800),
-                }).promise())
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                }).then(() =>
+                    s3.putObject({
+                        Bucket: bucketName,
+                        Key: objName,
+                        Body: Buffer.allocUnsafe(2890).fill(0, 0, 2800)
+                            .fill(1, 2800),
+                    }).promise())
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucketName)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucketName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucketName);
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in afterEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         it('should get the final 90 bytes of a 2890 byte object for a byte ' +
             'range of 2800-',
-            done => endRangeTest('bytes=2800-', 'bytes 2800-2889/2890', done)
+        done => endRangeTest('bytes=2800-', 'bytes 2800-2889/2890', done),
         );
 
         it('should get the final 90 bytes of a 2890 byte object for a byte ' +
             'range of 2800-Number.MAX_SAFE_INTEGER',
-            done => endRangeTest(`bytes=2800-${Number.MAX_SAFE_INTEGER}`,
-                                 'bytes 2800-2889/2890', done)
+        done => endRangeTest(`bytes=2800-${Number.MAX_SAFE_INTEGER}`,
+            'bytes 2800-2889/2890', done),
         );
     });
 });

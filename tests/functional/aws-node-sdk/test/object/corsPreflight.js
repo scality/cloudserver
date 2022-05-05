@@ -240,55 +240,55 @@ describe('Preflight CORS request with existing bucket', () => {
             },
         };
         describe(`CORS allows method "${allowedMethod}" and allows all origins`,
-        () => {
-            beforeEach(done => {
-                s3.putBucketCors(corsParams, done);
-            });
+            () => {
+                beforeEach(done => {
+                    s3.putBucketCors(corsParams, done);
+                });
 
-            afterEach(done => {
-                s3.deleteBucketCors({ Bucket: bucket }, done);
-            });
+                afterEach(done => {
+                    s3.deleteBucketCors({ Bucket: bucket }, done);
+                });
 
-            it('should respond with 200 and access control headers to ' +
+                it('should respond with 200 and access control headers to ' +
             `OPTIONS request from allowed origin and method "${allowedMethod}"`,
-            done => {
-                const headers = {
-                    'Origin': allowedOrigin,
-                    'Access-Control-Request-Method': allowedMethod,
-                };
-                const headersResponse = {
-                    'access-control-allow-origin': '*',
-                    'access-control-allow-methods': allowedMethod,
-                    vary,
-                };
-                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                    headersResponse }, done);
-            });
-            it('should respond AccessForbidden to OPTIONS request from ' +
-            'allowed origin and method but with not allowed Access-Control-' +
-            'Request-Headers', done => {
-                const headers = {
-                    'Origin': allowedOrigin,
-                    'Access-Control-Request-Method': allowedMethod,
-                    'Access-Control-Request-Headers': 'Origin, Accept, ' +
-                    'Content-Type',
-                };
-                methodRequest({ method: 'OPTIONS', bucket, headers,
-                    code: 'AccessForbidden', headersResponse: null }, done);
-            });
-            methods.filter(method => method !== allowedMethod)
-            .forEach(method => {
-                it('should respond AccessForbidden to OPTIONS request from ' +
-                `allowed origin but not allowed method "${method}"`, done => {
+                done => {
                     const headers = {
                         'Origin': allowedOrigin,
-                        'Access-Control-Request-Method': method,
+                        'Access-Control-Request-Method': allowedMethod,
+                    };
+                    const headersResponse = {
+                        'access-control-allow-origin': '*',
+                        'access-control-allow-methods': allowedMethod,
+                        vary,
+                    };
+                    methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                        headersResponse }, done);
+                });
+                it('should respond AccessForbidden to OPTIONS request from ' +
+            'allowed origin and method but with not allowed Access-Control-' +
+            'Request-Headers', done => {
+                    const headers = {
+                        'Origin': allowedOrigin,
+                        'Access-Control-Request-Method': allowedMethod,
+                        'Access-Control-Request-Headers': 'Origin, Accept, ' +
+                    'Content-Type',
                     };
                     methodRequest({ method: 'OPTIONS', bucket, headers,
                         code: 'AccessForbidden', headersResponse: null }, done);
                 });
+                methods.filter(method => method !== allowedMethod)
+                    .forEach(method => {
+                        it('should respond AccessForbidden to OPTIONS request from ' +
+                `allowed origin but not allowed method "${method}"`, done => {
+                            const headers = {
+                                'Origin': allowedOrigin,
+                                'Access-Control-Request-Method': method,
+                            };
+                            methodRequest({ method: 'OPTIONS', bucket, headers,
+                                code: 'AccessForbidden', headersResponse: null }, done);
+                        });
+                    });
             });
-        });
     });
 
     originsWithWildcards.forEach(origin => {
@@ -316,24 +316,24 @@ describe('Preflight CORS request with existing bucket', () => {
             });
 
             [originWithoutWildcard, originReplaceWildcard]
-            .forEach(acceptableOrigin => {
-                it('should return 200 and CORS header to OPTIONS request ' +
+                .forEach(acceptableOrigin => {
+                    it('should return 200 and CORS header to OPTIONS request ' +
                 `from allowed method and origin "${acceptableOrigin}"`,
-                done => {
-                    const headers = {
-                        'Origin': acceptableOrigin,
-                        'Access-Control-Request-Method': 'GET',
-                    };
-                    const headersResponse = {
-                        'access-control-allow-origin': acceptableOrigin,
-                        'access-control-allow-methods': 'GET',
-                        'access-control-allow-credentials': 'true',
-                        vary,
-                    };
-                    methodRequest({ method: 'OPTIONS', bucket, headers,
-                        code: 200, headersResponse }, done);
+                    done => {
+                        const headers = {
+                            'Origin': acceptableOrigin,
+                            'Access-Control-Request-Method': 'GET',
+                        };
+                        const headersResponse = {
+                            'access-control-allow-origin': acceptableOrigin,
+                            'access-control-allow-methods': 'GET',
+                            'access-control-allow-credentials': 'true',
+                            vary,
+                        };
+                        methodRequest({ method: 'OPTIONS', bucket, headers,
+                            code: 200, headersResponse }, done);
+                    });
                 });
-            });
             if (!origin.endsWith('*')) {
                 it('should respond AccessForbidden to OPTIONS request from ' +
                 `allowed method and origin "${originWithoutWildcard}test"`,
@@ -362,90 +362,90 @@ describe('Preflight CORS request with existing bucket', () => {
     });
 
     describe('CORS response access-control-allow-origin header value',
-    () => {
-        const anotherOrigin = 'http://www.anotherorigin.com';
-        const originContainingWildcard = 'http://www.originwith*.com';
-        const corsParams = {
-            Bucket: bucket,
-            CORSConfiguration: {
-                CORSRules: [
-                    {
-                        AllowedMethods: [
-                            'GET',
-                        ],
-                        AllowedOrigins: [
-                            allowedOrigin,
-                            originContainingWildcard,
-                        ],
-                    },
-                    {
-                        AllowedMethods: [
-                            'GET',
-                        ],
-                        AllowedOrigins: [
-                            '*',
-                        ],
-                    },
-                ],
-            },
-        };
-        beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
-        });
+        () => {
+            const anotherOrigin = 'http://www.anotherorigin.com';
+            const originContainingWildcard = 'http://www.originwith*.com';
+            const corsParams = {
+                Bucket: bucket,
+                CORSConfiguration: {
+                    CORSRules: [
+                        {
+                            AllowedMethods: [
+                                'GET',
+                            ],
+                            AllowedOrigins: [
+                                allowedOrigin,
+                                originContainingWildcard,
+                            ],
+                        },
+                        {
+                            AllowedMethods: [
+                                'GET',
+                            ],
+                            AllowedOrigins: [
+                                '*',
+                            ],
+                        },
+                    ],
+                },
+            };
+            beforeEach(done => {
+                s3.putBucketCors(corsParams, done);
+            });
 
-        afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
-        });
+            afterEach(done => {
+                s3.deleteBucketCors({ Bucket: bucket }, done);
+            });
 
-        it('if OPTIONS request matches rule with multiple origins, response ' +
+            it('if OPTIONS request matches rule with multiple origins, response ' +
         'access-control-request-origin header value should be request Origin ' +
         '(not list of AllowedOrigins)', done => {
-            const headers = {
-                'Origin': allowedOrigin,
-                'Access-Control-Request-Method': 'GET',
-            };
-            const headersResponse = {
-                'access-control-allow-origin': allowedOrigin,
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-credentials': 'true',
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
-        });
-        it('if OPTIONS request matches rule with origin containing wildcard, ' +
+                const headers = {
+                    'Origin': allowedOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': allowedOrigin,
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-credentials': 'true',
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
+            it('if OPTIONS request matches rule with origin containing wildcard, ' +
         'response access-control-request-origin header value should be ' +
         'request Origin (not value containing wildcard)', done => {
-            const requestOrigin = originContainingWildcard.replace('*', 'test');
-            const headers = {
-                'Origin': requestOrigin,
-                'Access-Control-Request-Method': 'GET',
-            };
-            const headersResponse = {
-                'access-control-allow-origin': requestOrigin,
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-credentials': 'true',
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
-        });
-        it('if OPTIONS request matches rule that allows all origins, ' +
+                const requestOrigin = originContainingWildcard.replace('*', 'test');
+                const headers = {
+                    'Origin': requestOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': requestOrigin,
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-credentials': 'true',
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
+            it('if OPTIONS request matches rule that allows all origins, ' +
         'e.g. "*", response access-control-request-origin header should ' +
         'return "*"', done => {
-            const headers = {
-                'Origin': anotherOrigin,
-                'Access-Control-Request-Method': 'GET',
-            };
-            const headersResponse = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
+                const headers = {
+                    'Origin': anotherOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'GET',
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
         });
-    });
 
     describe('CORS allows method GET, allows all origins and allows ' +
     'header Content-Type', () => {
@@ -523,121 +523,121 @@ describe('Preflight CORS request with existing bucket', () => {
     });
 
     describe('CORS response Access-Control-Allow-Headers header value',
-    () => {
-        const corsParams = {
-            Bucket: bucket,
-            CORSConfiguration: {
-                CORSRules: [
-                    {
-                        AllowedMethods: [
-                            'GET',
-                        ],
-                        AllowedOrigins: [
-                            '*',
-                        ],
-                        AllowedHeaders: [
-                            'Content-Type', 'amz-*', 'Expires',
-                        ],
-                    },
-                    {
-                        AllowedMethods: [
-                            'GET',
-                        ],
-                        AllowedOrigins: [
-                            '*',
-                        ],
-                        AllowedHeaders: [
-                            '*',
-                        ],
-                    },
-                ],
-            },
-        };
-        beforeEach(done => {
-            s3.putBucketCors(corsParams, done);
-        });
+        () => {
+            const corsParams = {
+                Bucket: bucket,
+                CORSConfiguration: {
+                    CORSRules: [
+                        {
+                            AllowedMethods: [
+                                'GET',
+                            ],
+                            AllowedOrigins: [
+                                '*',
+                            ],
+                            AllowedHeaders: [
+                                'Content-Type', 'amz-*', 'Expires',
+                            ],
+                        },
+                        {
+                            AllowedMethods: [
+                                'GET',
+                            ],
+                            AllowedOrigins: [
+                                '*',
+                            ],
+                            AllowedHeaders: [
+                                '*',
+                            ],
+                        },
+                    ],
+                },
+            };
+            beforeEach(done => {
+                s3.putBucketCors(corsParams, done);
+            });
 
-        afterEach(done => {
-            s3.deleteBucketCors({ Bucket: bucket }, done);
-        });
+            afterEach(done => {
+                s3.deleteBucketCors({ Bucket: bucket }, done);
+            });
 
-        it('should return request access-control-request-headers value, ' +
+            it('should return request access-control-request-headers value, ' +
         'not list of AllowedHeaders from rule or corresponding AllowedHeader ' +
         'value containing wildcard',
-        done => {
-            const requestHeaderValue = 'amz-meta-header-test, content-type';
-            const headers = {
-                'Origin': allowedOrigin,
-                'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': requestHeaderValue,
-            };
-            const headersResponse = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-headers': requestHeaderValue,
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
-        });
-        it('should return lowercase version of request Access-Control-' +
+            done => {
+                const requestHeaderValue = 'amz-meta-header-test, content-type';
+                const headers = {
+                    'Origin': allowedOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                    'Access-Control-Request-Headers': requestHeaderValue,
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-headers': requestHeaderValue,
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
+            it('should return lowercase version of request Access-Control-' +
         'Request-Method header value if it contains any upper-case values',
-        done => {
-            const requestHeaderValue = 'Content-Type';
-            const headers = {
-                'Origin': allowedOrigin,
-                'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': requestHeaderValue,
-            };
-            const headersResponse = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-headers':
+            done => {
+                const requestHeaderValue = 'Content-Type';
+                const headers = {
+                    'Origin': allowedOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                    'Access-Control-Request-Headers': requestHeaderValue,
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-headers':
                 requestHeaderValue.toLowerCase(),
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
-        });
-        it('should remove empty comma-separated values derived from request ' +
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
+            it('should remove empty comma-separated values derived from request ' +
         'Access-Control-Request-Method header and separate values with ' +
         'spaces when responding with Access-Control-Allow-Headers header',
-        done => {
-            const requestHeaderValue = 'content-type,,expires';
-            const expectedValue = 'content-type, expires';
-            const headers = {
-                'Origin': allowedOrigin,
-                'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': requestHeaderValue,
-            };
-            const headersResponse = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-headers': expectedValue,
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
-        });
-        it('should return request Access-Control-Request-Headers value ' +
+            done => {
+                const requestHeaderValue = 'content-type,,expires';
+                const expectedValue = 'content-type, expires';
+                const headers = {
+                    'Origin': allowedOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                    'Access-Control-Request-Headers': requestHeaderValue,
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-headers': expectedValue,
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
+            it('should return request Access-Control-Request-Headers value ' +
         'even if rule allows all headers (e.g. "*"), unlike access-control-' +
         'allow-origin value', done => {
-            const requestHeaderValue = 'puppies';
-            const headers = {
-                'Origin': allowedOrigin,
-                'Access-Control-Request-Method': 'GET',
-                'Access-Control-Request-Headers': requestHeaderValue,
-            };
-            const headersResponse = {
-                'access-control-allow-origin': '*',
-                'access-control-allow-methods': 'GET',
-                'access-control-allow-headers': requestHeaderValue,
-                vary,
-            };
-            methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
-                headersResponse }, done);
+                const requestHeaderValue = 'puppies';
+                const headers = {
+                    'Origin': allowedOrigin,
+                    'Access-Control-Request-Method': 'GET',
+                    'Access-Control-Request-Headers': requestHeaderValue,
+                };
+                const headersResponse = {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'GET',
+                    'access-control-allow-headers': requestHeaderValue,
+                    vary,
+                };
+                methodRequest({ method: 'OPTIONS', bucket, headers, code: 200,
+                    headersResponse }, done);
+            });
         });
-    });
 
     describe('CORS and OPTIONS request with object keys', () => {
         const corsParams = {

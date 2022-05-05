@@ -129,7 +129,7 @@ describe('putBucketACL API', () => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getAcl().Canned,
-                                           'authenticated-read');
+                            'authenticated-read');
                         done();
                     });
                 });
@@ -168,7 +168,7 @@ describe('putBucketACL API', () => {
                     assert.strictEqual(err, undefined);
                     metadata.getBucket(bucketName, log, (err, md) => {
                         assert.strictEqual(md.getAcl().Canned,
-                                           'log-delivery-write');
+                            'log-delivery-write');
                         done();
                     });
                 });
@@ -361,7 +361,7 @@ describe('putBucketACL API', () => {
                 assert.strictEqual(md.getAcl().READ[0], constants.publicId);
                 assert.strictEqual(md.getAcl().WRITE[0], constants.logId);
                 assert.strictEqual(md.getAcl().WRITE_ACP[0],
-                                   canonicalIDforSample1);
+                    canonicalIDforSample1);
                 assert.strictEqual(md.getAcl().READ_ACP[0],
                     canonicalIDforSample2);
                 done();
@@ -402,12 +402,12 @@ describe('putBucketACL API', () => {
     });
 
     it('should not be able to set ACLs without AccessControlList section',
-    done => {
-        const testACLRequest = {
-            bucketName,
-            namespace,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
+        done => {
+            const testACLRequest = {
+                bucketName,
+                namespace,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                post: '<AccessControlPolicy xmlns=' +
                     '"http://s3.amazonaws.com/doc/2006-03-01/">' +
                   '<Owner>' +
                     '<ID>79a59df900b949e55d96a1e698fbaced' +
@@ -415,15 +415,15 @@ describe('putBucketACL API', () => {
                     '<DisplayName>OwnerDisplayName</DisplayName>' +
                   '</Owner>' +
                 '</AccessControlPolicy>',
-            url: '/?acl',
-            query: { acl: '' },
-        };
+                url: '/?acl',
+                query: { acl: '' },
+            };
 
-        bucketPutACL(authInfo, testACLRequest, log, err => {
-            assert.strictEqual(err.is.MalformedACLError, true);
-            done();
+            bucketPutACL(authInfo, testACLRequest, log, err => {
+                assert.strictEqual(err.is.MalformedACLError, true);
+                done();
+            });
         });
-    });
 
     it('should return an error if multiple AccessControlList section', done => {
         const testACLRequest = {

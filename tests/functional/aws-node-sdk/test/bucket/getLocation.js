@@ -16,36 +16,36 @@ describeSkipAWS('GET bucket location ', () => {
         const otherAccountS3 = otherAccountBucketUtility.s3;
         const locationConstraints = config.locationConstraints;
         Object.keys(locationConstraints).forEach(
-        location => {
-            if (location === 'us-east-1') {
+            location => {
+                if (location === 'us-east-1') {
                 // if location is us-east-1 should return empty string
                 // see next test.
-                return;
-            }
-            describe(`with location: ${location}`, () => {
-                before(() => s3.createBucket(
-                    {
-                        Bucket: bucketName,
-                        CreateBucketConfiguration: {
-                            LocationConstraint: location,
-                        },
-                    }).promise());
-                after(() => bucketUtil.deleteOne(bucketName));
+                    return;
+                }
+                describe(`with location: ${location}`, () => {
+                    before(() => s3.createBucket(
+                        {
+                            Bucket: bucketName,
+                            CreateBucketConfiguration: {
+                                LocationConstraint: location,
+                            },
+                        }).promise());
+                    after(() => bucketUtil.deleteOne(bucketName));
 
-                it(`should return location configuration: ${location} ` +
+                    it(`should return location configuration: ${location} ` +
                 'successfully',
-                done => {
-                    s3.getBucketLocation({ Bucket: bucketName },
-                    (err, data) => {
-                        assert.strictEqual(err, null,
-                            `Found unexpected err ${err}`);
-                        assert.deepStrictEqual(data.LocationConstraint,
-                            location);
-                        return done();
+                    done => {
+                        s3.getBucketLocation({ Bucket: bucketName },
+                            (err, data) => {
+                                assert.strictEqual(err, null,
+                                    `Found unexpected err ${err}`);
+                                assert.deepStrictEqual(data.LocationConstraint,
+                                    location);
+                                return done();
+                            });
                     });
                 });
             });
-        });
 
         describe('with location us-east-1', () => {
             before(() => s3.createBucket(
@@ -57,25 +57,25 @@ describeSkipAWS('GET bucket location ', () => {
                 }).promise());
             afterEach(() => bucketUtil.deleteOne(bucketName));
             it('should return empty location',
-            done => {
-                s3.getBucketLocation({ Bucket: bucketName },
-                (err, data) => {
-                    assert.strictEqual(err, null,
-                        `Found unexpected err ${err}`);
-                    assert.deepStrictEqual(data.LocationConstraint, '');
-                    return done();
+                done => {
+                    s3.getBucketLocation({ Bucket: bucketName },
+                        (err, data) => {
+                            assert.strictEqual(err, null,
+                                `Found unexpected err ${err}`);
+                            assert.deepStrictEqual(data.LocationConstraint, '');
+                            return done();
+                        });
                 });
-            });
         });
 
         describe('without location configuration', () => {
             after(() => {
                 process.stdout.write('Deleting bucket\n');
                 return bucketUtil.deleteOne(bucketName)
-                .catch(err => {
-                    process.stdout.write(`Error in after: ${err}\n`);
-                    throw err;
-                });
+                    .catch(err => {
+                        process.stdout.write(`Error in after: ${err}\n`);
+                        throw err;
+                    });
             });
 
             it('should return request endpoint as location', done => {
@@ -94,12 +94,12 @@ describeSkipAWS('GET bucket location ', () => {
                         endpoint = '';
                     }
                     s3.getBucketLocation({ Bucket: bucketName },
-                    (err, data) => {
-                        assert.strictEqual(err, null, 'Expected succes, ' +
+                        (err, data) => {
+                            assert.strictEqual(err, null, 'Expected succes, ' +
                             `got error ${JSON.stringify(err)}`);
-                        assert.strictEqual(data.LocationConstraint, endpoint);
-                        done();
-                    });
+                            assert.strictEqual(data.LocationConstraint, endpoint);
+                            done();
+                        });
                 });
             });
         });
@@ -115,15 +115,15 @@ describeSkipAWS('GET bucket location ', () => {
             after(() => bucketUtil.deleteOne(bucketName));
 
             it('should return AccessDenied if user is not bucket owner',
-            done => {
-                otherAccountS3.getBucketLocation({ Bucket: bucketName },
-                err => {
-                    assert(err);
-                    assert.strictEqual(err.code, 'AccessDenied');
-                    assert.strictEqual(err.statusCode, 403);
-                    return done();
+                done => {
+                    otherAccountS3.getBucketLocation({ Bucket: bucketName },
+                        err => {
+                            assert(err);
+                            assert.strictEqual(err.code, 'AccessDenied');
+                            assert.strictEqual(err.statusCode, 403);
+                            return done();
+                        });
                 });
-            });
         });
     });
 });

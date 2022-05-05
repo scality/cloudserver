@@ -81,7 +81,7 @@ describe('listMultipartUploads API', () => {
         (err, result) => {
             assert.strictEqual(result.ListMultipartUploadsResult
                 .CommonPrefixes[0].Prefix[0],
-                commonPrefix);
+            commonPrefix);
             done();
         });
     });

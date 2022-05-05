@@ -146,27 +146,27 @@ class WebsiteConfig {
 
         if (this.IndexDocument) {
             xml.push('<IndexDocument>',
-            `<Suffix>${this.IndexDocument.Suffix}</Suffix>`,
-            '</IndexDocument>');
+                `<Suffix>${this.IndexDocument.Suffix}</Suffix>`,
+                '</IndexDocument>');
         }
 
         if (this.ErrorDocument) {
             xml.push('<ErrorDocument>',
-            `<Key>${this.ErrorDocument.Key}</Key>`,
-            '</ErrorDocument>');
+                `<Key>${this.ErrorDocument.Key}</Key>`,
+                '</ErrorDocument>');
         }
 
         if (this.RedirectAllRequestsTo) {
             xml.push('<RedirectAllRequestsTo>');
             if (this.RedirectAllRequestsTo.HostName) {
                 xml.push('<HostName>',
-                `${this.RedirectAllRequestsTo.HostName})`,
-                '</HostName>');
+                    `${this.RedirectAllRequestsTo.HostName})`,
+                    '</HostName>');
             }
             if (this.RedirectAllRequestsTo.Protocol) {
                 xml.push('<Protocol>',
-                `${this.RedirectAllRequestsTo.Protocol})`,
-                '</Protocol>');
+                    `${this.RedirectAllRequestsTo.Protocol})`,
+                    '</Protocol>');
             }
             xml.push('</RedirectAllRequestsTo>');
         }
@@ -306,17 +306,17 @@ class CorsConfigTester {
             xml.push('<CORSRule>');
             ['allowedMethods', 'allowedOrigins', 'allowedHeaders',
                 'exposeHeaders', 'maxAgeSeconds']
-            .forEach(key => {
-                if (rule[key] && Array.isArray(rule[key])) {
-                    const element = key === 'maxAgeSeconds' ?
-                    key.charAt(0).toUpperCase() + key.slice(1) :
-                    key.charAt(0).toUpperCase() +
+                .forEach(key => {
+                    if (rule[key] && Array.isArray(rule[key])) {
+                        const element = key === 'maxAgeSeconds' ?
+                            key.charAt(0).toUpperCase() + key.slice(1) :
+                            key.charAt(0).toUpperCase() +
                     key.slice(1, -1);
-                    rule[key].forEach(value => {
-                        xml.push(`<${element}>${value}</${element}>`);
-                    });
-                }
-            });
+                        rule[key].forEach(value => {
+                            xml.push(`<${element}>${value}</${element}>`);
+                        });
+                    }
+                });
             if (rule.id) {
                 xml.push(`<ID>${rule.id}</ID>`);
             }

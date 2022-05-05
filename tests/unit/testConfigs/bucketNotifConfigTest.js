@@ -21,7 +21,7 @@ describe('bucketNotifAssert', () => {
                 auth: { user: 'user', password: 'password' },
             });
         },
-            '/bad config: bucket notification configuration must be an array/');
+        '/bad config: bucket notification configuration must be an array/');
     });
     it('should throw an error if resource is not a string', () => {
         assert.throws(() => {

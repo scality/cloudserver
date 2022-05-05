@@ -27,23 +27,23 @@ describe('PUT object', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should put an object and set the acl via query param',
@@ -55,15 +55,15 @@ describe('PUT object', () => {
                     '--upload-file', 'uploadFile'], httpCode => {
                     assert.strictEqual(httpCode, '200 OK');
                     s3.getObjectAcl({ Bucket: bucket, Key: 'key' },
-                    (err, result) => {
-                        assert.equal(err, null, 'Expected success, ' +
+                        (err, result) => {
+                            assert.equal(err, null, 'Expected success, ' +
                         `got error ${JSON.stringify(err)}`);
-                        assert.deepStrictEqual(result.Grants[1], { Grantee:
+                            assert.deepStrictEqual(result.Grants[1], { Grantee:
                         { Type: 'Group', URI:
                             'http://acs.amazonaws.com/groups/global/AllUsers',
                         }, Permission: 'READ' });
-                        done();
-                    });
+                            done();
+                        });
                 });
             });
 
@@ -164,15 +164,15 @@ describe('PUT object', () => {
             });
 
             it('should be able to put object with 10 tags',
-            done => {
-                const taggingConfig = generateMultipleTagQuery(10);
-                s3.putObject({ Bucket: bucket, Key: object,
-                    Tagging: taggingConfig }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
+                done => {
+                    const taggingConfig = generateMultipleTagQuery(10);
+                    s3.putObject({ Bucket: bucket, Key: object,
+                        Tagging: taggingConfig }, err => {
+                        assert.equal(err, null, 'Expected success, ' +
                     `got error ${JSON.stringify(err)}`);
-                    done();
+                        done();
+                    });
                 });
-            });
 
             it('should be able to put an empty Tag set', done => {
                 s3.putObject({ Bucket: bucket, Key: object,
@@ -185,14 +185,14 @@ describe('PUT object', () => {
             });
 
             it('should be able to put object with empty tags',
-            done => {
-                s3.putObject({ Bucket: bucket, Key: object,
-                    Tagging: '&&&&&&&&&&&&&&&&&key1=value1' }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
+                done => {
+                    s3.putObject({ Bucket: bucket, Key: object,
+                        Tagging: '&&&&&&&&&&&&&&&&&key1=value1' }, err => {
+                        assert.equal(err, null, 'Expected success, ' +
                     `got error ${JSON.stringify(err)}`);
-                    done();
+                        done();
+                    });
                 });
-            });
 
             it('should allow putting 50 tags', done => {
                 const taggingConfig = generateMultipleTagQuery(50);
@@ -201,23 +201,23 @@ describe('PUT object', () => {
             });
 
             it('should return BadRequest if putting more that 50 tags',
-            done => {
-                const taggingConfig = generateMultipleTagQuery(51);
-                s3.putObject({ Bucket: bucket, Key: object,
-                    Tagging: taggingConfig }, err => {
-                    _checkError(err, 'BadRequest', 400);
-                    done();
+                done => {
+                    const taggingConfig = generateMultipleTagQuery(51);
+                    s3.putObject({ Bucket: bucket, Key: object,
+                        Tagging: taggingConfig }, err => {
+                        _checkError(err, 'BadRequest', 400);
+                        done();
+                    });
                 });
-            });
 
             it('should return InvalidArgument if using the same key twice',
-            done => {
-                s3.putObject({ Bucket: bucket, Key: object,
-                    Tagging: 'key1=value1&key1=value2' }, err => {
-                    _checkError(err, 'InvalidArgument', 400);
-                    done();
+                done => {
+                    s3.putObject({ Bucket: bucket, Key: object,
+                        Tagging: 'key1=value1&key1=value2' }, err => {
+                        _checkError(err, 'InvalidArgument', 400);
+                        done();
+                    });
                 });
-            });
 
             it('should return InvalidArgument if using the same key twice ' +
             'and empty tags', done => {
@@ -272,23 +272,23 @@ describe('PUT object with object lock', () => {
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
             }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should put object with valid object lock retention date and ' +

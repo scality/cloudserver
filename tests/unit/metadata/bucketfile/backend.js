@@ -32,7 +32,7 @@ class Reader extends EventEmitter {
             // extensions should take into account maxKeys
             // and should not filter more than the intended value
             assert(i <= MAX_KEYS,
-                   `listed more than maxKeys ${MAX_KEYS} (${i})`);
+                `listed more than maxKeys ${MAX_KEYS} (${i})`);
             if (i === KEY_COUNT) {
                 return this.emit('end');
             }

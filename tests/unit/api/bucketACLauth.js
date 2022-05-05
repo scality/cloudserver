@@ -157,7 +157,7 @@ describe('bucket authorization for bucketGetACL', () => {
     orders.forEach(value => {
         it(`should allow access to ${value.it}`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketGetACL',
-                                                    value.id);
+                value.id);
             assert.strictEqual(noAuthResult, false);
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);

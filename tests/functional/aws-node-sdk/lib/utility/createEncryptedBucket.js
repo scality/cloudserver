@@ -23,7 +23,7 @@ function createEncryptedBucket(bucketParams, cb) {
     if (bucketParams.CreateBucketConfiguration &&
         bucketParams.CreateBucketConfiguration.LocationConstraint) {
         locationConstraint = bucketParams.CreateBucketConfiguration
-        .LocationConstraint;
+            .LocationConstraint;
     }
 
     const prog = `${__dirname}/../../../../../bin/create_encrypted_bucket.js`;
@@ -44,23 +44,23 @@ function createEncryptedBucket(bucketParams, cb) {
     }
     const body = [];
     const child = childProcess.spawn(args[0], args)
-    .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item => {
-            const json = safeJSONParse(item);
-            const test = !(json instanceof Error) && json.name === 'S3' &&
+        .on('exit', () => {
+            const hasSucceed = body.join('').split('\n').find(item => {
+                const json = safeJSONParse(item);
+                const test = !(json instanceof Error) && json.name === 'S3' &&
                 json.statusCode === 200;
-            if (test) {
-                return true;
+                if (test) {
+                    return true;
+                }
+                return false;
+            });
+            if (!hasSucceed) {
+                process.stderr.write(`${body.join('')}\n`);
+                return cb(new Error('Cannot create encrypted bucket'));
             }
-            return false;
-        });
-        if (!hasSucceed) {
-            process.stderr.write(`${body.join('')}\n`);
-            return cb(new Error('Cannot create encrypted bucket'));
-        }
-        return cb();
-    })
-    .on('error', cb);
+            return cb();
+        })
+        .on('error', cb);
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 

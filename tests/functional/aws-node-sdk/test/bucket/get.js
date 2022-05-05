@@ -129,7 +129,7 @@ const tests = [
                     Body: '{}' },
                 { Bucket, Key:
                   '!exclamationPointObjTitle/!exclamationPointObjTitle',
-                    Body: '{}' },
+                Body: '{}' },
                 { Bucket, Key: '-dashObjTitle/' },
                 { Bucket, Key: '-dashObjTitle/objTitleA', Body: '{}' },
                 { Bucket, Key: '-dashObjTitle/-dashObjTitle', Body: '{}' },
@@ -157,7 +157,7 @@ const tests = [
                     Body: '{}' },
                 { Bucket, Key:
                   '山chineseMountainObjTitle/山chineseMountainObjTitle',
-                    Body: '{}' },
+                Body: '{}' },
                 { Bucket, Key: 'àaGraveLowerCaseObjTitle' },
                 { Bucket, Key: 'àaGraveLowerCaseObjTitle/objTitleA',
                     Body: '{}' },
@@ -294,17 +294,17 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         before(done => {
             bucketUtil = new BucketUtility();
             bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+                .then(created => {
+                    bucketName = created;
+                    done();
+                })
+                .catch(done);
         });
 
         after(done => {
             bucketUtil.deleteOne(bucketName)
-                      .then(() => done())
-                      .catch(done);
+                .then(() => done())
+                .catch(done);
         });
 
         it('should return 403 and AccessDenied on a private bucket', done => {
@@ -326,11 +326,11 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
         before(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             bucketUtil.createRandom(1)
-                      .then(created => {
-                          bucketName = created;
-                          done();
-                      })
-                      .catch(done);
+                .then(created => {
+                    bucketName = created;
+                    done();
+                })
+                .catch(done);
         });
 
         after(done => {
@@ -492,57 +492,57 @@ describe('GET Bucket - AWS.S3.listObjects', () => {
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
             it(`should list objects with key ${k} as ContinuationToken`,
-            done => {
-                const s3 = bucketUtil.s3;
-                const Bucket = bucketName;
-                const objects = [{ Bucket, Key: k }];
+                done => {
+                    const s3 = bucketUtil.s3;
+                    const Bucket = bucketName;
+                    const objects = [{ Bucket, Key: k }];
 
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjectsV2({
-                        Bucket,
-                        ContinuationToken: generateToken(k),
-                    }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.deepStrictEqual(
-                            decryptToken(data.ContinuationToken), k);
-                        done();
-                    })
-                    .catch(done);
-            });
+                    Promise
+                        .mapSeries(objects, param => s3.putObject(param).promise())
+                        .then(() => s3.listObjectsV2({
+                            Bucket,
+                            ContinuationToken: generateToken(k),
+                        }).promise())
+                        .then(data => {
+                            const isValidResponse = tv4.validate(data,
+                                bucketSchemaV2);
+                            if (!isValidResponse) {
+                                throw new Error(tv4.error);
+                            }
+                            return data;
+                        }).then(data => {
+                            assert.deepStrictEqual(
+                                decryptToken(data.ContinuationToken), k);
+                            done();
+                        })
+                        .catch(done);
+                });
         });
 
         ['&amp', '"quot', '\'apos', '<lt', '>gt'].forEach(k => {
             it(`should list objects with key ${k} as NextContinuationToken`,
-            done => {
-                const s3 = bucketUtil.s3;
-                const Bucket = bucketName;
-                const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
-                Promise
-                    .mapSeries(objects, param => s3.putObject(param).promise())
-                    .then(() => s3.listObjectsV2({ Bucket, MaxKeys: 1,
-                        Delimiter: 'foo' }).promise())
-                    .then(data => {
-                        const isValidResponse = tv4.validate(data,
-                            bucketSchemaV2);
-                        if (!isValidResponse) {
-                            throw new Error(tv4.error);
-                        }
-                        return data;
-                    }).then(data => {
-                        assert.strictEqual(
-                            decryptToken(data.NextContinuationToken), k);
-                        done();
-                    })
-                    .catch(done);
-            });
+                done => {
+                    const s3 = bucketUtil.s3;
+                    const Bucket = bucketName;
+                    const objects = [{ Bucket, Key: k }, { Bucket, Key: 'zzz' }];
+                    Promise
+                        .mapSeries(objects, param => s3.putObject(param).promise())
+                        .then(() => s3.listObjectsV2({ Bucket, MaxKeys: 1,
+                            Delimiter: 'foo' }).promise())
+                        .then(data => {
+                            const isValidResponse = tv4.validate(data,
+                                bucketSchemaV2);
+                            if (!isValidResponse) {
+                                throw new Error(tv4.error);
+                            }
+                            return data;
+                        }).then(data => {
+                            assert.strictEqual(
+                                decryptToken(data.NextContinuationToken), k);
+                            done();
+                        })
+                        .catch(done);
+                });
         });
     });
 });

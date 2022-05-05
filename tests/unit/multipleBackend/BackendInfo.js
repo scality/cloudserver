@@ -113,7 +113,7 @@ describe('BackendInfo class', () => {
     });
     describe('legacy for getControllingLocationConstraint', () => {
         const dummyBackendInfoLegacy = new BackendInfo(null, null,
-          '127.0.0.1', legacyLocation);
+            '127.0.0.1', legacyLocation);
         it('should return legacy location constraint', () => {
             const controllingLC =
             dummyBackendInfoLegacy.getControllingLocationConstraint();

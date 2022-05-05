@@ -56,7 +56,7 @@ describe('aws-sdk test get bucket encryption', () => {
 
     it('should include KMSMasterKeyID if user has configured a custom master key', done => {
         setEncryptionInfo({ cryptoScheme: 1, algorithm: 'aws:kms', masterKeyId: '12345',
-                            configuredMasterKeyId: '54321', mandatory: true }, err => {
+            configuredMasterKeyId: '54321', mandatory: true }, err => {
             assert.ifError(err);
             s3.getBucketEncryption({ Bucket: bucketName }, (err, res) => {
                 assert.ifError(err);

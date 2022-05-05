@@ -20,79 +20,79 @@ describe('DELETE object', () => {
             before(() => {
                 process.stdout.write('creating bucket\n');
                 return s3.createBucket({ Bucket: bucketName }).promise()
-                .then(() => {
-                    process.stdout.write('initiating multipart upload\n');
-                    return s3.createMultipartUpload({
-                        Bucket: bucketName,
-                        Key: objectName,
-                    }).promise();
-                })
-                .then(res => {
-                    process.stdout.write('uploading parts\n');
-                    uploadId = res.UploadId;
-                    const uploads = [];
-                    for (let i = 1; i <= 3; i++) {
-                        uploads.push(
-                            s3.uploadPart({
-                                Bucket: bucketName,
-                                Key: objectName,
-                                PartNumber: i,
-                                Body: testfile,
-                                UploadId: uploadId,
-                            }).promise()
-                        );
-                    }
-                    return Promise.all(uploads);
-                })
-                .catch(err => {
-                    process.stdout.write(`Error with uploadPart ${err}\n`);
-                    throw err;
-                })
-                .then(res => {
-                    process.stdout.write('about to complete multipart ' +
+                    .then(() => {
+                        process.stdout.write('initiating multipart upload\n');
+                        return s3.createMultipartUpload({
+                            Bucket: bucketName,
+                            Key: objectName,
+                        }).promise();
+                    })
+                    .then(res => {
+                        process.stdout.write('uploading parts\n');
+                        uploadId = res.UploadId;
+                        const uploads = [];
+                        for (let i = 1; i <= 3; i++) {
+                            uploads.push(
+                                s3.uploadPart({
+                                    Bucket: bucketName,
+                                    Key: objectName,
+                                    PartNumber: i,
+                                    Body: testfile,
+                                    UploadId: uploadId,
+                                }).promise(),
+                            );
+                        }
+                        return Promise.all(uploads);
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error with uploadPart ${err}\n`);
+                        throw err;
+                    })
+                    .then(res => {
+                        process.stdout.write('about to complete multipart ' +
                         'upload\n');
-                    return s3.completeMultipartUpload({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        UploadId: uploadId,
-                        MultipartUpload: {
-                            Parts: [
-                                { ETag: res[0].ETag, PartNumber: 1 },
-                                { ETag: res[1].ETag, PartNumber: 2 },
-                                { ETag: res[2].ETag, PartNumber: 3 },
-                            ],
-                        },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('completeMultipartUpload error: ' +
+                        return s3.completeMultipartUpload({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
+                                    { ETag: res[0].ETag, PartNumber: 1 },
+                                    { ETag: res[1].ETag, PartNumber: 2 },
+                                    { ETag: res[2].ETag, PartNumber: 3 },
+                                ],
+                            },
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write('completeMultipartUpload error: ' +
                         `${err}\n`);
-                    throw err;
-                });
+                        throw err;
+                    });
             });
 
             after(() => {
                 process.stdout.write('Emptying bucket\n');
                 return bucketUtil.empty(bucketName)
-                .then(() => {
-                    process.stdout.write('Deleting bucket\n');
-                    return bucketUtil.deleteOne(bucketName);
-                })
-                .catch(err => {
-                    process.stdout.write('Error in after\n');
-                    throw err;
-                });
+                    .then(() => {
+                        process.stdout.write('Deleting bucket\n');
+                        return bucketUtil.deleteOne(bucketName);
+                    })
+                    .catch(err => {
+                        process.stdout.write('Error in after\n');
+                        throw err;
+                    });
             });
 
             it('should delete a object uploaded in parts successfully',
-            done => {
-                s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                err => {
-                    assert.strictEqual(err, null,
-                        `Expected success, got error ${JSON.stringify(err)}`);
-                    done();
+                done => {
+                    s3.deleteObject({ Bucket: bucketName, Key: objectName },
+                        err => {
+                            assert.strictEqual(err, null,
+                                `Expected success, got error ${JSON.stringify(err)}`);
+                            done();
+                        });
                 });
-            });
         });
 
         describe('with object lock', () => {
@@ -105,76 +105,76 @@ describe('DELETE object', () => {
                     Bucket: bucketName,
                     ObjectLockEnabledForBucket: true,
                 }).promise()
-                .catch(err => {
-                    process.stdout.write(`Error creating bucket ${err}\n`);
-                    throw err;
-                })
-                .then(() => {
-                    process.stdout.write('putting object\n');
-                    return s3.putObject({
-                        Bucket: bucketName,
-                        Key: objectName,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Error putting object');
-                    throw err;
-                })
-                .then(res => {
-                    versionIdOne = res.VersionId;
-                    process.stdout.write('putting object retention\n');
-                    return s3.putObjectRetention({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        Retention: {
-                            Mode: 'GOVERNANCE',
-                            RetainUntilDate: retainDate,
-                        },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object retention\n');
-                    throw err;
-                })
-                .then(() => {
-                    process.stdout.write('putting object\n');
-                    return s3.putObject({
-                        Bucket: bucketName,
-                        Key: objectNameTwo,
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write(('Err putting second object\n'));
-                    throw err;
-                })
-                .then(res => {
-                    versionIdTwo = res.VersionId;
-                    process.stdout.write('putting object legal hold\n');
-                    return s3.putObjectLegalHold({
-                        Bucket: bucketName,
-                        Key: objectNameTwo,
-                        LegalHold: {
-                            Status: 'ON',
-                        },
-                    }).promise();
-                })
-                .catch(err => {
-                    process.stdout.write('Err putting object legal hold\n');
-                    throw err;
-                });
+                    .catch(err => {
+                        process.stdout.write(`Error creating bucket ${err}\n`);
+                        throw err;
+                    })
+                    .then(() => {
+                        process.stdout.write('putting object\n');
+                        return s3.putObject({
+                            Bucket: bucketName,
+                            Key: objectName,
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write('Error putting object');
+                        throw err;
+                    })
+                    .then(res => {
+                        versionIdOne = res.VersionId;
+                        process.stdout.write('putting object retention\n');
+                        return s3.putObjectRetention({
+                            Bucket: bucketName,
+                            Key: objectName,
+                            Retention: {
+                                Mode: 'GOVERNANCE',
+                                RetainUntilDate: retainDate,
+                            },
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write('Err putting object retention\n');
+                        throw err;
+                    })
+                    .then(() => {
+                        process.stdout.write('putting object\n');
+                        return s3.putObject({
+                            Bucket: bucketName,
+                            Key: objectNameTwo,
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write(('Err putting second object\n'));
+                        throw err;
+                    })
+                    .then(res => {
+                        versionIdTwo = res.VersionId;
+                        process.stdout.write('putting object legal hold\n');
+                        return s3.putObjectLegalHold({
+                            Bucket: bucketName,
+                            Key: objectNameTwo,
+                            LegalHold: {
+                                Status: 'ON',
+                            },
+                        }).promise();
+                    })
+                    .catch(err => {
+                        process.stdout.write('Err putting object legal hold\n');
+                        throw err;
+                    });
             });
 
             after(() => {
                 process.stdout.write('Emptying bucket\n');
                 return bucketUtil.empty(bucketName)
-                .then(() => {
-                    process.stdout.write('Deleting bucket\n');
-                    return bucketUtil.deleteOne(bucketName);
-                })
-                .catch(err => {
-                    process.stdout.write('Error in after\n');
-                    throw err;
-                });
+                    .then(() => {
+                        process.stdout.write('Deleting bucket\n');
+                        return bucketUtil.deleteOne(bucketName);
+                    })
+                    .catch(err => {
+                        process.stdout.write('Error in after\n');
+                        throw err;
+                    });
             });
 
             it('should put delete marker if no version id specified', done => {

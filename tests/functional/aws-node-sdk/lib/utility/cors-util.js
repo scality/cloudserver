@@ -63,12 +63,12 @@ function methodRequest(params, callback) {
                     `<Code>${code}</Code>` : '';
                 assert(total.indexOf(message) > -1, `Expected ${message}`);
                 assert.deepEqual(res.statusCode, statusCode[code],
-                `status code expected: ${statusCode[code]}`);
+                    `status code expected: ${statusCode[code]}`);
             }
             if (headersResponse) {
                 Object.keys(headersResponse).forEach(key => {
                     assert.deepEqual(res.headers[key], headersResponse[key],
-                      `error header: ${key}`);
+                        `error header: ${key}`);
                 });
             } else {
             // if no headersResponse provided, should not have these headers
@@ -77,9 +77,9 @@ function methodRequest(params, callback) {
                     'access-control-allow-methods',
                     'access-control-allow-credentials',
                     'vary'].forEach(key => {
-                        assert.strictEqual(res.headers[key], undefined,
+                    assert.strictEqual(res.headers[key], undefined,
                         `Error: ${key} should not have value`);
-                    });
+                });
             }
             if (headersOmitted) {
                 headersOmitted.forEach(key => {

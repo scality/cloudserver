@@ -52,7 +52,7 @@ describe('aws-sdk test delete bucket lifecycle', () => {
 
         it('should return AccessDenied if user is not bucket owner', done => {
             otherAccountS3.deleteBucketLifecycle({ Bucket: bucket },
-            err => assertError(err, 'AccessDenied', done));
+                err => assertError(err, 'AccessDenied', done));
         });
 
         it('should return no error if no lifecycle config on bucket', done => {
@@ -68,8 +68,8 @@ describe('aws-sdk test delete bucket lifecycle', () => {
                 s3.deleteBucketLifecycle({ Bucket: bucket }, err => {
                     assert.equal(err, null);
                     s3.getBucketLifecycleConfiguration({ Bucket: bucket },
-                    err =>
-                        assertError(err, 'NoSuchLifecycleConfiguration', done));
+                        err =>
+                            assertError(err, 'NoSuchLifecycleConfiguration', done));
                 });
             });
         });

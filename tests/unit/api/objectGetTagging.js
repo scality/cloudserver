@@ -39,7 +39,7 @@ describe('getObjectTagging API', () => {
                 return done(err);
             }
             return objectPut(authInfo, testPutObjectRequest, undefined, log,
-              done);
+                done);
         });
     });
 
@@ -57,14 +57,14 @@ describe('getObjectTagging API', () => {
             const testObjectGetTaggingRequest = taggingUtil
                 .createObjectTaggingRequest('GET', bucketName, objectName);
             return objectGetTagging(authInfo, testObjectGetTaggingRequest, log,
-            (err, xml) => {
-                if (err) {
-                    process.stdout.write(`Err getting object tagging ${err}`);
-                    return done(err);
-                }
-                assert.strictEqual(xml, taggingUtil.constructXml());
-                return done();
-            });
+                (err, xml) => {
+                    if (err) {
+                        process.stdout.write(`Err getting object tagging ${err}`);
+                        return done(err);
+                    }
+                    assert.strictEqual(xml, taggingUtil.constructXml());
+                    return done();
+                });
         });
     });
 });

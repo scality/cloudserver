@@ -54,7 +54,7 @@ describe('aws-sdk test delete bucket policy', () => {
 
         it('should return MethodNotAllowed if user is not bucket owner', done => {
             otherAccountS3.deleteBucketPolicy({ Bucket: bucket },
-            err => assertError(err, 'MethodNotAllowed', done));
+                err => assertError(err, 'MethodNotAllowed', done));
         });
 
         it('should return no error if no policy on bucket', done => {
@@ -69,8 +69,8 @@ describe('aws-sdk test delete bucket policy', () => {
                 s3.deleteBucketPolicy({ Bucket: bucket }, err => {
                     assert.equal(err, null);
                     s3.getBucketPolicy({ Bucket: bucket },
-                    err =>
-                        assertError(err, 'NoSuchBucketPolicy', done));
+                        err =>
+                            assertError(err, 'NoSuchBucketPolicy', done));
                 });
             });
         });

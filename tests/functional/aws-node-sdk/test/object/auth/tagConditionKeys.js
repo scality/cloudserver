@@ -11,7 +11,7 @@ const log = new DummyRequestLogger();
 const bucket = 'bucket2testconditionkeys';
 const object = 'object2testconditionkeys';
 const objPutTaggingReq = taggingUtil
-.createObjectTaggingRequest('PUT', bucket, object);
+    .createObjectTaggingRequest('PUT', bucket, object);
 const requestContexts = [createRequestContext('objectPutTagging', objPutTaggingReq)];
 
 describe('Tag condition keys updateRequestContext', () => {
@@ -23,10 +23,10 @@ describe('Tag condition keys updateRequestContext', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => bucketUtil.empty(bucket)
@@ -42,13 +42,14 @@ describe('Tag condition keys updateRequestContext', () => {
             s3.putObject(params, err => {
                 assert.ifError(err);
                 updateRequestContexts(objPutTaggingReq, requestContexts, 'objectPutTagging', log,
-                (err, newRequestContexts) => {
-                    assert.ifError(err);
-                    assert(newRequestContexts[0].getNeedTagEval());
-                    assert.strictEqual(newRequestContexts[0].getExistingObjTag(), tagsToExist);
-                    assert.strictEqual(newRequestContexts[0].getRequestObjTags(), makeTagQuery(taggingUtil.getTags()));
-                    done();
-                });
+                    (err, newRequestContexts) => {
+                        assert.ifError(err);
+                        assert(newRequestContexts[0].getNeedTagEval());
+                        assert.strictEqual(newRequestContexts[0].getExistingObjTag(), tagsToExist);
+                        assert.strictEqual(
+                            newRequestContexts[0].getRequestObjTags(), makeTagQuery(taggingUtil.getTags()));
+                        done();
+                    });
             });
         });
     });

@@ -118,7 +118,7 @@ describe('streaming V4 signature with bad chunk signature', () => {
             // above cases.
 
             const alterSignatureChunkId = ALTER_CHUNK_SIGNATURE ?
-                  (n % (N_DATA_CHUNKS + 2)) : null;
+                (n % (N_DATA_CHUNKS + 2)) : null;
             testChunkedPutWithBadSignature(n, alterSignatureChunkId, done);
         }, err => cb(err));
     });

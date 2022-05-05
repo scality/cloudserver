@@ -41,9 +41,9 @@ describe('Put object tagging with versioning', () => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
+                    (err, data) => next(err, data.VersionId)),
                 (versionId, next) => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
@@ -66,9 +66,9 @@ describe('Put object tagging with versioning', () => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
+                    (err, data) => next(err, data.VersionId)),
                 (versionId, next) => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
@@ -86,10 +86,10 @@ describe('Put object tagging with versioning', () => {
         it('should be able to put tag with a version of id "null"', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                err => next(err)),
+                    err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
@@ -111,10 +111,10 @@ describe('Put object tagging with versioning', () => {
         'version id', done => {
             async.waterfall([
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                err => next(err)),
+                    err => next(err)),
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
@@ -136,11 +136,11 @@ describe('Put object tagging with versioning', () => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
+                    err => next(err)),
                 next => s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
+                    err => next(err)),
                 next => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,
@@ -161,11 +161,11 @@ describe('Put object tagging with versioning', () => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
                     VersioningConfiguration: versioningEnabled },
-                  err => next(err)),
+                err => next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
+                    err => next(err)),
                 next => s3.deleteObject({ Bucket: bucketName, Key: objectName },
-                  (err, data) => next(err, data.VersionId)),
+                    (err, data) => next(err, data.VersionId)),
                 (versionId, next) => s3.putObjectTagging({
                     Bucket: bucketName,
                     Key: objectName,

@@ -16,16 +16,16 @@ describe('PUT object', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .then(() => s3.createMultipartUpload({
-                Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                uploadId = res.UploadId;
-                return uploadId;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => s3.createMultipartUpload({
+                    Bucket: bucket, Key: key }).promise())
+                .then(res => {
+                    uploadId = res.UploadId;
+                    return uploadId;
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
@@ -33,15 +33,15 @@ describe('PUT object', () => {
             return s3.abortMultipartUpload({
                 Bucket: bucket, Key: key, UploadId: uploadId,
             }).promise()
-            .then(() => bucketUtil.empty(bucket))
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => bucketUtil.empty(bucket))
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should return Not Implemented error for obj. encryption using ' +

@@ -83,7 +83,7 @@ describeF() {
                         UploadId: this.currentTest.uploadId,
                     }, err => next(err)),
                     next => s3.deleteBucket({ Bucket: azureContainerName },
-                      err => next(err)),
+                        err => next(err)),
                 ], err => {
                     assert.equal(err, null, `Error aborting MPU: ${err}`);
                     done();
@@ -104,12 +104,12 @@ describeF() {
                         return next(err);
                     }),
                     next => azureClient.listBlocks(azureContainerName,
-                    this.test.key, 'all', err => {
-                        assert.notEqual(err, null,
-                            'Expected failure but got success');
-                        assert.strictEqual(err.code, 'BlobNotFound');
-                        next();
-                    }),
+                        this.test.key, 'all', err => {
+                            assert.notEqual(err, null,
+                                'Expected failure but got success');
+                            assert.strictEqual(err.code, 'BlobNotFound');
+                            next();
+                        }),
                 ], done);
             });
 
@@ -117,7 +117,7 @@ describeF() {
                 const body = Buffer.alloc(maxSubPartSize + 10);
                 const parts = [{ partnbr: 1, subpartnbr: 0,
                     size: maxSubPartSize },
-                  { partnbr: 1, subpartnbr: 1, size: 10 }];
+                { partnbr: 1, subpartnbr: 1, size: 10 }];
                 const params = {
                     Bucket: azureContainerName,
                     Key: this.test.key,
@@ -132,78 +132,78 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(this.test.key, this.test.uploadId,
-                    parts, next),
+                        parts, next),
                 ], done);
             });
 
             it('should put 5 parts bigger than maxSubPartSize to Azure',
-            function it(done) {
-                const body = Buffer.alloc(maxSubPartSize + 10);
-                let parts = [];
-                for (let i = 1; i < 6; i++) {
-                    parts = parts.concat([
-                      { partnbr: i, subpartnbr: 0, size: maxSubPartSize },
-                      { partnbr: i, subpartnbr: 1, size: 10 },
-                    ]);
-                }
-                async.times(5, (n, next) => {
-                    const partNumber = n + 1;
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.key,
-                        UploadId: this.test.uploadId,
-                        PartNumber: partNumber,
-                        Body: body,
-                    };
-                    s3.uploadPart(params, (err, res) => {
-                        const eTagExpected = expectedETag(body);
-                        assert.strictEqual(res.ETag, eTagExpected);
-                        return next(err);
-                    });
-                }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
+                function it(done) {
+                    const body = Buffer.alloc(maxSubPartSize + 10);
+                    let parts = [];
+                    for (let i = 1; i < 6; i++) {
+                        parts = parts.concat([
+                            { partnbr: i, subpartnbr: 0, size: maxSubPartSize },
+                            { partnbr: i, subpartnbr: 1, size: 10 },
+                        ]);
+                    }
+                    async.times(5, (n, next) => {
+                        const partNumber = n + 1;
+                        const params = {
+                            Bucket: azureContainerName,
+                            Key: this.test.key,
+                            UploadId: this.test.uploadId,
+                            PartNumber: partNumber,
+                            Body: body,
+                        };
+                        s3.uploadPart(params, (err, res) => {
+                            const eTagExpected = expectedETag(body);
+                            assert.strictEqual(res.ETag, eTagExpected);
+                            return next(err);
+                        });
+                    }, err => {
+                        assert.equal(err, null, 'Expected success, ' +
                     `got error: ${err}`);
-                    checkSubPart(this.test.key, this.test.uploadId,
-                    parts, done);
+                        checkSubPart(this.test.key, this.test.uploadId,
+                            parts, done);
+                    });
                 });
-            });
 
             it('should put 5 parts smaller than maxSubPartSize to Azure',
-            function it(done) {
-                const body = Buffer.alloc(10);
-                let parts = [];
-                for (let i = 1; i < 6; i++) {
-                    parts = parts.concat([
-                      { partnbr: i, subpartnbr: 0, size: 10 },
-                    ]);
-                }
-                async.times(5, (n, next) => {
-                    const partNumber = n + 1;
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.key,
-                        UploadId: this.test.uploadId,
-                        PartNumber: partNumber,
-                        Body: body,
-                    };
-                    s3.uploadPart(params, (err, res) => {
-                        const eTagExpected = expectedETag(body);
-                        assert.strictEqual(res.ETag, eTagExpected);
-                        return next(err);
-                    });
-                }, err => {
-                    assert.equal(err, null, 'Expected success, ' +
+                function it(done) {
+                    const body = Buffer.alloc(10);
+                    let parts = [];
+                    for (let i = 1; i < 6; i++) {
+                        parts = parts.concat([
+                            { partnbr: i, subpartnbr: 0, size: 10 },
+                        ]);
+                    }
+                    async.times(5, (n, next) => {
+                        const partNumber = n + 1;
+                        const params = {
+                            Bucket: azureContainerName,
+                            Key: this.test.key,
+                            UploadId: this.test.uploadId,
+                            PartNumber: partNumber,
+                            Body: body,
+                        };
+                        s3.uploadPart(params, (err, res) => {
+                            const eTagExpected = expectedETag(body);
+                            assert.strictEqual(res.ETag, eTagExpected);
+                            return next(err);
+                        });
+                    }, err => {
+                        assert.equal(err, null, 'Expected success, ' +
                     `got error: ${err}`);
-                    checkSubPart(this.test.key, this.test.uploadId,
-                    parts, done);
+                        checkSubPart(this.test.key, this.test.uploadId,
+                            parts, done);
+                    });
                 });
-            });
 
             it('should put the same part twice', function itFn(done) {
                 const body1 = Buffer.alloc(maxSubPartSize + 10);
                 const body2 = Buffer.alloc(20);
                 const parts2 = [{ partnbr: 1, subpartnbr: 0, size: 20 },
-                  { partnbr: 1, subpartnbr: 1, size: 10 }];
+                    { partnbr: 1, subpartnbr: 1, size: 10 }];
                 async.waterfall([
                     next => s3.uploadPart({
                         Bucket: azureContainerName,
@@ -224,7 +224,7 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(this.test.key, this.test.uploadId,
-                    parts2, next),
+                        parts2, next),
                 ], done);
             });
         });
@@ -292,20 +292,20 @@ describeF() {
             });
 
             it('should put a part without overwriting existing object',
-            function itFn(done) {
-                const body = Buffer.alloc(20);
-                s3.uploadPart({
-                    Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: this.test.uploadId,
-                    PartNumber: 1,
-                    Body: body,
-                }, err => {
-                    assert.strictEqual(err, null, 'Err putting part to ' +
+                function itFn(done) {
+                    const body = Buffer.alloc(20);
+                    s3.uploadPart({
+                        Bucket: azureContainerName,
+                        Key: this.test.key,
+                        UploadId: this.test.uploadId,
+                        PartNumber: 1,
+                        Body: body,
+                    }, err => {
+                        assert.strictEqual(err, null, 'Err putting part to ' +
                     `Azure: ${err}`);
-                    azureCheck(this.test.key, done);
+                        azureCheck(this.test.key, done);
+                    });
                 });
-            });
         });
     });
 });
@@ -348,7 +348,7 @@ describeF() {
                         UploadId: this.currentTest.uploadId,
                     }, err => next(err)),
                     next => s3.deleteBucket({ Bucket: azureContainerName },
-                      err => next(err)),
+                        err => next(err)),
                 ], err => {
                     assert.equal(err, null, `Error aborting MPU: ${err}`);
                     done();
@@ -375,8 +375,8 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(
-                      `${azureContainerName}/${this.test.key}`,
-                      this.test.uploadId, parts, next),
+                        `${azureContainerName}/${this.test.key}`,
+                        this.test.uploadId, parts, next),
                 ], done);
             });
         });

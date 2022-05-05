@@ -62,34 +62,34 @@ describe('Multi-Object Delete Success', function success() {
         });
         s3 = bucketUtil.s3;
         return s3.createBucket({ Bucket: bucketName }).promise()
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
-            const objects = [];
-            for (let i = 1; i < 1001; i++) {
-                objects.push(`${key}${i}`);
-            }
-            const queued = [];
-            const parallel = 20;
-            const putPromises = objects.map(key => {
-                const mustComplete = Math.max(0, queued.length - parallel + 1);
-                const result = Promise.some(queued, mustComplete).then(() =>
-                    s3.putObject({
-                        Bucket: bucketName,
-                        Key: key,
-                        Body: 'somebody',
-                    }).promise()
-                );
-                queued.push(result);
-                return result;
-            });
-            return Promise.all(putPromises).catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
+            .catch(err => {
+                process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
+            })
+            .then(() => {
+                const objects = [];
+                for (let i = 1; i < 1001; i++) {
+                    objects.push(`${key}${i}`);
+                }
+                const queued = [];
+                const parallel = 20;
+                const putPromises = objects.map(key => {
+                    const mustComplete = Math.max(0, queued.length - parallel + 1);
+                    const result = Promise.some(queued, mustComplete).then(() =>
+                        s3.putObject({
+                            Bucket: bucketName,
+                            Key: key,
+                            Body: 'somebody',
+                        }).promise(),
+                    );
+                    queued.push(result);
+                    return result;
+                });
+                return Promise.all(putPromises).catch(err => {
+                    process.stdout.write(`Error creating objects: ${err}\n`);
+                    throw err;
+                });
             });
-        });
     });
 
     afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
@@ -105,7 +105,7 @@ describe('Multi-Object Delete Success', function success() {
         }, function result(err, res) {
             checkNoError(err);
             if (this.httpResponse.body.toString()
-                    .indexOf('<?xml version="1.0"') === -1) {
+                .indexOf('<?xml version="1.0"') === -1) {
                 return done('S3C-2642: should have included xml declaration');
             }
             assert.strictEqual(res.Deleted.length, 1000);
@@ -127,7 +127,7 @@ describe('Multi-Object Delete Success', function success() {
         }, function result(err, res) {
             checkNoError(err);
             if (this.httpResponse.body.toString()
-                    .indexOf('<?xml version="1.0"') === -1) {
+                .indexOf('<?xml version="1.0"') === -1) {
                 return done('S3C-2642: should have included xml declaration');
             }
             assert.strictEqual(res.Deleted.length, 0);
@@ -146,10 +146,10 @@ describe('Multi-Object Delete Error Responses', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucketName }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => s3.deleteBucket({ Bucket: bucketName }).promise());
@@ -222,24 +222,24 @@ describe('Multi-Object Delete Access', function access() {
         });
         s3 = bucketUtil.s3;
         return s3.createBucket({ Bucket: bucketName }).promise()
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
-            for (let i = 1; i < 501; i++) {
-                createObjects.push(s3.putObject({
-                    Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }).promise());
-            }
-            return Promise.all(createObjects)
             .catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
+                process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
+            })
+            .then(() => {
+                for (let i = 1; i < 501; i++) {
+                    createObjects.push(s3.putObject({
+                        Bucket: bucketName,
+                        Key: `${key}${i}`,
+                        Body: 'somebody',
+                    }).promise());
+                }
+                return Promise.all(createObjects)
+                    .catch(err => {
+                        process.stdout.write(`Error creating objects: ${err}\n`);
+                        throw err;
+                    });
             });
-        });
     });
 
     after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
@@ -301,41 +301,41 @@ describe('Multi-Object Delete with Object Lock', () => {
             Bucket: bucketName,
             ObjectLockEnabledForBucket: true,
         }).promise()
-        .then(() => s3.putObjectLockConfiguration({
-            Bucket: bucketName,
-            ObjectLockConfiguration: {
-                ObjectLockEnabled: 'Enabled',
-                Rule: {
-                    DefaultRetention: {
-                        Days: 1,
-                        Mode: 'GOVERNANCE',
+            .then(() => s3.putObjectLockConfiguration({
+                Bucket: bucketName,
+                ObjectLockConfiguration: {
+                    ObjectLockEnabled: 'Enabled',
+                    Rule: {
+                        DefaultRetention: {
+                            Days: 1,
+                            Mode: 'GOVERNANCE',
+                        },
                     },
                 },
-            },
-        }).promise())
-        .catch(err => {
-            process.stdout.write(`Error creating bucket: ${err}\n`);
-            throw err;
-        })
-        .then(() => {
-            for (let i = 1; i < 6; i++) {
-                createObjects.push(s3.putObject({
-                    Bucket: bucketName,
-                    Key: `${key}${i}`,
-                    Body: 'somebody',
-                }).promise());
-            }
-            return Promise.all(createObjects)
-            .then(res => {
-                res.forEach(r => {
-                    versionIds.push(r.VersionId);
-                });
-            })
+            }).promise())
             .catch(err => {
-                process.stdout.write(`Error creating objects: ${err}\n`);
+                process.stdout.write(`Error creating bucket: ${err}\n`);
                 throw err;
+            })
+            .then(() => {
+                for (let i = 1; i < 6; i++) {
+                    createObjects.push(s3.putObject({
+                        Bucket: bucketName,
+                        Key: `${key}${i}`,
+                        Body: 'somebody',
+                    }).promise());
+                }
+                return Promise.all(createObjects)
+                    .then(res => {
+                        res.forEach(r => {
+                            versionIds.push(r.VersionId);
+                        });
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error creating objects: ${err}\n`);
+                        throw err;
+                    });
             });
-        });
     });
 
     after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
@@ -369,17 +369,17 @@ describe('Multi-Object Delete with Object Lock', () => {
             date: moment().subtract(10, 'days').toISOString(),
         };
         return changeLockPromise(objectsCopy, newRetention)
-        .then(() => s3.deleteObjects({
-            Bucket: bucketName,
-            Delete: {
-                Objects: objects,
-                Quiet: false,
-            },
-        }).promise()).then(res => {
-            assert.strictEqual(res.Deleted.length, 5);
-            assert.strictEqual(res.Errors.length, 0);
-        }).catch(err => {
-            checkNoError(err);
-        });
+            .then(() => s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+            }).promise()).then(res => {
+                assert.strictEqual(res.Deleted.length, 5);
+                assert.strictEqual(res.Errors.length, 0);
+            }).catch(err => {
+                checkNoError(err);
+            });
     });
 });

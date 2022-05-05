@@ -47,12 +47,12 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         describe('create bucket twice', () => {
             beforeEach(done => bucketUtil.s3.createBucket({ Bucket:
                 bucketName,
-                CreateBucketConfiguration: {
-                    LocationConstraint: 'us-east-1',
-                },
+            CreateBucketConfiguration: {
+                LocationConstraint: 'us-east-1',
+            },
             }, done));
             afterEach(done => bucketUtil.s3.deleteBucket({ Bucket: bucketName },
-              done));
+                done));
             // AWS JS SDK sends a request with locationConstraint us-east-1 if
             // no locationConstraint provided.
             // Skip this test on E2E because it is making the asumption that the
@@ -77,7 +77,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     },
                 }, error => {
                     assert.notEqual(error, null,
-                      'Expected failure but got success');
+                        'Expected failure but got success');
                     assert.strictEqual(error.code, 'BucketAlreadyOwnedByYou');
                     assert.strictEqual(error.statusCode, 409);
                     done();
@@ -137,21 +137,21 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 done => {
                     const longName = 'x'.repeat(64);
                     testFn(longName, done);
-                }
+                },
             );
 
             itSkipIfAWS('should return 400 if name is formatted as IP address',
                 done => {
                     const ipAddress = '192.168.5.4';
                     testFn(ipAddress, done);
-                }
+                },
             );
 
             itSkipIfAWS('should return 400 if name starts with period',
                 done => {
                     const invalidName = '.myawsbucket';
                     testFn(invalidName, done);
-                }
+                },
             );
 
             it('should return 400 if name ends with period', done => {
@@ -164,7 +164,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 done => {
                     const invalidName = 'my..examplebucket';
                     testFn(invalidName, done);
-                }
+                },
             );
 
             it('should return 400 if name has special chars', done => {
@@ -179,7 +179,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                     assert.ifError(err);
                     assert(res.Location, 'No Location in response');
                     assert.deepStrictEqual(res.Location, `/${name}`,
-                      'Wrong Location header');
+                        'Wrong Location header');
                     bucketUtil.deleteOne(name).then(() => done()).catch(done);
                 });
             }
@@ -201,7 +201,7 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                 }, (err, res) => {
                     assert.ifError(err);
                     assert.strictEqual(res.Location, `/${name}`,
-                    'Wrong Location header');
+                        'Wrong Location header');
                     bucketUtil.s3.getObjectLockConfiguration({ Bucket: name }, (err, res) => {
                         assert.ifError(err);
                         assert.deepStrictEqual(res.ObjectLockConfiguration,
@@ -253,21 +253,21 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         });
 
         Object.keys(locationConstraints).forEach(
-        location => {
-            describeSkipAWS(`bucket creation with location: ${location}`,
-            () => {
-                after(() => bucketUtil.deleteOne(bucketName));
-                it(`should create bucket with location: ${location}`, done => {
-                    bucketUtil.s3.createBucket(
-                        {
-                            Bucket: bucketName,
-                            CreateBucketConfiguration: {
-                                LocationConstraint: location,
-                            },
-                        }, done);
-                });
+            location => {
+                describeSkipAWS(`bucket creation with location: ${location}`,
+                    () => {
+                        after(() => bucketUtil.deleteOne(bucketName));
+                        it(`should create bucket with location: ${location}`, done => {
+                            bucketUtil.s3.createBucket(
+                                {
+                                    Bucket: bucketName,
+                                    CreateBucketConfiguration: {
+                                        LocationConstraint: location,
+                                    },
+                                }, done);
+                        });
+                    });
             });
-        });
 
         describe('bucket creation with invalid location', () => {
             it('should return errors InvalidLocationConstraint', done => {
@@ -278,11 +278,11 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             LocationConstraint: 'coco',
                         },
                     }, err => {
-                    assert.strictEqual(err.code,
-                    'InvalidLocationConstraint');
-                    assert.strictEqual(err.statusCode, 400);
-                    done();
-                });
+                        assert.strictEqual(err.code,
+                            'InvalidLocationConstraint');
+                        assert.strictEqual(err.statusCode, 400);
+                        done();
+                    });
             });
         });
     });

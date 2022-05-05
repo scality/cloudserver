@@ -53,9 +53,9 @@ function createFile(name, bytes, callback) {
     process.stdout.write(`dd if=/dev/urandom of=${name} bs=${bytes} count=1\n`);
     proc.spawn('dd', ['if=/dev/urandom', `of=${name}`,
         `bs=${bytes}`, 'count=1'], { stdio: 'inherit' }).on('exit', code => {
-            assert.strictEqual(code, 0);
-            callback();
-        });
+        assert.strictEqual(code, 0);
+        callback();
+    });
 }
 
 function createEmptyFile(name, callback) {
@@ -85,7 +85,7 @@ function exec(args, done, exitCode) {
     process.stdout.write(`${program} ${av}\n`);
     proc.spawn(program, av, { stdio: 'inherit' }).on('exit', code => {
         assert.strictEqual(code, exit,
-                           's3cmd did not yield expected exit status.');
+            's3cmd did not yield expected exit status.');
         done();
     });
 }
@@ -229,23 +229,23 @@ function createEncryptedBucket(name, cb) {
     }
     const body = [];
     const child = proc.spawn(args[0], args)
-    .on('exit', () => {
-        const hasSucceed = body.join('').split('\n').find(item => {
-            const json = safeJSONParse(item);
-            const test = !(json instanceof Error) && json.name === 'S3' &&
+        .on('exit', () => {
+            const hasSucceed = body.join('').split('\n').find(item => {
+                const json = safeJSONParse(item);
+                const test = !(json instanceof Error) && json.name === 'S3' &&
                 json.statusCode === 200;
-            if (test) {
-                return true;
+                if (test) {
+                    return true;
+                }
+                return false;
+            });
+            if (!hasSucceed) {
+                process.stderr.write(`${body.join('')}\n`);
+                return cb(new Error('Cannot create encrypted bucket'));
             }
-            return false;
-        });
-        if (!hasSucceed) {
-            process.stderr.write(`${body.join('')}\n`);
-            return cb(new Error('Cannot create encrypted bucket'));
-        }
-        return cb();
-    })
-    .on('error', cb);
+            return cb();
+        })
+        .on('error', cb);
     child.stdout.on('data', chunk => body.push(chunk.toString()));
 }
 
@@ -279,15 +279,15 @@ describe('s3cmd putBucket', () => {
 
     if (process.env.ENABLE_KMS_ENCRYPTION === 'true') {
         it('creates a valid bucket with server side encryption',
-           function f(done) {
-               this.timeout(5000);
-               exec(['rb', `s3://${bucket}`], err => {
-                   if (err) {
-                       return done(err);
-                   }
-                   return createEncryptedBucket(bucket, done);
-               });
-           });
+            function f(done) {
+                this.timeout(5000);
+                exec(['rb', `s3://${bucket}`], err => {
+                    if (err) {
+                        return done(err);
+                    }
+                    return createEncryptedBucket(bucket, done);
+                });
+            });
     }
 });
 
@@ -302,10 +302,10 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL', '*anon*: READ',
-        'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     it('should set a specific ACL', done => {
@@ -317,10 +317,10 @@ describe('s3cmd put and get bucket ACLs', function aclBuck() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'ACL',
-        `${lowerCaseEmail}: WRITE`, 'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            `${lowerCaseEmail}: WRITE`, 'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 });
 
@@ -345,19 +345,19 @@ describe('s3cmd getService', () => {
     it("should have response headers matching AWS's response headers",
         done => {
             provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
-            parsedObject => {
-                assert(parsedObject.headers['x-amz-id-2']);
-                assert(parsedObject.headers['transfer-encoding']);
-                assert(parsedObject.headers['x-amz-request-id']);
-                const gmtDate = new Date(parsedObject.headers.date)
-                    .toUTCString();
-                assert.strictEqual(parsedObject.headers.date, gmtDate);
-                assert.strictEqual(parsedObject
-                    .headers['content-type'], 'application/xml');
-                assert.strictEqual(parsedObject
-                    .headers['set-cookie'], undefined);
-                done();
-            });
+                parsedObject => {
+                    assert(parsedObject.headers['x-amz-id-2']);
+                    assert(parsedObject.headers['transfer-encoding']);
+                    assert(parsedObject.headers['x-amz-request-id']);
+                    const gmtDate = new Date(parsedObject.headers.date)
+                        .toUTCString();
+                    assert.strictEqual(parsedObject.headers.date, gmtDate);
+                    assert.strictEqual(parsedObject
+                        .headers['content-type'], 'application/xml');
+                    assert.strictEqual(parsedObject
+                        .headers['set-cookie'], undefined);
+                    done();
+                });
         });
 });
 
@@ -432,40 +432,40 @@ describe('s3cmd copyObject without MPU to same bucket', function copyStuff() {
 
 describe('s3cmd copyObject without MPU to different bucket ' +
     '(always unencrypted)',
-    function copyStuff() {
-        const copyBucket = 'receiverbucket';
-        this.timeout(40000);
+function copyStuff() {
+    const copyBucket = 'receiverbucket';
+    this.timeout(40000);
 
-        before('create receiver bucket', done => {
-            exec(['mb', `s3://${copyBucket}`], done);
-        });
+    before('create receiver bucket', done => {
+        exec(['mb', `s3://${copyBucket}`], done);
+    });
 
-        after('delete downloaded file and receiver bucket' +
+    after('delete downloaded file and receiver bucket' +
             'copied', done => {
-            deleteFile(downloadCopy, () => {
-                exec(['rb', `s3://${copyBucket}`], done);
-            });
-        });
-
-        it('should copy an object to the new bucket', done => {
-            exec([
-                'cp', `s3://${bucket}/${upload}`,
-                `s3://${copyBucket}/${upload}`,
-            ], done);
-        });
-
-        it('should get an object that was copied', done => {
-            exec(['get', `s3://${copyBucket}/${upload}`, downloadCopy], done);
-        });
-
-        it('downloaded copy file should equal original uploaded file', done => {
-            diff(upload, downloadCopy, done);
-        });
-
-        it('should delete copy of object', done => {
-            exec(['rm', `s3://${copyBucket}/${upload}`], done);
+        deleteFile(downloadCopy, () => {
+            exec(['rb', `s3://${copyBucket}`], done);
         });
     });
+
+    it('should copy an object to the new bucket', done => {
+        exec([
+            'cp', `s3://${bucket}/${upload}`,
+            `s3://${copyBucket}/${upload}`,
+        ], done);
+    });
+
+    it('should get an object that was copied', done => {
+        exec(['get', `s3://${copyBucket}/${upload}`, downloadCopy], done);
+    });
+
+    it('downloaded copy file should equal original uploaded file', done => {
+        diff(upload, downloadCopy, done);
+    });
+
+    it('should delete copy of object', done => {
+        exec(['rm', `s3://${copyBucket}/${upload}`], done);
+    });
+});
 
 describe('s3cmd put and get object ACLs', function aclObj() {
     this.timeout(60000);
@@ -478,10 +478,10 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get canned ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        '*anon*: READ', 'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            '*anon*: READ', 'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     it('should set a specific ACL', done => {
@@ -491,10 +491,10 @@ describe('s3cmd put and get object ACLs', function aclObj() {
 
     it('should get specific ACL that was set', done => {
         checkRawOutput(['info', `s3://${bucket}/${upload}`], 'ACL',
-        `${lowerCaseEmail}: READ`, 'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            `${lowerCaseEmail}: READ`, 'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     it('should return error if set acl for ' +
@@ -511,18 +511,18 @@ describe('s3cmd delObject', () => {
 
     it('delete an already deleted object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${upload}`, '--debug'],
-        'DEBUG: Response: {', parsedObject => {
-            assert.strictEqual(parsedObject.status, 204);
-            done();
-        });
+            'DEBUG: Response: {', parsedObject => {
+                assert.strictEqual(parsedObject.status, 204);
+                done();
+            });
     });
 
     it('delete non-existing object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${nonexist}`, '--debug'],
-        'DEBUG: Response: {', parsedObject => {
-            assert.strictEqual(parsedObject.status, 204);
-            done();
-        });
+            'DEBUG: Response: {', parsedObject => {
+                assert.strictEqual(parsedObject.status, 204);
+                done();
+            });
     });
 
     it('try to get the deleted object, should fail', done => {
@@ -691,15 +691,15 @@ describe('s3cmd put, get and delete object with spaces ' +
 
     it('should get file with spaces', done => {
         exec(['get', `s3://${bucket}/${keyWithSpacesAndPluses}`, download],
-             done);
+            done);
     });
 
     it('should list bucket showing file with spaces', done => {
         checkRawOutput(['ls', `s3://${bucket}`], `s3://${bucket}`,
-        keyWithSpacesAndPluses, 'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            keyWithSpacesAndPluses, 'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     it('downloaded file should equal uploaded file', done => {
@@ -729,18 +729,18 @@ describe('s3cmd info', () => {
     // test that POLICY and CORS are returned as 'none'
     it('should find that policy has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
-        'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     it('should find that cors has a value of none', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none',
-        'stdout', foundIt => {
-            assert(foundIt);
-            done();
-        });
+            'stdout', foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 
     describe('after putting cors configuration', () => {
@@ -763,10 +763,10 @@ describe('s3cmd info', () => {
 
         it('should find that cors has a value', done => {
             checkRawOutput(['info', `s3://${bucket}`], 'cors', corsConfig,
-            'stdout', foundIt => {
-                assert(foundIt, 'Did not find value for cors');
-                done();
-            });
+                'stdout', foundIt => {
+                    assert(foundIt, 'Did not find value for cors');
+                    done();
+                });
         });
     });
 });
@@ -825,10 +825,10 @@ describeSkipIfE2E('If no location is sent with the request', () => {
     // on the restEndpoints (./config.json)
     it('endpoint should be used to determine the locationConstraint', done => {
         checkRawOutput(['info', `s3://${bucket}`], 'Location', 'us-east-1',
-        'stdout',
-        foundIt => {
-            assert(foundIt);
-            done();
-        });
+            'stdout',
+            foundIt => {
+                assert(foundIt);
+                done();
+            });
     });
 });

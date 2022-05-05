@@ -41,11 +41,11 @@ describe('parseSproxydConfig', () => {
         });
     });
     it('should throw an error if bootstrap array does not contain strings',
-    () => {
-        assert.throws(() => {
-            parseSproxydConfig(makeSproxydConf([8181]));
+        () => {
+            assert.throws(() => {
+                parseSproxydConfig(makeSproxydConf([8181]));
+            });
         });
-    });
     it('should throw an error if chordCos is more than 1 digit', () => {
         assert.throws(() => {
             parseSproxydConfig(makeSproxydConf(null, '200'));

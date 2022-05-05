@@ -58,24 +58,24 @@ describe('Complete MPU', () => {
             const result = {};
             return s3.createMultipartUpload({
                 Bucket: bucket, Key: key }).promise()
-            .then(data => {
-                result.uploadId = data.UploadId;
-                return s3.uploadPart({
-                    Bucket: bucket,
-                    Key: key,
-                    PartNumber: 1,
-                    UploadId: data.UploadId,
-                    Body: 'foo',
-                }).promise();
-            })
-            .then(data => {
-                result.eTag = data.ETag;
-                return result;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+                .then(data => {
+                    result.uploadId = data.UploadId;
+                    return s3.uploadPart({
+                        Bucket: bucket,
+                        Key: key,
+                        PartNumber: 1,
+                        UploadId: data.UploadId,
+                        Body: 'foo',
+                    }).promise();
+                })
+                .then(data => {
+                    result.eTag = data.ETag;
+                    return result;
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         }
 
         beforeEach(done => {
@@ -99,7 +99,7 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
             it('should complete an MPU with fewer parts than were ' +
@@ -118,7 +118,7 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
             it('should complete an MPU with fewer parts than were ' +
@@ -137,7 +137,7 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
             it('should complete an MPU with fewer parts than were ' +
@@ -219,7 +219,7 @@ describe('Complete MPU', () => {
                 .then(result => {
                     uploadId = result.uploadId;
                     eTag = result.eTag;
-                })
+                }),
             );
 
             it('should complete the MPU successfully and leave a readable object', done => {

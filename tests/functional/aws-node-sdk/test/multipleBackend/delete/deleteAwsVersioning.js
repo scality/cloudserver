@@ -120,24 +120,24 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error emptying/deleting bucket: ' +
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error emptying/deleting bucket: ' +
                 `${err}\n`);
-                throw err;
-            });
+                    throw err;
+                });
         });
 
         it('versioning not configured: if specifying "null" version, should ' +
@@ -149,7 +149,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
-                    err => next(err, awsVerId)),
+                err => next(err, awsVerId)),
                 (awsVerId, next) => _awsGetAssertDeleted({ key,
                     versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
             ], done);
@@ -182,7 +182,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 next => awsGetLatestVerId(key, someBody, next),
                 (awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
-                    err => next(err, awsVerId)),
+                err => next(err, awsVerId)),
                 (awsVerId, next) => _awsGetAssertDeleted({ key,
                     versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
             ], done);
@@ -198,7 +198,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     (err, awsVid) => next(err, s3vid, awsVid)),
                 (s3VerId, awsVerId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: s3VerId, resultType: deleteVersion },
-                    err => next(err, awsVerId)),
+                err => next(err, awsVerId)),
                 (awsVerId, next) => _awsGetAssertDeleted({ key,
                     versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
             ], done);
@@ -257,7 +257,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // delete delete marker
                 (dmVid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: dmVid, resultType: deleteDeleteMarker },
-                    err => next(err)),
+                err => next(err)),
                 // should get no such object even after deleting del marker
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
@@ -310,7 +310,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // deleting latest version after del marker
                 next => delAndAssertResult(s3, { bucket, key,
                     versionId: this.test.s3vid, resultType: deleteVersion },
-                    err => next(err)),
+                err => next(err)),
                 // should get no such object instead of null version
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
@@ -352,7 +352,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // delete delete marker
                 (s3vid, dmVid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: dmVid, resultType: deleteDeleteMarker },
-                    err => next(err, s3vid)),
+                err => next(err, s3vid)),
                 // should be able to get object originally put from s3
                 (s3vid, next) => getAndAssertResult(s3, { bucket, key,
                     body: someBody, expectedVersionId: s3vid }, next),
@@ -389,7 +389,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     (err, dmVids) => next(err, dmVids[2])),
                 (lastDmVid, next) => delAndAssertResult(s3, { bucket,
                     key, versionId: lastDmVid, resultType: deleteDeleteMarker },
-                    err => next(err)),
+                err => next(err)),
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
                 next => _awsGetAssertDeleted({ key, errorCode: 'NoSuchKey' },
@@ -411,7 +411,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // delete the latest version
                 (versionId, next) => delAndAssertResult(s3, { bucket,
                     key, versionId, resultType: deleteVersion },
-                    err => next(err)),
+                err => next(err)),
                 // should get the last null version
                 next => getAndAssertResult(s3, { bucket, key,
                     body: data[2], expectedVersionId: 'null' }, next),
@@ -420,7 +420,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // delete the null version
                 next => delAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
-                    err => next(err)),
+                err => next(err)),
                 // s3 metadata should report no existing versions for keyname
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
@@ -447,7 +447,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // delete original version in s3
                 (s3vid, awsVid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: s3vid, resultType: deleteVersion },
-                    err => next(err, awsVid)),
+                err => next(err, awsVid)),
                 (awsVid, next) => _getAssertDeleted(s3, { key,
                     errorCode: 'NoSuchKey' }, () => next(null, awsVid)),
                 (awsVerId, next) => _awsGetAssertDeleted({ key,
@@ -469,7 +469,7 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                 // then try to delete in S3
                 (s3vid, next) => delAndAssertResult(s3, { bucket, key,
                     versionId: s3vid, resultType: deleteVersion },
-                    err => next(err)),
+                err => next(err)),
                 next => _getAssertDeleted(s3, { key, errorCode: 'NoSuchKey' },
                     next),
             ], done);
@@ -494,24 +494,24 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket(createBucketParams).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
-            });
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket\n');
             return bucketUtil.empty(bucket)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error emptying/deleting bucket: ' +
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error emptying/deleting bucket: ' +
                 `${err}\n`);
-                throw err;
-            });
+                    throw err;
+                });
         });
 
         it('versioning not configured: deleting non-existing object should ' +

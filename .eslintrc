@@ -1,1 +1,6 @@
-{ "extends": "scality" }
+{ 
+    "extends": "scality",
+    "parserOptions": {
+        "ecmaVersion": 2020
+    }
+}

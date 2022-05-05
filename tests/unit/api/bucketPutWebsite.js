@@ -42,7 +42,7 @@ describe('putBucketWebsite API', () => {
     it('should update a bucket\'s metadata with website config obj', done => {
         const config = new WebsiteConfig('index.html', 'error.html');
         config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
-        { KeyPrefixEquals: 'docs/' });
+            { KeyPrefixEquals: 'docs/' });
         const testBucketPutWebsiteRequest =
             _getPutWebsiteRequest(config.getXml());
         bucketPutWebsite(authInfo, testBucketPutWebsiteRequest, log, err => {
@@ -62,10 +62,10 @@ describe('putBucketWebsite API', () => {
                     config.ErrorDocument.Key);
                 assert.strictEqual(bucketWebsiteConfig._routingRules[0]
                     ._condition.keyPrefixEquals,
-                    config.RoutingRules[0].Condition.KeyPrefixEquals);
+                config.RoutingRules[0].Condition.KeyPrefixEquals);
                 assert.strictEqual(bucketWebsiteConfig._routingRules[0]
                     ._redirect.replaceKeyPrefixWith,
-                    config.RoutingRules[0].Redirect.ReplaceKeyPrefixWith);
+                config.RoutingRules[0].Redirect.ReplaceKeyPrefixWith);
                 return done();
             });
         });

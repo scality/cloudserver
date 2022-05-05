@@ -74,7 +74,7 @@ describe('GET object', () => {
                 const md5HashExpected = crypto.createHash('md5');
                 assert.strictEqual(
                     md5Hash.update(data.Body).digest('hex'),
-                    md5HashExpected.update(body).digest('hex')
+                    md5HashExpected.update(body).digest('hex'),
                 );
                 return cb();
             });
@@ -208,14 +208,14 @@ describe('GET object', () => {
         // aws-sdk now (v2.363.0) returns 'UriParameterError' error
         it.skip('should return an error to get request without a valid ' +
         'bucket name',
-            done => {
-                s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
-                    assert.notEqual(err, null,
-                        'Expected failure but got success');
-                    assert.strictEqual(err.code, 'MethodNotAllowed');
-                    return done();
-                });
+        done => {
+            s3.getObject({ Bucket: '', Key: 'somekey' }, err => {
+                assert.notEqual(err, null,
+                    'Expected failure but got success');
+                assert.strictEqual(err.code, 'MethodNotAllowed');
+                return done();
             });
+        });
 
         it('should return NoSuchKey error when no such object',
             done => {
@@ -244,23 +244,23 @@ describe('GET object', () => {
                 });
                 it('should return additional headers', done => {
                     s3.getObject({ Bucket: bucketName, Key: objectName },
-                      (err, res) => {
-                          if (err) {
-                              return done(err);
-                          }
-                          assert.strictEqual(res.CacheControl,
-                            cacheControl);
-                          assert.strictEqual(res.ContentDisposition,
-                            contentDisposition);
-                          // Should remove V4 streaming value 'aws-chunked'
-                          // to be compatible with AWS behavior
-                          assert.strictEqual(res.ContentEncoding,
-                            'gzip');
-                          assert.strictEqual(res.ContentType, contentType);
-                          assert.strictEqual(res.Expires.toGMTString(),
-                            new Date(expires).toGMTString());
-                          return done();
-                      });
+                        (err, res) => {
+                            if (err) {
+                                return done(err);
+                            }
+                            assert.strictEqual(res.CacheControl,
+                                cacheControl);
+                            assert.strictEqual(res.ContentDisposition,
+                                contentDisposition);
+                            // Should remove V4 streaming value 'aws-chunked'
+                            // to be compatible with AWS behavior
+                            assert.strictEqual(res.ContentEncoding,
+                                'gzip');
+                            assert.strictEqual(res.ContentType, contentType);
+                            assert.strictEqual(res.Expires.toGMTString(),
+                                new Date(expires).toGMTString());
+                            return done();
+                        });
                 });
             });
 
@@ -287,11 +287,11 @@ describe('GET object', () => {
                             return done(err);
                         }
                         assert.strictEqual(res.CacheControl,
-                          cacheControl);
+                            cacheControl);
                         assert.strictEqual(res.ContentDisposition,
-                          contentDisposition);
+                            contentDisposition);
                         assert.strictEqual(res.ContentEncoding,
-                          contentEncoding);
+                            contentEncoding);
                         assert.strictEqual(res.ContentLanguage,
                             contentLanguage);
                         assert.strictEqual(res.ContentType, contentType);
@@ -315,13 +315,13 @@ describe('GET object', () => {
             it('should return website redirect header if specified in ' +
                 'objectPUT request', done => {
                 s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.WebsiteRedirectLocation, '/');
-                      return done();
-                  });
+                    (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res.WebsiteRedirectLocation, '/');
+                        return done();
+                    });
             });
         });
 
@@ -383,41 +383,41 @@ describe('GET object', () => {
             });
             it('If-Match: returns no error when ETag match, with double ' +
                 'quotes around ETag',
-                done => {
-                    requestGet({ IfMatch: etag }, err => {
-                        checkNoError(err);
-                        done();
-                    });
+            done => {
+                requestGet({ IfMatch: etag }, err => {
+                    checkNoError(err);
+                    done();
                 });
+            });
 
             it('If-Match: returns no error when one of ETags match, with ' +
                 'double quotes around ETag',
-                done => {
-                    requestGet({ IfMatch:
+            done => {
+                requestGet({ IfMatch:
                         `non-matching,${etag}` }, err => {
-                        checkNoError(err);
-                        done();
-                    });
+                    checkNoError(err);
+                    done();
                 });
+            });
 
             it('If-Match: returns no error when ETag match, without double ' +
                 'quotes around ETag',
-                done => {
-                    requestGet({ IfMatch: etagTrim }, err => {
-                        checkNoError(err);
-                        done();
-                    });
+            done => {
+                requestGet({ IfMatch: etagTrim }, err => {
+                    checkNoError(err);
+                    done();
                 });
+            });
 
             it('If-Match: returns no error when one of ETags match, without ' +
                 'double quotes around ETag',
-                done => {
-                    requestGet({ IfMatch:
+            done => {
+                requestGet({ IfMatch:
                         `non-matching,${etagTrim}` }, err => {
-                        checkNoError(err);
-                        done();
-                    });
+                    checkNoError(err);
+                    done();
                 });
+            });
 
             it('If-Match: returns no error when ETag match with *', done => {
                 requestGet({ IfMatch: '*' }, err => {
@@ -437,12 +437,12 @@ describe('GET object', () => {
                 });
 
             it('If-None-Match: returns no error when ETag does not match',
-            done => {
-                requestGet({ IfNoneMatch: 'non-matching' }, err => {
-                    checkNoError(err);
-                    done();
+                done => {
+                    requestGet({ IfNoneMatch: 'non-matching' }, err => {
+                        checkNoError(err);
+                        done();
+                    });
                 });
-            });
 
             it('If-None-Match: returns no error when all ETags do not match',
                 done => {
@@ -457,23 +457,23 @@ describe('GET object', () => {
 
             it('If-None-Match: returns NotModified when ETag match, with ' +
                 'double quotes around ETag',
-                done => {
-                    requestGet({ IfNoneMatch: etag }, err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
+            done => {
+                requestGet({ IfNoneMatch: etag }, err => {
+                    checkError(err, 'NotModified');
+                    done();
                 });
+            });
 
             it('If-None-Match: returns NotModified when one of ETags match, ' +
                 'with double quotes around ETag',
-                done => {
-                    requestGet({
-                        IfNoneMatch: `non-matching,${etag}`,
-                    }, err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
+            done => {
+                requestGet({
+                    IfNoneMatch: `non-matching,${etag}`,
+                }, err => {
+                    checkError(err, 'NotModified');
+                    done();
                 });
+            });
 
             it('If-None-Match: returns NotModified when value is "*"',
                 done => {
@@ -487,50 +487,50 @@ describe('GET object', () => {
 
             it('If-None-Match: returns NotModified when ETag match, without ' +
                 'double quotes around ETag',
-                done => {
-                    requestGet({ IfNoneMatch: etagTrim }, err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
+            done => {
+                requestGet({ IfNoneMatch: etagTrim }, err => {
+                    checkError(err, 'NotModified');
+                    done();
                 });
+            });
 
             it('If-None-Match: returns NotModified when one of ETags match, ' +
                 'without double quotes around ETag',
-                done => {
-                    requestGet({
-                        IfNoneMatch: `non-matching,${etagTrim}`,
-                    }, err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
+            done => {
+                requestGet({
+                    IfNoneMatch: `non-matching,${etagTrim}`,
+                }, err => {
+                    checkError(err, 'NotModified');
+                    done();
                 });
+            });
 
             it('If-Modified-Since: returns no error if Last modified date is ' +
                 'greater',
-                done => {
-                    requestGet({ IfModifiedSince: dateFromNow(-1) },
-                        err => {
-                            checkNoError(err);
-                            done();
-                        });
-                });
+            done => {
+                requestGet({ IfModifiedSince: dateFromNow(-1) },
+                    err => {
+                        checkNoError(err);
+                        done();
+                    });
+            });
 
             // Skipping this test, because real AWS does not provide error as
             // expected
             it.skip('If-Modified-Since: returns NotModified if Last modified ' +
                 'date is lesser',
-                done => {
-                    requestGet({ IfModifiedSince: dateFromNow(1) },
-                        err => {
-                            checkError(err, 'NotModified');
-                            done();
-                        });
-                });
+            done => {
+                requestGet({ IfModifiedSince: dateFromNow(1) },
+                    err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+            });
 
             it('If-Modified-Since: returns NotModified if Last modified ' +
                 'date is equal',
-                done => {
-                    s3.headObject({ Bucket: bucketName, Key: objectName },
+            done => {
+                s3.headObject({ Bucket: bucketName, Key: objectName },
                     (err, data) => {
                         checkNoError(err);
                         const lastModified = dateConvert(data.LastModified);
@@ -539,17 +539,17 @@ describe('GET object', () => {
                             done();
                         });
                     });
-                });
+            });
 
             it('If-Unmodified-Since: returns no error when lastModified date ' +
                 'is greater',
-                done => {
-                    requestGet({ IfUnmodifiedSince: dateFromNow(1) },
+            done => {
+                requestGet({ IfUnmodifiedSince: dateFromNow(1) },
                     err => {
                         checkNoError(err);
                         done();
                     });
-                });
+            });
 
             it('If-Unmodified-Since: returns no error when lastModified ' +
                 'date is equal', done => {
@@ -567,25 +567,25 @@ describe('GET object', () => {
 
             it('If-Unmodified-Since: returns PreconditionFailed when ' +
                 'lastModified date is lesser',
-                done => {
-                    requestGet({ IfUnmodifiedSince: dateFromNow(-1) },
+            done => {
+                requestGet({ IfUnmodifiedSince: dateFromNow(-1) },
                     err => {
                         checkError(err, 'PreconditionFailed');
                         done();
                     });
-                });
+            });
 
             it('If-Match & If-Unmodified-Since: returns no error when match ' +
                 'Etag and lastModified is greater',
-                done => {
-                    requestGet({
-                        IfMatch: etagTrim,
-                        IfUnmodifiedSince: dateFromNow(-1),
-                    }, err => {
-                        checkNoError(err);
-                        done();
-                    });
+            done => {
+                requestGet({
+                    IfMatch: etagTrim,
+                    IfUnmodifiedSince: dateFromNow(-1),
+                }, err => {
+                    checkNoError(err);
+                    done();
                 });
+            });
 
             it('If-Match match & If-Unmodified-Since match', done => {
                 requestGet({
@@ -661,32 +661,32 @@ describe('GET object', () => {
 
             it('If-None-Match & If-Modified-Since: returns NotModified when ' +
                 'Etag does not match and lastModified is greater',
-                done => {
-                    const req = s3.getObject({
-                        Bucket: bucketName,
-                        Key: objectName,
-                        IfNoneMatch: etagTrim,
-                        IfModifiedSince: dateFromNow(1),
-                    }, err => {
-                        checkError(err, 'NotModified');
-                        done();
-                    });
-                    req.on('httpHeaders', (code, headers) => {
-                        assert(!headers['content-type']);
-                        assert(!headers['content-length']);
-                    });
-                });
-
-            it('If-None-Match not match & If-Modified-Since not match',
             done => {
-                requestGet({
+                const req = s3.getObject({
+                    Bucket: bucketName,
+                    Key: objectName,
                     IfNoneMatch: etagTrim,
                     IfModifiedSince: dateFromNow(1),
                 }, err => {
                     checkError(err, 'NotModified');
                     done();
                 });
+                req.on('httpHeaders', (code, headers) => {
+                    assert(!headers['content-type']);
+                    assert(!headers['content-length']);
+                });
             });
+
+            it('If-None-Match not match & If-Modified-Since not match',
+                done => {
+                    requestGet({
+                        IfNoneMatch: etagTrim,
+                        IfModifiedSince: dateFromNow(1),
+                    }, err => {
+                        checkError(err, 'NotModified');
+                        done();
+                    });
+                });
 
             it('If-None-Match match & If-Modified-Since match', done => {
                 requestGet({
@@ -701,15 +701,15 @@ describe('GET object', () => {
             // Skipping this test, because real AWS does not provide error as
             // expected
             it.skip('If-None-Match match & If-Modified-Since not match',
-            done => {
-                requestGet({
-                    IfNoneMatch: 'non-matching',
-                    IfModifiedSince: dateFromNow(1),
-                }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
+                done => {
+                    requestGet({
+                        IfNoneMatch: 'non-matching',
+                        IfModifiedSince: dateFromNow(1),
+                    }, err => {
+                        checkError(err, 'PreconditionFailed');
+                        done();
+                    });
                 });
-            });
 
             it('If-None-Match match & If-Unmodified-Since match', done => {
                 requestGet({
@@ -742,15 +742,15 @@ describe('GET object', () => {
             });
 
             it('If-None-Match not match & If-Unmodified-Since not match',
-            done => {
-                requestGet({
-                    IfNoneMatch: etagTrim,
-                    IfUnmodifiedSince: dateFromNow(-1),
-                }, err => {
-                    checkError(err, 'PreconditionFailed');
-                    done();
+                done => {
+                    requestGet({
+                        IfNoneMatch: etagTrim,
+                        IfUnmodifiedSince: dateFromNow(-1),
+                    }, err => {
+                        checkError(err, 'PreconditionFailed');
+                        done();
+                    });
                 });
-            });
         });
 
         describe('With PartNumber field', () => {
@@ -770,7 +770,7 @@ describe('GET object', () => {
                             const expected = Buffer.alloc(partSize).fill(num);
                             assert.strictEqual(
                                 md5Hash.update(data.Body).digest('hex'),
-                                md5HashExpected.update(expected).digest('hex')
+                                md5HashExpected.update(expected).digest('hex'),
                             );
                             return done();
                         });
@@ -790,7 +790,7 @@ describe('GET object', () => {
                                 .fill(unOrderedPartNumbers[num - 1]);
                             assert.strictEqual(
                                 md5Hash.update(data.Body).digest('hex'),
-                                md5HashExpected.update(expected).digest('hex')
+                                md5HashExpected.update(expected).digest('hex'),
                             );
                             return done();
                         });
@@ -798,13 +798,13 @@ describe('GET object', () => {
 
             invalidPartNumbers.forEach(num =>
                 it(`should not accept a partNumber that is not 1-10000: ${num}`,
-                done => completeMPU(orderedPartNumbers, err => {
-                    checkNoError(err);
-                    return requestGet({ PartNumber: num }, err => {
-                        checkError(err, 'InvalidArgument');
-                        done();
-                    });
-                })));
+                    done => completeMPU(orderedPartNumbers, err => {
+                        checkNoError(err);
+                        return requestGet({ PartNumber: num }, err => {
+                            checkError(err, 'InvalidArgument');
+                            done();
+                        });
+                    })));
 
             it('should not accept a part number greater than the total parts ' +
             'uploaded for an MPU', done =>
@@ -829,7 +829,7 @@ describe('GET object', () => {
                         const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),
-                            md5HashExpected.update(expected).digest('hex')
+                            md5HashExpected.update(expected).digest('hex'),
                         );
                         done();
                     });
@@ -849,7 +849,7 @@ describe('GET object', () => {
                         const expected = Buffer.alloc(10);
                         assert.strictEqual(
                             md5Hash.update(data.Body).digest('hex'),
-                            md5HashExpected.update(expected).digest('hex')
+                            md5HashExpected.update(expected).digest('hex'),
                         );
                         done();
                     });
@@ -899,16 +899,16 @@ describe('GET object', () => {
             });
 
             it('should include PartsCount response header for mpu object',
-            done => {
-                completeMPU(orderedPartNumbers, err => {
-                    assert.ifError(err);
-                    return requestGet({ PartNumber: 1 }, (err, data) => {
+                done => {
+                    completeMPU(orderedPartNumbers, err => {
                         assert.ifError(err);
-                        checkIntegerHeader(data.PartsCount, 10);
-                        done();
+                        return requestGet({ PartNumber: 1 }, (err, data) => {
+                            assert.ifError(err);
+                            checkIntegerHeader(data.PartsCount, 10);
+                            done();
+                        });
                     });
                 });
-            });
 
             describe('uploadPartCopy', () => {
                 // The original object was composed of three parts
@@ -1026,8 +1026,8 @@ describe('GET object', () => {
 
                 it('should retrieve a part copied from an MPU after the ' +
                 'original part was overwritten',
-                    done => checkGetObjectPart(copyPartKey, 2, partTwoSize,
-                        partTwoBody, done));
+                done => checkGetObjectPart(copyPartKey, 2, partTwoSize,
+                    partTwoBody, done));
             });
         });
 
@@ -1042,14 +1042,14 @@ describe('GET object', () => {
             it('should return website redirect header if specified in ' +
                 'objectPUT request', done => {
                 s3.getObject({ Bucket: bucketName, Key: objectName },
-                  (err, res) => {
-                      if (err) {
-                          return done(err);
-                      }
-                      assert.strictEqual(res.WebsiteRedirectLocation,
-                          undefined);
-                      return done();
-                  });
+                    (err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
+                        assert.strictEqual(res.WebsiteRedirectLocation,
+                            undefined);
+                        return done();
+                    });
             });
         });
     });
@@ -1078,14 +1078,14 @@ describe('GET object with object lock', () => {
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
             }).promise()
-            .then(() => s3.putObject(params).promise())
-            .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
+                .then(() => s3.putObject(params).promise())
+                .then(() => s3.getObject({ Bucket: bucket, Key: key }).promise())
             /* eslint-disable no-return-assign */
-            .then(res => versionId = res.VersionId)
-            .catch(err => {
-                process.stdout.write('Error in before\n');
-                throw err;
-            });
+                .then(res => versionId = res.VersionId)
+                .catch(err => {
+                    process.stdout.write('Error in before\n');
+                    throw err;
+                });
         });
 
         afterEach(() => changeLockPromise([{ bucket, key, versionId }], '')

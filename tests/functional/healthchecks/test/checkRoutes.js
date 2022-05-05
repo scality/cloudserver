@@ -127,6 +127,6 @@ describe('Healthcheck stats', () => {
                 assert.deepStrictEqual(JSON.parse(res), expectedStatsRes);
                 return done();
             });
-        }, 500)
+        }, 500),
     );
 });

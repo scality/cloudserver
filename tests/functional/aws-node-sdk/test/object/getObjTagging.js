@@ -35,23 +35,23 @@ describe('GET object taggings', () => {
         beforeEach(done => {
             async.waterfall([
                 next => s3.createBucket({ Bucket: bucketName }, err =>
-                  next(err)),
+                    next(err)),
                 next => s3.putObject({ Bucket: bucketName, Key: objectName },
-                  err => next(err)),
+                    err => next(err)),
             ], done);
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
             return bucketUtil.empty(bucketName)
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucketName);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucketName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should return appropriate tags after putting tags', done => {
@@ -62,11 +62,11 @@ describe('GET object taggings', () => {
             }, err => {
                 assert.ifError(err, `putObjectTagging error: ${err}`);
                 s3.getObjectTagging({ Bucket: bucketName, Key: objectName },
-                (err, data) => {
-                    assert.ifError(err, `getObjectTagging error: ${err}`);
-                    assert.deepStrictEqual(data, taggingConfig);
-                    done();
-                });
+                    (err, data) => {
+                        assert.ifError(err, `getObjectTagging error: ${err}`);
+                        assert.deepStrictEqual(data, taggingConfig);
+                        done();
+                    });
             });
         });
 
@@ -90,32 +90,32 @@ describe('GET object taggings', () => {
 
         it('should return empty array after putting no tag', done => {
             s3.getObjectTagging({ Bucket: bucketName, Key: objectName },
-            (err, data) => {
-                assert.ifError(err, `getObjectTagging error: ${err}`);
-                assert.deepStrictEqual(data.TagSet, []);
-                done();
-            });
+                (err, data) => {
+                    assert.ifError(err, `getObjectTagging error: ${err}`);
+                    assert.deepStrictEqual(data.TagSet, []);
+                    done();
+                });
         });
 
         it('should return NoSuchKey getting tag to a non-existing object',
-        done => {
-            s3.getObjectTagging({
-                Bucket: bucketName,
-                Key: 'nonexisting',
-            }, err => {
-                _checkError(err, 'NoSuchKey', 404);
-                done();
+            done => {
+                s3.getObjectTagging({
+                    Bucket: bucketName,
+                    Key: 'nonexisting',
+                }, err => {
+                    _checkError(err, 'NoSuchKey', 404);
+                    done();
+                });
             });
-        });
 
         it('should return 403 AccessDenied getting tag with another account',
-        done => {
-            otherAccountS3.getObjectTagging({ Bucket: bucketName, Key:
+            done => {
+                otherAccountS3.getObjectTagging({ Bucket: bucketName, Key:
               objectName }, err => {
-                _checkError(err, 'AccessDenied', 403);
-                done();
+                    _checkError(err, 'AccessDenied', 403);
+                    done();
+                });
             });
-        });
 
         it('should return 403 AccessDenied getting tag with a different ' +
         'account to an object with ACL "public-read-write"',

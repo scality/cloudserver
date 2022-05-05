@@ -71,16 +71,16 @@ describe('KMS unit tests', () => {
 
     it('should not construct a sse info object if no ' +
         'x-amz-scal-server-side-encryption header included with request',
-        done => {
-            const sseConfig = parseBucketEncryptionHeaders({});
-            KMS.bucketLevelEncryption(
-                'dummyBucket', sseConfig, log,
-                (err, sseInfo) => {
-                    assert.strictEqual(err, null);
-                    assert.strictEqual(sseInfo, null);
-                    done();
-                });
-        });
+    done => {
+        const sseConfig = parseBucketEncryptionHeaders({});
+        KMS.bucketLevelEncryption(
+            'dummyBucket', sseConfig, log,
+            (err, sseInfo) => {
+                assert.strictEqual(err, null);
+                assert.strictEqual(sseInfo, null);
+                done();
+            });
+    });
 
     it('should create a cipher bundle for AES256', done => {
         const algorithm = 'AES256';
@@ -94,11 +94,11 @@ describe('KMS unit tests', () => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
                         assert.strictEqual(cipherBundle.algorithm,
-                                           sseInfo.algorithm);
+                            sseInfo.algorithm);
                         assert.strictEqual(cipherBundle.masterKeyId,
-                                           sseInfo.masterKeyId);
+                            sseInfo.masterKeyId);
                         assert.strictEqual(cipherBundle.cryptoScheme,
-                                           sseInfo.cryptoScheme);
+                            sseInfo.cryptoScheme);
                         assert.notEqual(cipherBundle.cipheredDataKey, null);
                         assert.notEqual(cipherBundle.cipher, null);
                         done();
@@ -129,11 +129,11 @@ describe('KMS unit tests', () => {
                 KMS.createCipherBundle(
                     sseInfo, log, (err, cipherBundle) => {
                         assert.strictEqual(cipherBundle.algorithm,
-                                           sseInfo.algorithm);
+                            sseInfo.algorithm);
                         assert.strictEqual(cipherBundle.masterKeyId,
-                                           sseInfo.masterKeyId);
+                            sseInfo.masterKeyId);
                         assert.strictEqual(cipherBundle.cryptoScheme,
-                                           sseInfo.cryptoScheme);
+                            sseInfo.cryptoScheme);
                         assert.notEqual(cipherBundle.cipheredDataKey, null);
                         assert.notEqual(cipherBundle.cipher, null);
                         done();
@@ -171,9 +171,9 @@ describe('KMS unit tests', () => {
                                     return;
                                 }
                                 assert.strictEqual(typeof decipherBundle,
-                                                   'object');
+                                    'object');
                                 assert.strictEqual(decipherBundle.cryptoScheme,
-                                                   cipherBundle.cryptoScheme);
+                                    cipherBundle.cryptoScheme);
                                 assert.notEqual(decipherBundle.decipher, null);
                                 cb(null, cipherBundle, decipherBundle);
                             });

@@ -15,7 +15,7 @@ const authInfo = makeAuthInfo('accessKey1');
 const bucketName = 'bucketname';
 const config = new WebsiteConfig('index.html', 'error.html');
 config.addRoutingRule({ ReplaceKeyPrefixWith: 'documents/' },
-{ KeyPrefixEquals: 'docs/' });
+    { KeyPrefixEquals: 'docs/' });
 const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
@@ -43,20 +43,20 @@ describe('deleteBucketWebsite API', () => {
 
     it('should delete a bucket\'s website configuration in metadata', done => {
         bucketDeleteWebsite(authInfo, testBucketDeleteWebsiteRequest, log,
-        err => {
-            if (err) {
-                process.stdout.write(`Unexpected err ${err}`);
-                return done(err);
-            }
-            return metadata.getBucket(bucketName, log, (err, bucket) => {
+            err => {
                 if (err) {
-                    process.stdout.write(`Err retrieving bucket MD ${err}`);
+                    process.stdout.write(`Unexpected err ${err}`);
                     return done(err);
                 }
-                assert.strictEqual(bucket.getWebsiteConfiguration(),
-                    null);
-                return done();
+                return metadata.getBucket(bucketName, log, (err, bucket) => {
+                    if (err) {
+                        process.stdout.write(`Err retrieving bucket MD ${err}`);
+                        return done(err);
+                    }
+                    assert.strictEqual(bucket.getWebsiteConfiguration(),
+                        null);
+                    return done();
+                });
             });
-        });
     });
 });

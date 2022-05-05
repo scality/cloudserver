@@ -62,7 +62,7 @@ describe('putObjectTagging API', () => {
                 return done(err);
             }
             return objectPut(authInfo, testPutObjectRequest, undefined, log,
-              done);
+                done);
         });
     });
 
@@ -78,15 +78,15 @@ describe('putObjectTagging API', () => {
                 return done(err);
             }
             return metadata.getObjectMD(bucketName, objectName, {}, log,
-            (err, objectMD) => {
-                if (err) {
-                    process.stdout.write(`Err retrieving object MD ${err}`);
-                    return done(err);
-                }
-                const uploadedTags = objectMD.tags;
-                assert.deepStrictEqual(uploadedTags, taggingUtil.getTags());
-                return done();
-            });
+                (err, objectMD) => {
+                    if (err) {
+                        process.stdout.write(`Err retrieving object MD ${err}`);
+                        return done(err);
+                    }
+                    const uploadedTags = objectMD.tags;
+                    assert.deepStrictEqual(uploadedTags, taggingUtil.getTags());
+                    return done();
+                });
         });
     });
 });
@@ -94,33 +94,33 @@ describe('putObjectTagging API', () => {
 describe('PUT object tagging :: helper validation functions ', () => {
     describe('validateTagStructure ', () => {
         it('should return expected true if tag is valid false/undefined if not',
-        done => {
-            const tags = [
-                { tagTest: { Key: ['foo'], Value: ['bar'] }, isValid: true },
-                { tagTest: { Key: ['foo'] }, isValid: false },
-                { tagTest: { Value: ['bar'] }, isValid: false },
-                { tagTest: { Keys: ['foo'], Value: ['bar'] }, isValid: false },
-                { tagTest: { Key: ['foo', 'boo'], Value: ['bar'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo'], Value: ['bar', 'boo'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo', 'boo'], Value: ['bar', 'boo'] },
-                    isValid: false },
-                { tagTest: { Key: ['foo'], Values: ['bar'] }, isValid: false },
-                { tagTest: { Keys: ['foo'], Values: ['bar'] }, isValid: false },
-            ];
+            done => {
+                const tags = [
+                    { tagTest: { Key: ['foo'], Value: ['bar'] }, isValid: true },
+                    { tagTest: { Key: ['foo'] }, isValid: false },
+                    { tagTest: { Value: ['bar'] }, isValid: false },
+                    { tagTest: { Keys: ['foo'], Value: ['bar'] }, isValid: false },
+                    { tagTest: { Key: ['foo', 'boo'], Value: ['bar'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo'], Value: ['bar', 'boo'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo', 'boo'], Value: ['bar', 'boo'] },
+                        isValid: false },
+                    { tagTest: { Key: ['foo'], Values: ['bar'] }, isValid: false },
+                    { tagTest: { Keys: ['foo'], Values: ['bar'] }, isValid: false },
+                ];
 
-            for (let i = 0; i < tags.length; i++) {
-                const tag = tags[i];
-                const result = _validator.validateTagStructure(tag.tagTest);
-                if (tag.isValid) {
-                    assert(result);
-                } else {
-                    assert(!result);
+                for (let i = 0; i < tags.length; i++) {
+                    const tag = tags[i];
+                    const result = _validator.validateTagStructure(tag.tagTest);
+                    if (tag.isValid) {
+                        assert(result);
+                    } else {
+                        assert(!result);
+                    }
                 }
-            }
-            done();
-        });
+                done();
+            });
 
         describe('validateXMLStructure ', () => {
             it('should return expected true if tag is valid false/undefined ' +

@@ -5,7 +5,7 @@ const { config } = require('../../../../lib/Config');
 const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 
 const { processVersioningState, getMasterState,
-        preprocessingVersioningDelete } =
+    preprocessingVersioningDelete } =
       require('../../../../lib/api/apiUtils/object/versioning');
 
 describe('versioning helpers', () => {
@@ -243,21 +243,21 @@ describe('versioning helpers', () => {
             },
         ].forEach(testCase =>
             ['Enabled', 'Suspended'].forEach(versioningStatus => it(
-            `${testCase.description}, versioning Status=${versioningStatus}`,
-            () => {
-                const mst = getMasterState(testCase.objMD);
-                // stringify and parse to get rid of the "undefined"
-                // properties, artifacts of how the function builds the
-                // result
-                const res = JSON.parse(
-                    JSON.stringify(
-                        processVersioningState(mst, versioningStatus)
-                    )
-                );
-                const expectedRes =
+                `${testCase.description}, versioning Status=${versioningStatus}`,
+                () => {
+                    const mst = getMasterState(testCase.objMD);
+                    // stringify and parse to get rid of the "undefined"
+                    // properties, artifacts of how the function builds the
+                    // result
+                    const res = JSON.parse(
+                        JSON.stringify(
+                            processVersioningState(mst, versioningStatus),
+                        ),
+                    );
+                    const expectedRes =
                       testCase[`versioning${versioningStatus}ExpectedRes`];
-                assert.deepStrictEqual(res, expectedRes);
-            })));
+                    assert.deepStrictEqual(res, expectedRes);
+                })));
     });
 
     describe('preprocessingVersioningDelete', () => {

@@ -179,7 +179,7 @@ withV4(sigCfg => {
                             assert.notStrictEqual(err, null);
                             assert.strictEqual(
                                 err.statusCode,
-                                errors.AccessDenied.code
+                                errors.AccessDenied.code,
                             );
                         }
                         done();

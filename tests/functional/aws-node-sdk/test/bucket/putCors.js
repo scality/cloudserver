@@ -27,10 +27,10 @@ function _corsTemplate(params) {
     };
     ['AllowedMethods', 'AllowedOrigins', 'AllowedHeaders', 'MaxAgeSeconds',
         'ExposeHeaders'].forEach(prop => {
-            if (params[prop]) {
-                sampleRule[prop] = params[prop];
-            }
-        });
+        if (params[prop]) {
+            sampleRule[prop] = params[prop];
+        }
+    });
     return { CORSRules: [sampleRule] };
 }
 
@@ -119,9 +119,9 @@ describe('PUT bucket cors', () => {
         });
 
         it('should return InvalidRequest if ExposeHeader has wildcard',
-        done => {
-            const testCors = _corsTemplate({ ExposeHeaders: ['x-amz-*'] });
-            _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
-        });
+            done => {
+                const testCors = _corsTemplate({ ExposeHeaders: ['x-amz-*'] });
+                _testPutBucketCors(testCors, 400, 'InvalidRequest', done);
+            });
     });
 });

@@ -57,37 +57,37 @@ describe('PUT object legal hold', () => {
                 Bucket: bucket,
                 ObjectLockEnabledForBucket: true,
             }).promise()
-            .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
-            .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
-            .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                versionId = res.VersionId;
-            })
-            .catch(err => {
-                process.stdout.write('Error in beforeEach\n');
-                throw err;
-            });
+                .then(() => s3.createBucket({ Bucket: unlockedBucket }).promise())
+                .then(() => s3.putObject({ Bucket: unlockedBucket, Key: key }).promise())
+                .then(() => s3.putObject({ Bucket: bucket, Key: key }).promise())
+                .then(res => {
+                    versionId = res.VersionId;
+                })
+                .catch(err => {
+                    process.stdout.write('Error in beforeEach\n');
+                    throw err;
+                });
         });
 
         afterEach(() => {
             process.stdout.write('Emptying and deleting buckets\n');
             return bucketUtil.empty(bucket)
-            .then(() => bucketUtil.empty(unlockedBucket))
-            .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]))
-            .catch(err => {
-                process.stdout.write('Error in afterEach\n');
-                throw err;
-            });
+                .then(() => bucketUtil.empty(unlockedBucket))
+                .then(() => bucketUtil.deleteMany([bucket, unlockedBucket]))
+                .catch(err => {
+                    process.stdout.write('Error in afterEach\n');
+                    throw err;
+                });
         });
 
         it('should return AccessDenied putting legal hold with another account',
-        done => {
-            const params = createLegalHoldParams(bucket, key, 'ON');
-            otherAccountS3.putObjectLegalHold(params, err => {
-                checkError(err, 'AccessDenied', 403);
-                done();
+            done => {
+                const params = createLegalHoldParams(bucket, key, 'ON');
+                otherAccountS3.putObjectLegalHold(params, err => {
+                    checkError(err, 'AccessDenied', 403);
+                    done();
+                });
             });
-        });
 
         it('should return NoSuchKey error if key does not exist', done => {
             const params = createLegalHoldParams(bucket, 'keynotexist', 'ON');
@@ -119,16 +119,16 @@ describe('PUT object legal hold', () => {
         });
 
         it('should return MethodNotAllowed if object version is delete marker',
-        done => {
-            s3.deleteObject({ Bucket: bucket, Key: key }, err => {
-                assert.ifError(err);
-                const params = createLegalHoldParams(bucket, key, 'ON');
-                s3.putObjectLegalHold(params, err => {
-                    checkError(err, 'MethodNotAllowed', 405);
-                    done();
+            done => {
+                s3.deleteObject({ Bucket: bucket, Key: key }, err => {
+                    assert.ifError(err);
+                    const params = createLegalHoldParams(bucket, key, 'ON');
+                    s3.putObjectLegalHold(params, err => {
+                        checkError(err, 'MethodNotAllowed', 405);
+                        done();
+                    });
                 });
             });
-        });
 
         it('should put object legal hold ON', done => {
             const params = createLegalHoldParams(bucket, key, 'ON');

@@ -97,10 +97,10 @@ describe('aws-sdk test put bucket policy', () => {
         });
 
         it('should not allow bucket policy with no Principal',
-        done => {
-            const params = getPolicyParams({ key: 'Principal', value: '' });
-            s3.putBucketPolicy(params, err =>
-                assertError(err, 'MalformedPolicy', done));
-        });
+            done => {
+                const params = getPolicyParams({ key: 'Principal', value: '' });
+                s3.putBucketPolicy(params, err =>
+                    assertError(err, 'MalformedPolicy', done));
+            });
     });
 });

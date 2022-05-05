@@ -144,11 +144,11 @@ describe('Head request on bucket website endpoint with ACL', () => {
             describe(`with existing bucket with ${bucketACL} acl`, () => {
                 beforeEach(done => {
                     WebsiteConfigTester.createPutBucketWebsite(s3, bucket,
-                      bucketACL, test.objects, done);
+                        bucketACL, test.objects, done);
                 });
                 afterEach(done => {
                     WebsiteConfigTester.deleteObjectsThenBucket(s3, bucket,
-                      test.objects, done);
+                        test.objects, done);
                 });
 
                 it(`${test.it} with no auth credentials sent`, done => {

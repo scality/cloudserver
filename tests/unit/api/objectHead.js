@@ -245,7 +245,7 @@ describe('objectHead API', () => {
                         assert.strictEqual(res[userMetadataKey],
                             userMetadataValue);
                         assert
-                        .strictEqual(res.ETag, `"${correctMD5}"`);
+                            .strictEqual(res.ETag, `"${correctMD5}"`);
                         done();
                     });
                 });
@@ -287,9 +287,9 @@ describe('objectHead API', () => {
                     objectHead(authInfo, testGetRequest, log, (err, res) => {
                         assert.ifError(err);
                         const expectedDate = testPutObjectRequestLock
-                        .headers['x-amz-object-lock-retain-until-date'];
+                            .headers['x-amz-object-lock-retain-until-date'];
                         const expectedMode = testPutObjectRequestLock
-                        .headers['x-amz-object-lock-mode'];
+                            .headers['x-amz-object-lock-mode'];
                         assert.ifError(err);
                         assert.strictEqual(
                             res['x-amz-object-lock-retain-until-date'],

@@ -64,8 +64,8 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                             accessKeyId: 'wrong',
                             secretAccessKey: 'wrong again',
                         },
-                        sigCfg
-                    )
+                        sigCfg,
+                    ),
                 );
                 const expectedCode = 'InvalidAccessKeyId';
                 const expectedStatus = 403;
@@ -123,7 +123,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                         if (bucketName.endsWith('000')) {
                             // log to keep ci alive
                             process.stdout
-                            .write(`deleting bucket: ${bucketName}\n`);
+                                .write(`deleting bucket: ${bucketName}\n`);
                         }
                         moveOn(err);
                     });
@@ -165,7 +165,7 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                     })
                     .then(data => {
                         const buckets = data.Buckets.filter(bucket =>
-                            createdBuckets.indexOf(bucket.Name) > -1
+                            createdBuckets.indexOf(bucket.Name) > -1,
                         );
 
                         assert.equal(buckets.length, createdBuckets.length,
@@ -180,8 +180,8 @@ describeFn('GET Service - AWS.S3.listBuckets', function getService() {
                         const isCorrectOrder = buckets
                             .reduce(
                                 (prev, bucket, idx) =>
-                                prev && bucket.Name === createdBuckets[idx]
-                            , true);
+                                    prev && bucket.Name === createdBuckets[idx]
+                                , true);
 
                         assert.ok(isCorrectOrder,
                             'Not returning created buckets by alphabetically');

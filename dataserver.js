@@ -27,7 +27,7 @@ if (config.backends.data === 'file' ||
     dataServer.setup(err => {
         if (err) {
             logger.error('Error initializing REST data server',
-                         { error: err });
+                { error: err });
             return;
         }
         dataServer.start();

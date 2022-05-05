@@ -25,8 +25,8 @@ const testKey = 'testkey';
 const testKeyUTF8 = '䆩鈁櫨㟔罳';
 const testData = 'testkey data';
 const testDataMd5 = crypto.createHash('md5')
-          .update(testData, 'utf-8')
-          .digest('hex');
+    .update(testData, 'utf-8')
+    .digest('hex');
 const emptyContentsMd5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const testMd = {
     'md-model-version': 2,
@@ -90,7 +90,7 @@ function checkObjectData(s3, objectKey, dataValue, done) {
  */
 function makeBackbeatRequest(params, callback) {
     const { method, headers, bucket, objectKey, resourceType,
-            authCredentials, requestBody, queryObj } = params;
+        authCredentials, requestBody, queryObj } = params;
     const options = {
         authCredentials,
         hostname: ipAddress,
@@ -110,12 +110,12 @@ function getMetadataToPut(putDataResponse) {
     // Reproduce what backbeat does to update target metadata
     mdToPut.location = JSON.parse(putDataResponse.body);
     ['x-amz-server-side-encryption',
-     'x-amz-server-side-encryption-aws-kms-key-id',
-     'x-amz-server-side-encryption-customer-algorithm'].forEach(headerName => {
-         if (putDataResponse.headers[headerName]) {
-             mdToPut[headerName] = putDataResponse.headers[headerName];
-         }
-     });
+        'x-amz-server-side-encryption-aws-kms-key-id',
+        'x-amz-server-side-encryption-customer-algorithm'].forEach(headerName => {
+        if (putDataResponse.headers[headerName]) {
+            mdToPut[headerName] = putDataResponse.headers[headerName];
+        }
+    });
     return mdToPut;
 }
 
@@ -173,109 +173,109 @@ describeSkipIfAWS('backbeat routes', () => {
 
     describe('backbeat PUT routes', () => {
         describe('PUT data + metadata should create a new complete object',
-        () => {
-            [{
-                caption: 'with ascii test key',
-                key: testKey, encodedKey: testKey,
-            },
-            {
-                caption: 'with UTF8 key',
-                key: testKeyUTF8, encodedKey: encodeURI(testKeyUTF8),
-            },
-            {
-                caption: 'with percents and spaces encoded as \'+\' in key',
-                key: '50% full or 50% empty',
-                encodedKey: '50%25+full+or+50%25+empty',
-            },
-            {
-                caption: 'with legacy API v1',
-                key: testKey, encodedKey: testKey,
-                legacyAPI: true,
-            },
-            {
-                caption: 'with encryption configuration',
-                key: testKey, encodedKey: testKey,
-                encryption: true,
-            },
-            {
-                caption: 'with encryption configuration and legacy API v1',
-                key: testKey, encodedKey: testKey,
-                encryption: true,
-                legacyAPI: true,
-            }].concat([
-                `${testKeyUTF8}/${testKeyUTF8}/%42/mykey`,
-                'Pâtisserie=中文-español-English',
-                'notes/spring/1.txt',
-                'notes/spring/2.txt',
-                'notes/spring/march/1.txt',
-                'notes/summer/1.txt',
-                'notes/summer/2.txt',
-                'notes/summer/august/1.txt',
-                'notes/year.txt',
-                'notes/yore.rs',
-                'notes/zaphod/Beeblebrox.txt',
-            ].map(key => ({
-                key, encodedKey: encodeURI(key),
-                caption: `with key ${key}`,
-            })))
-            .forEach(testCase => {
-                it(testCase.caption, done => {
-                    async.waterfall([next => {
-                        const queryObj = testCase.legacyAPI ? {} : { v2: '' };
-                        makeBackbeatRequest({
-                            method: 'PUT', bucket: testCase.encryption ?
-                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
-                            objectKey: testCase.encodedKey,
-                            resourceType: 'data',
-                            queryObj,
-                            headers: {
-                                'content-length': testData.length,
-                                'content-md5': testDataMd5,
-                                'x-scal-canonical-id': testArn,
-                            },
-                            authCredentials: backbeatAuthCredentials,
-                            requestBody: testData }, next);
-                    }, (response, next) => {
-                        assert.strictEqual(response.statusCode, 200);
-                        const newMd = getMetadataToPut(response);
-                        if (testCase.encryption && !testCase.legacyAPI) {
-                            assert.strictEqual(typeof newMd.location[0].cryptoScheme, 'number');
-                            assert.strictEqual(typeof newMd.location[0].cipheredDataKey, 'string');
-                        } else {
-                            // if no encryption or legacy API, data should not be encrypted
-                            assert.strictEqual(newMd.location[0].cryptoScheme, undefined);
-                            assert.strictEqual(newMd.location[0].cipheredDataKey, undefined);
-                        }
-                        makeBackbeatRequest({
-                            method: 'PUT', bucket: testCase.encryption ?
-                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
-                            objectKey: testCase.encodedKey,
-                            resourceType: 'metadata',
-                            queryObj: {
-                                versionId: versionIdUtils.encode(
-                                    testMd.versionId),
-                            },
-                            authCredentials: backbeatAuthCredentials,
-                            requestBody: JSON.stringify(newMd),
-                        }, next);
-                    }, (response, next) => {
-                        assert.strictEqual(response.statusCode, 200);
-                        s3.getObject({
-                            Bucket: testCase.encryption ?
-                                TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
-                            Key: testCase.key,
-                        }, (err, data) => {
-                            assert.ifError(err);
-                            assert.strictEqual(data.Body.toString(), testData);
-                            next();
+            () => {
+                [{
+                    caption: 'with ascii test key',
+                    key: testKey, encodedKey: testKey,
+                },
+                {
+                    caption: 'with UTF8 key',
+                    key: testKeyUTF8, encodedKey: encodeURI(testKeyUTF8),
+                },
+                {
+                    caption: 'with percents and spaces encoded as \'+\' in key',
+                    key: '50% full or 50% empty',
+                    encodedKey: '50%25+full+or+50%25+empty',
+                },
+                {
+                    caption: 'with legacy API v1',
+                    key: testKey, encodedKey: testKey,
+                    legacyAPI: true,
+                },
+                {
+                    caption: 'with encryption configuration',
+                    key: testKey, encodedKey: testKey,
+                    encryption: true,
+                },
+                {
+                    caption: 'with encryption configuration and legacy API v1',
+                    key: testKey, encodedKey: testKey,
+                    encryption: true,
+                    legacyAPI: true,
+                }].concat([
+                    `${testKeyUTF8}/${testKeyUTF8}/%42/mykey`,
+                    'Pâtisserie=中文-español-English',
+                    'notes/spring/1.txt',
+                    'notes/spring/2.txt',
+                    'notes/spring/march/1.txt',
+                    'notes/summer/1.txt',
+                    'notes/summer/2.txt',
+                    'notes/summer/august/1.txt',
+                    'notes/year.txt',
+                    'notes/yore.rs',
+                    'notes/zaphod/Beeblebrox.txt',
+                ].map(key => ({
+                    key, encodedKey: encodeURI(key),
+                    caption: `with key ${key}`,
+                })))
+                    .forEach(testCase => {
+                        it(testCase.caption, done => {
+                            async.waterfall([next => {
+                                const queryObj = testCase.legacyAPI ? {} : { v2: '' };
+                                makeBackbeatRequest({
+                                    method: 'PUT', bucket: testCase.encryption ?
+                                        TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
+                                    objectKey: testCase.encodedKey,
+                                    resourceType: 'data',
+                                    queryObj,
+                                    headers: {
+                                        'content-length': testData.length,
+                                        'content-md5': testDataMd5,
+                                        'x-scal-canonical-id': testArn,
+                                    },
+                                    authCredentials: backbeatAuthCredentials,
+                                    requestBody: testData }, next);
+                            }, (response, next) => {
+                                assert.strictEqual(response.statusCode, 200);
+                                const newMd = getMetadataToPut(response);
+                                if (testCase.encryption && !testCase.legacyAPI) {
+                                    assert.strictEqual(typeof newMd.location[0].cryptoScheme, 'number');
+                                    assert.strictEqual(typeof newMd.location[0].cipheredDataKey, 'string');
+                                } else {
+                                    // if no encryption or legacy API, data should not be encrypted
+                                    assert.strictEqual(newMd.location[0].cryptoScheme, undefined);
+                                    assert.strictEqual(newMd.location[0].cipheredDataKey, undefined);
+                                }
+                                makeBackbeatRequest({
+                                    method: 'PUT', bucket: testCase.encryption ?
+                                        TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
+                                    objectKey: testCase.encodedKey,
+                                    resourceType: 'metadata',
+                                    queryObj: {
+                                        versionId: versionIdUtils.encode(
+                                            testMd.versionId),
+                                    },
+                                    authCredentials: backbeatAuthCredentials,
+                                    requestBody: JSON.stringify(newMd),
+                                }, next);
+                            }, (response, next) => {
+                                assert.strictEqual(response.statusCode, 200);
+                                s3.getObject({
+                                    Bucket: testCase.encryption ?
+                                        TEST_ENCRYPTED_BUCKET : TEST_BUCKET,
+                                    Key: testCase.key,
+                                }, (err, data) => {
+                                    assert.ifError(err);
+                                    assert.strictEqual(data.Body.toString(), testData);
+                                    next();
+                                });
+                            }], err => {
+                                assert.ifError(err);
+                                done();
+                            });
                         });
-                    }], err => {
-                        assert.ifError(err);
-                        done();
                     });
-                });
             });
-        });
 
         it('PUT metadata with "x-scal-replication-content: METADATA"' +
         'header should replicate metadata only', done => {
@@ -341,63 +341,46 @@ describeSkipIfAWS('backbeat routes', () => {
         });
 
         it('should refuse PUT data if bucket is not versioned',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: NONVERSIONED_BUCKET,
-            objectKey: testKey, resourceType: 'data',
-            queryObj: { v2: '' },
-            headers: {
-                'content-length': testData.length,
-                'content-md5': testDataMd5,
-                'x-scal-canonical-id': testArn,
+            done => makeBackbeatRequest({
+                method: 'PUT', bucket: NONVERSIONED_BUCKET,
+                objectKey: testKey, resourceType: 'data',
+                queryObj: { v2: '' },
+                headers: {
+                    'content-length': testData.length,
+                    'content-md5': testDataMd5,
+                    'x-scal-canonical-id': testArn,
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: testData,
             },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: testData,
-        },
-        err => {
-            assert.strictEqual(err.code, 'InvalidBucketState');
-            done();
-        }));
+            err => {
+                assert.strictEqual(err.code, 'InvalidBucketState');
+                done();
+            }));
 
         it('should refuse PUT metadata if bucket is not versioned',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: NONVERSIONED_BUCKET,
-            objectKey: testKey, resourceType: 'metadata',
-            queryObj: {
-                versionId: versionIdUtils.encode(testMd.versionId),
+            done => makeBackbeatRequest({
+                method: 'PUT', bucket: NONVERSIONED_BUCKET,
+                objectKey: testKey, resourceType: 'metadata',
+                queryObj: {
+                    versionId: versionIdUtils.encode(testMd.versionId),
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: JSON.stringify(testMd),
             },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: JSON.stringify(testMd),
-        },
-        err => {
-            assert.strictEqual(err.code, 'InvalidBucketState');
-            done();
-        }));
+            err => {
+                assert.strictEqual(err.code, 'InvalidBucketState');
+                done();
+            }));
 
         it('should refuse PUT data if no x-scal-canonical-id header ' +
            'is provided', done => makeBackbeatRequest({
-               method: 'PUT', bucket: TEST_BUCKET,
-               objectKey: testKey, resourceType: 'data',
-               queryObj: { v2: '' },
-               headers: {
-                   'content-length': testData.length,
-                   'content-md5': testDataMd5,
-               },
-               authCredentials: backbeatAuthCredentials,
-               requestBody: testData,
-           },
-           err => {
-               assert.strictEqual(err.code, 'BadRequest');
-               done();
-           }));
-
-        it('should refuse PUT data if no content-md5 header is provided',
-        done => makeBackbeatRequest({
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: testKey, resourceType: 'data',
             queryObj: { v2: '' },
             headers: {
                 'content-length': testData.length,
-                'x-scal-canonical-id': testArn,
+                'content-md5': testDataMd5,
             },
             authCredentials: backbeatAuthCredentials,
             requestBody: testData,
@@ -407,26 +390,43 @@ describeSkipIfAWS('backbeat routes', () => {
             done();
         }));
 
-        it('should refuse PUT in metadata-only mode if object does not exist',
-        done => {
-            async.waterfall([next => {
-                const newMd = Object.assign({}, testMd);
-                makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
-                    objectKey: 'does-not-exist',
-                    resourceType: 'metadata',
-                    queryObj: {
-                        versionId: versionIdUtils.encode(testMd.versionId),
-                    },
-                    headers: { 'x-scal-replication-content': 'METADATA' },
-                    authCredentials: backbeatAuthCredentials,
-                    requestBody: JSON.stringify(newMd),
-                }, next);
-            }], err => {
-                assert.strictEqual(err.statusCode, 404);
+        it('should refuse PUT data if no content-md5 header is provided',
+            done => makeBackbeatRequest({
+                method: 'PUT', bucket: TEST_BUCKET,
+                objectKey: testKey, resourceType: 'data',
+                queryObj: { v2: '' },
+                headers: {
+                    'content-length': testData.length,
+                    'x-scal-canonical-id': testArn,
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: testData,
+            },
+            err => {
+                assert.strictEqual(err.code, 'BadRequest');
                 done();
+            }));
+
+        it('should refuse PUT in metadata-only mode if object does not exist',
+            done => {
+                async.waterfall([next => {
+                    const newMd = Object.assign({}, testMd);
+                    makeBackbeatRequest({
+                        method: 'PUT', bucket: TEST_BUCKET,
+                        objectKey: 'does-not-exist',
+                        resourceType: 'metadata',
+                        queryObj: {
+                            versionId: versionIdUtils.encode(testMd.versionId),
+                        },
+                        headers: { 'x-scal-replication-content': 'METADATA' },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: JSON.stringify(newMd),
+                    }, next);
+                }], err => {
+                    assert.strictEqual(err.statusCode, 404);
+                    done();
+                });
             });
-        });
 
         it('should remove old object data locations if version is overwritten ' +
         'with same contents', done => {
@@ -504,7 +504,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
                 setTimeout(() => checkObjectData(s3, testKey, testData, next),
-                           1000);
+                    1000);
             }, next => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
@@ -586,7 +586,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
                 setTimeout(() => checkObjectData(s3, testKey, '', next),
-                           1000);
+                    1000);
             }, next => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
@@ -606,131 +606,131 @@ describeSkipIfAWS('backbeat routes', () => {
         });
 
         it('should not remove data locations on replayed metadata PUT',
-        done => {
-            let serializedNewMd;
-            async.waterfall([next => {
-                makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
-                    objectKey: testKey,
-                    resourceType: 'data',
-                    headers: {
-                        'content-length': testData.length,
-                        'content-md5': testDataMd5,
-                        'x-scal-canonical-id': testArn,
-                    },
-                    authCredentials: backbeatAuthCredentials,
-                    requestBody: testData }, next);
-            }, (response, next) => {
-                assert.strictEqual(response.statusCode, 200);
-                const newMd = Object.assign({}, testMd);
-                newMd.location = JSON.parse(response.body);
-                serializedNewMd = JSON.stringify(newMd);
-                async.timesSeries(2, (i, putDone) => makeBackbeatRequest({
-                    method: 'PUT', bucket: TEST_BUCKET,
-                    objectKey: testKey,
-                    resourceType: 'metadata',
-                    authCredentials: backbeatAuthCredentials,
-                    requestBody: serializedNewMd,
-                }, (err, response) => {
-                    assert.ifError(err);
+            done => {
+                let serializedNewMd;
+                async.waterfall([next => {
+                    makeBackbeatRequest({
+                        method: 'PUT', bucket: TEST_BUCKET,
+                        objectKey: testKey,
+                        resourceType: 'data',
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData }, next);
+                }, (response, next) => {
                     assert.strictEqual(response.statusCode, 200);
-                    putDone(err);
-                }), () => next());
-            }, next => {
+                    const newMd = Object.assign({}, testMd);
+                    newMd.location = JSON.parse(response.body);
+                    serializedNewMd = JSON.stringify(newMd);
+                    async.timesSeries(2, (i, putDone) => makeBackbeatRequest({
+                        method: 'PUT', bucket: TEST_BUCKET,
+                        objectKey: testKey,
+                        resourceType: 'metadata',
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: serializedNewMd,
+                    }, (err, response) => {
+                        assert.ifError(err);
+                        assert.strictEqual(response.statusCode, 200);
+                        putDone(err);
+                    }), () => next());
+                }, next => {
                 // check that the object is still readable to make
                 // sure we did not remove the data keys
-                s3.getObject({
-                    Bucket: TEST_BUCKET,
-                    Key: testKey,
-                }, (err, data) => {
+                    s3.getObject({
+                        Bucket: TEST_BUCKET,
+                        Key: testKey,
+                    }, (err, data) => {
+                        assert.ifError(err);
+                        assert.strictEqual(data.Body.toString(), testData);
+                        next();
+                    });
+                }], err => {
                     assert.ifError(err);
-                    assert.strictEqual(data.Body.toString(), testData);
-                    next();
+                    done();
                 });
-            }], err => {
-                assert.ifError(err);
-                done();
             });
-        });
     });
     describe('backbeat authorization checks', () => {
         [{ method: 'PUT', resourceType: 'metadata' },
-         { method: 'PUT', resourceType: 'data' }].forEach(test => {
-             const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
-             it(`${test.method} ${test.resourceType} should respond with ` +
+            { method: 'PUT', resourceType: 'data' }].forEach(test => {
+            const queryObj = test.resourceType === 'data' ? { v2: '' } : {};
+            it(`${test.method} ${test.resourceType} should respond with ` +
              '403 Forbidden if no credentials are provided',
-             done => {
-                 makeBackbeatRequest({
-                     method: test.method, bucket: TEST_BUCKET,
-                     objectKey: TEST_KEY, resourceType: test.resourceType,
-                     queryObj,
-                 },
-                 err => {
-                     assert(err);
-                     assert.strictEqual(err.statusCode, 403);
-                     assert.strictEqual(err.code, 'AccessDenied');
-                     done();
-                 });
-             });
-             it(`${test.method} ${test.resourceType} should respond with ` +
-                '403 Forbidden if wrong credentials are provided',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        queryObj,
-                        authCredentials: {
-                            accessKey: 'wrong',
-                            secretKey: 'still wrong',
-                        },
-                    },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'InvalidAccessKeyId');
-                        done();
-                    });
+            done => {
+                makeBackbeatRequest({
+                    method: test.method, bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY, resourceType: test.resourceType,
+                    queryObj,
+                },
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.statusCode, 403);
+                    assert.strictEqual(err.code, 'AccessDenied');
+                    done();
                 });
-             it(`${test.method} ${test.resourceType} should respond with ` +
+            });
+            it(`${test.method} ${test.resourceType} should respond with ` +
+                '403 Forbidden if wrong credentials are provided',
+            done => {
+                makeBackbeatRequest({
+                    method: test.method, bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY, resourceType: test.resourceType,
+                    queryObj,
+                    authCredentials: {
+                        accessKey: 'wrong',
+                        secretKey: 'still wrong',
+                    },
+                },
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.statusCode, 403);
+                    assert.strictEqual(err.code, 'InvalidAccessKeyId');
+                    done();
+                });
+            });
+            it(`${test.method} ${test.resourceType} should respond with ` +
                 '403 Forbidden if the account does not match the ' +
                 'backbeat user',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        queryObj,
-                        authCredentials: {
-                            accessKey: 'accessKey2',
-                            secretKey: 'verySecretKey2',
-                        },
+            done => {
+                makeBackbeatRequest({
+                    method: test.method, bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY, resourceType: test.resourceType,
+                    queryObj,
+                    authCredentials: {
+                        accessKey: 'accessKey2',
+                        secretKey: 'verySecretKey2',
                     },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'AccessDenied');
-                        done();
-                    });
+                },
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.statusCode, 403);
+                    assert.strictEqual(err.code, 'AccessDenied');
+                    done();
                 });
-             it(`${test.method} ${test.resourceType} should respond with ` +
+            });
+            it(`${test.method} ${test.resourceType} should respond with ` +
                 '403 Forbidden if backbeat user has wrong secret key',
-                done => {
-                    makeBackbeatRequest({
-                        method: test.method, bucket: TEST_BUCKET,
-                        objectKey: TEST_KEY, resourceType: test.resourceType,
-                        queryObj,
-                        authCredentials: {
-                            accessKey: backbeatAuthCredentials.accessKey,
-                            secretKey: 'hastalavista',
-                        },
+            done => {
+                makeBackbeatRequest({
+                    method: test.method, bucket: TEST_BUCKET,
+                    objectKey: TEST_KEY, resourceType: test.resourceType,
+                    queryObj,
+                    authCredentials: {
+                        accessKey: backbeatAuthCredentials.accessKey,
+                        secretKey: 'hastalavista',
                     },
-                    err => {
-                        assert(err);
-                        assert.strictEqual(err.statusCode, 403);
-                        assert.strictEqual(err.code, 'SignatureDoesNotMatch');
-                        done();
-                    });
+                },
+                err => {
+                    assert(err);
+                    assert.strictEqual(err.statusCode, 403);
+                    assert.strictEqual(err.code, 'SignatureDoesNotMatch');
+                    done();
                 });
-         });
+            });
+        });
     });
 
     describe('GET Metadata route', () => {

@@ -69,7 +69,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
         it('should return AccessDenied if user is not bucket owner', done => {
             const params = getLifecycleParams();
             otherAccountS3.putBucketLifecycleConfiguration(params,
-            err => assertError(err, 'AccessDenied', done));
+                err => assertError(err, 'AccessDenied', done));
         });
 
         it('should put lifecycle configuration on bucket', done => {
@@ -112,11 +112,11 @@ describe('aws-sdk test put bucket lifecycle', () => {
         });
 
         it('should not allow lifecycle config with no Prefix or Filter',
-        done => {
-            const params = getLifecycleParams({ key: 'Prefix', value: null });
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'MalformedXML', done));
-        });
+            done => {
+                const params = getLifecycleParams({ key: 'Prefix', value: null });
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'MalformedXML', done));
+            });
 
         it('should not allow lifecycle config with empty action', done => {
             const params = getLifecycleParams({ key: 'Expiration', value: {} });
@@ -125,12 +125,12 @@ describe('aws-sdk test put bucket lifecycle', () => {
         });
 
         it('should not allow lifecycle config with ID longer than 255 char',
-        done => {
-            const params =
+            done => {
+                const params =
                 getLifecycleParams({ key: 'ID', value: 'a'.repeat(256) });
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'InvalidArgument', done));
-        });
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'InvalidArgument', done));
+            });
 
         it('should allow lifecycle config with Prefix length < 1024', done => {
             const params =
@@ -140,31 +140,31 @@ describe('aws-sdk test put bucket lifecycle', () => {
         });
 
         it('should allow lifecycle config with Prefix length === 1024',
-        done => {
-            const params =
+            done => {
+                const params =
                 getLifecycleParams({ key: 'Prefix', value: 'a'.repeat(1024) });
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, null, done));
-        });
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, null, done));
+            });
 
         it('should not allow lifecycle config with Prefix length > 1024',
-        done => {
-            const params =
+            done => {
+                const params =
                 getLifecycleParams({ key: 'Prefix', value: 'a'.repeat(1025) });
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'InvalidRequest', done));
-        });
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'InvalidRequest', done));
+            });
 
         it('should not allow lifecycle config with Filter.Prefix length > 1024',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Prefix: 'a'.repeat(1025) },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Prefix: 'a'.repeat(1025) },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'InvalidRequest', done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'InvalidRequest', done));
-        });
 
         it('should not allow lifecycle config with Filter.And.Prefix length ' +
         '> 1024', done => {
@@ -193,59 +193,59 @@ describe('aws-sdk test put bucket lifecycle', () => {
         });
 
         it('should allow lifecycle config with Tag.Key length === 128',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Tag: { Key: 'a'.repeat(128), Value: 'bar' } },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Tag: { Key: 'a'.repeat(128), Value: 'bar' } },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, null, done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, null, done));
-        });
 
         it('should not allow lifecycle config with Tag.Key length > 128',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Tag: { Key: 'a'.repeat(129), Value: 'bar' } },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Tag: { Key: 'a'.repeat(129), Value: 'bar' } },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'InvalidRequest', done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'InvalidRequest', done));
-        });
 
         it('should allow lifecycle config with Tag.Value length < 256',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Tag: { Key: 'a', Value: 'b'.repeat(255) } },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Tag: { Key: 'a', Value: 'b'.repeat(255) } },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, null, done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, null, done));
-        });
 
         it('should allow lifecycle config with Tag.Value length === 256',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Tag: { Key: 'a', Value: 'b'.repeat(256) } },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Tag: { Key: 'a', Value: 'b'.repeat(256) } },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, null, done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, null, done));
-        });
 
         it('should not allow lifecycle config with Tag.Value length > 256',
-        done => {
-            const params = getLifecycleParams({
-                key: 'Filter',
-                value: { Tag: { Key: 'a', Value: 'b'.repeat(257) } },
+            done => {
+                const params = getLifecycleParams({
+                    key: 'Filter',
+                    value: { Tag: { Key: 'a', Value: 'b'.repeat(257) } },
+                });
+                delete params.LifecycleConfiguration.Rules[0].Prefix;
+                s3.putBucketLifecycleConfiguration(params, err =>
+                    assertError(err, 'InvalidRequest', done));
             });
-            delete params.LifecycleConfiguration.Rules[0].Prefix;
-            s3.putBucketLifecycleConfiguration(params, err =>
-                assertError(err, 'InvalidRequest', done));
-        });
 
         it('should not allow lifecycle config with Prefix and Filter', done => {
             const params = getLifecycleParams(
@@ -324,12 +324,12 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
 
             it('should not allow config with And.Prefix & no And.Tags',
-            done => {
-                const params = getLifecycleParams(
-                    { key: 'Filter', value: { And: { Prefix: 'foo' } } });
-                s3.putBucketLifecycleConfiguration(params, err =>
-                    assertError(err, 'MalformedXML', done));
-            });
+                done => {
+                    const params = getLifecycleParams(
+                        { key: 'Filter', value: { And: { Prefix: 'foo' } } });
+                    s3.putBucketLifecycleConfiguration(params, err =>
+                        assertError(err, 'MalformedXML', done));
+                });
 
             it('should not allow config with only one And.Tags', done => {
                 const params = getLifecycleParams({
@@ -341,17 +341,17 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
 
             it('should allow config with And.Tags & no And.Prefix',
-            done => {
-                const params = getLifecycleParams({
-                    key: 'Filter',
-                    value: { And: { Tags:
+                done => {
+                    const params = getLifecycleParams({
+                        key: 'Filter',
+                        value: { And: { Tags:
                         [{ Key: 'foo', Value: 'bar' },
-                        { Key: 'foo2', Value: 'bar2' }],
-                    } },
+                            { Key: 'foo2', Value: 'bar2' }],
+                        } },
+                    });
+                    s3.putBucketLifecycleConfiguration(params, err =>
+                        assertError(err, null, done));
                 });
-                s3.putBucketLifecycleConfiguration(params, err =>
-                    assertError(err, null, done));
-            });
 
             it('should allow config with And.Prefix & And.Tags', done => {
                 const params = getLifecycleParams({

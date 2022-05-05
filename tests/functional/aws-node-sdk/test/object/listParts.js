@@ -24,24 +24,24 @@ describe('List parts', () => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
             return s3.createBucket({ Bucket: bucket }).promise()
-            .then(() => s3.createMultipartUpload({
-                Bucket: bucket, Key: key }).promise())
-            .then(res => {
-                uploadId = res.UploadId;
-                return s3.uploadPart({ Bucket: bucket, Key: key,
-                    PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
-                }).promise();
-            }).then(() => s3.uploadPart({
-                Bucket: bucket, Key: key,
-                PartNumber: 2, UploadId: uploadId, Body: bodySecondPart,
-            }).promise()).then(res => {
-                secondEtag = res.ETag;
-                return secondEtag;
-            })
-            .catch(err => {
-                process.stdout.write(`Error in beforeEach: ${err}\n`);
-                throw err;
-            });
+                .then(() => s3.createMultipartUpload({
+                    Bucket: bucket, Key: key }).promise())
+                .then(res => {
+                    uploadId = res.UploadId;
+                    return s3.uploadPart({ Bucket: bucket, Key: key,
+                        PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart,
+                    }).promise();
+                }).then(() => s3.uploadPart({
+                    Bucket: bucket, Key: key,
+                    PartNumber: 2, UploadId: uploadId, Body: bodySecondPart,
+                }).promise()).then(res => {
+                    secondEtag = res.ETag;
+                    return secondEtag;
+                })
+                .catch(err => {
+                    process.stdout.write(`Error in beforeEach: ${err}\n`);
+                    throw err;
+                });
         });
 
         afterEach(() => {
@@ -49,15 +49,15 @@ describe('List parts', () => {
             return s3.abortMultipartUpload({
                 Bucket: bucket, Key: key, UploadId: uploadId,
             }).promise()
-            .then(() => bucketUtil.empty(bucket))
-            .then(() => {
-                process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucket);
-            })
-            .catch(err => {
-                process.stdout.write('Error in afterEach');
-                throw err;
-            });
+                .then(() => bucketUtil.empty(bucket))
+                .then(() => {
+                    process.stdout.write('Deleting bucket');
+                    return bucketUtil.deleteOne(bucket);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in afterEach');
+                    throw err;
+                });
         });
 
         it('should only list the second part', done => {
@@ -83,14 +83,14 @@ describe('List parts', () => {
 function createPart(sigCfg, bucketUtil, s3, key) {
     let uploadId;
     return s3.createBucket({ Bucket: bucket }).promise()
-    .then(() => s3.createMultipartUpload({
-        Bucket: bucket, Key: key }).promise())
-    .then(res => {
-        uploadId = res.UploadId;
-        return s3.uploadPart({ Bucket: bucket, Key: key,
-            PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart }).promise();
-    })
-    .then(() => Promise.resolve(uploadId));
+        .then(() => s3.createMultipartUpload({
+            Bucket: bucket, Key: key }).promise())
+        .then(res => {
+            uploadId = res.UploadId;
+            return s3.uploadPart({ Bucket: bucket, Key: key,
+                PartNumber: 1, UploadId: uploadId, Body: bodyFirstPart }).promise();
+        })
+        .then(() => Promise.resolve(uploadId));
 }
 /* eslint-enable no-param-reassign */
 function deletePart(s3, bucketUtil, key, uploadId) {
@@ -99,11 +99,11 @@ function deletePart(s3, bucketUtil, key, uploadId) {
     return s3.abortMultipartUpload({
         Bucket: bucket, Key: key, UploadId: uploadId,
     }).promise()
-    .then(() => bucketUtil.empty(bucket))
-    .then(() => {
-        process.stdout.write('Deleting bucket');
-        return bucketUtil.deleteOne(bucket);
-    });
+        .then(() => bucketUtil.empty(bucket))
+        .then(() => {
+            process.stdout.write('Deleting bucket');
+            return bucketUtil.deleteOne(bucket);
+        });
 }
 
 function test(s3, bucket, key, uploadId, cb) {
@@ -127,10 +127,10 @@ describe('List parts - object keys with special characters: `&`', () => {
 
         beforeEach(() =>
             createPart(sigCfg, bucketUtil, s3, key)
-            .then(res => {
-                uploadId = res;
-                return Promise.resolve();
-            })
+                .then(res => {
+                    uploadId = res;
+                    return Promise.resolve();
+                }),
         );
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
@@ -149,10 +149,10 @@ describe('List parts - object keys with special characters: `"`', () => {
 
         beforeEach(() =>
             createPart(sigCfg, bucketUtil, s3, key)
-            .then(res => {
-                uploadId = res;
-                return Promise.resolve();
-            })
+                .then(res => {
+                    uploadId = res;
+                    return Promise.resolve();
+                }),
         );
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
@@ -171,10 +171,10 @@ describe('List parts - object keys with special characters: `\'`', () => {
 
         beforeEach(() =>
             createPart(sigCfg, bucketUtil, s3, key)
-            .then(res => {
-                uploadId = res;
-                return Promise.resolve();
-            })
+                .then(res => {
+                    uploadId = res;
+                    return Promise.resolve();
+                }),
         );
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
@@ -193,10 +193,10 @@ describe('List parts - object keys with special characters: `<`', () => {
 
         beforeEach(() =>
             createPart(sigCfg, bucketUtil, s3, key)
-            .then(res => {
-                uploadId = res;
-                return Promise.resolve();
-            })
+                .then(res => {
+                    uploadId = res;
+                    return Promise.resolve();
+                }),
         );
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));
@@ -215,10 +215,10 @@ describe('List parts - object keys with special characters: `>`', () => {
 
         beforeEach(() =>
             createPart(sigCfg, bucketUtil, s3, key)
-            .then(res => {
-                uploadId = res;
-                return Promise.resolve();
-            })
+                .then(res => {
+                    uploadId = res;
+                    return Promise.resolve();
+                }),
         );
 
         afterEach(() => deletePart(s3, bucketUtil, key, uploadId));

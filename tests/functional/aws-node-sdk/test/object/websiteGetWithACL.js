@@ -127,19 +127,19 @@ describe('User visits bucket website endpoint with ACL', () => {
             describe(`with existing bucket with ${bucketACL} acl`, () => {
                 beforeEach(done => {
                     WebsiteConfigTester.createPutBucketWebsite(s3, bucket,
-                      bucketACL, test.objects, done);
+                        bucketACL, test.objects, done);
                 });
                 afterEach(done => {
                     WebsiteConfigTester.deleteObjectsThenBucket(s3, bucket,
-                    test.objects, err => {
-                        if (process.env.AWS_ON_AIR) {
+                        test.objects, err => {
+                            if (process.env.AWS_ON_AIR) {
                             // Give some time for AWS to finish deleting
                             // object and buckets before starting next test
-                            setTimeout(() => done(err), 10000);
-                        } else {
-                            done(err);
-                        }
-                    });
+                                setTimeout(() => done(err), 10000);
+                            } else {
+                                done(err);
+                            }
+                        });
                 });
 
                 it(`${test.it} with no auth credentials sent`, done => {

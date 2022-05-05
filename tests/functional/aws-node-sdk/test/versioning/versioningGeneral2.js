@@ -145,7 +145,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             s3.getObject(params, (err, data) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(params.VersionId, data.VersionId,
-                        'version ids are not equal');
+                    'version ids are not equal');
                 // TODO compare the value of null version and the original
                 // version when find out how to include value in the put
                 params.VersionId = 'null';
@@ -215,13 +215,13 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             callback => s3.getObject(paramsNull, (err, data) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(data.VersionId, 'null',
-                        'version ids are equal');
+                    'version ids are equal');
                 callback();
             }),
             callback => s3.getObject(params, (err, data) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(data.VersionId, 'null',
-                        'version ids are not equal');
+                    'version ids are not equal');
                 callback();
             }),
         ], done);
@@ -254,7 +254,7 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
             callback => s3.getObject(paramsNull, (err, data) => {
                 assert.strictEqual(err, null);
                 assert.strictEqual(nullVersionId, data.VersionId,
-                        'version ids are not equal');
+                    'version ids are not equal');
                 callback();
             }),
         ], done);
@@ -275,13 +275,13 @@ describe('aws-node-sdk test bucket versioning', function testSuite() {
                         next();
                     });
                 }), err => {
-                    assert.strictEqual(err, null);
-                    s3.getObject(paramsNull, (err, data) => {
-                        assert.strictEqual(nullVersionId, data.VersionId,
-                            'version ids are not equal');
-                        done();
-                    });
+                assert.strictEqual(err, null);
+                s3.getObject(paramsNull, (err, data) => {
+                    assert.strictEqual(nullVersionId, data.VersionId,
+                        'version ids are not equal');
+                    done();
                 });
+            });
         });
     });
 

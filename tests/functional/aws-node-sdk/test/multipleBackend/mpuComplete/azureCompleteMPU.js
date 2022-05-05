@@ -34,20 +34,20 @@ let bucketUtil;
 function getCheck(key, bucketMatch, cb) {
     let azureKey = key;
     s3.getObject({ Bucket: azureContainerName, Key: azureKey },
-    (err, s3Res) => {
-        assert.equal(err, null, `Err getting object from S3: ${err}`);
-        assert.strictEqual(s3Res.ETag, `"${s3MD5}"`);
+        (err, s3Res) => {
+            assert.equal(err, null, `Err getting object from S3: ${err}`);
+            assert.strictEqual(s3Res.ETag, `"${s3MD5}"`);
 
-        if (!bucketMatch) {
-            azureKey = `${azureContainerName}/${key}`;
-        }
-        azureClient.getBlobProperties(azureContainerName, azureKey,
-        (err, azureRes) => {
-            assert.equal(err, null, `Err getting object from Azure: ${err}`);
-            assert.strictEqual(expectedContentLength, azureRes.contentLength);
-            cb();
+            if (!bucketMatch) {
+                azureKey = `${azureContainerName}/${key}`;
+            }
+            azureClient.getBlobProperties(azureContainerName, azureKey,
+                (err, azureRes) => {
+                    assert.equal(err, null, `Err getting object from Azure: ${err}`);
+                    assert.strictEqual(expectedContentLength, azureRes.contentLength);
+                    cb();
+                });
         });
-    });
 }
 
 function mpuSetup(key, location, cb) {
@@ -101,80 +101,36 @@ function mpuSetup(key, location, cb) {
 }
 
 describeSkipIfNotMultiple('Complete MPU API for Azure data backend',
-function testSuite() {
-    this.timeout(150000);
-    withV4(sigCfg => {
-        beforeEach(function beFn() {
-            this.currentTest.key = `somekey-${Date.now()}`;
-            bucketUtil = new BucketUtility('default', sigCfg);
-            s3 = bucketUtil.s3;
-            this.currentTest.awsClient = awsS3;
-            return s3.createBucket({ Bucket: azureContainerName }).promise()
-            .catch(err => {
-                process.stdout.write(`Error creating bucket: ${err}\n`);
-                throw err;
+    function testSuite() {
+        this.timeout(150000);
+        withV4(sigCfg => {
+            beforeEach(function beFn() {
+                this.currentTest.key = `somekey-${Date.now()}`;
+                bucketUtil = new BucketUtility('default', sigCfg);
+                s3 = bucketUtil.s3;
+                this.currentTest.awsClient = awsS3;
+                return s3.createBucket({ Bucket: azureContainerName }).promise()
+                    .catch(err => {
+                        process.stdout.write(`Error creating bucket: ${err}\n`);
+                        throw err;
+                    });
             });
-        });
 
-        afterEach(() => {
-            process.stdout.write('Emptying bucket\n');
-            return bucketUtil.empty(azureContainerName)
-            .then(() => {
-                process.stdout.write('Deleting bucket\n');
-                return bucketUtil.deleteOne(azureContainerName);
-            })
-            .catch(err => {
-                process.stdout.write(`Error in afterEach: ${err}\n`);
-                throw err;
+            afterEach(() => {
+                process.stdout.write('Emptying bucket\n');
+                return bucketUtil.empty(azureContainerName)
+                    .then(() => {
+                        process.stdout.write('Deleting bucket\n');
+                        return bucketUtil.deleteOne(azureContainerName);
+                    })
+                    .catch(err => {
+                        process.stdout.write(`Error in afterEach: ${err}\n`);
+                        throw err;
+                    });
             });
-        });
 
-        it('should complete an MPU on Azure', function itFn(done) {
-            mpuSetup(this.test.key, azureLocation, (uploadId, partArray) => {
-                const params = {
-                    Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: uploadId,
-                    MultipartUpload: { Parts: partArray },
-                };
-                s3.completeMultipartUpload(params, err => {
-                    assert.equal(err, null, `Err completing MPU: ${err}`);
-                    setTimeout(() => getCheck(this.test.key, true, done),
-                        azureTimeout);
-                });
-            });
-        });
-
-        it('should complete an MPU on Azure with bucketMatch=false',
-        function itFn(done) {
-            mpuSetup(this.test.key, azureLocationMismatch,
-            (uploadId, partArray) => {
-                const params = {
-                    Bucket: azureContainerName,
-                    Key: this.test.key,
-                    UploadId: uploadId,
-                    MultipartUpload: { Parts: partArray },
-                };
-                s3.completeMultipartUpload(params, err => {
-                    assert.equal(err, null, `Err completing MPU: ${err}`);
-                    setTimeout(() => getCheck(this.test.key, false, done),
-                        azureTimeout);
-                });
-            });
-        });
-
-        it('should complete an MPU on Azure with same key as object put ' +
-        'to file', function itFn(done) {
-            const body = Buffer.from('I am a body', 'utf8');
-            s3.putObject({
-                Bucket: azureContainerName,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': fileLocation } },
-            err => {
-                assert.equal(err, null, `Err putting object to file: ${err}`);
-                mpuSetup(this.test.key, azureLocation,
-                (uploadId, partArray) => {
+            it('should complete an MPU on Azure', function itFn(done) {
+                mpuSetup(this.test.key, azureLocation, (uploadId, partArray) => {
                     const params = {
                         Bucket: azureContainerName,
                         Key: this.test.key,
@@ -188,66 +144,110 @@ function testSuite() {
                     });
                 });
             });
-        });
 
-        it('should complete an MPU on Azure with same key as object put ' +
-        'to Azure', function itFn(done) {
-            const body = Buffer.from('I am a body', 'utf8');
-            s3.putObject({
-                Bucket: azureContainerName,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': azureLocation } },
-            err => {
-                assert.equal(err, null, `Err putting object to Azure: ${err}`);
-                mpuSetup(this.test.key, azureLocation,
-                (uploadId, partArray) => {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.key,
-                        UploadId: uploadId,
-                        MultipartUpload: { Parts: partArray },
-                    };
-                    s3.completeMultipartUpload(params, err => {
-                        assert.equal(err, null, `Err completing MPU: ${err}`);
-                        setTimeout(() => getCheck(this.test.key, true, done),
-                            azureTimeout);
-                    });
-                });
-            });
-        });
-
-        it('should complete an MPU on Azure with same key as object put ' +
-        'to AWS', function itFn(done) {
-            const body = Buffer.from('I am a body', 'utf8');
-            s3.putObject({
-                Bucket: azureContainerName,
-                Key: this.test.key,
-                Body: body,
-                Metadata: { 'scal-location-constraint': awsLocation } },
-            err => {
-                assert.equal(err, null, `Err putting object to AWS: ${err}`);
-                mpuSetup(this.test.key, azureLocation,
-                (uploadId, partArray) => {
-                    const params = {
-                        Bucket: azureContainerName,
-                        Key: this.test.key,
-                        UploadId: uploadId,
-                        MultipartUpload: { Parts: partArray },
-                    };
-                    s3.completeMultipartUpload(params, err => {
-                        assert.equal(err, null, `Err completing MPU: ${err}`);
-                        // make sure object is gone from AWS
-                        setTimeout(() => {
-                            this.test.awsClient.getObject({ Bucket: awsBucket,
-                            Key: this.test.key }, err => {
-                                assert.strictEqual(err.code, 'NoSuchKey');
-                                getCheck(this.test.key, true, done);
+            it('should complete an MPU on Azure with bucketMatch=false',
+                function itFn(done) {
+                    mpuSetup(this.test.key, azureLocationMismatch,
+                        (uploadId, partArray) => {
+                            const params = {
+                                Bucket: azureContainerName,
+                                Key: this.test.key,
+                                UploadId: uploadId,
+                                MultipartUpload: { Parts: partArray },
+                            };
+                            s3.completeMultipartUpload(params, err => {
+                                assert.equal(err, null, `Err completing MPU: ${err}`);
+                                setTimeout(() => getCheck(this.test.key, false, done),
+                                    azureTimeout);
                             });
-                        }, azureTimeout);
-                    });
+                        });
+                });
+
+            it('should complete an MPU on Azure with same key as object put ' +
+        'to file', function itFn(done) {
+                const body = Buffer.from('I am a body', 'utf8');
+                s3.putObject({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': fileLocation } },
+                err => {
+                    assert.equal(err, null, `Err putting object to file: ${err}`);
+                    mpuSetup(this.test.key, azureLocation,
+                        (uploadId, partArray) => {
+                            const params = {
+                                Bucket: azureContainerName,
+                                Key: this.test.key,
+                                UploadId: uploadId,
+                                MultipartUpload: { Parts: partArray },
+                            };
+                            s3.completeMultipartUpload(params, err => {
+                                assert.equal(err, null, `Err completing MPU: ${err}`);
+                                setTimeout(() => getCheck(this.test.key, true, done),
+                                    azureTimeout);
+                            });
+                        });
+                });
+            });
+
+            it('should complete an MPU on Azure with same key as object put ' +
+        'to Azure', function itFn(done) {
+                const body = Buffer.from('I am a body', 'utf8');
+                s3.putObject({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': azureLocation } },
+                err => {
+                    assert.equal(err, null, `Err putting object to Azure: ${err}`);
+                    mpuSetup(this.test.key, azureLocation,
+                        (uploadId, partArray) => {
+                            const params = {
+                                Bucket: azureContainerName,
+                                Key: this.test.key,
+                                UploadId: uploadId,
+                                MultipartUpload: { Parts: partArray },
+                            };
+                            s3.completeMultipartUpload(params, err => {
+                                assert.equal(err, null, `Err completing MPU: ${err}`);
+                                setTimeout(() => getCheck(this.test.key, true, done),
+                                    azureTimeout);
+                            });
+                        });
+                });
+            });
+
+            it('should complete an MPU on Azure with same key as object put ' +
+        'to AWS', function itFn(done) {
+                const body = Buffer.from('I am a body', 'utf8');
+                s3.putObject({
+                    Bucket: azureContainerName,
+                    Key: this.test.key,
+                    Body: body,
+                    Metadata: { 'scal-location-constraint': awsLocation } },
+                err => {
+                    assert.equal(err, null, `Err putting object to AWS: ${err}`);
+                    mpuSetup(this.test.key, azureLocation,
+                        (uploadId, partArray) => {
+                            const params = {
+                                Bucket: azureContainerName,
+                                Key: this.test.key,
+                                UploadId: uploadId,
+                                MultipartUpload: { Parts: partArray },
+                            };
+                            s3.completeMultipartUpload(params, err => {
+                                assert.equal(err, null, `Err completing MPU: ${err}`);
+                                // make sure object is gone from AWS
+                                setTimeout(() => {
+                                    this.test.awsClient.getObject({ Bucket: awsBucket,
+                                        Key: this.test.key }, err => {
+                                        assert.strictEqual(err.code, 'NoSuchKey');
+                                        getCheck(this.test.key, true, done);
+                                    });
+                                }, azureTimeout);
+                            });
+                        });
                 });
             });
         });
     });
-});

@@ -120,12 +120,12 @@ describe('putObjectRetention API', () => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.retentionMode, expectedMode);
-                    assert.strictEqual(objMD.retentionDate, expectedDate);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.retentionMode, expectedMode);
+                        assert.strictEqual(objMD.retentionDate, expectedDate);
+                        return done();
+                    });
             });
         });
 

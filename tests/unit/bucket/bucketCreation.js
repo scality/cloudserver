@@ -34,18 +34,18 @@ describe('bucket creation', () => {
 
         it('should return 200 if try to recreate in us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
-            specialBehaviorLocationConstraint, log, err => {
-                assert.ifError(err);
-                done();
-            });
+                specialBehaviorLocationConstraint, log, err => {
+                    assert.ifError(err);
+                    done();
+                });
         });
 
         it('should return 409 if try to recreate in non-us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
-            normalBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err.is.BucketAlreadyOwnedByYou, true);
-                done();
-            });
+                normalBehaviorLocationConstraint, log, err => {
+                    assert.strictEqual(err.is.BucketAlreadyOwnedByYou, true);
+                    done();
+                });
         });
     });
 
@@ -61,10 +61,10 @@ describe('bucket creation', () => {
 
         it('should return 409 if try to recreate in us-east-1', done => {
             createBucket(authInfo, bucketName, headers,
-            specialBehaviorLocationConstraint, log, err => {
-                assert.strictEqual(err.is.BucketAlreadyOwnedByYou, true);
-                done();
-            });
+                specialBehaviorLocationConstraint, log, err => {
+                    assert.strictEqual(err.is.BucketAlreadyOwnedByYou, true);
+                    done();
+                });
         });
     });
 });

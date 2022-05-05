@@ -12,8 +12,8 @@ const westLocation = 'scality-us-west-1';
 const eastLocation = 'us-east-1';
 
 const confLocations = [
-  { name: 'us-west-1', statusCode: 204, location: westLocation, describe },
-  { name: 'us-east-1', statusCode: 404, location: eastLocation, describe },
+    { name: 'us-west-1', statusCode: 204, location: westLocation, describe },
+    { name: 'us-east-1', statusCode: 404, location: eastLocation, describe },
 ];
 
 describe('DELETE multipart', () => {
@@ -39,16 +39,16 @@ describe('DELETE multipart', () => {
         }
 
         it('on bucket that does not exist: should return NoSuchBucket',
-        done => {
-            const uploadId = 'nonexistinguploadid';
-            s3.abortMultipartUpload({ Bucket: bucket, Key: key,
-                UploadId: uploadId }, err => {
-                assert.notEqual(err, null,
-                    'Expected NoSuchBucket but found no err');
-                assert.strictEqual(err.code, 'NoSuchBucket');
-                done();
+            done => {
+                const uploadId = 'nonexistinguploadid';
+                s3.abortMultipartUpload({ Bucket: bucket, Key: key,
+                    UploadId: uploadId }, err => {
+                    assert.notEqual(err, null,
+                        'Expected NoSuchBucket but found no err');
+                    assert.strictEqual(err.code, 'NoSuchBucket');
+                    done();
+                });
             });
-        });
         confLocations.forEach(confLocation => {
             confLocation.describe('on existing bucket with ' +
             `${confLocation.name}`,
@@ -58,23 +58,23 @@ describe('DELETE multipart', () => {
                         CreateBucketConfiguration: {
                             LocationConstraint: confLocation.location,
                         } }).promise()
-                    .catch(err => {
-                        process.stdout.write(`Error in beforeEach: ${err}\n`);
-                        throw err;
-                    })
+                        .catch(err => {
+                            process.stdout.write(`Error in beforeEach: ${err}\n`);
+                            throw err;
+                        }),
                 );
 
                 afterEach(() => {
                     process.stdout.write('Emptying bucket\n');
                     return bucketUtil.empty(bucket)
-                    .then(() => {
-                        process.stdout.write('Deleting bucket\n');
-                        return bucketUtil.deleteOne(bucket);
-                    })
-                    .catch(err => {
-                        process.stdout.write('Error in afterEach');
-                        throw err;
-                    });
+                        .then(() => {
+                            process.stdout.write('Deleting bucket\n');
+                            return bucketUtil.deleteOne(bucket);
+                        })
+                        .catch(err => {
+                            process.stdout.write('Error in afterEach');
+                            throw err;
+                        });
                 });
 
                 itSkipIfAWS(`should return ${confLocation.statusCode} if ` +
@@ -85,30 +85,30 @@ describe('DELETE multipart', () => {
                 });
 
                 describe('if mpu exists with uploadId + at least one part',
-                () => {
-                    let uploadId;
+                    () => {
+                        let uploadId;
 
-                    beforeEach(() =>
-                        s3.createMultipartUpload({
-                            Bucket: bucket,
-                            Key: key,
-                        }).promise()
-                        .then(res => {
-                            uploadId = res.UploadId;
-                            return s3.uploadPart({
+                        beforeEach(() =>
+                            s3.createMultipartUpload({
                                 Bucket: bucket,
                                 Key: key,
-                                PartNumber: 1,
-                                UploadId: uploadId,
-                            });
-                        })
-                    );
+                            }).promise()
+                                .then(res => {
+                                    uploadId = res.UploadId;
+                                    return s3.uploadPart({
+                                        Bucket: bucket,
+                                        Key: key,
+                                        PartNumber: 1,
+                                        UploadId: uploadId,
+                                    });
+                                }),
+                        );
 
-                    it('should return 204 for abortMultipartUpload', done => {
-                        _assertStatusCode(uploadId, 204,
-                          done);
+                        it('should return 204 for abortMultipartUpload', done => {
+                            _assertStatusCode(uploadId, 204,
+                                done);
+                        });
                     });
-                });
             });
         });
     });

@@ -168,8 +168,8 @@ utils.expectedETag = (body, getStringified = true) => {
 
 utils.putToAwsBackend = (s3, bucket, key, body, cb) => {
     s3.putObject({ Bucket: bucket, Key: key, Body: body,
-    Metadata: { 'scal-location-constraint': awsLocation } },
-        (err, result) => cb(err, result.VersionId));
+        Metadata: { 'scal-location-constraint': awsLocation } },
+    (err, result) => cb(err, result.VersionId));
 };
 
 utils.enableVersioning = (s3, bucket, cb) => {
@@ -214,7 +214,7 @@ utils.putNullVersionsToAws = (s3, bucket, key, versions, cb) => {
 
 utils.getAndAssertResult = (s3, params, cb) => {
     const { bucket, key, body, versionId, expectedVersionId, expectedTagCount,
-    expectedError } = params;
+        expectedError } = params;
     s3.getObject({ Bucket: bucket, Key: key, VersionId: versionId },
         (err, data) => {
             _assertErrorResult(err, expectedError, 'putting tags');
@@ -259,19 +259,19 @@ utils.getAwsRetry = (params, retryNumber, assertCb) => {
     const timeout = retryTimeout[retryNumber];
     return setTimeout(getObject, timeout, { Bucket: awsBucket, Key: key,
         VersionId: versionId },
-        (err, res) => {
-            try {
-                // note: this will only catch exceptions thrown before an
-                // asynchronous call
-                return assertCb(err, res);
-            } catch (e) {
-                if (retryNumber !== maxRetries) {
-                    return utils.getAwsRetry(params, retryNumber + 1,
-                        assertCb);
-                }
-                throw e;
+    (err, res) => {
+        try {
+            // note: this will only catch exceptions thrown before an
+            // asynchronous call
+            return assertCb(err, res);
+        } catch (e) {
+            if (retryNumber !== maxRetries) {
+                return utils.getAwsRetry(params, retryNumber + 1,
+                    assertCb);
             }
-        });
+            throw e;
+        }
+    });
 };
 
 utils.awsGetLatestVerId = (key, body, cb) =>
@@ -341,7 +341,7 @@ utils.tagging.getTaggingAndAssert = (s3, params, cb) => {
             }
             return utils.getAndAssertResult(s3, { bucket, key, versionId,
                 expectedVersionId, expectedTagCount },
-                () => cb(null, data.VersionId));
+            () => cb(null, data.VersionId));
         });
 };
 

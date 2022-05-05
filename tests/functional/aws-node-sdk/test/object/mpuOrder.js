@@ -20,13 +20,13 @@ function checkNoError(err) {
 const body = Buffer.alloc(1024 * 1024 * 5, 'a');
 
 const testsOrder = [
-  { values: [3, 8, 1000], err: false },
-  { values: [8, 3, 1000], err: true },
-  { values: [8, 1000, 3], err: true },
-  { values: [1000, 3, 8], err: true },
-  { values: [3, 1000, 8], err: true },
-  { values: [1000, 8, 3], err: true },
-  { values: [3, 3, 1000], err: true },
+    { values: [3, 8, 1000], err: false },
+    { values: [8, 3, 1000], err: true },
+    { values: [8, 1000, 3], err: true },
+    { values: [1000, 3, 8], err: true },
+    { values: [3, 1000, 8], err: true },
+    { values: [1000, 8, 3], err: true },
+    { values: [3, 3, 1000], err: true },
 ];
 
 describe('More MPU tests', () => {
@@ -73,7 +73,7 @@ describe('More MPU tests', () => {
         afterEach(done => {
             async.waterfall([
                 next => s3.deleteObject({ Bucket: bucket, Key: object },
-                  err => next(err)),
+                    err => next(err)),
                 next => s3.deleteBucket({ Bucket: bucket }, err => next(err)),
             ], done);
         });

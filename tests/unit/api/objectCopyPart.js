@@ -89,19 +89,19 @@ describe('objectCopyPart', () => {
     after(() => cleanup());
 
     it('should copy part even if legacy metadata without dataStoreName',
-    done => {
+        done => {
         // force metadata for dataStoreName to be undefined
-        metadata.keyMaps.get(sourceBucketName)
-            .get(objectKey).dataStoreName = undefined;
-        const testObjectCopyRequest =
+            metadata.keyMaps.get(sourceBucketName)
+                .get(objectKey).dataStoreName = undefined;
+            const testObjectCopyRequest =
             _createObjectCopyPartRequest(destBucketName, uploadId);
-        objectPutCopyPart(authInfo, testObjectCopyRequest,
-            sourceBucketName, objectKey,
-            undefined, log, err => {
-                assert.ifError(err, `Unexpected err: ${err}`);
-                done();
-            });
-    });
+            objectPutCopyPart(authInfo, testObjectCopyRequest,
+                sourceBucketName, objectKey,
+                undefined, log, err => {
+                    assert.ifError(err, `Unexpected err: ${err}`);
+                    done();
+                });
+        });
 
     it('should return InvalidArgument error given invalid range', done => {
         const headers = { 'x-amz-copy-source-range': 'bad-range-parameter' };

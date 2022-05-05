@@ -69,7 +69,7 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             done();
         });
     });
@@ -107,7 +107,7 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .URI[0], constants.publicId);
@@ -142,19 +142,19 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .URI[0], constants.publicId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'READ');
+            'READ');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
                 .URI[0], constants.publicId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Permission[0],
-                'WRITE');
+            'WRITE');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3], undefined);
             done();
@@ -184,16 +184,16 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .URI[0], constants.allAuthedUsersId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'READ');
+            'READ');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2],
-                undefined);
+            undefined);
             done();
         });
     });
@@ -224,13 +224,13 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'READ');
+            'READ');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2], undefined);
             done();
@@ -263,13 +263,13 @@ describe('objectGetACL API', () => {
                 .ID[0], canonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .ID[0], otherAccountCanonicalID);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2], undefined);
             done();
@@ -316,7 +316,7 @@ describe('objectGetACL API', () => {
                 .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[0].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
@@ -326,7 +326,7 @@ describe('objectGetACL API', () => {
                 .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[1].Permission[0],
-                'FULL_CONTROL');
+            'FULL_CONTROL');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
@@ -336,7 +336,7 @@ describe('objectGetACL API', () => {
                 .DisplayName[0], 'sampleaccount2@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[2].Permission[0],
-                'WRITE_ACP');
+            'WRITE_ACP');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Grantee[0]
                 .ID[0], '79a59df900b949e55d96a1e698fbacedfd6e09d98' +
@@ -346,16 +346,16 @@ describe('objectGetACL API', () => {
                 .DisplayName[0], 'sampleaccount1@sampling.com');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[3].Permission[0],
-                'READ_ACP');
+            'READ_ACP');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[4].Grantee[0]
                 .URI[0], constants.allAuthedUsersId);
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[4].Permission[0],
-                'READ');
+            'READ');
             assert.strictEqual(result.AccessControlPolicy.
                 AccessControlList[0].Grant[5],
-                undefined);
+            undefined);
             done();
         });
     });
