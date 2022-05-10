@@ -218,5 +218,17 @@
         "legacyAwsBehavior": false,
         "details": {},
         "isTransient": true
+    },
+    "location-dmf-v1": {
+        "type": "file",
+        "objectId": "location-dmf-v1",
+        "legacyAwsBehavior": false,
+        "cold": true,
+        "details": {
+            "dmf": {
+                "endpoint": "10.0.0.200:24000",
+                "repoId": "repo1"
+            }
+        }
     }
 }

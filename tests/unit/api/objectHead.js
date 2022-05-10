@@ -1,11 +1,13 @@
 const assert = require('assert');
 
+const sinon = require('sinon');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const objectHead = require('../../../lib/api/objectHead');
 const DummyRequest = require('../DummyRequest');
 const changeObjectLock = require('../../utilities/objectLock-util');
+const mdColdHelper = require('./utils/metadataMockColdStorage');
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -34,6 +36,14 @@ let testPutObjectRequest;
 describe('objectHead API', () => {
     beforeEach(() => {
         cleanup();
+        testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: { 'x-amz-meta-test': userMetadataValue },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: correctMD5,
+        }, postBody);
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -306,6 +316,92 @@ describe('objectHead API', () => {
                         }], '', done);
                     });
                 });
+        });
+    });
+
+    it('should reflect the storage location in storage class if the object is archived', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+        mdColdHelper.putBucketMock(bucketName, null, () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveArchivedMD(), () => {
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should not reflect the storage location in storage class if the bucket location is not cold', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+        mdColdHelper.putBucketMock(bucketName, 'scality-internal-file', () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, {}, () => {
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    assert.strictEqual(res['x-amz-storage-class'], undefined);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should reflect the restore header with ongoing-request=true if the object is being restored', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+        mdColdHelper.putBucketMock(bucketName, null, () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveOngoingRequestMD(), () => {
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    assert.strictEqual(res['x-amz-restore']['ongoing-request'], true);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('should reflect the restore header with ongoing-request=false and expiry-date set \
+if the object is restored and not yet expired', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+        mdColdHelper.putBucketMock(bucketName, null, () => {
+            const objectCustomMDFields = mdColdHelper.getArchiveRestoredMD();
+            mdColdHelper.putObjectMock(bucketName, objectName, objectCustomMDFields, () => {
+                objectHead(authInfo, testGetRequest, log, (err, res) => {
+                    assert.strictEqual(res[userMetadataKey], userMetadataValue);
+                    assert.strictEqual(res.ETag, `"${correctMD5}"`);
+                    assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
+                    assert.strictEqual(res['x-amz-restore']['ongoing-request'], false);
+                    assert.strictEqual(res['x-amz-restore']['expiry-date'],
+                        new Date(objectCustomMDFields['x-amz-restore']['expiry-date']).toUTCString());
+                    done();
+                });
+            });
         });
     });
 });
