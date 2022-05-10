@@ -495,6 +495,27 @@ describe('objectPut API', () => {
                 });
         });
     });
+
+    it('should not put object with storage-class header not equal to STANDARD', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-storage-class': 'COLD',
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => {
+                    assert.strictEqual(err.is.InvalidStorageClass, true);
+                    done();
+                });
+        });
+    });
 });
 
 describe('objectPut API with versioning', () => {

@@ -414,5 +414,19 @@ describeSkipIfCeph('PUT object with object lock', () => {
                 done();
             });
         });
+
+        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+            'and not equal to STANDARD', done => {
+            const params = {
+                Bucket: bucket,
+                Key: 'key8',
+                StorageClass: 'COLD',
+            };
+            s3.putObject(params, err => {
+                assert.strictEqual(err.code, 'InvalidStorageClass');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+            });
+        });
     });
 });
