@@ -51,7 +51,7 @@ const baseMd = {
         dataStoreVersionId: '',
         isNFS: null
     },
-    dataStoreName: 'us-east-1',
+    dataStoreName: 'location-dmf-v1',
     originOp: 's3:ObjectCreated:Put',
     'last-modified': '2022-05-10T08:31:51.878Z',
     'md-model-version': 5,

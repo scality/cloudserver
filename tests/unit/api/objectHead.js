@@ -43,14 +43,6 @@ describe('objectHead API', () => {
             url: `/${bucketName}/${objectName}`,
             calculatedHash: correctMD5,
         }, postBody);
-        testPutObjectRequest = new DummyRequest({
-            bucketName,
-            namespace,
-            objectKey: objectName,
-            headers: { 'x-amz-meta-test': userMetadataValue },
-            url: `/${bucketName}/${objectName}`,
-            calculatedHash: correctMD5,
-        }, postBody);
     });
 
     it('should return NotModified if request header ' +
