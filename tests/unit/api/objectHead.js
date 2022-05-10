@@ -364,7 +364,7 @@ describe('objectHead API', () => {
                     assert.strictEqual(res[userMetadataKey], userMetadataValue);
                     assert.strictEqual(res.ETag, `"${correctMD5}"`);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
-                    assert.strictEqual(res['x-amz-restore']['ongoing-request'], true);
+                    assert.strictEqual(res['x-amz-restore'], 'ongoing-request="true"');
                     done();
                 });
             });
@@ -387,9 +387,8 @@ describe('objectHead API', () => {
                     assert.strictEqual(res[userMetadataKey], userMetadataValue);
                     assert.strictEqual(res.ETag, `"${correctMD5}"`);
                     assert.strictEqual(res['x-amz-storage-class'], mdColdHelper.defaultLocation);
-                    assert.strictEqual(res['x-amz-restore']['ongoing-request'], false);
-                    assert.strictEqual(res['x-amz-restore']['expiry-date'],
-                        new Date(objectCustomMDFields['x-amz-restore']['expiry-date']).toUTCString());
+                    const utcDate = new Date(objectCustomMDFields['x-amz-restore']['expiry-date']).toUTCString();
+                    assert.strictEqual(res['x-amz-restore'], `ongoing-request="false", expiry-date="${utcDate}"`);
                     done();
                 });
             });
