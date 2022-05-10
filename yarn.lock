@@ -510,9 +510,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal.git#8.1.47":
+"arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-177-introduce-archive-field-in-metadata":
   version "8.1.47"
-  resolved "git+https://github.com/scality/Arsenal.git#e37712e94f747de6c2118d0280da7370e8aedd69"
+  resolved "git+https://github.com/scality/Arsenal#8bfe1a5749a4cbab133ef287164e2671e684000c"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
