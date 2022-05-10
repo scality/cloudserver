@@ -1,6 +1,5 @@
 const assert = require('assert');
 
-const sinon = require('sinon');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
@@ -380,8 +379,8 @@ describe('objectHead API', () => {
         });
     });
 
-    it('should reflect the restore header with ongoing-request=false and expiry-date set \
-if the object is restored and not yet expired', done => {
+    it('should reflect the restore header with ongoing-request=false and expiry-date set ' +
+        'if the object is restored and not yet expired', done => {
         const testGetRequest = {
             bucketName,
             namespace,

@@ -60,10 +60,10 @@ const baseMd = {
 
 /**
  * Mocks a Put Object to store custom metadata
- * @param {string} bucketName
- * @param {string|null} location
- * @param {Function} cb
- * @returns undefined
+ * @param {string} bucketName - the bucket name
+ * @param {string|null} location - the bucket location
+ * @param {Function} cb - callback once the bucket MD is created
+ * @returns {undefined}
  */
 function putBucketMock(bucketName, location, cb) {
     const bucket = new BucketInfo(
@@ -83,11 +83,11 @@ function putBucketMock(bucketName, location, cb) {
 
 /**
  * Mocks a Put Object to store custom metadata
- * @param {string} bucketName
- * @param {string} objectName
- * @param {object} fields
- * @param {Function} cb
- * @returns undefined
+ * @param {string} bucketName - the bucket name
+ * @param {string} objectName - the object name
+ * @param {object} fields - custom MD fields to add to the object
+ * @param {Function} cb - callback once the object MD is created
+ * @returns {undefined}
  */
 function putObjectMock(bucketName, objectName, fields, cb) {
     return metadata.putObjectMD(bucketName, objectName, {
@@ -99,18 +99,30 @@ function putObjectMock(bucketName, objectName, fields, cb) {
     });
 }
 
+/**
+ * Computes the 'archive' field of the object MD as an archived object
+ * @returns {ObjectMDArchive} the MD object
+ */
 function getArchiveArchivedMD() {
     return {
         archive: new ObjectMDArchive({}).getValue(),
     };
 }
 
+/**
+ * Computes the 'archive' field of the object MD as an object being restored
+ * @returns {ObjectMDArchive} the MD object
+ */
 function getArchiveOngoingRequestMD() {
     return {
         archive: new ObjectMDArchive({}, new Date(0), 5).getValue(),
     };
 }
 
+/**
+ * Computes the 'archive' field of the object MD as a restored object from cold storage
+ * @returns {ObjectMDArchive} the MD object
+ */
 function getArchiveRestoredMD() {
     return {
         archive: new ObjectMDArchive(
