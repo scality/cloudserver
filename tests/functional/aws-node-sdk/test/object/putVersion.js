@@ -14,7 +14,7 @@ const log = new DummyRequestLogger();
 
 const nonVersionedObjId =
     versionIdUtils.getInfVid(config.replicationGroupId);
-const bucketName = 'bucket1putversion22';
+const bucketName = 'bucket1putversion26';
 const objectName = 'object1putversion';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 
@@ -183,10 +183,6 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                // next => s3.listObjectVersions({ Bucket: bucketName }, (err, res) => {
-                //     console.log('LIST RES!!!', res);
-                //     return next(err);
-                // }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     next(err);
@@ -206,6 +202,60 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 // only the last-modified date should be updated.
                 assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
                 versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
+                assert.deepStrictEqual(versionsBefore, versionsAfter);
+
+                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
+                // eslint-disable-next-line no-param-reassign
+                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
+        it('should overwrite the lastest version and keep nullVersionId', done => {
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            const params = { Bucket: bucketName, Key: objectName };
+            let versionsBefore;
+            let versionsAfter;
+            let objMDBefore;
+            let objMDAfter;
+            let vId;
+
+            async.waterfall([
+                next => s3.putObject(params, err => next(err)),
+                next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => s3.putObject(params, (err, res) => {
+                    vId = res.VersionId;
+                    return next(err);
+                }),
+                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                    objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
+                    next(err);
+                }),
+                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                    objMDAfter = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
+                    next(err);
+                }),
+            ], err => {
+                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                // only the last-modified date should be updated.
+                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
+                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
 
                 assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
