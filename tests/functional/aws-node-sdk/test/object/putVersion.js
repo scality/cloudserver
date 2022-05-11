@@ -14,8 +14,9 @@ const log = new DummyRequestLogger();
 
 const nonVersionedObjId =
     versionIdUtils.getInfVid(config.replicationGroupId);
-const bucketName = 'bucket1putversion15';
+const bucketName = 'bucket1putversion22';
 const objectName = 'object1putversion';
+const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 
 function _getMetadata(bucketName, objectName, versionId, cb) {
     let decodedVersionId;
@@ -29,7 +30,6 @@ function _getMetadata(bucketName, objectName, versionId, cb) {
             return cb(new Error('Invalid version id specified'));
         }
     }
-    console.log('decodedVersionId!!!', decodedVersionId);
     return metadata.getObjectMD(bucketName, objectName, { versionId: decodedVersionId },
         log, (err, objMD) => {
             if (err) {
@@ -50,8 +50,9 @@ function putObjectVersion(s3, params, vid, next) {
 
 function updateVersionsLastModified(versionsBefore, versionsAfter) {
     versionsBefore.forEach((v, i) => {
+        assert.notEqual(versionsAfter[i].value.LastModified, v.value.LastModified);
         // eslint-disable-next-line no-param-reassign
-        versionsAfter[i].LastModified = v.LastModified;
+        versionsAfter[i].value.LastModified = v.value.LastModified;
     });
 }
 
@@ -101,8 +102,6 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], (err, objMDAfter) => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 // only the last-modified date should be updated.
-                console.log('objMDBefore!!!', objMDBefore);
-                console.log('objMDAfter!!!', objMDAfter);
                 assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
                 // eslint-disable-next-line no-param-reassign
                 objMDAfter['last-modified'] = objMDBefore['last-modified'];
@@ -131,8 +130,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsBefore = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
@@ -144,18 +143,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsAfter = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
                     next(err);
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 // only the last-modified date should be updated.
-                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
-                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
+                updateVersionsLastModified(versionsBefore, versionsAfter);
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
 
                 assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
@@ -187,8 +183,12 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsBefore = res.Contents;
+                // next => s3.listObjectVersions({ Bucket: bucketName }, (err, res) => {
+                //     console.log('LIST RES!!!', res);
+                //     return next(err);
+                // }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     next(err);
                 }),
                 next => putObjectVersion(s3, params, 'null', err => next(err)),
@@ -196,18 +196,16 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsAfter = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
                     next(err);
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                console.log('versionsBefore!!!', versionsBefore);
-                console.log('versionsAfter!!!', versionsAfter);
                 // only the last-modified date should be updated.
-                assert.notEqual(versionsAfter[2].value.LastModified, versionsBefore[2].value.LastModified);
-                versionsAfter[2].value.LastModified = versionsBefore[2].value.LastModified;
+                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
+                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
 
                 assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
@@ -246,8 +244,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsBefore = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     next(err);
                 }),
                 next => putObjectVersion(s3, params, 'null', err => next(err)),
@@ -255,16 +253,14 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsAfter = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
                     next(err);
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                console.log('versionsBefore!!!', versionsBefore);
-                console.log('versionsAfter!!!', versionsAfter);
-
+                // only the last-modified date should be updated.
                 assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
                 versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
@@ -298,8 +294,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => s3.putObject(params, err => next(err)),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsBefore = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -311,22 +307,21 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsAfter = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
                     next(err);
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                assert.notEqual(versionsAfter[2].value.LastModified, versionsBefore[2].value.LastModified);
-                versionsAfter[2].value.LastModified = versionsBefore[2].value.LastModified;
+                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
+                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
 
                 assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
                 // eslint-disable-next-line no-param-reassign
                 objMDAfter['last-modified'] = objMDBefore['last-modified'];
-                console.log('objMDBefore!!!', objMDBefore);
-                console.log('objMDAfter!!!', objMDAfter);
+
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -353,8 +348,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsBefore = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
@@ -366,21 +361,123 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
-                next => metadata.listObject(bucketName, {}, log, (err, res) => {
-                    versionsAfter = res.Contents;
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
                     next(err);
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
                 versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
                 assert.deepStrictEqual(versionsBefore, versionsAfter);
 
-                console.log('objMDBefore!!!', objMDBefore);
-                console.log('objMDAfter!!!', objMDAfter);
+                assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
+                // eslint-disable-next-line no-param-reassign
+                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
+        it('should overwrite the current versioned object after bucket version suspended', done => {
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            const sParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Suspended',
+                }
+            };
+            const params = { Bucket: bucketName, Key: objectName };
+            let objMDBefore;
+            let objMDAfter;
+            let versionsBefore;
+            let versionsAfter;
+            let vId;
+
+            async.waterfall([
+                next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => s3.putObject(params, err => next(err)),
+                next => s3.putObject(params, (err, res) => {
+                    vId = res.VersionId;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
+                    next(err);
+                }),
+                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                    objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => s3.putBucketVersioning(sParams, err => next(err)),
+                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                    objMDAfter = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
+                    next(err);
+                }),
+            ], err => {
+                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
+                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
+                assert.deepStrictEqual(versionsBefore, versionsAfter);
+
+                assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
+                // eslint-disable-next-line no-param-reassign
+                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
+        it('should overwrite the current versioned object after bucket version enabled', done => {
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            const params = { Bucket: bucketName, Key: objectName };
+            let objMDBefore;
+            let objMDAfter;
+            let versionsBefore;
+            let versionsAfter;
+
+            async.waterfall([
+                next => s3.putObject(params, err => next(err)),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
+                    next(err);
+                }),
+                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => putObjectVersion(s3, params, 'null', err => next(err)),
+                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDAfter = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
+                    next(err);
+                }),
+            ], err => {
+                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                updateVersionsLastModified(versionsBefore, versionsAfter);
+
                 assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
                 // eslint-disable-next-line no-param-reassign
                 objMDAfter['last-modified'] = objMDBefore['last-modified'];
@@ -390,4 +487,3 @@ describe('PUT object with x-scal-s3-version-id header', () => {
         });
     });
 });
-
