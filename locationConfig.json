@@ -7,31 +7,5 @@
       "legacyAwsBehavior": false,
       "objectId": "0b1d9226-a694-11eb-bc21-baec55d199cd",
       "type": "file"
-    },
-    "aws-location": {
-        "type": "aws_s3",
-        "legacyAwsBehavior": true,
-        "details": {
-            "awsEndpoint": "s3.amazonaws.com",
-            "bucketName": "lc-version",
-            "bucketMatch": false,
-            "credentialsProfile": "aws-account",
-            "serverSideEncryption": true
-        },
-        "objectId": "1b1d9226-a694-11eb-bc21-baec55d199cd"
-    },
-    "ring-location": {
-        "type": "aws_s3",
-        "legacyAwsBehavior": true,
-        "details": {
-            "https": false,
-            "awsEndpoint": "10.100.5.232",
-            "bucketName": "alex-test-bucket",
-            "bucketMatch": false,
-            "credentialsProfile": "ring",
-            "serverSideEncryption": true,
-            "pathStyle": true
-        },
-        "objectId": "2b1d9226-a694-11eb-bc21-baec55d199cd"
     }
 }
