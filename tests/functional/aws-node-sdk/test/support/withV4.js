@@ -1,6 +1,4 @@
-// const versions = ['default', 'v4'];
-const versions = ['v4'];
-
+const versions = ['default', 'v4'];
 
 function withV4(testFn) {
     versions.forEach(version => {
