@@ -7,6 +7,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
+const checkError = require('../../lib/utility/checkError');
 
 const versionIdUtils = versioning.VersionID;
 
@@ -46,14 +47,6 @@ function putObjectVersion(s3, params, vid, next) {
         request.httpRequest.headers['x-scal-s3-version-id'] = vid;
     });
     return request.send(next);
-}
-
-function updateVersionsLastModified(versionsBefore, versionsAfter) {
-    versionsBefore.forEach((v, i) => {
-        assert.notEqual(versionsAfter[i].value.LastModified, v.value.LastModified);
-        // eslint-disable-next-line no-param-reassign
-        versionsAfter[i].value.LastModified = v.value.LastModified;
-    });
 }
 
 describe('PUT object with x-scal-s3-version-id header', () => {
@@ -96,7 +89,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 (res, next) => _getMetadata(bucketName, objectName, undefined, next),
                 (objMD, next) => {
                     objMDBefore = objMD;
-                    return putObjectVersion(s3, params, 'null', next);
+                    return putObjectVersion(s3, params, '', next);
                 },
                 (res, next) => _getMetadata(bucketName, objectName, undefined, next),
             ], (err, objMDAfter) => {
@@ -148,6 +141,50 @@ describe('PUT object with x-scal-s3-version-id header', () => {
 
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
+        it('should fail if version specified is invalid', done => {
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            const params = { Bucket: bucketName, Key: objectName };
+
+            async.waterfall([
+                next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => s3.putObject(params, err => next(err)),
+                next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
+                    checkError(err, 'InvalidArgument', 400);
+                    return next();
+                }),
+            ], err => {
+                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                return done();
+            });
+        });
+
+        it('should fail if version specified does not exist', done => {
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            const params = { Bucket: bucketName, Key: objectName };
+
+            async.waterfall([
+                next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => s3.putObject(params, err => next(err)),
+                next => putObjectVersion(s3, params, '', err => {
+                    checkError(err, 'NoSuchKey', 404);
+                    return next();
+                }),
+            ], err => {
+                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 return done();
             });
         });
@@ -274,7 +311,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     versionsBefore = res.Versions;
                     next(err);
                 }),
-                next => putObjectVersion(s3, params, 'null', err => next(err)),
+                next => putObjectVersion(s3, params, '', err => next(err)),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
