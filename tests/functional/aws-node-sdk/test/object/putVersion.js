@@ -14,7 +14,7 @@ const log = new DummyRequestLogger();
 
 const nonVersionedObjId =
     versionIdUtils.getInfVid(config.replicationGroupId);
-const bucketName = 'bucket1putversion26';
+const bucketName = 'bucket1putversion27';
 const objectName = 'object1putversion';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 
@@ -101,10 +101,6 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 (res, next) => _getMetadata(bucketName, objectName, undefined, next),
             ], (err, objMDAfter) => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
-                // only the last-modified date should be updated.
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -150,13 +146,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                // only the last-modified date should be updated.
-                updateVersionsLastModified(versionsBefore, versionsAfter);
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -199,14 +189,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                // only the last-modified date should be updated.
-                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
-                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -253,14 +236,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                // only the last-modified date should be updated.
-                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -310,14 +286,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                // only the last-modified date should be updated.
-                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -339,6 +308,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
 
             async.waterfall([
                 next => s3.putBucketVersioning(vParams, err => next(err)),
+                next => s3.putObject(params, err => next(err)),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
@@ -363,14 +333,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }),
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
-
-                assert.notEqual(versionsAfter[1].value.LastModified, versionsBefore[1].value.LastModified);
-                versionsAfter[1].value.LastModified = versionsBefore[1].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDAfter['last-modified'], objMDBefore['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -418,13 +381,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -478,13 +435,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                assert.notEqual(versionsAfter[0].value.LastModified, versionsBefore[0].value.LastModified);
-                versionsAfter[0].value.LastModified = versionsBefore[0].value.LastModified;
-                assert.deepStrictEqual(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -526,11 +477,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             ], err => {
                 assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                updateVersionsLastModified(versionsBefore, versionsAfter);
-
-                assert.notEqual(objMDBefore['last-modified'], objMDAfter['last-modified']);
-                // eslint-disable-next-line no-param-reassign
-                objMDAfter['last-modified'] = objMDBefore['last-modified'];
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
