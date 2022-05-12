@@ -10,10 +10,10 @@ spec:
       resources:
         requests:
           cpu: "250m"
-          memory: 1Gi
+          memory: 4Gi
         limits:
           cpu: "1"
-          memory: 1Gi
+          memory: 4Gi
       env:
         - name: DOCKER_HOST
           value: localhost:2375
