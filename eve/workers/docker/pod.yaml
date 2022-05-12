@@ -25,10 +25,10 @@ spec:
       resources:
         requests:
           cpu: "500m"
-          memory: 1Gi
+          memory: 4Gi
         limits:
           cpu: "1"
-          memory: 1Gi
+          memory: 4Gi
       securityContext:
         privileged: true
       volumeMounts:
