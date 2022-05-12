@@ -10,10 +10,10 @@ spec:
       resources:
         requests:
           cpu: "250m"
-          memory: 1Gi
+          memory: 2Gi
         limits:
           cpu: "1"
-          memory: 1Gi
+          memory: 2Gi
       env:
         - name: DOCKER_HOST
           value: localhost:2375
@@ -25,10 +25,10 @@ spec:
       resources:
         requests:
           cpu: "500m"
-          memory: 1Gi
+          memory: 2Gi
         limits:
           cpu: "1"
-          memory: 1Gi
+          memory: 2Gi
       securityContext:
         privileged: true
       volumeMounts:
