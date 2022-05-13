@@ -404,7 +404,7 @@ describe('objectGet API', () => {
         });
     });
 
-    it('should return RestoreAlreadyInProgress if trying to GET the object in cold storage', done => {
+    it('should return InvalidObjectState if trying to GET the object in cold storage being restored', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -415,7 +415,7 @@ describe('objectGet API', () => {
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getArchiveOngoingRequestMD(), () => {
                 objectGet(authInfo, testGetRequest, false, log, err => {
-                    assert.strictEqual(err.is.RestoreAlreadyInProgress, true);
+                    assert.strictEqual(err.is.InvalidObjectState, true);
                     done();
                 });
             });
