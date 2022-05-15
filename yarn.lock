@@ -510,9 +510,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal.git#feature/ARSN-202/overwrite":
+"arsenal@git+https://github.com/scality/Arsenal.git#8.1.47":
   version "8.1.47"
-  resolved "git+https://github.com/scality/Arsenal.git#f91f75c97a6cd53cb8f61a00c29542826e582f03"
+  resolved "git+https://github.com/scality/Arsenal.git#e37712e94f747de6c2118d0280da7370e8aedd69"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
