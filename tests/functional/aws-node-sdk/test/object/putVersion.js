@@ -34,7 +34,7 @@ function _getMetadata(bucketName, objectName, versionId, cb) {
     return metadata.getObjectMD(bucketName, objectName, { versionId: decodedVersionId },
         log, (err, objMD) => {
             if (err) {
-                assert.equal(err, null, 'Getting object metadata: expected success, ' +
+                assert.strictEqual(err, null, 'Getting object metadata: expected success, ' +
                     `got error ${JSON.stringify(err)}`);
             }
             return cb(null, objMD);
@@ -52,8 +52,8 @@ function putObjectVersion(s3, params, vid, next) {
 
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
     indexes.forEach(i => {
-        assert.notEqual(versionsAfter[i].value.Size, versionsBefore[i].value.Size);
-        assert.notEqual(versionsAfter[i].value.ETag, versionsBefore[i].value.ETag);
+        assert.notStrictEqual(versionsAfter[i].value.Size, versionsBefore[i].value.Size);
+        assert.notStrictEqual(versionsAfter[i].value.ETag, versionsBefore[i].value.ETag);
         /* eslint-disable no-param-reassign */
         versionsBefore[i].value.Size = versionsAfter[i].value.Size;
         versionsBefore[i].value.ETag = versionsAfter[i].value.ETag;
@@ -63,7 +63,7 @@ function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
 
 function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
     props.forEach(p => {
-        assert.notEqual(objMDAfter[p], objMDBefore[p]);
+        assert.notStrictEqual(objMDAfter[p], objMDBefore[p]);
         // eslint-disable-next-line no-param-reassign
         objMDBefore[p] = objMDAfter[p];
     });
@@ -80,7 +80,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             return metadata.setup(() =>
                 s3.createBucket({ Bucket: bucketName }, err => {
                     if (err) {
-                        assert.equal(err, null, 'Creating bucket: Expected success, ' +
+                        assert.strictEqual(err, null, 'Creating bucket: Expected success, ' +
                             `got error ${JSON.stringify(err)}`);
                     }
                     done();
@@ -107,27 +107,27 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsBefore;
             let versionsAfter;
 
-            async.waterfall([
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putObject(params, next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
-                next => putObjectVersion(s3, params, '', err => next(err)),
+                next => putObjectVersion(s3, params, '', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -153,31 +153,31 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => putObjectVersion(s3, params, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -203,31 +203,31 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, '', err => next(err)),
+                next => putObjectVersion(s3, params, '', next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -249,15 +249,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             };
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
                     checkError(err, 'InvalidArgument', 400);
                     return next();
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 return done();
             });
         });
@@ -265,13 +265,13 @@ describe('PUT object with x-scal-s3-version-id header', () => {
         it('should fail if key does not exist', done => {
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.waterfall([
+            async.series([
                 next => putObjectVersion(s3, params, '', err => {
                     checkError(err, 'NoSuchKey', 404);
                     return next();
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 return done();
             });
         });
@@ -285,16 +285,16 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             };
             const params = { Bucket: bucketName, Key: objectName };
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => putObjectVersion(s3, params,
                 '393833343735313131383832343239393939393952473030312020313031', err => {
                     checkError(err, 'NoSuchVersion', 404);
                     return next();
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 return done();
             });
         });
@@ -312,10 +312,10 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let objMDBefore;
             let objMDAfter;
 
-            async.waterfall([
-                next => s3.putObject(params, err => next(err)),
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putObject(params, next),
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => _getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
@@ -324,17 +324,17 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     versionsBefore = res.Versions;
                     next(err);
                 }),
-                next => putObjectVersion(s3, params, 'null', err => next(err)),
+                next => putObjectVersion(s3, params, 'null', next),
                 next => _getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -360,9 +360,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let objMDAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putObject(params, err => next(err)),
-                next => s3.putBucketVersioning(vParams, err => next(err)),
+            async.series([
+                next => s3.putObject(params, next),
+                next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
@@ -373,19 +373,19 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => putObjectVersion(s3, params, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -416,30 +416,30 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsBefore;
             let versionsAfter;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
-                next => s3.putBucketVersioning(sParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
+                next => s3.putBucketVersioning(sParams, next),
+                next => s3.putObject(params, next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
-                next => putObjectVersion(s3, params, '', err => next(err)),
+                next => putObjectVersion(s3, params, '', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -465,33 +465,33 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
                 }),
-                next => s3.putObject(params, err => next(err)),
+                next => s3.putObject(params, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => putObjectVersion(s3, params, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -517,32 +517,32 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => putObjectVersion(s3, params, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -574,33 +574,33 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsAfter;
             let vId;
 
-            async.waterfall([
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
                 next => s3.putObject(params, (err, res) => {
                     vId = res.VersionId;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => s3.putBucketVersioning(sParams, err => next(err)),
-                next => putObjectVersion(s3, params, vId, err => next(err)),
+                next => s3.putBucketVersioning(sParams, next),
+                next => putObjectVersion(s3, params, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
@@ -625,28 +625,28 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             let versionsBefore;
             let versionsAfter;
 
-            async.waterfall([
-                next => s3.putObject(params, err => next(err)),
+            async.series([
+                next => s3.putObject(params, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => s3.putBucketVersioning(vParams, err => next(err)),
-                next => putObjectVersion(s3, params, 'null', err => next(err)),
+                next => s3.putBucketVersioning(vParams, next),
+                next => putObjectVersion(s3, params, 'null', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsAfter = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
             ], err => {
-                assert.equal(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
