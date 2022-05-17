@@ -56,14 +56,14 @@ describe('locationConstraintAssert', () => {
         /bad config: locationConstraints[region].type is mandatory/ +
             /and must be a string/);
     });
-    it('should throw error if type is not mem/file/scality', () => {
+    it('should throw error if type is not mem/file/scality/dmf', () => {
         const locationConstraint = new LocationConstraint(
             'notSupportedType', 'locId');
         assert.throws(() => {
             locationConstraintAssert({ 'scality-east': locationConstraint });
         },
         /bad config: locationConstraints[region].type must be/ +
-            /one of mem,file,scality/);
+            /one of mem,file,scality,dmf/);
     });
     it('should throw error if legacyAwsBehavior is not a boolean', () => {
         const locationConstraint = new LocationConstraint(

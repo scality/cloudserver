@@ -31,6 +31,7 @@ const testChecks = [
         parsedHost: '127.1.2.3',
         locationReturn: 'scality-internal-file',
         isError: false,
+        expectedError: '',
     },
     {
         data: 'scality-internal-file',
@@ -38,6 +39,7 @@ const testChecks = [
         parsedHost: '127.1.0.0',
         locationReturn: undefined,
         isError: true,
+        expectedError: 'InvalidLocationConstraint',
     },
     {
         data: 'scality-internal-file',
@@ -45,6 +47,7 @@ const testChecks = [
         parsedHost: '127.0.0.1',
         locationReturn: config.restEndpoints['127.0.0.1'],
         isError: false,
+        expectedError: '',
     },
     {
         data: 'scality-internal-file',
@@ -52,6 +55,7 @@ const testChecks = [
         parsedHost: '127.3.2.1',
         locationReturn: 'us-east-1',
         isError: false,
+        expectedError: '',
     },
     {
         data: 'multiple',
@@ -59,6 +63,15 @@ const testChecks = [
         parsedHost: '127.3.2.1',
         locationReturn: 'us-east-1',
         isError: false,
+        expectedError: '',
+    },
+    {
+        data: 'multiple',
+        locationSent: 'location-dmf-v1',
+        parsedHost: '127.3.2.1',
+        locationReturn: 'location-dmf-v1',
+        isError: true,
+        expectedError: 'InvalidLocationConstraint',
     },
 ];
 
@@ -69,7 +82,7 @@ describe('checkLocationConstraint function', () => {
         config.backends.data = initialConfigData;
     });
     testChecks.forEach(testCheck => {
-        const returnText = testCheck.isError ? 'InvalidLocationConstraint error'
+        const returnText = testCheck.isError ? `${testCheck.expectedError} error`
         : 'the appropriate location constraint';
         it(`with data backend: "${testCheck.data}", ` +
         `location: "${testCheck.locationSent}",` +
@@ -83,7 +96,7 @@ describe('checkLocationConstraint function', () => {
                 assert.notEqual(checkLocation.error, null,
                   'Expected failure but got success');
                 assert.strictEqual(
-                    checkLocation.error.is.InvalidLocationConstraint, true);
+                    checkLocation.error.is[testCheck.expectedError], true);
             } else {
                 assert.ifError(checkLocation.error);
                 assert.strictEqual(checkLocation.locationConstraint,
@@ -335,6 +348,27 @@ describe('bucketPut API', () => {
                     bucketInfo.getLocationConstraint());
                 done();
             });
+        });
+    });
+
+    it('should deny put bucket to cold storage', done => {
+        const bucketName = 'cold-bucket-name';
+        const newRestEndpoint = 'location-dmf-v1';
+        const coldLocation = 'location-dmf-v1';
+
+        const req = {
+            ...testRequest,
+            parsedHost: newRestEndpoint,
+            bucketName,
+        };
+
+        const newRestEndpoints = Object.assign({}, config.restEndpoints);
+        newRestEndpoints[newRestEndpoint] = coldLocation;
+        config.setRestEndpoints(newRestEndpoints);
+
+        bucketPut(authInfo, req, log, err => {
+            assert.strictEqual(err.is.InvalidLocationConstraint, true);
+            done();
         });
     });
 
