@@ -257,7 +257,9 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
         location => {
             describeSkipAWS(`bucket creation with location: ${location}`,
             () => {
-                after(() => bucketUtil.deleteOne(bucketName));
+                after(done =>
+                    bucketUtil.deleteOne(bucketName)
+                        .then(() => done()).catch(() => done()));
                 it(`should create bucket with location: ${location}`, done => {
                     bucketUtil.s3.createBucket(
                         {
@@ -265,7 +267,16 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             CreateBucketConfiguration: {
                                 LocationConstraint: location,
                             },
-                        }, done);
+                        }, err => {
+                            if (location === 'location-dmf-v1') {
+                                assert.strictEqual(
+                                    err.code,
+                                    'InvalidLocationConstraint'
+                                );
+                                assert.strictEqual(err.statusCode, 400);
+                            }
+                            return done();
+                        });
                 });
             });
         });
@@ -279,11 +290,30 @@ describe('PUT Bucket - AWS.S3.createBucket', () => {
                             LocationConstraint: 'coco',
                         },
                     }, err => {
-                    assert.strictEqual(err.code,
-                    'InvalidLocationConstraint');
+                    assert.strictEqual(
+                        err.code,
+                        'InvalidLocationConstraint'
+                    );
                     assert.strictEqual(err.statusCode, 400);
                     done();
                 });
+            });
+
+            it('should return error InvalidLocationConstraint for location constraint dmf', done => {
+                bucketUtil.s3.createBucket(
+                    {
+                        Bucket: bucketName,
+                        CreateBucketConfiguration: {
+                            LocationConstraint: 'location-dmf-v1',
+                        },
+                    }, err => {
+                        assert.strictEqual(
+                            err.code,
+                            'InvalidLocationConstraint',
+                        );
+                        assert.strictEqual(err.statusCode, 400);
+                        done();
+                    });
             });
         });
 
