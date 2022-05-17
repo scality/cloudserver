@@ -41,13 +41,62 @@ function _getMetadata(bucketName, objectName, versionId, cb) {
     });
 }
 
-function putObjectVersion(s3, params, vid, next) {
-    const paramsWithBody = { ...params, Body: '123' };
-    const request = s3.putObject(paramsWithBody);
-    request.on('build', () => {
-        request.httpRequest.headers['x-scal-s3-version-id'] = vid;
-    });
-    return request.send(next);
+function putMPUVersion(s3, bucketName, objectName, vId, cb) {
+    async.waterfall([
+        next => {
+            const params = { Bucket: bucketName, Key: objectName };
+            const request = s3.createMultipartUpload(params);
+            if (vId !== undefined) {
+                request.on('build', () => {
+                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
+                });
+            }
+            return request.send(next);
+        },
+        (resCreation, next) => {
+            const uploadId = resCreation.UploadId;
+            const params = {
+                Body: 'okok',
+                Bucket: bucketName,
+                Key: objectName,
+                PartNumber: 1,
+                UploadId: uploadId,
+            };
+            const request = s3.uploadPart(params);
+            if (vId !== undefined) {
+                request.on('build', () => {
+                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
+                });
+            }
+            return request.send((err, res) => next(err, res, uploadId));
+        },
+        (res, uploadId, next) => {
+            const params = {
+                Bucket: bucketName,
+                Key: objectName,
+                MultipartUpload: {
+                    Parts: [
+                        {
+                            ETag: res.ETag,
+                            PartNumber: 1
+                        },
+                    ]
+                },
+                UploadId: uploadId,
+            };
+            const request = s3.completeMultipartUpload(params);
+            if (vId !== undefined) {
+                request.on('build', () => {
+                    request.httpRequest.headers['x-scal-s3-version-id'] = vId;
+                });
+            }
+            return request.send(next);
+        },
+    ], err => cb(err));
+}
+
+function putMPU(s3, bucketName, objectName, cb) {
+    return putMPUVersion(s3, bucketName, objectName, undefined, cb);
 }
 
 function checkVersionsAndUpdate(versionsBefore, versionsAfter, indexes) {
@@ -69,7 +118,7 @@ function checkObjMdAndUpdate(objMDBefore, objMDAfter, props) {
     });
 }
 
-describe('PUT object with x-scal-s3-version-id header', () => {
+describe('MPU with x-scal-s3-version-id header', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
@@ -100,6 +149,44 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             });
         });
 
+        it('should overwrite an MPU object', done => {
+            let objMDBefore;
+            let objMDAfter;
+            let versionsBefore;
+            let versionsAfter;
+
+            async.series([
+                next => putMPU(s3, bucketName, objectName, next),
+                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
+                    return next(err);
+                }),
+                next => putMPUVersion(s3, bucketName, objectName, '', next),
+                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDAfter = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsAfter = res.Versions;
+                    return next(err);
+                }),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                assert.deepStrictEqual(versionsAfter, versionsBefore);
+
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'uploadId', 'microVersionId']);
+
+                assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
         it('should overwrite an object', done => {
             const params = { Bucket: bucketName, Key: objectName };
             let objMDBefore;
@@ -117,7 +204,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, '', next),
+                next => putMPUVersion(s3, bucketName, objectName, '', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -132,8 +219,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'content-md5',
-                'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
+
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -167,7 +255,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, next),
+                next => putMPUVersion(s3, bucketName, objectName, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -182,8 +270,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -217,7 +305,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, '', next),
+                next => putMPUVersion(s3, bucketName, objectName, '', next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -232,15 +320,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
         });
 
 
-        it('should fail if version id is invalid', done => {
+        it('should fail if version is invalid', done => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {
@@ -252,7 +340,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             async.series([
                 next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, next),
-                next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
+                next => putMPUVersion(s3, bucketName, objectName, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
                     checkError(err, 'InvalidArgument', 400);
                     return next();
                 }),
@@ -263,10 +351,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
         });
 
         it('should fail if key does not exist', done => {
-            const params = { Bucket: bucketName, Key: objectName };
-
             async.series([
-                next => putObjectVersion(s3, params, '', err => {
+                next => putMPUVersion(s3, bucketName, objectName, '', err => {
                     checkError(err, 'NoSuchKey', 404);
                     return next();
                 }),
@@ -288,7 +374,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
             async.series([
                 next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, next),
-                next => putObjectVersion(s3, params,
+                next => putMPUVersion(s3, bucketName, objectName,
                 '393833343735313131383832343239393939393952473030312020313031', err => {
                     checkError(err, 'NoSuchVersion', 404);
                     return next();
@@ -322,9 +408,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    next(err);
+                    return next(err);
                 }),
-                next => putObjectVersion(s3, params, 'null', next),
+                next => putMPUVersion(s3, bucketName, objectName, 'null', next),
                 next => _getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -339,8 +425,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -373,9 +459,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    return next(err);
+                    next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, next),
+                next => putMPUVersion(s3, bucketName, objectName, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -390,8 +476,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -427,9 +513,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
-                    return next(err);
+                    next(err);
                 }),
-                next => putObjectVersion(s3, params, '', next),
+                next => putMPUVersion(s3, bucketName, objectName, '', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -444,8 +530,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -481,7 +567,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, next),
+                next => putMPUVersion(s3, bucketName, objectName, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -496,8 +582,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -532,7 +618,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
-                next => putObjectVersion(s3, params, vId, next),
+                next => putMPUVersion(s3, bucketName, objectName, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -547,8 +633,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -590,7 +676,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => s3.putBucketVersioning(sParams, next),
-                next => putObjectVersion(s3, params, vId, next),
+                next => putMPUVersion(s3, bucketName, objectName, vId, next),
                 next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -605,8 +691,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -636,7 +722,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => s3.putBucketVersioning(vParams, next),
-                next => putObjectVersion(s3, params, 'null', next),
+                next => putMPUVersion(s3, bucketName, objectName, 'null', next),
                 next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
@@ -651,8 +737,9 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                checkObjMdAndUpdate(objMDBefore, objMDAfter,
+                    ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId']);
+
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
