@@ -45,6 +45,10 @@ describe('getBucketLocation API', () => {
             // see next test.
             return;
         }
+        if (location === 'location-dmf-v1') {
+            // if region location-dmf-v1 should return InvalidLocationConstraint error
+            return;
+        }
         const bucketPutRequest = getBucketRequestObject(location);
         describe(`with ${location} LocationConstraint`, () => {
             beforeEach(done => {

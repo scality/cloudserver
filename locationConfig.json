@@ -94,5 +94,12 @@
         "objectId": "sa-east-1",
         "legacyAwsBehavior": false,
         "details": {}
+    },
+    "location-dmf-v1": {
+        "type": "dmf",
+        "objectId": "location-dmf-v1",
+        "legacyAwsBehavior": false,
+        "isCold": true,
+        "details": {}
     }
 }
