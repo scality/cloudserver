@@ -198,6 +198,9 @@ const constants = {
     ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
     allowedRestoreObjectRequestTierValues: ['Standard'],
+    validStorageClasses: [
+        'STANDARD',
+    ],
 };
 
 module.exports = constants;

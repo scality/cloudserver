@@ -39,6 +39,19 @@ describe('Initiate MPU', () => {
             });
         });
 
+        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+        'and not equal to STANDARD', done =>
+            s3.createMultipartUpload({
+                Bucket: bucket,
+                Key: key,
+                StorageClass: 'COLD',
+             }, err => {
+                assert.strictEqual(err.code, 'InvalidStorageClass');
+                assert.strictEqual(err.statusCode, 400);
+                done();
+             })
+        );
+
         it('should return error if initiating MPU w/ > 2KB user-defined md',
         done => {
             const metadata = genMaxSizeMetaHeaders();

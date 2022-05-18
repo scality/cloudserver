@@ -562,7 +562,8 @@ describe('Object Copy', () => {
             });
         });
 
-        it('should copy a 0 byte object to same destination', done => {
+        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
+        it.skip('should copy a 0 byte object to same destination', done => {
             const emptyFileETag = '"d41d8cd98f00b204e9800998ecf8427e"';
             s3.putObject({ Bucket: sourceBucketName, Key: sourceObjName,
                 Body: '' }, () => {
@@ -586,7 +587,8 @@ describe('Object Copy', () => {
             });
         });
 
-        it('should copy an object to a different destination and change ' +
+        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
+        it.skip('should copy an object to a different destination and change ' +
             'the storage class if storage class header provided', done => {
             s3.copyObject({ Bucket: destBucketName, Key: destObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
@@ -603,7 +605,8 @@ describe('Object Copy', () => {
                 });
         });
 
-        it('should copy an object to the same destination and change the ' +
+        // TODO: disabled in CLDSRV-184 as only STANDARD class is supported
+        it.skip('should copy an object to the same destination and change the ' +
             'storage class if the storage class header provided', done => {
             s3.copyObject({ Bucket: sourceBucketName, Key: sourceObjName,
                 CopySource: `${sourceBucketName}/${sourceObjName}`,
