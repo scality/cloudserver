@@ -174,6 +174,24 @@ describe('Multipart Upload API', () => {
             });
     });
 
+    it('should not mpu with storage-class header not equal to STANDARD', done => {
+        const initiateRequestCold = {
+            bucketName,
+            namespace,
+            objectKey,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+                'x-amz-storage-class': 'COLD',
+            },
+            url: `/${objectKey}?uploads`,
+        };
+        initiateMultipartUpload(authInfo, initiateRequestCold,
+            log, err => {
+                assert.strictEqual(err.is.InvalidStorageClass, true);
+                done();
+            });
+    });
+
     it('should upload a part', done => {
         async.waterfall([
             next => bucketPut(authInfo, bucketPutRequest, log, next),

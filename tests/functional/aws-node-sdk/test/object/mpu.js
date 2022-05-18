@@ -111,6 +111,18 @@ describe('aws-node-sdk test suite of listMultipartUploads', () =>
             .then(() => bucketUtil.deleteOne(bucket))
         );
 
+        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+        'and not equal to STANDARD', () =>
+            s3.createMultipartUpload({
+                Bucket: bucket,
+                Key: objectKey,
+                StorageClass: 'COLD',
+             }).promise().then(err => {
+                assert.strictEqual(err.code, 'InvalidStorageClass');
+                assert.strictEqual(err.statusCode, 400);
+             })
+        );
+
         it('should list ongoing multipart uploads', () =>
             s3.listMultipartUploads({ Bucket: bucket }).promise()
             .then(res => checkValues(res, data))
