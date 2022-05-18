@@ -1217,6 +1217,20 @@ describe('Object Copy', () => {
                 done();
             });
         });
+
+        it('should return InvalidStorageClass error when x-amz-storage-class header is provided ' +
+        'and not equal to STANDARD', done => {
+            s3.copyObject({
+                Bucket: destBucketName,
+                Key: destObjName,
+                CopySource: `${sourceBucketName}/${sourceObjName}`,
+                StorageClass: 'COLD',
+            }, err => {
+                    assert.strictEqual(err.code, 'InvalidStorageClass');
+                    assert.strictEqual(err.statusCode, 400);
+                    done();
+                });
+        });
     });
 });
 

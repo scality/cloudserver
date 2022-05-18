@@ -104,4 +104,16 @@ describe('objectCopy with versioning', () => {
                 });
             });
     });
+
+    it('should not copy object with storage-class header not equal to STANDARD', done => {
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        testObjectCopyRequest.headers['x-amz-storage-class'] = 'COLD';
+        objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey,
+            undefined, log, err => {
+                setImmediate(() => {
+                    assert.strictEqual(err.is.InvalidStorageClass, true);
+                    done();
+                });
+            });
+    });
 });
