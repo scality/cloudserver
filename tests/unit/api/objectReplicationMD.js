@@ -278,6 +278,8 @@ describe('Replication object MD without bucket replication config', () => {
 });
 
 [true, false].forEach(hasStorageClass => {
+    // this may break....
+    // or need to add a test where there is no default entry in config--->which should fail indeed...
     describe('Replication object MD with bucket replication config ' +
     `${hasStorageClass ? 'with' : 'without'} storage class`, () => {
         const replicationMD = {
