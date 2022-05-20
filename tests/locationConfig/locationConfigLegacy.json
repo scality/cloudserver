@@ -180,15 +180,10 @@
         "isTransient": true
     },
     "location-dmf-v1": {
-        "type": "file",
+        "type": "dmf",
         "objectId": "location-dmf-v1",
         "legacyAwsBehavior": false,
         "isCold": true,
-        "details": {
-            "dmf": {
-                "endpoint": "10.0.0.200:24000",
-                "repoId": "repo1"
-            }
-        }
+        "details": {}
     }
 }
