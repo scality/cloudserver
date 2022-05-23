@@ -1,4 +1,12 @@
+const { versioning } = require('arsenal');
+const versionIdUtils = versioning.VersionID;
 const metadata = require('../../../../../lib/metadata/wrapper');
+const { config } = require('../../../../../lib/Config');
+const { DummyRequestLogger } = require('../../../../unit/helpers');
+const log = new DummyRequestLogger();
+const nonVersionedObjId =
+    versionIdUtils.getInfVid(config.replicationGroupId);
+
 let metadataInit = false;
 
 function initMetadata(done) {
@@ -14,6 +22,41 @@ function initMetadata(done) {
 	});
 }
 
+function getMetadata(bucketName, objectName, versionId, cb) {
+    let decodedVersionId;
+    if (versionId) {
+        if (versionId === 'null') {
+            decodedVersionId = nonVersionedObjId;
+        } else {
+            decodedVersionId = versionIdUtils.decode(versionId);
+        }
+    }
+    return metadata.getObjectMD(bucketName, objectName, { versionId: decodedVersionId },
+        log, cb);
+}
+
+function fakeMetadataRestore(bucketName, objectName, versionId, archive, cb) {
+    let decodedVersionId;
+    if (versionId) {
+        if (versionId === 'null') {
+            decodedVersionId = nonVersionedObjId;
+        } else {
+            decodedVersionId = versionIdUtils.decode(versionId);
+        }
+    }
+    return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
+        if (err) {
+			return cb(err);
+		}
+		// eslint-disable-next-line no-param-reassign
+        objMD.archive = archive;
+        return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodedVersionId },
+            log, err => cb(err));
+    });
+}
+
 module.exports = {
 	initMetadata,
+	getMetadata,
+	fakeMetadataRestore,
 };

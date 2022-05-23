@@ -1,45 +1,23 @@
 const assert = require('assert');
 const async = require('async');
-const { versioning } = require('arsenal');
 
-const { config } = require('../../../../../lib/Config');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
-
-const versionIdUtils = versioning.VersionID;
+const { getMetadata, fakeMetadataRestore } = require('../utils/init');
 
 const log = new DummyRequestLogger();
 
-const nonVersionedObjId =
-    versionIdUtils.getInfVid(config.replicationGroupId);
-const bucketName = 'bucket1putversion31';
+const bucketName = 'bucket1putversion32';
 const objectName = 'object1putversion';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
-
-function _getMetadata(bucketName, objectName, versionId, cb) {
-    let decodedVersionId;
-    if (versionId) {
-        if (versionId === 'null') {
-            decodedVersionId = nonVersionedObjId;
-        } else {
-            decodedVersionId = versionIdUtils.decode(versionId);
-        }
-        if (decodedVersionId instanceof Error) {
-            return cb(new Error('Invalid version id specified'));
-        }
-    }
-    return metadata.getObjectMD(bucketName, objectName, { versionId: decodedVersionId },
-        log, (err, objMD) => {
-            if (err) {
-                assert.strictEqual(err, null, 'Getting object metadata: expected success, ' +
-                    `got error ${JSON.stringify(err)}`);
-            }
-            return cb(null, objMD);
-    });
-}
+const archive = {
+    archiveInfo: {},
+    restoreRequestedAt: new Date(0).toString(),
+    restoreRequestedDays: 5,
+};
 
 function putObjectVersion(s3, params, vid, next) {
     const paramsWithBody = { ...params, Body: '123' };
@@ -109,7 +87,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
 
             async.series([
                 next => s3.putObject(params, next),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archive, next),
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
@@ -118,7 +97,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, '', next),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -133,7 +112,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'content-md5',
-                'microVersionId']);
+                'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -159,16 +138,17 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, vId, next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -183,7 +163,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -209,16 +189,17 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, '', next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -233,7 +214,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -248,10 +229,15 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 }
             };
             const params = { Bucket: bucketName, Key: objectName };
+            let vId;
 
             async.series([
                 next => s3.putBucketVersioning(vParams, next),
-                next => s3.putObject(params, next),
+                next => s3.putObject(params, (err, res) => {
+                    vId = res.VersionId;
+                    return next(err);
+                }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => putObjectVersion(s3, params, 'aJLWKz4Ko9IjBBgXKj5KQT.G9UHv0g7P', err => {
                     checkError(err, 'InvalidArgument', 400);
                     return next();
@@ -316,7 +302,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 next => s3.putObject(params, next),
                 next => s3.putBucketVersioning(vParams, next),
                 next => s3.putObject(params, next),
-                next => _getMetadata(bucketName, objectName, 'null', (err, objMD) => {
+                next => fakeMetadataRestore(bucketName, objectName, 'null', archive, next),
+                next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
@@ -325,7 +312,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     next(err);
                 }),
                 next => putObjectVersion(s3, params, 'null', next),
-                next => _getMetadata(bucketName, objectName, 'null', (err, objMD) => {
+                next => getMetadata(bucketName, objectName, 'null', (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -340,7 +327,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -367,7 +354,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
@@ -376,7 +364,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, vId, next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -391,7 +379,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -421,7 +409,8 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 next => s3.putObject(params, next),
                 next => s3.putBucketVersioning(sParams, next),
                 next => s3.putObject(params, next),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archive, next),
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
@@ -430,7 +419,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, '', next),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -445,7 +434,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -472,17 +461,18 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => s3.putObject(params, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, vId, next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -497,7 +487,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -524,16 +514,17 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => putObjectVersion(s3, params, vId, next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -548,7 +539,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -581,17 +572,18 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     vId = res.VersionId;
                     return next(err);
                 }),
+                next => fakeMetadataRestore(bucketName, objectName, vId, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => s3.putBucketVersioning(sParams, next),
                 next => putObjectVersion(s3, params, vId, next),
-                next => _getMetadata(bucketName, objectName, vId, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -606,7 +598,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -627,17 +619,18 @@ describe('PUT object with x-scal-s3-version-id header', () => {
 
             async.series([
                 next => s3.putObject(params, next),
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
                 }),
                 next => s3.putBucketVersioning(vParams, next),
                 next => putObjectVersion(s3, params, 'null', next),
-                next => _getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDAfter = objMD;
                     return next(err);
                 }),
@@ -652,8 +645,108 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
+                return done();
+            });
+        });
+
+        it('should fail if archiving is not in progress', done => {
+            const params = { Bucket: bucketName, Key: objectName };
+
+            async.series([
+                next => s3.putObject(params, next),
+                next => putObjectVersion(s3, params, '', err => {
+                    checkError(err, 'InvalidObjectState', 403);
+                    return next();
+                }),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                return done();
+            });
+        });
+
+        it('should fail if trying to overwrite a delete marker', done => {
+            const params = { Bucket: bucketName, Key: objectName };
+            const vParams = {
+                Bucket: bucketName,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                }
+            };
+            let vId;
+
+            async.series([
+                next => s3.putBucketVersioning(vParams, next),
+                next => s3.putObject(params, next),
+                next => s3.deleteObject(params, (err, res) => {
+                    vId = res.VersionId;
+                    return next(err);
+                }),
+                next => putObjectVersion(s3, params, vId, err => {
+                    checkError(err, 'MethodNotAllowed', 405);
+                    return next();
+                }),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                return done();
+            });
+        });
+
+        it('should fail if restore is already completed', done => {
+            const params = { Bucket: bucketName, Key: objectName };
+            const archiveCompleted = {
+                archiveInfo: {},
+                restoreRequestedAt: new Date(0),
+                restoreRequestedDays: 5,
+                restoreCompletedAt: new Date(10),
+                restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
+            };
+
+            async.series([
+                next => s3.putObject(params, next),
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archiveCompleted, next),
+                next => putObjectVersion(s3, params, '', err => {
+                    checkError(err, 'InvalidObjectState', 403);
+                    return next();
+                }),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                return done();
+            });
+        });
+
+        it('should update restore metadata', done => {
+            const params = { Bucket: bucketName, Key: objectName };
+            let objMDBefore;
+            let objMDAfter;
+
+            async.series([
+                next => s3.putObject(params, next),
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archive, next),
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, next),
+                next => putObjectVersion(s3, params, '', next),
+                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                    objMDAfter = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, next),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                assert.deepStrictEqual(objMDAfter.archive.archiveInfo, objMDBefore.archive.archiveInfo);
+                assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt, objMDBefore.archive.restoreRequestedAt);
+                assert.deepStrictEqual(objMDAfter.archive.restoreRequestedDays,
+                    objMDBefore.archive.restoreRequestedDays);
+                assert.deepStrictEqual(objMDAfter['x-amz-restore']['ongoing-request'], false);
+
+                assert(objMDAfter.archive.restoreCompletedAt);
+                assert(objMDAfter.archive.restoreWillExpireAt);
+                assert(objMDAfter['x-amz-restore']['expiry-date']);
                 return done();
             });
         });
