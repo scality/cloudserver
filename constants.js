@@ -104,7 +104,6 @@ const constants = {
         'policyStatus',
         'publicAccessBlock',
         'requestPayment',
-        'restore',
         'torrent',
     ],
 
@@ -198,6 +197,7 @@ const constants = {
         'bucket',
     ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
+    allowedRestoreObjectRequestTierValues: ['Standard'],
 };
 
 module.exports = constants;

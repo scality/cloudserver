@@ -68,8 +68,8 @@ const baseMd = {
 function putBucketMock(bucketName, location, cb) {
     const bucket = new BucketInfo(
         bucketName,
-        'ownerid',
-        'ownerdisplayname',
+        baseMd['owner-id'],
+        baseMd['owner-display-name'],
         new Date().toJSON(),
         null,
         null,
@@ -115,7 +115,7 @@ function getArchiveArchivedMD() {
  */
 function getArchiveOngoingRequestMD() {
     return {
-        archive: new ObjectMDArchive({}, new Date(0), 5).getValue(),
+        archive: new ObjectMDArchive({}, new Date(Date.now() - 60), 5).getValue(),
     };
 }
 
@@ -127,19 +127,37 @@ function getArchiveRestoredMD() {
     return {
         archive: new ObjectMDArchive(
             {},
-            new Date(0),
+            new Date(Date.now() - 60000),
             5,
-            new Date(1000),
-            new Date(10000)).getValue(),
-        'x-amz-restore': new ObjectMDAmzRestore(false, new Date(20000)),
+            new Date(Date.now() - 10000),
+            new Date(Date.now() + 60000 * 60 * 24)).getValue(),
+        'x-amz-restore': new ObjectMDAmzRestore(false, new Date(Date.now() + 60 * 60 * 24)),
     };
 }
+
+/**
+ * Computes the 'archive' field of the object MD as a restored object from cold storage
+ * @returns {ObjectMDArchive} the MD object
+ */
+function getArchiveExpiredMD() {
+    return {
+        archive: new ObjectMDArchive(
+            {},
+            new Date(Date.now() - 30000),
+            5,
+            new Date(Date.now() - 20000),
+            new Date(Date.now() - 10000)).getValue(),
+        'x-amz-restore': new ObjectMDAmzRestore(false, new Date(Date.now() + 60 * 60 * 24)),
+    };
+}
+
 
 module.exports = {
     putObjectMock,
     getArchiveArchivedMD,
     getArchiveOngoingRequestMD,
     getArchiveRestoredMD,
+    getArchiveExpiredMD,
     putBucketMock,
     defaultLocation,
 };
