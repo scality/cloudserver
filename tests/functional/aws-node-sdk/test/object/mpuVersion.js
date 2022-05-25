@@ -10,7 +10,7 @@ const { getMetadata, fakeMetadataRestore } = require('../utils/init');
 
 const log = new DummyRequestLogger();
 
-const bucketName = 'bucket1putversion33';
+const bucketName = 'bucket1putversion34';
 const objectName = 'object1putversion';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 const archive = {
@@ -208,7 +208,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
             });
         });
 
-        it('should overwrite a version', done => {
+        it.only('should overwrite a version', done => {
             const vParams = {
                 Bucket: bucketName,
                 VersioningConfiguration: {

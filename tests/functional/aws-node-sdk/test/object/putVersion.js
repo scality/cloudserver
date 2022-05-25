@@ -13,8 +13,11 @@ const log = new DummyRequestLogger();
 const bucketName = 'bucket1putversion32';
 const objectName = 'object1putversion';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
+const hotLocation = 'us-east-2';
 const archive = {
-    archiveInfo: {},
+    archiveInfo: {
+        hotLocation,
+    },
     restoreRequestedAt: new Date(0).toString(),
     restoreRequestedDays: 5,
 };
@@ -112,7 +115,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'content-md5',
-                'microVersionId', 'x-amz-restore', 'archive']);
+                'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -163,7 +166,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -214,7 +217,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -327,7 +330,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -379,7 +382,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -434,7 +437,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -487,7 +490,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -539,7 +542,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -598,7 +601,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -645,7 +648,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -742,6 +745,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt, objMDBefore.archive.restoreRequestedAt);
                 assert.deepStrictEqual(objMDAfter.archive.restoreRequestedDays,
                     objMDBefore.archive.restoreRequestedDays);
+                assert.deepStrictEqual(objMDAfter.archive.archiveInfo.hotLocation, hotLocation);
                 assert.deepStrictEqual(objMDAfter['x-amz-restore']['ongoing-request'], false);
 
                 assert(objMDAfter.archive.restoreCompletedAt);
