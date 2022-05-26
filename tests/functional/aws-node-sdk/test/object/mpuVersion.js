@@ -159,7 +159,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'uploadId', 'microVersionId', 'x-amz-restore', 'archive']);
+                    ['location', 'uploadId', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -201,7 +201,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -254,7 +254,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -306,7 +306,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -413,7 +413,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -466,7 +466,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -522,7 +522,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -576,7 +576,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -629,7 +629,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -689,7 +689,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -737,7 +737,7 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
                     ['location', 'content-length', 'content-md5', 'originOp', 'uploadId', 'microVersionId',
-                    'x-amz-restore', 'archive']);
+                    'x-amz-restore', 'archive', 'dataStoreName']);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -830,6 +830,9 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 next => metadata.listObject(bucketName, mdListingParams, log, next),
             ], err => {
                 assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+
+                // Make sure object data location is set back to its bucket data location.
+                assert.deepStrictEqual(objMDAfter.dataStoreName, 'us-east-1');
 
                 assert.deepStrictEqual(objMDAfter.archive.archiveInfo, objMDBefore.archive.archiveInfo);
                 assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt, objMDBefore.archive.restoreRequestedAt);

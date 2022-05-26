@@ -48,8 +48,10 @@ function fakeMetadataRestore(bucketName, objectName, versionId, archive, cb) {
         if (err) {
 			return cb(err);
 		}
-		// eslint-disable-next-line no-param-reassign
+        /* eslint-disable no-param-reassign */
+        objMD.dataStoreName = 'location-dmf-v1';
         objMD.archive = archive;
+        /* eslint-enable no-param-reassign */
         return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodedVersionId },
             log, err => cb(err));
     });
