@@ -596,8 +596,7 @@ describe('Replication object MD without bucket replication config', () => {
                         if (err) {
                             return done(err);
                         }
-                        checkObjectReplicationInfo(keyA,
-                                                   completedReplicationInfo);
+                        checkObjectReplicationInfo(keyA, completedReplicationInfo);
                         return done();
                     });
                 });

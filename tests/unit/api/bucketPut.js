@@ -95,8 +95,7 @@ describe('checkLocationConstraint function', () => {
             if (testCheck.isError) {
                 assert.notEqual(checkLocation.error, null,
                   'Expected failure but got success');
-                assert.strictEqual(
-                    checkLocation.error.is[testCheck.expectedError], true);
+                assert(checkLocation.error.is[testCheck.expectedError]);
             } else {
                 assert.ifError(checkLocation.error);
                 assert.strictEqual(checkLocation.locationConstraint,

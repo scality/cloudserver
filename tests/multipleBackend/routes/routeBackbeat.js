@@ -568,8 +568,8 @@ describe.skip('backbeat routes', () => {
             });
         });
 
-        it('should remove old object data locations if version is overwritten ' +
-        'with same contents', done => {
+        it('should remove old object data locations if version is overwritten',
+        done => {
             let oldLocation;
             const testKeyOldData = `${testKey}-old-data`;
             async.waterfall([next => {

@@ -21,7 +21,7 @@ describe.skip('Healthcheck response', () => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                assert(resultKeys.includes(constraint));
+                assert(resultKeys.includes(constraint), `constraint: ${constraint} not in results: ${resultKeys}`);
             });
             done();
         });
@@ -70,8 +70,7 @@ describe.skip('Healthcheck response', () => {
                 const azureLocationNonExistContainerError =
                     results[azureLocationNonExistContainer].error;
                 if (err) {
-                    assert(err.is.InternalError,
-                        `got unexpected err in clientCheck: ${err}`);
+                    assert(err.is.InternalError, `got unexpected err in clientCheck: ${err}`);
                     assert(azureLocationNonExistContainerError.startsWith(
                         'The specified container is being deleted.'));
                     return done();

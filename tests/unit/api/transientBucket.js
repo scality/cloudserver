@@ -402,10 +402,9 @@ describe('transient bucket handling', () => {
 
         it('should return no error if legacyAwsBehavior is not enabled',
         done => {
-            config.locationConstraints[locationConstraint].
-                legacyAwsBehavior = false;
+            config.locationConstraints[locationConstraint].legacyAwsBehavior = false;
             multipartDelete(authInfo, deleteRequest, log, err => {
-                assert.strictEqual(err, null);
+                assert.ifError(err);
                 return done();
             });
         });
