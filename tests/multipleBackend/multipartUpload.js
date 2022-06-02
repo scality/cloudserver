@@ -240,8 +240,7 @@ function assertObjOnBackend(expectedBackend, objectKey, cb) {
     return objectGet(authInfo, getObjectGetRequest(zenkoObjectKey), false, log,
     (err, result, metaHeaders) => {
         assert.equal(err, null, `Error getting object on S3: ${err}`);
-        assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`],
-            expectedBackend);
+        assert.strictEqual(metaHeaders[`x-amz-meta-${locMetaHeader}`], expectedBackend);
         if (expectedBackend === awsLocation) {
             return s3.headObject({ Bucket: awsBucket, Key: objectKey },
             (err, result) => {
@@ -527,8 +526,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
         const fakeKey = `key-${Date.now()}`;
         const delParams = getDeleteParams(fakeKey, fakeUploadId);
         multipartDelete(authInfo, delParams, log, err => {
-            assert.strictEqual(err.is.NoSuchUpload, true,
-                `Error aborting MPU: ${err}`);
+            assert(err.is.NoSuchUpload, `Error aborting MPU: ${err}`);
             done();
         });
     });
@@ -842,7 +840,7 @@ describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                     (uploadId, next) => {
                         const listParams = getListParams(objectKey, uploadId);
                         listParts(authInfo, listParams, log, err => {
-                            assert.strictEqual(err.is.NoSuchUpload, true);
+                            assert(err.is.NoSuchUpload);
                             next();
                         });
                     },

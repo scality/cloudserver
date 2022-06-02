@@ -196,9 +196,9 @@
   integrity sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==
 
 "@types/async@^3.2.12":
-  version "3.2.13"
-  resolved "https://registry.yarnpkg.com/@types/async/-/async-3.2.13.tgz#ec023074c70180d17cbc9117ddc3cec2f3894ea4"
-  integrity sha512-7Q3awrhnvm89OzfsmqeqRQh8mh+8Pxfgq1UvSAn2nWQ5y/F3+NrbIF0RbkWq8+5dY99ozgap2b3DNBNwjLVOxw==
+  version "3.2.12"
+  resolved "https://registry.yarnpkg.com/@types/async/-/async-3.2.12.tgz#0ebbfaf3f249ffa0fdc50179b07705f69c90d70c"
+  integrity sha512-4i4w4tfNDo73BOjk0qHcB2YJ8A2SjITCrU4BTsgdJFTsVr6atPDXa0T9r0QZTrX3axtWwkqpZqF4B3gR0TqBGw==
 
 "@types/json5@^0.0.29":
   version "0.0.29"
@@ -2207,7 +2207,7 @@ gar@^1.0.4:
   resolved "https://registry.yarnpkg.com/gar/-/gar-1.0.4.tgz#f777bc7db425c0572fdeb52676172ca1ae9888b8"
   integrity sha512-w4n9cPWyP7aHxKxYHFQMegj7WIAsL/YX/C4Bs5Rr8s1H9M1rNtRWRsw+ovYMkXDQ5S4ZbYHsHAPmevPjPgw44w==
 
-gauge@^4.0.3:
+gauge@^4.0.0:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/gauge/-/gauge-4.0.4.tgz#52ff0652f2bbf607a989793d53b751bef2328dce"
   integrity sha512-f9m+BEN5jkg6a0fZjleidjN51VE1X+mPFQ2DJ0uv1V39oCLCbsGe6yjbBnp7eK7z/+GAon99a3nHuqbuuthyPg==
@@ -4049,13 +4049,13 @@ npm-run-all@~4.1.5:
     string.prototype.padend "^3.0.0"
 
 npmlog@^6.0.0:
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/npmlog/-/npmlog-6.0.2.tgz#c8166017a42f2dea92d6453168dd865186a70830"
-  integrity sha512-/vBvz5Jfr9dT/aFWd0FIRf+T/Q2WBsLENygUaFUqstqsycmZAP/t5BvFJTK0viFmSUxiUKTUplWy5vt+rvKIxg==
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/npmlog/-/npmlog-6.0.1.tgz#06f1344a174c06e8de9c6c70834cfba2964bba17"
+  integrity sha512-BTHDvY6nrRHuRfyjt1MAufLxYdVXZfd099H4+i1f0lPywNQyI4foeNXJRObB/uy+TYqUW0vAD9gbdSOXPst7Eg==
   dependencies:
     are-we-there-yet "^3.0.0"
     console-control-strings "^1.1.0"
-    gauge "^4.0.3"
+    gauge "^4.0.0"
     set-blocking "^2.0.0"
 
 oas-tools@^2.1.8:
