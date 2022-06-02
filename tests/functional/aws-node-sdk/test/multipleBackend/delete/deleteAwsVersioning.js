@@ -640,8 +640,11 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
                 (awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                        versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 
@@ -655,8 +658,11 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
                 (awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
                     key, versionId: 'null', resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                        versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
 
@@ -671,8 +677,11 @@ describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' 
                 (s3VerId, awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
                     key, versionId: s3VerId, resultType: deleteVersion },
                     err => next(err, awsVerId)),
-                (awsVerId, next) => _awsGetAssertDeleted({ key,
-                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+                (awsVerId, next) => {
+                    const wanted = isCEPH ? 'NoSuchKey' : 'NoSuchVersion';
+                    _awsGetAssertDeleted({ key,
+                        versionId: awsVerId, errorCode: wanted }, next);
+                },
             ], done);
         });
     });
