@@ -7,6 +7,7 @@ const metadata = require('../../../../../lib/metadata/wrapper');
 const { DummyRequestLogger } = require('../../../../unit/helpers');
 const checkError = require('../../lib/utility/checkError');
 const { getMetadata, fakeMetadataRestore } = require('../utils/init');
+const { addDays } = require('../../../../utilities/helpers');
 
 const log = new DummyRequestLogger();
 
@@ -788,12 +789,13 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
         it('should fail if restore is already completed', done => {
             const params = { Bucket: bucketName, Key: objectName };
+            const now = Date.now();
             const archiveCompleted = {
                 archiveInfo: {},
                 restoreRequestedAt: new Date(0),
                 restoreRequestedDays: 5,
-                restoreCompletedAt: new Date(10),
-                restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
+                restoreCompletedAt: now,
+                restoreWillExpireAt: addDays(now, 5),
             };
 
             async.series([
@@ -803,6 +805,26 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     checkError(err, 'InvalidObjectState', 403);
                     return next();
                 }),
+            ], err => {
+                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                return done();
+            });
+        });
+
+        it('should pass if restore expired but has not been cleaned up yet', done => {
+            const params = { Bucket: bucketName, Key: objectName };
+            const archiveCompleted = {
+                archiveInfo: {},
+                restoreRequestedAt: new Date(0),
+                restoreRequestedDays: 5,
+                restoreCompletedAt: new Date(10),
+                restoreWillExpireAt: addDays(new Date(10), 5),
+            };
+
+            async.series([
+                next => s3.putObject(params, next),
+                next => fakeMetadataRestore(bucketName, objectName, undefined, archiveCompleted, next),
+                next => putMPUVersion(s3, bucketName, objectName, '', next),
             ], err => {
                 assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
                 return done();

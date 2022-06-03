@@ -2,6 +2,7 @@ const assert = require('assert');
 
 const { errors } = require('arsenal');
 const { validatePutVersionId } = require('../../../../lib/api/apiUtils/object/coldStorage');
+const { addDays } = require('../../../utilities/helpers');
 const { DummyRequestLogger } = require('../../helpers');
 const log = new DummyRequestLogger();
 const oneDay = 24 * 60 * 60 * 1000;
@@ -46,11 +47,24 @@ describe('cold storage', () => {
                     archive: {
                         restoreRequestedAt: new Date(0),
                         restoreRequestedDays: 5,
-                        restoreCompletedAt: new Date(1000),
-                        restoreWillExpireAt: new Date(1000 + 5 * oneDay),
+                        restoreCompletedAt: Date.now(),
+                        restoreWillExpireAt: addDays(Date.now(), 5),
                     },
                 },
                 expectedRes: errors.InvalidObjectState,
+            },
+            {
+                description: 'should pass if restore expired but has not been cleaned up yet',
+                objMD: {
+                    dataStoreName: 'location-dmf-v1',
+                    archive: {
+                        restoreRequestedAt: new Date(0),
+                        restoreRequestedDays: 5,
+                        restoreCompletedAt: new Date(1000),
+                        restoreWillExpireAt: addDays(new Date(1000), 5),
+                    },
+                },
+                expectedRes: undefined,
             },
             {
                 description: 'should pass if object archived',
