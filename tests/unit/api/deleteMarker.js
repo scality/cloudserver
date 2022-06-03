@@ -12,7 +12,6 @@ const { multiObjectDelete } = require('../../../lib/api/multiObjectDelete');
 const metadata = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
-const { config } = require('../../../lib/Config');
 
 const versionIdUtils = versioning.VersionID;
 
@@ -122,8 +121,7 @@ describe('delete marker creation', () => {
                 const mdVersionId = deleteMarkerMD.versionId;
                 assert.strictEqual(deleteMarkerMD.isDeleteMarker, true);
                 assert.strictEqual(
-                    versionIdUtils.encode(
-                        mdVersionId, config.versionIdEncodingType),
+                    versionIdUtils.encode(mdVersionId),
                     deleteResultVersionId);
                 assert.strictEqual(deleteMarkerMD['content-length'], 0);
                 assert.strictEqual(deleteMarkerMD.location, null);
