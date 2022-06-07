@@ -98,7 +98,7 @@ describe('PUT object legal hold', () => {
             s3.putObjectLegalHold({
                 Bucket: bucket,
                 Key: key,
-                VersionId: '000000000000',
+                VersionId: '012345678901234567890123456789012',
                 LegalHold: mockLegalHold.on,
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);

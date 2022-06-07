@@ -1,12 +1,14 @@
 const crypto = require('crypto');
 const assert = require('assert');
+const { storage } = require('arsenal');
 
 const AuthInfo = require('arsenal').auth.AuthInfo;
 const { RequestContext } = require('arsenal').policies;
 const constants = require('../../constants');
-const { metadata } = require('../../lib/metadata/in_memory/metadata');
-const { resetCount, ds } = require('../../lib/data/in_memory/backend');
 const DummyRequest = require('./DummyRequest');
+
+const { metadata } = storage.metadata.inMemory.metadata;
+const { resetCount, ds } = storage.data.inMemory.datastore;
 
 const testsRangeOnEmptyFile = [
     { range: 'bytes=0-9', valid: true },
@@ -64,7 +66,7 @@ function timeDiff(startTime) {
     return milliseconds;
 }
 
-function makeAuthInfo(accessKey, userName, sessionName) {
+function makeAuthInfo(accessKey, userName) {
     const canIdMap = {
         accessKey1: '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7'
             + 'cd47ef2be',
@@ -90,11 +92,6 @@ function makeAuthInfo(accessKey, userName, sessionName) {
     if (userName) {
         params.IAMdisplayName = `${accessKey}-${userName}-userDisplayName`;
         params.arn = `arn:aws:iam::${shortid}:user/${userName}`;
-    }
-
-    if (sessionName) {
-        params.IAMdisplayName = `[assumedRole] rolename:${sessionName}`;
-        params.arn = `arn:aws:sts::${shortid}:assumed-role/rolename/${sessionName}`;
     }
 
     return new AuthInfo(params);

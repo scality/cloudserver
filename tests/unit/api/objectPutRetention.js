@@ -99,7 +99,7 @@ describe('putObjectRetention API', () => {
 
         it('should return InvalidRequest error', done => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
-                assert.strictEqual(err.InvalidRequest, true);
+                assert.strictEqual(err.is.InvalidRequest, true);
                 done();
             });
         });

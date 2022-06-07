@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
     = require('../unit/helpers');
-const { ds } = require('../../lib/data/in_memory/backend');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const { bucketPut } = require('../../lib/api/bucketPut');
 const objectPut = require('../../lib/api/objectPut');
 const DummyRequest = require('../unit/DummyRequest');

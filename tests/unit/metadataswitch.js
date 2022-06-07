@@ -1,6 +1,6 @@
 const wrapper = require('../../lib/metadata/wrapper');
-const backend = require('../../lib/metadata/in_memory/backend');
+const backend = require('arsenal').storage.metadata.inMemory.metastore;
 
-wrapper.switch(backend);
+wrapper.switch(backend, () => {});
 
 module.exports = wrapper;

@@ -106,7 +106,7 @@ describe('GET object retention', () => {
             s3.getObjectRetention({
                 Bucket: bucketName,
                 Key: objectName,
-                VersionId: '000000000000',
+                VersionId: '012345678901234567890123456789012',
             }, err => {
                 checkError(err, 'NoSuchVersion', 404);
                 done();

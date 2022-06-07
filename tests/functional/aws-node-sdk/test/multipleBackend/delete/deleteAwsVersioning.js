@@ -76,6 +76,32 @@ function delAndAssertResult(s3, params, cb) {
     });
 }
 
+function delObjectsAndAssertResult(s3, params, cb) {
+    const { bucket, key, versionId, resultType, resultError } = params;
+    const deleteParams = {
+        Objects: [
+            {
+                Key: key,
+                VersionId: versionId,
+            },
+        ],
+        Quiet: false,
+    };
+    return s3.deleteObjects({ Bucket: bucket, Delete: deleteParams }, (err, res) => {
+        if (resultError) {
+            assert(err, `expected ${resultError} but found no error`);
+            assert.strictEqual(err.code, resultError);
+            assert.strictEqual(err.statusCode, errors[resultError].code);
+            return cb(null);
+        }
+        assert.strictEqual(err, null, 'Expected success ' +
+            `deleting object, got error ${err}`);
+        const result = res.Deleted[0];
+        _assertDeleteResult(result, resultType, versionId);
+        return cb(null, result.VersionId);
+    });
+}
+
 function _createDeleteMarkers(s3, bucket, key, count, cb) {
     return async.timesSeries(count,
         (i, next) => delAndAssertResult(s3, { bucket, key,
@@ -553,6 +579,86 @@ describeSkipIfNotMultiple('AWS backend delete object w. versioning: ' +
                     next),
                 next => _awsGetAssertDeleted({ key, errorCode: 'NoSuchKey' },
                     next),
+            ], done);
+        });
+    });
+});
+
+
+describeSkipIfNotMultiple('AWS backend delete multiple objects w. versioning: ' +
+    'using object location constraint', function testSuite() {
+    this.timeout(120000);
+    withV4(sigCfg => {
+        let bucketUtil;
+        let s3;
+        beforeEach(() => {
+            process.stdout.write('Creating bucket\n');
+            bucketUtil = new BucketUtility('default', sigCfg);
+            s3 = bucketUtil.s3;
+            return s3.createBucket({ Bucket: bucket }).promise()
+            .catch(err => {
+                process.stdout.write(`Error creating bucket: ${err}\n`);
+                throw err;
+            });
+        });
+
+        afterEach(() => {
+            process.stdout.write('Emptying bucket\n');
+            return bucketUtil.empty(bucket)
+            .then(() => {
+                process.stdout.write('Deleting bucket\n');
+                return bucketUtil.deleteOne(bucket);
+            })
+            .catch(err => {
+                process.stdout.write('Error emptying/deleting bucket: ' +
+                `${err}\n`);
+                throw err;
+            });
+        });
+
+        it('versioning not configured: if specifying "null" version, should ' +
+        'delete specific version in AWS backend', done => {
+            const key = `somekey-${Date.now()}`;
+            async.waterfall([
+                next => putToAwsBackend(s3, bucket, key, someBody,
+                    err => next(err)),
+                next => awsGetLatestVerId(key, someBody, next),
+                (awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
+                    key, versionId: 'null', resultType: deleteVersion },
+                    err => next(err, awsVerId)),
+                (awsVerId, next) => _awsGetAssertDeleted({ key,
+                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+            ], done);
+        });
+
+        it('versioning suspended: should delete a specific version in AWS ' +
+        'backend successfully', done => {
+            const key = `somekey-${Date.now()}`;
+            async.waterfall([
+                next => putNullVersionsToAws(s3, bucket, key, [someBody],
+                    err => next(err)),
+                next => awsGetLatestVerId(key, someBody, next),
+                (awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
+                    key, versionId: 'null', resultType: deleteVersion },
+                    err => next(err, awsVerId)),
+                (awsVerId, next) => _awsGetAssertDeleted({ key,
+                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
+            ], done);
+        });
+
+        it('versioning enabled: should delete a specific version in AWS ' +
+        'backend successfully', done => {
+            const key = `somekey-${Date.now()}`;
+            async.waterfall([
+                next => putVersionsToAws(s3, bucket, key, [someBody],
+                    (err, versionIds) => next(err, versionIds[0])),
+                (s3vid, next) => awsGetLatestVerId(key, someBody,
+                    (err, awsVid) => next(err, s3vid, awsVid)),
+                (s3VerId, awsVerId, next) => delObjectsAndAssertResult(s3, { bucket,
+                    key, versionId: s3VerId, resultType: deleteVersion },
+                    err => next(err, awsVerId)),
+                (awsVerId, next) => _awsGetAssertDeleted({ key,
+                    versionId: awsVerId, errorCode: 'NoSuchVersion' }, next),
             ], done);
         });
     });

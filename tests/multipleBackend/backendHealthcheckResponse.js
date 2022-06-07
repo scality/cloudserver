@@ -1,6 +1,5 @@
 'use strict'; // eslint-disable-line strict
 const assert = require('assert');
-const { errors } = require('arsenal');
 const DummyRequestLogger = require('../unit/helpers').DummyRequestLogger;
 const clientCheck
     = require('../../lib/utilities/healthcheckHandler').clientCheck;
@@ -22,7 +21,7 @@ describe('Healthcheck response', () => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
-                assert(resultKeys.includes(constraint));
+                assert(resultKeys.includes(constraint), `constraint: ${constraint} not in results: ${resultKeys}`);
             });
             done();
         });
@@ -71,8 +70,7 @@ describe('Healthcheck response', () => {
                 const azureLocationNonExistContainerError =
                     results[azureLocationNonExistContainer].error;
                 if (err) {
-                    assert.strictEqual(err, errors.InternalError,
-                        `got unexpected err in clientCheck: ${err}`);
+                    assert(err.is.InternalError, `got unexpected err in clientCheck: ${err}`);
                     assert(azureLocationNonExistContainerError.startsWith(
                         'The specified container is being deleted.'));
                     return done();

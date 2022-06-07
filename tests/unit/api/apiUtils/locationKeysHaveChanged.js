@@ -38,16 +38,4 @@ describe('Check if location keys have changed between object locations', () => {
         const curr = [{ key: 'ddd' }, { key: 'eee' }, { key: 'fff' }];
         assert.strictEqual(locationKeysHaveChanged(prev, curr), true);
     });
-
-    it('should return true if curr location is null', () => {
-        const prev = [{ key: 'ddd' }, { key: 'eee' }, { key: 'fff' }];
-        const curr = null;
-        assert.strictEqual(locationKeysHaveChanged(prev, curr), true);
-    });
-
-    it('should return true if both prev and curr locations are null', () => {
-        const prev = null;
-        const curr = null;
-        assert.strictEqual(locationKeysHaveChanged(prev, curr), true);
-    });
 });

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { config } = require('../../../lib/Config');
-const parseLC = require('../../../lib/data/locationConstraintParser');
+const { parseLC } = require('arsenal').storage.data;
 
 const newLC = {};
 const newLCKey = `test_location_constraint_${Date.now()}`;

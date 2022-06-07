@@ -10,7 +10,7 @@ const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const { parseTagFromQuery } = s3middleware.tagging;
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
-const { ds } = require('../../../lib/data/in_memory/backend');
+const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectLockTestUtils } = require('../helpers');
@@ -84,7 +84,7 @@ describe('parseTagFromQuery', () => {
         it(`should ${behavior} if tag set: "${test.tagging}"`, done => {
             const result = parseTagFromQuery(test.tagging);
             if (test.error) {
-                assert(result[test.error.status]);
+                assert(result.is[test.error.status]);
                 assert.strictEqual(result.code, test.error.statusCode);
             } else {
                 assert.deepStrictEqual(result, test.result);
