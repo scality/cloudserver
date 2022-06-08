@@ -26,55 +26,47 @@ docker pull registry.scality.com/cloudserver/cloudserver:<tag>
 
 To release a production image:
 
-* Checkout the relevant branch. In this example,
-  we are working on development/8.3, and we want to release version `8.3.0`.
-
-```sh
-git checkout development/8.3
-```
-
-* Tag the branch with the release version. In this example, `8.3.0`
-
-```sh
-git tag -a 8.3.0
-# The message should be 'v<version>'
-v8.3.0
-```
-
-* Push the tags to GitHub.
-
-```sh
-git push --tags
-```
-
-* With the following parameters, [force a build here](https://eve.devsca.com/github/scality/cloudserver/#/builders/3/force/force)
-
-    * Branch Name: The one used for the tag earlier. In this example 'development/8.3'
-    * Override Stage: 'release'
-    * Extra properties:
-      * name: `'tag'`, value: `[release version]`, in this example`'8.3.0'`
-
-* Once the docker image is present on [registry.scality.com](registry.scality.com),
-  update CloudServers' `package.json`
-  by bumping it to the relevant next version in a new PR.
-  In this case, `8.3.1` .
+* Create a PR to bump the package version
+  Update Cloudserver's `package.json` by bumping it to the relevant next
+  version in a new PR. Per example if the last released version was
+  `8.4.7`, the next version would be `8.4.8`.
 
 ```js
 {
-  "name": "@zenko/cloudserver",
-  "version": "8.3.1", <--- Here
+  "name": "cloudserver",
+  "version": "8.4.8", <--- Here
   [...]
 }
 ```
 
-* Finally, once your PR has been reviewed, release the release version on Jira,
-  set up the next version, and approve your PR.
+* Review & merge the PR
+
+* Create the release on GitHub
+  
+  * Go the Release tab (https://github.com/scality/cloudserver/releases);
+  * Click on the `Draft new release button`;
+  * In the `tag` field, type the name of the release (`8.4.8`), and confirm
+    to create the tag on publish;
+  * Click on `Generate release notes` button to field the fields;
+  * Rename the release to `Release x.y.z` (e.g. `Release 8.4.8` in this case);
+  * Click to `Publish the release` to create the GitHub release and git tag
+
+  Notes:
+  * the Git tag will be created automatically.
+  * this should be done as soon as the PR is merged, so that the tag
+    is put on the "version bump" commit.
+
+* With the following parameters, [force a build here](https://eve.devsca.com/github/scality/cloudserver/#/builders/3/force/force)
+
+  * Branch Name: The one used for the tag earlier. In this example `development/8.4`
+  * Override Stage: 'release'
+  * Extra properties:
+    * name: `'tag'`, value: `[release version]`, in this example`'8.4.8'`
+
+* Release the release version on Jira
 
   * Go to the [CloudServer release page](https://scality.atlassian.net/projects/CLDSRV?selectedItem=com.atlassian.jira.jira-projects-plugin:release-page)
-  * Create a new version if necessary
-    * Name: `[next version]`, in this example `8.3.1`
-    * Start Date: `[date of the release]`
-  * Click `...` and select `Release` on the release version
-  * Return to the release ticket,
-    change the fix version of the ticket to the new version
-  * Return to your PR and type `/approve`
+  * Create a next version
+    * Name: `[next version]`, in this example `8.4.9`
+  * Click `...` and select `Release` on the recently released version (`8.4.8`)
+  * Fill in the field to move incomplete version to the next one
