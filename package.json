@@ -20,7 +20,11 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
+<<<<<<< HEAD
     "arsenal": "git+https://github.com/scality/Arsenal.git#8.1.48",
+=======
+    "arsenal": "git+https://github.com/scality/Arsenal.git#8.1.53",
+>>>>>>> origin/bugfix/CLDSRV-219-bump-arsenal-version-with-sproxydclient-fix
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
