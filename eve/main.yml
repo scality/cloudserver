@@ -173,15 +173,15 @@ stages:
       - TriggerStages:
           name: Launch all workers
           stage_names:
-            - docker-build
-            - linting-coverage
+            # - docker-build
+            # - linting-coverage
             - file-ft-tests
-            - multiple-backend-test
-            - mongo-v0-ft-tests
-            - mongo-v1-ft-tests
-            - ceph-backend-tests
-            - kmip-ft-tests
-            - utapi-v2-tests
+            # - multiple-backend-test
+            # - mongo-v0-ft-tests
+            # - mongo-v1-ft-tests
+            # - ceph-backend-tests
+            # - kmip-ft-tests
+            # - utapi-v2-tests
           waitForFinish: true
           haltOnFailure: true
 
