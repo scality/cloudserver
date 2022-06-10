@@ -666,7 +666,8 @@ describe('aws-sdk test put bucket lifecycle', () => {
                     }],
                 },
             };
-            s3.putBucketLifecycleConfiguration(params, err => {
+            s3.putBucketLifecycleConfiguration(params, (err, data) => {
+                console.log(err, data);
                 assert.strictEqual(err.statusCode, 501);
                 assert.strictEqual(err.code, 'NotImplemented');
                 done();
