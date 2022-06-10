@@ -650,7 +650,7 @@ describe('aws-sdk test put bucket lifecycle', () => {
             });
         });
 
-        it.only('should not allow config when specifying ' +
+        it.skip('should not allow config when specifying ' +
         'NoncurrentVersionTransitions', done => {
             const params = {
                 Bucket: bucket,
