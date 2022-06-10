@@ -179,7 +179,7 @@ stages:
             # - multiple-backend-test
             # - mongo-v0-ft-tests
             # - mongo-v1-ft-tests
-            # - ceph-backend-tests
+            - ceph-backend-tests
             # - kmip-ft-tests
             # - utapi-v2-tests
           waitForFinish: true
