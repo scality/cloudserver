@@ -197,4 +197,39 @@ describe('aws-sdk test put bucket tagging', () => {
             done(err);
         });
     });
+
+    it('should put 50 tags', done => {
+        const tags = {
+            TagSet: new Array(50).fill().map((el, index) => ({
+                Key: `test_${index}`,
+                Value: `value_${index}`,
+            })),
+        };
+        s3.putBucketTagging({
+            AccountId: s3.AccountId,
+            Tagging: tags,
+            Bucket: bucket,
+            ExpectedBucketOwner: s3.AccountId
+        }, err => {
+            assert.ifError(err);
+            done(err);
+        });
+    });
+
+    it('should not put more than 50 tags', done => {
+        const tags = {
+            TagSet: new Array(51).fill().map((el, index) => ({
+                Key: `test_${index}`,
+                Value: `value_${index}`,
+            })),
+        };
+        s3.putBucketTagging({
+            AccountId: s3.AccountId,
+            Tagging: tags,
+            Bucket: bucket,
+            ExpectedBucketOwner: s3.AccountId
+        }, err => {
+            assertError(err, 'BadRequest', done);
+        });
+    });
 });
