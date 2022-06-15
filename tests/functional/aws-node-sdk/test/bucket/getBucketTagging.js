@@ -1,7 +1,7 @@
 const assertError = require('../../../../utilities/bucketTagging-util');
 const { S3 } = require('aws-sdk');
 const async = require('async');
-
+const assert = require('assert');
 const getConfig = require('../support/config');
 
 const bucket = 'gettaggingtestbucket';
@@ -28,7 +28,7 @@ describe('aws-sdk test get bucket tagging', () => {
                 (err, res) => {
                     next(err, res);
                 }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'AccessDenied');
             done();
         });
@@ -40,8 +40,35 @@ describe('aws-sdk test get bucket tagging', () => {
                 (err, res) => {
                     next(err, res);
                 }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'NoSuchTagSet');
+            done();
+        });
+    });
+
+    it('should return the TagSet', done => {
+        const tagSet = {
+            TagSet: [
+                {
+                    Key: 'key1',
+                    Value: 'value1',
+                },
+            ],
+        };
+        async.series([
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: tagSet,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId
+            }, next),
+            next => s3.getBucketTagging({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+                ExpectedBucketOwner: s3.AccountId
+            }, next),
+        ], (err, data) => {
+            assert.deepStrictEqual(data[1], tagSet);
             done();
         });
     });

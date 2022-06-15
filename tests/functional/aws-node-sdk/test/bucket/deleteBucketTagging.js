@@ -53,7 +53,7 @@ describe('aws-sdk test delete bucket tagging', () => {
                 AccountId: s3.AccountId,
                 Bucket: bucket,
             }, next),
-        ], (err) => {
+        ], err => {
             assertError(err, 'NoSuchTagSet');
             done();
         });
@@ -64,7 +64,7 @@ describe('aws-sdk test delete bucket tagging', () => {
             next => s3.getBucketTagging({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err) => {
+            }, err => {
                 assertError(err, 'NoSuchTagSet');
                 next();
             }),
@@ -75,7 +75,7 @@ describe('aws-sdk test delete bucket tagging', () => {
             next => s3.getBucketTagging({
                 AccountId: s3.AccountId,
                 Bucket: bucket,
-            }, (err) => {
+            }, err => {
                 assertError(err, 'NoSuchTagSet');
                 next();
             }),

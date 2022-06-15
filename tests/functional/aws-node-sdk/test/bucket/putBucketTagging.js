@@ -99,7 +99,7 @@ describe('aws-sdk test put bucket tagging', () => {
             }, (err, res) => {
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'InvalidTag');
             done();
         });
@@ -113,7 +113,7 @@ describe('aws-sdk test put bucket tagging', () => {
             }, (err, res) => {
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'InvalidTag');
             done();
         });
@@ -127,7 +127,7 @@ describe('aws-sdk test put bucket tagging', () => {
             }, (err, res) => {
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'InvalidTag');
             done();
         });
@@ -148,7 +148,7 @@ describe('aws-sdk test put bucket tagging', () => {
                 assert.deepStrictEqual(res, validTagging);
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assert.ifError(err);
             done(err);
         });
@@ -169,7 +169,7 @@ describe('aws-sdk test put bucket tagging', () => {
                 assert.deepStrictEqual(res, validSingleTagging);
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assert.ifError(err);
             done(err);
         });
@@ -197,7 +197,7 @@ describe('aws-sdk test put bucket tagging', () => {
                 Tagging: validEmptyTagging, Bucket: bucket, ExpectedBucketOwner: '944690102203' }, (err, res) => {
                 next(err, res);
             }),
-        ], (err) => {
+        ], err => {
             assertError(err, 'AccessDenied');
             done();
         });
@@ -210,7 +210,7 @@ describe('aws-sdk test put bucket tagging', () => {
                 next(err, res);
             }),
             next => s3.getBucketTagging({ AccountId: s3.AccountId, Bucket: bucket }, next),
-        ], (err) => {
+        ], err => {
             assertError(err, 'NoSuchTagSet');
             done();
         });
@@ -247,7 +247,8 @@ describe('aws-sdk test put bucket tagging', () => {
             Bucket: bucket,
             ExpectedBucketOwner: s3.AccountId
         }, err => {
-            assertError(err, 'BadRequest', done);
+            assertError(err, 'BadRequest');
+            done();
         });
     });
 });
