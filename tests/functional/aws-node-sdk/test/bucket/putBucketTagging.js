@@ -1,7 +1,7 @@
 const assert = require('assert');
-const { errors } = require('arsenal');
 const { S3 } = require('aws-sdk');
 const async = require('async');
+const assertError = require('../../../../utilities/bucketTagging-util');
 
 const getConfig = require('../support/config');
 
@@ -79,27 +79,12 @@ const taggingValueNotValid = {
     ],
 };
 
-// Check for the expected error response code and status code.
-function assertError(err, expectedErr, cb) {
-    if (expectedErr === null) {
-        assert.strictEqual(err, null, `expected no error but got '${err}'`);
-    } else {
-        assert.strictEqual(err.code, expectedErr, 'incorrect error response ' +
-            `code: should be '${expectedErr}' but got '${err.code}'`);
-        assert.strictEqual(err.statusCode, errors[expectedErr].code,
-            'incorrect error status code: should be  ' +
-            `${errors[expectedErr].code}, but got '${err.statusCode}'`);
-    }
-    cb();
-}
-
 describe('aws-sdk test put bucket tagging', () => {
     let s3;
 
-    before(done => {
+    before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
-        return done();
     });
 
     beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
@@ -108,43 +93,61 @@ describe('aws-sdk test put bucket tagging', () => {
 
     it('should not add tag if tagKey not unique', done => {
         async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: taggingNotUnique, Bucket: bucket }, (err, res) => {
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: taggingNotUnique, Bucket: bucket,
+            }, (err, res) => {
                 next(err, res);
             }),
         ], (err) => {
-            assertError(err, 'InvalidTag', done);
+            assertError(err, 'InvalidTag');
+            done();
         });
     });
 
     it('should not add tag if tagKey not valid', done => {
         async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: taggingKeyNotValid, Bucket: bucket }, (err, res) => {
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: taggingKeyNotValid, Bucket: bucket,
+            }, (err, res) => {
                 next(err, res);
             }),
         ], (err) => {
-            assertError(err, 'InvalidTag', done);
+            assertError(err, 'InvalidTag');
+            done();
         });
     });
 
     it('should not add tag if tagValue not valid', done => {
         async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: taggingValueNotValid, Bucket: bucket }, (err, res) => {
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: taggingValueNotValid, Bucket: bucket,
+            }, (err, res) => {
                 next(err, res);
             }),
         ], (err) => {
-            assertError(err, 'InvalidTag', done);
+            assertError(err, 'InvalidTag');
+            done();
         });
     });
 
     it('should add tag', done => {
-        async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: validTagging, Bucket: bucket }, (err, res) => {
+        async.series([
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: validTagging, Bucket: bucket,
+            }, (err, res) => {
                 next(err, res);
-            }), //TODO when getBucketTagging is done
+            }),
+            next => s3.getBucketTagging({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+            }, (err, res) => {
+                assert.deepStrictEqual(res, validTagging);
+                next(err, res);
+            }),
         ], (err) => {
             assert.ifError(err);
             done(err);
@@ -152,11 +155,20 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should be able to put single tag', done => {
-        async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: validSingleTagging, Bucket: bucket }, (err, res) => {
+        async.series([
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: validSingleTagging, Bucket: bucket,
+            }, (err, res) => {
+                next(err, res, next);
+            }),
+            next => s3.getBucketTagging({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+            }, (err, res) => {
+                assert.deepStrictEqual(res, validSingleTagging);
                 next(err, res);
-            }), //TODO when getBucketTagging is done
+            }),
         ], (err) => {
             assert.ifError(err);
             done(err);
@@ -164,14 +176,18 @@ describe('aws-sdk test put bucket tagging', () => {
     });
 
     it('should be able to put empty tag array', done => {
-        async.waterfall([
-            next => s3.putBucketTagging({ AccountId: s3.AccountId,
-                Tagging: validEmptyTagging, Bucket: bucket }, (err, res) => {
-                next(err, res);
-            }), //TODO when getBucketTagging is done
-        ], (err) => {
-            assert.ifError(err);
-            done(err);
+        async.series([
+            next => s3.putBucketTagging({
+                AccountId: s3.AccountId,
+                Tagging: validEmptyTagging, Bucket: bucket,
+            }, next),
+            next => s3.getBucketTagging({
+                AccountId: s3.AccountId,
+                Bucket: bucket,
+            }, next),
+        ], err => {
+            assertError(err, 'NoSuchTagSet');
+            done();
         });
     });
 
@@ -180,21 +196,23 @@ describe('aws-sdk test put bucket tagging', () => {
             next => s3.putBucketTagging({ AccountId: s3.AccountId,
                 Tagging: validEmptyTagging, Bucket: bucket, ExpectedBucketOwner: '944690102203' }, (err, res) => {
                 next(err, res);
-            }), //TODO when getBucketTagging is done
+            }),
         ], (err) => {
-            assertError(err, 'AccessDenied', done);
+            assertError(err, 'AccessDenied');
+            done();
         });
     });
 
     it('should not return accessDenied if expected bucket owner matches', done => {
-        async.waterfall([
+        async.series([
             next => s3.putBucketTagging({ AccountId: s3.AccountId,
                 Tagging: validEmptyTagging, Bucket: bucket, ExpectedBucketOwner: s3.AccountId }, (err, res) => {
                 next(err, res);
-            }), //TODO when getBucketTagging is done
+            }),
+            next => s3.getBucketTagging({ AccountId: s3.AccountId, Bucket: bucket }, next),
         ], (err) => {
-            assert.ifError(err);
-            done(err);
+            assertError(err, 'NoSuchTagSet');
+            done();
         });
     });
 });
