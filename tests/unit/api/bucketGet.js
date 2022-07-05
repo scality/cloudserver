@@ -311,6 +311,9 @@ describe('bucketGet API V2', () => {
                 assert.strictEqual(keyCount, keysReturned);
                 // assert the results from tests
                 test.assertion(result);
+                if (result.ListBucketResult.IsTruncated && result.ListBucketResult.IsTruncated[0] === 'false') {
+                    assert.strictEqual(result.ListBucketResult.NextContinuationToken, undefined);
+                }
                 done();
             });
         });
