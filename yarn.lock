@@ -510,9 +510,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.1.56":
-  version "8.1.56"
-  resolved "git+https://github.com/scality/Arsenal#f7d360fe0b9fd632254350844ac8e1c4e50de1c3"
+"arsenal@git+https://github.com/scality/Arsenal#8.1.58":
+  version "8.1.58"
+  resolved "git+https://github.com/scality/Arsenal#56665069c1746fa385410f572d768255593781b5"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -521,7 +521,7 @@ arraybuffer.slice@~0.0.7:
     ajv "6.12.3"
     async "~2.6.4"
     aws-sdk "2.80.0"
-    azure-storage "2.10.3"
+    azure-storage "~2.10.7"
     backo "^1.1.0"
     base-x "3.0.8"
     base62 "2.0.1"
@@ -714,7 +714,7 @@ azure-storage@2.10.3:
     xml2js "0.2.8"
     xmlbuilder "^9.0.7"
 
-azure-storage@^2.1.0:
+azure-storage@^2.1.0, azure-storage@~2.10.7:
   version "2.10.7"
   resolved "https://registry.yarnpkg.com/azure-storage/-/azure-storage-2.10.7.tgz#50290ac638d1b709b89d961f333cc1c1a6722a05"
   integrity sha512-4oeFGtn3Ziw/fGs/zkoIpKKtygnCVIcZwzJ7UQzKTxhkGQqVCByOFbYqMGYR3L+wOsunX9lNfD0jc51SQuKSSA==
