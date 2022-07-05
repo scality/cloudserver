@@ -100,7 +100,8 @@ describe('objectGet API', () => {
         url: `/${bucketName}/${objectName}`,
     }, postBody);
 
-    const testDate = new Date(2022, 6, 3).toISOString();
+    const threeDaysMilliSecs = 3 * 24 * 60 * 60 * 1000;
+    const testDate = new Date(Date.now() + threeDaysMilliSecs).toISOString();
 
     it('should get the object metadata with valid retention info', done => {
         bucketPut(authInfo, testPutBucketRequestObjectLock, log, () => {
