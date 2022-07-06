@@ -129,7 +129,7 @@ const constants = {
         },
     },
     /* eslint-disable camelcase */
-    externalBackends: { aws_s3: true, azure: true, gcp: true, pfs: true },
+    externalBackends: { aws_s3: true, azure: true, gcp: true, pfs: true, dmf: true },
     // some of the available data backends  (if called directly rather
     // than through the multiple backend gateway) need a key provided
     // as a string as first parameter of the get/delete methods.
