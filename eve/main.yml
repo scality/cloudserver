@@ -360,6 +360,8 @@ stages:
     steps:
       - Git: *clone
       - ShellCommand: *credentials
+      - ShellCommand:
+          command: free -m
       - ShellCommand: *yarn-install
       - ShellCommand:
           command: |
