@@ -94,6 +94,8 @@ models:
       name: install modules
       command: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
       haltOnFailure: true
+      env:
+        NODE_OPTIONS: --max-old-space-size=8192
   - ShellCommand: &check-s3-action-logs
       name: Check s3 action logs
       command: |
