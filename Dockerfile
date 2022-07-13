@@ -35,9 +35,9 @@ RUN apt-get update \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
-ENV PYTHON=python3
 RUN yarn cache clean \
-    && yarn install --production --ignore-optional --ignore-engines --network-concurrency 1 \
+    && NODE_OPTIONS="--max-old-space-size=8192" \
+      yarn install --production --ignore-optional --ignore-engines --network-concurrency 1 \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \
