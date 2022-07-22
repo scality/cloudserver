@@ -180,8 +180,8 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "2Gi"
-        s3Mem: "2Gi"
+        aggressorMem: "2560Mi"
+        s3Mem: "2560Mi"
         env:
           <<: *multiple-backend-vars
           <<: *global-env
@@ -227,7 +227,7 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "1920Mi"
+        aggressorMem: "2560Mi"
         s3Mem: "2Gi"
         redis: enabled
         env:
@@ -261,7 +261,7 @@ stages:
         s3: "."
         pykmip: eve/workers/pykmip
       vars:
-        aggressorMem: "2Gi"
+        aggressorMem: "2560Mi"
         s3Mem: "1664Mi"
         redis: enabled
         pykmip: enabled
@@ -300,7 +300,7 @@ stages:
         aggressor: eve/workers/build
         s3: "."
       vars:
-        aggressorMem: "2Gi"
+        aggressorMem: "2560Mi"
         s3Mem: "2Gi"
         env:
           ENABLE_UTAPI_V2: t
