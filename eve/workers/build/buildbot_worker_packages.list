@@ -1,5 +1,6 @@
 ca-certificates
 git
+git-lfs
 gnupg
 libffi-dev
 libssl-dev
