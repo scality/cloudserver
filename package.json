@@ -1,6 +1,6 @@
 {
   "name": "@zenko/cloudserver",
-  "version": "8.5.9",
+  "version": "8.5.10",
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
@@ -24,7 +24,7 @@
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
-    "bucketclient": "scality/bucketclient#8.1.1",
+    "bucketclient": "scality/bucketclient#8.1.5",
     "bufferutil": "^4.0.6",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
@@ -42,11 +42,11 @@
     "prom-client": "^14.0.1",
     "request": "^2.81.0",
     "sql-where-parser": "~2.2.1",
-    "utapi": "github:scality/utapi#8.1.5",
+    "utapi": "github:scality/utapi#8.1.7",
     "utf-8-validate": "^5.0.8",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
-    "vaultclient": "scality/vaultclient#8.3.5",
+    "vaultclient": "scality/vaultclient#8.3.6",
     "werelogs": "scality/werelogs#8.1.0",
     "ws": "^5.1.0",
     "xml2js": "~0.4.16"
