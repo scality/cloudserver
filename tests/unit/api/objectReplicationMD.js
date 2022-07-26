@@ -577,29 +577,19 @@ describe('Replication object MD without bucket replication config', () => {
                         return done();
                     }));
 
-                it('should update on a put object ACL request', done => {
-                    let completedReplicationInfo;
+                it('should update on a put object ACL request', done =>
                     async.series([
                         next => putObjectAndCheckMD(keyA,
                             expectedReplicationInfo, next),
-                        next => {
-                            const objectMD = metadata.keyMaps
-                                  .get(bucketName).get(keyA);
-                            // Update metadata to a status after replication
-                            // has occurred.
-                            objectMD.replicationInfo.status = 'COMPLETED';
-                            completedReplicationInfo = JSON.parse(
-                                JSON.stringify(objectMD.replicationInfo));
-                            objectPutACL(authInfo, objectACLReq, log, next);
-                        },
+                        next => objectPutACL(authInfo, objectACLReq, log, next),
                     ], err => {
                         if (err) {
                             return done(err);
                         }
-                        checkObjectReplicationInfo(keyA, completedReplicationInfo);
+                        checkObjectReplicationInfo(keyA,
+                            expectedReplicationInfoMD);
                         return done();
-                    });
-                });
+                    }));
 
                 it('should update on a put object tagging request', done =>
                     async.series([
