@@ -7,6 +7,7 @@ const BucketUtility = require('../../lib/utility/bucket-util');
 const constants = require('../../../../../constants');
 const { VALIDATE_CREDENTIALS, SIGN } = AWS.EventListeners.Core;
 const itSkipIfE2E = process.env.S3_END_TO_END ? it.skip : it;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 withV4(sigCfg => {
     const ownerAccountBucketUtil = new BucketUtility('default', sigCfg);
@@ -51,7 +52,8 @@ withV4(sigCfg => {
         const grantUri = `uri=${auth ?
             constants.allAuthedUsersId : constants.publicId}`;
 
-        describe('PUT Bucket ACL using predefined groups - ' +
+        // TODO fix flakiness on E2E and re-enable, see CLDSRV-254
+        describeSkipIfE2E('PUT Bucket ACL using predefined groups - ' +
             `${authType} request`, () => {
             const aclParam = {
                 Bucket: testBucket,
