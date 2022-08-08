@@ -91,6 +91,7 @@ describe('putObjectACL API', () => {
                         log, (err, md) => {
                             assert.strictEqual(md.acl.Canned,
                             'public-read-write');
+                            assert.strictEqual(md.originOp, 's3:ObjectAcl:Put');
                             done();
                         });
                     });
@@ -136,6 +137,7 @@ describe('putObjectACL API', () => {
                                             assert.strictEqual(md
                                                    .acl.Canned,
                                                    'authenticated-read');
+                                            assert.strictEqual(md.originOp, 's3:ObjectAcl:Put');
                                             done();
                                         });
                                 });
@@ -181,6 +183,7 @@ describe('putObjectACL API', () => {
                                     .indexOf(ownerID) > -1);
                                 assert(acls.WRITE_ACP[0]
                                     .indexOf(anotherID) > -1);
+                                assert.strictEqual(md.originOp, 's3:ObjectAcl:Put');
                                 done();
                             });
                     });
@@ -249,6 +252,7 @@ describe('putObjectACL API', () => {
                                 .acl.WRITE_ACP[0], ownerID);
                             assert.strictEqual(md
                                 .acl.READ_ACP[0], anotherID);
+                            assert.strictEqual(md.originOp, 's3:ObjectAcl:Put');
                             done();
                         });
                     });
