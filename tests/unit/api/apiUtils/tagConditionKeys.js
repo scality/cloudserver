@@ -8,9 +8,10 @@ const {
     TaggingConfigTester,
     createRequestContext,
 } = require('../../helpers');
-const { tagConditionKeyAuth, updateRequestContexts, makeTagQuery } =
+const { tagConditionKeyAuth, updateRequestContextsWithTags, makeTagQuery } =
     require('../../../../lib/api/apiUtils/authorization/tagConditionKeys');
 const { bucketPut } = require('../../../../lib/api/bucketPut');
+const objectPut = require('../../../../lib/api/objectPut');
 
 const log = new DummyRequestLogger();
 const bucketName = 'tagconditionkeybuckettester';
@@ -39,27 +40,41 @@ const objectPutReq = new DummyRequest({
     calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
 }, postBody);
 
-const requestContexts = [
+const objectPutRequestContexts = [
     createRequestContext('objectPut', objectPutReq),
+];
+
+const objectGetReq = {
+    bucketName,
+    headers: {
+        host: `${bucketName}.s3.amazonaws.com`,
+    },
+    objectKey,
+    url: `/${bucketName}/${objectKey}`,
+    query: {},
+};
+const objectGetRequestContexts = [
+    createRequestContext('objectGet', objectGetReq),
+    createRequestContext('objectGetTagging', objectGetReq),
 ];
 
 describe('tagConditionKeyAuth', () => {
     it('should return empty if no previous auth results', done => {
-        tagConditionKeyAuth([], objectPutReq, requestContexts, 'bucketPut', log, err => {
+        tagConditionKeyAuth([], objectPutReq, objectPutRequestContexts, 'bucketPut', log, err => {
             assert.ifError(err);
             done();
         });
     });
     it('should return empty if auth results do not contain checkTagConditions key', done => {
         const authResults = [{ isAllowed: true }, { isAllowed: true }];
-        tagConditionKeyAuth(authResults, objectPutReq, requestContexts, 'bucketPut', log, err => {
+        tagConditionKeyAuth(authResults, objectPutReq, objectPutRequestContexts, 'bucketPut', log, err => {
             assert.ifError(err);
             done();
         });
     });
 });
 
-describe('updateRequestContexts', () => {
+describe('updateRequestContextsWithTags', () => {
     before(done => {
         cleanup();
         bucketPut(authInfo, bucketPutReq, log, done);
@@ -68,11 +83,30 @@ describe('updateRequestContexts', () => {
     after(cleanup);
 
     it('should update request context with request object tags', done => {
-        updateRequestContexts(objectPutReq, requestContexts, 'objectPut', log, (err, newRequestContexts) => {
+        updateRequestContextsWithTags(objectPutReq, objectPutRequestContexts, 'objectPut', log, err => {
             assert.ifError(err);
-            assert(newRequestContexts[0].getNeedTagEval());
-            assert.strictEqual(newRequestContexts[0].getRequestObjTags(), makeTagQuery(taggingUtil.getTags()));
+            assert(objectPutRequestContexts[0].getNeedTagEval());
+            assert.strictEqual(objectPutRequestContexts[0].getRequestObjTags(),
+                               makeTagQuery(taggingUtil.getTags()));
+            assert.strictEqual(objectPutRequestContexts[0].getExistingObjTag(), null);
             done();
+        });
+    });
+
+    it('should update multiple request contexts with existing object tags', done => {
+        objectPut(authInfo, objectPutReq, 'foobar', log, err => {
+            assert.ifError(err);
+            updateRequestContextsWithTags(objectGetReq, objectGetRequestContexts, 'objectGet', log,
+            err => {
+                assert.ifError(err);
+                for (const requestContext of objectGetRequestContexts) {
+                    assert(requestContext.getNeedTagEval());
+                    assert.strictEqual(requestContext.getExistingObjTag(),
+                                       makeTagQuery(taggingUtil.getTags()));
+                    assert.strictEqual(requestContext.getRequestObjTags(), null);
+                }
+                done();
+            });
         });
     });
 });
