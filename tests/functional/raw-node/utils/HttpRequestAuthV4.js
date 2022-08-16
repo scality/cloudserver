@@ -65,7 +65,7 @@ class HttpRequestAuthV4 extends stream.Writable {
         const signingDate = this._timestamp.slice(0, 8);
         const credentialScope =
               `${signingDate}/${REGION}/${SERVICE}/aws4_request`;
-        // console.log(`CREDENTIAL SCOPE: "${credentialScope}"`);
+        // // console.log(`CREDENTIAL SCOPE: "${credentialScope}"`);
         return credentialScope;
     }
 
@@ -118,7 +118,7 @@ class HttpRequestAuthV4 extends stream.Writable {
             signedHeaders['x-amz-content-sha256'],
         ].join('\n');
 
-        // console.log(`CANONICAL REQUEST: "${canonicalRequest}"`);
+        // // console.log(`CANONICAL REQUEST: "${canonicalRequest}"`);
         return canonicalRequest;
     }
 
@@ -127,7 +127,7 @@ class HttpRequestAuthV4 extends stream.Writable {
               crypto.createHash('sha256').update(canonicalReq).digest('hex');
         const stringToSign = `AWS4-HMAC-SHA256\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${canonicalReqHash}`;
-        // console.log(`STRING TO SIGN: "${stringToSign}"`);
+        // // console.log(`STRING TO SIGN: "${stringToSign}"`);
         return stringToSign;
     }
 
@@ -158,7 +158,7 @@ class HttpRequestAuthV4 extends stream.Writable {
         const stringToSign = `AWS4-HMAC-SHA256-PAYLOAD\n${this._timestamp}\n` +
               `${this.getCredentialScope()}\n${this._lastSignature}\n` +
               `${EMPTY_STRING_HASH}\n${currentChunkHash}`;
-        // console.log(`CHUNK STRING TO SIGN: "${stringToSign}"`);
+        // // console.log(`CHUNK STRING TO SIGN: "${stringToSign}"`);
         return stringToSign;
     }
 

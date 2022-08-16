@@ -47,7 +47,7 @@ class HttpChunkedUploadWithBadSignature extends HttpRequestAuthV4 {
     getChunkSignature(chunkData) {
         let signature;
         if (this._chunkId === this._alterSignatureChunkId) {
-            // console.log(
+            // // console.log(
             //     `ALTERING SIGNATURE OF DATA CHUNK #${this._chunkId}`);
             signature = DUMMY_SIGNATURE;
         } else {
@@ -84,7 +84,7 @@ function testChunkedPutWithBadSignature(n, alterSignatureChunkId, cb) {
         assert.ifError(err);
     });
     async.timesSeries(N_DATA_CHUNKS, (chunkIndex, done) => {
-        // console.log(`SENDING NEXT CHUNK OF LENGTH ${CHUNK_DATA.length}`);
+        // // console.log(`SENDING NEXT CHUNK OF LENGTH ${CHUNK_DATA.length}`);
         if (req.write(CHUNK_DATA)) {
             process.nextTick(done);
         } else {

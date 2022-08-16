@@ -31,14 +31,16 @@ RUN apt-get update \
         yarn \
         wget \
         libffi-dev \
-        zlib1g-dev \
-    && mkdir -p /root/ssh \
+        zlib1g-dev
+
+RUN mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
 ENV PYTHON=python3
-RUN yarn cache clean \
-    && yarn install --production --ignore-optional --ignore-engines --network-concurrency 1 \
-    && apt-get autoremove --purge -y python git build-essential \
+RUN yarn cache clean
+RUN yarn install --production --ignore-optional --ignore-engines --network-concurrency 1
+RUN apt-get install htop
+RUN apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \
     && rm -rf ~/.node-gyp \
