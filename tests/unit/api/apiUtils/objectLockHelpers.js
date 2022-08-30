@@ -8,6 +8,7 @@ const {
     validateHeaders,
     validateObjectLockUpdate,
     compareObjectLockInformation,
+    objectLockRequiresBypass,
 } = require('../../../../lib/api/apiUtils/object/objectLockHelpers');
 
 const mockName = 'testbucket';
@@ -176,6 +177,77 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
         const retainUntilDate = calculateRetainUntilDate(mockConfigWithYears);
         assert.strictEqual(retainUntilDate.slice(0, 16),
             expectedRetainUntilDate.toISOString().slice(0, 16));
+    });
+});
+
+describe('objectLockHelpers: objectLockRequiresBypass', () => {
+    it('should not require bypass if extending non-expired GOVERNANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should not require bypass if previous mode is undefined', () => {
+        const objMD = {
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should not require bypass if previous mode was COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should require bypass if new mode is COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), true);
+    });
+
+    it('should require bypass if we are shortening retention', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), true);
     });
 });
 
