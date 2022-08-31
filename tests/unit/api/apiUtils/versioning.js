@@ -267,7 +267,9 @@ describe('versioning helpers', () => {
                 objMD: {
                     versionId: 'v1',
                 },
-                expectedRes: {},
+                expectedRes: {
+                    isNull: true,
+                },
             },
             {
                 description: 'delete non-null object version',

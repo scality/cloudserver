@@ -5208,9 +5208,9 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-"utapi@git+https://github.com/scality/utapi#7.10.7":
-  version "7.10.7"
-  resolved "git+https://github.com/scality/utapi#a072535050c84c30719cfe258333940750240614"
+"utapi@git+https://github.com/scality/utapi#7.10.9":
+  version "7.10.9"
+  resolved "git+https://github.com/scality/utapi#f3a9a57f589a2b428cde415f626844fbd2d5d27c"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
