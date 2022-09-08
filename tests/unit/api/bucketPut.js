@@ -1,7 +1,8 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
+const sinon = require('sinon');
 
-const { checkLocationConstraint } = require('../../../lib/api/bucketPut');
+const { checkLocationConstraint, _handleAuthResults } = require('../../../lib/api/bucketPut');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const { config } = require('../../../lib/Config');
 const constants = require('../../../constants');
@@ -381,5 +382,56 @@ describe('bucketPut API', () => {
                 done();
             });
         });
+    });
+
+    describe('_handleAuthResults handles', () => {
+        const constraint = 'location-constraint';
+        [
+            {
+                description: 'errors',
+                error: 'our error',
+                results: undefined,
+                calledWith: ['our error'],
+            },
+            {
+                description: 'single allowed auth',
+                error: undefined,
+                results: [{ isAllowed: true }],
+                calledWith: [null, constraint],
+            },
+            {
+                description: 'many allowed auth',
+                error: undefined,
+                results: [
+                    { isAllowed: true },
+                    { isAllowed: true },
+                    { isAllowed: true },
+                    { isAllowed: true },
+                ],
+                calledWith: [null, constraint],
+            },
+            {
+                description: 'single not allowed auth',
+                error: undefined,
+                results: [{ isAllowed: false }],
+                calledWith: [errors.AccessDenied],
+            },
+            {
+                description: 'one not allowed auth of many',
+                error: undefined,
+                results: [
+                    { isAllowed: true },
+                    { isAllowed: true },
+                    { isAllowed: false },
+                    { isAllowed: true },
+                ],
+                calledWith: [errors.AccessDenied],
+            },
+        ].forEach(tc => it(tc.description, () => {
+            const cb = sinon.fake();
+            const handler = _handleAuthResults(constraint, log, cb);
+            handler(tc.error, tc.results);
+            assert.deepStrictEqual(cb.getCalls()[0].args, tc.calledWith);
+        }));
     });
 });
