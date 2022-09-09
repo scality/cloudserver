@@ -5544,9 +5544,9 @@ vaultclient@scality/vaultclient#8.2.6:
     werelogs "git+https://github.com/scality/werelogs#8.1.0"
     xml2js "0.4.19"
 
-vaultclient@scality/vaultclient#8.3.6:
-  version "8.3.6"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/ed2202cb946745222b903688a8bff054e4dba088"
+vaultclient@scality/vaultclient#8.3.8:
+  version "8.3.8"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/c77ec545ce421072d5f860fd588cb4b265e4a290"
   dependencies:
     agentkeepalive "^4.1.3"
     arsenal "git+https://github.com/scality/Arsenal#8.1.62"
@@ -5570,7 +5570,6 @@ webidl-conversions@^3.0.0:
 
 "werelogs@git+https://github.com/scality/werelogs#8.1.0":
   version "8.1.0"
-  uid e8f828725642c54c511cdbe580b18f43d3589313
   resolved "git+https://github.com/scality/werelogs#e8f828725642c54c511cdbe580b18f43d3589313"
   dependencies:
     safe-json-stringify "1.0.3"
