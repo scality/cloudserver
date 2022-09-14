@@ -1,0 +1,39 @@
+---
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to be released'
+        required: true
+
+env:
+  REGISTRY_NAME: registry.scality.com
+  PROJECT_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  build-federation-image:
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    secrets: inherit
+    with:
+      push: true
+      registry: ${{ env.REGISTRY_NAME }}
+      namespace: ${{env.PROJECT_NAME}}
+      name: ${{env.PROJECT_NAME}}
+      context: .
+      file: images/svc-base/Dockerfile
+      tag: ${{ github.event.inputs.tag }}-svc-base"
+
+  github-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Release ${{ github.event.inputs.tag }}
+          tag_name: ${{ github.event.inputs.tag }}
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
