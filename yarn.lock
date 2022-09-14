@@ -468,7 +468,7 @@ arraybuffer.slice@~0.0.7:
 
 "arsenal@git+https://github.com/scality/Arsenal#bugfix/ARSN-252-listing-bug-versioned-bucket":
   version "7.10.34"
-  resolved "git+https://github.com/scality/Arsenal#b6ea4b48901716bdb49983d4fc1cb7e1ebeccadb"
+  resolved "git+https://github.com/scality/Arsenal#848fe3597f6e684d708084488c23504be28815ca"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -580,9 +580,9 @@ aws-sdk@2.905.0:
     xml2js "0.4.19"
 
 aws-sdk@^2.1005.0:
-  version "2.1215.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1215.0.tgz#dafc339c2f9039a8f9de30d863a8665716df2ec0"
-  integrity sha512-btOexIY0O2F+HhjytToaYuub2HEdLqccZSM8rbT3nrbXo7U4k4Gqi6SbMGi2a+vEpj8lY8dAuMR2lvvVs4Ib9Q==
+  version "2.1216.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1216.0.tgz#d2be6259f6374b214f9ea6a665b015d5ba54cdb5"
+  integrity sha512-sCgkIc9ZdFyf4dImsbRx+139gw9A6Xy924wwP4rAVrYeSbudBY0jDO4wJBAwUpPKqX5cxjSLmjP7gOi2CDwhjw==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
