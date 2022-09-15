@@ -1,5 +1,4 @@
-FROM node:16.13.2-slim
-MAINTAINER Giorgio Regni <gr@scality.com>
+FROM registry.scality.com/federation/nodesvc-base:7.10.6.0
 
 WORKDIR /usr/src/app
 
