@@ -19,8 +19,8 @@ jobs:
     with:
       push: true
       registry: ${{ env.REGISTRY_NAME }}
-      namespace: ${{env.PROJECT_NAME}}
-      name: ${{env.PROJECT_NAME}}
+      namespace: ${{ env.PROJECT_NAME }}
+      name: ${{ env.PROJECT_NAME }}
       context: .
       file: images/svc-base/Dockerfile
       tag: ${{ github.event.inputs.tag }}-svc-base"
