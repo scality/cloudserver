@@ -32,6 +32,7 @@ RUN apt-get update \
         wget \
         libffi-dev \
         zlib1g-dev \
+    && apt-get clean \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
 
