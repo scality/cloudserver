@@ -13,14 +13,21 @@ env:
   PROJECT_NAME: ${{ github.event.repository.name }}
 
 jobs:
+  build-vars:
+    outputs:
+      REGISTRY_NAME: ${{ env.REGISTRY_NAME }}
+      PROJECT_NAME: ${{ env.PROJECT_NAME }}
+
   build-federation-image:
     uses: scality/workflows/.github/workflows/docker-build.yaml@v1
     secrets: inherit
+    needs:
+      - build-vars
     with:
       push: true
-      registry: ${{ env.REGISTRY_NAME }}
-      namespace: ${{ env.PROJECT_NAME }}
-      name: ${{ env.PROJECT_NAME }}
+      registry: ${{ needs.build-vars.outputs.REGISTRY_NAME }}
+      namespace: ${{ needs.build-vars.outputs.PROJECT_NAME }}
+      name: ${{ needs.build-vars.outputs.PROJECT_NAME }}
       context: .
       file: images/svc-base/Dockerfile
       tag: ${{ github.event.inputs.tag }}-svc-base"
