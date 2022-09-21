@@ -12,8 +12,6 @@ jobs:
   build-federation-image:
     uses: scality/workflows/.github/workflows/docker-build.yaml@v1
     secrets: inherit
-    needs:
-      - build-vars
     with:
       push: true
       registry: registry.scality.com
