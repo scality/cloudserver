@@ -19,7 +19,7 @@ jobs:
       name: ${{ github.event.repository.name }}
       context: .
       file: images/svc-base/Dockerfile
-      tag: ${{ github.event.inputs.tag }}-svc-base"
+      tag: ${{ github.event.inputs.tag }}-svc-base
 
   github-release:
     runs-on: ubuntu-latest
