@@ -410,6 +410,28 @@ describe('bucketPut API', () => {
                 calledWith: [null, constraint],
             },
             {
+                description: 'array of arrays allowed auth',
+                error: undefined,
+                results: [
+                    { isAllowed: true },
+                    { isAllowed: true },
+                    [{ isAllowed: true }, { isAllowed: true }],
+                    { isAllowed: true },
+                ],
+                calledWith: [null, constraint],
+            },
+            {
+                description: 'array of arrays not allowed auth',
+                error: undefined,
+                results: [
+                    { isAllowed: true },
+                    { isAllowed: true },
+                    [{ isAllowed: true }, { isAllowed: false }],
+                    { isAllowed: true },
+                ],
+                calledWith: [errors.AccessDenied],
+            },
+            {
                 description: 'single not allowed auth',
                 error: undefined,
                 results: [{ isAllowed: false }],
