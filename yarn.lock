@@ -466,9 +466,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#7.10.34":
-  version "7.10.34"
-  resolved "git+https://github.com/scality/Arsenal#264e0c1aaddaac0150bfaaa51ca09c4a12aff112"
+"arsenal@git+https://github.com/scality/Arsenal#7.10.37":
+  version "7.10.37"
+  resolved "git+https://github.com/scality/Arsenal#9d614a4ab30a200501681a2e80dc14d758ac9338"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -5339,7 +5339,6 @@ webidl-conversions@^3.0.0:
 
 "werelogs@git+https://github.com/scality/werelogs#8.1.0":
   version "8.1.0"
-  uid e8f828725642c54c511cdbe580b18f43d3589313
   resolved "git+https://github.com/scality/werelogs#e8f828725642c54c511cdbe580b18f43d3589313"
   dependencies:
     safe-json-stringify "1.0.3"
