@@ -103,7 +103,7 @@ See all buckets:
     env_auth = false
     access_key_id = accessKey1
     secret_access_key = verySecretKey1
-    region = other-v2-signature
+    region = us-east-1
     endpoint = http://localhost:8000
     location_constraint =
     acl = private
