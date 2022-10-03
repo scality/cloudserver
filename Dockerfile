@@ -48,7 +48,7 @@ RUN cd /tmp \
     && rm -rf /tmp/Python-$PY_VERSION.tgz
 
 RUN yarn cache clean \
-    && yarn install --production --ignore-optional --ignore-engines  \
+    && yarn install --production --ignore-optional --ignore-engines  --network-concurrency 1 \
     && apt-get autoremove --purge -y python git build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && yarn cache clean \
