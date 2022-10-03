@@ -537,7 +537,7 @@ stages:
           name: docker build
           command: >-
             docker build .
-            --tag=${DEVELOPMENT_DOCKER_IMAGE_NAME}:%(prop:commit_short_revision)s
+            --tag=${DEVELOPMENT_DOCKER_IMAGE_NAME}:8.4.505
           env: *docker_env
           haltOnFailure: true
       - ShellCommand:
@@ -557,7 +557,7 @@ stages:
           name: push dashboards to the development namespace
           command: |
             for revision in %(prop:commit_short_revision)s latest ; do
-              oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:$revision ${LAYERS}
+              oras push ${REGISTRY}/${PROJECT}-dev/${PROJECT}-dashboards:8.4.505 ${LAYERS}
             done
           env: *oras
           workdir: build/monitoring/
