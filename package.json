@@ -34,7 +34,7 @@
     "sproxydclient": "scality/sproxydclient#7.4.11",
     "utapi": "scality/utapi#7.4.12",
     "utf8": "~2.1.1",
-    "uuid": "^8.3.2",
+    "uuid": "^9.0.0",
     "vaultclient": "scality/vaultclient#7.4.12",
     "werelogs": "scality/werelogs#8.1.0",
     "xml2js": "~0.4.16"
