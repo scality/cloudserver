@@ -1,4 +1,4 @@
-FROM node:16.13.2-slim
+FROM node:16.17-slim
 MAINTAINER Giorgio Regni <gr@scality.com>
 
 ENV NO_PROXY localhost,127.0.0.1
