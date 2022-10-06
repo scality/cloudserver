@@ -10,7 +10,7 @@ RUN pip3 install redis===3.5.3 requests==2.27.1 && \
 
 USER ${USER}
 WORKDIR ${HOME_DIR}/s3
-RUN ln -s /scality-kms node_modules && \
+RUN ln -sf /scality-kms node_modules && \
     rm -f ~/.gitconfig && \
     git config --global --add safe.directory . && \
     git lfs install && \
