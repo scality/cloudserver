@@ -5,14 +5,14 @@ ENV S3_LOCATION_FILE=${CONF_DIR}/locationConfig.json
 
 COPY . ${HOME_DIR}/s3
 RUN chown -R ${USER} ${HOME_DIR}
-RUN pip3 install redis===3.5.3 requests==2.27.1
+RUN pip3 install redis===3.5.3 requests==2.27.1 && \
+    apt-get install -y git-lfs
 
 USER ${USER}
 WORKDIR ${HOME_DIR}/s3
 RUN ln -s /scality-kms node_modules && \
     rm -f ~/.gitconfig && \
     git config --global --add safe.directory . && \
-    apt-get install -y git-lfs && \
     git lfs install && \
     GIT_LFS_SKIP_SMUDGE=1 && \
     yarn install --frozen-lockfile --production --network-concurrency 1 && \
