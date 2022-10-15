@@ -534,9 +534,8 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.1.69", "arsenal@git+https://github.com/scality/Arsenal#8307a1513edcc38b529271d5ae0fc7b06996f5ae":
+"arsenal@git+https://github.com/scality/Arsenal#8.1.69":
   version "8.1.69"
-  uid "8307a1513edcc38b529271d5ae0fc7b06996f5ae"
   resolved "git+https://github.com/scality/Arsenal#8307a1513edcc38b529271d5ae0fc7b06996f5ae"
   dependencies:
     "@types/async" "^3.2.12"
@@ -5377,9 +5376,9 @@ url@0.10.3:
     punycode "1.3.2"
     querystring "0.2.0"
 
-"utapi@github:scality/utapi#8.1.7":
-  version "8.1.7"
-  resolved "https://codeload.github.com/scality/utapi/tar.gz/62bf4d86e6f0409efccdc96e230e68d3fb3127c3"
+"utapi@github:scality/utapi#8.1.8":
+  version "8.1.8"
+  resolved "https://codeload.github.com/scality/utapi/tar.gz/750cabc565ad2332333acf55f423244b1a3a7cfd"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
