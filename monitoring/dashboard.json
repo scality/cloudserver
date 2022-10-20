@@ -1231,7 +1231,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "time()\n- max by() (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}\n   - on() kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"}\n   > 0 or vector(0))",
+          "expr": "time()\n- max(cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (max(cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n   - max(kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"})\n   > 0 or vector(0))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2456,5 +2456,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 24
+  "version": 25
 }

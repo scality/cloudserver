@@ -181,9 +181,9 @@ lastReport = Stat(
     targets=[Target(
         expr="\n".join([
             'time()',
-            '- max by() (cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
-            '+ (cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"}',  # noqa: E501
-            '   - on() kube_cronjob_status_last_schedule_time{namespace="${namespace}", cronjob="${countItemsJob}"}',  # noqa: E501
+            '- max(cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+            '+ (max(cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+            '   - max(kube_cronjob_status_last_schedule_time{namespace="${namespace}", cronjob="${countItemsJob}"})',  # noqa: E501
             '   > 0 or vector(0))',
         ])
     )],
