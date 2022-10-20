@@ -1549,6 +1549,196 @@
       "maxDataPoints": 100,
       "panels": [],
       "targets": [],
+      "title": "Operations",
+      "transformations": [],
+      "transparent": false,
+      "type": "row"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {},
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 18,
+        "x": 0,
+        "y": 18
+      },
+      "hideTimeOverride": false,
+      "id": 20,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(action)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{action}}",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Request count per S3 action",
+      "transformations": [],
+      "transparent": false,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 6,
+        "x": 18,
+        "y": 18
+      },
+      "hideTimeOverride": false,
+      "id": 21,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "values": []
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(method)",
+          "format": "time_series",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{method}}",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "HTTP Method breakdown",
+      "transformations": [],
+      "transparent": false,
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          }
+        }
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "hideTimeOverride": false,
+      "id": 22,
+      "links": [],
+      "maxDataPoints": 100,
+      "panels": [],
+      "targets": [],
       "title": "Latency",
       "transformations": [],
       "transparent": false,
@@ -1602,10 +1792,10 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 29
       },
       "hideTimeOverride": false,
-      "id": 20,
+      "id": 23,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1725,13 +1915,13 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 29
       },
       "heatmap": {},
       "hideTimeOverride": false,
       "hideZeroBuckets": false,
       "highlightCards": true,
-      "id": 21,
+      "id": 24,
       "legend": {
         "show": false
       },
@@ -1779,6 +1969,94 @@
       }
     },
     {
+      "datasource": "${DS_PROMETHEUS}",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {},
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "hideTimeOverride": false,
+      "id": 25,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{action}}",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Latencies per S3 action",
+      "transformations": [],
+      "transparent": false,
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "editable": true,
       "error": false,
@@ -1794,10 +2072,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 47
       },
       "hideTimeOverride": false,
-      "id": 22,
+      "id": 26,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -1885,10 +2163,10 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 48
       },
       "hideTimeOverride": false,
-      "id": 23,
+      "id": 27,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -1961,10 +2239,10 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 27
+        "y": 48
       },
       "hideTimeOverride": false,
-      "id": 24,
+      "id": 28,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2047,10 +2325,10 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 27
+        "y": 48
       },
       "hideTimeOverride": false,
-      "id": 25,
+      "id": 29,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2124,10 +2402,10 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 56
       },
       "hideTimeOverride": false,
-      "id": 26,
+      "id": 30,
       "links": [],
       "maxDataPoints": 100,
       "panels": [],
@@ -2160,10 +2438,10 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 36
+        "y": 57
       },
       "hideTimeOverride": false,
-      "id": 27,
+      "id": 31,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2233,10 +2511,10 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 36
+        "y": 57
       },
       "hideTimeOverride": false,
-      "id": 28,
+      "id": 32,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2306,10 +2584,10 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 36
+        "y": 57
       },
       "hideTimeOverride": false,
-      "id": 29,
+      "id": 33,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -2456,5 +2734,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 25
+  "version": 26
 }

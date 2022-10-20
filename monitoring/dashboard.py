@@ -321,14 +321,46 @@ httpAggregatedStatus = TimeSeries(
 )
 
 
-def average_latency_target(title, action=""):
-    # type: (str, str) -> Target
+requestsByAction = TimeSeries(
+    title="Request count per S3 action",
+    dataSource="${DS_PROMETHEUS}",
+    legendDisplayMode="table",
+    legendPlacement="right",
+    legendValues=["max", "mean", "sum"],
+    lineInterpolation="smooth",
+    unit=UNITS.SHORT,
+    targets=[
+        Target(
+            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(action)',  # noqa: E501
+            legendFormat="{{action}}",
+        )
+    ]
+)
+
+requestsByMethod = PieChart(
+    title="HTTP Method breakdown",
+    dataSource="${DS_PROMETHEUS}",
+    displayLabels=['name', 'percent'],
+    unit=UNITS.SHORT,
+    targets=[
+        Target(
+            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
+            instant=True,
+            legendFormat="{{method}}",
+        ),
+    ],
+)
+
+
+def average_latency_target(title, action="", by=""):
+    # type: (str, str, str) -> Target
     extra = ', action=' + action if action else ""
+    by = " by (" + by + ")" if by else ""
     return Target(
         expr="\n".join([
-            'sum(rate(http_request_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))",  # noqa: E501
+            'sum(rate(http_request_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
             "   /",
-            'sum(rate(http_request_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))",  # noqa: E501
+            'sum(rate(http_request_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
         ]),
         legendFormat=title,
     )
@@ -351,6 +383,19 @@ averageLatencies = TimeSeries(
             title="Multi-delete", action='~"multiObjectDelete|multipartDelete"'
         ),
     ],
+)
+
+latenciesByAction = TimeSeries(
+    title="Latencies per S3 action",
+    dataSource="${DS_PROMETHEUS}",
+    legendDisplayMode="table",
+    legendPlacement="right",
+    legendValues=["max", "mean"],
+    lineInterpolation="smooth",
+    unit=UNITS.SECONDS,
+    targets=[
+        average_latency_target(title="{{action}}", by="action"),
+    ]
 )
 
 requestTime = Heatmap(
@@ -566,8 +611,13 @@ dashboard = (
                 height=4),
             RowPanel(title="Response codes"),
             layout.row([httpStatusCodes, httpAggregatedStatus], height=8),
+            RowPanel(title="Operations"),
+            layout.row([
+                requestsByAction, layout.resize([requestsByMethod], width=6)
+            ], height=10),
             RowPanel(title="Latency"),
             layout.row([averageLatencies, requestTime], height=8),
+            layout.row([latenciesByAction], height=10),
             RowPanel(title="Data rate"),
             layout.row(layout.resize([bandWidth], width=12)
                        + [uploadChunkSize, downloadChunkSize],
