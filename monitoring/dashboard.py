@@ -39,12 +39,11 @@ up = Stat(
 httpRequests = Stat(
     title="Http requests",
     dataSource="${DS_PROMETHEUS}",
-    decimals=0,
     format=UNITS.SHORT,
     noValue="0",
     reduceCalc="sum",
     targets=[Target(
-        expr='sum(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])))',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
@@ -204,12 +203,11 @@ def http_status_panel(title, code):
         title=title,
         dataSource="${DS_PROMETHEUS}",
         colorMode="background",
-        decimals=0,
         format=UNITS.SHORT,
         noValue="0",
         reduceCalc="sum",
         targets=[Target(
-            expr='sum(increase(http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval]))",  # noqa: E501
+            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval])))",  # noqa: E501
         )],
         thresholds=[Threshold("semi-dark-blue", 0, 0.)],
     )
@@ -273,12 +271,11 @@ oobObjectIngestionRate = Stat(
 httpStatusCodes = TimeSeries(
     title="Http status code over time",
     dataSource="${DS_PROMETHEUS}",
-    decimals=0,
     fillOpacity=30,
     lineInterpolation="smooth",
     unit=UNITS.SHORT,
     targets=[Target(
-        expr='sum by (code) (increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='round(sum by (code) (increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])))',  # noqa: E501
         legendFormat="{{code}}",
     )],
 )
@@ -287,7 +284,7 @@ httpStatusCodes = TimeSeries(
 def http_aggregated_request_target(title, code):
     # type: (str, str) -> Target
     return Target(
-        expr='sum(increase(http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval]))",  # noqa: E501
+        expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval])))",  # noqa: E501
         legendFormat=title,
     )
 
@@ -306,7 +303,6 @@ def color_override(name, color):
 httpAggregatedStatus = TimeSeries(
     title="Aggregated status over time",
     dataSource="${DS_PROMETHEUS}",
-    decimals=0,
     fillOpacity=39,
     lineInterpolation="smooth",
     unit=UNITS.SHORT,
