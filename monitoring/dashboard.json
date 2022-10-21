@@ -2224,11 +2224,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#808080",
                 "index": 0,
                 "line": true,
                 "op": "gt",
                 "value": "null",
+                "yaxis": "left"
+              },
+              {
+                "color": "green",
+                "index": 1,
+                "line": true,
+                "op": "gt",
+                "value": 0.0,
                 "yaxis": "left"
               }
             ]
@@ -2249,14 +2257,14 @@
         "displayMode": "gradient",
         "fieldOptions": {
           "calcs": [
-            "mean"
+            "lastNotNull"
           ],
           "defaults": {
             "decimals": null,
             "links": [],
             "max": null,
             "min": null,
-            "noValue": "0",
+            "noValue": "-",
             "title": null,
             "unit": "bytes"
           },
@@ -2265,11 +2273,19 @@
           "override": {},
           "thresholds": [
             {
-              "color": "green",
+              "color": "#808080",
               "index": 0,
               "line": true,
               "op": "gt",
               "value": "null",
+              "yaxis": "left"
+            },
+            {
+              "color": "green",
+              "index": 1,
+              "line": true,
+              "op": "gt",
+              "value": 0.0,
               "yaxis": "left"
             }
           ],
@@ -2282,20 +2298,20 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
-          "format": "heatmap",
+          "expr": "avg(http_request_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}) by (quantile)",
+          "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{ le }}",
+          "legendFormat": "{{ quantile }}",
           "metric": "",
           "refId": "",
           "step": 10,
           "target": ""
         }
       ],
-      "title": "Upload chunk size",
+      "title": "Avg upload chunk size by \u03c6-quantile",
       "transformations": [],
       "transparent": false,
       "type": "bargauge"
@@ -2310,11 +2326,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#808080",
                 "index": 0,
                 "line": true,
                 "op": "gt",
                 "value": "null",
+                "yaxis": "left"
+              },
+              {
+                "color": "green",
+                "index": 1,
+                "line": true,
+                "op": "gt",
+                "value": 0.0,
                 "yaxis": "left"
               }
             ]
@@ -2335,14 +2359,14 @@
         "displayMode": "gradient",
         "fieldOptions": {
           "calcs": [
-            "mean"
+            "lastNotNull"
           ],
           "defaults": {
             "decimals": null,
             "links": [],
             "max": null,
             "min": null,
-            "noValue": "0",
+            "noValue": "-",
             "title": null,
             "unit": "bytes"
           },
@@ -2351,11 +2375,19 @@
           "override": {},
           "thresholds": [
             {
-              "color": "green",
+              "color": "#808080",
               "index": 0,
               "line": true,
               "op": "gt",
               "value": "null",
+              "yaxis": "left"
+            },
+            {
+              "color": "green",
+              "index": 1,
+              "line": true,
+              "op": "gt",
+              "value": 0.0,
               "yaxis": "left"
             }
           ],
@@ -2368,20 +2400,20 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_response_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
-          "format": "heatmap",
+          "expr": "avg(http_response_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}) by (quantile)",
+          "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{ le }}",
+          "legendFormat": "{{ quantile }}",
           "metric": "",
           "refId": "",
           "step": 10,
           "target": ""
         }
       ],
-      "title": "Download chunk size",
+      "title": "Avg download chunk size by \u03c6-quantile",
       "transformations": [],
       "transparent": false,
       "type": "bargauge"
@@ -2734,5 +2766,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 26
+  "version": 27
 }

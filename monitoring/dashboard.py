@@ -449,42 +449,42 @@ bandWidth = TimeSeries(
 )
 
 uploadChunkSize = BarGauge(
-    title="Upload chunk size",
+    title="Avg upload chunk size by φ-quantile",
     dataSource="${DS_PROMETHEUS}",
-    calc="mean",
+    calc="lastNotNull",
     displayMode="gradient",
     format="bytes",
     max=None,
     min=None,
-    noValue="0",
+    noValue="-",
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_request_size_bytes{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by (le)',  # noqa: E501
-        format='heatmap',
-        legendFormat='{{ le }}',
+        expr='avg(http_request_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
+        legendFormat='{{ quantile }}',
     )],
     thresholds=[
-        Threshold("green", 0, 0.0),
+        Threshold("#808080", 0, 0.0),
+        Threshold("green", 1, 0.0),
     ]
 )
 
 downloadChunkSize = BarGauge(
-    title="Download chunk size",
+    title="Avg download chunk size by φ-quantile",
     dataSource="${DS_PROMETHEUS}",
-    calc="mean",
+    calc="lastNotNull",
     displayMode="gradient",
     format="bytes",
     max=None,
     min=None,
-    noValue="0",
+    noValue="-",
     orientation="vertical",
     targets=[Target(
-        expr='sum(increase(http_response_size_bytes{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by (le)',  # noqa: E501
-        format='heatmap',
-        legendFormat='{{ le }}',
+        expr='avg(http_response_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
+        legendFormat='{{ quantile }}',
     )],
     thresholds=[
-        Threshold("green", 0, 0.0),
+        Threshold("#808080", 0, 0.0),
+        Threshold("green", 1, 0.0),
     ]
 )
 
