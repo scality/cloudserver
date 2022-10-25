@@ -50,7 +50,7 @@ const testMd = {
     },
     'nullVersionId': '99999999999999999999RG001  ',
     'isDeleteMarker': false,
-    'versionId': '98505119639965999999RG001  9',
+    'versionId': '98505119639965999999RG001  ',
     'replicationInfo': {
         status: 'COMPLETED',
         backends: [{ site: 'zenko', status: 'PENDING' }],
@@ -416,8 +416,7 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
-        it('should remove old object data locations if version is overwritten',
-        done => {
+        it('should remove old object data locations if version is overwritten', done => {
             let oldLocation;
             const testKeyOldData = `${testKey}-old-data`;
             async.waterfall([next => {
@@ -443,6 +442,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: testKey,
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
@@ -485,6 +487,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: testKey,
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
@@ -516,6 +521,7 @@ describeSkipIfAWS('backbeat routes', () => {
                 done();
             });
         });
+
         it('should not remove data locations on replayed metadata PUT',
         done => {
             let serializedNewMd;
@@ -540,6 +546,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: testKey,
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: serializedNewMd,
                 }, (err, response) => {
@@ -553,6 +562,97 @@ describeSkipIfAWS('backbeat routes', () => {
                 s3.getObject({
                     Bucket: TEST_BUCKET,
                     Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                });
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should create a new version when no versionId is passed in query string', done => {
+            let newVersion;
+            async.waterfall([next => {
+                // put object's data locations
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // put object metadata
+                const oldMd = Object.assign({}, testMd);
+                oldMd.location = JSON.parse(response.body);
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(oldMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const parsedResponse = JSON.parse(response.body);
+                assert.strictEqual(parsedResponse.versionId, testMd.versionId);
+                // create new data locations
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // create a new version with the new data locations,
+                // not passing 'versionId' in the query string
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(newMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                const parsedResponse = JSON.parse(response.body);
+                newVersion = parsedResponse.versionId;
+                assert.notStrictEqual(newVersion, testMd.versionId);
+                // give some time for the async deletes to complete,
+                // then check that we can read the latest version
+                setTimeout(() => s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                }, (err, data) => {
+                    assert.ifError(err);
+                    assert.strictEqual(data.Body.toString(), testData);
+                    next();
+                }), 1000);
+            }, next => {
+                // check that the previous object version is still readable
+                s3.getObject({
+                    Bucket: TEST_BUCKET,
+                    Key: testKey,
+                    VersionId: versionIdUtils.encode(testMd.versionId),
                 }, (err, data) => {
                     assert.ifError(err);
                     assert.strictEqual(data.Body.toString(), testData);
@@ -649,6 +749,9 @@ describeSkipIfAWS('backbeat routes', () => {
             method: 'PUT', bucket: TEST_BUCKET,
             objectKey: TEST_KEY,
             resourceType: 'metadata',
+            queryObj: {
+                versionId: versionIdUtils.encode(testMd.versionId),
+            },
             authCredentials: backbeatAuthCredentials,
             requestBody: JSON.stringify(testMd),
         }, done));
