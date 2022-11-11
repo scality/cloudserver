@@ -534,9 +534,49 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.1.70":
-  version "8.1.70"
-  resolved "git+https://github.com/scality/Arsenal#c343820cae2c7a533fb73046b2ad4c13cb77fc8b"
+"arsenal@git+https://github.com/scality/Arsenal#8.1.71":
+  version "8.1.71"
+  resolved "git+https://github.com/scality/Arsenal#92c567414aa34f7b76c58872fbd3b36659b2b8c4"
+  dependencies:
+    "@types/async" "^3.2.12"
+    "@types/utf8" "^3.0.1"
+    JSONStream "^1.0.0"
+    agentkeepalive "^4.1.3"
+    ajv "6.12.3"
+    async "~2.6.4"
+    aws-sdk "^2.1005.0"
+    azure-storage "~2.10.7"
+    backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "2.0.1"
+    bson "4.0.0"
+    debug "~4.1.0"
+    diskusage "^1.1.1"
+    fcntl "github:scality/node-fcntl#0.2.0"
+    hdclient scality/hdclient#1.1.0
+    https-proxy-agent "^2.2.0"
+    ioredis "^4.28.5"
+    ipaddr.js "1.9.1"
+    joi "^17.6.0"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    mongodb "^3.0.1"
+    node-forge "^1.3.0"
+    prom-client "10.2.3"
+    simple-glob "^0.2.0"
+    socket.io "2.4.1"
+    socket.io-client "2.4.0"
+    sproxydclient "github:scality/sproxydclient#8.0.4"
+    utf8 "3.0.0"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#8.1.0
+    xml2js "~0.4.23"
+  optionalDependencies:
+    ioctl "^2.0.2"
+
+"arsenal@github:scality/Arsenal#8.1.71":
+  version "8.1.71"
+  resolved "https://codeload.github.com/scality/Arsenal/tar.gz/92c567414aa34f7b76c58872fbd3b36659b2b8c4"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
