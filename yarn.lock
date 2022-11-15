@@ -534,9 +534,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.1.72":
-  version "8.1.72"
-  resolved "git+https://github.com/scality/Arsenal#162d9ec46b66b240254a1635d4c3ecc5cd7b5c05"
+"arsenal@git+https://github.com/scality/Arsenal#bugfix/ARSN-278-handle-versioning-suspended-versionId":
+  version "8.1.66"
+  resolved "git+https://github.com/scality/Arsenal#105a45af82c35e147ad8b49a60e2e04adec898e8"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
