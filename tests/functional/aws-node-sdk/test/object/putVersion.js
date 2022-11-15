@@ -112,7 +112,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'content-md5',
-                'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
+                'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName', 'originOp']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
@@ -162,7 +162,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -213,7 +213,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -326,7 +326,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -378,7 +378,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -433,7 +433,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -486,7 +486,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [1]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -538,7 +538,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -597,7 +597,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
@@ -644,7 +644,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 checkVersionsAndUpdate(versionsBefore, versionsAfter, [0]);
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
-                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length',
+                checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
                 'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
