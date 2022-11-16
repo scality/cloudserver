@@ -159,7 +159,8 @@ describe('MPU with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter,
-                    ['location', 'uploadId', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
+                    ['location', 'uploadId', 'microVersionId', 'x-amz-restore',
+                    'archive', 'dataStoreName', 'originOp']);
 
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
