@@ -1773,7 +1773,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 180000,
             "stacking": {},
             "thresholdsStyle": {
               "mode": "off"
@@ -1997,7 +1997,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": 180000,
             "stacking": {},
             "thresholdsStyle": {
               "mode": "off"
@@ -2766,5 +2766,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 29
+  "version": 30
 }

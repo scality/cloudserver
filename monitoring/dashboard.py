@@ -370,6 +370,7 @@ averageLatencies = TimeSeries(
     title="Average latencies",
     dataSource="${DS_PROMETHEUS}",
     lineInterpolation="smooth",
+    spanNulls=3*60*1000,
     unit=UNITS.SECONDS,
     targets=[
         average_latency_target(title="Overall"),
@@ -392,6 +393,7 @@ latenciesByAction = TimeSeries(
     legendPlacement="right",
     legendValues=["max", "mean"],
     lineInterpolation="smooth",
+    spanNulls=3*60*1000,
     unit=UNITS.SECONDS,
     targets=[
         average_latency_target(title="{{action}}", by="action"),
