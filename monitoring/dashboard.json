@@ -1685,7 +1685,7 @@
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
@@ -1700,7 +1700,7 @@
           "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(method)",
           "format": "time_series",
           "hide": false,
-          "instant": true,
+          "instant": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{method}}",
@@ -2766,5 +2766,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 27
+  "version": 28
 }

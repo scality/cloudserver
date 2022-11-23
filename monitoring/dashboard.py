@@ -341,11 +341,11 @@ requestsByMethod = PieChart(
     title="HTTP Method breakdown",
     dataSource="${DS_PROMETHEUS}",
     displayLabels=['name', 'percent'],
+    reduceOptionsCalcs=['sum'],
     unit=UNITS.SHORT,
     targets=[
         Target(
             expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
-            instant=True,
             legendFormat="{{method}}",
         ),
     ],
