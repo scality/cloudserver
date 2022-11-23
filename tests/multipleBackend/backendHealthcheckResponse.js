@@ -56,12 +56,12 @@ describe.skip('Healthcheck response', () => {
         const containerName =
             getAzureContainerName(azureLocationNonExistContainer);
 
-        beforeEach(done => {
-            azureClient.deleteContainerIfExists(containerName, done);
+        beforeEach(async () => {
+            await azureClient.getContainerClient(containerName).deleteIfExists();
         });
 
-        afterEach(done => {
-            azureClient.deleteContainerIfExists(containerName, done);
+        afterEach(async () => {
+            await azureClient.getContainerClient(containerName).deleteIfExists();
         });
 
         it('should create an azure location\'s container if it is missing ' +
@@ -75,11 +75,13 @@ describe.skip('Healthcheck response', () => {
                         'The specified container is being deleted.'));
                     return done();
                 }
-                return azureClient.getContainerMetadata(containerName,
-                    (err, azureResult) => {
+                return azureClient.getContainerClient(containerName).getProperties(
+                    azureResult => {
+                        assert.strictEqual(azureResult.metadata.name, containerName);
+                        return done();
+                    }, err => {
                         assert.strictEqual(err, null, 'got unexpected err ' +
                             `heading azure container: ${err}`);
-                        assert.strictEqual(azureResult.name, containerName);
                         return done();
                     });
             });
@@ -90,12 +92,15 @@ describe.skip('Healthcheck response', () => {
             clientCheck(false, log, err => {
                 assert.strictEqual(err, null,
                     `got unexpected err in clientCheck: ${err}`);
-                return azureClient.getContainerMetadata(containerName, err => {
-                    assert(err, 'Expected err but did not find one');
-                    assert.strictEqual(err.code, 'NotFound',
-                        `got unexpected err code in clientCheck: ${err.code}`);
-                    return done();
-                });
+                return azureClient.getContainerClient(containerName).getProperties().then(
+                    () => {
+                        assert(err, 'Expected err but did not find one');
+                        return done();
+                    }, err => {
+                        assert.strictEqual(err.code, 'NotFound',
+                            `got unexpected err code in clientCheck: ${err.code}`);
+                        return done();
+                    });
             });
         });
     });

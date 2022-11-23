@@ -96,18 +96,20 @@ function assertCopyPart(infos, cb) {
             assert.deepStrictEqual(res, resultCopy);
             next();
         }),
-        next => azureClient.listBlocks(azureContainerName,
-        mpuKeyNameAzure, 'all', (err, res) => {
-            assert.equal(err, null, 'listBlocks: Expected ' +
-            `success, got error: ${err}`);
-            subPartSize.forEach((size, index) => {
-                const partName = azureMpuUtils.getBlockId(uploadId, 1, index);
-                assert.strictEqual(res.UncommittedBlocks[index].Name,
-                  partName);
-                assert.equal(res.UncommittedBlocks[index].Size, size);
-            });
-            next();
-        }),
+        next => azureClient.getContainerClient(azureContainerName)
+            .getBlockBlobClient(mpuKeyNameAzure)
+            .getBlockList('all').then(res => {
+                subPartSize.forEach((size, index) => {
+                    const partName = azureMpuUtils.getBlockId(uploadId, 1, index);
+                    assert.strictEqual(res.uncommittedBlocks[index].name, partName);
+                    assert.equal(res.uncommittedBlocks[index].size, size);
+                });
+                next();
+            }, err => {
+                assert.equal(err, null, 'listBlocks: Expected ' +
+                    `success, got error: ${err}`);
+                next();
+            }),
     ], cb);
 }
 
@@ -558,24 +560,23 @@ describeSkipIfNotMultipleOrCeph('Put Copy Part to AZURE', function describeF() {
                             assert.deepStrictEqual(res, resultCopy);
                             next();
                         }),
-                        next => azureClient.listBlocks(azureContainerName,
-                        this.test.mpuKeyNameAzure, 'all', (err, res) => {
-                            assert.equal(err, null, 'listBlocks: Expected ' +
-                            `success, got error: ${err}`);
-                            const partName = azureMpuUtils.getBlockId(
-                              this.test.uploadId, 1, 0);
-                            const partName2 = azureMpuUtils.getBlockId(
-                              this.test.uploadId, 2, 0);
-                            assert.strictEqual(res.UncommittedBlocks[0].Name,
-                              partName);
-                            assert.equal(res.UncommittedBlocks[0].Size,
-                            oneKb);
-                            assert.strictEqual(res.UncommittedBlocks[1].Name,
-                                partName2);
-                            assert.equal(res.UncommittedBlocks[1].Size,
-                            11);
-                            next();
-                        }),
+                        next => azureClient.getContainerClient(azureContainerName)
+                            .getBlockBlobClient(this.test.mpuKeyNameAzure)
+                            .getBlockList('all').then(res => {
+                                const partName = azureMpuUtils.getBlockId(
+                                    this.test.uploadId, 1, 0);
+                                const partName2 = azureMpuUtils.getBlockId(
+                                    this.test.uploadId, 2, 0);
+                                assert.strictEqual(res.uncommittedBlocks[0].name, partName);
+                                assert.equal(res.uncommittedBlocks[0].size, oneKb);
+                                assert.strictEqual(res.uncommittedBlocks[1].name, partName2);
+                                assert.equal(res.uncommittedBlocks[1].size, 11);
+                                next();
+                            }, err => {
+                                assert.equal(err, null, 'listBlocks: Expected ' +
+                                    `success, got error: ${err}`);
+                                next();
+                            }),
                     ], done);
                 });
             });

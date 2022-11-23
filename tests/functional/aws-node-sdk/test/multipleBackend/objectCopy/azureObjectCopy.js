@@ -72,7 +72,8 @@ destBucket, destLoc, azureKey, mdDirective, objSize, callback) {
     async.series([
         cb => s3.getObject(sourceGetParams, cb),
         cb => s3.getObject(destGetParams, cb),
-        cb => azureClient.getBlobProperties(azureContainerName, azureKey, cb),
+        cb => azureClient.getContainerClient(azureContainerName).getProperties(azureKey)
+                .then(res => cb(null, res), err => cb(err)),
     ], (err, results) => {
         assert.equal(err, null, `Error in assertGetObjects: ${err}`);
         const [sourceRes, destRes, azureRes] = results;

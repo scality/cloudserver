@@ -20,30 +20,30 @@ let bucketUtil;
 let s3;
 
 function checkSubPart(key, uploadId, expectedParts, cb) {
-    azureClient.listBlocks(azureContainerName, key, 'all', (err, list) => {
-        assert.equal(err, null, 'Expected success, got error ' +
-        `on call to Azure: ${err}`);
-        const uncommittedBlocks = list.UncommittedBlocks;
-        const committedBlocks = list.CommittedBlocks;
-        assert.strictEqual(committedBlocks, undefined);
-        uncommittedBlocks.forEach((l, index) => {
-            assert.strictEqual(l.Name, getBlockId(uploadId,
-                expectedParts[index].partnbr, expectedParts[index].subpartnbr));
-            assert.strictEqual(l.Size, expectedParts[index].size.toString());
-        });
-        cb();
-    });
+    azureClient.getContainerClient(azureContainerName)
+        .getBlockBlobClient(key)
+        .getBlockList('all').then(list => {
+            const uncommittedBlocks = list.uncommittedBlocks;
+            const committedBlocks = list.committedBlocks;
+            assert.strictEqual(committedBlocks, undefined);
+            uncommittedBlocks.forEach((l, index) => {
+                assert.strictEqual(l.name, getBlockId(uploadId,
+                    expectedParts[index].partnbr, expectedParts[index].subpartnbr));
+                assert.strictEqual(l.size, expectedParts[index].size.toString());
+            });
+            cb();
+        }, cb);
 }
 
 function azureCheck(key, cb) {
     s3.getObject({ Bucket: azureContainerName, Key: key }, (err, res) => {
         assert.equal(err, null);
         assert.strictEqual(res.ETag, `"${expectedMD5}"`);
-        azureClient.getBlobProperties(azureContainerName, key, (err, res) => {
+        azureClient.getContainerClient(azureContainerName).getProperties(key).then(res => {
             const convertedMD5 = convertMD5(res.contentSettings.contentMD5);
             assert.strictEqual(convertedMD5, expectedMD5);
             return cb();
-        });
+        }, assert.ifError);
     });
 }
 
@@ -103,13 +103,13 @@ describeF() {
                         assert.strictEqual(res.ETag, eTagExpected);
                         return next(err);
                     }),
-                    next => azureClient.listBlocks(azureContainerName,
-                    this.test.key, 'all', err => {
-                        assert.notEqual(err, null,
-                            'Expected failure but got success');
-                        assert.strictEqual(err.code, 'BlobNotFound');
-                        next();
-                    }),
+                    next => azureClient.getContainerClient(azureContainerName)
+                        .getBlockBlobClient(this.test.key)
+                        .getBlockList('all').then(
+                            () => assert.fail('Expected failure but got success'), err => {
+                                assert.strictEqual(err.code, 'BlobNotFound');
+                                next();
+                            }),
                 ], done);
             });
 
@@ -132,7 +132,7 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(this.test.key, this.test.uploadId,
-                    parts, next),
+                        parts, next),
                 ], done);
             });
 
@@ -162,9 +162,9 @@ describeF() {
                     });
                 }, err => {
                     assert.equal(err, null, 'Expected success, ' +
-                    `got error: ${err}`);
+                        `got error: ${err}`);
                     checkSubPart(this.test.key, this.test.uploadId,
-                    parts, done);
+                        parts, done);
                 });
             });
 
@@ -193,9 +193,9 @@ describeF() {
                     });
                 }, err => {
                     assert.equal(err, null, 'Expected success, ' +
-                    `got error: ${err}`);
+                        `got error: ${err}`);
                     checkSubPart(this.test.key, this.test.uploadId,
-                    parts, done);
+                        parts, done);
                 });
             });
 
@@ -224,7 +224,7 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(this.test.key, this.test.uploadId,
-                    parts2, next),
+                        parts2, next),
                 ], done);
             });
         });
@@ -375,8 +375,8 @@ describeF() {
                         return next(err);
                     }),
                     next => checkSubPart(
-                      `${azureContainerName}/${this.test.key}`,
-                      this.test.uploadId, parts, next),
+                        `${azureContainerName}/${this.test.key}`,
+                        this.test.uploadId, parts, next),
                 ], done);
             });
         });
