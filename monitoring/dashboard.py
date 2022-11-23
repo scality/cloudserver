@@ -37,13 +37,13 @@ up = Stat(
 )
 
 httpRequests = Stat(
-    title="Http requests",
+    title="Http requests rate",
     dataSource="${DS_PROMETHEUS}",
-    format=UNITS.SHORT,
+    format=UNITS.OPS_PER_SEC,
     noValue="0",
-    reduceCalc="sum",
+    reduceCalc="mean",
     targets=[Target(
-        expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])))',  # noqa: E501
+        expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
@@ -203,11 +203,11 @@ def http_status_panel(title, code):
         title=title,
         dataSource="${DS_PROMETHEUS}",
         colorMode="background",
-        format=UNITS.SHORT,
+        format=UNITS.OPS_PER_SEC,
         noValue="0",
-        reduceCalc="sum",
+        reduceCalc="mean",
         targets=[Target(
-            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval])))",  # noqa: E501
+            expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval]))",  # noqa: E501
         )],
         thresholds=[Threshold("semi-dark-blue", 0, 0.)],
     )
@@ -273,9 +273,9 @@ httpStatusCodes = TimeSeries(
     dataSource="${DS_PROMETHEUS}",
     fillOpacity=30,
     lineInterpolation="smooth",
-    unit=UNITS.SHORT,
+    unit=UNITS.OPS_PER_SEC,
     targets=[Target(
-        expr='round(sum by (code) (increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])))',  # noqa: E501
+        expr='sum by (code) (rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
         legendFormat="{{code}}",
     )],
 )
@@ -284,7 +284,7 @@ httpStatusCodes = TimeSeries(
 def http_aggregated_request_target(title, code):
     # type: (str, str) -> Target
     return Target(
-        expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval])))",  # noqa: E501
+        expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval]))",  # noqa: E501
         legendFormat=title,
     )
 
@@ -305,7 +305,7 @@ httpAggregatedStatus = TimeSeries(
     dataSource="${DS_PROMETHEUS}",
     fillOpacity=39,
     lineInterpolation="smooth",
-    unit=UNITS.SHORT,
+    unit=UNITS.OPS_PER_SEC,
     scaleDistributionType="log",
     stacking={"mode": "normal", "group": "A"},
     targets=[
@@ -322,16 +322,16 @@ httpAggregatedStatus = TimeSeries(
 
 
 requestsByAction = TimeSeries(
-    title="Request count per S3 action",
+    title="Request rate per S3 action",
     dataSource="${DS_PROMETHEUS}",
     legendDisplayMode="table",
     legendPlacement="right",
-    legendValues=["max", "mean", "sum"],
+    legendValues=["min", "mean", "max"],
     lineInterpolation="smooth",
-    unit=UNITS.SHORT,
+    unit=UNITS.OPS_PER_SEC,
     targets=[
         Target(
-            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(action)',  # noqa: E501
+            expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
             legendFormat="{{action}}",
         )
     ]

@@ -165,7 +165,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -186,7 +186,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -196,7 +196,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -209,7 +209,7 @@
           "target": ""
         }
       ],
-      "title": "Http requests",
+      "title": "Http requests rate",
       "transformations": [],
       "transparent": false,
       "type": "stat"
@@ -644,7 +644,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -665,7 +665,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -675,7 +675,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=\"200\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=\"200\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -716,7 +716,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -737,7 +737,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -747,7 +747,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"4..\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"4..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -788,7 +788,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -809,7 +809,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "mean"
           ],
           "fields": "",
           "values": false
@@ -819,7 +819,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"5..\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"5..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1318,7 +1318,7 @@
             "mode": "absolute",
             "steps": []
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -1345,7 +1345,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "round(sum by (code) (increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])))",
+          "expr": "sum by (code) (rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1406,7 +1406,7 @@
             "mode": "absolute",
             "steps": []
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": [
           {
@@ -1479,7 +1479,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1493,7 +1493,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"4..\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"4..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1507,7 +1507,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"5..\"}[$__rate_interval])))",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"5..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1594,7 +1594,7 @@
             "mode": "absolute",
             "steps": []
           },
-          "unit": "short"
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -1611,9 +1611,9 @@
       "options": {
         "legend": {
           "calcs": [
-            "max",
+            "min",
             "mean",
-            "sum"
+            "max"
           ],
           "displayMode": "table",
           "placement": "right"
@@ -1625,7 +1625,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(action)",
+          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by(action)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1638,7 +1638,7 @@
           "target": ""
         }
       ],
-      "title": "Request count per S3 action",
+      "title": "Request rate per S3 action",
       "transformations": [],
       "transparent": false,
       "type": "timeseries"
@@ -2766,5 +2766,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 28
+  "version": 29
 }
