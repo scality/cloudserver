@@ -1,8 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const werelogs = require('werelogs');
-const _config = require('../../lib/Config').config;
-const { makeAuthInfo } = require('../unit/helpers');
 
 const testEvents = [{
     action: 'getObject',
@@ -496,10 +494,6 @@ describe('utapi v2 pushmetrics utility', () => {
         pushMetric = require('../../lib/utapi/utilities').pushMetric;
     });
 
-    beforeEach(() => {
-        _config.lifecycleRoleName = null;
-    });
-
     after(() => {
         sinon.restore();
     });
@@ -511,53 +505,6 @@ describe('utapi v2 pushmetrics utility', () => {
             Object.keys(event.expected).forEach(key => {
                 assert.strictEqual(eventPushed[key], event.expected[key]);
             });
-        });
-    });
-
-    describe('with lifecycle enabled', () => {
-        _config.lifecycleRoleName = 'lifecycleTestRoleName';
-        const eventFilterList = new Set([
-            'getBucketAcl',
-            'getBucketCors',
-            'getBucketLocation',
-            'getBucketNotification',
-            'getBucketObjectLock',
-            'getBucketReplication',
-            'getBucketVersioning',
-            'getBucketWebsite',
-            'getObjectTagging',
-            'headObject',
-        ]);
-
-        testEvents
-        .map(event => {
-            const modifiedEvent = event;
-            const authInfo = makeAuthInfo('accesskey1', 'Bart');
-            authInfo.arn = `foo:assumed-role/${_config.lifecycleRoleName}/backbeat-lifecycle`;
-            modifiedEvent.metrics.authInfo = authInfo;
-            modifiedEvent.metrics.canonicalID = 'accesskey1';
-            return modifiedEvent;
-        })
-        .map(event => {
-            if (eventFilterList.has(event.action)) {
-                it(`should skip action ${event.action}`, () => {
-                    _config.lifecycleRoleName = 'lifecycleTestRoleName';
-                    const eventPushed = pushMetric(event.action, log, event.metrics);
-                    assert.strictEqual(eventPushed, undefined);
-                });
-            }
-            return event;
-        })
-        .forEach(event => {
-            if (!eventFilterList.has(event.action)) {
-                it(`should compute and push metrics for ${event.action}`, () => {
-                    const eventPushed = pushMetric(event.action, log, event.metrics);
-                    assert(eventPushed);
-                    Object.keys(event.expected).forEach(key => {
-                        assert.strictEqual(eventPushed[key], event.expected[key]);
-                    });
-                });
-            }
         });
     });
 });
