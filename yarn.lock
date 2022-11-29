@@ -466,9 +466,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#7.10.31":
-  version "7.10.31"
-  resolved "git+https://github.com/scality/Arsenal#10402ae78d48eda51d6a1c8f86d7e8443d32c748"
+"arsenal@git+https://github.com/scality/Arsenal#7.10.31-1":
+  version "7.10.31-1"
+  resolved "git+https://github.com/scality/Arsenal#914bc7559de65fd99e61c0afb0a5fb51193d3c37"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -5282,6 +5282,16 @@ vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
+
+"vaultclient@git+https://github.com/scality/vaultclient#7.10.8-1":
+  version "7.10.8-1"
+  resolved "git+https://github.com/scality/vaultclient#dcbaade9b7ddd266b0ea4631d45d59b23a6de7e1"
+  dependencies:
+    agentkeepalive "^4.1.3"
+    arsenal "git+https://github.com/scality/Arsenal#7.10.28"
+    commander "2.20.0"
+    werelogs "git+https://github.com/scality/werelogs#8.1.0"
+    xml2js "0.4.19"
 
 vaultclient@scality/vaultclient#7.10.8:
   version "7.10.8"
