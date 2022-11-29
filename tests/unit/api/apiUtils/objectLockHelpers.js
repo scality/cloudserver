@@ -6,8 +6,9 @@ const { DummyRequestLogger } = require('../../helpers');
 const {
     calculateRetainUntilDate,
     validateHeaders,
+    validateObjectLockUpdate,
     compareObjectLockInformation,
-    ObjectLockInfo,
+    objectLockRequiresBypass,
 } = require('../../../../lib/api/apiUtils/object/objectLockHelpers');
 
 const mockName = 'testbucket';
@@ -179,6 +180,199 @@ describe('objectLockHelpers: calculateRetainUntilDate', () => {
     });
 });
 
+describe('objectLockHelpers: objectLockRequiresBypass', () => {
+    it('should not require bypass if extending non-expired GOVERNANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should not require bypass if previous mode is undefined', () => {
+        const objMD = {
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should not require bypass if previous mode was COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), false);
+    });
+
+    it('should require bypass if new mode is COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), true);
+    });
+
+    it('should require bypass if we are shortening retention', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().toISOString(),
+        };
+
+        assert.strictEqual(objectLockRequiresBypass(objMD, retentionInfo), true);
+    });
+});
+
+describe('objectLockHelpers: validateObjectLockUpdate', () => {
+    it('should allow GOVERNANCE => COMPLIANCE if bypassGovernanceRetention is true', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, true);
+        assert.strictEqual(error, null);
+    });
+
+    it('should disallow GOVERNANCE => COMPLIANCE if bypassGovernanceRetention is false', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, false);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
+
+    it('should disallow COMPLIANCE => GOVERNANCE if retention is not expired', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
+
+    it('should allow COMPLIANCE => GOVERNANCE if retention is expired', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().subtract(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.strictEqual(error, null);
+    });
+
+    it('should allow extending retention period if in COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.strictEqual(error, null);
+    });
+
+    it('should allow extending retention period if in GOVERNANCE if bypassGovernanceRetention is false', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(1, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(2, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, false);
+        assert.strictEqual(error, null);
+    });
+
+    it('should disallow shortening retention period if in COMPLIANCE', () => {
+        const objMD = {
+            retentionMode: 'COMPLIANCE',
+            retentionDate: moment().add(2, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'COMPLIANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo);
+        assert.deepStrictEqual(error, errors.AccessDenied);
+    });
+
+    it('should allow shortening retention period if in GOVERNANCE', () => {
+        const objMD = {
+            retentionMode: 'GOVERNANCE',
+            retentionDate: moment().add(2, 'days').toISOString(),
+        };
+
+        const retentionInfo = {
+            mode: 'GOVERNANCE',
+            date: moment().add(1, 'days').toISOString(),
+        };
+
+        const error = validateObjectLockUpdate(objMD, retentionInfo, true);
+        assert.strictEqual(error, null);
+    });
+});
+
 describe('objectLockHelpers: compareObjectLockInformation', () => {
     const mockDate = new Date();
     let origNow = null;
@@ -267,343 +461,4 @@ describe('objectLockHelpers: compareObjectLockInformation', () => {
         const res = compareObjectLockInformation(headers, defaultRetention);
         assert.deepStrictEqual(res, { legalHold: true });
     });
-});
-
-
-const pastDate = moment().subtract(1, 'days');
-const futureDate = moment().add(100, 'days');
-
-const isLockedTestCases = [
-    {
-        desc: 'no mode and no date',
-        policy: {},
-        expected: false,
-    },
-    {
-        desc: 'mode and no date',
-        policy: {
-            mode: 'GOVERNANCE',
-        },
-        expected: false,
-    },
-    {
-        desc: 'mode and past date',
-        policy: {
-            mode: 'GOVERNANCE',
-            date: pastDate.toISOString(),
-        },
-        expected: false,
-    },
-    {
-        desc: 'mode and future date',
-        policy: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        expected: true,
-    },
-];
-
-const isExpiredTestCases = [
-    {
-        desc: 'should return true, no date is the same as expired',
-        expected: true,
-    },
-    {
-        desc: 'should return true, past date.',
-        date: pastDate.toISOString(),
-        expected: true,
-    },
-    {
-        desc: 'should return false, future date.',
-        date: futureDate.toISOString(),
-        expected: false,
-    },
-];
-
-const policyChangeTestCases = [
-    {
-        desc: 'enable governance policy',
-        from: {},
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'modifying expired governance policy',
-        from: {
-            mode: 'GOVERNANCE',
-            date: pastDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'extending governance policy',
-        from: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.add(1, 'days').toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'shortening governance policy',
-        from: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.subtract(1, 'days').toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'removing governance policy',
-        from: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {},
-        allowed: false,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'changing governance policy to compliance',
-        from: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'enable compliance policy',
-        from: {},
-        to: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'modifying expired compliance policy',
-        from: {
-            mode: 'COMPLIANCE',
-            date: pastDate.toISOString(),
-        },
-        to: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'extending compliance policy',
-        from: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'COMPLIANCE',
-            date: futureDate.add(1, 'days').toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'shortening compliance policy',
-        from: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'COMPLIANCE',
-            date: futureDate.subtract(1, 'days').toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: false,
-    },
-    {
-        desc: 'removing compliance policy',
-        from: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {},
-        allowed: false,
-        allowedWithBypass: false,
-    },
-    {
-        desc: 'changing compliance to governance policy',
-        from: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: false,
-    },
-    {
-        desc: 'invalid starting mode',
-        from: {
-            mode: 'IM_AN_INVALID_MODE',
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: false,
-    },
-    {
-        desc: 'date with no mode',
-        from: {
-            date: futureDate.toISOString(),
-        },
-        to: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-];
-
-const canModifyObjectTestCases = [
-    {
-        desc: 'No object lock config',
-        policy: {},
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'active governance mode',
-        policy: {
-            mode: 'GOVERNANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'expired governance mode',
-        policy: {
-            mode: 'GOVERNANCE',
-            date: pastDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'active compliance mode',
-        policy: {
-            mode: 'COMPLIANCE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: false,
-    },
-    {
-        desc: 'expired compliance mode',
-        policy: {
-            mode: 'COMPLIANCE',
-            date: pastDate.toISOString(),
-        },
-        allowed: true,
-        allowedWithBypass: true,
-    },
-    {
-        desc: 'invalid mode',
-        policy: {
-            mode: 'IM_AN_INVALID_MODE',
-            date: futureDate.toISOString(),
-        },
-        allowed: false,
-        allowedWithBypass: false,
-    },
-];
-
-describe('objectLockHelpers: ObjectLockInfo', () => {
-    ['GOVERNANCE', 'COMPLIANCE'].forEach(mode => {
-        it(`should return ${mode === 'GOVERNANCE'} for isGovernance`, () => {
-            const info = new ObjectLockInfo({
-                mode,
-            });
-            assert.strictEqual(info.isGovernanceMode(), mode === 'GOVERNANCE');
-        });
-
-        it(`should return ${mode === 'COMPLIANCE'} for isCompliance`, () => {
-            const info = new ObjectLockInfo({
-                mode,
-            });
-            assert.strictEqual(info.isComplianceMode(), mode === 'COMPLIANCE');
-        });
-    });
-
-    describe('isExpired: ', () => isExpiredTestCases.forEach(testCase => {
-        const objLockInfo = new ObjectLockInfo({ date: testCase.date });
-        it(testCase.desc, () => assert.strictEqual(objLockInfo.isExpired(), testCase.expected));
-    }));
-
-    describe('isLocked: ', () => isLockedTestCases.forEach(testCase => {
-        describe(`${testCase.desc}`, () => {
-            it(`should show policy as ${testCase.expected ? '' : 'not'} locked without legal hold`, () => {
-                const objLockInfo = new ObjectLockInfo(testCase.policy);
-                assert.strictEqual(objLockInfo.isLocked(), testCase.expected);
-            });
-
-            // legal hold should show as locked regardless of policy
-            it('should show policy as locked with legal hold', () => {
-                const policy = Object.assign({}, testCase.policy, { legalHold: true });
-                const objLockInfo = new ObjectLockInfo(policy);
-                assert.strictEqual(objLockInfo.isLocked(), true);
-            });
-        });
-    }));
-
-    describe('canModifyPolicy: ', () => policyChangeTestCases.forEach(testCase => {
-        describe(testCase.desc, () => {
-            const objLockInfo = new ObjectLockInfo(testCase.from);
-            it(`should ${testCase.allowed ? 'allow' : 'deny'} modifying the policy without bypass`,
-                () => assert.strictEqual(objLockInfo.canModifyPolicy(testCase.to), testCase.allowed));
-
-            it(`should ${testCase.allowedWithBypass ? 'allow' : 'deny'} modifying the policy with bypass`,
-                () => assert.strictEqual(objLockInfo.canModifyPolicy(testCase.to, true), testCase.allowedWithBypass));
-        });
-    }));
-
-    describe('canModifyObject: ', () => canModifyObjectTestCases.forEach(testCase => {
-        describe(testCase.desc, () => {
-            const objLockInfo = new ObjectLockInfo(testCase.policy);
-            it(`should ${testCase.allowed ? 'allow' : 'deny'} modifying object without bypass`,
-                () => assert.strictEqual(objLockInfo.canModifyObject(), testCase.allowed));
-
-            it(`should ${testCase.allowedWithBypass ? 'allow' : 'deny'} modifying object with bypass`,
-                () => assert.strictEqual(objLockInfo.canModifyObject(true), testCase.allowedWithBypass));
-        });
-    }));
 });
