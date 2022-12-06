@@ -128,6 +128,30 @@
             "azureContainerName": "s3test2"
         }
     },
+    "azurebackend3": {
+        "type": "azure",
+        "objectId": "azurebackend3",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname3.blob.core.fake.net/",
+            "sasToken": "?sig=Fake00Sig002&sv=2021-04-21&sp=rw",
+            "bucketMatch": true,
+            "azureContainerName": "s3test3"
+        }
+    },
+    "azurebackend4": {
+        "type": "azure",
+        "objectId": "azurebackend4",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "https://fakeaccountname4.blob.core.fake.net/",
+            "tenantId": "fakeTenant",
+            "clientId": "fakeClient",
+            "clientKey": "Fake00Key002",
+            "bucketMatch": true,
+            "azureContainerName": "s3test4"
+        }
+    },
     "azurebackendmismatch": {
         "type": "azure",
         "objectId": "azurebackendmismatch",
