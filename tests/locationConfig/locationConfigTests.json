@@ -152,6 +152,17 @@
             "azureContainerName": "s3test4"
         }
     },
+    "azuritebackend": {
+        "type": "azure",
+        "objectId": "azuritebackend",
+        "legacyAwsBehavior": true,
+        "details": {
+            "azureStorageEndpoint": "http://localhost/myfakeaccount",
+            "sasToken": "?sig=Fake00Sig002&sv=2021-04-21&sp=rw",
+            "bucketMatch": true,
+            "azureContainerName": "s3test5"
+        }
+    },
     "azurebackendmismatch": {
         "type": "azure",
         "objectId": "azurebackendmismatch",

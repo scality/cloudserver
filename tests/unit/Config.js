@@ -204,6 +204,55 @@ describe('Config', () => {
         });
     });
 
+    describe('getAzureStorageAccountName', () => {
+        const { ConfigObject } = require('../../lib/Config');
+
+        it('should return account name from config', () => {
+            setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', '');
+            const config = new ConfigObject();
+            assert.deepStrictEqual(
+                config.getAzureStorageAccountName('azurebackend'),
+                'fakeaccountname'
+            );
+        });
+
+        it('should return account name from env', () => {
+            setEnv('azurebackend_AZURE_STORAGE_ACCOUNT_NAME', 'foooo');
+            const config = new ConfigObject();
+            assert.deepStrictEqual(
+                config.getAzureStorageAccountName('azurebackend'),
+                'foooo'
+            );
+        });
+
+        it('should return account name from shared-access-signature auth', () => {
+            setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
+            const config = new ConfigObject();
+            assert.deepStrictEqual(
+                config.getAzureStorageAccountName('azurebackend3'),
+                'fakeaccountname3'
+            );
+        });
+
+        it('should return account name from client-secret auth', () => {
+            setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
+            const config = new ConfigObject();
+            assert.deepStrictEqual(
+                config.getAzureStorageAccountName('azurebackend4'),
+                'fakeaccountname4',
+            );
+        });
+
+        it('should return account name from endpoint', () => {
+            setEnv('S3_LOCATION_FILE', 'tests/locationConfig/locationConfigTests.json');
+            const config = new ConfigObject();
+            assert.deepStrictEqual(
+                config.getAzureStorageAccountName('azuritebackend'),
+                'myfakeaccount',
+            );
+        });
+    });
+
     describe('utapi option setup', () => {
         let oldConfig;
 
