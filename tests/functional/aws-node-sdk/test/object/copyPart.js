@@ -577,6 +577,72 @@ describe('Object Part Copy', () => {
                     checkNoError(err);
                 });
             });
+
+            it('should not corrupt object if overwriting an existing part by copying a part ' +
+            'while the MPU is being completed', () => {
+                // AWS response etag for this completed MPU
+                const finalObjETag = '"db77ebbae9e9f5a244a26b86193ad818-1"';
+                process.stdout.write('Putting first part in MPU test');
+                return s3.uploadPartCopy({ Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                }).promise().then(res => {
+                    assert.strictEqual(res.ETag, etag);
+                    assert(res.LastModified);
+                }).then(() => {
+                    process.stdout.write('Overwriting first part in MPU test and completing MPU ' +
+                                         'at the same time');
+                    return Promise.all([
+                        s3.uploadPartCopy({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            CopySource: `${sourceBucketName}/${sourceObjName}`,
+                            PartNumber: 1,
+                            UploadId: uploadId,
+                        }).promise().catch(err => {
+                            // in case the CompleteMPU finished
+                            // earlier, we may get a NoSuchKey error,
+                            // so just ignore it and resolve with a
+                            // special value, otherwise re-throw the
+                            // error
+                            if (err && err.code === 'NoSuchKey') {
+                                return Promise.resolve(null);
+                            }
+                            throw err;
+                        }),
+                        s3.completeMultipartUpload({
+                            Bucket: destBucketName,
+                            Key: destObjName,
+                            UploadId: uploadId,
+                            MultipartUpload: {
+                                Parts: [
+                                    { ETag: etag, PartNumber: 1 },
+                                ],
+                            },
+                        }).promise(),
+                    ]);
+                }).then(([uploadRes, completeRes]) => {
+                    // if upload succeeded before CompleteMPU finished
+                    if (uploadRes !== null) {
+                        assert.strictEqual(uploadRes.ETag, etag);
+                        assert(uploadRes.LastModified);
+                    }
+                    assert.strictEqual(completeRes.Bucket, destBucketName);
+                    assert.strictEqual(completeRes.Key, destObjName);
+                    assert.strictEqual(completeRes.ETag, finalObjETag);
+                }).then(() => {
+                    process.stdout.write('Getting object put by MPU with ' +
+                    'overwrite part');
+                    return s3.getObject({
+                        Bucket: destBucketName,
+                        Key: destObjName,
+                    }).promise();
+                }).then(res => {
+                    assert.strictEqual(res.ETag, finalObjETag);
+                });
+            });
         });
 
         it('should return an error if no such upload initiated',
