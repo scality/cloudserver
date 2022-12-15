@@ -27,6 +27,7 @@ const testData = 'testkey data';
 const testDataMd5 = crypto.createHash('md5')
           .update(testData, 'utf-8')
           .digest('hex');
+const emptyContentsMd5 = 'd41d8cd98f00b204e9800998ecf8427e';
 const testMd = {
     'md-model-version': 2,
     'owner-display-name': 'Bart',
@@ -59,6 +60,17 @@ const testMd = {
         storageClass: 'STANDARD',
     },
 };
+
+function checkObjectData(s3, objectKey, dataValue, done) {
+    s3.getObject({
+        Bucket: TEST_BUCKET,
+        Key: objectKey,
+    }, (err, data) => {
+        assert.ifError(err);
+        assert.strictEqual(data.Body.toString(), dataValue);
+        done();
+    });
+}
 
 /** makeBackbeatRequest - utility function to generate a request going
  * through backbeat route
@@ -416,7 +428,8 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
-        it('should remove old object data locations if version is overwritten', done => {
+        it('should remove old object data locations if version is overwritten ' +
+        'with same contents', done => {
             let oldLocation;
             const testKeyOldData = `${testKey}-old-data`;
             async.waterfall([next => {
@@ -496,14 +509,96 @@ describeSkipIfAWS('backbeat routes', () => {
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
-                setTimeout(() => s3.getObject({
+                setTimeout(() => checkObjectData(s3, testKey, testData, next),
+                           1000);
+            }, next => {
+                // check that the object copy referencing the old data
+                // locations is unreadable, confirming that the old
+                // data locations have been deleted
+                s3.getObject({
                     Bucket: TEST_BUCKET,
-                    Key: testKey,
-                }, (err, data) => {
-                    assert.ifError(err);
-                    assert.strictEqual(data.Body.toString(), testData);
+                    Key: testKeyOldData,
+                }, err => {
+                    assert(err, 'expected error to get object with old data ' +
+                           'locations, got success');
                     next();
-                }), 1000);
+                });
+            }], err => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should remove old object data locations if version is overwritten ' +
+        'with empty contents', done => {
+            let oldLocation;
+            const testKeyOldData = `${testKey}-old-data`;
+            async.waterfall([next => {
+                // put object's data locations
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'data',
+                    headers: {
+                        'content-length': testData.length,
+                        'content-md5': testDataMd5,
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: testData }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // put object metadata
+                const newMd = Object.assign({}, testMd);
+                newMd.location = JSON.parse(response.body);
+                oldLocation = newMd.location;
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(newMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // put another object which metadata reference the
+                // same data locations, we will attempt to retrieve
+                // this object at the end of the test to confirm that
+                // its locations have been deleted
+                const oldDataMd = Object.assign({}, testMd);
+                oldDataMd.location = oldLocation;
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKeyOldData,
+                    resourceType: 'metadata',
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(oldDataMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // overwrite the original object version with an empty location
+                const newMd = Object.assign({}, testMd);
+                newMd['content-length'] = 0;
+                newMd['content-md5'] = emptyContentsMd5;
+                newMd.location = null;
+                makeBackbeatRequest({
+                    method: 'PUT', bucket: TEST_BUCKET,
+                    objectKey: testKey,
+                    resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: JSON.stringify(newMd),
+                }, next);
+            }, (response, next) => {
+                assert.strictEqual(response.statusCode, 200);
+                // give some time for the async deletes to complete
+                setTimeout(() => checkObjectData(s3, testKey, '', next),
+                           1000);
             }, next => {
                 // check that the object copy referencing the old data
                 // locations is unreadable, confirming that the old
