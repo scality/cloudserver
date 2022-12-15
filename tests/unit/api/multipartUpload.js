@@ -1640,6 +1640,78 @@ describe('Multipart Upload API', () => {
         });
     });
 
+    it('should leave orphaned data when overwriting an object part during completeMPU',
+    done => {
+        const fullSizedPart = crypto.randomBytes(5 * 1024 * 1024);
+        const overWritePart = Buffer.from('Overwrite content', 'utf8');
+        let uploadId;
+
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                uploadId = json.InitiateMultipartUploadResult.UploadId[0];
+                const requestObj = {
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${uploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId,
+                    },
+                };
+                const partRequest = new DummyRequest(requestObj, fullSizedPart);
+                objectPutPart(authInfo, partRequest, undefined, log, (err, partCalculatedHash) => {
+                    assert.deepStrictEqual(err, null);
+                    next(null, requestObj, partCalculatedHash);
+                });
+            },
+            (requestObj, partCalculatedHash, next) => {
+                assert.deepStrictEqual(ds[1].value, fullSizedPart);
+                async.parallel([
+                    done => {
+                        const partRequest = new DummyRequest(requestObj, overWritePart);
+                        objectPutPart(authInfo, partRequest, undefined, log, err => {
+                            assert.deepStrictEqual(err, null);
+                            done();
+                        });
+                    },
+                    done => {
+                        const completeBody = '<CompleteMultipartUpload>' +
+                              '<Part>' +
+                              '<PartNumber>1</PartNumber>' +
+                              `<ETag>"${partCalculatedHash}"</ETag>` +
+                              '</Part>' +
+                              '</CompleteMultipartUpload>';
+
+                        const completeRequest = {
+                            bucketName,
+                            namespace,
+                            objectKey,
+                            parsedHost: 's3.amazonaws.com',
+                            url: `/${objectKey}?uploadId=${uploadId}`,
+                            headers: { host: `${bucketName}.s3.amazonaws.com` },
+                            query: { uploadId },
+                            post: completeBody,
+                        };
+                        completeMultipartUpload(authInfo, completeRequest, log, done);
+                    },
+                ], err => next(err));
+            },
+        ],
+        err => {
+            assert.deepStrictEqual(err, null);
+            assert.strictEqual(ds[0], undefined);
+            assert.deepStrictEqual(ds[1].value, fullSizedPart);
+            assert.deepStrictEqual(ds[2].value, overWritePart);
+            done();
+        });
+    });
+
     it('should throw an error on put of an object part with an invalid ' +
     'uploadId', done => {
         const testUploadId = 'invalidUploadID';
@@ -1840,12 +1912,22 @@ describe('complete mpu with versioning', () => {
             },
             (eTag, testUploadId, next) => {
                 const origPutObject = metadataBackend.putObject;
+                let callCount = 0;
                 metadataBackend.putObject =
-                    (bucketName, objName, objVal, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        metadataBackend.putObject = origPutObject;
-                        metadataBackend.putObject(
-                            bucketName, objName, objVal, params, log, cb);
+                    (putBucketName, objName, objVal, params, log, cb) => {
+                        if (callCount === 0) {
+                            // first putObject sets the completeInProgress flag in the overview key
+                            assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
+                            assert.strictEqual(
+                                objName, `overview${splitter}${objectKey}${splitter}${testUploadId}`);
+                            assert.strictEqual(objVal.completeInProgress, true);
+                        } else {
+                            assert.strictEqual(params.replayId, testUploadId);
+                            metadataBackend.putObject = origPutObject;
+                        }
+                        origPutObject(
+                            putBucketName, objName, objVal, params, log, cb);
+                        callCount += 1;
                     };
                 const parts = [{ partNumber: 1, eTag }];
                 const completeRequest = _createCompleteMpuRequest(testUploadId,
@@ -1902,12 +1984,22 @@ describe('complete mpu with versioning', () => {
             },
             (eTag, testUploadId, next) => {
                 const origPutObject = metadataBackend.putObject;
+                let callCount = 0;
                 metadataBackend.putObject =
-                    (bucketName, objName, objVal, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        metadataBackend.putObject = origPutObject;
-                        metadataBackend.putObject(
-                            bucketName, objName, objVal, params, log, cb);
+                    (putBucketName, objName, objVal, params, log, cb) => {
+                        if (callCount === 0) {
+                            // first putObject sets the completeInProgress flag in the overview key
+                            assert.strictEqual(putBucketName, `${constants.mpuBucketPrefix}${bucketName}`);
+                            assert.strictEqual(
+                                objName, `overview${splitter}${objectKey}${splitter}${testUploadId}`);
+                            assert.strictEqual(objVal.completeInProgress, true);
+                        } else {
+                            assert.strictEqual(params.replayId, testUploadId);
+                            metadataBackend.putObject = origPutObject;
+                        }
+                        origPutObject(
+                            putBucketName, objName, objVal, params, log, cb);
+                        callCount += 1;
                     };
                 const parts = [{ partNumber: 1, eTag }];
                 const completeRequest = _createCompleteMpuRequest(testUploadId,
