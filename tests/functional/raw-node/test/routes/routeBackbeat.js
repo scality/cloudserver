@@ -556,6 +556,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: testKey,
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
@@ -585,6 +588,9 @@ describeSkipIfAWS('backbeat routes', () => {
                     method: 'PUT', bucket: TEST_BUCKET,
                     objectKey: testKey,
                     resourceType: 'metadata',
+                    queryObj: {
+                        versionId: versionIdUtils.encode(testMd.versionId),
+                    },
                     authCredentials: backbeatAuthCredentials,
                     requestBody: JSON.stringify(newMd),
                 }, next);
