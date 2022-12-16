@@ -6,7 +6,7 @@ AWS.config.logger = console;
 const { v4: uuidv4 } = require('uuid');
 
 const async = require('async');
-const azure = require('azure-storage');
+const azure = require('@azure/storage-blob');
 
 const { GCP } = storage.data.external;
 
@@ -150,8 +150,11 @@ utils.getAzureClient = () => {
         return undefined;
     }
 
-    return azure.createBlobService(params.azureStorageAccountName,
-        params.azureStorageAccessKey, params.azureStorageEndpoint);
+    const cred = new azure.StorageSharedKeyCredential(
+        params.azureStorageAccountName,
+        params.azureStorageAccessKey,
+    );
+    return new azure.BlobServiceClient(params.azureStorageEndpoint, cred);
 };
 
 utils.getAzureContainerName = azureLocation => {

@@ -138,12 +138,12 @@ function testSuite() {
                 }, err => {
                     assert.equal(err, null, 'Expected success but got ' +
                     `error ${err}`);
-                    azureClient.deleteBlob(azureContainerName, azureObject,
-                    err => {
-                        assert.equal(err, null, 'Expected success but got ' +
-                        `error ${err}`);
-                        done(err);
-                    });
+                    azureClient.getContainerClient(azureContainerName)
+                        .deleteBlob(azureObject).then(done, err => {
+                            assert.equal(err, null, 'Expected success but got ' +
+                                `error ${err}`);
+                            done(err);
+                        });
                 });
             });
 

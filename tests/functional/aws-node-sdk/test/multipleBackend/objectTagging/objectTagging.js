@@ -80,9 +80,7 @@ function awsGet(key, tagCheck, isEmpty, isMpu, callback) {
 
 function azureGet(key, tagCheck, isEmpty, callback) {
     process.stdout.write('Getting object from Azure\n');
-    azureClient.getBlobProperties(azureContainerName, key,
-    (err, res) => {
-        assert.equal(err, null);
+    azureClient.getContainerClient(azureContainerName).getProperties(key).then(res => {
         const resMD5 = convertMD5(res.contentSettings.contentMD5);
         if (isEmpty) {
             assert.strictEqual(resMD5, `${emptyMD5}`);
@@ -95,6 +93,9 @@ function azureGet(key, tagCheck, isEmpty, callback) {
         } else {
             assert.strictEqual(res.metadata.tags, undefined);
         }
+        return callback();
+    }, err => {
+        assert.equal(err, null);
         return callback();
     });
 }

@@ -18,14 +18,16 @@ let bucketUtil;
 let s3;
 
 function azureCheck(container, key, expected, cb) {
-    azureClient.getBlobProperties(container, key, (err, res) => {
-        if (expected.error) {
-            assert.strictEqual(err.statusCode, 404);
-            assert.strictEqual(err.code, 'NotFound');
-        } else {
-            const convertedMD5 = convertMD5(res.contentSettings.contentMD5);
-            assert.strictEqual(convertedMD5, expectedMD5);
-        }
+    azureClient.getContainerClient(container).getProperties(key).then(res => {
+        assert.ok(!expected.error);
+        const convertedMD5 = convertMD5(res.contentSettings.contentMD5);
+        assert.strictEqual(convertedMD5, expectedMD5);
+        return cb();
+    },
+    err => {
+        assert.ok(expected.error);
+        assert.strictEqual(err.statusCode, 404);
+        assert.strictEqual(err.code, 'NotFound');
         return cb();
     });
 }

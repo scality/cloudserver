@@ -34,20 +34,22 @@ let bucketUtil;
 
 function getCheck(key, bucketMatch, cb) {
     let azureKey = key;
-    s3.getObject({ Bucket: azureContainerName, Key: azureKey },
-    (err, s3Res) => {
+    s3.getObject({ Bucket: azureContainerName, Key: azureKey }, (err, s3Res) => {
         assert.equal(err, null, `Err getting object from S3: ${err}`);
         assert.strictEqual(s3Res.ETag, `"${s3MD5}"`);
 
         if (!bucketMatch) {
             azureKey = `${azureContainerName}/${key}`;
         }
-        azureClient.getBlobProperties(azureContainerName, azureKey,
-        (err, azureRes) => {
-            assert.equal(err, null, `Err getting object from Azure: ${err}`);
-            assert.strictEqual(expectedContentLength, azureRes.contentLength);
-            cb();
-        });
+        azureClient.getContainerClient(azureContainerName).getProperties(azureKey).then(
+            azureRes => {
+                assert.strictEqual(expectedContentLength, azureRes.contentLength);
+                cb();
+            },
+            err => {
+                assert.equal(err, null, `Err getting object from Azure: ${err}`);
+                cb();
+            });
     });
 }
 

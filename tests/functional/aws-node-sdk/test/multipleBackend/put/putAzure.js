@@ -35,13 +35,14 @@ let bucketUtil;
 let s3;
 
 function azureGetCheck(objectKey, azureMD5, azureMetadata, cb) {
-    azureClient.getBlobProperties(azureContainerName, objectKey,
-    (err, res) => {
-        assert.strictEqual(err, null, 'Expected success, got error ' +
-        `on call to Azure: ${err}`);
+    azureClient.getContainerClient(azureContainerName).getProperties(objectKey).then(res => {
         const resMD5 = convertMD5(res.contentSettings.contentMD5);
         assert.strictEqual(resMD5, azureMD5);
         assert.deepStrictEqual(res.metadata, azureMetadata);
+        return cb();
+    }, err => {
+        assert.strictEqual(err, null, 'Expected success, got error ' +
+            `on call to Azure: ${err}`);
         return cb();
     });
 }
@@ -243,11 +244,14 @@ describeF() {
                             fileLocation);
                         next();
                     }),
-                    next => azureClient.getBlobProperties(azureContainerName,
-                    this.test.keyName, err => {
-                        assert.strictEqual(err.code, 'NotFound');
-                        next();
-                    }),
+                    next => azureClient.getContainerClient(azureContainerName)
+                        .getProperties(this.test.keyName).then(() => {
+                            assert.fail('unexpected success');
+                            next();
+                        }, err => {
+                            assert.strictEqual(err.code, 'NotFound');
+                            next();
+                        }),
                 ], done);
             });
 
