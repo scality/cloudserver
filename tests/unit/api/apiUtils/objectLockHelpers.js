@@ -372,6 +372,19 @@ const policyChangeTestCases = [
         allowedWithBypass: true,
     },
     {
+        desc: 'extending governance policy using same date',
+        from: {
+            mode: 'GOVERNANCE',
+            date: futureDate.toISOString(),
+        },
+        to: {
+            mode: 'GOVERNANCE',
+            date: futureDate.toISOString(),
+        },
+        allowed: true,
+        allowedWithBypass: true,
+    },
+    {
         desc: 'removing governance policy',
         from: {
             mode: 'GOVERNANCE',
@@ -442,6 +455,19 @@ const policyChangeTestCases = [
         },
         allowed: false,
         allowedWithBypass: false,
+    },
+    {
+        desc: 'extending compliance policy with the same date',
+        from: {
+            mode: 'COMPLIANCE',
+            date: futureDate.toISOString(),
+        },
+        to: {
+            mode: 'COMPLIANCE',
+            date: futureDate.toISOString(),
+        },
+        allowed: true,
+        allowedWithBypass: true,
     },
     {
         desc: 'removing compliance policy',
