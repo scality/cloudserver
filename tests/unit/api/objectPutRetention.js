@@ -16,8 +16,8 @@ const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
 
-const date = new Date();
-date.setDate(date.getDate() + 1);
+const expectedMode = 'GOVERNANCE';
+const expectedDate = moment().add(2, 'days').toISOString();
 
 const bucketPutRequest = {
     bucketName,
@@ -36,19 +36,25 @@ const putObjectRequest = new DummyRequest({
 const objectRetentionXmlGovernance = '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>GOVERNANCE</Mode>' +
-    `<RetainUntilDate>${date.toISOString()}</RetainUntilDate>` +
+    `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlCompliance = '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>COMPLIANCE</Mode>' +
-    `<RetainUntilDate>${moment().add(2, 'days').toISOString()}</RetainUntilDate>` +
+    `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlGovernanceLonger = '<Retention ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<Mode>GOVERNANCE</Mode>' +
     `<RetainUntilDate>${moment().add(5, 'days').toISOString()}</RetainUntilDate>` +
+    '</Retention>';
+
+const objectRetentionXmlGovernanceShorter = '<Retention ' +
+    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
+    '<Mode>GOVERNANCE</Mode>' +
+    `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
     '</Retention>';
 
 const objectRetentionXmlComplianceShorter = '<Retention ' +
@@ -95,8 +101,12 @@ const putObjRetRequestGovernanceLonger = {
     post: objectRetentionXmlGovernanceLonger,
 };
 
-const expectedMode = 'GOVERNANCE';
-const expectedDate = date.toISOString();
+const putObjRetRequestGovernanceShorter = {
+    bucketName,
+    objectKey: objectName,
+    headers: { host: `${bucketName}.s3.amazonaws.com` },
+    post: objectRetentionXmlGovernanceShorter,
+};
 
 describe('putObjectRetention API', () => {
     before(() => cleanup());
@@ -178,8 +188,19 @@ describe('putObjectRetention API', () => {
             + 'GOVERNANCE mode is enabled', done => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.ifError(err);
-                return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                return objectPutRetention(authInfo, putObjRetRequestGovernanceShorter, log, err => {
                     assert.deepStrictEqual(err, errors.AccessDenied);
+                    done();
+                });
+            });
+        });
+
+        it('should allow update if the x-amz-bypass-governance-retention header is missing and '
+            + 'GOVERNANCE mode is enabled and the same date is used', done => {
+            objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                assert.ifError(err);
+                return objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
+                    assert.ifError(err);
                     done();
                 });
             });
