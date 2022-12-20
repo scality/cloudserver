@@ -1,12 +1,7 @@
 ---
 version: 0.2
 
-branches:
-  feature/*, improvement/*, bugfix/*, w/*, q/*, hotfix/*, dependabot/*:
-    stage: pre-merge
-  development/*:
-    stage: post-merge
-
+branches: {}
 models:
   - env: &global-env
       azurebackend_AZURE_STORAGE_ACCESS_KEY: >-
