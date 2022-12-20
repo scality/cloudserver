@@ -741,9 +741,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#8.1.75":
-  version "8.1.75"
-  resolved "git+https://github.com/scality/Arsenal#3da671920082dcdde53550f27d776cd2f3b09c60"
+"arsenal@git+https://github.com/scality/Arsenal#8.1.77":
+  version "8.1.77"
+  resolved "git+https://github.com/scality/Arsenal#0f9c9c2f189c014de06b16b9096d0561e6f04eab"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
@@ -761,7 +761,7 @@ arraybuffer.slice@~0.0.7:
     debug "~4.1.0"
     diskusage "^1.1.1"
     fcntl "github:scality/node-fcntl#0.2.0"
-    hdclient scality/hdclient#1.1.4
+    hdclient scality/hdclient#1.1.5
     httpagent scality/httpagent#1.0.6
     https-proxy-agent "^2.2.0"
     ioredis "^4.28.5"
@@ -775,7 +775,7 @@ arraybuffer.slice@~0.0.7:
     simple-glob "^0.2.0"
     socket.io "2.4.1"
     socket.io-client "2.4.0"
-    sproxydclient scality/sproxydclient#8.0.6
+    sproxydclient scality/sproxydclient#8.0.7
     utf8 "3.0.0"
     uuid "^3.0.1"
     werelogs scality/werelogs#8.1.2
@@ -2633,11 +2633,11 @@ hdclient@scality/hdclient#1.1.0:
   dependencies:
     werelogs scality/werelogs#GA7.2.0.5
 
-hdclient@scality/hdclient#1.1.4:
-  version "1.1.4"
-  resolved "https://codeload.github.com/scality/hdclient/tar.gz/2ff1cdd213370b0a24aff5cd08da4fb5d25df5ec"
+hdclient@scality/hdclient#1.1.5:
+  version "1.1.5"
+  resolved "https://codeload.github.com/scality/hdclient/tar.gz/0260d7ddc898bd0abdd6567c73fb9ded86cb8874"
   dependencies:
-    httpagent "github:scality/httpagent#1.0.5"
+    httpagent "github:scality/httpagent#1.0.6"
     werelogs "github:scality/werelogs#8.1.2"
 
 hosted-git-info@^2.1.4:
@@ -2710,7 +2710,7 @@ http-signature@~1.2.0:
   dependencies:
     agentkeepalive "^4.2.1"
 
-httpagent@scality/httpagent#1.0.6:
+"httpagent@github:scality/httpagent#1.0.6", httpagent@scality/httpagent#1.0.6:
   version "1.0.6"
   resolved "https://codeload.github.com/scality/httpagent/tar.gz/66e97ab93532d79dbddcf6c4ea4df849b84c33c9"
   dependencies:
@@ -5227,9 +5227,9 @@ sprintf-js@~1.0.2:
     async "^3.2.0"
     werelogs scality/werelogs#8.1.0
 
-sproxydclient@scality/sproxydclient#8.0.6:
-  version "8.0.6"
-  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/83bb5c58849fc8803c252b9f3776e491c915d67e"
+sproxydclient@scality/sproxydclient#8.0.7:
+  version "8.0.7"
+  resolved "https://codeload.github.com/scality/sproxydclient/tar.gz/46049c28d2487c8e4ea4c7dde2be2fc90dbcc9ec"
   dependencies:
     async "^3.2.0"
     httpagent "github:scality/httpagent#1.0.5"
