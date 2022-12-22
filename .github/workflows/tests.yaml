@@ -161,6 +161,7 @@ jobs:
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
+      JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -168,6 +169,8 @@ jobs:
       run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
     - name: Setup Credentials
       run: bash .github/scripts/credentials.bash
+    - name: Setup artifacts
+      uses: ./.github/actions/setup-artifacts
     - uses: actions/setup-node@v2
       with:
         node-version: '16'
@@ -187,12 +190,19 @@ jobs:
       run: docker-compose up -d
       working-directory: .github/docker
     - name: Run multiple backend test
-      run: yarn run multiple_backend_test
+      run: |-
+        set -o pipefail;
+        yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
-    - name: Dump logs
-      run: docker-compose logs
-      working-directory: .github/docker
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
       if: always()
 
   file-ft-tests:
@@ -203,6 +213,7 @@ jobs:
       S3VAULT: mem
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       MPU_TESTING: "yes"
+      JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -210,6 +221,8 @@ jobs:
       run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
     - name: Setup Credentials
       run: bash .github/scripts/credentials.bash
+    - name: Setup artifacts
+      uses: ./.github/actions/setup-artifacts
     - uses: actions/setup-node@v2
       with:
         node-version: '16'
@@ -226,8 +239,15 @@ jobs:
       run: docker-compose up -d
       working-directory: .github/docker
     - name: Run file ft tests
-      run: yarn run ft_test
-    - name: Dump logs
-      run: docker-compose logs
-      working-directory: .github/docker
+      run: |-
+        set -o pipefail;
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
       if: always()

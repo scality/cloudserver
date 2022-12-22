@@ -1,6 +1,7 @@
 services:
   cloudserver:
     image: ${CLOUDSERVER_IMAGE}
+    command: sh -c "yarn start > /artifacts/${JOB_NAME}/s3.log"
     ports:
       - "8000:8000"
       - "9990:9990"
