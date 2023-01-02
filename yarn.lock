@@ -734,7 +734,7 @@ arraybuffer.slice@~0.0.7:
 
 "arsenal@git+https://github.com/scality/Arsenal#bugfix/ARSN-290-simplify-update-before-delete":
   version "8.1.77"
-  resolved "git+https://github.com/scality/Arsenal#a000bfa046697c18bee185627829937376960d21"
+  resolved "git+https://github.com/scality/Arsenal#4d05c9de5baf247aa92a09901559677c8559f0f6"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
