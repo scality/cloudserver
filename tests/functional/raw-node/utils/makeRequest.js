@@ -45,6 +45,8 @@ function _decodeURI(uri) {
  * @param {object} params.authCredentials.secretKey - secret key
  * @param {object} params.GCP - flag to setup for GCP request
  * @param {string} [params.requestBody] - request body contents
+ * @param {string} [params.urlForSignature] - the url to use when signing the
+ *   request
  * @param {boolean} [params.jsonResponse] - if true, response is
  *   expected to be received in JSON format (including errors)
  * @param {function} callback - with error and response parameters
@@ -52,7 +54,8 @@ function _decodeURI(uri) {
  */
 function makeRequest(params, callback) {
     const { hostname, port, method, queryObj, headers, path,
-            authCredentials, requestBody, jsonResponse } = params;
+            authCredentials, requestBody, jsonResponse,
+            urlForSignature } = params;
     const options = {
         hostname,
         port,
@@ -107,7 +110,8 @@ function makeRequest(params, callback) {
         return callback(err);
     });
     // generate v4 headers if authentication credentials are provided
-    const encodedPath = req.path;
+    const savedPath = req.path;
+    const encodedPath = urlForSignature || req.path;
     // decode path because signing code re-encodes it
     req.path = _decodeURI(encodedPath);
     if (authCredentials && !params.GCP) {
@@ -121,7 +125,7 @@ function makeRequest(params, callback) {
         }
     }
     // restore original URL-encoded path
-    req.path = encodedPath;
+    req.path = savedPath;
     req.path = queryObj ? `${options.path}?${qs}` : req.path;
     if (requestBody) {
         req.write(requestBody);
