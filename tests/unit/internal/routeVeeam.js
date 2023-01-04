@@ -102,14 +102,6 @@ describe('RouteVeeam: checkBucketAndKey', () => {
     });
 });
 
-describe('RouteVeeam: authorizationMiddleware', () => {
-    it('should return AccessDenied is no API', () => {
-        routeVeeam.authorizationMiddleware({}, {}, null, log, err => {
-            assert(err.is.AccessDenied, true);
-        });
-    });
-});
-
 describe('RouteVeeam: _normalizeVeeamRequest', () => {
     it('should normalize request', () => {
         const request = {

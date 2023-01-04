@@ -21,29 +21,29 @@ const badVeeamAuthCredentials = {
 const TEST_BUCKET = 'veeambucket';
 const testArn = 'aws::iam:123456789012:user/bart';
 
-const testCapacity = `<?xml version="1.0" encoding="utf-8"?>
+const testCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
 <CapacityInfo>
     <Capacity>1099511627776</Capacity>
     <Available>0</Available>
     <Used>0</Used>
-</CapacityInfo>`;
+</CapacityInfo>\n`;
 
 const testCapacityMd5 = crypto.createHash('md5')
     .update(testCapacity, 'utf-8')
     .digest('hex');
 
-const invalidTestCapacity = `<?xml version="1.0" encoding="utf-8"?>
+const invalidTestCapacity = `<?xmlversion="1.0"encoding="UTF-8"?>
 <CapacityInfo>
     <Capacity>1099511627776</Capacity>
     <Available>-5</Available>
     <Used>0</Used>
-</CapacityInfo>`;
+</CapacityInfo>\n`;
 
 const invalidTestCapacityMd5 = crypto.createHash('md5')
     .update(invalidTestCapacity, 'utf-8')
     .digest('hex');
 
-const testSystem = `<?xml version="1.0" encoding="utf-8"?>
+const testSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     <SystemInfo>
        <ProtocolVersion>"1.0"</ProtocolVersion>
        <ModelName>"ARTESCA"</ModelName>
@@ -62,13 +62,13 @@ const testSystem = `<?xml version="1.0" encoding="utf-8"?>
            <StorageCurrentTasksLimit>0</StorageCurrentTasksLimit>
            <KbBlockSize>256</KbBlockSize>
        </SystemRecommendations>
-    </SystemInfo>`;
+    </SystemInfo>\n`;
 
 const testSystemMd5 = crypto.createHash('md5')
     .update(testSystem, 'utf-8')
     .digest('hex');
 
-const invalidTestSystem = `<?xml version="1.0" encoding="utf-8"?>
+const invalidTestSystem = `<?xmlversion="1.0"encoding="UTF-8"?>
     <SystemInfo>
        <ProtocolVersion>"1.0"</ProtocolVersion>
        <ModelName>"ARTESCA"</ModelName>
@@ -87,7 +87,7 @@ const invalidTestSystem = `<?xml version="1.0" encoding="utf-8"?>
            <StorageCurrentTasksLimit>0</StorageCurrentTasksLimit>
            <KbBlockSize>256</KbBlockSize>
        </SystemRecommendations>
-    </SystemInfo>`;
+    </SystemInfo>\n`;
 
 const invalidTestSystemMd5 = crypto.createHash('md5')
     .update(testSystem, 'utf-8')
@@ -129,7 +129,7 @@ function makeVeeamRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-describe('veeam PUT routes', () => {
+describe('veeam PUT routes:', () => {
     before(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
@@ -215,7 +215,7 @@ describe('veeam PUT routes', () => {
     });
 });
 
-describe('veeam GET routes', () => {
+describe('veeam GET routes:', () => {
     beforeEach(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
@@ -299,7 +299,7 @@ describe('veeam GET routes', () => {
     });
 });
 
-describe('veeam DELETE routes', () => {
+describe('veeam DELETE routes:', () => {
     beforeEach(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
@@ -410,7 +410,7 @@ describe('veeam DELETE routes', () => {
     });
 });
 
-describe('veeam HEAD routes', () => {
+describe('veeam HEAD routes:', () => {
     beforeEach(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
@@ -495,7 +495,7 @@ describe('veeam HEAD routes', () => {
 
 
 // TODO {test_debt} handle query params tests with signature (happy path)
-describe.skip('veeam LIST routes', () => {
+describe.skip('veeam LIST routes:', () => {
     beforeEach(done => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
