@@ -164,28 +164,12 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup etc/hosts
-      run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
-    - name: Setup Credentials
-      run: bash .github/scripts/credentials.bash
-    - name: Setup artifacts
-      uses: ./.github/actions/setup-artifacts
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
-    - name: install dependencies
-      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-    - name: Install python deps
-      run: pip install docker-compose
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
@@ -217,30 +201,14 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup etc/hosts
-      run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
-    - name: Setup Credentials
-      run: bash .github/scripts/credentials.bash
-    - name: Setup artifacts
-      uses: ./.github/actions/setup-artifacts
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: |
           2.7
           3.9
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
-    - name: install dependencies
-      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-    - name: Install python deps
-      run: pip install docker-compose
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
     - name: Setup python2 test environment
       run: |
         sudo apt-get install -y libdigest-hmac-perl
@@ -278,28 +246,12 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup etc/hosts
-      run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
-    - name: Setup Credentials
-      run: bash .github/scripts/credentials.bash
-    - name: Setup artifacts
-      uses: ./.github/actions/setup-artifacts
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: 3.9
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
-    - name: install dependencies
-      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-    - name: Install python deps
-      run: pip install docker-compose
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
@@ -329,28 +281,12 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup etc/hosts
-      run: sudo echo "127.0.0.1 bucketwebsitetester.s3-website-us-east-1.amazonaws.com" | sudo tee -a /etc/hosts
-    - name: Setup Credentials
-      run: bash .github/scripts/credentials.bash
-    - name: Setup artifacts
-      uses: ./.github/actions/setup-artifacts
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
         python-version: 3.9
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
-    - name: install dependencies
-      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-    - name: Install python deps
-      run: pip install docker-compose
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
     - name: Copy KMIP certs
       run: cp -r ./certs /tmp/ssl-kmip
       working-directory: .github/pykmip
