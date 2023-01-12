@@ -48,7 +48,7 @@ signed_headers = 'host;x-amz-content-sha256;x-amz-date'
 canonical_request = '{0}\n{1}\n{2}\n{3}\n{4}\n{5}' \
     .format(method, canonical_uri, canonical_querystring, canonical_headers,
             signed_headers, payload_hash)
-print canonical_request
+print(canonical_request)
 
 credential_scope = '{0}/{1}/{2}/aws4_request' \
     .format(date_stamp, region, service)
@@ -76,4 +76,4 @@ headers = {
 endpoint = 'http://' + host + canonical_uri + '?' + canonical_querystring
 
 r = requests.get(endpoint, headers=headers)
-print (r.text)
+print(r.text)
