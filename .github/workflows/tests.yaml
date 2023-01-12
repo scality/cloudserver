@@ -1,0 +1,310 @@
+---
+name: tests
+
+on:
+  push:
+    branches-ignore:
+      - 'development/**'
+      - 'q/*/**'
+
+env:
+  # Secrets
+  azurebackend_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurebackend_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurebackend_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azurebackend2_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY_2 }}
+  azurebackend2_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_2 }}
+  azurebackend2_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT_2 }}
+  azurebackendmismatch_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurebackendmismatch_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurebackendmismatch_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azurenonexistcontainer_AZURE_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.AZURE_STORAGE_ACCESS_KEY }}
+  azurenonexistcontainer_AZURE_STORAGE_ACCOUNT_NAME: >-
+    ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+  azurenonexistcontainer_AZURE_STORAGE_ENDPOINT: >-
+    ${{ secrets.AZURE_STORAGE_ENDPOINT }}
+  azuretest_AZURE_BLOB_ENDPOINT: "${{ secrets.AZURE_STORAGE_ENDPOINT }}"
+  b2backend_B2_ACCOUNT_ID: "${{ secrets.B2BACKEND_B2_ACCOUNT_ID }}"
+  b2backend_B2_STORAGE_ACCESS_KEY: >-
+    ${{ secrets.B2BACKEND_B2_STORAGE_ACCESS_KEY }}
+  GOOGLE_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
+  GOOGLE_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
+  AWS_S3_BACKEND_ACCESS_KEY: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }}"
+  AWS_S3_BACKEND_SECRET_KEY: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY }}"
+  AWS_S3_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_S3_BACKEND_ACCESS_KEY_2 }}"
+  AWS_S3_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_S3_BACKEND_SECRET_KEY_2 }}"
+  AWS_GCP_BACKEND_ACCESS_KEY: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY }}"
+  AWS_GCP_BACKEND_SECRET_KEY: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY }}"
+  AWS_GCP_BACKEND_ACCESS_KEY_2: "${{ secrets.AWS_GCP_BACKEND_ACCESS_KEY_2 }}"
+  AWS_GCP_BACKEND_SECRET_KEY_2: "${{ secrets.AWS_GCP_BACKEND_SECRET_KEY_2 }}"
+  b2backend_B2_STORAGE_ENDPOINT: "${{ secrets.B2BACKEND_B2_STORAGE_ENDPOINT }}"
+  gcpbackend2_GCP_SERVICE_EMAIL: "${{ secrets.GCP2_SERVICE_EMAIL }}"
+  gcpbackend2_GCP_SERVICE_KEY: "${{ secrets.GCP2_SERVICE_KEY }}"
+  gcpbackend2_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackend_GCP_SERVICE_EMAIL: "${{ secrets.GCP_SERVICE_EMAIL }}"
+  gcpbackend_GCP_SERVICE_KEY: "${{ secrets.GCP_SERVICE_KEY }}"
+  gcpbackendmismatch_GCP_SERVICE_EMAIL: >-
+    ${{ secrets.GCPBACKENDMISMATCH_GCP_SERVICE_EMAIL }}
+  gcpbackendmismatch_GCP_SERVICE_KEY: >-
+    ${{ secrets.GCPBACKENDMISMATCH_GCP_SERVICE_KEY }}
+  gcpbackend_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendmismatch_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendnoproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  gcpbackendproxy_GCP_SERVICE_KEYFILE: /root/.gcp/servicekey
+  # Configs
+  ENABLE_LOCAL_CACHE: "true"
+  REPORT_TOKEN: "report-token-1"
+  REMOTE_MANAGEMENT_DISABLE: "1"
+
+jobs:
+  linting-coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        cache: yarn
+    - name: install dependencies
+      run: yarn install --frozen-lockfile --network-concurrency 1
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+    - name: Install python deps
+      run: pip install flake8
+    - name: Lint Javascript
+      run: yarn run --silent lint -- --max-warnings 0
+    - name: Lint Markdown
+      run: yarn run --silent lint_md
+    - name: Lint python
+      run: flake8 $(git ls-files "*.py")
+    - name: Lint Yaml
+      run: yamllint -c yamllint.yml $(git ls-files "*.yml")
+    - name: Unit Coverage
+      run: |
+        set -ex
+        mkdir -p $CIRCLE_TEST_REPORTS/unit
+        yarn test
+        yarn run test_legacy_location
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+        CIRCLE_TEST_REPORTS: /tmp
+        CIRCLE_ARTIFACTS: /tmp
+        CI_REPORTS: /tmp
+    - name: Unit Coverage logs
+      run: find /tmp/unit -exec cat {} \;
+    - name: preparing junit files for upload
+      run: |
+        mkdir -p artifacts/junit
+        find . -name "*junit*.xml" -exec cp {} artifacts/junit/ ";"
+      if: always()
+    - name: Upload files to artifacts
+      uses: scality/action-artifacts@v2
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: artifacts
+      if: always()
+
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1.6.0
+      - name: Login to GitHub Registry
+        uses: docker/login-action@v1.10.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Registry
+        uses: docker/login-action@v1
+        with:
+          registry: registry.scality.com
+          username: ${{ secrets.REGISTRY_LOGIN }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build and push cloudserver image
+        uses: docker/build-push-action@v2.7.0
+        with:
+          push: true
+          context: .
+          tags: |
+            ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+            registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
+          cache-from: type=gha,scope=cloudserver
+          cache-to: type=gha,mode=max,scope=cloudserver
+
+  multiple-backend:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      S3BACKEND: mem
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      S3DATA: multiple
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose up -d
+      working-directory: .github/docker
+    - name: Run multiple backend test
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
+  file-ft-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: file
+      S3VAULT: mem
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MPU_TESTING: "yes"
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: |
+          2.7
+          3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup python2 test environment
+      run: |
+        sudo apt-get install -y libdigest-hmac-perl
+        pip install virtualenv
+        virtualenv -p $(which python2) ~/.virtualenv/py2
+        source ~/.virtualenv/py2/bin/activate
+        pip install 's3cmd==1.6.1'
+    - name: Setup CI services
+      run: docker-compose up -d
+      working-directory: .github/docker
+    - name: Run file ft tests
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        source ~/.virtualenv/py2/bin/activate
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
+  utapi-v2-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      ENABLE_UTAPI_V2: t
+      S3BACKEND: mem 
+      BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose up -d
+      working-directory: .github/docker
+    - name: Run file utapi v2 tests
+      run: |-
+        set -ex -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run test_utapi_v2 | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
+  kmip-ft-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: file
+      S3VAULT: mem
+      MPU_TESTING: true
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Copy KMIP certs
+      run: cp -r ./certs /tmp/ssl-kmip
+      working-directory: .github/pykmip
+    - name: Setup CI services
+      run: docker-compose --profile pykmip up -d
+      working-directory: .github/docker
+    - name: Run file KMIP tests
+      run: |-
+        set -ex -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        bash wait_for_local_port.bash 5696 40
+        yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
