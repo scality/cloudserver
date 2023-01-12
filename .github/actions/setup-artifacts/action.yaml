@@ -1,0 +1,12 @@
+---
+name: "Setup Artifacts"
+description: "Setup artifacts directory"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup job artifacts directory
+      shell: bash
+      run: |-
+        set -exu;
+        mkdir -p /tmp/artifacts/${{ github.job }}/;
