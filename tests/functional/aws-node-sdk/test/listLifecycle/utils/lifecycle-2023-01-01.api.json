@@ -1,0 +1,299 @@
+{
+    "version": "2.0",
+    "metadata": {
+      "apiVersion": "2023-01-01",
+      "checksumFormat": "md5",
+      "endpointPrefix": "s3",
+      "protocol": "rest-xml",
+      "serviceAbbreviation": "Lifecycle",
+      "serviceFullName": "Lifecycle Listing Client",
+      "serviceId": "lifecycle",
+      "signatureVersion": "v4",
+      "uid": "lifecycle-2023-01-01"
+    },
+    "operations": {
+        "ListLifecycleObjects": {
+            "name": "ListLifecycleObjects",
+            "http": {
+              "method": "GET",
+              "requestUri": "/{Bucket}?scal-list-type=lifecycle"
+            },
+            "input": {
+              "shape": "ListLifecycleObjectsRequest"
+            },
+            "output": {
+              "shape": "ListLifecycleObjectsOutput"
+            },
+            "errors": [
+              {
+                "shape": "NoSuchBucket"
+              }
+            ],
+            "documentation": "<p>Returns some or all (up to 1,000) of the objects in a non version bucket. You can use the request parameters as selection criteria to return a subset of the objects in a bucket. A 200 OK response can contain valid or invalid XML. Be sure to design your application to parse the contents of the response and handle it appropriately.</p>",
+            "alias": "GetBucket"
+        }
+    },
+    "shapes": {
+        "BeforeDate": {
+          "type": "string"
+        },
+        "BucketName": {
+          "type": "string"
+        },
+        "ChecksumAlgorithm": {
+          "type": "string",
+          "enum": [
+            "CRC32",
+            "CRC32C",
+            "SHA1",
+            "SHA256"
+          ]
+        },
+        "ChecksumAlgorithmList": {
+          "type": "list",
+          "member": {
+            "shape": "ChecksumAlgorithm"
+          },
+          "flattened": true
+        },
+        "Date": {
+          "type": "timestamp",
+          "timestampFormat": "iso8601"
+        },
+        "DisplayName": {
+          "type": "string"
+        },
+        "EncodingType": {
+          "type": "string",
+          "documentation": "<p>Requests Amazon S3 to encode the object keys in the response and specifies the encoding method to use. An object key may contain any Unicode character; however, XML 1.0 parser cannot parse some characters, such as characters with an ASCII value from 0 to 10. For characters that are not supported in XML 1.0, you can add this parameter to request that Amazon S3 encode the keys in the response.</p>",
+          "enum": [
+            "url"
+          ]
+        },
+        "ETag": {
+          "type": "string"
+        },
+        "KeyMarker": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "string"
+        },
+        "IsTruncated": {
+            "type": "boolean"
+        },
+        "LastModified": {
+          "type": "timestamp"
+        },
+        "ListLifecycleObjectsOutput": {
+          "type": "structure",
+          "members": {
+            "DateMarker": {
+              "shape": "DateMarker",
+              "documentation": "<p>Indicates where in the bucket listing begins. DateMarker is included in the response if it was sent with the request.</p>"
+            },
+            "KeyMarker": {
+              "shape": "KeyMarker",
+              "documentation": "<p>Indicates where in the bucket listing begins. KeyMarker is included in the response if it was sent with the request.</p>"
+            },
+            "IsTruncated": {
+              "shape": "IsTruncated",
+              "documentation": "<p>A flag that indicates whether Cloudserver returned all of the results that satisfied the search criteria.</p>"
+            },
+            "NextDateMarker": {
+              "shape": "NextDateMarker",
+              "documentation": "<p>When response is truncated (the IsTruncated element value in the response is true), you can use the date in this field as marker in the subsequent request to get next set of objects. Cloudserver orders objects in ascending order.</p>"
+            },
+            "NextKeyMarker": {
+              "shape": "NextKeyMarker",
+              "documentation": "<p>When response is truncated (the IsTruncated element value in the response is true), you can use the key name in this field as key-marker in the subsequent request to get next set of objects.</p>"
+            },
+            "Contents": {
+              "shape": "ObjectLifecycleList",
+              "documentation": "<p>Metadata about each object returned.</p>"
+            },
+            "Name": {
+              "shape": "BucketName",
+              "documentation": "<p>The bucket name.</p>"
+            },
+            "Prefix": {
+              "shape": "Prefix",
+              "documentation": "<p>Keys that begin with the indicated prefix.</p>"
+            },
+            "MaxKeys": {
+              "shape": "MaxKeys",
+              "documentation": "<p>The maximum number of keys returned in the response body.</p>"
+            },
+            "EncodingType": {
+              "shape": "EncodingType",
+              "documentation": "<p>Encoding type used by Amazon S3 to encode object keys in the response.</p>"
+            }
+          }
+        },
+        "ListLifecycleObjectsRequest": {
+          "type": "structure",
+          "required": [
+            "Bucket"
+          ],
+          "members": {
+            "Bucket": {
+              "shape": "BucketName",
+              "documentation": "<p>The name of the bucket containing the objects.</p> <p>When using this action with an access point, you must direct requests to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket name. For more information about access point ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html\">Using access points</a> in the <i>Amazon S3 User Guide</i>.</p> <p>When using this action with Amazon S3 on Outposts, you must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. When using this action with S3 on Outposts through the Amazon Web Services SDKs, you provide the Outposts bucket ARN in place of the bucket name. For more information about S3 on Outposts ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html\">Using Amazon S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.</p>",
+              "contextParam": {
+                "name": "Bucket"
+              },
+              "location": "uri",
+              "locationName": "Bucket"
+            },
+            "BeforeDate": {
+              "shape": "BeforeDate",
+              "documentation": "<p>Limit the response to keys modified prior to before date.</p>",
+              "location": "querystring",
+              "locationName": "before-date"
+            },
+            "EncodingType": {
+              "shape": "EncodingType",
+              "location": "querystring",
+              "locationName": "encoding-type"
+            },
+            "KeyMarker": {
+              "shape": "KeyMarker",
+              "documentation": "<p>KeyMarker is where you want Cloudserver to start listing from. CloudServer starts listing after this specified key. Marker can be any key in the bucket.</p>",
+              "location": "querystring",
+              "locationName": "key-marker"
+            },
+            "DateMarker": {
+              "shape": "DateMarker",
+              "documentation": "<p>DateMarker is where you want Cloudserver to start listing from. Cloudserver starts listing after this specified date.</p>",
+              "location": "querystring",
+              "locationName": "date-marker"
+            },
+            "MaxKeys": {
+              "shape": "MaxKeys",
+              "documentation": "<p>Sets the maximum number of keys returned in the response. By default the action returns up to 1,000 key names. The response might contain fewer keys but will never contain more. </p>",
+              "location": "querystring",
+              "locationName": "max-keys"
+            },
+            "Prefix": {
+              "shape": "Prefix",
+              "documentation": "<p>Limits the response to keys that begin with the specified prefix.</p>",
+              "location": "querystring",
+              "locationName": "prefix"
+            }
+          }
+        },
+        "DateMarker": {
+          "type": "string"
+        },
+        "MaxKeys": {
+          "type": "integer"
+        },
+        "NextDateMarker": {
+          "type": "string"
+        },
+        "NextKeyMarker": {
+          "type": "string"
+        },
+        "ObjectLifecycle": {
+          "type": "structure",
+          "members": {
+            "Key": {
+              "shape": "ObjectKey",
+              "documentation": "<p>The name that you assign to an object. You use the object key to retrieve the object.</p>"
+            },
+            "LastModified": {
+              "shape": "LastModified",
+              "documentation": "<p>Creation date of the object.</p>"
+            },
+            "ETag": {
+              "shape": "ETag",
+              "documentation": "<p>The entity tag is a hash of the object. The ETag reflects changes only to the contents of an object, not its metadata. The ETag may or may not be an MD5 digest of the object data. Whether or not it is depends on how the object was created and how it is encrypted as described below:</p> <ul> <li> <p>Objects created by the PUT Object, POST Object, or Copy operation, or through the Amazon Web Services Management Console, and are encrypted by SSE-S3 or plaintext, have ETags that are an MD5 digest of their object data.</p> </li> <li> <p>Objects created by the PUT Object, POST Object, or Copy operation, or through the Amazon Web Services Management Console, and are encrypted by SSE-C or SSE-KMS, have ETags that are not an MD5 digest of their object data.</p> </li> <li> <p>If an object is created by either the Multipart Upload or Part Copy operation, the ETag is not an MD5 digest, regardless of the method of encryption. If an object is larger than 16 MB, the Amazon Web Services Management Console will upload or copy that object as a Multipart Upload, and therefore the ETag will not be an MD5 digest.</p> </li> </ul>"
+            },
+            "ChecksumAlgorithm": {
+              "shape": "ChecksumAlgorithmList",
+              "documentation": "<p>The algorithm that was used to create a checksum of the object.</p>"
+            },
+            "Size": {
+              "shape": "Size",
+              "documentation": "<p>Size in bytes of the object</p>"
+            },
+            "StorageClass": {
+              "shape": "ObjectStorageClass",
+              "documentation": "<p>The class of storage used to store the object.</p>"
+            },
+            "Owner": {
+              "shape": "Owner",
+              "documentation": "<p>The owner of the object</p>"
+            },
+            "TagSet": {
+              "shape": "TagSet",
+              "documentation": "<p>Contains the tag set.</p>"
+            }
+        },
+        "documentation": "<p>An object consists of data and its descriptive metadata.</p>"
+        },
+        "ObjectKey": {
+          "type": "string",
+          "min": 1
+        },
+        "ObjectLifecycleList": {
+          "type": "list",
+          "member": {
+            "shape": "ObjectLifecycle"
+          },
+          "flattened": true
+        },
+        "ObjectStorageClass": {
+          "type": "string"
+        },
+        "Owner": {
+          "type": "structure",
+          "members": {
+            "DisplayName": {
+              "shape": "DisplayName",
+              "documentation": "<p>Container for the display name of the owner.</p>"
+            },
+            "ID": {
+              "shape": "ID",
+              "documentation": "<p>Container for the ID of the owner.</p>"
+            }
+          },
+          "documentation": "<p>Container for the owner's display name and ID.</p>"
+        },
+        "Prefix": {
+          "type": "string"
+        },
+        "Size": {
+          "type": "integer"
+        },
+        "Tag": {
+          "type": "structure",
+          "required": [
+            "Key",
+            "Value"
+          ],
+          "members": {
+            "Key": {
+              "shape": "ObjectKey",
+              "documentation": "<p>Name of the object key.</p>"
+            },
+            "Value": {
+              "shape": "Value",
+              "documentation": "<p>Value of the tag.</p>"
+            }
+          },
+          "documentation": "<p>A container of a key value name pair.</p>"
+        },
+        "TagSet": {
+          "type": "list",
+          "member": {
+            "shape": "Tag",
+            "locationName": "Tag"
+          }
+        },
+        "Value": {
+            "type": "string"
+        }
+    }
+}
+        

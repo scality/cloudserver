@@ -165,6 +165,15 @@ class MongoTestClient {
             },
         }, cb);
     }
+
+    matchObjectsLastModified(bucketName, lastModified, cb) {
+        const m = this.db.collection(bucketName);
+        m.update(
+            {},
+            { "$set" : { "value.last-modified" : lastModified } },
+            { multi: true },
+        cb);
+    }
 }
 
 const mongoClient = new MongoTestClient({
