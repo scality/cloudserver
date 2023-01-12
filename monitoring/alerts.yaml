@@ -53,8 +53,8 @@ groups:
   # all the response codes
   - alert: SystemErrorsWarning
     expr: |
-      sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
-          / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
+      sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
+          / sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
         >= ${systemErrorsWarningThreshold}
     for: 5m
     labels:
@@ -67,8 +67,8 @@ groups:
   # all the response codes
   - alert: SystemErrorsCritical
     expr: |
-      sum(rate(http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
-          / sum(rate(http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
+      sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", service="${service}", code=~"5.."}[1m]))
+          / sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", service="${service}"}[1m]))
         >= ${systemErrorsCriticalThreshold}
     for: 5m
     labels:
@@ -81,8 +81,8 @@ groups:
   # version listing operation latency is more than 300ms
   - alert: ListingLatencyWarning
     expr: |
-      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
-          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+      sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+          / sum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
         >= ${listingLatencyWarningThreshold}
     for: 5m
     labels:
@@ -95,8 +95,8 @@ groups:
   # version listing operation latency is more than 500ms
   - alert: ListingLatencyCritical
     expr: |
-      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
-          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+      sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
+          / sum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="listBucket"}[1m]))
         >= ${listingLatencyCriticalThreshold}
     for: 5m
     labels:
@@ -109,8 +109,8 @@ groups:
   # 500ms
   - alert: DeleteLatencyWarning
     expr: |
-      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
-          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+      sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+          / sum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
         >= ${deleteLatencyWarningThreshold}
     for: 5m
     labels:
@@ -123,8 +123,8 @@ groups:
   # than 1s
   - alert: DeleteLatencyCritical
     expr: |
-      sum(rate(http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
-          / sum(rate(http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+      sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
+          / sum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace="${namespace}",service="${service}",action="deleteObject"}[1m]))
         >= ${deleteLatencyCriticalThreshold}
     for: 5m
     labels:
