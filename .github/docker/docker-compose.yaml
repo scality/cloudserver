@@ -20,6 +20,7 @@ services:
       - METADATA_HOST=0.0.0.0
       - S3BACKEND
       - S3DATA
+      - S3METADATA
       - MPU_TESTING
       - S3VAULT
       - S3_LOCATION_FILE
@@ -34,6 +35,10 @@ services:
       - S3KMIP_KEY
       - S3KMIP_CERT
       - S3KMIP_CA
+      - MONGODB_HOSTS=0.0.0.0:27018
+      - MONGODB_RS=rs0
+      - DEFAULT_BUCKET_KEY_FORMAT
+      - METADATA_MAX_CACHED_BUCKETS
     env_file:
       - creds.env
     depends_on:
@@ -64,3 +69,11 @@ services:
     image: registry.scality.com/cloudserver-dev/pykmip
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts
+  mongo:
+    network_mode: "host"
+    profiles: ['mongo']
+    image: scality/ci-mongo:3.6.8
+  # ceph: 
+  #   network_mode: "host"
+  #   profiles: ['mongo']
+  #   image: scality/ci-mongo:3.6.8

@@ -189,6 +189,54 @@ jobs:
         password: ${{ secrets.ARTIFACTS_PASSWORD }}
         source: /tmp/artifacts
       if: always()
+ 
+  mongo-ft-tests:
+    strategy:
+      matrix:
+        include:
+        - version: v0
+          md-max-cache-buckets: ''
+        - version: v1
+          md-max-cache-buckets: '1'
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: mem
+      MPU_TESTING: true
+      S3METADATA: mongodb
+      S3KMS: file
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      DEFAULT_BUCKET_KEY_FORMAT: ${{ matrix.version }}
+      METADATA_MAX_CACHED_BUCKETS: ${{ matrix.md-max-cache-buckets }}
+      JOB_NAME: ${{ github.job }}-${{ matrix.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose --profile mongo up -d
+      working-directory: .github/docker
+    - name: Run multiple backend test
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
 
   file-ft-tests:
     runs-on: ubuntu-latest
