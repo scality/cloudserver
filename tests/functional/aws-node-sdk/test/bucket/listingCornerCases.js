@@ -332,7 +332,7 @@ describe('Listing corner cases tests', () => {
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
                     Marker: 'notes/',
-                    NextMarker: 'notes/spring/1.txt',
+                    NextMarker: 'notes/spring/',
                     IsTruncated: true,
                     Contents: [],
                     Name: Bucket,
@@ -349,15 +349,15 @@ describe('Listing corner cases tests', () => {
             { Bucket,
                 Delimiter: '/',
                 Prefix: 'notes/',
-                Marker: 'notes/spring/1.txt',
+                Marker: 'notes/spring/',
                 MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
-                    Marker: 'notes/spring/1.txt',
-                    NextMarker: 'notes/summer/1.txt',
+                    Marker: 'notes/spring/',
+                    NextMarker: 'notes/summer/',
                     IsTruncated: true,
                     Contents: [],
                     Name: Bucket,
@@ -374,14 +374,14 @@ describe('Listing corner cases tests', () => {
             { Bucket,
                 Delimiter: '/',
                 Prefix: 'notes/',
-                Marker: 'notes/summer/1.txt',
+                Marker: 'notes/summer/',
                 MaxKeys: 1,
             },
             (err, data) => {
                 assert.strictEqual(err, null);
                 cutAttributes(data);
                 assert.deepStrictEqual(data, {
-                    Marker: 'notes/summer/1.txt',
+                    Marker: 'notes/summer/',
                     NextMarker: 'notes/year.txt',
                     IsTruncated: true,
                     Contents: ['notes/year.txt'],
