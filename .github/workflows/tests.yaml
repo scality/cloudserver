@@ -165,9 +165,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
@@ -178,6 +175,84 @@ jobs:
         set -o pipefail;
         bash wait_for_local_port.bash 8000 40
         yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+ 
+  mongo-v0-ft-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: mem
+      MPU_TESTING: "yes" 
+      S3METADATA: mongodb
+      S3KMS: file
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      DEFAULT_BUCKET_KEY_FORMAT: v0
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose --profile mongo up -d
+      working-directory: .github/docker
+    - name: Run functional tests
+      run: |-
+        set -o pipefail;
+        source ~/.virtualenv/py2/bin/activate
+        bash wait_for_local_port.bash 8000 40
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
+  mongo-v1-ft-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: mem
+      MPU_TESTING: "yes" 
+      S3METADATA: mongodb
+      S3KMS: file
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      DEFAULT_BUCKET_KEY_FORMAT: v1
+      METADATA_MAX_CACHED_BUCKETS: 1
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose --profile mongo up -d
+      working-directory: .github/docker
+    - name: Run functional tests
+      run: |-
+        set -o pipefail;
+        source ~/.virtualenv/py2/bin/activate
+        bash wait_for_local_port.bash 8000 40
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+        yarn run ft_mixed_bucket_format_version | tee /tmp/artifacts/${{ github.job }}/mixed-tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
     - name: Upload logs to artifacts
@@ -202,20 +277,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: |
-          2.7
-          3.9
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
-    - name: Setup python2 test environment
-      run: |
-        sudo apt-get install -y libdigest-hmac-perl
-        pip install virtualenv
-        virtualenv -p $(which python2) ~/.virtualenv/py2
-        source ~/.virtualenv/py2/bin/activate
-        pip install 's3cmd==1.6.1'
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
@@ -247,9 +310,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
@@ -276,15 +336,12 @@ jobs:
     env:
       S3BACKEND: file
       S3VAULT: mem
-      MPU_TESTING: true
+      MPU_TESTING: "yes" 
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Copy KMIP certs
@@ -299,6 +356,84 @@ jobs:
         bash wait_for_local_port.bash 8000 40
         bash wait_for_local_port.bash 5696 40
         yarn run ft_kmip | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+  
+  ceph-backend-test:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: mem
+      S3DATA: multiple
+      S3KMS: file
+      CI_CEPH: 'true'
+      MPU_TESTING: "yes" 
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigCeph.json
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Login to GitHub Registry
+      uses: docker/login-action@v1.10.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.5.0'
+    - name: Install Ruby dependencies
+      run: |
+        gem install nokogiri:1.12.5 fog-aws:1.3.0 json mime-types:3.1 rspec:3.5
+    - name: Install Java dependencies
+      run: |
+        sudo apt-get install -y default-jdk maven
+    - name: Setup CI services
+      run: docker-compose --profile ceph up -d
+      working-directory: .github/docker
+      env: 
+        S3METADATA: mongodb
+    - name: Run Ceph multiple backend tests
+      run: |-
+        set -ex -o pipefail;
+        bash .github/ceph/wait_for_ceph.sh
+        bash wait_for_local_port.bash 27018 40
+        bash wait_for_local_port.bash 8000 40
+        yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/multibackend-tests.log
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
+        S3METADATA: mem
+    - name: Run Java tests
+      run: |-
+        set -ex -o pipefail;
+        mvn test | tee /tmp/artifacts/${{ github.job }}/java-tests.log
+      working-directory: tests/functional/jaws
+    - name: Run Ruby tests
+      run: |-
+        set -ex -o pipefail;
+        rspec tests.rb | tee /tmp/artifacts/${{ github.job }}/ruby-tests.log
+      working-directory: tests/functional/fog
+    - name: Run Javascript AWS SDK tests
+      run: |-
+        set -ex -o pipefail;
+        source ~/.virtualenv/py2/bin/activate
+        yarn run ft_awssdk | tee /tmp/artifacts/${{ github.job }}/js-awssdk-tests.log;
+        yarn run ft_s3cmd | tee /tmp/artifacts/${{ github.job }}/js-s3cmd-tests.log;
+      env:
+        S3_LOCATION_FILE: tests/locationConfig/locationConfigCeph.json
+        S3BACKEND: file
+        S3VAULT: mem
+        S3METADATA: mongodb
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v3
       with:

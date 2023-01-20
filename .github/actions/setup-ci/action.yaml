@@ -15,7 +15,7 @@ runs:
       shell: bash
       run: |-
         set -exu;
-        mkdir -p /tmp/artifacts/${{ github.job }}/;
+        mkdir -p /tmp/artifacts/${JOB_NAME}/;
     - uses: actions/setup-node@v2
       with:
         node-version: '16'
@@ -27,6 +27,19 @@ runs:
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip
+    - uses: actions/setup-python@v4
+      with:
+        python-version: |
+          2.7
+          3.9
     - name: Install python deps
       shell: bash
       run: pip install docker-compose
+    - name: Setup python2 test environment
+      shell: bash
+      run: |
+        sudo apt-get install -y libdigest-hmac-perl
+        pip install virtualenv
+        virtualenv -p $(which python2) ~/.virtualenv/py2
+        source ~/.virtualenv/py2/bin/activate
+        pip install 's3cmd==1.6.1'
