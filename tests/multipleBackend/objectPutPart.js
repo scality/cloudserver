@@ -103,6 +103,9 @@ errorDescription) {
             assert(err.description.indexOf(errorDescription) > -1);
             return cb();
         }
+
+        assert.ifError(err, 'Error initiating MPU');
+
         // Need to build request in here since do not have uploadId
         // until here
         const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
