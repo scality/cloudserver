@@ -2,6 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const moment = require('moment');
 const { errors, s3middleware } = require('arsenal');
+const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
@@ -15,6 +16,9 @@ const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectLockTestUtils } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
+const mpuUtils = require('../utils/mpuUtils');
+
+const any = sinon.match.any;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -95,6 +99,11 @@ describe('parseTagFromQuery', () => {
 });
 
 describe('objectPut API', () => {
+    before(() => {
+        sinon.stub(metadata, 'putObjectMD')
+            .callsFake(originalputObjectMD);
+    });
+
     beforeEach(() => {
         cleanup();
         testPutObjectRequest = new DummyRequest({
@@ -108,6 +117,7 @@ describe('objectPut API', () => {
 
     after(() => {
         metadata.putObjectMD = originalputObjectMD;
+        sinon.restore();
     });
 
     it('should return an error if the bucket does not exist', done => {
@@ -430,6 +440,20 @@ describe('objectPut API', () => {
                                 Buffer.from('I am another body', 'utf8'));
                             done();
                         });
+                    });
+                });
+        });
+    });
+
+    it('should not leave orphans in data when overwriting an multipart upload object', done => {
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            mpuUtils.createMPU(namespace, bucketName, objectName, log,
+                (err, testUploadId) => {
+                    objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD,
+                            any, any, any, { oldReplayId: testUploadId }, any, any);
+                        done();
                     });
                 });
         });
