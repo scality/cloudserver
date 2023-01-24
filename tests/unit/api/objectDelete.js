@@ -1,9 +1,8 @@
 const assert = require('assert');
-const async = require('async');
-const crypto = require('crypto');
 const { errors } = require('arsenal');
-const xml2js = require('xml2js');
+const sinon = require('sinon');
 
+const services = require('../../../lib/services');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const constants = require('../../../constants');
@@ -11,12 +10,11 @@ const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
 const objectDelete = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
-const initiateMultipartUpload
-    = require('../../../lib/api/initiateMultipartUpload');
-const objectPutPart = require('../../../lib/api/objectPutPart');
-const completeMultipartUpload
-    = require('../../../lib/api/completeMultipartUpload');
 const DummyRequest = require('../DummyRequest');
+const mpuUtils = require('../utils/mpuUtils');
+
+const any = sinon.match.any;
+const originalDeleteObject = services.deleteObject;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -49,6 +47,11 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
 describe('objectDelete API', () => {
     let testPutObjectRequest;
 
+    before(() => {
+        sinon.stub(services, 'deleteObject')
+            .callsFake(originalDeleteObject);
+    });
+
     beforeEach(() => {
         cleanup();
         testPutObjectRequest = new DummyRequest({
@@ -59,6 +62,11 @@ describe('objectDelete API', () => {
             url: `/${bucketName}/${objectKey}`,
         }, postBody);
     });
+
+    after(() => {
+        sinon.restore();
+    });
+
 
     const testBucketPutRequest = new DummyRequest({
         bucketName,
@@ -80,14 +88,6 @@ describe('objectDelete API', () => {
         headers: {},
         url: `/${bucketName}/${objectKey}`,
     });
-
-    const initiateMPURequest = {
-        bucketName,
-        namespace,
-        objectKey,
-        headers: { host: `${bucketName}.s3.amazonaws.com` },
-        url: `/${objectKey}?uploads`,
-    };
 
     it('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
@@ -131,55 +131,22 @@ describe('objectDelete API', () => {
         });
     });
 
-    it('should delete a multipart upload', done => {
-        const partBody = Buffer.from('I am a part\n', 'utf8');
-        let testUploadId;
-        let calculatedHash;
-        async.waterfall([
-            next => bucketPut(authInfo, testBucketPutRequest, log, next),
-            (corsHeaders, next) => initiateMultipartUpload(authInfo,
-                initiateMPURequest, log, next),
-            (result, corsHeaders, next) => xml2js.parseString(result, next),
-            (json, next) => {
-                testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
-                const md5Hash = crypto.createHash('md5').update(partBody);
-                calculatedHash = md5Hash.digest('hex');
-                const partRequest = new DummyRequest({
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
-                    query: {
-                        partNumber: '1',
-                        uploadId: testUploadId,
-                    },
-                    calculatedHash,
-                }, partBody);
-                objectPutPart(authInfo, partRequest, undefined, log, next);
-            },
-            (hexDigest, corsHeaders, next) => {
-                const completeBody = '<CompleteMultipartUpload>' +
-                      '<Part>' +
-                      '<PartNumber>1</PartNumber>' +
-                      `<ETag>"${calculatedHash}"</ETag>` +
-                      '</Part>' +
-                      '</CompleteMultipartUpload>';
-                const completeRequest = {
-                    bucketName,
-                    namespace,
-                    objectKey,
-                    parsedHost: 's3.amazonaws.com',
-                    url: `/${objectKey}?uploadId=${testUploadId}`,
-                    headers: { host: `${bucketName}.s3.amazonaws.com` },
-                    query: { uploadId: testUploadId },
-                    post: completeBody,
-                };
-                completeMultipartUpload(authInfo, completeRequest, log, next);
-            },
-            (result, resHeaders, next) =>
-                objectDelete(authInfo, testDeleteRequest, log, next),
-        ], done);
+    it('should delete a multipart upload and send `uploadId` as `replayId` to deleteObject', done => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            mpuUtils.createMPU(namespace, bucketName, objectKey, log,
+                (err, testUploadId) => {
+                    assert.ifError(err);
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        sinon.assert.calledWith(services.deleteObject,
+                            any, any, any,
+                            { deleteData: true,
+                              replayId: testUploadId,
+                            }, any, any);
+                        done();
+                    });
+                });
+        });
     });
 
     it('should prevent anonymous user deleteObject API access', done => {
