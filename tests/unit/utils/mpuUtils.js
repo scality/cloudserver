@@ -94,7 +94,7 @@ function createMPU(namespace, bucketName, objectKey, logger, cb) {
                 createCompleteRequest(namespace, bucketName, objectKey, testUploadId);
             completeMultipartUpload(authInfo, completeRequest, logger, next);
         },
-    ], (err) => {
+    ], err => {
         assert.ifError(err);
         cb(null, testUploadId);
     });
