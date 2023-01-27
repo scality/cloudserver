@@ -143,10 +143,11 @@ jobs:
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Build and push cloudserver image
-        uses: docker/build-push-action@v2.7.0
+        uses: docker/build-push-action@v3
         with:
           push: true
           context: .
+          provenance: false
           tags: |
             ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
             registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
