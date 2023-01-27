@@ -147,6 +147,7 @@ jobs:
         with:
           push: true
           context: .
+          provenance: false
           tags: |
             ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
             registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
