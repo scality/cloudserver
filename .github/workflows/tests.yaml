@@ -161,6 +161,12 @@ jobs:
           registry: registry.scality.com
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Push dashboards into the development namespace
+        run: |
+          oras push registry.scality.com/cloudserver-dev/cloudserver-dashboards:${{ needs.get-project-version.outputs.tag }} \
+            dashboard.json:application/grafana-dashboard+json \
+            alerts.yaml:application/prometheus-alerts+yaml
+        working-directory: monitoring
       - name: Build and push cloudserver image
         uses: docker/build-push-action@v3
         with:
