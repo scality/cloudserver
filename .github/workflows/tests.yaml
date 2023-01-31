@@ -172,7 +172,7 @@ jobs:
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: CONF_DIR=${{ env.GITHUB_WORKSPACE }}/ docker-compose up
+      run: sudo -E CONF_DIR=${{ env.GITHUB_WORKSPACE }}/ docker-compose up
       working-directory: .github/docker
     - name: Run multiple backend test
       run: |-
