@@ -70,15 +70,22 @@ jobs:
   get-project-version: # Get project version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get-version.outputs.PROJECT_VERSION }}
-      tag: ${{ steps.get-version.outputs.PROJECT_VERSION }}-${{ github.sha }}
+      version: ${{ steps.package.outputs.version }}
+      tag: ${{ steps.package.outputs.version }}-${{ github.sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Get version
-        id: get-version
-        run: |
-          echo ::set-output name=PROJECT_VERSION::$(node -p "require('./package.json').version")
+      - name: Get package info
+        id: package
+        uses: codex-team/action-nodejs-package-info@v1.1
+#    outputs:
+#      version: ${{ steps.get-version.outputs.PROJECT_VERSION }}
+#      tag: ${{ steps.get-version.outputs.PROJECT_VERSION }}-${{ github.sha }}
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#      - name: Get version
+#        id: get-version
+#        run: |
+#          echo ::set-output name=PROJECT_VERSION::$(node -p "require('./package.json').version")
 
 
   linting-coverage:
