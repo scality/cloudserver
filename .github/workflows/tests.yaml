@@ -84,6 +84,16 @@ jobs:
         run: |
           echo "PROJECT_VERSION=$(node -p "require('./package.json').version")"
 
+  print-project-version: # Get project version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Print version
+        run: |
+          echo ${{ needs.get-project-version.outputs.version }}
+          echo ${{ needs.get-project-version.outputs.tag }}
+
   linting-coverage:
     runs-on: ubuntu-latest
     steps:
