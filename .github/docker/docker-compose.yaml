@@ -8,6 +8,8 @@ services:
       - /tmp/ssl-kmip:/ssl-kmip
       - ${HOME}/.aws/credentials:/root/.aws/credentials
       - /tmp/artifacts/${JOB_NAME}:/artifacts
+      - /tmp/artifacts/${JOB_NAME}/cloudserver/logs/:/logs
+      - ${CONF_DIR}:/conf
     environment:
       - CI=true
       - ENABLE_LOCAL_CACHE=true
