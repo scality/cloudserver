@@ -84,15 +84,6 @@ jobs:
         run: |
           echo "PROJECT_VERSION=$(node -p "require('./package.json').version")"
 
-  print-project-version: # Get project version
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Print version
-        run: |
-          echo ${{ needs.get-project-version.outputs.version }}
-          echo ${{ needs.get-project-version.outputs.tag }}
 
   linting-coverage:
     runs-on: ubuntu-latest
@@ -152,6 +143,7 @@ jobs:
 
   build:
     runs-on: ubuntu-20.04
+    needs: get-project-version
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -183,7 +175,7 @@ jobs:
 
   multiple-backend:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       S3BACKEND: mem
@@ -217,7 +209,7 @@ jobs:
  
   mongo-v0-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       MPU_TESTING: "yes" 
@@ -255,7 +247,7 @@ jobs:
 
   mongo-v1-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       MPU_TESTING: "yes" 
@@ -295,7 +287,7 @@ jobs:
 
   file-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: file
       S3VAULT: mem
@@ -328,7 +320,7 @@ jobs:
 
   utapi-v2-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem 
@@ -360,7 +352,7 @@ jobs:
 
   kmip-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: file
       S3VAULT: mem
@@ -396,7 +388,7 @@ jobs:
   
   ceph-backend-test:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       S3DATA: multiple
