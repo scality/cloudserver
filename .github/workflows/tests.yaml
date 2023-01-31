@@ -79,6 +79,10 @@ jobs:
         id: get-version
         run: |
           echo "PROJECT_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: print version
+        id: print-version
+        run: |
+          echo "PROJECT_VERSION=$(node -p "require('./package.json').version")"
 
   linting-coverage:
     runs-on: ubuntu-latest
