@@ -163,8 +163,8 @@ jobs:
           context: .
           provenance: false
           tags: |
-            ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
-            registry.scality.com/cloudserver-dev/cloudserver:${{ get-project-version.outputs.tag }}
+            ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
+            registry.scality.com/cloudserver-dev/cloudserver:${{ needs.get-project-version.outputs.tag }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
@@ -172,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     env:
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
@@ -212,7 +212,7 @@ jobs:
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v0
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -251,7 +251,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v1
       METADATA_MAX_CACHED_BUCKETS: 1
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -286,7 +286,7 @@ jobs:
     env:
       S3BACKEND: file
       S3VAULT: mem
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       MPU_TESTING: "yes"
       JOB_NAME: ${{ github.job }}
     steps:
@@ -320,7 +320,7 @@ jobs:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem 
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -352,7 +352,7 @@ jobs:
       S3BACKEND: file
       S3VAULT: mem
       MPU_TESTING: "yes" 
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -391,7 +391,7 @@ jobs:
       CI_CEPH: 'true'
       MPU_TESTING: "yes" 
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigCeph.json
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ get-project-version.outputs.tag }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
