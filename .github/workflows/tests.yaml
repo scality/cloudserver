@@ -154,18 +154,6 @@ jobs:
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
-  build-federation-image:
-    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
-    secrets: inherit
-    with:
-      push: true
-      registry: registry.scality.com
-      namespace: cloudserver-dev
-      name: cloudserver
-      context: .
-      file: images/svc-base/Dockerfile
-      tag: ${{ github.sha }}-svc-base
-
   multiple-backend:
     runs-on: ubuntu-latest
     needs: build
