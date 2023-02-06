@@ -154,6 +154,13 @@ const tests = [
             assert.strictEqual(result.ListBucketResult.MaxKeys[0], '99999'),
     },
     {
+        name: 'return max-keys number from request even when value is 0',
+        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
+            baseGetRequest),
+        assertion: result =>
+            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
+    },
+    {
         name: 'url encode object key name if requested',
         request: Object.assign(
             { query: { 'encoding-type': 'url' }, url: baseUrl },
@@ -273,6 +280,13 @@ const testsForV2 = [...tests,
                 = result.ListBucketResult.Contents.filter(c => c.Owner);
             assert.strictEqual(owners.length, 0);
         },
+    },
+    {
+        name: 'return max-keys number from request even when value is 0',
+        request: Object.assign({ query: { 'max-keys': '0' }, url: baseUrl },
+            baseGetRequest),
+        assertion: result =>
+            assert.strictEqual(result.ListBucketResult.MaxKeys[0], '0'),
     },
 ];
 
