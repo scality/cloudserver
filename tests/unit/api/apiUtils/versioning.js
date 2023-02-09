@@ -267,9 +267,7 @@ describe('versioning helpers', () => {
                 objMD: {
                     versionId: 'v1',
                 },
-                expectedRes: {
-                    isNull: true,
-                },
+                expectedRes: {},
             },
             {
                 description: 'delete non-null object version',
@@ -280,19 +278,6 @@ describe('versioning helpers', () => {
                 expectedRes: {
                     deleteData: true,
                     versionId: 'v1',
-                },
-            },
-            {
-                description: 'delete MPU object non-null version',
-                objMD: {
-                    versionId: 'v1',
-                    uploadId: 'fooUploadId',
-                },
-                reqVersionId: 'v1',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'v1',
-                    replayId: 'fooUploadId',
                 },
             },
             {
@@ -308,132 +293,20 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'delete MPU object null version',
-                objMD: {
-                    versionId: 'vnull',
-                    isNull: true,
-                    uploadId: 'fooUploadId',
-                },
-                reqVersionId: 'null',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'vnull',
-                    replayId: 'fooUploadId',
-                },
-            },
-            {
-                description:
-                'delete object put before versioning was first enabled',
+                description: 'delete object put before versioning was first enabled',
                 objMD: {},
                 reqVersionId: 'null',
                 expectedRes: {
                     deleteData: true,
                 },
             },
-            {
-                description:
-                'delete MPU object put before versioning was first enabled',
-                objMD: {
-                    uploadId: 'fooUploadId',
-                },
-                reqVersionId: 'null',
-                expectedRes: {
-                    deleteData: true,
-                },
-            },
-            {
-                description:
-                'delete non-null object version with ref to null version',
-                objMD: {
-                    versionId: 'v1',
-                    nullVersionId: 'vnull',
-                },
-                reqVersionId: 'v1',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'v1',
-                },
-            },
-            {
-                description:
-                'delete MPU object non-null version with ref to null version',
-                objMD: {
-                    versionId: 'v1',
-                    uploadId: 'fooUploadId',
-                    nullVersionId: 'vnull',
-                },
-                reqVersionId: 'v1',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'v1',
-                    replayId: 'fooUploadId',
-                },
-            },
-            {
-                description:
-                'delete non-null object version with ref to MPU null version',
-                objMD: {
-                    versionId: 'v1',
-                    nullVersionId: 'vnull',
-                    nullUploadId: 'nullFooUploadId',
-                },
-                reqVersionId: 'v1',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'v1',
-                },
-            },
-            {
-                description:
-                'delete null object version from ref to null version',
-                objMD: {
-                    versionId: 'v1',
-                    nullVersionId: 'vnull',
-                },
-                reqVersionId: 'null',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'vnull',
-                },
-            },
-            {
-                description:
-                'delete MPU object null version from ref to null version',
-                objMD: {
-                    versionId: 'v1',
-                    nullVersionId: 'vnull',
-                    nullUploadId: 'nullFooUploadId',
-                },
-                reqVersionId: 'null',
-                expectedRes: {
-                    deleteData: true,
-                    versionId: 'vnull',
-                    replayId: 'nullFooUploadId',
-                },
-            },
-            {
-                description: 'delete null version that does not exist',
-                objMD: {
-                    versionId: 'v1',
-                },
-                reqVersionId: 'null',
-                expectedError: 'NoSuchKey',
-            },
-        ].forEach(testCase => it(testCase.description, done => {
+        ].forEach(testCase => it(testCase.description, () => {
             const mockBucketMD = {
                 getVersioningConfiguration: () => ({ Status: 'Enabled' }),
             };
-            preprocessingVersioningDelete(
-                'foobucket', mockBucketMD, testCase.objMD,
-                testCase.reqVersionId, null, (err, options) => {
-                    if (testCase.expectedError) {
-                        assert.strictEqual(err.is[testCase.expectedError], true);
-                    } else {
-                        assert.ifError(err);
-                        assert.deepStrictEqual(options, testCase.expectedRes);
-                    }
-                    done();
-                });
+            const options = preprocessingVersioningDelete(
+                'foobucket', mockBucketMD, testCase.objMD, testCase.reqVersionId);
+            assert.deepStrictEqual(options, testCase.expectedRes);
         }));
     });
 });
