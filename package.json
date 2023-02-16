@@ -21,7 +21,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.12.0",
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#8.1.84",
+    "arsenal": "git+https://github.com/scality/Arsenal#improvement/ARSN-300/listings",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "bucketclient": "scality/bucketclient#8.1.5",
@@ -78,6 +78,7 @@
     "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/versioning/",
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
     "ft_mixed_bucket_format_version": "cd tests/functional/metadata && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json MixedVersionFormat.js",
+    "ft_backbeat": "cd tests/functional/backbeat && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
     "ft_management": "cd tests/functional/report && yarn test",
     "ft_node": "cd tests/functional/raw-node && yarn test",
     "ft_node_routes": "cd tests/functional/raw-node && npm run test-routes",

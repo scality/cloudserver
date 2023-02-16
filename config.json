@@ -36,6 +36,12 @@
     }, {
         "site": "us-east-2",
         "type": "aws_s3"
+    }, {
+        "site": "aws-location",
+        "type": "aws_s3"
+    }, {
+        "site": "location-dmf-v1",
+        "type": "dmf"
     }],
     "backbeat": {
         "host": "localhost",
