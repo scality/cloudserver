@@ -101,5 +101,12 @@
         "legacyAwsBehavior": false,
         "isCold": true,
         "details": {}
+    },
+    "location-azure-archive-v1": {
+        "type": "azure_archive",
+        "objectId": "location-azure-archive-v1",
+        "legacyAwsBehavior": false,
+        "isCold": true,
+        "details": {}
     }
 }
