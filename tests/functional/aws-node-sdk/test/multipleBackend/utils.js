@@ -45,7 +45,7 @@ const itSkipCeph = isCEPH ? it.skip : it.skip;
 const describeSkipIfCeph = isCEPH ? describe.skip : describe.skip; // always skip
 
 if (config.backends.data === 'multiple') {
-    describeSkipIfNotMultiple = describe.skip;
+    describeSkipIfNotMultiple = describe;
     describeSkipIfNotMultipleOrCeph = isCEPH ? describe.skip : describe.skip; // always skip
     const awsConfig = getRealAwsConfig(awsLocation);
     awsS3 = new AWS.S3(awsConfig);
