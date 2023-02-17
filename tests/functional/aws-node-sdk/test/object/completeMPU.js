@@ -164,9 +164,9 @@ describe('Complete MPU', () => {
                             if (test.error) {
                                 assert.strictEqual(err.code, test.error);
                                 assert.strictEqual(err.statusCode, 400);
-                                next('expected');
+                                return next('expected');
                             }
-                            next(null, data.UploadId);
+                            return next(err, data.UploadId);
                         }),
                         (uploadId, next) => s3.uploadPart({
                             Bucket: bucket,
