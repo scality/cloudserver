@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 const assert = require('assert');
 const promclient = require('prom-client');
 const sinon = require('sinon');
@@ -23,18 +24,23 @@ describe('Monitoring: endpoint', () => {
     });
 
     async function fetchMetrics(req, res) {
-        await new Promise(resolve => monitoring.monitoringHandler(null, req, {
-            ...res, end: (...body) => { res.end(...body); resolve(); }
-        }, null));
+        await new Promise(resolve => monitoring.monitoringHandler(null, req,
+            {
+                ...res,
+                end: (...body) => {
+                    res.end(...body);
+                    resolve();
+                },
+            }, null));
     }
 
-    it('should return an error is method is not GET', async () => {
+    it('should return an error if method is not GET', async () => {
         await fetchMetrics({ method: 'PUT', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(405));
         assert(res.end.calledOnce);
     });
 
-    it('should return an error is path is not /metrics', async () => {
+    it('should return an error if path is not /metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/foo' }, res);
         assert(res.writeHead.calledOnceWith(405));
         assert(res.end.calledOnce);

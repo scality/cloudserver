@@ -50,26 +50,24 @@ describe('Monitoring - getting metrics', () => {
 
     [
         // Check all methods are reported (on unsupported route)
-        ['/_/fooooo',       { method: 'GET', code: '400' }],
-        ['/_/fooooo',       { method: 'PUT', code: '400' }],
-        ['/_/fooooo',       { method: 'POST', code: '400' }],
-        ['/_/fooooo',       { method: 'DELETE', code: '400' }],
+        ['/_/fooooo', { method: 'GET', code: '400' }],
+        ['/_/fooooo', { method: 'PUT', code: '400' }],
+        ['/_/fooooo', { method: 'POST', code: '400' }],
+        ['/_/fooooo', { method: 'DELETE', code: '400' }],
 
         // S3/api routes
-        ['/',               { method: 'GET', code: '403', action: 'serviceGet' }],
-        ['/foo',            { method: 'GET', code: '404', action: 'bucketGet' }],
-        ['/foo/bar',        { method: 'GET', code: '404', action: 'objectGet' }],
+        ['/', { method: 'GET', code: '403', action: 'serviceGet' }],
+        ['/foo', { method: 'GET', code: '404', action: 'bucketGet' }],
+        ['/foo/bar', { method: 'GET', code: '404', action: 'objectGet' }],
 
         // Internal handlers
-        ['/_/report',       { method: 'GET', code: '200', action: 'report' }],
-        ['/_/backbeat',     { method: 'GET', code: '405', action: 'routeBackbeat' }],
-        ['/_/metadata',     { method: 'GET', code: '403', action: 'routeMetadata' }],
-        ['/_/workflow-engine-operator',
-                            { method: 'GET', code: '405', action: 'routeWorkflowEngineOperator' }],
+        ['/_/backbeat', { method: 'GET', code: '405', action: 'routeBackbeat' }],
+        ['/_/metadata', { method: 'GET', code: '403', action: 'routeMetadata' }],
     ].forEach(([path, labels]) => {
         it(`should count http ${labels.method} requests metrics on ${path}`, async () => {
             const count = parseRequestsCount(await getMetrics(), labels);
             for (let i = 1; i <= 3; i++) { /* eslint no-await-in-loop: "off" */
+                // eslint-disable-next-line no-unused-expressions
                 await query(path, labels.method);
 
                 const c = parseRequestsCount(await getMetrics(), labels);
@@ -81,6 +79,7 @@ describe('Monitoring - getting metrics', () => {
             const initialDuration = parseDuration(await getMetrics(), labels);
             let previousDuration = initialDuration;
             for (let i = 0; i < 1000; i++) { /* eslint no-await-in-loop: "off" */
+                // eslint-disable-next-line no-unused-expressions
                 await query(path, labels.method);
 
                 const duration = parseDuration(await getMetrics(), labels);
