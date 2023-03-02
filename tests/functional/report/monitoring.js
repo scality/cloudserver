@@ -28,6 +28,7 @@ describe('Monitoring - getting metrics', () => {
     }
 
     function parseMetric(metrics, name, labels) {
+        console.log('****parseMetric****', metrics);
         const labelsString = Object.entries(labels).map(e => `${e[0]}="${e[1]}"`).join(',');
         const metric = metrics.match(new RegExp(`^${name}{${labelsString}} (.*)$`, 'm'));
         return metric ? metric[1] : null;

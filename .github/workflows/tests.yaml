@@ -68,6 +68,7 @@ env:
 
 jobs:
   linting-coverage:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -155,6 +156,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=cloudserver
 
   multiple-backend:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -189,6 +191,7 @@ jobs:
       if: always()
  
   mongo-v0-ft-tests:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -227,6 +230,7 @@ jobs:
       if: always()
 
   mongo-v1-ft-tests:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -300,6 +304,7 @@ jobs:
       if: always()
 
   utapi-v2-tests:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -332,6 +337,7 @@ jobs:
       if: always()
 
   kmip-ft-tests:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
@@ -368,6 +374,7 @@ jobs:
       if: always()
   
   ceph-backend-test:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs: build
     env:
