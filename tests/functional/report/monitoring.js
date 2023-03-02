@@ -34,12 +34,12 @@ describe('Monitoring - getting metrics', () => {
     }
 
     function parseDuration(metrics, labels) {
-        const duration = parseMetric(metrics, 'http_request_duration_seconds_sum', labels);
+        const duration = parseMetric(metrics, 's3_cloudserver_http_request_duration_seconds_sum', labels);
         return duration ? parseFloat(duration) : 0;
     }
 
     function parseRequestsCount(metrics, labels) {
-        const count = parseMetric(metrics, 'http_requests_total', labels);
+        const count = parseMetric(metrics, 's3_cloudserver_http_requests_total', labels);
         return count ? parseInt(count, 10) : 0;
     }
 
