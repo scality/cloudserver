@@ -48,4 +48,4 @@ VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 CMD [ "yarn", "start" ]
 
-EXPOSE 8000
+EXPOSE 8000 8002

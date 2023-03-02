@@ -4,6 +4,7 @@ const promclient = require('prom-client');
 const sinon = require('sinon');
 
 const monitoring = require('../../../lib/utilities/monitoringHandler');
+const metrics = require('../../../lib/utilities/metrics');
 
 describe('Monitoring: endpoint', () => {
     const sandbox = sinon.createSandbox();
@@ -107,7 +108,7 @@ describe('Monitoring: endpoint', () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         const requestSize = parseHttpRequestSize(res.end.args[0][0]);
 
-        monitoring.promMetrics('PUT', 'stuff', '200',
+        metrics.promMetrics('PUT', 'stuff', '200',
             'putObject', 2357, 3572, false, null, 5723);
 
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
@@ -118,7 +119,7 @@ describe('Monitoring: endpoint', () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         const responseSize = parseHttpResponseSize(res.end.args[0][0]);
 
-        monitoring.promMetrics('GET', 'stuff', '200',
+        metrics.promMetrics('GET', 'stuff', '200',
             'getObject', 7532);
 
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
