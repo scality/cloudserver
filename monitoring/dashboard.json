@@ -196,7 +196,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -287,7 +287,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval])) * 100\n   /\nsum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]) > 0)",
+          "expr": "sum(rate(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval])) * 100\n   /\nsum(rate(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]) > 0)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -360,7 +360,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "-sum(deriv(cloud_server_data_disk_available{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "-sum(deriv(s3_cloudserver_disk_available_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -433,7 +433,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(deriv(cloud_server_number_of_objects{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(deriv(s3_cloudserver_objects_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -514,7 +514,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(cloud_server_number_of_buckets{namespace=\"${namespace}\", job=\"${reportJob}\"})",
+          "expr": "sum(s3_cloudserver_buckets_count{namespace=\"${namespace}\", job=\"${reportJob}\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -667,7 +667,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=\"200\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=\"200\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -739,7 +739,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"4..\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"4..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -811,7 +811,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"5..\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\",code=~\"5..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -891,7 +891,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(http_active_requests{namespace=\"${namespace}\", job=~\"$job\"})",
+          "expr": "sum(s3_cloudserver_http_active_requests{namespace=\"${namespace}\", job=~\"$job\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -964,7 +964,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(deriv(cloud_server_data_ingested{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(deriv(s3_cloudserver_ingested_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1037,7 +1037,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(deriv(cloud_server_number_of_ingested_objects{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(deriv(s3_cloudserver_ingested_objects_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1118,7 +1118,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(cloud_server_number_of_objects{namespace=\"${namespace}\", job=\"${reportJob}\"})",
+          "expr": "sum(s3_cloudserver_objects_count{namespace=\"${namespace}\", job=\"${reportJob}\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1223,7 +1223,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "time()\n- max by() (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (cloud_server_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}\n   - on() kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"}\n   > 0 or vector(0))",
+          "expr": "time()\n- max by() (s3_cloudserver_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"})\n+ (s3_cloudserver_last_report_timestamp{namespace=\"${namespace}\", job=\"${reportJob}\"}\n   - on() kube_cronjob_status_last_schedule_time{namespace=\"${namespace}\", cronjob=\"${countItemsJob}\"}\n   > 0 or vector(0))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1326,7 +1326,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum by (code) (increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum by (code) (increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1457,7 +1457,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1471,7 +1471,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"4..\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"4..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1485,7 +1485,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"5..\"}[$__rate_interval]))",
+          "expr": "sum(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\", code=~\"5..\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1588,7 +1588,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1602,7 +1602,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=~\"objectPut|objectPutPart|objectCopy|objectPutCopyPart\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1616,7 +1616,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=\"objectDelete\"}[$__rate_interval]))\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=\"objectDelete\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=\"objectDelete\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=\"objectDelete\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1630,7 +1630,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=\"objectGet\"}[$__rate_interval]))\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=\"objectGet\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=\"objectGet\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=\"objectGet\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1644,7 +1644,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", action=~\"multiObjectDelete|multipartDelete\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1700,7 +1700,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum by(le) (increase(http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__interval]))",
+          "expr": "sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__interval]))",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -1852,7 +1852,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_response_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1866,7 +1866,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1935,7 +1935,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_request_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
+          "expr": "sum(increase(s3_cloudserver_http_request_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -2004,7 +2004,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(increase(http_response_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
+          "expr": "sum(increase(s3_cloudserver_http_response_size_bytes{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -2279,7 +2279,7 @@
         "multi": true,
         "name": "job",
         "options": [],
-        "query": "label_values(http_active_requests{namespace=\"${namespace}\", container=\"${container}\"}, job)",
+        "query": "label_values(s3_cloudserver_http_active_requests{namespace=\"${namespace}\", container=\"${container}\"}, job)",
         "refresh": 1,
         "regex": "/(?<value>${zenkoName}-(?<text>\\w*).*)/",
         "sort": 1,
@@ -2306,7 +2306,7 @@
         "multi": false,
         "name": "pod",
         "options": [],
-        "query": "label_values(http_active_requests{namespace=\"${namespace}\", container=\"${container}\", job=~\"$job\"}, pod)",
+        "query": "label_values(s3_cloudserver_http_active_requests{namespace=\"${namespace}\", container=\"${container}\", job=~\"$job\"}, pod)",
         "refresh": 1,
         "regex": null,
         "sort": 1,

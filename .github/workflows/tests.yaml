@@ -398,7 +398,7 @@ jobs:
         gem install nokogiri:1.12.5 fog-aws:1.3.0 json mime-types:3.1 rspec:3.5
     - name: Install Java dependencies
       run: |
-        sudo apt-get install -y default-jdk maven
+        sudo apt-get update && sudo apt-get install -y --fix-missing default-jdk maven
     - name: Setup CI services
       run: docker-compose --profile ceph up -d
       working-directory: .github/docker
