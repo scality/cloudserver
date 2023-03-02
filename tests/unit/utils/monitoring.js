@@ -52,31 +52,31 @@ describe('Monitoring: endpoint', () => {
     it('should have http duration histogram metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
-        assert(res.end.args[0][0].includes('\n# TYPE http_request_duration_seconds histogram'));
+        assert(res.end.args[0][0].includes('\n# TYPE s3_cloudserver_http_request_duration_seconds histogram'));
     });
 
     it('should have http requests counter metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
-        assert(res.end.args[0][0].includes('\n# TYPE http_requests_total counter'));
+        assert(res.end.args[0][0].includes('\n# TYPE s3_cloudserver_http_requests_total counter'));
     });
 
     it('should have http active requests gauge metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
-        assert(res.end.args[0][0].includes('\n# TYPE http_active_requests gauge'));
+        assert(res.end.args[0][0].includes('\n# TYPE s3_cloudserver_http_active_requests gauge'));
     });
 
     it('should have http requests size metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
-        assert(res.end.args[0][0].includes('\n# TYPE http_request_size_bytes summary'));
+        assert(res.end.args[0][0].includes('\n# TYPE s3_cloudserver_http_request_size_bytes summary'));
     });
 
     it('should have http response size metrics', async () => {
         await fetchMetrics({ method: 'GET', url: '/metrics' }, res);
         assert(res.writeHead.calledOnceWith(200));
-        assert(res.end.args[0][0].includes('\n# TYPE http_response_size_bytes summary'));
+        assert(res.end.args[0][0].includes('\n# TYPE s3_cloudserver_http_response_size_bytes summary'));
     });
 
     function parseMetric(metrics, name, labels) {
@@ -86,13 +86,13 @@ describe('Monitoring: endpoint', () => {
     }
 
     function parseHttpRequestSize(metrics, action = 'putObject') {
-        const value = parseMetric(metrics, 'http_request_size_bytes_sum',
+        const value = parseMetric(metrics, 's3_cloudserver_http_request_size_bytes_sum',
             { method: 'PUT', action, code: '200' });
         return value ? parseInt(value, 10) : 0;
     }
 
     function parseHttpResponseSize(metrics, action = 'getObject') {
-        const value = parseMetric(metrics, 'http_response_size_bytes_sum',
+        const value = parseMetric(metrics, 's3_cloudserver_http_response_size_bytes_sum',
             { method: 'GET', action, code: '200' });
         return value ? parseInt(value, 10) : 0;
     }
