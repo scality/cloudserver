@@ -4,9 +4,9 @@ const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
 
-const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
-const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
-const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-noncurrent-tests';
+const testBucket = 'bucket-for-list-lifecycle-orphans-tests';
+const emptyBucket = 'empty-bucket-for-list-lifecycle-orphans-tests';
+const nonVersionedBucket = 'non-versioned-bucket-for-list-lifecycle-orphans-tests';
 
 const credentials = {
     accessKey: 'WLI8X7JGPU1AWQEQIKM5',
@@ -17,30 +17,40 @@ function checkContents(contents) {
     contents.forEach(d => {
         assert(d.Key);
         assert(d.LastModified);
+        assert(d.VersionId);
         assert(d.Etag);
         assert(d.Owner.DisplayName);
         assert(d.Owner.ID);
         assert(d.StorageClass);
         assert.strictEqual(d.StorageClass, 'STANDARD');
-        assert(d.VersionId);
-        assert(d.staleDate);
-        assert(!d.IsLatest);
-        assert.deepStrictEqual(d.TagSet, [{
-            Key: 'mykey',
-            Value: 'myvalue',
-        }]);
+        assert(!d.TagSet);
+        assert.strictEqual(d.IsLatest, true);
         assert.strictEqual(d.DataStoreName, 'us-east-1');
-        assert.strictEqual(d.ListType, 'noncurrent');
-        assert.strictEqual(d.Size, 3);
+        assert.strictEqual(d.ListType, 'orphan');
+        assert.strictEqual(d.Size, 0);
     });
 }
 
-describe('listLifecycleNonCurrents', () => {
+function createOrhanDeleteMarker(s3, bucketName, keyName, cb) {
+    let versionId;
+    return async.series([
+        next => s3.putObject({ Bucket: bucketName, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+            (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                versionId = data.VersionId;
+                return next();
+            }),
+        next => s3.deleteObject({ Bucket: bucketName, Key: keyName }, next),
+        next => s3.deleteObject({ Bucket: bucketName, Key: keyName, VersionId: versionId }, next),
+    ], cb);
+}
+
+describe('listLifecycleOrphans', () => {
     let bucketUtil;
     let s3;
     let date;
-    let expectedKey1VersionIds = [];
-    let expectedKey2VersionIds = [];
 
     before(done => {
         bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
@@ -58,35 +68,15 @@ describe('listLifecycleNonCurrents', () => {
                 Bucket: emptyBucket,
                 VersioningConfiguration: { Status: 'Enabled' },
             }, next),
-            next => async.timesSeries(3, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, (err, res) => {
-                // Only the two first ones are kept, since the stale date of the last one (3rd)
-                // Will be the last-modified of the next one (4th) that is created after the "date".
-                // The array is reverse since, for a specific key, we expect the listing to be ordered
-                // by last-modified date in descending order due to the way version id is generated.
-                expectedKey1VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
-                return next(err);
-            }),
-            next => async.timesSeries(3, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, (err, res) => {
-                // Only the two first ones are kept, since the stale date of the last one (3rd)
-                // Will be the last-modified of the next one (4th) that is created after the "date".
-                // The array is reverse since, for a specific key, we expect the listing to be ordered
-                // by last-modified date in descending order due to the way version id is generated.
-                expectedKey2VersionIds = res.map(r => r.VersionId).slice(0, 2).reverse();
-                return next(err);
-            }),
+            next => async.times(3, (n, cb) => {
+                createOrhanDeleteMarker(s3, testBucket, `key${n}old`, cb);
+            }, next),
             next => {
                 date = new Date(Date.now()).toISOString();
                 return async.times(5, (n, cb) => {
-                    s3.putObject({ Bucket: testBucket, Key: 'key1', Body: '123', Tagging: 'mykey=myvalue' }, cb);
+                    createOrhanDeleteMarker(s3, testBucket, `key${n}`, cb);
                 }, next);
             },
-            next => async.times(5, (n, cb) => {
-                s3.putObject({ Bucket: testBucket, Key: 'key2', Body: '123', Tagging: 'mykey=myvalue' }, cb);
-            }, next),
         ], done);
     });
 
@@ -97,11 +87,11 @@ describe('listLifecycleNonCurrents', () => {
         next => s3.deleteBucket({ Bucket: nonVersionedBucket }, next),
     ], done));
 
-    it('should return empty list of noncurrent versions if bucket is empty', done => {
+    it('should return empty list of orphan delete markers if bucket is empty', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: emptyBucket,
-            queryObj: { 'list-type': 'noncurrent' },
+            queryObj: { 'list-type': 'orphan' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -120,7 +110,7 @@ describe('listLifecycleNonCurrents', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: 'idonotexist',
-            queryObj: { 'list-type': 'noncurrent' },
+            queryObj: { 'list-type': 'orphan' },
             authCredentials: credentials,
         }, err => {
             assert.strictEqual(err.code, 'NoSuchBucket');
@@ -128,23 +118,11 @@ describe('listLifecycleNonCurrents', () => {
         });
     });
 
-    it('should return error if bucket not versioned', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: nonVersionedBucket,
-            queryObj: { 'list-type': 'noncurrent' },
-            authCredentials: credentials,
-        }, err => {
-            assert.strictEqual(err.code, 'InvalidRequest');
-            return done();
-        });
-    });
-
-    it('should return all the noncurrent versions', done => {
+    it('should return all the current versions', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent' },
+            queryObj: { 'list-type': 'orphan' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -156,20 +134,20 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.MaxKeys, 1000);
 
             const contents = data.Contents;
-            assert.strictEqual(contents.length, 14);
+            assert.strictEqual(contents.length, 8);
             checkContents(contents);
 
             return done();
         });
     });
 
-    it('should return all the noncurrent versions with prefix key1', done => {
+    it('should return all the current versions with prefix key1', done => {
         const prefix = 'key1';
 
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent', prefix },
+            queryObj: { 'list-type': 'orphan', prefix },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -182,8 +160,11 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
-            assert.strictEqual(contents.length, 7);
+            assert.strictEqual(contents.length, 2);
             checkContents(contents);
+
+            assert.strictEqual(contents[0].Key, 'key1');
+            assert.strictEqual(contents[1].Key, 'key1old');
 
             return done();
         });
@@ -193,7 +174,10 @@ describe('listLifecycleNonCurrents', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent', 'before-date': date },
+            queryObj: {
+                'list-type': 'orphan',
+                'before-date': date,
+            },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -203,61 +187,26 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Contents.length, 3);
             assert.strictEqual(data.BeforeDate, date);
 
             const contents = data.Contents;
-            assert.strictEqual(contents.length, 4);
             checkContents(contents);
-
-            const key1Versions = contents.filter(c => c.Key === 'key1');
-            assert.strictEqual(key1Versions.length, 2);
-
-            const key2Versions = contents.filter(c => c.Key === 'key2');
-            assert.strictEqual(key2Versions.length, 2);
-
-            assert.deepStrictEqual(key1Versions.map(v => v.VersionId), expectedKey1VersionIds)
-            assert.deepStrictEqual(key2Versions.map(v => v.VersionId), expectedKey2VersionIds)
-
+            assert.strictEqual(contents[0].Key, 'key0old');
+            assert.strictEqual(contents[1].Key, 'key1old');
+            assert.strictEqual(contents[2].Key, 'key2old');
             return done();
         });
     });
 
-    it('should truncate list of non current versions before a defined date', done => {
-        makeBackbeatRequest({
-            method: 'GET',
-            bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent', 'before-date': date, 'max-keys': '1' },
-            authCredentials: credentials,
-        }, (err, response) => {
-            assert.ifError(err);
-            assert.strictEqual(response.statusCode, 200);
-            const data = JSON.parse(response.body);
-
-            assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.NextKeyMarker, 'key1');
-            assert.strictEqual(data.NextVersionIdMarker, expectedKey1VersionIds[0]);
-            assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.BeforeDate, date);
-            assert.strictEqual(data.Contents.length, 1);
-
-            const contents = data.Contents;
-            checkContents(contents);
-            assert.strictEqual(contents[0].Key, 'key1');
-            assert.strictEqual(contents[0].VersionId, expectedKey1VersionIds[0]);
-            return done();
-        });
-    });
-
-    it('should return the first following list of current versions before a defined date', done => {
+    it('should truncate list of orphan delete markers before a defined date', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
             queryObj: {
-                'list-type': 'noncurrent',
+                'list-type': 'orphan',
                 'before-date': date,
                 'max-keys': '1',
-                'key-marker': 'key1',
-                'version-id-marker': expectedKey1VersionIds[0]
             },
             authCredentials: credentials,
         }, (err, response) => {
@@ -266,33 +215,23 @@ describe('listLifecycleNonCurrents', () => {
             const data = JSON.parse(response.body);
 
             assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.KeyMarker, 'key1');
-            assert.strictEqual(data.VersionIdMarker, expectedKey1VersionIds[0]);
-            assert.strictEqual(data.NextKeyMarker, 'key1');
-            assert.strictEqual(data.NextVersionIdMarker, expectedKey1VersionIds[1]);
+            assert.strictEqual(data.NextKeyMarker, 'key0old');
             assert.strictEqual(data.MaxKeys, 1);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
             const contents = data.Contents;
             checkContents(contents);
-            assert.strictEqual(contents[0].Key, 'key1');
-            assert.strictEqual(contents[0].VersionId, expectedKey1VersionIds[1]);
+            assert.strictEqual(contents[0].Key, 'key0old');
             return done();
         });
     });
 
-    it('should return the second following list of current versions before a defined date', done => {
+    it('should return the second truncate list of orphan delete markers before a defined date', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: {
-                'list-type': 'noncurrent',
-                'before-date': date,
-                'max-keys': '1',
-                'key-marker': 'key1',
-                'version-id-marker': expectedKey1VersionIds[1]
-            },
+            queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'key-marker': 'key0old' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -300,33 +239,49 @@ describe('listLifecycleNonCurrents', () => {
             const data = JSON.parse(response.body);
 
             assert.strictEqual(data.IsTruncated, true);
-            assert.strictEqual(data.KeyMarker, 'key1');
-            assert.strictEqual(data.VersionIdMarker, expectedKey1VersionIds[1]);
-            assert.strictEqual(data.NextKeyMarker, 'key2');
-            assert.strictEqual(data.NextVersionIdMarker, expectedKey2VersionIds[0]);
+            assert.strictEqual(data.KeyMarker, 'key0old');
+            assert.strictEqual(data.NextKeyMarker, 'key1old');
             assert.strictEqual(data.MaxKeys, 1);
-            assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
             const contents = data.Contents;
             checkContents(contents);
-            assert.strictEqual(contents[0].Key, 'key2');
-            assert.strictEqual(contents[0].VersionId, expectedKey2VersionIds[0]);
+            assert.strictEqual(contents[0].Key, 'key1old');
+            assert.strictEqual(data.BeforeDate, date);
             return done();
         });
     });
 
-    it('should return the last and third following list of current versions before a defined date', done => {
+    it('should return the third truncate list of orphan delete markers before a defined date', done => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: {
-                'list-type': 'noncurrent',
-                'before-date': date,
-                'max-keys': '1',
-                'key-marker': 'key2',
-                'version-id-marker': expectedKey2VersionIds[0]
-            },
+            queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'key-marker': 'key1old' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.KeyMarker, 'key1old');
+            assert.strictEqual(data.BeforeDate, date);
+            assert.strictEqual(data.NextKeyMarker, 'key2old');
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents);
+            assert.strictEqual(contents[0].Key, 'key2old');
+            return done();
+        });
+    });
+
+    it('should return the fourth and last truncate list of orphan delete markers before a defined date', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'before-date': date, 'max-keys': '1', 'key-marker': 'key2old' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -334,18 +289,12 @@ describe('listLifecycleNonCurrents', () => {
             const data = JSON.parse(response.body);
 
             assert.strictEqual(data.IsTruncated, false);
-            assert.strictEqual(data.KeyMarker, 'key2');
-            assert.strictEqual(data.VersionIdMarker, expectedKey2VersionIds[0]);
-            assert(!data.NextKeyMarker);
-            assert(!data.NextVersionIdMarker);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.KeyMarker, 'key2old');
             assert.strictEqual(data.BeforeDate, date);
-            assert.strictEqual(data.Contents.length, 1);
 
             const contents = data.Contents;
-            checkContents(contents);
-            assert.strictEqual(contents[0].Key, 'key2');
-            assert.strictEqual(contents[0].VersionId, expectedKey2VersionIds[1]);
+            assert.strictEqual(contents.length, 0);
             return done();
         });
     });

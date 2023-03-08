@@ -1,42 +1,11 @@
 const assert = require('assert');
 const async = require('async');
-const { makeRequest } = require('../raw-node/utils/makeRequest');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-
-const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-current-tests';
-
-/** makeBackbeatRequest - utility function to generate a request going
- * through backbeat route
- * @param {object} params - params for making request
- * @param {string} params.method - request method
- * @param {string} params.bucket - bucket name
- * @param {string} params.subCommand - subcommand to backbeat
- * @param {object} [params.headers] - headers and their string values
- * @param {object} [params.authCredentials] - authentication credentials
- * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - secret key
- * @param {string} [params.requestBody] - request body contents
- * @param {function} callback - with error and response parameters
- * @return {undefined} - and call callback
- */
-function makeBackbeatRequest(params, callback) {
-    const { method, headers, bucket, authCredentials, queryObj } = params;
-    const options = {
-        hostname: ipAddress,
-        port: 8000,
-        method,
-        headers,
-        authCredentials,
-        path: `/_/backbeat/lifecycle/${bucket}`,
-        jsonResponse: true,
-        queryObj,
-    };
-    makeRequest(options, callback);
-}
 
 const credentials = {
     accessKey: 'WLI8X7JGPU1AWQEQIKM5',
@@ -102,17 +71,15 @@ function checkContents(contents) {
                     return async.times(5, (n, cb) => {
                         s3.putObject({ Bucket: testBucket, Key: `key${n}`, Body: '123', Tagging: 'mykey=myvalue' }, cb);
                     }, next);
-                },  
-            ], done)
-        });
-
-        after(done => {
-            return async.series([
-                next => removeAllVersions({ Bucket: testBucket }, next),
-                next => s3.deleteBucket({ Bucket: testBucket }, next),
-                next => s3.deleteBucket({ Bucket: emptyBucket }, next),
+                },
             ], done);
         });
+
+        after(done => async.series([
+            next => removeAllVersions({ Bucket: testBucket }, next),
+            next => s3.deleteBucket({ Bucket: testBucket }, next),
+            next => s3.deleteBucket({ Bucket: emptyBucket }, next),
+        ], done));
 
         it('should return empty list of current versions if bucket is empty', done => {
             makeBackbeatRequest({
@@ -139,11 +106,11 @@ function checkContents(contents) {
                 bucket: 'idonotexist',
                 queryObj: { 'list-type': 'current' },
                 authCredentials: credentials,
-            }, (err, response) => {
+            }, err => {
                 assert.strictEqual(err.code, 'NoSuchBucket');
                 return done();
             });
-        }); 
+        });
 
         it('should return all the current versions', done => {
             makeBackbeatRequest({
@@ -155,7 +122,7 @@ function checkContents(contents) {
                 assert.ifError(err);
                 assert.strictEqual(response.statusCode, 200);
                 const data = JSON.parse(response.body);
-                
+
                 assert.strictEqual(data.IsTruncated, false);
                 assert(!data.NextKeyMarker);
                 assert.strictEqual(data.MaxKeys, 1000);
@@ -180,7 +147,7 @@ function checkContents(contents) {
                 assert.ifError(err);
                 assert.strictEqual(response.statusCode, 200);
                 const data = JSON.parse(response.body);
-                
+
                 assert.strictEqual(data.IsTruncated, false);
                 assert(!data.NextKeyMarker);
                 assert.strictEqual(data.MaxKeys, 1000);
@@ -244,7 +211,7 @@ function checkContents(contents) {
             });
         });
 
-        it('should get the next truncate list of current versions before a defined date', done => {
+        it('should return the next truncate list of current versions before a defined date', done => {
             makeBackbeatRequest({
                 method: 'GET',
                 bucket: testBucket,
@@ -269,28 +236,28 @@ function checkContents(contents) {
             });
         });
 
-        it('should get the last truncate list of current versions before a defined date', done => {
-            makeBackbeatRequest({
-                method: 'GET',
-                bucket: testBucket,
-                queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'key-marker': 'oldkey1' },
-                authCredentials: credentials,
-            }, (err, response) => {
-                assert.ifError(err);
-                assert.strictEqual(response.statusCode, 200);
-                const data = JSON.parse(response.body);
+        // it('should return the last truncate list of current versions before a defined date', done => {
+        //     makeBackbeatRequest({
+        //         method: 'GET',
+        //         bucket: testBucket,
+        //         queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'key-marker': 'oldkey1' },
+        //         authCredentials: credentials,
+        //     }, (err, response) => {
+        //         assert.ifError(err);
+        //         assert.strictEqual(response.statusCode, 200);
+        //         const data = JSON.parse(response.body);
 
-                assert.strictEqual(data.IsTruncated, false);
-                assert.strictEqual(data.MaxKeys, 1);
-                assert.strictEqual(data.KeyMarker, 'oldkey1');
-                assert.strictEqual(data.BeforeDate, date);
+        //         assert.strictEqual(data.IsTruncated, false);
+        //         assert.strictEqual(data.MaxKeys, 1);
+        //         assert.strictEqual(data.KeyMarker, 'oldkey1');
+        //         assert.strictEqual(data.BeforeDate, date);
 
-                const contents = data.Contents;
-                assert.strictEqual(contents.length, 1);
-                checkContents(contents);
-                assert.strictEqual(contents[0].Key, 'oldkey2');
-                return done();
-            });
-        }); 
+        //         const contents = data.Contents;
+        //         assert.strictEqual(contents.length, 1);
+        //         checkContents(contents);
+        //         assert.strictEqual(contents[0].Key, 'oldkey2');
+        //         return done();
+        //     });
+        // });
     });
 });

@@ -732,9 +732,10 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#improvement/ARSN-300/listings":
-  version "8.1.81"
-  resolved "git+https://github.com/scality/Arsenal#fead35105c485243b2738634fa0ccdf3cec99224"  dependencies:
+"arsenal@git+https://github.com/scality/Arsenal#feature/ARSN-312/listLifecycleOrphan":
+  version "8.1.85"
+  resolved "git+https://github.com/scality/Arsenal#71935daefbefd83a6018566381cc2b849f57bfff"
+  dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
     "@types/async" "^3.2.12"
