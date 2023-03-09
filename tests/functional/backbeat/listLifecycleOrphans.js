@@ -106,6 +106,37 @@ describe('listLifecycleOrphans', () => {
         });
     });
 
+    it('should return empty list of orphan delete markers if prefix does not apply', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', prefix: 'unknown' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Contents.length, 0);
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-keys is invalid', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-keys': 'a' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
     it('should return error if bucket does not exist', done => {
         makeBackbeatRequest({
             method: 'GET',

@@ -116,6 +116,25 @@ describe('listLifecycleNonCurrents', () => {
         });
     });
 
+    it('should return empty list of noncurrent versions if prefix does not apply', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', prefix: 'unknown' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Contents.length, 0);
+            return done();
+        });
+    });
+
     it('should return error if bucket does not exist', done => {
         makeBackbeatRequest({
             method: 'GET',
@@ -124,6 +143,42 @@ describe('listLifecycleNonCurrents', () => {
             authCredentials: credentials,
         }, err => {
             assert.strictEqual(err.code, 'NoSuchBucket');
+            return done();
+        });
+    });
+
+    it('should return BadRequest error if list type is empty', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': '' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'BadRequest');
+            return done();
+        });
+    });
+
+    it('should return BadRequest error if list type is invalid', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'invalid' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'BadRequest');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-keys is invalid', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-keys': 'a' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
             return done();
         });
     });
@@ -183,6 +238,108 @@ describe('listLifecycleNonCurrents', () => {
 
             const contents = data.Contents;
             assert.strictEqual(contents.length, 7);
+            assert(contents.every(d => d.Key === 'key1'));
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should return all the noncurrent versions with prefix key1 before a defined date', done => {
+        const prefix = 'key1';
+
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', prefix, 'before-date': date  },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Prefix, prefix);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 2);
+            assert(contents.every(d => d.Key === 'key1'));
+
+            assert.deepStrictEqual(contents.map(v => v.VersionId), expectedKey1VersionIds);
+
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should return the noncurrent version with prefix key1, before a defined date, and after marker', done => {
+        const prefix = 'key2';
+
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'noncurrent',
+                prefix,
+                'before-date': date,
+                'key-marker': 'key1',
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Prefix, prefix);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 2);
+            assert(contents.every(d => d.Key === 'key2'));
+
+            assert.deepStrictEqual(contents.map(v => v.VersionId), expectedKey2VersionIds);
+
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should return the noncurrent version with prefix key1, before a defined date, and after marker', done => {
+        const prefix = 'key2';
+
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'noncurrent',
+                prefix,
+                'before-date': date,
+                'key-marker': 'key2',
+                'version-id-marker': expectedKey2VersionIds[0]
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextKeyMarker);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.Prefix, prefix);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            assert(contents.every(d => d.Key === 'key2'));
+            contents[0].Key = 'key2';
+            contents[0].VersionId = expectedKey2VersionIds[1];
+
             checkContents(contents);
 
             return done();
@@ -215,8 +372,8 @@ describe('listLifecycleNonCurrents', () => {
             const key2Versions = contents.filter(c => c.Key === 'key2');
             assert.strictEqual(key2Versions.length, 2);
 
-            assert.deepStrictEqual(key1Versions.map(v => v.VersionId), expectedKey1VersionIds)
-            assert.deepStrictEqual(key2Versions.map(v => v.VersionId), expectedKey2VersionIds)
+            assert.deepStrictEqual(key1Versions.map(v => v.VersionId), expectedKey1VersionIds);
+            assert.deepStrictEqual(key2Versions.map(v => v.VersionId), expectedKey2VersionIds);
 
             return done();
         });

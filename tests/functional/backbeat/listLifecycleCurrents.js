@@ -100,7 +100,26 @@ function checkContents(contents) {
             });
         });
 
-        it('should return error if bucket does not exist', done => {
+        it('should return empty list of current versions if prefix does not apply', done => {
+            makeBackbeatRequest({
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: { 'list-type': 'current', prefix: 'unknown' },
+                authCredentials: credentials,
+            }, (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
+
+                assert.strictEqual(data.IsTruncated, false);
+                assert(!data.NextKeyMarker);
+                assert.strictEqual(data.MaxKeys, 1000);
+                assert.strictEqual(data.Contents.length, 0);
+                return done();
+            });
+        });
+
+        it('should return NoSuchBucket error if bucket does not exist', done => {
             makeBackbeatRequest({
                 method: 'GET',
                 bucket: 'idonotexist',
@@ -108,6 +127,18 @@ function checkContents(contents) {
                 authCredentials: credentials,
             }, err => {
                 assert.strictEqual(err.code, 'NoSuchBucket');
+                return done();
+            });
+        });
+
+        it('should return InvalidArgument error if max-keys is invalid', done => {
+            makeBackbeatRequest({
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: { 'list-type': 'current', 'max-keys': 'a' },
+                authCredentials: credentials,
+            }, err => {
+                assert.strictEqual(err.code, 'InvalidArgument');
                 return done();
             });
         });
@@ -236,28 +267,28 @@ function checkContents(contents) {
             });
         });
 
-        // it('should return the last truncate list of current versions before a defined date', done => {
-        //     makeBackbeatRequest({
-        //         method: 'GET',
-        //         bucket: testBucket,
-        //         queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'key-marker': 'oldkey1' },
-        //         authCredentials: credentials,
-        //     }, (err, response) => {
-        //         assert.ifError(err);
-        //         assert.strictEqual(response.statusCode, 200);
-        //         const data = JSON.parse(response.body);
+        it('should return the last truncate list of current versions before a defined date', done => {
+            makeBackbeatRequest({
+                method: 'GET',
+                bucket: testBucket,
+                queryObj: { 'list-type': 'current', 'before-date': date, 'max-keys': '1', 'key-marker': 'oldkey1' },
+                authCredentials: credentials,
+            }, (err, response) => {
+                assert.ifError(err);
+                assert.strictEqual(response.statusCode, 200);
+                const data = JSON.parse(response.body);
 
-        //         assert.strictEqual(data.IsTruncated, false);
-        //         assert.strictEqual(data.MaxKeys, 1);
-        //         assert.strictEqual(data.KeyMarker, 'oldkey1');
-        //         assert.strictEqual(data.BeforeDate, date);
+                assert.strictEqual(data.IsTruncated, false);
+                assert.strictEqual(data.MaxKeys, 1);
+                assert.strictEqual(data.KeyMarker, 'oldkey1');
+                assert.strictEqual(data.BeforeDate, date);
 
-        //         const contents = data.Contents;
-        //         assert.strictEqual(contents.length, 1);
-        //         checkContents(contents);
-        //         assert.strictEqual(contents[0].Key, 'oldkey2');
-        //         return done();
-        //     });
-        // });
+                const contents = data.Contents;
+                assert.strictEqual(contents.length, 1);
+                checkContents(contents);
+                assert.strictEqual(contents[0].Key, 'oldkey2');
+                return done();
+            });
+        });
     });
 });
