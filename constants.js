@@ -200,6 +200,11 @@ const constants = {
     validStorageClasses: [
         'STANDARD',
     ],
+    lifecycleListing: {
+        CURRENT_TYPE: 'current',
+        NON_CURRENT_TYPE: 'noncurrent',
+        ORPHAN_DM_TYPE: 'orphan',
+    },
 };
 
 module.exports = constants;
