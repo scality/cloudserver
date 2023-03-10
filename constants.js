@@ -179,6 +179,11 @@ const constants = {
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
     multiObjectDeleteConcurrency: 50,
+    lifecycleListing: {
+        CURRENT_TYPE: 'current',
+        NON_CURRENT_TYPE: 'noncurrent',
+        ORPHAN_DM_TYPE: 'orphan',
+    },
 };
 
 module.exports = constants;
