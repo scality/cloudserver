@@ -27,7 +27,7 @@ jobs:
       name: cloudserver
   trivy:
     needs: build
-    uses: scality/workflows/.github/workflows/trivy.yaml@1.1.1
+    uses: scality/workflows/.github/workflows/trivy.yaml@a48dbfffd32d7ecdb5c93f3d12f19a6e7c85da4a
     with:
       namespace: scality
       name: cloudserver
