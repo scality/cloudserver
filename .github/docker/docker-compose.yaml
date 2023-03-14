@@ -34,6 +34,7 @@ services:
       - S3KMIP_KEY
       - S3KMIP_CERT
       - S3KMIP_CA
+      - ENABLE_NULL_VERSION_COMPAT_MODE
     env_file:
       - creds.env
     depends_on:
