@@ -1,0 +1,32 @@
+---
+
+name: security
+
+on:
+  push:
+    branches:
+      - development/*
+      - stabilization/*
+      - hotfix/*
+  workflow_dispatch: {}
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  security-events: write
+  packages: write
+
+jobs:
+  build:
+    uses: scality/workflows/.github/workflows/docker-build.yaml@1.1.1
+    with:
+      namespace: scality
+      name: cloudserver
+  trivy:
+    needs: build
+    uses: scality/workflows/.github/workflows/trivy.yaml@1.1.1
+    with:
+      namespace: scality
+      name: cloudserver
