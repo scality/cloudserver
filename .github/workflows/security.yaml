@@ -8,6 +8,7 @@ on:
       - development/*
       - stabilization/*
       - hotfix/*
+      - '**'
   workflow_dispatch: {}
   release:
     types:
