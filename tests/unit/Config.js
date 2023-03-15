@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { azureArchiveLocationConstraintAssert } = require('../../lib/Config');
 
 describe('Config', () => {
     const envToRestore = [];
@@ -313,9 +314,7 @@ describe('Config', () => {
     });
 
     describe('azureArchiveLocationConstraintAssert', () => {
-        const { azureArchiveLocationConstraintAssert } = require('../../lib/Config');
-
-        it('should return undefined if azureStorageEndpoint is missing', () => {
+        it('should succeed azureStorageEndpoint is missing', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -324,7 +323,7 @@ describe('Config', () => {
             assert.strictEqual(azureArchiveLocationConstraintAssert(locationObj), undefined);
         });
 
-        it('should return undefined if azureContainerName is missing', () => {
+        it('should succeed if azureContainerName is missing', () => {
             const locationObj = {
                 details: {
                     azureStorageEndpoint: 'http://test.com/',
@@ -333,7 +332,7 @@ describe('Config', () => {
             assert.strictEqual(azureArchiveLocationConstraintAssert(locationObj), undefined);
         });
 
-        it('should return undefined if both azureStorageEndpoint and azureContainerName are missing', () => {
+        it('should succeed if both azureStorageEndpoint and azureContainerName are missing', () => {
             const locationObj = {
                 details: {
                 }
@@ -348,42 +347,30 @@ describe('Config', () => {
                     azureStorageEndpoint: true,
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: true must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if azureContainerName is not a string', () => {
+        it('should assert if azureContainerName is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 42,
                     azureStorageEndpoint: 'endpoint',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if missing an authentication method', () => {
+        it('should assert if missing an authentication method', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
                     azureStorageEndpoint: 'endpoint',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'Missing authentication method');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if sasToken is not a string', () => {
+        it('should assert if sasToken is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -391,14 +378,10 @@ describe('Config', () => {
                     sasToken: 42,
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if missing azureStorageAccountName but azureStorageAccessKey defined', () => {
+        it('should assert if missing azureStorageAccountName but azureStorageAccessKey defined', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -406,14 +389,10 @@ describe('Config', () => {
                     azureStorageAccessKey: 'key',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'Missing authentication method');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if azureStorageAccountName is not a string', () => {
+        it('should assert if azureStorageAccountName is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -422,14 +401,10 @@ describe('Config', () => {
                     azureStorageAccessKey: 'key',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if azureStorageAccessKey is not a string', () => {
+        it('should assert if azureStorageAccessKey is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -438,14 +413,10 @@ describe('Config', () => {
                     azureStorageAccessKey: false,
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: false must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if tenantId is not a string', () => {
+        it('should assert if tenantId is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -455,14 +426,10 @@ describe('Config', () => {
                     clientKey: 'key',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if tenantId is not a string', () => {
+        it('should assert if tenantId is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -472,14 +439,10 @@ describe('Config', () => {
                     clientKey: 'key',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if tenantId is not a string', () => {
+        it('should assert if tenantId is not a string', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -489,14 +452,10 @@ describe('Config', () => {
                     clientKey: 42,
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'bad config: 42 must be a string');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
 
-        it('should fail assert if multiple auth method are provided', () => {
+        it('should assert if multiple auth method are provided', () => {
             const locationObj = {
                 details: {
                     azureContainerName: 'mycontainer',
@@ -508,11 +467,7 @@ describe('Config', () => {
                     azureStorageAccessKey: 'key',
                 }
             };
-            try {
-                azureArchiveLocationConstraintAssert(locationObj);
-            } catch (err) {
-                assert.strictEqual(err.message, 'Multiple authentication methods are not allowed');
-            }
+            assert.throws(() => azureArchiveLocationConstraintAssert(locationObj));
         });
     });
 });
