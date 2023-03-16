@@ -386,9 +386,10 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#7.10.28":
-  version "7.10.28"
-  resolved "git+https://github.com/scality/Arsenal#acf38cc01020ea64600947d7d2e09a8ccc73ecfd"
+"arsenal@git+https://github.com/scality/Arsenal#7.10.46":
+  version "7.10.46"
+  uid bd76402586f1b5117ada9857a9e437727562d55a
+  resolved "git+https://github.com/scality/Arsenal#bd76402586f1b5117ada9857a9e437727562d55a"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -414,7 +415,7 @@ arraybuffer.slice@~0.0.7:
     level-sublevel "~6.6.5"
     mongodb "^3.0.1"
     node-forge "^0.7.1"
-    prom-client "10.2.3"
+    prom-client "14.2.0"
     simple-glob "^0.2"
     socket.io "~2.3.0"
     socket.io-client "~2.3.0"
@@ -426,9 +427,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#7.10.29":
-  version "7.10.29"
-  resolved "git+https://github.com/scality/Arsenal#3882ecf1a08608b77ae004189f0fb938b50caf59"
+"arsenal@git+https://github.com/scality/arsenal#7.10.46":
+  version "7.10.46"
+  resolved "git+https://github.com/scality/arsenal#bd76402586f1b5117ada9857a9e437727562d55a"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -454,47 +455,7 @@ arraybuffer.slice@~0.0.7:
     level-sublevel "~6.6.5"
     mongodb "^3.0.1"
     node-forge "^0.7.1"
-    prom-client "10.2.3"
-    simple-glob "^0.2"
-    socket.io "~2.3.0"
-    socket.io-client "~2.3.0"
-    sproxydclient "github:scality/sproxydclient#8.0.4"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#8.1.0
-    xml2js "~0.4.23"
-  optionalDependencies:
-    ioctl "^2.0.2"
-
-"arsenal@git+https://github.com/scality/arsenal#7.10.43":
-  version "7.10.43"
-  resolved "git+https://github.com/scality/arsenal#054f61d6c1b3c9bdef0ad7a98bb4703b5acacad4"
-  dependencies:
-    "@types/async" "^3.2.12"
-    "@types/utf8" "^3.0.1"
-    JSONStream "^1.0.0"
-    agentkeepalive "^4.1.3"
-    ajv "6.12.2"
-    async "~2.1.5"
-    aws-sdk "^2.1005.0"
-    azure-storage "~2.10.7"
-    backo "^1.1.0"
-    base-x "3.0.8"
-    base62 "2.0.1"
-    bson "4.0.0"
-    debug "~2.6.9"
-    diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl#0.2.0"
-    hdclient scality/hdclient#1.1.0
-    https-proxy-agent "^2.2.0"
-    ioredis "^4.28.5"
-    ipaddr.js "1.9.1"
-    joi "^17.6.0"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^3.0.1"
-    node-forge "^0.7.1"
-    prom-client "10.2.3"
+    prom-client "14.2.0"
     simple-glob "^0.2"
     socket.io "~2.3.0"
     socket.io-client "~2.3.0"
@@ -852,12 +813,12 @@ bson@^1.1.4:
   resolved "https://registry.yarnpkg.com/bson/-/bson-1.1.6.tgz#fb819be9a60cd677e0853aee4ca712a785d6618a"
   integrity sha512-EvVNVeGo4tHxwi8L6bPj3y3itEvStdwvvlojVxxbyYfoaxJ6keLgrTuKdyfEAszFK+H3olzBuafE0yoh0D1gdg==
 
-bucketclient@scality/bucketclient#7.10.4:
-  version "7.10.4"
-  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/08b8e1b1cd95651e231ccc88ec449f5b1c900304"
+bucketclient@scality/bucketclient#7.10.6:
+  version "7.10.6"
+  resolved "https://codeload.github.com/scality/bucketclient/tar.gz/115ab1ae974781aafaba455cf83228b1732191af"
   dependencies:
     agentkeepalive "^4.1.4"
-    arsenal "git+https://github.com/scality/Arsenal#7.10.28"
+    arsenal "git+https://github.com/scality/Arsenal#7.10.46"
     werelogs scality/werelogs#8.1.0
 
 buffer-equal-constant-time@1.0.1:
@@ -4092,24 +4053,10 @@ progress@^1.1.8:
   resolved "https://registry.yarnpkg.com/progress/-/progress-1.1.8.tgz#e260c78f6161cdd9b0e56cc3e0a85de17c7a57be"
   integrity sha512-UdA8mJ4weIkUBO224tIarHzuHs4HuYiJvsuGT7j/SPQiUJVjYvNDBIPa0hAorduOfjGohB/qHWRa/lrrWX/mXw==
 
-prom-client@10.2.3:
-  version "10.2.3"
-  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-10.2.3.tgz#a51bf21c239c954a6c5be4b1361fdd380218bb41"
-  integrity sha512-Xboq5+TdUwuQtSSDRZRNnb5NprINlgQN999VqUjZxnLKydUNLeIPx6Eiahg6oJua3XBg2TGnh5Cth1s4I6+r7g==
-  dependencies:
-    tdigest "^0.1.1"
-
-prom-client@^13.1.0:
-  version "13.2.0"
-  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-13.2.0.tgz#99d13357912dd400f8911b77df19f7b328a93e92"
-  integrity sha512-wGr5mlNNdRNzEhRYXgboUU2LxHWIojxscJKmtG3R8f4/KiWqyYgXTLHs0+Ted7tG3zFT7pgHJbtomzZ1L0ARaQ==
-  dependencies:
-    tdigest "^0.1.1"
-
-prom-client@^14.0.1:
-  version "14.1.1"
-  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-14.1.1.tgz#e9bebef0e2269bfde22a322f4ca803cb52b4a0c0"
-  integrity sha512-hFU32q7UZQ59bVJQGUtm3I2PrJ3gWvoCkilX9sF165ks1qflhugVCeK+S1JjJYHvyt3o5kj68+q3bchormjnzw==
+prom-client@14.2.0:
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-14.2.0.tgz#ca94504e64156f6506574c25fb1c34df7812cf11"
+  integrity sha512-sF308EhTenb/pDRPakm+WgiN+VdM/T1RaHj1x+MvAuT8UiQP8JmOEbxVqtkbfR4LrvOg5n7ic01kRBDGXjYikA==
   dependencies:
     tdigest "^0.1.1"
 
@@ -5215,19 +5162,19 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-"utapi@git+https://github.com/scality/utapi#7.10.11":
-  version "7.10.11"
-  resolved "git+https://github.com/scality/utapi#3ec818bca133f71cfc7819c5f4319802d2851dc3"
+"utapi@git+https://github.com/scality/utapi#7.10.12":
+  version "7.10.12"
+  resolved "git+https://github.com/scality/utapi#347cf3c1cb088bc14bea082227100f93d1b11597"
   dependencies:
     "@hapi/joi" "^17.1.1"
     "@senx/warp10" "^1.0.14"
-    arsenal "git+https://github.com/scality/Arsenal#7.10.29"
+    arsenal "git+https://github.com/scality/Arsenal#7.10.46"
     async "^3.2.0"
     aws-sdk "^2.1005.0"
     aws4 "^1.8.0"
     backo "^1.1.0"
     body-parser "^1.19.0"
-    bucketclient scality/bucketclient#7.10.4
+    bucketclient scality/bucketclient#7.10.6
     byte-size "^7.0.0"
     commander "^5.1.0"
     cron-parser "^2.15.0"
@@ -5240,9 +5187,9 @@ user-home@^2.0.0:
     needle "^2.5.0"
     node-schedule "^1.3.2"
     oas-tools "^2.2.2"
-    prom-client "^13.1.0"
+    prom-client "14.2.0"
     uuid "^3.3.2"
-    vaultclient scality/vaultclient#7.10.8
+    vaultclient scality/vaultclient#7.10.13
     werelogs scality/werelogs#8.1.0
 
 utf8@2.1.2, utf8@~2.1.1:
@@ -5310,22 +5257,12 @@ vary@~1.1.2:
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-vaultclient@scality/vaultclient#7.10.10:
-  version "7.10.10"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/ceed0d9e20e526fd584b6d80284a58aabf032127"
+vaultclient@scality/vaultclient#7.10.13:
+  version "7.10.13"
+  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/e9876b8d492ccad9ac5ab72404b32ea9a31fc1e3"
   dependencies:
     agentkeepalive "^4.1.3"
-    arsenal "git+https://github.com/scality/Arsenal#7.10.28"
-    commander "2.20.0"
-    werelogs "git+https://github.com/scality/werelogs#8.1.0"
-    xml2js "0.4.19"
-
-vaultclient@scality/vaultclient#7.10.8:
-  version "7.10.8"
-  resolved "https://codeload.github.com/scality/vaultclient/tar.gz/aab460b592ca3ad8422bfa8f46b2a27cb6ca2b75"
-  dependencies:
-    agentkeepalive "^4.1.3"
-    arsenal "git+https://github.com/scality/Arsenal#7.10.28"
+    arsenal "git+https://github.com/scality/Arsenal#7.10.46"
     commander "2.20.0"
     werelogs "git+https://github.com/scality/werelogs#8.1.0"
     xml2js "0.4.19"
