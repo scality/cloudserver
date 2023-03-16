@@ -138,7 +138,7 @@ describe('aws-node-sdk test delete object', () => {
         // delete bucket after testing
         after(done => {
             removeAllVersions({ Bucket: bucket }, err => {
-                if (err.code === 'NoSuchBucket') {
+                if (err && err.code === 'NoSuchBucket') {
                     return done();
                 } else if (err) {
                     return done(err);
