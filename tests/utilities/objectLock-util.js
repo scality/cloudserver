@@ -19,7 +19,8 @@ function changeObjectLock(objects, newConfig, cb) {
             objMD.retentionMode = newConfig.mode;
             objMD.retentionDate = newConfig.date;
             objMD.legalHold = false;
-            metadata.putObjectMD(bucket, key, objMD, { versionId: objMD.versionId }, log, err => {
+            const params = { versionId: objMD.versionId, isNull: false };
+            metadata.putObjectMD(bucket, key, objMD, params, log, err => {
                 assert.ifError(err);
                 next();
             });
