@@ -137,9 +137,11 @@ describe('get behavior on versioning-enabled bucket', () => {
                 s3.getObject({
                     Bucket: bucket,
                     Key: key,
-                    VersionId: this.test.deleteVersionId },
-                err => {
+                    VersionId: this.test.deleteVersionId,
+                }, function test1(err) {
                     _assertError(err, 405, 'MethodNotAllowed');
+                    const headers = this.httpResponse.headers;
+                    assert.strictEqual(headers['x-amz-delete-marker'], 'true');
                     done();
                 });
             });
@@ -148,9 +150,11 @@ describe('get behavior on versioning-enabled bucket', () => {
             'latest version is a delete marker', done => {
                 s3.getObject({
                     Bucket: bucket,
-                    Key: key },
-                err => {
+                    Key: key,
+                }, function test2(err) {
                     _assertError(err, 404, 'NoSuchKey');
+                    const headers = this.httpResponse.headers;
+                    assert.strictEqual(headers['x-amz-delete-marker'], 'true');
                     done();
                 });
             });
@@ -175,9 +179,11 @@ describe('get behavior on versioning-enabled bucket', () => {
                 s3.getObject({
                     Bucket: bucket,
                     Key: key,
-                    VersionId: this.test.deleteVersionId },
-                err => {
+                    VersionId: this.test.deleteVersionId,
+                }, function test3(err) {
                     _assertError(err, 405, 'MethodNotAllowed');
+                    const headers = this.httpResponse.headers;
+                    assert.strictEqual(headers['x-amz-delete-marker'], 'true');
                     done();
                 });
             });
@@ -200,9 +206,11 @@ describe('get behavior on versioning-enabled bucket', () => {
             done => {
                 s3.getObject({
                     Bucket: bucket,
-                    Key: key },
-                err => {
+                    Key: key,
+                }, function test4(err) {
                     _assertError(err, 404, 'NoSuchKey');
+                    const headers = this.httpResponse.headers;
+                    assert.strictEqual(headers['x-amz-delete-marker'], 'true');
                     done();
                 });
             });

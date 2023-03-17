@@ -131,7 +131,7 @@ describe('Delete object tagging with versioning', () => {
             });
         });
 
-        it('should return 405 MethodNotAllowed deletting tag set without ' +
+        it('should return 405 MethodNotAllowed deleting tag set without ' +
          'version id if version specified is a delete marker', done => {
             async.waterfall([
                 next => s3.putBucketVersioning({ Bucket: bucketName,
