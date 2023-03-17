@@ -688,7 +688,7 @@ describe('Object Version Copy', () => {
             });
 
         it('should return NoSuchKey if attempt to copy version with ' +
-        ' delete marker', done => {
+        'delete marker', done => {
             s3.deleteObject({
                 Bucket: sourceBucketName,
                 Key: sourceObjName,
