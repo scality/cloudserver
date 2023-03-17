@@ -163,7 +163,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'prior MPU object null version exists',
+                description: 'prior MPU object legacy null version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -205,6 +205,47 @@ describe('versioning helpers', () => {
                     },
                     delOptions: {
                         versionId: 'vnull',
+                    },
+                },
+            },
+            {
+                description: 'prior MPU object non-legacy null version exists',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true, // flag marking that it's a non-legacy null version
+                    uploadId: 'fooUploadId',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key with version ID in its metadata
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'fooUploadId',
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
                     },
                 },
             },
