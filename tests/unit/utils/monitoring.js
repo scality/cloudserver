@@ -15,9 +15,26 @@ describe('Monitoring: endpoint', () => {
     };
     monitoring.collectDefaultMetrics();
 
+    // adding a fake to route handler because `routeHandler` is implemented to
+    // gather aggregated metrics, the unit tests here are executed in master and
+    // the prom-client aggregator registry will not collect metrics from master
+    // TODO: refactor unit tests to not check routes/response & only check
+    // for list of custom metrics & system metrics, move response code tests to
+    // functional tests.
+    async function fakeRouteHandler(req, res) {
+        const metrics = await promclient.register.metrics();
+        const contentLen = Buffer.byteLength(metrics, 'utf8');
+        res.writeHead(200, {
+            'Content-Length': contentLen,
+            'Content-Type': promclient.register.contentType,
+        });
+        res.end(metrics);
+        return undefined;
+    }
     beforeEach(() => {
         sandbox.spy(res);
         sandbox.spy(promclient.register, 'metrics');
+        sandbox.replace(monitoring, 'routeHandler', fakeRouteHandler);
     });
 
     afterEach(() => {
