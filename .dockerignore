@@ -7,4 +7,3 @@ localMetadata/*
 .tox
 coverage
 .DS_Store
-tests
