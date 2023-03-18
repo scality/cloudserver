@@ -554,7 +554,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'delete null object version',
+                description: 'delete legacy null object version',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -568,6 +568,25 @@ describe('versioning helpers', () => {
                 expectedResCompat: {
                     deleteData: true,
                     versionId: 'vnull',
+                },
+            },
+            {
+                description: 'delete null object version in null key',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true,
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+                expectedResCompat: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    isNull: true,
                 },
             },
             {
