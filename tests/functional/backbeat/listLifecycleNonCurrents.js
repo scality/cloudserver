@@ -135,6 +135,26 @@ runIfMongoV1('listLifecycleNonCurrents', () => {
         });
     });
 
+    it('should return empty list if max-keys is set to 0', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-keys': '0' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, false);
+            assert(!data.NextMarker);
+            assert.strictEqual(data.MaxKeys, 0);
+            assert.strictEqual(data.Contents.length, 0);
+
+            return done();
+        });
+    });
+
     it('should return error if bucket does not exist', done => {
         makeBackbeatRequest({
             method: 'GET',
