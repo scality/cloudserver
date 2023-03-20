@@ -170,6 +170,22 @@ describe('Multi-Object Versioning Delete Success', function success() {
                 checkNoError(err);
             });
         });
+
+        it('should not crash when deleting a null versionId that does not exist', () => {
+            const objects = [{ Key: objectsRes[0].Key, VersionId: 'null' }];
+            return s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                },
+            }).promise().then(res => {
+                assert.deepStrictEqual(res.Deleted, [{ Key: objectsRes[0].Key, VersionId: 'null' }]);
+                assert.strictEqual(res.Errors.length, 0);
+            })
+            .catch(err => {
+                checkNoError(err);
+            });
+        });
     });
 });
 
