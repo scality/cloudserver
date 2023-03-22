@@ -120,6 +120,16 @@ function getArchiveOngoingRequestMD() {
 }
 
 /**
+ * Computes the 'archive' field of the object MD as an object being restored
+ * @returns {ObjectMDArchive} the MD object
+ */
+function getTransitionInProgressMD() {
+    return {
+        'x-amz-scal-transition-in-progress': true,
+    };
+}
+
+/**
  * Computes the 'archive' field of the object MD as a restored object from cold storage
  * @returns {ObjectMDArchive} the MD object
  */
@@ -158,6 +168,7 @@ module.exports = {
     getArchiveOngoingRequestMD,
     getArchiveRestoredMD,
     getArchiveExpiredMD,
+    getTransitionInProgressMD,
     putBucketMock,
     defaultLocation,
 };

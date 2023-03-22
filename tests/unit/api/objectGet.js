@@ -423,6 +423,24 @@ describe('objectGet API', () => {
         });
     });
 
+    it('should return InvalidObjectState if trying to GET a transitioning object', done => {
+        const testGetRequest = {
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+        };
+        mdColdHelper.putBucketMock(bucketName, null, () => {
+            mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getTransitionInProgressMD(), () => {
+                objectGet(authInfo, testGetRequest, false, log, err => {
+                    assert.strictEqual(err.is.InvalidObjectState, true);
+                    done();
+                });
+            });
+        });
+    });
+
     it('should not reflect the storage location in storage class if the bucket location is not cold', done => {
         const testGetRequest = {
             bucketName,
