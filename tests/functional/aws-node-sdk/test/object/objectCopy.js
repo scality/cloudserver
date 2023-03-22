@@ -2,6 +2,7 @@ const assert = require('assert');
 const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const changeObjectLock = require('../../../../utilities/objectLock-util');
+const { fakeMetadataTransition, fakeMetadataArchive } = require('../utils/init');
 
 const { taggingTests } = require('../../lib/utility/tagging');
 const genMaxSizeMetaHeaders
@@ -1233,6 +1234,63 @@ describe('Object Copy', () => {
                     assert.strictEqual(err.statusCode, 400);
                     done();
                 });
+        });
+
+        it('should not copy a cold object', done => {
+            const archive = {
+                archiveInfo: {
+                    archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
+                    archiveVersion: 5577006791947779
+                },
+            };
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archive, err => {
+                assert.ifError(err);
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                }, err => {
+                        assert.strictEqual(err.code, 'InvalidObjectState');
+                        assert.strictEqual(err.statusCode, 403);
+                        done();
+                    });
+            });
+        });
+
+        it('should not copy an object when it\'s transitioning to cold', done => {
+            fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
+                assert.ifError(err);
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                }, err => {
+                        assert.strictEqual(err.code, 'InvalidObjectState');
+                        assert.strictEqual(err.statusCode, 403);
+                        done();
+                    });
+            });
+        });
+
+        it('should copy restored object', done => {
+            const archiveCompleted = {
+                archiveInfo: {},
+                restoreRequestedAt: new Date(0),
+                restoreRequestedDays: 5,
+                restoreCompletedAt: new Date(10),
+                restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
+            };
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archiveCompleted, err => {
+                assert.ifError(err);
+                s3.copyObject({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                }, (err, res) => {
+                    successCopyCheck(err, res, originalMetadata,
+                        destBucketName, destObjName, done);
+                    });
+            });
         });
     });
 });
