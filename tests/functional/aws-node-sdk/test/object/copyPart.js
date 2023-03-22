@@ -7,6 +7,7 @@ const withV4 = require('../support/withV4');
 const BucketUtility = require('../../lib/utility/bucket-util');
 const { createEncryptedBucketPromise } =
     require('../../lib/utility/createEncryptedBucket');
+const { fakeMetadataTransition, fakeMetadataArchive } = require('../utils/init');
 
 const sourceBucketName = 'supersourcebucket81033016532';
 const sourceObjName = 'supersourceobject';
@@ -709,6 +710,71 @@ describe('Object Part Copy', () => {
                     done();
                 });
             });
+
+        it('should not copy a part of a cold object', done => {
+            const archive = {
+                archiveInfo: {
+                    archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
+                    archiveVersion: 5577006791947779
+                },
+            };
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archive, err => {
+                assert.ifError(err);
+                s3.uploadPartCopy({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                }, err => {
+                        assert.strictEqual(err.code, 'InvalidObjectState');
+                        assert.strictEqual(err.statusCode, 403);
+                        done();
+                    });
+            });
+        });
+
+        it('should not copy a part of an object when it\'s transitioning to cold', done => {
+            fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
+                assert.ifError(err);
+                s3.uploadPartCopy({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                }, err => {
+                        assert.strictEqual(err.code, 'InvalidObjectState');
+                        assert.strictEqual(err.statusCode, 403);
+                        done();
+                    });
+            });
+        });
+
+        it('should copy a part of a restored object', done => {
+            const archiveCompleted = {
+                archiveInfo: {},
+                restoreRequestedAt: new Date(0),
+                restoreRequestedDays: 5,
+                restoreCompletedAt: new Date(10),
+                restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
+            };
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archiveCompleted, err => {
+                assert.ifError(err);
+                s3.uploadPartCopy({
+                    Bucket: destBucketName,
+                    Key: destObjName,
+                    CopySource: `${sourceBucketName}/${sourceObjName}`,
+                    PartNumber: 1,
+                    UploadId: uploadId,
+                }, (err, res) => {
+                    checkNoError(err);
+                    assert.strictEqual(res.ETag, etag);
+                    assert(res.LastModified);
+                    done();
+                });
+            });
+        });
 
         describe('copying parts by another account', () => {
             const otherAccountBucket = 'otheraccountbucket42342342342';
