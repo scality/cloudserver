@@ -1,8 +1,9 @@
 const assert = require('assert');
 
 const { errors } = require('arsenal');
-const { validatePutVersionId } = require('../../../../lib/api/apiUtils/object/coldStorage');
+const { validatePutVersionId, verifyColdObjectAvailable } = require('../../../../lib/api/apiUtils/object/coldStorage');
 const { DummyRequestLogger } = require('../../helpers');
+const { ObjectMD, ObjectMDArchive } = require('arsenal/build/lib/models');
 const log = new DummyRequestLogger();
 const oneDay = 24 * 60 * 60 * 1000;
 
@@ -67,5 +68,41 @@ describe('cold storage', () => {
             const res = validatePutVersionId(testCase.objMD, testCase.versionId, log);
             assert.deepStrictEqual(res, testCase.expectedRes);
         }));
+    });
+
+    describe('verifyColdObjectAvailable', () => {
+        [
+            {
+                description: 'should return error if object is in a cold location',
+                objectMd: new ObjectMD()
+                    .setArchive(new ObjectMDArchive({
+                        archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
+                        archiveVersion: 5577006791947779
+                    }))
+            },
+            {
+                description: 'should return error if object is restoring',
+                objectMd: new ObjectMD()
+                    .setArchive(new ObjectMDArchive({
+                        archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
+                        archiveVersion: 5577006791947779
+                    }, Date.now()))
+            },
+            {
+                description: 'should return error if object is transitioning to a cold location',
+                objectMd: new ObjectMD().setTransitionInProgress(true)
+            },
+        ].forEach(params => {
+            it(`${params.description}`, () => {
+                const err = verifyColdObjectAvailable(params.objectMd.getValue());
+                assert(err.InvalidObjectState);
+            });
+        });
+
+        it('should return null if object data is not in cold', () => {
+            const objectMd = new ObjectMD();
+            const err = verifyColdObjectAvailable(objectMd.getValue());
+            assert.ifError(err);
+        });
     });
 });
