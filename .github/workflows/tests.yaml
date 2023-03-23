@@ -155,7 +155,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=cloudserver
 
   build-federation-image:
-    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    uses: scality/workflows/.github/workflows/docker-build.yaml@9b984414dd211d8b7ee1fce4fc07f20874a6a980
     secrets: inherit
     with:
       push: true
