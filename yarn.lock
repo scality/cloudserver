@@ -388,7 +388,6 @@ arraybuffer.slice@~0.0.7:
 
 "arsenal@git+https://github.com/scality/Arsenal#7.10.46":
   version "7.10.46"
-  uid bd76402586f1b5117ada9857a9e437727562d55a
   resolved "git+https://github.com/scality/Arsenal#bd76402586f1b5117ada9857a9e437727562d55a"
   dependencies:
     "@types/async" "^3.2.12"
@@ -427,9 +426,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.10.46":
-  version "7.10.46"
-  resolved "git+https://github.com/scality/arsenal#bd76402586f1b5117ada9857a9e437727562d55a"
+"arsenal@git+https://github.com/scality/arsenal#4c39ef64":
+  version "7.70.4"
+  resolved "git+https://github.com/scality/arsenal#4c39ef6469d4d7b630ac03bb8ba41104c46ae36e"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
