@@ -39,6 +39,7 @@ services:
       - MONGODB_RS=rs0
       - DEFAULT_BUCKET_KEY_FORMAT
       - METADATA_MAX_CACHED_BUCKETS
+      - ENABLE_NULL_VERSION_COMPAT_MODE
     env_file:
       - creds.env
     depends_on:
