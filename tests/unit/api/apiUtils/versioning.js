@@ -70,14 +70,13 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: 'vnull',
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
                     },
                     // instruct to first copy the null version onto a
                     // newly created version key preserving the version ID
-                    storeOptions: {
-                        isNull: true,
-                        versionId: 'vnull',
-                    },
+                    nullVersionId: 'vnull',
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -99,15 +98,14 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: 'vnull',
-                        nullUploadId: 'fooUploadId',
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'fooUploadId',
+                        },
                     },
                     // instruct to first copy the null version onto a
                     // newly created version key preserving the version ID
-                    storeOptions: {
-                        isNull: true,
-                        versionId: 'vnull',
-                    },
+                    nullVersionId: 'vnull',
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -127,14 +125,13 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: INF_VID,
+                        extraMD: {
+                            nullVersionId: INF_VID,
+                        },
                     },
                     // instruct to first copy the null version onto a
                     // newly created version key as the oldest version
-                    storeOptions: {
-                        isNull: true,
-                        versionId: INF_VID,
-                    },
+                    nullVersionId: INF_VID,
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -152,14 +149,14 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: INF_VID,
+                        extraMD: {
+                            nullVersionId: INF_VID,
+                            nullUploadId: 'fooUploadId',
+                        },
                     },
                     // instruct to first copy the null version onto a
                     // newly created version key as the oldest version
-                    storeOptions: {
-                        isNull: true,
-                        versionId: INF_VID,
-                    },
+                    nullVersionId: INF_VID,
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -178,7 +175,9 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: 'vnull',
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
                     },
                 },
                 versioningSuspendedExpectedRes: {
@@ -202,7 +201,9 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: 'vnull',
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
                     },
                 },
                 versioningSuspendedExpectedRes: {
@@ -226,8 +227,10 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        nullVersionId: 'vnull',
-                        nullUploadId: 'nullFooUploadId',
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'nullFooUploadId',
+                        },
                     },
                 },
                 versioningSuspendedExpectedRes: {
@@ -246,16 +249,8 @@ describe('versioning helpers', () => {
             `${testCase.description}, versioning Status=${versioningStatus}`,
             () => {
                 const mst = getMasterState(testCase.objMD);
-                // stringify and parse to get rid of the "undefined"
-                // properties, artifacts of how the function builds the
-                // result
-                const res = JSON.parse(
-                    JSON.stringify(
-                        processVersioningState(mst, versioningStatus)
-                    )
-                );
-                const expectedRes =
-                      testCase[`versioning${versioningStatus}ExpectedRes`];
+                const res = processVersioningState(mst, versioningStatus);
+                const expectedRes = testCase[`versioning${versioningStatus}ExpectedRes`];
                 assert.deepStrictEqual(res, expectedRes);
             })));
     });
