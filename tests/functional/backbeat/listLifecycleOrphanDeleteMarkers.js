@@ -18,7 +18,7 @@ function checkContents(contents) {
         assert(d.Key);
         assert(d.LastModified);
         assert(d.VersionId);
-        assert(d.Etag);
+        assert(d.ETag);
         assert(d.Owner.DisplayName);
         assert(d.Owner.ID);
         assert(d.StorageClass);
