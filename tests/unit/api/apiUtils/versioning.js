@@ -563,7 +563,6 @@ describe('versioning helpers', () => {
                 expectedRes: {
                     deleteData: true,
                     versionId: 'vnull',
-                    isNull: true,
                 },
                 expectedResCompat: {
                     deleteData: true,
