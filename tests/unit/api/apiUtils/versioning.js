@@ -119,7 +119,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description: 'prior null object version exists',
+                description: 'prior legacy null object version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -159,6 +159,45 @@ describe('versioning helpers', () => {
                     },
                     delOptions: {
                         versionId: 'vnull',
+                    },
+                },
+            },
+            {
+                description: 'prior non-legacy null object version exists',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true, // flag marking that it's a non-legacy null version
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key with version ID in its metadata
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
                     },
                 },
             },
@@ -331,13 +370,10 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
                     },
-                    // backward-compat: delete old null version key
-                    delOptions: {
-                        versionId: 'vnull',
-                    },
-                    // backward-compat: create new null key
-                    nullVersionId: 'vnull',
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -363,6 +399,7 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
                         deleteData: true,
@@ -379,13 +416,10 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
                     },
-                    // backward-compat: delete old null version key
-                    delOptions: {
-                        versionId: 'vnull',
-                    },
-                    // backward-compat: create new null key
-                    nullVersionId: 'vnull',
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -411,6 +445,7 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
                         deleteData: true,
@@ -427,13 +462,11 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'nullFooUploadId',
+                        },
                     },
-                    // backward-compat: delete old null version key
-                    delOptions: {
-                        versionId: 'vnull',
-                    },
-                    // backward-compat: create new null key
-                    nullVersionId: 'vnull',
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -461,6 +494,7 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
                         replayId: 'nullFooUploadId',
