@@ -131,6 +131,11 @@ describe('versioning helpers', () => {
                     // instruct to first copy the null version onto a
                     // newly created null key with version ID in its metadata
                     nullVersionId: 'vnull',
+                    // delete possibly existing null versioned key
+                    // that is identical to the null master
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -215,6 +220,11 @@ describe('versioning helpers', () => {
                     // instruct to first copy the null version onto a
                     // newly created null key with version ID in its metadata
                     nullVersionId: 'vnull',
+                    // delete possibly existing null versioned key
+                    // that is identical to the null master
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
