@@ -678,3 +678,95 @@ describe('aws-node-sdk test delete object', () => {
         });
     });
 });
+
+describe('aws-node-sdk test concurrent version-specific deletes with null', () => {
+    withV4(sigCfg => {
+        const bucketUtil = new BucketUtility('default', sigCfg);
+        const s3 = bucketUtil.s3;
+
+        // setup test
+        before(done => {
+            s3.createBucket({ Bucket: bucket }, done);
+        });
+
+        // delete bucket after testing
+        after(done => {
+            removeAllVersions({ Bucket: bucket }, err => {
+                if (err && err.code === 'NoSuchBucket') {
+                    return done();
+                } else if (err) {
+                    return done(err);
+                }
+                return s3.deleteBucket({ Bucket: bucket }, err => {
+                    assert.strictEqual(err, null,
+                        `Error deleting bucket: ${err}`);
+                    return done();
+                });
+            });
+        });
+
+        it('creating non-versioned object', done => {
+            s3.putObject({
+                Bucket: bucket,
+                Key: key,
+                Body: 'null-body',
+            }, (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                assert.equal(res.VersionId, undefined);
+                return done();
+            });
+        });
+
+        it('enable versioning', done => {
+            const params = {
+                Bucket: bucket,
+                VersioningConfiguration: {
+                    Status: 'Enabled',
+                },
+            };
+            s3.putBucketVersioning(params, done);
+        });
+
+        it('put 5 new versions to the object', done => {
+            async.times(5, (i, putDone) => s3.putObject({
+                Bucket: bucket,
+                Key: key,
+                Body: `test-body-${i}`,
+            }, putDone), done);
+        });
+
+        it('list versions and batch-delete all except null version', done => {
+            s3.listObjectVersions({ Bucket: bucket }, (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                assert.strictEqual(res.DeleteMarkers.length, 0);
+                assert.strictEqual(res.Versions.length, 6);
+                assert.strictEqual(res.Versions[5].VersionId, 'null');
+                return s3.deleteObjects({
+                    Bucket: bucket,
+                    Delete: {
+                        Objects: res.Versions.slice(0, 5).map(item => ({
+                            Key: item.Key,
+                            VersionId: item.VersionId,
+                        })),
+                    },
+                }, done);
+            });
+        });
+
+        it('list versions should return a list with just the null version', done => {
+            s3.listObjectVersions({ Bucket: bucket }, (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                assert.strictEqual(res.DeleteMarkers.length, 0);
+                assert.strictEqual(res.Versions.length, 1);
+                assert.strictEqual(res.Versions[0].VersionId, 'null');
+                return done();
+            });
+        });
+    });
+});
