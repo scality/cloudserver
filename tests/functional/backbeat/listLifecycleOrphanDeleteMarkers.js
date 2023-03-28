@@ -18,16 +18,15 @@ function checkContents(contents) {
         assert(d.Key);
         assert(d.LastModified);
         assert(d.VersionId);
-        assert(d.ETag);
         assert(d.Owner.DisplayName);
         assert(d.Owner.ID);
-        assert(d.StorageClass);
-        assert.strictEqual(d.StorageClass, 'STANDARD');
-        assert(!d.TagSet);
         assert.strictEqual(d.IsLatest, true);
-        assert.strictEqual(d.DataStoreName, 'us-east-1');
         assert.strictEqual(d.ListType, 'orphan');
-        assert.strictEqual(d.Size, 0);
+        assert(!d.ETag);
+        assert(!d.Size);
+        assert(!d.StorageClass);
+        assert(!d.TagSet);
+        assert(!d.DataStoreName);
     });
 }
 
