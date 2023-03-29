@@ -16,7 +16,7 @@ function checkContents(contents) {
     contents.forEach(d => {
         assert(d.Key);
         assert(d.LastModified);
-        assert(d.ETag);
+        assert(d.ETag && d.ETag.startsWith('"') && d.ETag.endsWith('"'));
         assert(d.Owner.DisplayName);
         assert(d.Owner.ID);
         assert(d.StorageClass);
