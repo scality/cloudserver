@@ -354,6 +354,33 @@ describe('Multi-Object Delete with Object Lock', () => {
         });
     });
 
+    it('should not delete locked objects with GOVERNANCE ' +
+        'retention mode and bypass header when object is legal hold enabled', () => {
+        const objects = createObjectsList(5, versionIds);
+        const putObjectLegalHolds = [];
+        for (let i = 1; i < 6; i++) {
+            putObjectLegalHolds.push(s3.putObjectLegalHold({
+                Bucket: bucketName,
+                Key: `${key}${i}`,
+                LegalHold: {
+                    Status: 'ON',
+                },
+            }).promise());
+        }
+        return Promise.all(putObjectLegalHolds)
+            .then(() => s3.deleteObjects({
+                Bucket: bucketName,
+                Delete: {
+                    Objects: objects,
+                    Quiet: false,
+                },
+                BypassGovernanceRetention: true,
+            }).promise()).then(res => {
+                assert.strictEqual(res.Errors.length, 5);
+                res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+            });
+    });
+
     it('should delete locked objects after retention period has expired', () => {
         const objects = createObjectsList(5, versionIds);
         const objectsCopy = JSON.parse(JSON.stringify(objects));
@@ -376,6 +403,24 @@ describe('Multi-Object Delete with Object Lock', () => {
                 Quiet: false,
             },
         }).promise()).then(res => {
+            assert.strictEqual(res.Deleted.length, 5);
+            assert.strictEqual(res.Errors.length, 0);
+        }).catch(err => {
+            checkNoError(err);
+        });
+    });
+
+    it('should delete locked objects with GOVERNANCE ' +
+        'retention mode and bypass header', () => {
+        const objects = createObjectsList(5, versionIds);
+        return s3.deleteObjects({
+            Bucket: bucketName,
+            Delete: {
+                Objects: objects,
+                Quiet: false,
+            },
+            BypassGovernanceRetention: true,
+        }).promise().then(res => {
             assert.strictEqual(res.Deleted.length, 5);
             assert.strictEqual(res.Errors.length, 0);
         }).catch(err => {
