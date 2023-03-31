@@ -571,6 +571,24 @@ const canModifyObjectTestCases = [
         allowed: false,
         allowedWithBypass: false,
     },
+    {
+        desc: 'legal hold enabled',
+        policy: {
+            legalHold: true,
+        },
+        allowed: false,
+        allowedWithBypass: false,
+    },
+    {
+        desc: 'legal hold enabled with governance mode',
+        policy: {
+            legalHold: true,
+            mode: 'GOVERNANCE',
+            date: futureDate.toISOString(),
+        },
+        allowed: false,
+        allowedWithBypass: false,
+    },
 ];
 
 describe('objectLockHelpers: ObjectLockInfo', () => {
