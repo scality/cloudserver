@@ -1,6 +1,6 @@
 {
   "name": "s3",
-  "version": "7.70.18",
+  "version": "7.70.19",
   "description": "S3 connector",
   "main": "index.js",
   "engines": {
