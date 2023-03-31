@@ -67,6 +67,24 @@ env:
   REMOTE_MANAGEMENT_DISABLE: "1"
 
 jobs:
+  get-project-version: # Get project version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.PROJECT_VERSION }}
+      tag: ${{ steps.get-version.outputs.PROJECT_VERSION }}-${{github.sha}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get version
+        id: get-version
+        run: |
+          echo "PROJECT_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: print version
+        id: print-version
+        run: |
+          echo "PROJECT_VERSION=$(node -p "require('./package.json').version")"
+
+
   linting-coverage:
     runs-on: ubuntu-latest
     steps:
@@ -125,6 +143,7 @@ jobs:
 
   build:
     runs-on: ubuntu-20.04
+    needs: get-project-version
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -142,6 +161,12 @@ jobs:
           registry: registry.scality.com
           username: ${{ secrets.REGISTRY_LOGIN }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Push dashboards into the development namespace
+        run: |
+          oras push registry.scality.com/cloudserver-dev/cloudserver-dashboards:${{ needs.get-project-version.outputs.tag }} \
+            dashboard.json:application/grafana-dashboard+json \
+            alerts.yaml:application/prometheus-alerts+yaml
+        working-directory: monitoring
       - name: Build and push cloudserver image
         uses: docker/build-push-action@v3
         with:
@@ -149,16 +174,16 @@ jobs:
           context: .
           provenance: false
           tags: |
-            ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
-            registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
+            registry.scality.com/cloudserver-dev/cloudserver:${{ needs.get-project-version.outputs.tag }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
   multiple-backend:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
@@ -190,7 +215,7 @@ jobs:
  
   mongo-v0-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       MPU_TESTING: "yes" 
@@ -198,7 +223,7 @@ jobs:
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v0
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -228,7 +253,7 @@ jobs:
 
   mongo-v1-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       MPU_TESTING: "yes" 
@@ -237,7 +262,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v1
       METADATA_MAX_CACHED_BUCKETS: 1
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -276,11 +301,11 @@ jobs:
             job-name: file-ft-tests-null-compat
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: file
       S3VAULT: mem
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       MPU_TESTING: "yes"
       ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
       JOB_NAME: ${{ matrix.job-name }}
@@ -315,12 +340,12 @@ jobs:
 
   utapi-v2-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem 
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -347,12 +372,12 @@ jobs:
 
   kmip-ft-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: file
       S3VAULT: mem
       MPU_TESTING: "yes" 
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -383,7 +408,7 @@ jobs:
   
   ceph-backend-test:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, get-project-version]
     env:
       S3BACKEND: mem
       S3DATA: multiple
@@ -391,7 +416,7 @@ jobs:
       CI_CEPH: 'true'
       MPU_TESTING: "yes" 
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigCeph.json
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ needs.get-project-version.outputs.tag }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
