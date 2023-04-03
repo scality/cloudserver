@@ -223,8 +223,8 @@ describe('put and get object with versioning', function testSuite() {
                 const versionIds = [];
                 const params = { Bucket: bucket, Key: key };
                 const paramsNull = {
-                    Bucket: bucket, Key:
-                    key,
+                    Bucket: bucket,
+                    Key: key,
                     VersionId: 'null',
                 };
                 // create new versions
@@ -239,6 +239,38 @@ describe('put and get object with versioning', function testSuite() {
                             next(err);
                         });
                     }), done);
+            });
+
+            // S3C-5139
+            it('should not fail PUT on versioning-suspended bucket if nullVersionId refers ' +
+            'to deleted null version', done => {
+                async.series([
+                    // create a new version on top of non-versioned object
+                    next => s3.putObject({ Bucket: bucket, Key: key }, next),
+                    // suspend versioning
+                    next => s3.putBucketVersioning({
+                        Bucket: bucket,
+                        VersioningConfiguration: versioningSuspended,
+                    }, next),
+                    // delete existing non-versioned object
+                    next => s3.deleteObject({ Bucket: bucket, Key: key, VersionId: 'null' }, next),
+                    // put a new null version
+                    next => s3.putObject({ Bucket: bucket, Key: key, Body: data[0] }, next),
+                    // get the new null version
+                    next => s3.getObject({
+                        Bucket: bucket,
+                        Key: key,
+                        VersionId: 'null',
+                    }, (err, nullVerData) => {
+                        assert.ifError(err);
+                        assert.strictEqual(nullVerData.ETag, eTags[0]);
+                        assert.strictEqual(nullVerData.VersionId, 'null');
+                        next();
+                    }),
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
             });
         });
 
