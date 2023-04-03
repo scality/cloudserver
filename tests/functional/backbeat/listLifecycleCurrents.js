@@ -12,9 +12,15 @@ const credentials = {
     secretKey: 'verySecretKey1',
 };
 
-function checkContents(contents) {
+function checkContents(contents, expectedKeyVersions) {
     contents.forEach(d => {
         assert(d.Key);
+        // The current versions listed to be lifecycle should include version id if the bucket is versioned.
+        if (expectedKeyVersions && expectedKeyVersions[d.Key]) {
+            assert(d.VersionId, expectedKeyVersions[d.Key]);
+        } else {
+            assert(!d.VersionId);
+        }
         assert(d.LastModified);
         assert(d.ETag && d.ETag.startsWith('"') && d.ETag.endsWith('"'));
         assert(d.Owner.DisplayName);
@@ -37,6 +43,7 @@ function checkContents(contents) {
         let bucketUtil;
         let s3;
         let date;
+        const expectedKeyVersions = {};
 
         before(done => {
             bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
@@ -64,12 +71,28 @@ function checkContents(contents) {
                     }, next);
                 },
                 next => async.times(3, (n, cb) => {
-                    s3.putObject({ Bucket: testBucket, Key: `oldkey${n}`, Body: '123', Tagging: 'mykey=myvalue' }, cb);
+                    const keyName = `oldkey${n}`;
+                    s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+                    (err, data) => {
+                        if (err) {
+                            cb(err);
+                        }
+                        expectedKeyVersions[keyName] = data.VersionId;
+                        return cb();
+                    });
                 }, next),
                 next => {
                     date = new Date(Date.now()).toISOString();
                     return async.times(5, (n, cb) => {
-                        s3.putObject({ Bucket: testBucket, Key: `key${n}`, Body: '123', Tagging: 'mykey=myvalue' }, cb);
+                        const keyName = `key${n}`;
+                        s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+                        (err, data) => {
+                            if (err) {
+                                cb(err);
+                            }
+                            expectedKeyVersions[keyName] = data.VersionId;
+                            return cb();
+                        });
                     }, next);
                 },
             ], done);
@@ -180,7 +203,7 @@ function checkContents(contents) {
 
                 const contents = data.Contents;
                 assert.strictEqual(contents.length, 8);
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
 
                 return done();
             });
@@ -206,7 +229,7 @@ function checkContents(contents) {
 
                 const contents = data.Contents;
                 assert.strictEqual(contents.length, 3);
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
 
                 return done();
             });
@@ -230,7 +253,7 @@ function checkContents(contents) {
                 assert.strictEqual(data.BeforeDate, date);
 
                 const contents = data.Contents;
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
                 assert.strictEqual(contents[0].Key, 'oldkey0');
                 assert.strictEqual(contents[1].Key, 'oldkey1');
                 assert.strictEqual(contents[2].Key, 'oldkey2');
@@ -256,7 +279,7 @@ function checkContents(contents) {
                 assert.strictEqual(data.Contents.length, 1);
 
                 const contents = data.Contents;
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
                 assert.strictEqual(contents[0].Key, 'oldkey0');
                 return done();
             });
@@ -280,7 +303,7 @@ function checkContents(contents) {
                 assert.strictEqual(data.Contents.length, 1);
 
                 const contents = data.Contents;
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
                 assert.strictEqual(contents[0].Key, 'oldkey1');
                 assert.strictEqual(data.BeforeDate, date);
                 return done();
@@ -305,7 +328,7 @@ function checkContents(contents) {
 
                 const contents = data.Contents;
                 assert.strictEqual(contents.length, 1);
-                checkContents(contents);
+                checkContents(contents, expectedKeyVersions);
                 assert.strictEqual(contents[0].Key, 'oldkey2');
                 return done();
             });
