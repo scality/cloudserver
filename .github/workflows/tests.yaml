@@ -270,10 +270,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - enable-null-compat: ''
-            job-name: file-ft-tests
-          - enable-null-compat: 'true'
-            job-name: file-ft-tests-null-compat
+          - job-name: file-ft-tests
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-latest
     needs: build
@@ -282,7 +279,6 @@ jobs:
       S3VAULT: mem
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       MPU_TESTING: "yes"
-      ENABLE_NULL_VERSION_COMPAT_MODE: "${{ matrix.enable-null-compat }}"
       JOB_NAME: ${{ matrix.job-name }}
     steps:
     - name: Checkout
