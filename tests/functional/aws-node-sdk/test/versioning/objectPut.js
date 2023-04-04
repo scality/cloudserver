@@ -218,7 +218,7 @@ describe('put and get object with versioning', function testSuite() {
                 });
             });
 
-            it('should create new versions but still keep nullVersionId',
+            it('should create new versions but still keep the null version',
             done => {
                 const versionIds = [];
                 const params = { Bucket: bucket, Key: key };
