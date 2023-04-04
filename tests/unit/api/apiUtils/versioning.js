@@ -535,6 +535,7 @@ describe('versioning helpers', () => {
                     versionId: 'v1',
                 },
                 expectedRes: {},
+                expectedResCompat: {},
             },
             {
                 description: 'delete non-null object version',
@@ -545,10 +546,15 @@ describe('versioning helpers', () => {
                 expectedRes: {
                     deleteData: true,
                     versionId: 'v1',
+                    isNull: false,
+                },
+                expectedResCompat: {
+                    deleteData: true,
+                    versionId: 'v1',
                 },
             },
             {
-                description: 'delete null object version',
+                description: 'delete legacy null object version',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -558,6 +564,29 @@ describe('versioning helpers', () => {
                     deleteData: true,
                     versionId: 'vnull',
                 },
+                expectedResCompat: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                },
+            },
+            {
+                description: 'delete null object version in null key',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true,
+                },
+                reqVersionId: 'null',
+                expectedRes: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+                expectedResCompat: {
+                    deleteData: true,
+                    versionId: 'vnull',
+                    isNull: true,
+                },
             },
             {
                 description: 'delete object put before versioning was first enabled',
@@ -565,15 +594,26 @@ describe('versioning helpers', () => {
                 reqVersionId: 'null',
                 expectedRes: {
                     deleteData: true,
+                    // no 'isNull' parameter, as there is no 'versionId', the code will
+                    // not use the version-specific DELETE route but a regular DELETE
+                },
+                expectedResCompat: {
+                    deleteData: true,
                 },
             },
-        ].forEach(testCase => it(testCase.description, () => {
-            const mockBucketMD = {
-                getVersioningConfiguration: () => ({ Status: 'Enabled' }),
-            };
-            const options = preprocessingVersioningDelete(
-                'foobucket', mockBucketMD, testCase.objMD, testCase.reqVersionId);
-            assert.deepStrictEqual(options, testCase.expectedRes);
-        }));
+        ].forEach(testCase =>
+            [false, true].forEach(nullVersionCompatMode =>
+                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`,
+                () => {
+                    const mockBucketMD = {
+                        getVersioningConfiguration: () => ({ Status: 'Enabled' }),
+                    };
+                    const options = preprocessingVersioningDelete(
+                        'foobucket', mockBucketMD, testCase.objMD, testCase.reqVersionId,
+                        nullVersionCompatMode);
+                    const expectedResAttr = nullVersionCompatMode ?
+                          'expectedResCompat' : 'expectedRes';
+                    assert.deepStrictEqual(options, testCase[expectedResAttr]);
+                })));
     });
 });
