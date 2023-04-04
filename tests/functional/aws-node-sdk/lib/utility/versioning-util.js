@@ -82,8 +82,17 @@ function enableVersioningThenPutObject(bucket, object, callback) {
     });
 }
 
-/** createDualNullVersion - create a null version that is stored in metadata
- *  both in the master version and a separate version
+/** createDualNullVersion
+ *
+ * - PREVIOUSLY: created a null version that was stored in metadata
+ *   both in the master version and a separate version
+ *
+ * - CURRENTLY: only one null version key is present in metadata
+ *   after the second put, as the first null key is cleaned up
+ *
+ *  Even though there is only one key at the end, it is still useful
+ *  to keep this function for regression testing
+ *
  *  @param {AWS.S3} s3 - aws sdk s3 instance
  *  @param {string} bucketName - name of bucket in versioning suspended state
  *  @param {string} keyName - name of key
