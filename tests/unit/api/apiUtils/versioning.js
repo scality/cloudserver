@@ -24,6 +24,25 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
+                    },
                 },
             },
             {
@@ -40,6 +59,25 @@ describe('versioning helpers', () => {
                     options: {
                         isNull: true,
                         versionId: '',
+                    },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
                     },
                 },
             },
@@ -59,10 +97,29 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        deleteData: true,
+                        versionId: 'null',
+                    },
                 },
             },
             {
-                description: 'prior null object version exists',
+                description: 'prior legacy null object version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
@@ -70,13 +127,15 @@ describe('versioning helpers', () => {
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        extraMD: {
-                            nullVersionId: 'vnull',
-                        },
                     },
                     // instruct to first copy the null version onto a
-                    // newly created version key preserving the version ID
+                    // newly created null key with version ID in its metadata
                     nullVersionId: 'vnull',
+                    // delete possibly existing null versioned key
+                    // that is identical to the null master
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
                 },
                 versioningSuspendedExpectedRes: {
                     options: {
@@ -87,15 +146,96 @@ describe('versioning helpers', () => {
                         versionId: 'vnull',
                     },
                 },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
+                },
             },
             {
-                description: 'prior MPU object null version exists',
+                description: 'prior non-legacy null object version exists',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true, // flag marking that it's a non-legacy null version
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key with version ID in its metadata
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+            },
+            {
+                description: 'prior MPU object legacy null version exists',
                 objMD: {
                     versionId: 'vnull',
                     isNull: true,
                     uploadId: 'fooUploadId',
                 },
                 versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key with version ID in its metadata
+                    nullVersionId: 'vnull',
+                    // delete possibly existing null versioned key
+                    // that is identical to the null master
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    delOptions: {
+                        versionId: 'vnull',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
                     options: {
                         versioning: true,
                         extraMD: {
@@ -107,30 +247,66 @@ describe('versioning helpers', () => {
                     // newly created version key preserving the version ID
                     nullVersionId: 'vnull',
                 },
-                versioningSuspendedExpectedRes: {
+                versioningSuspendedCompatExpectedRes: {
                     options: {
                         isNull: true,
                         versionId: '',
                     },
                     delOptions: {
                         versionId: 'vnull',
-                        replayId: 'fooUploadId',
                     },
                 },
             },
             {
-                description:
-                'prior object exists, put before versioning was first enabled',
+                description: 'prior MPU object non-legacy null version exists',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true, // flag marking that it's a non-legacy null version
+                    uploadId: 'fooUploadId',
+                },
+                versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key with version ID in its metadata
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'fooUploadId',
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key preserving the version ID
+                    nullVersionId: 'vnull',
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+            },
+            {
+                description: 'prior object exists, put before versioning was first enabled',
                 objMD: {},
                 versioningEnabledExpectedRes: {
                     options: {
                         versioning: true,
-                        extraMD: {
-                            nullVersionId: INF_VID,
-                        },
                     },
                     // instruct to first copy the null version onto a
-                    // newly created version key as the oldest version
+                    // newly created null key as the oldest version
                     nullVersionId: INF_VID,
                 },
                 versioningSuspendedExpectedRes: {
@@ -139,14 +315,44 @@ describe('versioning helpers', () => {
                         versionId: '',
                     },
                 },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: INF_VID,
+                        },
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created version key as the oldest version
+                    nullVersionId: INF_VID,
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
             },
             {
-                description: 'prior MPU object exists, put before versioning ' +
-                    'was first enabled',
+                description: 'prior MPU object exists, put before versioning was first enabled',
                 objMD: {
                     uploadId: 'fooUploadId',
                 },
                 versioningEnabledExpectedRes: {
+                    options: {
+                        versioning: true,
+                    },
+                    // instruct to first copy the null version onto a
+                    // newly created null key as the oldest version
+                    nullVersionId: INF_VID,
+                },
+                versioningSuspendedExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
                     options: {
                         versioning: true,
                         extraMD: {
@@ -158,7 +364,7 @@ describe('versioning helpers', () => {
                     // newly created version key as the oldest version
                     nullVersionId: INF_VID,
                 },
-                versioningSuspendedExpectedRes: {
+                versioningSuspendedCompatExpectedRes: {
                     options: {
                         isNull: true,
                         versionId: '',
@@ -166,8 +372,7 @@ describe('versioning helpers', () => {
                 },
             },
             {
-                description:
-                'prior non-null object version exists with ref to null version',
+                description: 'prior non-null object version exists with ref to null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -185,14 +390,34 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
+                        deleteData: true,
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    // backward-compat: delete old null version key
+                    delOptions: {
+                        versionId: 'vnull',
+                        deleteData: true,
                     },
                 },
             },
             {
-                description: 'prior MPU object non-null version exists with ' +
-                    'ref to null version',
+                description: 'prior MPU object non-null version exists with ref to null version',
                 objMD: {
                     versionId: 'v1',
                     uploadId: 'fooUploadId',
@@ -211,14 +436,34 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
+                        deleteData: true,
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                        },
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    // backward-compat: delete old null version key
+                    delOptions: {
+                        versionId: 'vnull',
+                        deleteData: true,
                     },
                 },
             },
             {
-                description: 'prior object non-null version exists with ' +
-                    'ref to MPU null version',
+                description: 'prior object non-null version exists with ref to MPU null version',
                 objMD: {
                     versionId: 'v1',
                     nullVersionId: 'vnull',
@@ -238,21 +483,48 @@ describe('versioning helpers', () => {
                         isNull: true,
                         versionId: '',
                     },
+                    // backward-compat: delete old null version key
                     delOptions: {
                         versionId: 'vnull',
                         replayId: 'nullFooUploadId',
+                        deleteData: true,
+                    },
+                },
+                versioningEnabledCompatExpectedRes: {
+                    options: {
+                        versioning: true,
+                        extraMD: {
+                            nullVersionId: 'vnull',
+                            nullUploadId: 'nullFooUploadId',
+                        },
+                    },
+                },
+                versioningSuspendedCompatExpectedRes: {
+                    options: {
+                        isNull: true,
+                        versionId: '',
+                    },
+                    // backward-compat: delete old null version key
+                    delOptions: {
+                        versionId: 'vnull',
+                        replayId: 'nullFooUploadId',
+                        deleteData: true,
                     },
                 },
             },
         ].forEach(testCase =>
-            ['Enabled', 'Suspended'].forEach(versioningStatus => it(
-            `${testCase.description}, versioning Status=${versioningStatus}`,
-            () => {
-                const mst = getMasterState(testCase.objMD);
-                const res = processVersioningState(mst, versioningStatus);
-                const expectedRes = testCase[`versioning${versioningStatus}ExpectedRes`];
-                assert.deepStrictEqual(res, expectedRes);
-            })));
+            [false, true].forEach(nullVersionCompatMode =>
+                ['Enabled', 'Suspended'].forEach(versioningStatus => it(
+                `${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}` +
+                `, versioning Status=${versioningStatus}`,
+                () => {
+                    const mst = getMasterState(testCase.objMD);
+                    const res = processVersioningState(mst, versioningStatus, nullVersionCompatMode);
+                    const resultName = `versioning${versioningStatus}` +
+                          `${nullVersionCompatMode ? 'Compat' : ''}ExpectedRes`;
+                    const expectedRes = testCase[resultName];
+                    assert.deepStrictEqual(res, expectedRes);
+                }))));
     });
 
     describe('preprocessingVersioningDelete', () => {

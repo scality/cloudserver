@@ -1936,13 +1936,13 @@ describe('complete mpu with versioning', () => {
                                         err => next(err, testUploadId));
             },
             (testUploadId, next) => {
-                const origDeleteObject = metadataBackend.deleteObject;
-                metadataBackend.deleteObject =
-                    (bucketName, objName, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        metadataBackend.deleteObject = origDeleteObject;
-                        metadataBackend.deleteObject(
-                            bucketName, objName, params, log, cb);
+                const origPutObject = metadataBackend.putObject;
+                metadataBackend.putObject =
+                    (putBucketName, objName, objVal, params, log, cb) => {
+                        assert.strictEqual(params.oldReplayId, testUploadId);
+                        metadataBackend.putObject = origPutObject;
+                        origPutObject(
+                            putBucketName, objName, objVal, params, log, cb);
                     };
                 // overwrite null version with a non-MPU object
                 objectPut(authInfo, testPutObjectRequests[1],
@@ -2011,13 +2011,13 @@ describe('complete mpu with versioning', () => {
                 versioningTestUtils.assertDataStoreValues(
                     ds, [undefined, objData[1], objData[2]]);
 
-                const origDeleteObject = metadataBackend.deleteObject;
-                metadataBackend.deleteObject =
-                    (bucketName, objName, params, log, cb) => {
-                        assert.strictEqual(params.replayId, testUploadId);
-                        metadataBackend.deleteObject = origDeleteObject;
-                        metadataBackend.deleteObject(
-                            bucketName, objName, params, log, cb);
+                const origPutObject = metadataBackend.putObject;
+                metadataBackend.putObject =
+                    (putBucketName, objName, objVal, params, log, cb) => {
+                        assert.strictEqual(params.oldReplayId, testUploadId);
+                        metadataBackend.putObject = origPutObject;
+                        origPutObject(
+                            putBucketName, objName, objVal, params, log, cb);
                     };
                 // overwrite null version with a non-MPU object
                 objectPut(authInfo, testPutObjectRequests[1],
