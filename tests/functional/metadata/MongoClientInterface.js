@@ -75,10 +75,7 @@ runIfMongo('MongoClientInterface', () => {
         }
         collection.findOne({
             _id: objName,
-        }, {}, (err, doc) => {
-            if (err) {
-                return cb(err);
-            }
+        }, {}).then(doc => {
             if (!doc) {
                 return cb(errors.NoSuchKey);
             }
@@ -87,7 +84,7 @@ runIfMongo('MongoClientInterface', () => {
                 doc.value.tags = unescape(doc.value.tags);
             }
             return cb(null, doc.value);
-        });
+        }).catch(err => cb(err));
     }
 
     function checkVersionAndMasterMatch(versionId, cb) {

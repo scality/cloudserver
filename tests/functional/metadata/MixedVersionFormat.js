@@ -53,27 +53,21 @@ describe('Mongo backend mixed bucket format versions', () => {
             return db.collection(bucketName)
             .findOne({
                 _id: key,
-            }, {}, (err, doc) => {
-                if (err) {
-                    return cb(err);
-                }
+            }, {}).then(doc => {
                 if (!doc) {
                     return cb(errors.NoSuchKey);
                 }
                 return cb(null, doc.value);
-            });
+            }).catch(err => cb(err));
         }
 
         before(done => {
-            MongoClient.connect(mongoUrl, {}, (err, client) => {
-                if (err) {
-                    return done(err);
-                }
+            MongoClient.connect(mongoUrl, {}).then(client => {
                 mongoClient = client;
                 bucketUtil = new BucketUtility('default', sigCfg);
                 s3 = bucketUtil.s3;
                 return done();
-            });
+            }).catch(err => done(err));
         });
 
         beforeEach(() => {
@@ -103,7 +97,7 @@ describe('Mongo backend mixed bucket format versions', () => {
             });
         });
 
-        after(done => mongoClient.close(true, done));
+        after(done => mongoClient.close(true).then(() => done()).catch(() => done()));
 
         ['v0', 'v1'].forEach(vFormat => {
             it(`Should perform operations on non versioned bucket in ${vFormat} format`, done => {

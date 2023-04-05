@@ -34,21 +34,19 @@ class MongoTestClient {
     }
 
     disconnectClient(cb) {
-        return this.client.close(true, cb);
+        return this.client.close(true).then(() => cb()).catch(() => cb());
     }
 
     connectClient(cb) {
-        return MongoClient.connect(this.mongoUrl, this.options,
-        (err, client) => {
-            if (err) {
-                return cb(err);
-            }
-            this.client = client;
-            this.db = client.db(this.database, {
-                ignoreUndefined: true,
-            });
-            return cb();
-        });
+        return MongoClient.connect(this.mongoUrl, this.options)
+            .then(client => {
+                this.client = client;
+                this.db = client.db(this.database, {
+                    ignoreUndefined: true,
+                });
+                return cb();
+            })
+            .catch(err => cb(err));
     }
 
     /**
@@ -66,7 +64,9 @@ class MongoTestClient {
                         _id: overlayVersionId,
                     },
                     update: {
-                        _id: overlayVersionId, value: id,
+                        $set: {
+                            _id: overlayVersionId, value: id,
+                        }
                     },
                     upsert: true,
                 },
@@ -76,19 +76,14 @@ class MongoTestClient {
                         _id: getOverlayConfigId(id),
                     },
                     update: {
-                        _id: getOverlayConfigId(id), value: overlay,
+                        $set: {
+                            _id: getOverlayConfigId(id), value: overlay,
+                        }
                     },
                     upsert: true,
                 }
             }],
-            { ordered: 1 },
-            err => {
-                if (err) {
-                    return cb(err);
-                }
-                return cb();
-            }
-        );
+            { ordered: 1 }).then(() => cb()).catch(err => cb(err));
     }
 
     deleteMockOverlayConfig(id, cb) {
@@ -106,14 +101,7 @@ class MongoTestClient {
                         _id: getOverlayConfigId(id),
                     }
                 }
-            }], {},
-            err => {
-                if (err) {
-                    return cb(err);
-                }
-                return cb();
-            }
-        );
+            }], {}).then(() => cb()).catch(err => cb(err));
     }
 
     createBucket(bucketName, location, cb) {
@@ -126,26 +114,26 @@ class MongoTestClient {
         const bucketMDStr = bucketInfo.serialize();
         const mdValue = JSON.parse(bucketMDStr);
         const m = this.db.collection(METASTORE);
-        m.update({
+        m.updateOne({
             _id: bucketName,
         }, {
-            _id: bucketName,
-            value: mdValue,
+            $set: {
+                _id: bucketName,
+                value: mdValue,
+            },
         }, {
             upsert: true,
-        }, err => {
-            if (err) {
-                return cb(errors.InternalError);
-            }
-            return this.db.createCollection(bucketName, {}, cb);
-        });
+        }).then(() => this.db.createCollection(bucketName, {})
+            .then(() => cb())
+            .catch(err => cb(err)))
+            .catch(() => cb(errors.InternalError));
     }
 
     deleteBucket(bucketName, cb) {
         return async.series({
             deleteCollection: next => {
                 const c = this.db.collection(bucketName);
-                c.drop({}, err => {
+                c.drop({}).then(() => next()).catch(err => {
                     if (err && err.codeName !== 'NameSpaceNodeFound') {
                         return next(err);
                     }
@@ -156,9 +144,9 @@ class MongoTestClient {
                 const m = this.db.collection(METASTORE);
                 m.findOneAndDelete({
                     _id: bucketName,
-                }, {}, (err, res) => {
-                    if (err || res.ok !== 1) {
-                        return next(errors.InternalError);
+                }, {}).then(() => next()).catch(err => {
+                    if (err && err.codeName !== 'NameSpaceNodeFound') {
+                        return next(err);
                     }
                     return next();
                 });
