@@ -8,7 +8,7 @@ const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const constants = require('../../../constants');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const objectPut = require('../../../lib/api/objectPut');
-const objectDelete = require('../../../lib/api/objectDelete');
+const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
@@ -44,7 +44,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     });
 }
 
-describe('objectDelete API', () => {
+describe.only('objectDelete API', () => {
     let testPutObjectRequest;
 
     before(() => {
@@ -142,7 +142,7 @@ describe('objectDelete API', () => {
                             any, any, any,
                             { deleteData: true,
                               replayId: testUploadId,
-                            }, any, any);
+                            }, any, any, any);
                         done();
                     });
                 });

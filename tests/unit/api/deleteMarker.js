@@ -7,7 +7,7 @@ const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
-const objectDelete = require('../../../lib/api/objectDelete');
+const { objectDelete } = require('../../../lib/api/objectDelete');
 const { multiObjectDelete } = require('../../../lib/api/multiObjectDelete');
 const metadata = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
