@@ -85,12 +85,8 @@ describe('cold storage', () => {
                 objectMd: new ObjectMD()
                     .setArchive(new ObjectMDArchive({
                         archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
-                        archiveVersion: 5577006791947779
+                        archiveVersion: 5577006791947779,
                     }, Date.now()))
-            },
-            {
-                description: 'should return error if object is transitioning to a cold location',
-                objectMd: new ObjectMD().setTransitionInProgress(true)
             },
         ].forEach(params => {
             it(`${params.description}`, () => {
@@ -101,6 +97,25 @@ describe('cold storage', () => {
 
         it('should return null if object data is not in cold', () => {
             const objectMd = new ObjectMD();
+            const err = verifyColdObjectAvailable(objectMd.getValue());
+            assert.ifError(err);
+        });
+
+        it('should return null if object is transitioning to cold', () => {
+            const objectMd = new ObjectMD().setTransitionInProgress(true);
+            const err = verifyColdObjectAvailable(objectMd.getValue());
+            assert.ifError(err);
+        });
+
+        it('should return null if object is restored', () => {
+            const objectMd = new ObjectMD().setArchive(new ObjectMDArchive({
+                archiveId: '97a71dfe-49c1-4cca-840a-69199e0b0322',
+                archiveVersion: 5577006791947779,
+                restoreRequestedAt: new Date(0),
+                restoreRequestedDays: 5,
+                restoreCompletedAt: new Date(1000),
+                restoreWillExpireAt: new Date(1000 + 5 * oneDay),
+            }));
             const err = verifyColdObjectAvailable(objectMd.getValue());
             assert.ifError(err);
         });

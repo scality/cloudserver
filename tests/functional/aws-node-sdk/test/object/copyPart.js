@@ -734,7 +734,7 @@ describe('Object Part Copy', () => {
             });
         });
 
-        it('should not copy a part of an object when it\'s transitioning to cold', done => {
+        it('should copy a part of an object when it\'s transitioning to cold', done => {
             fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
                 assert.ifError(err);
                 s3.uploadPartCopy({
@@ -743,11 +743,12 @@ describe('Object Part Copy', () => {
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
                     PartNumber: 1,
                     UploadId: uploadId,
-                }, err => {
-                        assert.strictEqual(err.code, 'InvalidObjectState');
-                        assert.strictEqual(err.statusCode, 403);
-                        done();
-                    });
+                }, (err, res) => {
+                    checkNoError(err);
+                    assert.strictEqual(res.ETag, etag);
+                    assert(res.LastModified);
+                    done();
+                });
             });
         });
 

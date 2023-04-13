@@ -1257,18 +1257,17 @@ describe('Object Copy', () => {
             });
         });
 
-        it('should not copy an object when it\'s transitioning to cold', done => {
+        it('should copy an object when it\'s transitioning to cold', done => {
             fakeMetadataTransition(sourceBucketName, sourceObjName, undefined, err => {
                 assert.ifError(err);
                 s3.copyObject({
                     Bucket: destBucketName,
                     Key: destObjName,
                     CopySource: `${sourceBucketName}/${sourceObjName}`,
-                }, err => {
-                        assert.strictEqual(err.code, 'InvalidObjectState');
-                        assert.strictEqual(err.statusCode, 403);
-                        done();
-                    });
+                }, (err, res) => {
+                    successCopyCheck(err, res, originalMetadata,
+                        destBucketName, destObjName, done);
+                });
             });
         });
 
@@ -1289,7 +1288,7 @@ describe('Object Copy', () => {
                 }, (err, res) => {
                     successCopyCheck(err, res, originalMetadata,
                         destBucketName, destObjName, done);
-                    });
+                });
             });
         });
     });
