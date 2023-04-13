@@ -110,6 +110,19 @@ describeSkipIfCeph('GET object legal hold', () => {
             });
         });
 
+        it('should return NoSuchKey if latest version is delete marker', done => {
+            s3.deleteObject({ Bucket: bucket, Key: key }, err => {
+                assert.ifError(err);
+                s3.getObjectLegalHold({
+                    Bucket: bucket,
+                    Key: key,
+                }, err => {
+                    checkError(err, 'NoSuchKey', 404);
+                    done();
+                });
+            });
+        });
+
         it('should return InvalidRequest error getting legal hold of object ' +
             'inside object lock disabled bucket', done => {
             s3.getObjectLegalHold({
