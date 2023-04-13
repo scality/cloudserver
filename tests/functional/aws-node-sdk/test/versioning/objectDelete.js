@@ -348,7 +348,7 @@ describe('aws-node-sdk test delete object', () => {
             });
         });
 
-        it('should delete the versionned object', done => {
+        it('should delete the versioned object', done => {
             const version = versionIds.shift();
             s3.deleteObject({
                 Bucket: bucket,
@@ -370,12 +370,15 @@ describe('aws-node-sdk test delete object', () => {
                 Bucket: bucket,
                 Key: key,
                 VersionId: version,
-            }, (err, res) => {
+            }, function test(err, res) {
                 if (err) {
                     return done(err);
                 }
                 assert.strictEqual(res.VersionId, version);
                 assert.equal(res.DeleteMarker, true);
+                // deleting a delete marker should set the x-amz-delete-marker header
+                const headers = this.httpResponse.headers;
+                assert.strictEqual(headers['x-amz-delete-marker'], 'true');
                 return done();
             });
         });
