@@ -716,9 +716,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.1.97":
+"arsenal@git+https://github.com/scality/arsenal#8.1.98":
   version "8.1.97"
-  resolved "git+https://github.com/scality/arsenal#0c1afe535b0a68c8aeaf38916bc0d19d1d5c91cd"
+  resolved "git+https://github.com/scality/arsenal#3f7229eebe378a0f4852d2c25b9ac33c027fa7eb"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
