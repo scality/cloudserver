@@ -73,7 +73,7 @@ services:
   mongo:
     network_mode: "host"
     profiles: ['mongo', 'ceph']
-    image: scality/ci-mongo:3.6.8
+    image: ${MONGODB_IMAGE}
   ceph: 
     network_mode: "host"
     profiles: ['ceph']
