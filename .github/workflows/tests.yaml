@@ -125,6 +125,9 @@ jobs:
 
   build:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -153,6 +156,14 @@ jobs:
             registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
+      - name: Build and push MongoDB
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .github/docker/mongodb
+          tags: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   multiple-backend:
     runs-on: ubuntu-latest
@@ -198,6 +209,7 @@ jobs:
       S3KMS: file
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v0
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
@@ -237,6 +249,7 @@ jobs:
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       DEFAULT_BUCKET_KEY_FORMAT: v1
       METADATA_MAX_CACHED_BUCKETS: 1
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
@@ -387,6 +400,7 @@ jobs:
       CI_CEPH: 'true'
       MPU_TESTING: "yes" 
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigCeph.json
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
