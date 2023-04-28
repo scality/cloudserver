@@ -1,6 +1,58 @@
 const { makeRequest } = require('../raw-node/utils/makeRequest');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
+const { models: { ObjectMD } } = require('arsenal');
+
+// NOTE: The routes "getMetadata" and "putMetadata" are utilized for modifying the metadata of an object.
+// This approach is preferred over directly updating the metadata in MongoDB,
+// as it allows the tests to be compatible with S3C metadata.
+function updateMetadata(params, toUpdate, cb) {
+    const { bucket, objectKey, versionId, authCredentials } = params;
+    const { dataStoreName } = toUpdate;
+    const options = {
+        authCredentials,
+        hostname: ipAddress,
+        port: 8000,
+        method: 'GET',
+        path: `/_/backbeat/metadata/${bucket}/${objectKey}`,
+        jsonResponse: true,
+    };
+    if (versionId) {
+        options.queryObj = { versionId };
+    }
+    return makeRequest(options, (err, data) => {
+        if (err) {
+            return cb(err);
+        }
+        let parsedBody;
+        try {
+            parsedBody = JSON.parse(data.body);
+        } catch (err) {
+            return cb(err);
+        }
+        const { result, error } = ObjectMD.createFromBlob(parsedBody.Body);
+        if (error) {
+            return cb(error);
+        }
+
+        if (dataStoreName) {
+            result.setDataStoreName(dataStoreName);
+        }
+        const options = {
+            authCredentials,
+            hostname: ipAddress,
+            port: 8000,
+            method: 'PUT',
+            path: `/_/backbeat/metadata/${bucket}/${objectKey}`,
+            requestBody: result.getSerialized(),
+            jsonResponse: true,
+        };
+        if (versionId) {
+            options.queryObj = { versionId };
+        }
+        return makeRequest(options, err => cb(err));
+    });
+}
 
 /** makeBackbeatRequest - utility function to generate a request going
  * through backbeat route
@@ -40,4 +92,5 @@ module.exports = {
     makeBackbeatRequest,
     runIfMongoV1,
     runIfMongo,
+    updateMetadata,
 };
