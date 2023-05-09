@@ -4,6 +4,8 @@ const { cleanup, DummyRequestLogger } = require('../helpers');
 const { createBucket } =
     require('../../../lib/api/apiUtils/bucket/bucketCreation');
 const { makeAuthInfo } = require('../helpers');
+const metadata = require('../../../lib/metadata/wrapper');
+const constants = require('../../../constants');
 
 const bucketName = 'creationbucket';
 const log = new DummyRequestLogger();
@@ -79,5 +81,38 @@ describe('bucket creation with object lock', () => {
                 assert.ifError(err);
                 done();
             });
+    });
+});
+
+describe('bucket creation date consistency', () => {
+    let creationDate;
+
+    beforeEach(done => {
+        cleanup();
+        createBucket(authInfo, bucketName, headers, normalBehaviorLocationConstraint, log, err => {
+            assert.ifError(err);
+            metadata.getBucket(bucketName, log, (err, bucketInfo) => {
+                assert.ifError(err);
+                creationDate = bucketInfo.getCreationDate();
+                done();
+            });
+        });
+    });
+
+    it('should have the same creation date in metadata and users bucket', done => {
+        // Check creation date in metadata
+        metadata.getBucket(bucketName, log, (err, bucketMD) => {
+            assert.ifError(err);
+            assert.strictEqual(creationDate, bucketMD.getCreationDate());
+
+            // Check creation date in users bucket
+            const canonicalID = authInfo.getCanonicalID();
+            const usersBucketKey = `${canonicalID}${constants.splitter}${bucketName}`;
+            metadata.getObjectMD(constants.usersBucket, usersBucketKey, {}, log, (err, usersBucketObjMD) => {
+                assert.ifError(err);
+                assert.strictEqual(creationDate, new Date(usersBucketObjMD.creationDate).toJSON());
+                done();
+            });
+        });
     });
 });
