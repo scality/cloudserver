@@ -239,7 +239,7 @@ jobs:
     - name: Setup python2 test environment
       run: |
         sudo apt-get install -y libdigest-hmac-perl
-        pip install virtualenv
+        pip install virtualenv==20.21.0
         virtualenv -p $(which python2) ~/.virtualenv/py2
         source ~/.virtualenv/py2/bin/activate
         pip install 's3cmd==1.6.1'

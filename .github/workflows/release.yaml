@@ -21,6 +21,18 @@ jobs:
       file: images/svc-base/Dockerfile
       tag: ${{ github.event.inputs.tag }}-svc-base
 
+  build-dev-image:
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    secrets: inherit
+    with:
+      push: true
+      registry: registry.scality.com
+      namespace: ${{ github.event.repository.name }}-dev
+      name: ${{ github.event.repository.name }}
+      context: .
+      file: Dockerfile
+      tag: ${{ github.event.inputs.tag }}
+
   github-release:
     runs-on: ubuntu-latest
     steps:
