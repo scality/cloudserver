@@ -32,9 +32,6 @@ runs:
         python-version: |
           2.7
           3.9
-    - name: Install python deps
-      shell: bash
-      run: pip install docker-compose
     - name: Setup python2 test environment
       shell: bash
       run: |
