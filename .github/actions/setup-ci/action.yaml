@@ -16,13 +16,6 @@ runs:
       run: |-
         set -exu;
         mkdir -p /tmp/artifacts/${JOB_NAME}/;
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        cache: 'yarn'
-    - name: install dependencies
-      shell: bash
-      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
     - uses: actions/cache@v2
       with:
         path: ~/.cache/pip
@@ -40,3 +33,10 @@ runs:
         virtualenv -p $(which python2) ~/.virtualenv/py2
         source ~/.virtualenv/py2/bin/activate
         pip install 's3cmd==1.6.1'
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+        cache: 'yarn'
+    - name: install dependencies
+      shell: bash
+      run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
