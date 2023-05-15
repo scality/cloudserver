@@ -1,0 +1,49 @@
+services:
+  cloudserver:
+    image: ${CLOUDSERVER_IMAGE}
+    command: sh -c "yarn start > /artifacts/s3.log"
+    network_mode: "host"
+    volumes:
+      - /tmp/ssl:/ssl
+      - /tmp/ssl-kmip:/ssl-kmip
+      - ${HOME}/.aws/credentials:/root/.aws/credentials
+      - /tmp/artifacts/${JOB_NAME}:/artifacts
+    environment:
+      - CI=true
+      - ENABLE_LOCAL_CACHE=true
+      - REDIS_HOST=0.0.0.0
+      - REDIS_PORT=6379
+      - REPORT_TOKEN=report-token-1
+      - REMOTE_MANAGEMENT_DISABLE=1
+      - HEALTHCHECKS_ALLOWFROM=0.0.0.0/0
+      - DATA_HOST=0.0.0.0
+      - METADATA_HOST=0.0.0.0
+      - S3BACKEND
+      - S3DATA
+      - MPU_TESTING
+      - S3VAULT
+      - S3_LOCATION_FILE
+    env_file:
+      - creds.env
+    depends_on:
+      - redis
+    extra_hosts:
+      - "bucketwebsitetester.s3-website-us-east-1.amazonaws.com:127.0.0.1"
+      - "pykmip.local:127.0.0.1"
+  redis:
+    image: redis:alpine
+    network_mode: "host"
+  squid:
+    network_mode: "host"
+    profiles: ['ci-proxy']
+    image: scality/ci-squid
+    command: >-
+      sh -c 'mkdir -p /ssl &&
+            openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 \
+              -subj "/C=US/ST=Country/L=City/O=Organization/CN=CN=scality-proxy" \
+              -keyout /ssl/myca.pem  -out /ssl/myca.pem &&
+            cp /ssl/myca.pem /ssl/CA.pem &&
+            squid -f /etc/squid/squid.conf -N -z &&
+            squid -f /etc/squid/squid.conf -NYCd 1'
+    volumes:
+      - /tmp/ssl:/ssl
