@@ -8,7 +8,7 @@ const { models: { ObjectMD } } = require('arsenal');
 // as it allows the tests to be compatible with S3C metadata.
 function updateMetadata(params, toUpdate, cb) {
     const { bucket, objectKey, versionId, authCredentials } = params;
-    const { dataStoreName } = toUpdate;
+    const { dataStoreName, storageClass } = toUpdate;
     const options = {
         authCredentials,
         hostname: ipAddress,
@@ -38,6 +38,11 @@ function updateMetadata(params, toUpdate, cb) {
         if (dataStoreName) {
             result.setDataStoreName(dataStoreName);
         }
+
+        if (storageClass) {
+            result.setAmzStorageClass(storageClass);
+        }
+
         const options = {
             authCredentials,
             hostname: ipAddress,
