@@ -1,4 +1,4 @@
-FROM mongo:4.2.24
+FROM mongo:4.4.21
 
 ENV USER=scality \
     HOME_DIR=/home/scality \
