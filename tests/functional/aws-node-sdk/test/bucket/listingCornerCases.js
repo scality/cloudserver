@@ -475,4 +475,58 @@ describe('Listing corner cases tests', () => {
             }
         });
     });
+
+    it('should not list DeleteMarkers for version suspended buckets', done => {
+        const obj = { name: 'testDeleteMarker.txt', value: 'foo' };
+        const bucketName = `bucket-test-delete-markers-not-listed${Date.now()}`;
+        let objectCount = 0;
+        return async.waterfall([
+            next => s3.createBucket({ Bucket: bucketName }, err => next(err)),
+            next => {
+                const params = {
+                    Bucket: bucketName,
+                    VersioningConfiguration: {
+                        Status: 'Suspended',
+                    },
+                };
+                return s3.putBucketVersioning(params, err =>
+                    next(err));
+            },
+            next => s3.putObject({
+                    Bucket: bucketName,
+                    Key: obj.name,
+                    Body: obj.value,
+                }, err =>
+                next(err)),
+            next => s3.listObjectsV2({ Bucket: bucketName },
+                (err, res) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    objectCount = res.Contents.length;
+                    assert.strictEqual(res.Contents.some(c => c.Key === obj.name), true);
+                    return next();
+                }),
+            next => s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: obj.name,
+                }, function test(err) {
+                    const headers = this.httpResponse.headers;
+                    assert.strictEqual(
+                        headers['x-amz-delete-marker'], 'true');
+                    return next(err);
+                }),
+            next => s3.listObjectsV2({ Bucket: bucketName },
+                (err, res) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    assert.strictEqual(res.Contents.length, objectCount - 1);
+                    assert.strictEqual(res.Contents.some(c => c.Key === obj.name), false);
+                    return next();
+                }),
+            next => s3.deleteObject({ Bucket: bucketName, Key: obj.name, VersionId: 'null' }, err => next(err)),
+            next => s3.deleteBucket({ Bucket: bucketName }, err => next(err))
+        ], err => done(err));
+    });
 });
