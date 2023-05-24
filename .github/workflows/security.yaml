@@ -1,0 +1,39 @@
+---
+name: security
+
+on:
+  push:
+    branches: [development/*, stabilization/*, hotfix/*]
+  release:
+    types: [published]
+  pull_request:
+    branches: [development/*, stabilization/*, hotfix/*]
+  schedule:
+    - cron: '0 8 * * 1' # Monday - 8am - UTC
+  workflow_dispatch:
+
+jobs:  
+  build:
+    permissions:
+      contents: read
+      packages: write
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    secrets:
+      REGISTRY_LOGIN: ${{ github.repository_owner }}
+      REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      registry: ghcr.io
+      namespace: ${{ github.repository }}
+      name: cloudserver
+      context: .
+      tag: ${{ github.sha }}
+
+  trivy:
+    needs: build
+    name: Trivy Vulnerability Scan for Code
+    uses: scality/workflows/.github/workflows/trivy.yaml@v1
+    with:
+      registry: ghcr.io
+      namespace: ${{ github.repository }}
+      name: cloudserver
+      tag: ${{ github.sha }}
