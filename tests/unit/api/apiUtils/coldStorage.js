@@ -229,6 +229,10 @@ describe('cold storage', () => {
                 assert.strictEqual(objectMd.archive.restoreWillExpireAt.getTime(),
                     objectMd.archive.restoreRequestedAt.getTime() + 5 * oneDay
                 );
+                assert.deepEqual(objectMd['x-amz-restore'], {
+                    'ongoing-request': false,
+                    'expiry-date': objectMd.archive.restoreWillExpireAt,
+                });
 
                 done();
             });
