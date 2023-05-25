@@ -423,7 +423,7 @@ describe('objectGet API', () => {
         });
     });
 
-    it('should return InvalidObjectState if trying to GET a transitioning object', done => {
+    it('should GET a transitioning object', done => {
         const testGetRequest = {
             bucketName,
             namespace,
@@ -433,8 +433,10 @@ describe('objectGet API', () => {
         };
         mdColdHelper.putBucketMock(bucketName, null, () => {
             mdColdHelper.putObjectMock(bucketName, objectName, mdColdHelper.getTransitionInProgressMD(), () => {
-                objectGet(authInfo, testGetRequest, false, log, err => {
-                    assert.strictEqual(err.is.InvalidObjectState, true);
+                objectGet(authInfo, testGetRequest, false, log, (err, res, headers) => {
+                    assert.ifError(err);
+                    assert.ok(res);
+                    assert.strictEqual(headers['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     done();
                 });
             });
@@ -452,6 +454,8 @@ describe('objectGet API', () => {
         mdColdHelper.putBucketMock(bucketName, 'scality-internal-file', () => {
             mdColdHelper.putObjectMock(bucketName, objectName, {}, () => {
                 objectGet(authInfo, testGetRequest, false, log, (err, res, headers) => {
+                    assert.ifError(err);
+                    assert.ok(res);
                     assert.strictEqual(headers['x-amz-storage-class'], undefined);
                     done();
                 });
@@ -471,6 +475,8 @@ describe('objectGet API', () => {
             const objectCustomMDFields = mdColdHelper.getArchiveRestoredMD();
             mdColdHelper.putObjectMock(bucketName, objectName, objectCustomMDFields, () => {
                 objectGet(authInfo, testGetRequest, false, log, (err, res, headers) => {
+                    assert.ifError(err);
+                    assert.ok(res);
                     assert.strictEqual(headers['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     const utcDate = new Date(objectCustomMDFields['x-amz-restore']['expiry-date']).toUTCString();
                     assert.strictEqual(headers['x-amz-restore'], `ongoing-request="false", expiry-date="${utcDate}"`);
@@ -493,6 +499,8 @@ describe('objectGet API', () => {
             const objectCustomMDFields = mdColdHelper.getArchiveRestoredMD();
             mdColdHelper.putObjectMock(bucketName, objectName, objectCustomMDFields, () => {
                 objectGet(authInfo, testGetRequest, false, log, (err, res, headers) => {
+                    assert.ifError(err);
+                    assert.ok(res);
                     assert.strictEqual(headers['x-amz-storage-class'], mdColdHelper.defaultLocation);
                     const utcDate = new Date(objectCustomMDFields['x-amz-restore']['expiry-date']).toUTCString();
                     assert.strictEqual(headers['x-amz-restore'], `ongoing-request="false", expiry-date="${utcDate}"`);

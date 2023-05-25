@@ -44,7 +44,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
     });
 }
 
-describe.only('objectDelete API', () => {
+describe('objectDelete API', () => {
     let testPutObjectRequest;
 
     before(() => {
