@@ -1,5 +1,8 @@
 {
     "extends": "scality",
+    "plugins": [
+        "mocha"
+    ],
     "rules": {
         "import/extensions": "off",
         "lines-around-directive": "off",
@@ -42,7 +45,8 @@
         "no-restricted-properties": "off",
         "new-parens": "off",
         "no-multi-spaces": "off",
-        "quote-props": "off"
+        "quote-props": "off",
+        "mocha/no-exclusive-tests": "error",
     },
     "parserOptions": {
         "ecmaVersion": 2020

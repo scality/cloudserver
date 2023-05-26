@@ -1,6 +1,6 @@
 {
   "name": "@zenko/cloudserver",
-  "version": "8.7.20",
+  "version": "8.7.21",
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
@@ -57,6 +57,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-scality": "scality/Guidelines#8.2.0",
     "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-mocha": "^10.1.0",
     "express": "^4.17.1",
     "ioredis": "4.9.5",
     "istanbul": "1.0.0-alpha.2",
