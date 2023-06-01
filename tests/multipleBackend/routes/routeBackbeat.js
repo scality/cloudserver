@@ -4,8 +4,8 @@ const async = require('async');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { models, versioning } = require('arsenal');
-const { ObjectMD } = models;
 const versionIdUtils = versioning.VersionID;
+const { ObjectMD } = models;
 
 const { makeid } = require('../../unit/helpers');
 const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
@@ -763,7 +763,7 @@ describe('backbeat routes', () => {
                 assert.strictEqual(headObjectRes.StorageClass, storageClass);
 
                 const listObjectVersionsRes = data[5];
-                const { DeleteMarkers, Versions }  = listObjectVersionsRes;
+                const { DeleteMarkers, Versions } = listObjectVersionsRes;
                 assert.strictEqual(DeleteMarkers.length, 0);
                 assert.strictEqual(Versions.length, 1);
 
@@ -1114,7 +1114,8 @@ describe('backbeat routes', () => {
             });
         });
 
-        it('should update current null version if versioning suspended and put a null version afterwards', done => {
+        it('should update current null version if versioning suspended and put a null version ' +
+        'afterwards', done => {
             let objMD;
             let deletedVersionId;
             return async.series([
