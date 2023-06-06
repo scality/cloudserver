@@ -1,5 +1,8 @@
 const assert = require('assert');
-const { azureArchiveLocationConstraintAssert } = require('../../lib/Config');
+const {
+    azureArchiveLocationConstraintAssert,
+    ConfigObject: ConfigObjectForTest,
+} = require('../../lib/Config');
 
 describe('Config', () => {
     const envToRestore = [];
@@ -251,6 +254,99 @@ describe('Config', () => {
                 config.getAzureStorageAccountName('azuritebackend'),
                 'myfakeaccount',
             );
+        });
+    });
+
+    describe('time options', () => {
+        it('should getTimeOptions', () => {
+            const config = new ConfigObjectForTest();
+            const expectedOptions = {
+                expireOneDayEarlier: false,
+                transitionOneDayEarlier: false,
+                timeProgressionFactor: 1,
+                scaledMsPerDay: 86400000,
+            };
+            const timeOptions = config.getTimeOptions();
+            assert.deepStrictEqual(timeOptions, expectedOptions);
+        });
+
+        it('should getTimeOptions with TIME_PROGRESSION_FACTOR', () => {
+            setEnv('TIME_PROGRESSION_FACTOR', 2);
+
+            const config = new ConfigObjectForTest();
+            const expectedOptions = {
+                expireOneDayEarlier: false,
+                transitionOneDayEarlier: false,
+                timeProgressionFactor: 2,
+                scaledMsPerDay: 43200000,
+            };
+            const timeOptions = config.getTimeOptions();
+            assert.deepStrictEqual(timeOptions, expectedOptions);
+        });
+
+        it('should getTimeOptions with EXPIRE_ONE_DAY_EARLIER', () => {
+            setEnv('EXPIRE_ONE_DAY_EARLIER', true);
+
+            const config = new ConfigObjectForTest();
+            const expectedOptions = {
+                expireOneDayEarlier: true,
+                transitionOneDayEarlier: false,
+                timeProgressionFactor: 1,
+                scaledMsPerDay: 86400000,
+            };
+            const timeOptions = config.getTimeOptions();
+            assert.deepStrictEqual(timeOptions, expectedOptions);
+        });
+
+        it('should getTimeOptions with TRANSITION_ONE_DAY_EARLIER', () => {
+            setEnv('TRANSITION_ONE_DAY_EARLIER', true);
+
+            const config = new ConfigObjectForTest();
+            const expectedOptions = {
+                expireOneDayEarlier: false,
+                transitionOneDayEarlier: true,
+                timeProgressionFactor: 1,
+                scaledMsPerDay: 86400000,
+            };
+            const timeOptions = config.getTimeOptions();
+            assert.deepStrictEqual(timeOptions, expectedOptions);
+        });
+
+        it('should getTimeOptions with both EXPIRE_ONE_DAY_EARLIER and TRANSITION_ONE_DAY_EARLIER', () => {
+            setEnv('EXPIRE_ONE_DAY_EARLIER', true);
+            setEnv('TRANSITION_ONE_DAY_EARLIER', true);
+
+            const config = new ConfigObjectForTest();
+            const expectedOptions = {
+                expireOneDayEarlier: true,
+                transitionOneDayEarlier: true,
+                timeProgressionFactor: 1,
+                scaledMsPerDay: 86400000,
+            };
+            const timeOptions = config.getTimeOptions();
+            assert.deepStrictEqual(timeOptions, expectedOptions);
+        });
+
+        it('should throw error if EXPIRE_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
+            setEnv('EXPIRE_ONE_DAY_EARLIER', true);
+            setEnv('TIME_PROGRESSION_FACTOR', 2);
+
+            assert.throws(() => new ConfigObjectForTest());
+        });
+
+        it('should throw error if TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
+            setEnv('TRANSITION_ONE_DAY_EARLIER', true);
+            setEnv('TIME_PROGRESSION_FACTOR', 2);
+
+            assert.throws(() => new ConfigObjectForTest());
+        });
+
+        it('should throw error if both EXPIRE/TRANSITION_ONE_DAY_EARLIER and TIME_PROGRESSION_FACTOR', () => {
+            setEnv('EXPIRE_ONE_DAY_EARLIER', true);
+            setEnv('TRANSITION_ONE_DAY_EARLIER', true);
+            setEnv('TIME_PROGRESSION_FACTOR', 2);
+
+            assert.throws(() => new ConfigObjectForTest());
         });
     });
 
