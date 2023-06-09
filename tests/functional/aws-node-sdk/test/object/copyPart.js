@@ -718,7 +718,7 @@ describe('Object Part Copy', () => {
                     archiveVersion: 5577006791947779
                 },
             };
-            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archive, err => {
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archive, undefined, err => {
                 assert.ifError(err);
                 s3.uploadPartCopy({
                     Bucket: destBucketName,
@@ -760,7 +760,7 @@ describe('Object Part Copy', () => {
                 restoreCompletedAt: new Date(10),
                 restoreWillExpireAt: new Date(10 + (5 * 24 * 60 * 60 * 1000)),
             };
-            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archiveCompleted, err => {
+            fakeMetadataArchive(sourceBucketName, sourceObjName, undefined, archiveCompleted, undefined, err => {
                 assert.ifError(err);
                 s3.uploadPartCopy({
                     Bucket: destBucketName,

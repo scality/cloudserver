@@ -68,10 +68,11 @@ function fakeMetadataTransition(bucketName, objectName, versionId, cb) {
  * @param {string} objectName obejct name
  * @param {string} versionId encoded object version id
  * @param {Object} archive archive info object
+ * @param {Object} userMD user metadata
  * @param {Function} cb callback
  * @returns {undefined}
  */
-function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
+function fakeMetadataArchive(bucketName, objectName, versionId, archive, userMD, cb) {
     return getMetadata(bucketName, objectName, versionId, (err, objMD) => {
         if (err) {
 			return cb(err);
@@ -79,6 +80,7 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
         /* eslint-disable no-param-reassign */
         objMD.dataStoreName = 'location-dmf-v1';
         objMD.archive = archive;
+        Object.assign(objMD, userMD);
         /* eslint-enable no-param-reassign */
         return metadata.putObjectMD(bucketName, objectName, objMD, { versionId: decodeVersionId(versionId) },
             log, err => cb(err));
