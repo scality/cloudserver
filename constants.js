@@ -177,6 +177,8 @@ const constants = {
     assumedRoleArnResourceType: 'assumed-role',
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
+    // Backends that support metadata batching
+    supportsBatchingMethods: ['mongodb'],
 };
 
 module.exports = constants;
