@@ -1,7 +1,7 @@
 const assert = require('assert');
 const { errors, storage } = require('arsenal');
 
-const { getObjMetadataAndDelete }
+const { processObjectVersion, getObjMetadataAndDelete, shouldBatchGetObjectsFromMetadata }
     = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
@@ -11,6 +11,7 @@ const objectPut = require('../../../lib/api/objectPut');
 const { metadata } = storage.metadata.inMemory.metadata;
 const { ds } = storage.data.inMemory.datastore;
 
+const constants = require('../../../constants');
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
@@ -184,5 +185,50 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
                 assert.strictEqual(totalContentLengthDeleted, contentLength);
                 done();
             });
+    });
+});
+
+describe('shouldBatchGetObjectsFromMetadata', () => {
+    it('should return a call to the batching method if the backend supports it', done => {
+        constants.supportsBatchingMethods.push('mem');
+        const returnedCallback = shouldBatchGetObjectsFromMetadata(bucketName, [], log);
+        returnedCallback(err => {
+            assert.strictEqual(err.NotImplemented, true);
+            constants.supportsBatchingMethods.splice(-1, 1);
+            return done();
+        });
+    });
+    it('should not return a call to the batching method if the backend does not support it', done => {
+        const returnedCallback = shouldBatchGetObjectsFromMetadata(bucketName, [], log);
+        returnedCallback((err, cache) => {
+            assert.strictEqual(err, undefined);
+            assert.strictEqual(cache, undefined);
+            return done();
+        });
+    });
+});
+
+describe('processObjectVersion function helper', () => {
+    const bucketName = 'bucketName';
+
+    it('should throw error for invalid version IDs', () => {
+        const ret = processObjectVersion({
+            versionId: '\0',
+        }, bucketName);
+        assert(ret[0].is.NoSuchVersion);
+    });
+
+    it('should return "null" for null versionId', () => {
+        const ret = processObjectVersion({
+            versionId: 'null',
+        }, bucketName);
+        assert.strictEqual(ret[0], null);
+        assert.strictEqual(ret[1], 'null');
+    });
+
+    it('should return null error on success', () => {
+        const ret = processObjectVersion({}, bucketName);
+        assert.ifError(ret[0]);
+        assert.deepStrictEqual(ret[1], undefined);
     });
 });
