@@ -205,6 +205,8 @@ const constants = {
         NON_CURRENT_TYPE: 'noncurrent',
         ORPHAN_DM_TYPE: 'orphan',
     },
+    // Backends that support metadata batching
+    supportsBatchingMethods: ['mongodb'],
 };
 
 module.exports = constants;
