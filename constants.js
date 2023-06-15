@@ -200,6 +200,8 @@ const constants = {
     validStorageClasses: [
         'STANDARD',
     ],
+    // Backends that support metadata batching
+    supportsBatchingMethods: ['mongodb'],
 };
 
 module.exports = constants;
