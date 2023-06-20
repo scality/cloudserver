@@ -144,6 +144,7 @@ describe('Object Copy', () => {
             s3.getObject({ Bucket: destBucketName,
                 Key: destObjName }, (err, res) => {
                 checkNoError(err);
+                assert.strictEqual(res.StorageClass, undefined);
                 assert.strictEqual(res.Body.toString(),
                     content);
                 assert.deepStrictEqual(res.Metadata,
@@ -1271,7 +1272,7 @@ describe('Object Copy', () => {
             });
         });
 
-        it('should copy restored object', done => {
+        it('should copy restored object and reset storage class', done => {
             const archiveCompleted = {
                 archiveInfo: {},
                 restoreRequestedAt: new Date(0),
