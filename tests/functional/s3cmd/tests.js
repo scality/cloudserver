@@ -260,7 +260,7 @@ describe('s3cmd putBucket', () => {
         exec([
             'mb', `s3://${bucket}`,
             '--bucket-location=scality-us-west-1',
-        ], done, 11);
+        ], done, 13);
     });
 
     it('put an invalid bucket, should fail', done => {
