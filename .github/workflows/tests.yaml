@@ -226,9 +226,7 @@ jobs:
       uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
-        python-version: |
-          2.7
-          3.9
+        python-version: 3.9
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup matrix job artifacts directory
@@ -236,13 +234,10 @@ jobs:
       run: |
         set -exu
         mkdir -p /tmp/artifacts/${{ matrix.job-name }}/
-    - name: Setup python2 test environment
+    - name: Setup python test environment
       run: |
         sudo apt-get install -y libdigest-hmac-perl
-        pip install virtualenv==20.21.0
-        virtualenv -p $(which python2) ~/.virtualenv/py2
-        source ~/.virtualenv/py2/bin/activate
-        pip install 's3cmd==1.6.1'
+        pip install 's3cmd==2.3.0'
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
