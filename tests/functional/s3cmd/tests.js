@@ -161,7 +161,9 @@ function readJsonFromChild(child, lineFinder, cb) {
         const findBrace = data.indexOf('{', findLine);
         const findEnd = findEndJson(data, findBrace);
         const endJson = data.substring(findBrace, findEnd + 1)
-            .replace(/"/g, '\\"').replace(/'/g, '"');
+            .replace(/"/g, '\\"').replace(/'/g, '"')
+            .replace(/b'/g, '\'')
+            .replace(/b"/g, '"');
         return cb(JSON.parse(endJson));
     });
 }
@@ -258,7 +260,7 @@ describe('s3cmd putBucket', () => {
         exec([
             'mb', `s3://${bucket}`,
             '--bucket-location=scality-us-west-1',
-        ], done, 13);
+        ], done, 11);
     });
 
     it('put an invalid bucket, should fail', done => {
@@ -340,18 +342,18 @@ describe('s3cmd getService', () => {
 
     it("should have response headers matching AWS's response headers",
         done => {
-            provideLineOfInterest(['ls', '--debug'], 'DEBUG: Response: {',
+            provideLineOfInterest(['ls', '--debug'], '\'headers\': {',
             parsedObject => {
-                assert(parsedObject.headers['x-amz-id-2']);
-                assert(parsedObject.headers['transfer-encoding']);
-                assert(parsedObject.headers['x-amz-request-id']);
-                const gmtDate = new Date(parsedObject.headers.date)
+                assert(parsedObject['x-amz-id-2']);
+                assert(parsedObject['transfer-encoding']);
+                assert(parsedObject['x-amz-request-id']);
+                const gmtDate = new Date(parsedObject.date)
                     .toUTCString();
-                assert.strictEqual(parsedObject.headers.date, gmtDate);
+                assert.strictEqual(parsedObject.date, gmtDate);
                 assert.strictEqual(parsedObject
-                    .headers['content-type'], 'application/xml');
+                    ['content-type'], 'application/xml');
                 assert.strictEqual(parsedObject
-                    .headers['set-cookie'], undefined);
+                    ['set-cookie'], undefined);
                 done();
             });
         });
@@ -391,11 +393,11 @@ describe('s3cmd getObject', function toto() {
     });
 
     it('get non existing file in existing bucket, should fail', done => {
-        exec(['get', `s3://${bucket}/${nonexist}`, 'fail'], done, 12);
+        exec(['get', `s3://${bucket}/${nonexist}`, 'fail'], done, 64);
     });
 
     it('get file in non existing bucket, should fail', done => {
-        exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2'], done, 12);
+        exec(['get', `s3://${nonexist}/${nonexist}`, 'fail2'], done, 64);
     });
 });
 
@@ -507,7 +509,7 @@ describe('s3cmd delObject', () => {
 
     it('delete an already deleted object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${upload}`, '--debug'],
-        'DEBUG: Response: {', parsedObject => {
+        'DEBUG: Response:\n{', parsedObject => {
             assert.strictEqual(parsedObject.status, 204);
             done();
         });
@@ -515,14 +517,14 @@ describe('s3cmd delObject', () => {
 
     it('delete non-existing object, should return a 204', done => {
         provideLineOfInterest(['rm', `s3://${bucket}/${nonexist}`, '--debug'],
-        'DEBUG: Response: {', parsedObject => {
+        'DEBUG: Response:\n{', parsedObject => {
             assert.strictEqual(parsedObject.status, 204);
             done();
         });
     });
 
     it('try to get the deleted object, should fail', done => {
-        exec(['get', `s3://${bucket}/${upload}`, download], done, 12);
+        exec(['get', `s3://${bucket}/${upload}`, download], done, 64);
     });
 });
 
@@ -617,7 +619,7 @@ describe('s3cmd multipart upload', function titi() {
     });
 
     it('should not be able to get deleted object', done => {
-        exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 12);
+        exec(['get', `s3://${bucket}/${MPUpload}`, download], done, 64);
     });
 });
 
@@ -656,7 +658,7 @@ MPUploadSplitter.forEach(file => {
         });
 
         it('should not be able to get deleted object', done => {
-            exec(['get', `s3://${bucket}/${file}`, download], done, 12);
+            exec(['get', `s3://${bucket}/${file}`, download], done, 64);
         });
     });
 });
@@ -724,7 +726,7 @@ describe('s3cmd info', () => {
 
     // test that POLICY and CORS are returned as 'none'
     it('should find that policy has a value of none', done => {
-        checkRawOutput(['info', `s3://${bucket}`], 'policy', 'none',
+        checkRawOutput(['info', `s3://${bucket}`], 'Policy', 'none',
         'stdout', foundIt => {
             assert(foundIt);
             done();
@@ -732,7 +734,7 @@ describe('s3cmd info', () => {
     });
 
     it('should find that cors has a value of none', done => {
-        checkRawOutput(['info', `s3://${bucket}`], 'cors', 'none',
+        checkRawOutput(['info', `s3://${bucket}`], 'CORS', 'none',
         'stdout', foundIt => {
             assert(foundIt);
             done();
@@ -758,7 +760,7 @@ describe('s3cmd info', () => {
         });
 
         it('should find that cors has a value', done => {
-            checkRawOutput(['info', `s3://${bucket}`], 'cors', corsConfig,
+            checkRawOutput(['info', `s3://${bucket}`], 'CORS', corsConfig,
             'stdout', foundIt => {
                 assert(foundIt, 'Did not find value for cors');
                 done();
