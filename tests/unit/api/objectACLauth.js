@@ -456,7 +456,7 @@ describe('without object metadata', () => {
 
             bucket.setCannedAcl(value.canned);
             const results = requestTypes.map(type =>
-                isObjAuthorized(bucket, null, type, value.id, authInfoUser, log));
+                isObjAuthorized(bucket, null, type, value.id, authInfoUser, true, log));
             assert.deepStrictEqual(results, value.response);
             done();
         });

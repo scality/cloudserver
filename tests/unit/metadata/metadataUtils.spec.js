@@ -48,7 +48,7 @@ describe('validateBucket', () => {
             authInfo: otherAuthInfo,
             requestType: 'bucketGet',
             request: null,
-        }, log);
+        }, true, log);
         assert(validationResult);
         assert(validationResult.is.AccessDenied);
     });
