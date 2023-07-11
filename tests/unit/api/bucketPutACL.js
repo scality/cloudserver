@@ -496,7 +496,7 @@ describe('putBucketACL API', () => {
                 + '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
