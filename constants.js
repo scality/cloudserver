@@ -177,6 +177,7 @@ const constants = {
     assumedRoleArnResourceType: 'assumed-role',
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
+    multiObjectDeleteConcurrency: 50,
 };
 
 module.exports = constants;
