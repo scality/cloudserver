@@ -131,7 +131,7 @@ const results = [
   },
 ];
 
-describe('Testing Config.js function: ', () => {
+describe('Testing Config.js function: ', () => {-
     results.forEach(result => {
         it(`should return ${result.boolExpected} if source location ` +
         `constraint === ${result.sourceLocationConstraintName} ` +

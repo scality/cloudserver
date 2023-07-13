@@ -50,7 +50,7 @@ function dateConvert(d) {
     return (new Date(d)).toISOString();
 }
 
-describe('GET object', () => {
+describe.only('GET object', () => {
     withV4(sigCfg => {
         let bucketUtil;
         let s3;
