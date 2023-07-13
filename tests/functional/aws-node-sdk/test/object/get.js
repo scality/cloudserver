@@ -1057,7 +1057,7 @@ describe('GET object', () => {
 });
 
 const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe.only;
 
 describeSkipIfCeph('GET object with object lock', () => {
     withV4(sigCfg => {
@@ -1114,7 +1114,7 @@ describeSkipIfCeph('GET object with object lock', () => {
                 throw err;
             }));
 
-        it.only('should return object lock headers if set on the object', done => {
+        it('should return object lock headers if set on the object', done => {
             s3.getObject({ Bucket: bucket, Key: key }, (err, res) => {
                 assert.ifError(err);
                 assert.strictEqual(res.ObjectLockMode, mockMode);

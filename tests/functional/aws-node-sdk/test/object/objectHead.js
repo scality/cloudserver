@@ -536,7 +536,7 @@ describe('HEAD object, conditions', () => {
 });
 
 const isCEPH = process.env.CI_CEPH !== undefined;
-const describeSkipIfCeph = isCEPH ? describe.skip : describe;
+const describeSkipIfCeph = isCEPH ? describe.skip : describe.only;
 
 describeSkipIfCeph('HEAD object with object lock', () => {
     withV4(sigCfg => {
