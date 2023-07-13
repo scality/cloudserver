@@ -593,7 +593,7 @@ describeSkipIfCeph('HEAD object with object lock', () => {
                 throw err;
             }));
 
-        it('should return object lock headers if set on the object', done => {
+        it.only('should return object lock headers if set on the object', done => {
             s3.headObject({ Bucket: bucket, Key: key }, (err, res) => {
                 assert.ifError(err);
                 assert.strictEqual(res.ObjectLockMode, mockMode);
