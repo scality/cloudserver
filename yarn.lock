@@ -450,9 +450,9 @@
   integrity sha512-pg9d0yC4rVNWQzX8U7xb4olIOFuuVL9za3bzMT2pu2SU0SNEi66i2qrvhE2qt0HvkhuCaWJu7pLNOt/Pj8BIrw==
 
 "@types/node@>=10.0.0":
-  version "20.2.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.2.5.tgz#26d295f3570323b2837d322180dfbf1ba156fefb"
-  integrity sha512-JJulVEQXmiY9Px5axXHeYGLSjhkZEnD+MDPDGbCbIAbMslkKwmygtZFy1X6s/075Yo94sf8GuSlFfPzysQrWZQ==
+  version "20.4.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.4.2.tgz#129cc9ae69f93824f92fac653eebfb4812ab4af9"
+  integrity sha512-Dd0BYtWgnWJKwO1jkmTrzofjK2QXXcai0dmtzvIBhcA+RsG5h8R3xlyta0kGOZRNfL9GuRtb1knmPEhQrePCEw==
 
 "@types/triple-beam@^1.3.2":
   version "1.3.2"
@@ -789,9 +789,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.1.103":
-  version "8.1.103"
-  resolved "git+https://github.com/scality/arsenal#96cbaeb821d8045cbe8eabd00092290e13e46784"
+"arsenal@git+https://github.com/scality/arsenal#8.1.104":
+  version "8.1.104"
+  resolved "git+https://github.com/scality/arsenal#8716fee67d77f78e79497c75c62d9e4fa5b9a80e"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
@@ -808,7 +808,7 @@ arraybuffer.slice@~0.0.7:
     bson "4.0.0"
     debug "~4.1.0"
     diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl#0.2.0"
+    fcntl "github:scality/node-fcntl#0.2.2"
     hdclient scality/hdclient#1.1.5
     httpagent scality/httpagent#1.0.6
     https-proxy-agent "^2.2.0"
@@ -2253,6 +2253,14 @@ fastq@^1.6.0:
 "fcntl@github:scality/node-fcntl#0.2.0":
   version "0.2.0"
   resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/ae7493da46fb353eff0c4cb79e2cce838197c066"
+  dependencies:
+    bindings "^1.1.1"
+    nan "^2.3.2"
+    node-gyp "^8.0.0"
+
+"fcntl@github:scality/node-fcntl#0.2.2":
+  version "0.2.1"
+  resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/b1335ca204c6265cedc50c26020c4d63aabe920e"
   dependencies:
     bindings "^1.1.1"
     nan "^2.3.2"
