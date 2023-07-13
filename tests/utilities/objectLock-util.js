@@ -12,7 +12,7 @@ const log = new DummyRequestLogger();
 function changeObjectLock(objects, newConfig, cb) {
     async.each(objects, (object, next) => {
         const { bucket, key, versionId } = object;
-        metadataGetObject(bucket, key, versionIdUtils.decode(versionId), log, (err, objMD) => {
+        metadataGetObject(bucket, key, versionIdUtils.decode(versionId), null, log, (err, objMD) => {
             assert.ifError(err);
             // set newConfig as empty string to remove object lock
             /* eslint-disable no-param-reassign */

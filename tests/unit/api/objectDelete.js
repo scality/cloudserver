@@ -142,7 +142,8 @@ describe('objectDelete API', () => {
                             any, any, any,
                             { deleteData: true,
                               replayId: testUploadId,
-                            }, any, any);
+                              doesNotNeedOpogUpdate: true,
+                            }, any, any, any);
                         done();
                     });
                 });

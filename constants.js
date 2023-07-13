@@ -205,6 +205,7 @@ const constants = {
         NON_CURRENT_TYPE: 'noncurrent',
         ORPHAN_DM_TYPE: 'orphan',
     },
+    multiObjectDeleteConcurrency: 50,
 };
 
 module.exports = constants;
