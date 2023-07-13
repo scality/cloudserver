@@ -322,5 +322,62 @@ describe('DELETE object', () => {
                      }
                 ));
         });
+
+        describe.only('Try to delete an object version in COMPLIANCE', () => {
+            const bucketName = 'testdeletelocklegalholdbucket';
+            const objectName = 'key';
+            let versionId;
+            before(() => {
+                return s3.createBucket({
+                    Bucket: bucketName,
+                    ObjectLockEnabledForBucket: true,
+                }).promise()
+                .catch(err => {
+                    process.stdout.write(`Error creating bucket ${err}\n`);
+                    throw err;
+                }).then(() => {
+                    process.stdout.write('putting object lock configuration\n');
+                    return s3.putObjectLockConfiguration({
+                        Bucket: bucketName,
+                        ObjectLockConfiguration: {
+                            ObjectLockEnabled: 'Enabled',
+                            Rule: {
+                                DefaultRetention: {
+                                    Mode: 'COMPLIANCE',
+                                    Days: 1,
+                                },
+                            },
+                        },
+                    }).promise();
+                }).catch(err => {
+                    process.stdout.write('Error putting object lock configuration\n');
+                    throw err;
+                }).then(() => {
+                    process.stdout.write('putting object\n');
+                    return s3.putObject({
+                        Bucket: bucketName,
+                        Key: objectName,
+                    }).promise();
+                })
+                .catch(err => {
+                    process.stdout.write('Error putting object');
+                    throw err;
+                })
+                .then(res => {
+                    process.stdout.write('get object versionId\n');
+                    versionId = res.VersionId;
+                });
+            });
+
+            it('delete object in COMPLIANCE mode', () => {
+                s3.deleteObject({
+                    Bucket: bucketName,
+                    Key: objectName,
+                    VersionId: versionId,
+                }, err => {
+                    assert.ifError(err);
+                });
+            });
+        });
     });
 });
