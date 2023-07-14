@@ -369,6 +369,19 @@ describe('DELETE object', () => {
                 });
             });
 
+            after(() => {
+                process.stdout.write('Emptying bucket\n');
+                return bucketUtil.empty(bucketName)
+                .then(() => {
+                    process.stdout.write('Deleting bucket\n');
+                    return bucketUtil.deleteOne(bucketName);
+                })
+                .catch(err => {
+                    process.stdout.write('Error in after\n');
+                    throw err;
+                });
+            });
+
             it('delete object in COMPLIANCE mode', () => {
                 s3.deleteObject({
                     Bucket: bucketName,

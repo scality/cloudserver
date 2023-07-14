@@ -286,6 +286,75 @@ describe('Multi-Object Delete Access', function access() {
     });
 });
 
+describe('Multi-Object Delete with Objec Lock in COMPLIANCE mode', () => {
+    let bucketUtil;
+    let s3;
+    const versionIds = [];
+
+    before(() => {
+        const createObjects = [];
+        bucketUtil = new BucketUtility('default', {
+            signatureVersion: 'v4',
+        });
+        s3 = bucketUtil.s3;
+        return s3.createBucket({
+            Bucket: bucketName,
+            ObjectLockEnabledForBucket: true,
+        }).promise()
+        .then(() => s3.putObjectLockConfiguration({
+            Bucket: bucketName,
+            ObjectLockConfiguration: {
+                ObjectLockEnabled: 'Enabled',
+                Rule: {
+                    DefaultRetention: {
+                        Days: 1,
+                        Mode: 'COMPLIANCE',
+                    },
+                },
+            },
+        }).promise())
+        .catch(err => {
+            process.stdout.write(`Error creating bucket: ${err}\n`);
+            throw err;
+        })
+        .then(() => {
+            for (let i = 1; i < 6; i++) {
+                createObjects.push(s3.putObject({
+                    Bucket: bucketName,
+                    Key: `${key}${i}`,
+                    Body: 'somebody',
+                }).promise());
+            }
+            return Promise.all(createObjects)
+            .then(res => {
+                res.forEach(r => {
+                    versionIds.push(r.VersionId);
+                });
+            })
+            .catch(err => {
+                process.stdout.write(`Error creating objects: ${err}\n`);
+                throw err;
+            });
+        });
+    });
+
+    after(() => s3.deleteBucket({ Bucket: bucketName }).promise());
+
+    it('delete objects compliance', () => {
+        const objects = createObjectsList(5, versionIds);
+        return s3.deleteObjects({
+            Bucket: bucketName,
+            Delete: {
+                Objects: objects,
+                Quiet: false,
+            },
+        }).promise().then(res => {
+            assert.strictEqual(res.Errors.length, 5);
+            res.Errors.forEach(err => assert.strictEqual(err.Code, 'AccessDenied'));
+        });
+    });
+});
+
 describe('Multi-Object Delete with Object Lock', () => {
     let bucketUtil;
     let s3;
