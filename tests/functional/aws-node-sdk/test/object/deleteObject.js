@@ -323,7 +323,7 @@ describe('DELETE object', () => {
                 ));
         });
 
-        describe.only('Try to delete an object version in COMPLIANCE', () => {
+        describe('Try to delete an object version in COMPLIANCE', () => {
             const bucketName = 'testdeletelocklegalholdbucket';
             const objectName = 'key';
             let versionId;
