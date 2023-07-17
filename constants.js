@@ -117,6 +117,7 @@ const constants = {
 
     // user metadata header to set object locationConstraint
     objectLocationConstraintHeader: 'x-amz-meta-scal-location-constraint',
+    lastModifiedHeader: 'x-amz-meta-x-scal-last-modified',
     legacyLocations: ['sproxyd', 'legacy'],
     // declare here all existing service accounts and their properties
     // (if any, otherwise an empty object)
