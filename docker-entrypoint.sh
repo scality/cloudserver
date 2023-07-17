@@ -121,6 +121,10 @@ if [[ "$BUCKETD_BOOTSTRAP" ]]; then
     JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .bucketd.bootstrap=[\"$BUCKETD_BOOTSTRAP\""]
 fi
 
+if [[ "$TESTING_MODE" ]]; then
+    JQ_FILTERS_CONFIG="$JQ_FILTERS_CONFIG | .testingMode=true"
+fi
+
 if [[ $JQ_FILTERS_CONFIG != "." ]]; then
     jq "$JQ_FILTERS_CONFIG" config.json > config.json.tmp
     mv config.json.tmp config.json
