@@ -10,6 +10,7 @@ const versionIdUtils = versioning.VersionID;
 const log = new DummyRequestLogger();
 
 function changeObjectLock(objects, newConfig, cb) {
+    console.log('>W>>>', metadata, objects, newConfig, metadata.setup, metadata.client)
     async.each(objects, (object, next) => {
         const { bucket, key, versionId } = object;
         metadataGetObject(bucket, key, versionIdUtils.decode(versionId), log, (err, objMD) => {

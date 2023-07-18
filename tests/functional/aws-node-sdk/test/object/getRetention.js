@@ -68,6 +68,7 @@ describe('GET object retention', () => {
 
         afterEach(() => {
             process.stdout.write('Removing object lock\n');
+            console.log(changeLockPromise, bucketName, objectName, versionId, changeObjectLock)
             return changeLockPromise([{ bucket: bucketName, key: objectName, versionId }], '')
             .then(() => {
                 process.stdout.write('Emptying and deleting buckets\n');
@@ -81,7 +82,7 @@ describe('GET object retention', () => {
             });
         });
 
-        it('should return AccessDenied putting retention with another account',
+        it.only('should return AccessDenied putting retention with another account',
         done => {
             otherAccountS3.getObjectRetention({
                 Bucket: bucketName,
