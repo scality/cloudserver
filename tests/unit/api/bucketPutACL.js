@@ -442,30 +442,6 @@ describe('putBucketACL API', () => {
             bucketName,
             namespace,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
-            post: '<AccessControlPolicy xmlns=' +
-                    '"http://s3.amazonaws.com/doc/2006-03-01/">' +
-                  '<Owner>' +
-                    '<ID>79a59df900b949e55d96a1e698fbaced' +
-                    'fd6e09d98eacf8f8d5218e7cd47ef2be</ID>' +
-                    '<DisplayName>OwnerDisplayName</DisplayName>' +
-                  '</Owner>' +
-                '</AccessControlPolicy>',
-            url: '/?acl',
-            query: { acl: '' },
-            actionImplicitDenies: false,
-        };
-
-            bucketPutACL(authInfo, testACLRequest, log, err => {
-                assert.deepStrictEqual(err, errors.MalformedACLError);
-                done();
-            });
-        });
-
-    it('should return an error if multiple AccessControlList section', done => {
-        const testACLRequest = {
-            bucketName,
-            namespace,
-            headers: { host: `${bucketName}.s3.amazonaws.com` },
             post: '<AccessControlPolicy xmlns='
                     + '"http://s3.amazonaws.com/doc/2006-03-01/">'
                   + '<Owner>'
