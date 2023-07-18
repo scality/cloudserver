@@ -19,6 +19,7 @@ function _makeRequest(includePolicy) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        isImplicitIdentityDeny: false,
     };
     if (includePolicy) {
         const examplePolicy = {

@@ -32,6 +32,7 @@ describe('listMultipartUploads API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
+        isImplicitIdentityDeny: false,
     };
     const testInitiateMPURequest1 = {
         bucketName,
@@ -39,6 +40,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName1,
         headers: {},
         url: `/${bucketName}/${objectName1}?uploads`,
+        isImplicitIdentityDeny: false,
     };
     const testInitiateMPURequest2 = {
         bucketName,
@@ -46,6 +48,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName2,
         headers: {},
         url: `/${bucketName}/${objectName2}?uploads`,
+        isImplicitIdentityDeny: false,
     };
     const testInitiateMPURequest3 = {
         bucketName,
@@ -53,6 +56,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName3,
         headers: {},
         url: `/${bucketName}/${objectName3}?uploads`,
+        isImplicitIdentityDeny: false,
     };
 
     it('should return the name of the common prefix ' +
@@ -65,6 +69,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
             query: { delimiter, prefix },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -94,6 +99,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: {},
+            isImplicitIdentityDeny: false,
         };
 
 
@@ -127,6 +133,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'max-uploads': '1' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -163,6 +170,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'encoding-type': 'url' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -195,6 +203,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'key-marker': objectName1 },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([

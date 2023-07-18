@@ -24,6 +24,7 @@ describe('serviceGet API', () => {
         parsedHost: 's3.amazonaws.com',
         headers: { host: 's3.amazonaws.com' },
         url: '/',
+        isImplicitIdentityDeny: false,
     };
 
     it('should return the list of buckets owned by the user', done => {

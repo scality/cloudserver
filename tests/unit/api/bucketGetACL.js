@@ -25,6 +25,7 @@ describe('bucketGetACL API', () => {
         namespace,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        isImplicitIdentityDeny: false,
     };
     const testGetACLRequest = {
         bucketName,
@@ -32,6 +33,7 @@ describe('bucketGetACL API', () => {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/?acl',
         query: { acl: '' },
+        isImplicitIdentityDeny: false,
     };
 
     it('should get a canned private ACL', done => {
@@ -44,6 +46,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -76,6 +79,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -119,6 +123,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -156,6 +161,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -194,6 +200,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([
@@ -248,6 +255,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
@@ -338,6 +346,7 @@ describe('bucketGetACL API', () => {
                 },
                 url: '/?acl',
                 query: { acl: '' },
+                isImplicitIdentityDeny: false,
             };
 
             async.waterfall([
@@ -377,6 +386,7 @@ describe('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            isImplicitIdentityDeny: false,
         };
 
         async.waterfall([

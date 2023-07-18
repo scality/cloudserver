@@ -13,6 +13,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    isImplicitIdentityDeny: false,
 };
 
 describe('bucketDeleteEncryption API', () => {

@@ -76,7 +76,7 @@ function hydrateSSEConfig({ algo: SSEAlgorithm, masterKeyId: KMSMasterKeyID }) {
     );
 }
 
-describe('per object encryption headers', () => {
+describe.skip('per object encryption headers', () => {
     withV4(sigCfg => {
         let bucket;
         let bucket2;

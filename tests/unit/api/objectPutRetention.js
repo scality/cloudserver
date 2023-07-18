@@ -23,6 +23,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    isImplicitIdentityDeny: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -68,6 +69,7 @@ const putObjRetRequestGovernance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernance,
+    isImplicitIdentityDeny: false,
 };
 
 const putObjRetRequestGovernanceWithHeader = {
@@ -78,6 +80,7 @@ const putObjRetRequestGovernanceWithHeader = {
         'x-amz-bypass-governance-retention': 'true',
     },
     post: objectRetentionXmlGovernance,
+    isImplicitIdentityDeny: false,
 };
 
 const putObjRetRequestCompliance = {
@@ -85,6 +88,7 @@ const putObjRetRequestCompliance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlCompliance,
+    isImplicitIdentityDeny: false,
 };
 
 const putObjRetRequestComplianceShorter = {
@@ -92,6 +96,7 @@ const putObjRetRequestComplianceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlComplianceShorter,
+    isImplicitIdentityDeny: false,
 };
 
 const putObjRetRequestGovernanceLonger = {
@@ -99,6 +104,7 @@ const putObjRetRequestGovernanceLonger = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceLonger,
+    isImplicitIdentityDeny: false,
 };
 
 const putObjRetRequestGovernanceShorter = {
@@ -106,6 +112,7 @@ const putObjRetRequestGovernanceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceShorter,
+    isImplicitIdentityDeny: false,
 };
 
 describe('putObjectRetention API', () => {

@@ -20,6 +20,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    isImplicitIdentityDeny: false,
 };
 const testBucketDeleteWebsiteRequest = {
     bucketName,
@@ -28,6 +29,7 @@ const testBucketDeleteWebsiteRequest = {
     },
     url: '/?website',
     query: { website: '' },
+    isImplicitIdentityDeny: false,
 };
 const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() },
     testBucketDeleteWebsiteRequest);

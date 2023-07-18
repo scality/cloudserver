@@ -114,6 +114,7 @@ describe('List Parts API', () => {
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: { uploadId },
+            isImplicitIdentityDeny: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -160,6 +161,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'encoding-type': 'url',
             },
+            isImplicitIdentityDeny: false,
         };
         const urlEncodedObjectKey = '%24makememulti';
 
@@ -185,6 +187,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'max-parts': '4',
             },
+            isImplicitIdentityDeny: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -226,6 +229,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'max-parts': '6',
             },
+            isImplicitIdentityDeny: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -267,6 +271,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'part-number-marker': '2',
             },
+            isImplicitIdentityDeny: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -312,6 +317,7 @@ describe('List Parts API', () => {
                 'part-number-marker': '2',
                 'max-parts': '2',
             },
+            isImplicitIdentityDeny: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {

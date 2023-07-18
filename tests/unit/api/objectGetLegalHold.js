@@ -18,6 +18,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    isImplicitIdentityDeny: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -37,12 +38,14 @@ const putObjectLegalHoldRequest = status => ({
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectLegalHoldXml(status),
+    isImplicitIdentityDeny: false,
 });
 
 const getObjectLegalHoldRequest = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
+    isImplicitIdentityDeny: false,
 };
 
 describe('getObjectLegalHold API', () => {

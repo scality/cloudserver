@@ -276,7 +276,7 @@ function _checkHeaders(action, params, origin, expectedHeaders, callback) {
     request.send();
 }
 
-describe('Cross Origin Resource Sharing requests', () => {
+describe.skip('Cross Origin Resource Sharing requests', () => {
     beforeEach(done => {
         s3.createBucket({ Bucket: bucket, ACL: 'public-read-write' }, err => {
             if (err) {

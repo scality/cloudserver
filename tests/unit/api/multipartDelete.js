@@ -24,6 +24,7 @@ const bucketPutRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    isImplicitIdentityDeny: false,
 };
 const objectKey = 'testObject';
 const initiateRequest = {
@@ -32,6 +33,7 @@ const initiateRequest = {
     objectKey,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
+    isImplicitIdentityDeny: false,
 };
 const eastLocation = 'us-east-1';
 const westLocation = 'scality-internal-file';
@@ -68,6 +70,7 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
                     partNumber: '1',
                     uploadId,
                 },
+                isImplicitIdentityDeny: false,
             }, partBody);
             const testUploadId = fakeUploadID ? 'nonexistinguploadid' :
                 uploadId;
@@ -78,6 +81,7 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 url: `/${objectKey}?uploadId=${testUploadId}`,
                 query: { uploadId: testUploadId },
+                isImplicitIdentityDeny: false,
             };
             next(null, partRequest, deleteMpuRequest);
         },
