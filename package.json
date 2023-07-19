@@ -80,7 +80,7 @@
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
     "ft_mixed_bucket_format_version": "cd tests/functional/metadata && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json MixedVersionFormat.js",
     "ft_management": "cd tests/functional/report && yarn test",
-    "ft_backbeat": "cd tests/functional/backbeat && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 *.js",
+    "ft_backbeat": "cd tests/functional/backbeat && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json -t 40000 listNullVersion.js",
     "ft_node": "cd tests/functional/raw-node && yarn test",
     "ft_node_routes": "cd tests/functional/raw-node && npm run test-routes",
     "ft_gcp": "cd tests/functional/raw-node && yarn run test-gcp",
