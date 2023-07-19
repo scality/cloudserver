@@ -16,7 +16,7 @@ class DummyRequest extends http.IncomingMessage {
                 this.parsedContentLength = 0;
             }
         }
-        this.isImplicitIdentityDeny = false;
+        this.iamAuthzResults = false;
         if (Array.isArray(msg)) {
             msg.forEach(part => {
                 this.push(part);

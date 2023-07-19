@@ -23,7 +23,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -69,7 +69,7 @@ const putObjRetRequestGovernance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernance,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjRetRequestGovernanceWithHeader = {
@@ -80,7 +80,7 @@ const putObjRetRequestGovernanceWithHeader = {
         'x-amz-bypass-governance-retention': 'true',
     },
     post: objectRetentionXmlGovernance,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjRetRequestCompliance = {
@@ -88,7 +88,7 @@ const putObjRetRequestCompliance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlCompliance,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjRetRequestComplianceShorter = {
@@ -96,7 +96,7 @@ const putObjRetRequestComplianceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlComplianceShorter,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjRetRequestGovernanceLonger = {
@@ -104,7 +104,7 @@ const putObjRetRequestGovernanceLonger = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceLonger,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const putObjRetRequestGovernanceShorter = {
@@ -112,7 +112,7 @@ const putObjRetRequestGovernanceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceShorter,
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 describe('putObjectRetention API', () => {

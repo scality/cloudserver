@@ -15,7 +15,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const expectedNotifConfig = {
@@ -53,7 +53,7 @@ function getNotifRequest(empty) {
             host: `${bucketName}.s3.amazonaws.com`,
         },
         post: notifXml,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     return putNotifConfigRequest;
 }

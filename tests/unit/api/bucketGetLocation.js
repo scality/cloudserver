@@ -16,7 +16,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const testGetLocationRequest = {
@@ -26,7 +26,7 @@ const testGetLocationRequest = {
     },
     url: '/?location',
     query: { location: '' },
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const locationConstraints = config.locationConstraints;

@@ -53,13 +53,13 @@ const baseTestRequest = {
     url: '/',
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 const serviceGetRequest = {
     parsedHost: 's3.amazonaws.com',
     headers: { host: 's3.amazonaws.com' },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const userBucketOwner = 'admin';

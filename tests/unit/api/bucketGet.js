@@ -63,7 +63,7 @@ const baseGetRequest = {
     bucketName,
     namespace,
     headers: { host: '/' },
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 const baseUrl = `/${bucketName}`;
 

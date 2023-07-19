@@ -16,7 +16,7 @@ const testBasicRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const expectedBucketPolicy = {
@@ -35,7 +35,7 @@ const testPutPolicyRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: JSON.stringify(expectedBucketPolicy),
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 describe('getBucketPolicy API', () => {

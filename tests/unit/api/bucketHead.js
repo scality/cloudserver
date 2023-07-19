@@ -14,7 +14,7 @@ const testRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 describe('bucketHead API', () => {
     beforeEach(() => {

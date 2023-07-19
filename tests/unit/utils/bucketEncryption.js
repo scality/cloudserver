@@ -29,7 +29,7 @@ function templateRequest(bucketName, { post }) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         post,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
 }
 

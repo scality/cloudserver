@@ -49,7 +49,7 @@
     },
     "clusters": 10,
     "log": {
-        "logLevel": "error",
+        "logLevel": "trace",
         "dumpLevel": "error"
     },
     "healthChecks": {

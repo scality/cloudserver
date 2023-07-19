@@ -47,7 +47,7 @@ describe('objectGet API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     const userMetadataKey = 'x-amz-meta-test';
     const userMetadataValue = 'some metadata';
@@ -57,7 +57,7 @@ describe('objectGet API', () => {
         objectKey: objectName,
         headers: {},
         url: `/${bucketName}/${objectName}`,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
 
     it('should get the object metadata', done => {
@@ -86,7 +86,7 @@ describe('objectGet API', () => {
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: `/${bucketName}`,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
 
     const createPutDummyRetention = (date, mode) => new DummyRequest({
@@ -248,7 +248,7 @@ describe('objectGet API', () => {
                 objectKey: objectName,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 url: `/${objectName}?uploads`,
-                isImplicitIdentityDeny: false,
+                iamAuthzResults: false,
             };
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -325,7 +325,7 @@ describe('objectGet API', () => {
                         headers: { host: `${bucketName}.s3.amazonaws.com` },
                         query: { uploadId: testUploadId },
                         post: completeBody,
-                        isImplicitIdentityDeny: false,
+                        iamAuthzResults: false,
                     };
                     completeMultipartUpload(authInfo, completeRequest,
                                             log, err => {

@@ -19,7 +19,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 function _getPutWebsiteRequest(xml) {
@@ -30,7 +30,7 @@ function _getPutWebsiteRequest(xml) {
         },
         url: '/?website',
         query: { website: '' },
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     request.post = xml;
     return request;

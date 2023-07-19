@@ -15,7 +15,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 function getNotificationRequest(bucketName, xml) {
@@ -24,7 +24,7 @@ function getNotificationRequest(bucketName, xml) {
         headers: {
             host: `${bucketName}.s3.amazonaws.com`,
         },
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     if (xml) {
         request.post = xml;

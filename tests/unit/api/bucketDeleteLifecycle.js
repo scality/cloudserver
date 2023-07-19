@@ -19,7 +19,7 @@ function _makeRequest(includeXml) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     if (includeXml) {
         request.post = '<LifecycleConfiguration ' +

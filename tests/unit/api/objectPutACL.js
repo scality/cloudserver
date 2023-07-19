@@ -56,7 +56,7 @@ describe('putObjectACL API', () => {
             headers: { 'x-amz-acl': 'invalid-option' },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -80,7 +80,7 @@ describe('putObjectACL API', () => {
             headers: { 'x-amz-acl': 'public-read-write' },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -110,7 +110,7 @@ describe('putObjectACL API', () => {
             headers: { 'x-amz-acl': 'public-read' },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         const testObjACLRequest2 = {
@@ -120,7 +120,7 @@ describe('putObjectACL API', () => {
             headers: { 'x-amz-acl': 'authenticated-read' },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -166,7 +166,7 @@ describe('putObjectACL API', () => {
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
@@ -209,7 +209,7 @@ describe('putObjectACL API', () => {
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -240,7 +240,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -278,7 +278,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -307,7 +307,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -346,7 +346,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
 
@@ -376,7 +376,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(modifiedXml, 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -405,7 +405,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(modifiedXml, 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
 
@@ -434,7 +434,7 @@ describe('putObjectACL API', () => {
             url: `/${bucketName}/${objectName}?acl`,
             post: [Buffer.from(acp.getXml(), 'utf8')],
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -463,7 +463,7 @@ describe('putObjectACL API', () => {
             },
             url: `/${bucketName}/${objectName}?acl`,
             query: { acl: '' },
-            isImplicitIdentityDeny: false,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {

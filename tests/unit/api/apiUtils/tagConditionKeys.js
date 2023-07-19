@@ -24,7 +24,7 @@ const bucketPutReq = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    isImplicitIdentityDeny: false,
+    iamAuthzResults: false,
 };
 
 const taggingUtil = new TaggingConfigTester();

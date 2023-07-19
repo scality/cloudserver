@@ -254,7 +254,7 @@ describe('objectPut API', () => {
                 bucketName,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 post: objectLockTestUtils.generateXml(testMode, val, type),
-                isImplicitIdentityDeny: false,
+                iamAuthzResults: false,
             };
 
             bucketPut(authInfo, testPutBucketRequestLock, log, () => {

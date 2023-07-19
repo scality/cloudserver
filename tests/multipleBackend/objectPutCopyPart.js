@@ -80,7 +80,7 @@ errorPutCopyPart) {
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     if (mpuLoc) {
         initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
@@ -95,7 +95,7 @@ errorPutCopyPart) {
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
-        isImplicitIdentityDeny: false,
+        iamAuthzResults: false,
     };
     if (srcObjLoc) {
         sourceObjPutParams.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
