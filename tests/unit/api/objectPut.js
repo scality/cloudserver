@@ -17,6 +17,7 @@ const { objectLockTestUtils } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 const { maximumAllowedUploadSize } = require('../../../constants');
 const mpuUtils = require('../utils/mpuUtils');
+const { lastModifiedHeader } = require('../../../constants');
 
 const { ds } = storage.data.inMemory.datastore;
 
@@ -382,6 +383,80 @@ describe('objectPut API', () => {
                                         'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
                                         'even more metadata');
+                            done();
+                        });
+                });
+        });
+    });
+
+    it('If testingMode=true and the last-modified header is given, should set last-modified accordingly', done => {
+        const imposedLastModified = '2024-07-19';
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                [lastModifiedHeader]: imposedLastModified,
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            const config = require('../../../lib/Config');
+            config.config.testingMode = true;
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    metadata.getObjectMD(bucketName, objectName, {}, log,
+                        (err, md) => {
+                            assert(md);
+
+                            const lastModified = md['last-modified'];
+                            const lastModifiedDate = lastModified.split('T')[0];
+                            // last-modified date should be the one set by the last-modified header
+                            assert.strictEqual(lastModifiedDate, imposedLastModified);
+
+                            // The header should be removed after being treated.
+                            assert(md[lastModifiedHeader] === undefined);
+
+                            config.config.testingMode = false;
+                            done();
+                        });
+                });
+        });
+    });
+
+    it('should not take into acccount the last-modified header when testingMode=false', done => {
+        const imposedLastModified = '2024-07-19';
+
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {
+                'x-amz-meta-x-scal-last-modified': imposedLastModified,
+            },
+            url: `/${bucketName}/${objectName}`,
+            calculatedHash: 'vnR+tLdVF79rPPfF+7YvOg==',
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            const config = require('../../../lib/Config');
+            config.config.testingMode = false;
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                (err, resHeaders) => {
+                    assert.strictEqual(resHeaders.ETag, `"${correctMD5}"`);
+                    metadata.getObjectMD(bucketName, objectName, {}, log,
+                        (err, md) => {
+                            assert(md);
+                            assert.strictEqual(md['x-amz-meta-x-scal-last-modified'],
+                                        imposedLastModified);
+                            const lastModified = md['last-modified'];
+                            const lastModifiedDate = lastModified.split('T')[0];
+                            const currentTs = new Date().toJSON();
+                            const currentDate = currentTs.split('T')[0];
+                            assert.strictEqual(lastModifiedDate, currentDate);
                             done();
                         });
                 });
