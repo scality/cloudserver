@@ -95,7 +95,7 @@ describe('DELETE object', () => {
             });
         });
 
-        describe.only('with object lock', () => {
+        describe('with object lock', () => {
             const bucketName = 'testdeleteobjectlockbucket';
             let versionIdOne;
             let versionIdTwo;
@@ -274,7 +274,7 @@ describe('DELETE object', () => {
                          }
                     ));
 
-                it(`delete object in ${response.bucketMode} mode`, () => {
+                it(`should delete object in ${response.bucketMode} mode`, () => {
                     s3.deleteObject({
                         Bucket: bucketName,
                         Key: objectName,
