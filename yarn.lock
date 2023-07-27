@@ -767,9 +767,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.1.101":
+"arsenal@git+https://github.com/scality/arsenal#0109494ab6273a0f88e61667be8a66f397ff1d0a":
   version "8.1.101"
-  resolved "git+https://github.com/scality/arsenal#25be9014c9af1bd3ea6bf6f2f30f4cc30f5586eb"
+  resolved "git+https://github.com/scality/arsenal#0109494ab6273a0f88e61667be8a66f397ff1d0a"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
@@ -801,7 +801,7 @@ arraybuffer.slice@~0.0.7:
     simple-glob "^0.2.0"
     socket.io "2.4.1"
     socket.io-client "2.4.0"
-    sproxydclient "git+https://github.com/scality/sproxydclient#8.0.9"
+    sproxydclient "git+https://github.com/scality/sproxydclient#483996f6ffd6c8bbdb73e5533fbc8cedea3773c9"
     utf8 "3.0.0"
     uuid "^3.0.1"
     werelogs scality/werelogs#8.1.2
@@ -1969,13 +1969,25 @@ eslint-plugin-mocha@^10.1.0:
     eslint-utils "^3.0.0"
     rambda "^7.1.0"
 
-eslint-scope@^7.1.1:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/eslint-scope/-/eslint-scope-7.1.1.tgz#fff34894c2f65e5226d3041ac480b4513a163642"
-  integrity sha512-QKQM/UXpIiHcLqJ5AOyIW7XZmzjkzQXYE54n1++wb0u9V/abW3l9uQnxX8Z5Xd18xyKIMTUAyQ0k1e8pz6LUrw==
+eslint-scope@^7.2.0:
+  version "7.2.1"
+  resolved "https://registry.yarnpkg.com/eslint-scope/-/eslint-scope-7.2.1.tgz#936821d3462675f25a18ac5fd88a67cc15b393bd"
+  integrity sha512-CvefSOsDdaYYvxChovdrPo/ZGt8d5lrJWleAc1diXRKhHGiTYEI26cvo8Kle/wGnsizoCJjK73FMg1/IkIwiNA==
   dependencies:
     esrecurse "^4.3.0"
     estraverse "^5.2.0"
+
+eslint-utils@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-utils/-/eslint-utils-3.0.0.tgz#8aebaface7345bb33559db0a1f13a1d2d48c3672"
+  integrity sha512-uuQC43IGctw68pJA1RgbQS8/NP7rch6Cwd4j3ZBtgo4/8Flj4eGE7ZYSZRN3iq5pVUv6GPdW5Z1RFleo84uLDA==
+  dependencies:
+    eslint-visitor-keys "^2.0.0"
+
+eslint-visitor-keys@^2.0.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-2.1.0.tgz#f65328259305927392c938ed44eb0a5c9b2bd303"
+  integrity sha512-0rSmRBzXgDzIsD6mGdJgevzgezI534Cer5L/vyMX0kHzT/jiB43jRhd9YUlMGYLQy2zprNmoT8qasCGtY+QaKw==
 
 eslint-visitor-keys@^3.3.0, eslint-visitor-keys@^3.4.1:
   version "3.4.1"
@@ -5195,9 +5207,9 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
 
-"sproxydclient@git+https://github.com/scality/sproxydclient#8.0.9":
+"sproxydclient@git+https://github.com/scality/sproxydclient#483996f6ffd6c8bbdb73e5533fbc8cedea3773c9":
   version "8.0.9"
-  resolved "git+https://github.com/scality/sproxydclient#117b53fb472fb95e06605a5f6872be068a659fda"
+  resolved "git+https://github.com/scality/sproxydclient#483996f6ffd6c8bbdb73e5533fbc8cedea3773c9"
   dependencies:
     async "^3.2.0"
     httpagent "github:scality/httpagent#1.0.6"
