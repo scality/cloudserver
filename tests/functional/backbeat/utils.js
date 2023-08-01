@@ -83,11 +83,7 @@ function makeBackbeatRequest(params, callback) {
     makeRequest(options, callback);
 }
 
-const runIfMongoV1 = process.env.S3METADATA === 'mongodb' && process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v1' ?
-    describe : describe.skip;
-
 module.exports = {
     makeBackbeatRequest,
-    runIfMongoV1,
     updateMetadata,
 };

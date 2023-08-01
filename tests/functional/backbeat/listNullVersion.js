@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1 } = require('./utils');
+const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-null-tests';
 
@@ -11,7 +11,7 @@ const credentials = {
     secretKey: 'verySecretKey1',
 };
 
-runIfMongoV1('listLifecycle if null version', () => {
+describe('listLifecycle if null version', () => {
     let bucketUtil;
     let s3;
     let versionForKey2;
@@ -103,7 +103,7 @@ runIfMongoV1('listLifecycle if null version', () => {
     });
 });
 
-runIfMongoV1('listLifecycle with null current version after versioning suspended', () => {
+describe('listLifecycle with null current version after versioning suspended', () => {
     let bucketUtil;
     let s3;
     let expectedVersionId;

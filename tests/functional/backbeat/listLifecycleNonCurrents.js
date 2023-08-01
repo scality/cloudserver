@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1 } = require('./utils');
+const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
@@ -35,7 +35,7 @@ function checkContents(contents) {
     });
 }
 
-runIfMongoV1('listLifecycleNonCurrents', () => {
+describe('listLifecycleNonCurrents', () => {
     let bucketUtil;
     let s3;
     let date;
@@ -295,7 +295,7 @@ runIfMongoV1('listLifecycleNonCurrents', () => {
         });
     });
 
-    it('should return the noncurrent version with prefix key1, before a defined date, and after marker', done => {
+    it('should return the noncurrent version with prefix, before a defined date and after key-marker', done => {
         const prefix = 'key2';
 
         makeBackbeatRequest({
@@ -330,7 +330,7 @@ runIfMongoV1('listLifecycleNonCurrents', () => {
         });
     });
 
-    it('should return the noncurrent version with prefix key1, before a defined date, and after marker', done => {
+    it('should return the noncurrent version with prefix, before a defined date, and after version-id-marker', done => {
         const prefix = 'key2';
 
         makeBackbeatRequest({
@@ -341,7 +341,7 @@ runIfMongoV1('listLifecycleNonCurrents', () => {
                 prefix,
                 'before-date': date,
                 'key-marker': 'key2',
-                'version-id-marker': expectedKey2VersionIds[0]
+                'version-id-marker': expectedKey2VersionIds[0],
             },
             authCredentials: credentials,
         }, (err, response) => {

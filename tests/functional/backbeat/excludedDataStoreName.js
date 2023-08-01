@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1, updateMetadata } = require('./utils');
+const { makeBackbeatRequest, updateMetadata } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-current-tests';
 const location1 = 'us-east-1';
@@ -13,7 +13,7 @@ const credentials = {
     secretKey: 'verySecretKey1',
 };
 
-runIfMongoV1('excludedDataStoreName', () => {
+describe('excludedDataStoreName', () => {
     let bucketUtil;
     let s3;
     const expectedVersions = [];
