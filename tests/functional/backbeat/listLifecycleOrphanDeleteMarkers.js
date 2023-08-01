@@ -118,7 +118,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'orphan', prefix: 'unknown' },
+            queryObj: { 'list-type': 'orphan', 'prefix': 'unknown' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);

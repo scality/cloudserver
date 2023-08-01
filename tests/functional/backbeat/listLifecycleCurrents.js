@@ -37,7 +37,6 @@ function checkContents(contents, expectedKeyVersions) {
 
 ['Enabled', 'Disabled'].forEach(versioning => {
     describe(`listLifecycleCurrents with bucket versioning ${versioning}`, () => {
-
         const testBucket = `bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
         const emptyBucket = `empty-bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
 
@@ -128,7 +127,7 @@ function checkContents(contents, expectedKeyVersions) {
             makeBackbeatRequest({
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'current', prefix: 'unknown' },
+                queryObj: { 'list-type': 'current', 'prefix': 'unknown' },
                 authCredentials: credentials,
             }, (err, response) => {
                 assert.ifError(err);
@@ -423,7 +422,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 
+            queryObj: {
                 'list-type': 'current',
                 'max-keys': '1',
                 'marker': 'key0',
@@ -452,7 +451,7 @@ describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () 
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 
+            queryObj: {
                 'list-type': 'current',
                 'max-keys': '1',
                 'marker': 'key1',
@@ -518,12 +517,13 @@ describe('listLifecycleCurrents with bucket versioning enabled and delete object
                     expectedKeyVersions[keyName2] = data.VersionId;
                     return next();
                 }),
-            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' }, (err, data) => {
-                if (err) {
-                    return next(err);
-                }
-                return s3.deleteObject({ Bucket: testBucket, Key: keyName2, VersionId: data.VersionId }, next);
-            }),
+            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    return s3.deleteObject({ Bucket: testBucket, Key: keyName2, VersionId: data.VersionId }, next);
+                }),
         ], done);
     });
 

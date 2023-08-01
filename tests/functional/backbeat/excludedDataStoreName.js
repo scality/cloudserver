@@ -145,7 +145,7 @@ describe('excludedDataStoreName', () => {
             assert.strictEqual(contents[0].Key, 'key0');
             assert.strictEqual(contents[0].DataStoreName, location1);
 
-            return  makeBackbeatRequest({
+            return makeBackbeatRequest({
                 method: 'GET',
                 bucket: testBucket,
                 queryObj: {

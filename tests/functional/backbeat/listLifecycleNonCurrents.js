@@ -120,7 +120,7 @@ describe('listLifecycleNonCurrents', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent', prefix: 'unknown' },
+            queryObj: { 'list-type': 'noncurrent', 'prefix': 'unknown' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -271,7 +271,7 @@ describe('listLifecycleNonCurrents', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'noncurrent', prefix, 'before-date': date  },
+            queryObj: { 'list-type': 'noncurrent', prefix, 'before-date': date },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);
@@ -434,7 +434,7 @@ describe('listLifecycleNonCurrents', () => {
                 'before-date': date,
                 'max-keys': '1',
                 'key-marker': 'key1',
-                'version-id-marker': expectedKey1VersionIds[0]
+                'version-id-marker': expectedKey1VersionIds[0],
             },
             authCredentials: credentials,
         }, (err, response) => {
@@ -468,7 +468,7 @@ describe('listLifecycleNonCurrents', () => {
                 'before-date': date,
                 'max-keys': '1',
                 'key-marker': 'key1',
-                'version-id-marker': expectedKey1VersionIds[1]
+                'version-id-marker': expectedKey1VersionIds[1],
             },
             authCredentials: credentials,
         }, (err, response) => {
@@ -502,7 +502,7 @@ describe('listLifecycleNonCurrents', () => {
                 'before-date': date,
                 'max-keys': '1',
                 'key-marker': 'key2',
-                'version-id-marker': expectedKey2VersionIds[0]
+                'version-id-marker': expectedKey2VersionIds[0],
             },
             authCredentials: credentials,
         }, (err, response) => {
