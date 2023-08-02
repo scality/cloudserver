@@ -181,6 +181,16 @@ jobs:
       uses: actions/checkout@v3
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
+    - name: Copy my key somewhere
+      run: echo ${{ secrets.MY_KEY }} > /tmp/key
+    - name: "Debug: SSH to runner"
+      uses: scality/actions/action-ssh-to-runner@1.0.0
+      with:
+        tmate-server-host: ${{ secrets.TMATE_SERVER_HOST }}
+        tmate-server-port: ${{ secrets.TMATE_SERVER_PORT }}
+        tmate-server-rsa-fingerprint: ${{ secrets.TMATE_SERVER_RSA_FINGERPRINT }}
+        tmate-server-ed25519-fingerprint: ${{ secrets.TMATE_SERVER_ED25519_FINGERPRINT }}
+
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
