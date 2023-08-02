@@ -4,6 +4,11 @@
         "legacyAwsBehavior": true,
         "details": {}
     },
+    "us-east-2": {
+        "type": "file",
+        "legacyAwsBehavior": true,
+        "details": {}
+    },
     "scality-internal-file": {
         "type": "file",
         "legacyAwsBehavior": false,
