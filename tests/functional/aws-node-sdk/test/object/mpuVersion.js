@@ -551,13 +551,13 @@ describe('MPU with x-scal-s3-version-id header', () => {
                     return next(err);
                 }),
                 next => s3.putObject(params, next),
-                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
-                    versionsBefore = res.Versions;
-                    return next(err);
-                }),
                 next => fakeMetadataArchive(bucketName, objectName, vId, archive, next),
                 next => getMetadata(bucketName, objectName, vId, (err, objMD) => {
                     objMDBefore = objMD;
+                    return next(err);
+                }),
+                next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
+                    versionsBefore = res.Versions;
                     return next(err);
                 }),
                 next => putMPUVersion(s3, bucketName, objectName, vId, next),
@@ -711,11 +711,11 @@ describe('MPU with x-scal-s3-version-id header', () => {
 
             async.series([
                 next => s3.putObject(params, next),
+                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                 next => metadata.listObject(bucketName, mdListingParams, log, (err, res) => {
                     versionsBefore = res.Versions;
                     return next(err);
                 }),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
                 next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
                     objMDBefore = objMD;
                     return next(err);
@@ -810,41 +810,77 @@ describe('MPU with x-scal-s3-version-id header', () => {
             });
         });
 
-        it('should update restore metadata', done => {
-            const params = { Bucket: bucketName, Key: objectName };
-            let objMDBefore;
-            let objMDAfter;
+        [
+            'non versioned',
+            'versioned',
+            'suspended'
+        ].forEach(versioning => {
+            it(`should update restore metadata while keeping storage class (${versioning})`, done => {
+                const params = { Bucket: bucketName, Key: objectName };
+                let objMDBefore;
+                let objMDAfter;
 
-            async.series([
-                next => s3.putObject(params, next),
-                next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDBefore = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, next),
-                next => putMPUVersion(s3, bucketName, objectName, '', next),
-                next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
-                    objMDAfter = objMD;
-                    return next(err);
-                }),
-                next => metadata.listObject(bucketName, mdListingParams, log, next),
-            ], err => {
-                assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
+                async.series([
+                    next => {
+                        if (versioning === 'versioned') {
+                            return s3.putBucketVersioning({
+                                Bucket: bucketName,
+                                VersioningConfiguration: { Status: 'Enabled' }
+                            }, next);
+                        } else if (versioning === 'suspended') {
+                            return s3.putBucketVersioning({
+                                Bucket: bucketName,
+                                VersioningConfiguration: { Status: 'Suspended' }
+                            }, next);
+                        }
+                        return next();
+                    },
+                    next => s3.putObject(params, next),
+                    next => fakeMetadataArchive(bucketName, objectName, undefined, archive, next),
+                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                        objMDBefore = objMD;
+                        return next(err);
+                    }),
+                    next => metadata.listObject(bucketName, mdListingParams, log, next),
+                    next => putMPUVersion(s3, bucketName, objectName, '', next),
+                    next => getMetadata(bucketName, objectName, undefined, (err, objMD) => {
+                        objMDAfter = objMD;
+                        return next(err);
+                    }),
+                    next => s3.listObjects({ Bucket: bucketName }, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.Contents.length, 1);
+                        assert.strictEqual(res.Contents[0].StorageClass, 'location-dmf-v1');
+                        return next();
+                    }),
+                    next => s3.headObject(params, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.StorageClass, 'location-dmf-v1');
+                        return next();
+                    }),
+                    next => s3.getObject(params, (err, res) => {
+                        assert.ifError(err);
+                        assert.strictEqual(res.StorageClass, 'location-dmf-v1');
+                        return next();
+                    }),
+                ], err => {
+                    assert.strictEqual(err, null, `Expected success got error ${JSON.stringify(err)}`);
 
-                // Make sure object data location is set back to its bucket data location.
-                assert.deepStrictEqual(objMDAfter.dataStoreName, 'us-east-1');
+                    // Make sure object data location is set back to its bucket data location.
+                    assert.deepStrictEqual(objMDAfter.dataStoreName, 'us-east-1');
 
-                assert.deepStrictEqual(objMDAfter.archive.archiveInfo, objMDBefore.archive.archiveInfo);
-                assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt, objMDBefore.archive.restoreRequestedAt);
-                assert.deepStrictEqual(objMDAfter.archive.restoreRequestedDays,
-                    objMDBefore.archive.restoreRequestedDays);
-                assert.deepStrictEqual(objMDAfter['x-amz-restore']['ongoing-request'], false);
+                    assert.deepStrictEqual(objMDAfter.archive.archiveInfo, objMDBefore.archive.archiveInfo);
+                    assert.deepStrictEqual(objMDAfter.archive.restoreRequestedAt,
+                        objMDBefore.archive.restoreRequestedAt);
+                    assert.deepStrictEqual(objMDAfter.archive.restoreRequestedDays,
+                        objMDBefore.archive.restoreRequestedDays);
+                    assert.deepStrictEqual(objMDAfter['x-amz-restore']['ongoing-request'], false);
 
-                assert(objMDAfter.archive.restoreCompletedAt);
-                assert(objMDAfter.archive.restoreWillExpireAt);
-                assert(objMDAfter['x-amz-restore']['expiry-date']);
-                return done();
+                    assert(objMDAfter.archive.restoreCompletedAt);
+                    assert(objMDAfter.archive.restoreWillExpireAt);
+                    assert(objMDAfter['x-amz-restore']['expiry-date']);
+                    return done();
+                });
             });
         });
     });

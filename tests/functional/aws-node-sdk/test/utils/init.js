@@ -77,6 +77,7 @@ function fakeMetadataArchive(bucketName, objectName, versionId, archive, cb) {
 			return cb(err);
 		}
         /* eslint-disable no-param-reassign */
+        objMD['x-amz-storage-class'] = 'location-dmf-v1';
         objMD.dataStoreName = 'location-dmf-v1';
         objMD.archive = archive;
         /* eslint-enable no-param-reassign */
