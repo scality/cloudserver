@@ -12,6 +12,7 @@ const log = new DummyRequestLogger();
 
 const bucketName = 'bucket1putversion32';
 const objectName = 'object1putversion';
+const bucketNameMD = 'restore-metadata-copy-bucket';
 const mdListingParams = { listingType: 'DelimiterVersions', maxKeys: 1000 };
 const archive = {
     archiveInfo: {},
@@ -55,22 +56,19 @@ describe('PUT object with x-scal-s3-version-id header', () => {
         beforeEach(done => {
             bucketUtil = new BucketUtility('default', sigCfg);
             s3 = bucketUtil.s3;
-            return metadata.setup(() =>
-                s3.createBucket({ Bucket: bucketName }, err => {
-                    if (err) {
-                        assert.strictEqual(err, null, 'Creating bucket: Expected success, ' +
-                            `got error ${JSON.stringify(err)}`);
-                    }
-                    done();
-                }));
+            async.series([
+                next => metadata.setup(next),
+                next => s3.createBucket({ Bucket: bucketName }, next),
+                next => s3.createBucket({ Bucket: bucketNameMD, ObjectLockEnabledForBucket: true, }, next),
+            ], done);
         });
 
         afterEach(() => {
             process.stdout.write('Emptying bucket');
-            return bucketUtil.empty(bucketName)
+            return bucketUtil.emptyMany([bucketName, bucketNameMD])
             .then(() => {
                 process.stdout.write('Deleting bucket');
-                return bucketUtil.deleteOne(bucketName);
+                return bucketUtil.deleteMany([bucketName, bucketNameMD]);
             })
             .catch(err => {
                 process.stdout.write('Error in afterEach');
@@ -791,6 +789,121 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                     return done();
                 });
             });
+        });
+
+        it('should "copy" all but non data-related metadata (data encryption, data size...)', done => {
+            const params = {
+                Bucket: bucketNameMD,
+                Key: objectName
+            };
+            const putParams = {
+                ...params,
+                Metadata: {
+                    'custom-user-md': 'custom-md',
+                },
+                WebsiteRedirectLocation: 'http://custom-redirect'
+            };
+            const aclParams = {
+                ...params,
+                // email of user Bart defined in authdata.json
+                GrantFullControl: 'emailaddress=sampleaccount1@sampling.com',
+            };
+            const tagParams = {
+                ...params,
+                Tagging: {
+                    TagSet: [{
+                      Key: 'tag1',
+                      Value: 'value1'
+                    }, {
+                        Key: 'tag2',
+                        Value: 'value2'
+                    }]
+                }
+            };
+            const legalHoldParams = {
+                ...params,
+                LegalHold: {
+                    Status: 'ON'
+                  },
+            };
+            const acl = {
+                'Canned': '',
+                'FULL_CONTROL': [
+                    // canonicalID of user Bart
+                    '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be',
+                ],
+                'WRITE_ACP': [],
+                'READ': [],
+                'READ_ACP': [],
+            };
+            const tags = { tag1: 'value1', tag2: 'value2' };
+            const replicationInfo = {
+                'status': 'COMPLETED',
+                'backends': [
+                        {
+                                'site': 'azure-normal',
+                                'status': 'COMPLETED',
+                                'dataStoreVersionId': '',
+                        },
+                ],
+                'content': [
+                        'DATA',
+                        'METADATA',
+                ],
+                'destination': 'arn:aws:s3:::versioned',
+                'storageClass': 'azure-normal',
+                'role': 'arn:aws:iam::root:role/s3-replication-role',
+                'storageType': 'azure',
+                'dataStoreVersionId': '',
+                'isNFS': null,
+            };
+            async.series([
+                next => s3.putObject(putParams, next),
+                next => s3.putObjectAcl(aclParams, next),
+                next => s3.putObjectTagging(tagParams, next),
+                next => s3.putObjectLegalHold(legalHoldParams, next),
+                next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    /* eslint-disable no-param-reassign */
+                    objMD.dataStoreName = 'location-dmf-v1';
+                    objMD.archive = archive;
+                    objMD.replicationInfo = replicationInfo;
+                    // data related
+                    objMD['content-length'] = 99;
+                    objMD['content-type'] = 'testtype';
+                    objMD['content-md5'] = 'testmd 5';
+                    objMD['content-encoding'] = 'testencoding';
+                    objMD['x-amz-server-side-encryption'] = 'aws:kms';
+                    /* eslint-enable no-param-reassign */
+                    return metadata.putObjectMD(bucketNameMD, objectName, objMD, undefined, log, next);
+                }),
+                next => putObjectVersion(s3, params, '', next),
+                next => getMetadata(bucketNameMD, objectName, undefined, (err, objMD) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    assert.deepStrictEqual(objMD.acl, acl);
+                    assert.deepStrictEqual(objMD.tags, tags);
+                    assert.deepStrictEqual(objMD.replicationInfo, replicationInfo);
+                    assert.deepStrictEqual(objMD.legalHold, true);
+                    assert.strictEqual(objMD['x-amz-meta-custom-user-md'], 'custom-md');
+                    assert.strictEqual(objMD['x-amz-website-redirect-location'], 'http://custom-redirect');
+                    // make sure data related metadatas ar not the same before and after
+                    assert.notStrictEqual(objMD['x-amz-server-side-encryption'], 'aws:kms');
+                    assert.notStrictEqual(objMD['content-length'], 99);
+                    assert.notStrictEqual(objMD['content-md5'], 'testmd5');
+                    assert.notStrictEqual(objMD['content-encoding'], 'testencoding');
+                    assert.notStrictEqual(objMD['content-type'], 'testtype');
+                    return next();
+                }),
+                // removing legal hold to be able to clean the bucket after the test
+                next => {
+                    legalHoldParams.LegalHold.Status = 'OFF';
+                    return s3.putObjectLegalHold(legalHoldParams, next);
+                },
+            ], done);
         });
     });
 });
