@@ -1625,7 +1625,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by(action)",
+          "expr": "sum(rate(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by(action)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1697,7 +1697,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(round(increase(http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(method)",
+          "expr": "sum(round(increase(s3_cloudserver_http_requests_total{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))) by(method)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2038,7 +2038,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)\n   /\nsum(rate(http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)",
+          "expr": "sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)\n   /\nsum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by (action)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2766,5 +2766,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 30
+  "version": 31
 }

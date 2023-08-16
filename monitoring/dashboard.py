@@ -331,7 +331,7 @@ requestsByAction = TimeSeries(
     unit=UNITS.OPS_PER_SEC,
     targets=[
         Target(
-            expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
+            expr='sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
             legendFormat="{{action}}",
         )
     ]
@@ -345,7 +345,7 @@ requestsByMethod = PieChart(
     unit=UNITS.SHORT,
     targets=[
         Target(
-            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
+            expr='sum(round(increase(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
             legendFormat="{{method}}",
         ),
     ],
