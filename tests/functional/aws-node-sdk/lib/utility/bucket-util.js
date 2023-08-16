@@ -14,6 +14,18 @@ class BucketUtility {
         });
     }
 
+    bucketExists(bucketName) {
+        return this.s3
+            .headBucket({ Bucket: bucketName }).promise()
+            .then(() => true)
+            .catch(err => {
+                if (err.code === 'NotFound') {
+                    return false;
+                }
+                throw err;
+            });
+    }
+
     createOne(bucketName) {
         return this.s3
             .createBucket({ Bucket: bucketName }).promise()
@@ -116,6 +128,24 @@ class BucketUtility {
     emptyMany(bucketNames) {
         const promises = bucketNames.map(
             bucketName => this.empty(bucketName)
+        );
+
+        return Promise.all(promises);
+    }
+
+    emptyIfExists(bucketName) {
+        return this.bucketExists(bucketName)
+            .then(exists => {
+                if (exists) {
+                    return this.empty(bucketName);
+                }
+                return undefined;
+            });
+    }
+
+    emptyManyIfExists(bucketNames) {
+        const promises = bucketNames.map(
+            bucketName => this.emptyIfExists(bucketName)
         );
 
         return Promise.all(promises);
