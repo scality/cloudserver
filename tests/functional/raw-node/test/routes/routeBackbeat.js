@@ -156,7 +156,8 @@ describeSkipIfAWS('backbeat routes', () => {
         bucketUtil = new BucketUtility(
             'default', { signatureVersion: 'v4' });
         s3 = bucketUtil.s3;
-        s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+        bucketUtil.emptyManyIfExists([TEST_BUCKET, TEST_ENCRYPTED_BUCKET, NONVERSIONED_BUCKET])
+            .then(() => s3.createBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => s3.putBucketVersioning(
                 {
                     Bucket: TEST_BUCKET,
@@ -190,15 +191,16 @@ describeSkipIfAWS('backbeat routes', () => {
                 throw err;
             });
     });
-    after(done => {
+
+    after(done =>
         bucketUtil.empty(TEST_BUCKET)
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
             .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
             .then(() =>
                 s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
-            .then(() => done());
-    });
+            .then(() => done(), err => done(err))
+    );
 
     describe('null version', () => {
         const bucket = BUCKET_FOR_NULL_VERSION;
@@ -219,12 +221,17 @@ describeSkipIfAWS('backbeat routes', () => {
             assert.strictEqual(StorageClass, 'STANDARD');
         }
 
-        beforeEach(done => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }, done));
-        afterEach(done => {
+        beforeEach(done =>
+            bucketUtil.emptyIfExists(BUCKET_FOR_NULL_VERSION)
+                .then(() => s3.createBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
+                .then(() => done(), err => done(err))
+        );
+
+        afterEach(done =>
             bucketUtil.empty(BUCKET_FOR_NULL_VERSION)
                 .then(() => s3.deleteBucket({ Bucket: BUCKET_FOR_NULL_VERSION }).promise())
-                .then(() => done());
-        });
+                .then(() => done(), err => done(err))
+        );
 
         it('should update metadata of a current null version', done => {
             let objMD;
