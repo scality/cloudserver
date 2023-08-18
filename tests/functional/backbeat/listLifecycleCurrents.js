@@ -2,10 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1 } = require('./utils');
-
-const testBucket = 'bucket-for-list-lifecycle-current-tests';
-const emptyBucket = 'empty-bucket-for-list-lifecycle-current-tests';
+const { makeBackbeatRequest } = require('./utils');
 
 const credentials = {
     accessKey: 'accessKey1',
@@ -39,7 +36,10 @@ function checkContents(contents, expectedKeyVersions) {
 }
 
 ['Enabled', 'Disabled'].forEach(versioning => {
-    runIfMongoV1(`listLifecycleCurrents with bucket versioning ${versioning}`, () => {
+    describe(`listLifecycleCurrents with bucket versioning ${versioning}`, () => {
+        const testBucket = `bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
+        const emptyBucket = `empty-bucket-for-list-lifecycle-current-tests-${versioning.toLowerCase()}`;
+
         let bucketUtil;
         let s3;
         let date;
@@ -127,7 +127,7 @@ function checkContents(contents, expectedKeyVersions) {
             makeBackbeatRequest({
                 method: 'GET',
                 bucket: testBucket,
-                queryObj: { 'list-type': 'current', prefix: 'unknown' },
+                queryObj: { 'list-type': 'current', 'prefix': 'unknown' },
                 authCredentials: credentials,
             }, (err, response) => {
                 assert.ifError(err);
@@ -332,6 +332,255 @@ function checkContents(contents, expectedKeyVersions) {
                 assert.strictEqual(contents[0].Key, 'oldkey2');
                 return done();
             });
+        });
+    });
+});
+
+describe('listLifecycleCurrents with bucket versioning enabled and maxKeys', () => {
+    const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
+    let bucketUtil;
+    let s3;
+    const expectedKeyVersions = {};
+
+    before(done => {
+        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
+        s3 = bucketUtil.s3;
+
+        return async.series([
+            next => s3.createBucket({ Bucket: testBucket }, next),
+            next => s3.putBucketVersioning({
+                Bucket: testBucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }, next),
+            next => async.times(3, (n, cb) => {
+                const keyName = 'key0';
+                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        cb(err);
+                    }
+                    expectedKeyVersions[keyName] = data.VersionId;
+                    return cb();
+                });
+            }, next),
+            next => async.times(5, (n, cb) => {
+                const keyName = 'key1';
+                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        cb(err);
+                    }
+                    expectedKeyVersions[keyName] = data.VersionId;
+                    return cb();
+                });
+            }, next),
+            next => async.times(3, (n, cb) => {
+                const keyName = 'key2';
+                s3.putObject({ Bucket: testBucket, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        cb(err);
+                    }
+                    expectedKeyVersions[keyName] = data.VersionId;
+                    return cb();
+                });
+            }, next),
+        ], done);
+    });
+
+    after(done => async.series([
+        next => removeAllVersions({ Bucket: testBucket }, next),
+        next => s3.deleteBucket({ Bucket: testBucket }, next),
+    ], done));
+
+    it('should return truncated lists - part 1', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'current', 'max-keys': '1' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.NextMarker, 'key0');
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.Contents.length, 1);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents, expectedKeyVersions);
+            assert.strictEqual(contents[0].Key, 'key0');
+            return done();
+        });
+    });
+
+    it('should return truncated lists - part 2', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'current',
+                'max-keys': '1',
+                'marker': 'key0',
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.Marker, 'key0');
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.NextMarker, 'key1');
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.Contents.length, 1);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents, expectedKeyVersions);
+            assert.strictEqual(contents[0].Key, 'key1');
+            return done();
+        });
+    });
+
+    it('should return truncated lists - part 3', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'current',
+                'max-keys': '1',
+                'marker': 'key1',
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert(!data.NextMarker);
+            assert.strictEqual(data.IsTruncated, false);
+            assert.strictEqual(data.Marker, 'key1');
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.Contents.length, 1);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents, expectedKeyVersions);
+            assert.strictEqual(contents[0].Key, 'key2');
+            return done();
+        });
+    });
+});
+
+
+describe('listLifecycleCurrents with bucket versioning enabled and delete object', () => {
+    const testBucket = 'bucket-for-list-lifecycle-current-tests-truncated';
+    const keyName0 = 'key0';
+    const keyName1 = 'key1';
+    const keyName2 = 'key2';
+    let bucketUtil;
+    let s3;
+    const expectedKeyVersions = {};
+
+    before(done => {
+        bucketUtil = new BucketUtility('account1', { signatureVersion: 'v4' });
+        s3 = bucketUtil.s3;
+
+        return async.series([
+            next => s3.createBucket({ Bucket: testBucket }, next),
+            next => s3.putBucketVersioning({
+                Bucket: testBucket,
+                VersioningConfiguration: { Status: 'Enabled' },
+            }, next),
+            next => {
+                s3.putObject({ Bucket: testBucket, Key: keyName0, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        next(err);
+                    }
+                    expectedKeyVersions[keyName0] = data.VersionId;
+                    return next();
+                });
+            },
+            next => s3.putObject({ Bucket: testBucket, Key: keyName1, Body: '123', Tagging: 'mykey=myvalue' }, next),
+            next => s3.deleteObject({ Bucket: testBucket, Key: keyName1 }, next),
+            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        next(err);
+                    }
+                    expectedKeyVersions[keyName2] = data.VersionId;
+                    return next();
+                }),
+            next => s3.putObject({ Bucket: testBucket, Key: keyName2, Body: '123', Tagging: 'mykey=myvalue' },
+                (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    return s3.deleteObject({ Bucket: testBucket, Key: keyName2, VersionId: data.VersionId }, next);
+                }),
+        ], done);
+    });
+
+    after(done => async.series([
+        next => removeAllVersions({ Bucket: testBucket }, next),
+        next => s3.deleteBucket({ Bucket: testBucket }, next),
+    ], done));
+
+    it('should return truncated lists - part 1', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'current', 'max-keys': '1' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.NextMarker, keyName0);
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.Contents.length, 1);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents, expectedKeyVersions);
+            assert.strictEqual(contents[0].Key, keyName0);
+            return done();
+        });
+    });
+
+    it('should return truncated lists - part 2', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: {
+                'list-type': 'current',
+                'max-keys': '1',
+                'marker': keyName0,
+            },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert(!data.NextMarker);
+            assert.strictEqual(data.IsTruncated, false);
+            assert.strictEqual(data.Marker, keyName0);
+            assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.Contents.length, 1);
+
+            const contents = data.Contents;
+            assert.strictEqual(contents.length, 1);
+            checkContents(contents, expectedKeyVersions);
+            assert.strictEqual(contents[0].Key, keyName2);
+            return done();
         });
     });
 });
