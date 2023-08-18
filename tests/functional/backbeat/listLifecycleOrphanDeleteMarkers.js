@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1 } = require('./utils');
+const { makeBackbeatRequest } = require('./utils');
 
 const testBucket = 'bucket-for-list-lifecycle-orphans-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-orphans-tests';
@@ -30,6 +30,13 @@ function checkContents(contents) {
     });
 }
 
+function createDeleteMarker(s3, bucketName, keyName, cb) {
+    return async.series([
+        next => s3.putObject({ Bucket: bucketName, Key: keyName, Body: '123', Tagging: 'mykey=myvalue' }, next),
+        next => s3.deleteObject({ Bucket: bucketName, Key: keyName }, next),
+    ], cb);
+}
+
 function createOrphanDeleteMarker(s3, bucketName, keyName, cb) {
     let versionId;
     return async.series([
@@ -46,7 +53,7 @@ function createOrphanDeleteMarker(s3, bucketName, keyName, cb) {
     ], cb);
 }
 
-runIfMongoV1('listLifecycleOrphanDeleteMarkers', () => {
+describe('listLifecycleOrphanDeleteMarkers', () => {
     let bucketUtil;
     let s3;
     let date;
@@ -70,6 +77,7 @@ runIfMongoV1('listLifecycleOrphanDeleteMarkers', () => {
             next => async.times(3, (n, cb) => {
                 createOrphanDeleteMarker(s3, testBucket, `key${n}old`, cb);
             }, next),
+            next => createDeleteMarker(s3, testBucket, 'no-orphan-delete-marker', next),
             next => {
                 date = new Date(Date.now()).toISOString();
                 return async.times(5, (n, cb) => {
@@ -110,7 +118,7 @@ runIfMongoV1('listLifecycleOrphanDeleteMarkers', () => {
         makeBackbeatRequest({
             method: 'GET',
             bucket: testBucket,
-            queryObj: { 'list-type': 'orphan', prefix: 'unknown' },
+            queryObj: { 'list-type': 'orphan', 'prefix': 'unknown' },
             authCredentials: credentials,
         }, (err, response) => {
             assert.ifError(err);

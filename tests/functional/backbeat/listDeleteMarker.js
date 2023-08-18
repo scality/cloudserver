@@ -2,14 +2,14 @@ const assert = require('assert');
 const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
-const { makeBackbeatRequest, runIfMongoV1 } = require('./utils');
+const { makeBackbeatRequest } = require('./utils');
 
 const credentials = {
     accessKey: 'accessKey1',
     secretKey: 'verySecretKey1',
 };
 
-runIfMongoV1('listLifecycle with non-current delete marker', () => {
+describe('listLifecycle with non-current delete marker', () => {
     let bucketUtil;
     let s3;
     let expectedVersionId;
@@ -113,7 +113,7 @@ runIfMongoV1('listLifecycle with non-current delete marker', () => {
     });
 });
 
-runIfMongoV1('listLifecycle with current delete marker version', () => {
+describe('listLifecycle with current delete marker version', () => {
     let bucketUtil;
     let s3;
     let expectedVersionId;
