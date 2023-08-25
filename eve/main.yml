@@ -39,8 +39,8 @@ models:
         %(secret:b2backend_b2_storage_access_key)s
       GOOGLE_SERVICE_EMAIL: "%(secret:gcp_service_email)s"
       GOOGLE_SERVICE_KEY: "%(secret:gcp_service_key)s"
-      AWS_S3_BACKEND_ACCESS_KEY: "%(secret:aws_s3_backend_access_key)s"
-      AWS_S3_BACKEND_SECRET_KEY: "%(secret:aws_s3_backend_secret_key)s"
+      AWS_S3_BACKEND_ACCESS_KEY: "%(secret:aws_s3_backend_access_key_3)s"
+      AWS_S3_BACKEND_SECRET_KEY: "%(secret:aws_s3_backend_secret_key_3)s"
       AWS_S3_BACKEND_ACCESS_KEY_2: "%(secret:aws_s3_backend_access_key_2)s"
       AWS_S3_BACKEND_SECRET_KEY_2: "%(secret:aws_s3_backend_secret_key_2)s"
       AWS_GCP_BACKEND_ACCESS_KEY: "%(secret:aws_gcp_backend_access_key)s"
