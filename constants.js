@@ -174,6 +174,11 @@ const constants = {
         'user',
         'bucket',
     ],
+    arrayOfAllowed: [
+        'objectPutTagging',
+        'objectPutLegalHold',
+        'objectPutRetention',
+    ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
     // The AWS assumed Role resource type
     assumedRoleArnResourceType: 'assumed-role',
