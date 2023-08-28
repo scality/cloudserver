@@ -53,7 +53,11 @@ function getNotifRequest(empty) {
             host: `${bucketName}.s3.amazonaws.com`,
         },
         post: notifXml,
+<<<<<<< HEAD
         actionImplicitDenies: false,
+=======
+        iamAuthzResults: false,
+>>>>>>> 8878814e (CLDSRV-428: put apis updated for implicit deny)
     };
     return putNotifConfigRequest;
 }
