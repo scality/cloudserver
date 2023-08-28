@@ -19,6 +19,7 @@ const putBucketRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    iamAuthzResults: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -29,16 +30,17 @@ const putObjectRequest = new DummyRequest({
     url: `/${bucketName}/${objectName}`,
 }, postBody);
 
-const objectLegalHoldXml = status => '<LegalHold ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    `<Status>${status}</Status>` +
-    '</LegalHold>';
+const objectLegalHoldXml = status => '<LegalHold '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + `<Status>${status}</Status>`
+    + '</LegalHold>';
 
 const putLegalHoldReq = status => ({
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectLegalHoldXml(status),
+    iamAuthzResults: false,
 });
 
 describe('putObjectLegalHold API', () => {
@@ -77,11 +79,11 @@ describe('putObjectLegalHold API', () => {
             objectPutLegalHold(authInfo, putLegalHoldReq('ON'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.legalHold, true);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.legalHold, true);
+                        return done();
+                    });
             });
         });
 
@@ -89,11 +91,11 @@ describe('putObjectLegalHold API', () => {
             objectPutLegalHold(authInfo, putLegalHoldReq('OFF'), log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.legalHold, false);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.legalHold, false);
+                        return done();
+                    });
             });
         });
     });
