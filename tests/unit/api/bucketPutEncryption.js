@@ -14,6 +14,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    iamAuthzResults: false,
 };
 
 describe('bucketPutEncryption API', () => {
@@ -32,10 +33,11 @@ describe('bucketPutEncryption API', () => {
 
         it('should reject a config with no Rule', done => {
             bucketPutEncryption(authInfo, templateRequest(bucketName,
-            { post: `<?xml version="1.0" encoding="UTF-8"?>
+                {
+                    post: `<?xml version="1.0" encoding="UTF-8"?>
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 </ServerSideEncryptionConfiguration>`,
-            }), log, err => {
+                }), log, err => {
                 assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
@@ -43,11 +45,12 @@ describe('bucketPutEncryption API', () => {
 
         it('should reject a config with no ApplyServerSideEncryptionByDefault section', done => {
             bucketPutEncryption(authInfo, templateRequest(bucketName,
-            { post: `<?xml version="1.0" encoding="UTF-8"?>
+                {
+                    post: `<?xml version="1.0" encoding="UTF-8"?>
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 <Rule></Rule>
                 </ServerSideEncryptionConfiguration>`,
-            }), log, err => {
+                }), log, err => {
                 assert.strictEqual(err.is.MalformedXML, true);
                 done();
             });
@@ -155,33 +158,32 @@ describe('bucketPutEncryption API', () => {
             });
         });
 
-        it('should update SSEAlgorithm if existing SSEAlgorithm is AES256, ' +
-            'new SSEAlgorithm is aws:kms and no KMSMasterKeyID is provided',
-            done => {
-                const post = templateSSEConfig({ algorithm: 'AES256' });
-                bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+        it('should update SSEAlgorithm if existing SSEAlgorithm is AES256, '
+            + 'new SSEAlgorithm is aws:kms and no KMSMasterKeyID is provided',
+        done => {
+            const post = templateSSEConfig({ algorithm: 'AES256' });
+            bucketPutEncryption(authInfo, templateRequest(bucketName, { post }), log, err => {
+                assert.ifError(err);
+                return getSSEConfig(bucketName, log, (err, sseInfo) => {
                     assert.ifError(err);
-                    return getSSEConfig(bucketName, log, (err, sseInfo) => {
-                        assert.ifError(err);
-                        const { masterKeyId } = sseInfo;
-                        const newConf = templateSSEConfig({ algorithm: 'aws:kms' });
-                        return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
-                            err => {
-                                assert.ifError(err);
-                                return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
-                                    assert.deepStrictEqual(updatedSSEInfo, {
-                                        mandatory: true,
-                                        algorithm: 'aws:kms',
-                                        cryptoScheme: 1,
-                                        masterKeyId,
-                                    });
-                                    done();
+                    const { masterKeyId } = sseInfo;
+                    const newConf = templateSSEConfig({ algorithm: 'aws:kms' });
+                    return bucketPutEncryption(authInfo, templateRequest(bucketName, { post: newConf }), log,
+                        err => {
+                            assert.ifError(err);
+                            return getSSEConfig(bucketName, log, (err, updatedSSEInfo) => {
+                                assert.deepStrictEqual(updatedSSEInfo, {
+                                    mandatory: true,
+                                    algorithm: 'aws:kms',
+                                    cryptoScheme: 1,
+                                    masterKeyId,
                                 });
-                            }
-                        );
-                    });
+                                done();
+                            });
+                        });
                 });
             });
+        });
 
         it('should update SSEAlgorithm to aws:kms and set KMSMasterKeyID', done => {
             const post = templateSSEConfig({ algorithm: 'AES256' });
