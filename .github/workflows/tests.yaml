@@ -133,6 +133,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Copy AWS_S3_BACKEND_ACCESS_KEY key somewhere
+        run: echo ${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }} > /tmp/key
+      - name: Copy AWS_GCP_BACKEND_ACCESS_KEY_2 key somewhere
+        run: echo ${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }} > /tmp/key2
+      - name: "Debug: SSH to runner"
+        uses: scality/actions/action-ssh-to-runner@main
+        with:
+          tmate-server-host: ${{ secrets.TMATE_SERVER_HOST }}
+          tmate-server-port: ${{ secrets.TMATE_SERVER_PORT }}
+          tmate-server-rsa-fingerprint: ${{ secrets.TMATE_SERVER_RSA_FINGERPRINT }}
+          tmate-server-ed25519-fingerprint: ${{ secrets.TMATE_SERVER_ED25519_FINGERPRINT }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to GitHub Registry
@@ -181,17 +193,7 @@ jobs:
       uses: actions/checkout@v3
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
-    - name: Copy AWS_S3_BACKEND_ACCESS_KEY key somewhere
-      run: echo ${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }} > /tmp/key
-    - name: Copy AWS_GCP_BACKEND_ACCESS_KEY_2 key somewhere
-      run: echo ${{ secrets.AWS_S3_BACKEND_ACCESS_KEY }} > /tmp/key2
-    - name: "Debug: SSH to runner"
-      uses: scality/actions/action-ssh-to-runner@1.0.0
-      with:
-        tmate-server-host: ${{ secrets.TMATE_SERVER_HOST }}
-        tmate-server-port: ${{ secrets.TMATE_SERVER_PORT }}
-        tmate-server-rsa-fingerprint: ${{ secrets.TMATE_SERVER_RSA_FINGERPRINT }}
-        tmate-server-ed25519-fingerprint: ${{ secrets.TMATE_SERVER_ED25519_FINGERPRINT }}
+
 
     - name: Setup CI services
       run: docker-compose up -d
