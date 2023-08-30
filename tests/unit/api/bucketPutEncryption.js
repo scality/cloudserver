@@ -38,9 +38,9 @@ describe('bucketPutEncryption API', () => {
                 <ServerSideEncryptionConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
                 </ServerSideEncryptionConfiguration>`,
                 }), log, err => {
-                assert.strictEqual(err.is.MalformedXML, true);
-                done();
-            });
+                    assert.strictEqual(err.is.MalformedXML, true);
+                    done();
+                });
         });
 
         it('should reject a config with no ApplyServerSideEncryptionByDefault section', done => {
@@ -51,9 +51,9 @@ describe('bucketPutEncryption API', () => {
                 <Rule></Rule>
                 </ServerSideEncryptionConfiguration>`,
                 }), log, err => {
-                assert.strictEqual(err.is.MalformedXML, true);
-                done();
-            });
+                    assert.strictEqual(err.is.MalformedXML, true);
+                    done();
+                });
         });
 
         it('should reject a config with no SSEAlgorithm', done => {
