@@ -75,78 +75,78 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
 describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     this.timeout(5000);
 
+    const putCases = [
+        {
+            name: 'mem',
+            bucketLoc: fileLocation,
+            objLoc: memLocation,
+        },
+        {
+            name: 'file',
+            bucketLoc: memLocation,
+            objLoc: fileLocation,
+        },
+        {
+            name: 'sproxyd',
+            bucketLoc: sproxydLocation,
+            objLoc: null,
+        },
+        {
+            name: 'AWS',
+            bucketLoc: memLocation,
+            objLoc: 'awsbackend',
+        },
+        {
+            name: 'azure',
+            bucketLoc: memLocation,
+            objLoc: 'azurebackend',
+        },
+        {
+            name: 'mem based on bucket location',
+            bucketLoc: memLocation,
+            objLoc: null,
+        },
+        {
+            name: 'file based on bucket location',
+            bucketLoc: fileLocation,
+            objLoc: null,
+        },
+        {
+            name: 'AWS based on bucket location',
+            bucketLoc: 'awsbackend',
+            objLoc: null,
+        },
+        {
+            name: 'Azure based on bucket location',
+            bucketLoc: 'azurebackend',
+            objLoc: null,
+        },
+        {
+            name: 'us-east-1 which is file based on bucket location if no locationConstraint provided',
+            bucketLoc: null,
+            objLoc: null,
+        },
+    ];
+
+    const isDataStoredInMem = testCase => {
+        return testCase.objLoc === memLocation
+               || (testCase.objLoc === null && testCase.bucketLoc === memLocation);
+    };
+
     afterEach(() => {
         cleanup();
     });
 
-    it('should put an object to mem', done => {
-        put(fileLocation, memLocation, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
-        });
-    });
-
-    it('should put an object to file', done => {
-        put(memLocation, fileLocation, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to sproxyd', done => {
-        put(sproxydLocation, null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to AWS', done => {
-        put(memLocation, 'awsbackend', 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to mem based on bucket location', done => {
-        put(memLocation, null, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
-        });
-    });
-
-    it('should put an object to file based on bucket location', done => {
-        put(fileLocation, null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to AWS based on bucket location', done => {
-        put('awsbackend', null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to Azure based on bucket location', done => {
-        put('azurebackend', null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to Azure based on object location', done => {
-        put(memLocation, 'azurebackend', 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to us-east-1 which is file based on bucket' +
-    ' location if no locationConstraint provided', done => {
-        put(null, null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
+    putCases.forEach(testCase => {
+        it(`should put an object to ${testCase.name}`, done => {
+            put(testCase.bucketLoc, testCase.objLoc, 'localhost', () => {
+                if (isDataStoredInMem(testCase)) {
+                    assert.deepStrictEqual(ds[1].value, body);
+                } else {
+                    assert.deepStrictEqual(ds, []);
+                }
+                done();
+            });
         });
     });
 });
