@@ -157,6 +157,10 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
                     checkPut(testCase);
                     next();
                 }),
+                // Increase the probability of the first request having released
+                // the socket, so that it can be reused for the next request.
+                // This tests how HTTP connection reuse behaves.
+                next => setTimeout(next, 10),
                 // Second put should work as well
                 next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', () => {
                     checkPut(testCase);
