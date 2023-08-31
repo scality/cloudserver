@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const { storage } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
@@ -132,10 +133,18 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
         });
     }
 
-    const isDataStoredInMem = testCase => {
+    function isDataStoredInMem(testCase) {
         return testCase.objLoc === memLocation
                || (testCase.objLoc === null && testCase.bucketLoc === memLocation);
-    };
+    }
+
+    function checkPut(testCase) {
+        if (isDataStoredInMem(testCase)) {
+            assert.deepStrictEqual(ds[ds.length - 1].value, body);
+        } else {
+            assert.deepStrictEqual(ds, []);
+        }
+    }
 
     afterEach(() => {
         cleanup();
@@ -143,14 +152,17 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
 
     putCases.forEach(testCase => {
         it(`should put an object to ${testCase.name}`, done => {
-            put(testCase.bucketLoc, testCase.objLoc, 'localhost', () => {
-                if (isDataStoredInMem(testCase)) {
-                    assert.deepStrictEqual(ds[1].value, body);
-                } else {
-                    assert.deepStrictEqual(ds, []);
-                }
-                done();
-            });
+            async.series([
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', () => {
+                    checkPut(testCase);
+                    next();
+                }),
+                // Second put should work as well
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', () => {
+                    checkPut(testCase);
+                    next();
+                }),
+            ], done);
         });
     });
 });
