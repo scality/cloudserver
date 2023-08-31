@@ -92,6 +92,13 @@ describe.skip('objectPutAPI with multiple backends', function testSuite() {
         });
     });
 
+    it('should put an object to sproxyd', done => {
+        put(sproxydLocation, null, 'localhost', () => {
+            assert.deepStrictEqual(ds, []);
+            done();
+        });
+    });
+
     it('should put an object to AWS', done => {
         put(memLocation, 'awsbackend', 'localhost', () => {
             assert.deepStrictEqual(ds, []);
