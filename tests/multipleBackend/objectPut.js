@@ -19,8 +19,9 @@ const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 const objectName = 'objectName';
 const fileLocation = 'scality-internal-file';
 const memLocation = 'scality-internal-mem';
+const sproxydLocation = 'scality-internal-sproxyd';
 
-// const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -71,7 +72,7 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     });
 }
 
-describe.skip('objectPutAPI with multiple backends', function testSuite() {
+describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     this.timeout(5000);
 
     afterEach(() => {
