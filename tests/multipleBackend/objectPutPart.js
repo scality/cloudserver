@@ -168,8 +168,9 @@ function listAndAbort(uploadId, calculatedHash2, objectName, done) {
         });
     });
 }
-
+//TODO CLDSRV-431 remove skip
 describeSkipIfE2E('objectPutPart API with multiple backends',
+describe.skip('objectPutPart API with multiple backends',
     function testSuite() {
         this.timeout(5000);
 

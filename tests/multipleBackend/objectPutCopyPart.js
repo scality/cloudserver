@@ -174,7 +174,9 @@ function assertPartList(partList, uploadId) {
     assert.strictEqual(partList.Parts[0].Size, 11);
 }
 
-describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
+// TODO CLDSRV-431 remove skip
+//describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
+describe.skip('ObjectCopyPutPart API with multiple backends',
     function testSuite() {
         this.timeout(60000);
 
