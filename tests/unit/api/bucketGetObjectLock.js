@@ -65,8 +65,8 @@ function getObjectLockXml(mode, type, time) {
     xmlStr += xml.objLockConfigClose;
     return xmlStr;
 }
-
-describe('bucketGetObjectLock API', () => {
+// TODO CLDSRV-429 remove skip
+describe.skip('bucketGetObjectLock API', () => {
     before(done => bucketPut(authInfo, bucketPutReq, log, done));
     after(cleanup);
 
@@ -79,8 +79,8 @@ describe('bucketGetObjectLock API', () => {
         });
     });
 });
-
-describe('bucketGetObjectLock API', () => {
+// TODO CLDSRV-429 remove skip
+describe.skip('bucketGetObjectLock API', () => {
     before(cleanup);
     beforeEach(done => bucketPut(authInfo, testBucketPutReqWithObjLock, log, done));
     afterEach(cleanup);

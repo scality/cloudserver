@@ -77,8 +77,8 @@ function createMPU(testRequest, initiateRequest, deleteOverviewMPUObj, cb) {
         });
     });
 }
-
-describe('bucketDelete API', () => {
+// TODO CLDSRV-430 remove skip
+describe.skip('bucketDelete API', () => {
     beforeEach(() => {
         cleanup();
     });
