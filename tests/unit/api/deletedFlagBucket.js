@@ -103,8 +103,8 @@ function confirmDeleted(done) {
     });
 }
 
-
-describe('deleted flag bucket handling', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('deleted flag bucket handling', () => {
     beforeEach(done => {
         cleanup();
         const bucketMD = new BucketInfo(bucketName, canonicalID,

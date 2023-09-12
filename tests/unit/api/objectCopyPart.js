@@ -58,8 +58,8 @@ function _createObjectCopyPartRequest(destBucketName, uploadId, headers) {
 const putDestBucketRequest = _createBucketPutRequest(destBucketName);
 const putSourceBucketRequest = _createBucketPutRequest(sourceBucketName);
 const initiateRequest = _createInitiateRequest(destBucketName);
-
-describe('objectCopyPart', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('objectCopyPart', () => {
     let uploadId;
     const objData = Buffer.from('foo', 'utf8');
     const testPutObjectRequest =

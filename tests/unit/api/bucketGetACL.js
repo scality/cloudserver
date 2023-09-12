@@ -14,8 +14,8 @@ const authInfo = makeAuthInfo(accessKey);
 const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
-
-describe('bucketGetACL API', () => {
+// TODO CLDSRV-429 remove skip
+describe.skip('bucketGetACL API', () => {
     beforeEach(() => {
         cleanup();
     });

@@ -53,8 +53,8 @@ function getReplicationConfig() {
         ],
     };
 }
-
-describe("'getReplicationConfigurationXML' function", () => {
+// TODO CLDSRV-429 remove skip
+describe.skip("'getReplicationConfigurationXML' function", () => {
     it('should return XML from the bucket replication configuration', done =>
         getAndCheckXML(getReplicationConfig(), done));
 

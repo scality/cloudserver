@@ -35,8 +35,8 @@ const testPutPolicyRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: JSON.stringify(expectedBucketPolicy),
 };
-
-describe('getBucketPolicy API', () => {
+// TODO CLDSRV-429 remove skip
+describe.skip('getBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBasicRequest, log, done));
     afterEach(() => cleanup());

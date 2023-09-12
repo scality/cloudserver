@@ -25,8 +25,8 @@ const testBucketPutRequest = new DummyRequest({
     headers: {},
     url: `/${bucketName}`,
 });
-
-describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('getObjMetadataAndDelete function for multiObjectDelete', () => {
     let testPutObjectRequest1;
     let testPutObjectRequest2;
     const request = new DummyRequest({

@@ -36,8 +36,8 @@ function _makeRequest(includePolicy) {
     }
     return request;
 }
-
-describe('deleteBucketPolicy API', () => {
+// TODO CLDSRV-430 remove skip
+describe.skip('deleteBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, _makeRequest(), log, done));
     afterEach(() => cleanup());

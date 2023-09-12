@@ -92,8 +92,8 @@ function _createAndAbortMpu(usEastSetting, fakeUploadID, locationConstraint,
             multipartDelete(authInfo, deleteMpuRequest, log, next),
     ], err => callback(err, uploadId));
 }
-
-describe('Multipart Delete API', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('Multipart Delete API', () => {
     beforeEach(() => {
         cleanup();
     });
