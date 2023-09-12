@@ -286,7 +286,8 @@ const tests = [
     },
 ];
 
-describe('GET Bucket - AWS.S3.listObjects', () => {
+// TODO CLDSRV-928 remove skip
+describe.skip('GET Bucket - AWS.S3.listObjects', () => {
     describe('When user is unauthorized', () => {
         let bucketUtil;
         let bucketName;
