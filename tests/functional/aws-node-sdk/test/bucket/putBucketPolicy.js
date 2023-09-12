@@ -30,6 +30,23 @@ function getPolicyParams(paramToChange) {
     };
 }
 
+function getPolicyParamsWithId(paramToChange, policyId) {
+    const newParam = {};
+    const bucketPolicy = {
+        Version: '2012-10-17',
+        Id: policyId,
+        Statement: [basicStatement],
+    };
+    if (paramToChange) {
+        newParam[paramToChange.key] = paramToChange.value;
+        bucketPolicy.Statement[0] = Object.assign({}, basicStatement, newParam);
+    }
+    return {
+        Bucket: bucket,
+        Policy: JSON.stringify(bucketPolicy),
+    };
+}
+
 // Check for the expected error response code and status code.
 function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
@@ -101,6 +118,20 @@ describe('aws-sdk test put bucket policy', () => {
             const params = getPolicyParams({ key: 'Principal', value: '' });
             s3.putBucketPolicy(params, err =>
                 assertError(err, 'MalformedPolicy', done));
+        });
+
+        it('should return MalformedPolicy because Id is not a string',
+        done => {
+            const params = getPolicyParamsWithId(null, 59);
+            s3.putBucketPolicy(params, err =>
+                assertError(err, 'MalformedPolicy', done));
+        });
+
+        it('should put a bucket policy on bucket since Id is a string',
+        done => {
+            const params = getPolicyParamsWithId(null, 'cd3ad3d9-2776-4ef1-a904-4c229d1642e');
+            s3.putBucketPolicy(params, err =>
+                assertError(err, null, done));
         });
     });
 });
