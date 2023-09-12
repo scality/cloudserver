@@ -291,6 +291,41 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
+  awssdk-buckets-ft-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      S3BACKEND: mem
+      S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
+      S3DATA: multiple
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker-compose up -d
+      working-directory: .github/docker
+    - name: Run bucket tests with AWS SDK
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run ft_awssdk_buckets | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
   kmip-ft-tests:
     runs-on: ubuntu-latest
     needs: build
