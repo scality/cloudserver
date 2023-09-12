@@ -1,5 +1,4 @@
 const assert = require('assert');
-const sinon = require('sinon');
 
 const { models } = require('arsenal');
 const { BucketInfo } = models;
@@ -14,8 +13,7 @@ const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-const { validateBucket, metadataGetObject } = require('../../../lib/metadata/metadataUtils');
-const metadata = require('../../../lib/metadata/wrapper');
+const { validateBucket } = require('../../../lib/metadata/metadataUtils');
 
 describe('validateBucket', () => {
     it('action bucketPutPolicy by bucket owner', () => {
