@@ -18,6 +18,7 @@ function getPolicyParams(paramToChange) {
     const newParam = {};
     const bucketPolicy = {
         Version: '2012-10-17',
+        Id: 'PolicyId123456789012',
         Statement: [basicStatement],
     };
     if (paramToChange) {
