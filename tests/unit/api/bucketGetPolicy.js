@@ -37,8 +37,7 @@ const testPutPolicyRequest = {
     post: JSON.stringify(expectedBucketPolicy),
     iamAuthzResults: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketPolicy API', () => {
+describe('getBucketPolicy API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBasicRequest, log, done));
     afterEach(() => cleanup());

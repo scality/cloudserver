@@ -19,8 +19,7 @@ const testBucketPutRequest = {
     url: '/',
     iamAuthzResults: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketLifecycle API', () => {
+describe('getBucketLifecycle API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());

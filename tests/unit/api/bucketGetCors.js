@@ -57,8 +57,7 @@ function _comparePutGetXml(sampleXml, done) {
         });
     });
 }
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketCors API', () => {
+describe('getBucketCors API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, done);

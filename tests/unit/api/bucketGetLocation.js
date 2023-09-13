@@ -39,8 +39,7 @@ function getBucketRequestObject(location) {
         '</CreateBucketConfiguration>' : undefined;
     return Object.assign({ post }, testBucketPutRequest);
 }
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketLocation API', () => {
+describe('getBucketLocation API', () => {
     Object.keys(locationConstraints).forEach(location => {
         if (location === 'us-east-1') {
             // if region us-east-1 should return empty string

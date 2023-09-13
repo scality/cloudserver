@@ -47,8 +47,7 @@ const getObjectLegalHoldRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     iamAuthzResults: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectLegalHold API', () => {
+describe('getObjectLegalHold API', () => {
     before(cleanup);
 
     describe('without Object Lock enabled on bucket', () => {

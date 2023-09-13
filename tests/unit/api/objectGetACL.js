@@ -20,8 +20,7 @@ const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
-// TODO CLDSRV-429 remove skip
-describe.skip('objectGetACL API', () => {
+describe('objectGetACL API', () => {
     beforeEach(() => {
         cleanup();
     });
