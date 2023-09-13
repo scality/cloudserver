@@ -31,8 +31,7 @@ function _makeRequest(includeXml) {
     }
     return request;
 }
-// TODO CLDSRV-430 remove skip
-describe.skip('deleteBucketLifecycle API', () => {
+describe('deleteBucketLifecycle API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, _makeRequest(), log, done));
     afterEach(() => cleanup());
