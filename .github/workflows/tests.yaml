@@ -227,13 +227,11 @@ jobs:
     - name: Setup CI services
       run: docker-compose up -d
       working-directory: .github/docker
-      # TODO CLDSRV-431 re-enable file backend tests
-      # Note: Disabled here to save time as due to API logic changes only 28 passing, 474 pending and 696 failing
-    # - name: Run file ft tests
-    #   run: |-
-    #     set -o pipefail;
-    #     bash wait_for_local_port.bash 8000 40
-    #     yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Run file ft tests
+      run: |-
+        set -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run ft_test | tee /tmp/artifacts/${{ github.job }}/tests.log
     - name: Upload logs to artifacts
       uses: scality/action-artifacts@v3
       with:
