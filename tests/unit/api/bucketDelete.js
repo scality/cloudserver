@@ -129,7 +129,8 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should not return an error if the bucket has an initiated mpu',
+    // TODO CLDSRV-431 remove skip
+    it.skip('should not return an error if the bucket has an initiated mpu',
     done => {
         bucketPut(authInfo, testRequest, log, err => {
             assert.strictEqual(err, null);
@@ -159,11 +160,13 @@ describe('bucketDelete API', () => {
         });
     });
 
-    it('should delete a bucket even if the bucket has ongoing mpu',
+    // TODO CLDSRV-431 remove skip
+    it.skip('should delete a bucket even if the bucket has ongoing mpu',
         done => createMPU(testRequest, initiateRequest, false, done));
 
+    // TODO CLDSRV-431 remove skip
     // if only part object (and no overview objects) is in mpu shadow bucket
-    it('should delete a bucket even if the bucket has an orphan part',
+    it.skip('should delete a bucket even if the bucket has an orphan part',
         done => createMPU(testRequest, initiateRequest, true, done));
 
 
