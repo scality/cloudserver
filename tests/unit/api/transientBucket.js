@@ -67,8 +67,8 @@ const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
 const locationConstraint = 'us-east-1';
-// TODO CLDSRV-431 remove skip
-describe.skip('transient bucket handling', () => {
+
+describe('transient bucket handling', () => {
     beforeEach(done => {
         cleanup();
         const bucketMD = new BucketInfo(bucketName, canonicalID,
