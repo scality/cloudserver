@@ -25,8 +25,7 @@ const testBucketPutCorsRequest =
     corsUtil.createBucketCorsRequest('PUT', bucketName);
 const testBucketDeleteCorsRequest =
     corsUtil.createBucketCorsRequest('DELETE', bucketName);
-// TODO CLDSRV-430 remove skip
-describe.skip('deleteBucketCors API', () => {
+describe('deleteBucketCors API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, () => {

@@ -33,8 +33,7 @@ const testBucketDeleteWebsiteRequest = {
 };
 const testBucketPutWebsiteRequest = Object.assign({ post: config.getXml() },
     testBucketDeleteWebsiteRequest);
-// TODO CLDSRV-430 remove skip
-describe.skip('deleteBucketWebsite API', () => {
+describe('deleteBucketWebsite API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, () => {

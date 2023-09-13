@@ -39,8 +39,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
         });
     });
 }
-// TODO CLDSRV-430 remove skip
-describe.skip('objectDelete API', () => {
+describe('objectDelete API', () => {
     let testPutObjectRequest;
 
     before(() => {

@@ -15,8 +15,7 @@ const bucketPutRequest = {
     url: '/',
     iamAuthzResults: false,
 };
-// TODO CLDSRV-430 remove skip
-describe.skip('bucketDeleteEncryption API', () => {
+describe('bucketDeleteEncryption API', () => {
     before(() => cleanup());
 
     beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
