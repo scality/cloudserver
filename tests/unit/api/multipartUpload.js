@@ -49,6 +49,7 @@ const bucketPutRequest = {
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
     '</CreateBucketConfiguration >',
+    iamAuthzResults: false,
 };
 const lockEnabledBucketRequest = Object.assign({}, bucketPutRequest);
 lockEnabledBucketRequest.bucketName = lockedBucket;
@@ -62,6 +63,7 @@ const initiateRequest = {
     objectKey,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
+    iamAuthzResults: false,
 };
 const retentionInitiateRequest = Object.assign({}, initiateRequest);
 retentionInitiateRequest.bucketName = lockedBucket;
@@ -82,6 +84,7 @@ const getObjectLockInfoRequest = {
     namespace,
     objectKey,
     headers: { host: `${lockedBucket}.s3.amazonaws.com` },
+    iamAuthzResults: false,
 };
 const expectedRetentionConfig = {
     $: { xmlns: 'http://s3.amazonaws.com/doc/2006-03-01/' },
@@ -106,6 +109,7 @@ function _createPutPartRequest(uploadId, partNumber, partBody) {
             uploadId,
         },
         calculatedHash,
+        iamAuthzResults: false,
     }, partBody);
 }
 
@@ -128,6 +132,7 @@ function _createCompleteMpuRequest(uploadId, parts) {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         query: { uploadId },
         post: completeBody,
+        iamAuthzResults: false,
     };
 }
 
@@ -542,6 +547,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    iamAuthzResults: false,
                 };
                 const awsVerifiedETag =
                     '"953e9e776f285afc0bfcf1ab4668299d-1"';
@@ -630,6 +636,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    iamAuthzResults: false,
                 };
                 const awsVerifiedETag =
                     '"953e9e776f285afc0bfcf1ab4668299d-1"';
@@ -702,6 +709,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo,
                     completeRequest, log, err => {
@@ -757,6 +765,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     assert(err.is.MalformedXML);
@@ -829,6 +838,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
@@ -887,6 +897,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     assert(err.is.InvalidPart);
@@ -958,6 +969,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
@@ -1040,6 +1052,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
@@ -1122,6 +1135,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1153,6 +1167,7 @@ describe.skip('Multipart Upload API', () => {
                 'x-amz-acl': 'authenticated-read',
             },
             url: `/${objectKey}?uploads`,
+            iamAuthzResults: false,
         };
 
         async.waterfall([
@@ -1221,6 +1236,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1255,6 +1271,7 @@ describe.skip('Multipart Upload API', () => {
                 'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
             },
             url: `/${objectKey}?uploads`,
+            iamAuthzResults: false,
         };
 
         async.waterfall([
@@ -1323,6 +1340,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1375,6 +1393,7 @@ describe.skip('Multipart Upload API', () => {
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
+                    iamAuthzResults: false,
                 };
                 assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                 multipartDelete(authInfo, deleteRequest, log, err => {
@@ -1425,6 +1444,7 @@ describe.skip('Multipart Upload API', () => {
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: 'non-existent-upload-id' },
+                    iamAuthzResults: false,
                 };
                 assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                 multipartDelete(authInfo, deleteRequest, log, err => {
@@ -1504,6 +1524,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log,
                                         (err, result) => {
@@ -1557,6 +1578,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
@@ -1628,6 +1650,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId },
                     post: completeBody,
+                    iamAuthzResults: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
@@ -1698,6 +1721,7 @@ describe.skip('Multipart Upload API', () => {
                             headers: { host: `${bucketName}.s3.amazonaws.com` },
                             query: { uploadId },
                             post: completeBody,
+                            iamAuthzResults: false,
                         };
                         completeMultipartUpload(authInfo, completeRequest, log, done);
                     },
@@ -1790,6 +1814,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        iamAuthzResults: false,
                     };
                     // show that second part data is there
                     assert(ds[2]);

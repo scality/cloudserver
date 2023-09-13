@@ -48,6 +48,7 @@ const objectACLReq = {
     },
     url: `/${bucketName}/${keyA}?acl`,
     query: { acl: '' },
+    iamAuthzResults: false,
 };
 
 // Get an object request with the given key.
@@ -185,6 +186,7 @@ function putMPU(key, body, cb) {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         query: { uploadId },
         post: postBody,
+        iamAuthzResults: false,
     };
     return completeMultipartUpload(authInfo, req, log, cb);
 }

@@ -29,6 +29,7 @@ const testPutBucketRequest = {
     namespace,
     headers: {},
     url: `/${bucketName}`,
+    iamAuthzResults: false,
 };
 const userMetadataKey = 'x-amz-meta-test';
 const userMetadataValue = 'some metadata';
@@ -57,6 +58,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: { 'if-modified-since': laterDate },
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -80,6 +82,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: { 'if-unmodified-since': earlierDate },
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -105,6 +108,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: { 'if-match': incorrectMD5 },
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -129,6 +133,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: { 'if-none-match': correctMD5 },
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -151,6 +156,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: { range: 'bytes=1-9' },
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -175,6 +181,7 @@ describe.skip('objectHead API', () => {
             query: {
                 partNumber: '1',
             },
+            iamAuthzResults: false,
         };
         const customizedInvalidRequestError = errors.InvalidRequest
             .customizeDescription('Cannot specify both Range header and ' +
@@ -202,6 +209,7 @@ describe.skip('objectHead API', () => {
             query: {
                 partNumber: 'nan',
             },
+            iamAuthzResults: false,
         };
         const customizedInvalidArgumentError = errors.InvalidArgument
             .customizeDescription('Part number must be a number.');
@@ -226,6 +234,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -246,6 +255,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
@@ -269,6 +279,7 @@ describe.skip('objectHead API', () => {
             namespace,
             headers: { 'x-amz-bucket-object-lock-enabled': 'true' },
             url: `/${bucketName}`,
+            iamAuthzResults: false,
         };
         const testPutObjectRequestLock = new DummyRequest({
             bucketName,
@@ -288,6 +299,7 @@ describe.skip('objectHead API', () => {
             objectKey: objectName,
             headers: {},
             url: `/${bucketName}/${objectName}`,
+            iamAuthzResults: false,
         };
 
         bucketPut(authInfo, testPutBucketRequestLock, log, () => {
