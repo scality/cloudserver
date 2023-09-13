@@ -519,8 +519,7 @@ describe('objectPut API', () => {
         });
     });
 
-    // TODO CLDSRV-431 remove skip
-    it.skip('should not leave orphans in data when overwriting an multipart upload object', done => {
+    it('should not leave orphans in data when overwriting an multipart upload object', done => {
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             mpuUtils.createMPU(namespace, bucketName, objectName, log,
                 (err, testUploadId) => {

@@ -99,8 +99,7 @@ const undefHeadersExpected = [
     'expires',
 ];
 
-// TODO CLDSRV-431 remove skip
-describe.skip('delete marker creation', () => {
+describe('delete marker creation', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testPutBucketRequest, log, err => {

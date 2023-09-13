@@ -16,8 +16,7 @@ const testRequest = {
     url: '/',
     iamAuthzResults: false,
 };
-// TODO CLDSRV-431 remove skip
-describe.skip('bucketHead API', () => {
+describe('bucketHead API', () => {
     beforeEach(() => {
         cleanup();
     });
