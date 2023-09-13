@@ -32,6 +32,7 @@ describe.skip('listMultipartUploads API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
+        iamAuthzResults: false,
     };
     const testInitiateMPURequest1 = {
         bucketName,
@@ -39,6 +40,7 @@ describe.skip('listMultipartUploads API', () => {
         objectKey: objectName1,
         headers: {},
         url: `/${bucketName}/${objectName1}?uploads`,
+        iamAuthzResults: false,
     };
     const testInitiateMPURequest2 = {
         bucketName,
@@ -46,6 +48,7 @@ describe.skip('listMultipartUploads API', () => {
         objectKey: objectName2,
         headers: {},
         url: `/${bucketName}/${objectName2}?uploads`,
+        iamAuthzResults: false,
     };
     const testInitiateMPURequest3 = {
         bucketName,
@@ -53,6 +56,7 @@ describe.skip('listMultipartUploads API', () => {
         objectKey: objectName3,
         headers: {},
         url: `/${bucketName}/${objectName3}?uploads`,
+        iamAuthzResults: false,
     };
 
     it('should return the name of the common prefix ' +
@@ -65,6 +69,7 @@ describe.skip('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
             query: { delimiter, prefix },
+            iamAuthzResults: false,
         };
 
         async.waterfall([
@@ -94,6 +99,7 @@ describe.skip('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: {},
+            iamAuthzResults: false,
         };
 
 
@@ -127,6 +133,7 @@ describe.skip('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'max-uploads': '1' },
+            iamAuthzResults: false,
         };
 
         async.waterfall([
@@ -163,6 +170,7 @@ describe.skip('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'encoding-type': 'url' },
+            iamAuthzResults: false,
         };
 
         async.waterfall([
@@ -195,6 +203,7 @@ describe.skip('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'key-marker': objectName1 },
+            iamAuthzResults: false,
         };
 
         async.waterfall([

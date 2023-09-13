@@ -58,11 +58,13 @@ const baseTestRequest = {
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     query: {},
+    iamAuthzResults: false,
 };
 const serviceGetRequest = {
     parsedHost: 's3.amazonaws.com',
     headers: { host: 's3.amazonaws.com' },
     url: '/',
+    iamAuthzResults: false,
 };
 
 const userBucketOwner = 'admin';
