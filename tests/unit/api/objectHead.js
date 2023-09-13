@@ -35,8 +35,8 @@ const userMetadataKey = 'x-amz-meta-test';
 const userMetadataValue = 'some metadata';
 
 let testPutObjectRequest;
-// TODO CLDSRV-431 remove skip
-describe.skip('objectHead API', () => {
+
+describe('objectHead API', () => {
     beforeEach(() => {
         cleanup();
         testPutObjectRequest = new DummyRequest({

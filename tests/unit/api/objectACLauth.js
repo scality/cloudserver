@@ -29,8 +29,8 @@ const object = {
     },
 };
 const log = new DummyRequestLogger();
-// TODO CLDSRV-431 remove skip
-describe.skip('object acl authorization for objectGet and objectHead', () => {
+
+describe('object acl authorization for objectGet and objectHead', () => {
     // Reset the object ACLs
     afterEach(() => {
         object.acl = {
@@ -175,8 +175,8 @@ describe.skip('object acl authorization for objectGet and objectHead', () => {
         assert.deepStrictEqual(results, [false, false]);
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('object authorization for objectPut and objectDelete', () => {
+
+describe('object authorization for objectPut and objectDelete', () => {
     it('should allow access to anyone since checks ' +
         'are done at bucket level', () => {
         const requestTypes = ['objectPut', 'objectDelete'];
@@ -189,8 +189,8 @@ describe.skip('object authorization for objectPut and objectDelete', () => {
         assert.deepStrictEqual(publicUserResults, [true, true]);
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('object authorization for objectPutACL and objectGetACL', () => {
+
+describe('object authorization for objectPutACL and objectGetACL', () => {
     // Reset the object ACLs
     afterEach(() => {
         object.acl = {
@@ -275,8 +275,8 @@ describe.skip('object authorization for objectPutACL and objectGetACL', () => {
         assert.strictEqual(authorizedResult, true);
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('without object metadata', () => {
+
+describe('without object metadata', () => {
     afterEach(() => {
         bucket.setFullAcl({
             Canned: 'private',

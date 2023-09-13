@@ -209,8 +209,8 @@ function copyObject(sourceObjectKey, copyObjectKey, hasContent, cb) {
             log, cb);
     });
 }
-// TODO CLDSRV-431 remove skip
-describe.skip('Replication object MD without bucket replication config', () => {
+
+describe('Replication object MD without bucket replication config', () => {
     beforeEach(() => {
         cleanup();
         createBucket();
@@ -277,10 +277,9 @@ describe.skip('Replication object MD without bucket replication config', () => {
             }));
     });
 });
-// TODO CLDSRV-431 remove skip
 
 [true, false].forEach(hasStorageClass => {
-    describe.skip('Replication object MD with bucket replication config ' +
+    describe('Replication object MD with bucket replication config ' +
     `${hasStorageClass ? 'with' : 'without'} storage class`, () => {
         const replicationMD = {
             status: 'PENDING',

@@ -136,8 +136,7 @@ function _createCompleteMpuRequest(uploadId, parts) {
     };
 }
 
-// TODO CLDSRV-431 remove skip
-describe.skip('Multipart Upload API', () => {
+describe('Multipart Upload API', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -1894,8 +1893,8 @@ describe.skip('Multipart Upload API', () => {
         });
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('complete mpu with versioning', () => {
+
+describe('complete mpu with versioning', () => {
     const objData = ['foo0', 'foo1', 'foo2'].map(str =>
         Buffer.from(str, 'utf8'));
 
@@ -2125,8 +2124,8 @@ describe.skip('complete mpu with versioning', () => {
         });
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('multipart upload with object lock', () => {
+
+describe('multipart upload with object lock', () => {
     before(done => {
         cleanup();
         bucketPut(authInfo, lockEnabledBucketRequest, log, done);

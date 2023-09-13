@@ -15,8 +15,8 @@ const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
 const namespace = 'default';
 const bucketName = 'bucketname';
-// TODO CLDSRV-431 remove skip
-describe.skip('listMultipartUploads API', () => {
+
+describe('listMultipartUploads API', () => {
     beforeEach(() => {
         cleanup();
     });

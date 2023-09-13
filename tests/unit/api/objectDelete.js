@@ -127,8 +127,7 @@ describe('objectDelete API', () => {
         });
     });
 
-    // TODO CLDSRV-431 remove skip - skipped due to MPU call
-    it.skip('should delete a multipart upload and send `uploadId` as `replayId` to deleteObject', done => {
+    it('should delete a multipart upload and send `uploadId` as `replayId` to deleteObject', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             mpuUtils.createMPU(namespace, bucketName, objectKey, log,
                 (err, testUploadId) => {
