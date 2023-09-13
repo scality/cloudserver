@@ -13,6 +13,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    iamAuthzResults: false,
 };
 // TODO CLDSRV-430 remove skip
 describe.skip('bucketDeleteEncryption API', () => {
