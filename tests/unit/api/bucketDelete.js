@@ -88,6 +88,7 @@ describe('bucketDelete API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
+        iamAuthzResults: false,
     };
 
     const initiateRequest = {
@@ -96,6 +97,7 @@ describe('bucketDelete API', () => {
         objectKey: objectName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${objectName}?uploads`,
+        iamAuthzResults: false,
     };
 
     it('should return an error if the bucket is not empty', done => {
