@@ -17,6 +17,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    iamAuthzResults: false,
 };
 // TODO CLDSRV-429 remove skip
 describe.skip('getBucketLifecycle API', () => {
