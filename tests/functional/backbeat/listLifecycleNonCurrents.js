@@ -3,6 +3,7 @@ const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
+const { config } = require('../../../lib/Config');
 
 const testBucket = 'bucket-for-list-lifecycle-noncurrent-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-noncurrent-tests';
@@ -111,6 +112,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
             return done();
         });
@@ -130,6 +132,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
             return done();
         });
@@ -149,6 +152,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 0);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
 
             return done();
@@ -203,6 +207,55 @@ describe('listLifecycleNonCurrents', () => {
         });
     });
 
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is invalid', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-scanned-lifecycle-listing-entries': 'a' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 0', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-scanned-lifecycle-listing-entries': '0' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 2', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-scanned-lifecycle-listing-entries': '2' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument if max-scanned-lifecycle-listing-entries exceeds the default value', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-scanned-lifecycle-listing-entries':
+                (config.maxScannedLifecycleListingEntries + 1).toString() },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
     it('should return error if bucket not versioned', done => {
         makeBackbeatRequest({
             method: 'GET',
@@ -229,9 +282,36 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
 
             const contents = data.Contents;
             assert.strictEqual(contents.length, 14);
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should return all the noncurrent versions scanned before max scanned entries value is reached', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'noncurrent', 'max-scanned-lifecycle-listing-entries': '9' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+            const data = JSON.parse(response.body);
+
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.NextKeyMarker, 'key1');
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, 9);
+
+            const contents = data.Contents;
+            // only return the first 7 entries as the master version is denoted by 2 entries.
+            assert.strictEqual(contents.length, 7);
+            assert(contents.every(c => c.Key === 'key1'));
             checkContents(contents);
 
             return done();
@@ -254,6 +334,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
@@ -281,6 +362,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
@@ -316,6 +398,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
@@ -352,6 +435,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
@@ -380,6 +464,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextKeyMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
 
             const contents = data.Contents;
@@ -414,6 +499,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.NextKeyMarker, 'key1');
             assert.strictEqual(data.NextVersionIdMarker, expectedKey1VersionIds[0]);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
@@ -448,6 +534,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.NextKeyMarker, 'key1');
             assert.strictEqual(data.NextVersionIdMarker, expectedKey1VersionIds[1]);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
@@ -482,6 +569,7 @@ describe('listLifecycleNonCurrents', () => {
             assert.strictEqual(data.NextKeyMarker, 'key2');
             assert.strictEqual(data.NextVersionIdMarker, expectedKey2VersionIds[0]);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
@@ -516,6 +604,7 @@ describe('listLifecycleNonCurrents', () => {
             assert(!data.NextKeyMarker);
             assert(!data.NextVersionIdMarker);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 

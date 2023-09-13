@@ -184,6 +184,7 @@ const constants = {
         NON_CURRENT_TYPE: 'noncurrent',
         ORPHAN_DM_TYPE: 'orphan',
     },
+    maxScannedLifecycleListingEntries: 10000,
 };
 
 module.exports = constants;
