@@ -52,8 +52,7 @@ const getObjRetRequest = {
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     iamAuthzResults: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectRetention API', () => {
+describe('getObjectRetention API', () => {
     before(cleanup);
 
     describe('without Object Lock enabled on bucket', () => {

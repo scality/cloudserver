@@ -84,8 +84,7 @@ describe('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
-    // TODO CLDSRV-429 remove skip - skipped due to get at the end
-    it.skip('should delete an object', done => {
+    it('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest,
                 undefined, log, () => {
@@ -102,8 +101,7 @@ describe('objectDelete API', () => {
         });
     });
 
-    // TODO CLDSRV-429 remove skip - skipped due to get at the end
-    it.skip('should delete a 0 bytes object', done => {
+    it('should delete a 0 bytes object', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,

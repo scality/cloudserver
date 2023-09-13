@@ -22,8 +22,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
-// TODO CLDSRV-429 remove skip
-describe.skip('objectGet API', () => {
+describe('objectGet API', () => {
     let testPutObjectRequest;
 
     beforeEach(() => {

@@ -174,8 +174,7 @@ const tests = [
         },
     },
 ];
-// TODO CLDSRV-429 remove skip
-describe.skip('bucketGet API', () => {
+describe('bucketGet API', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -291,8 +290,7 @@ const testsForV2 = [...tests,
     },
 ];
 
-// TODO CLDSRV-429 remove skip
-describe.skip('bucketGet API V2', () => {
+describe('bucketGet API V2', () => {
     beforeEach(() => {
         cleanup();
     });

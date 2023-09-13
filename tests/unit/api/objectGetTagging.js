@@ -31,8 +31,8 @@ const testPutObjectRequest = new DummyRequest({
     headers: {},
     url: `/${bucketName}/${objectName}`,
 }, postBody);
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectTagging API', () => {
+
+describe('getObjectTagging API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, err => {

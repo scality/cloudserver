@@ -54,8 +54,7 @@ function getNotificationXml() {
         '</NotificationConfiguration>';
 }
 
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketNotification API', () => {
+describe('getBucketNotification API', () => {
     before(cleanup);
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(cleanup);
