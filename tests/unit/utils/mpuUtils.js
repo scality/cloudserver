@@ -28,7 +28,7 @@ function createinitiateMPURequest(namespace, bucketName, objectKey) {
         objectKey,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${objectKey}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 
     return request;
@@ -46,7 +46,7 @@ function createPutPartRequest(namespace, bucketName, objectKey, partNumber, test
             uploadId: testUploadId,
         },
         calculatedHash,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     }, partBody);
 
     return request;
@@ -70,7 +70,7 @@ function createCompleteRequest(namespace, bucketName, objectKey, testUploadId) {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         query: { uploadId: testUploadId },
         post: completeBody,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 
     return request;

@@ -4,7 +4,7 @@ function getLifecycleRequest(bucketName, xml) {
         headers: {
             host: `${bucketName}.s3.amazonaws.com`,
         },
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (xml) {
         request.post = xml;

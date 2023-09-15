@@ -114,7 +114,7 @@ describe('List Parts API', () => {
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: { uploadId },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -161,7 +161,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'encoding-type': 'url',
             },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
         const urlEncodedObjectKey = '%24makememulti';
 
@@ -187,7 +187,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'max-parts': '4',
             },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -229,7 +229,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'max-parts': '6',
             },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -271,7 +271,7 @@ describe('List Parts API', () => {
                 uploadId,
                 'part-number-marker': '2',
             },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -317,7 +317,7 @@ describe('List Parts API', () => {
                 'part-number-marker': '2',
                 'max-parts': '2',
             },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
