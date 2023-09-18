@@ -14,7 +14,7 @@ const bucketPutReq = {
         host: `${bucketName}.s3.amazonaws.com`,
     },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const testBucketPutReqWithObjLock = {
@@ -24,7 +24,7 @@ const testBucketPutReqWithObjLock = {
         'x-amz-bucket-object-lock-enabled': 'True',
     },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 function getObjectLockConfigRequest(bucketName, xml) {
@@ -35,7 +35,7 @@ function getObjectLockConfigRequest(bucketName, xml) {
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: '/?object-lock',
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (xml) {
         request.post = xml;

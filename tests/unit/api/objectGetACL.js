@@ -36,7 +36,7 @@ describe('objectGetACL API', () => {
             'x-amz-acl': 'public-read-write',
         },
         url: '/',
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     const testGetACLRequest = {
         bucketName,
@@ -45,7 +45,7 @@ describe('objectGetACL API', () => {
         objectKey: objectName,
         url: `/${bucketName}/${objectName}?acl`,
         query: { acl: '' },
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 
     it('should get a canned private ACL', done => {

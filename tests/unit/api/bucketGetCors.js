@@ -16,7 +16,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 function _makeCorsRequest(xml) {
@@ -27,7 +27,7 @@ function _makeCorsRequest(xml) {
         },
         url: '/?cors',
         query: { cors: '' },
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 
     if (xml) {
