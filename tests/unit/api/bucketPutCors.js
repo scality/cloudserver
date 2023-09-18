@@ -19,7 +19,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 function _testPutBucketCors(authInfo, request, log, errCode, cb) {
