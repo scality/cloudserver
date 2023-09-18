@@ -32,7 +32,7 @@ describe('listMultipartUploads API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     const testInitiateMPURequest1 = {
         bucketName,
@@ -40,7 +40,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName1,
         headers: {},
         url: `/${bucketName}/${objectName1}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     const testInitiateMPURequest2 = {
         bucketName,
@@ -48,7 +48,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName2,
         headers: {},
         url: `/${bucketName}/${objectName2}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     const testInitiateMPURequest3 = {
         bucketName,
@@ -56,7 +56,7 @@ describe('listMultipartUploads API', () => {
         objectKey: objectName3,
         headers: {},
         url: `/${bucketName}/${objectName3}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 
     it('should return the name of the common prefix ' +
@@ -69,7 +69,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads&delimiter=/&prefix=sub`,
             query: { delimiter, prefix },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -99,7 +99,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: {},
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
 
@@ -133,7 +133,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'max-uploads': '1' },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -170,7 +170,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'encoding-type': 'url' },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -203,7 +203,7 @@ describe('listMultipartUploads API', () => {
             headers: { host: '/' },
             url: `/${bucketName}?uploads`,
             query: { 'key-marker': objectName1 },
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([

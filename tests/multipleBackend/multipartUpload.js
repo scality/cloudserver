@@ -54,7 +54,7 @@ const bucketPutRequest = {
     url: '/',
     post: '',
     parsedHost: 'localhost',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const awsETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
@@ -74,7 +74,7 @@ const completeBody = '<CompleteMultipartUpload>' +
 const basicParams = {
     bucketName,
     namespace,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 function getObjectGetRequest(objectKey) {
@@ -272,7 +272,7 @@ function mpuSetup(location, key, cb) {
             'x-amz-meta-scal-location-constraint': location },
         url: `/${key}?uploads`,
         parsedHost: 'localhost',
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     initiateMultipartUpload(authInfo, initiateRequest, log,
     (err, result) => {
@@ -344,7 +344,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 'x-amz-meta-scal-location-constraint': `${awsLocation}` },
             url: `/${objectKey}?uploads`,
             parsedHost: 'localhost',
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         initiateMultipartUpload(authInfo, initiateRequest, log,
@@ -368,7 +368,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 `${awsLocationMismatch}` },
             url: `/${objectKey}?uploads`,
             parsedHost: 'localhost',
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         initiateMultipartUpload(authInfo, initiateRequest, log,
@@ -393,7 +393,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
             },
             url: `/${objectKey}?uploads`,
             parsedHost: 'localhost',
-            iamAuthzResults: false,
+            actionImplicitDenies: false,
         };
 
         initiateMultipartUpload(authInfo, initiateRequest, log,
@@ -617,7 +617,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                         'x-amz-meta-scal-location-constraint': awsLocation },
                     url: `/${objectKey}?uploads`,
                     parsedHost: 'localhost',
-                    iamAuthzResults: false,
+                    actionImplicitDenies: false,
                 };
                 initiateMultipartUpload(authInfo, initiateRequest, log,
                 err => {
@@ -718,7 +718,7 @@ describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
                 headers: { host: '/' },
                 url: `/${bucketName}?uploads`,
                 query: {},
-                iamAuthzResults: false,
+                actionImplicitDenies: false,
             };
             listMultipartUploads(authInfo, listMpuParams, log,
             (err, mpuListXml) => {
