@@ -189,7 +189,7 @@ jobs:
     - name: Run multiple backend test
       run: |-
         set -o pipefail;
-        bash wait_for_local_port.bash 8000 40
+        bash wait_for_local_port.bash 8000 400
         yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json
