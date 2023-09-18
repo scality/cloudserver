@@ -39,8 +39,7 @@ function testAuth(bucketOwner, authUser, bucketPutReq, objPutReq, objDelReq,
         });
     });
 }
-// TODO CLDSRV-430 remove skip
-describe.skip('objectDelete API', () => {
+describe('objectDelete API', () => {
     let testPutObjectRequest;
 
     before(() => {
@@ -85,7 +84,8 @@ describe.skip('objectDelete API', () => {
         url: `/${bucketName}/${objectKey}`,
     });
 
-    it('should delete an object', done => {
+    // TODO CLDSRV-429 remove skip - skipped due to get at the end
+    it.skip('should delete an object', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest,
                 undefined, log, () => {
@@ -102,7 +102,8 @@ describe.skip('objectDelete API', () => {
         });
     });
 
-    it('should delete a 0 bytes object', done => {
+    // TODO CLDSRV-429 remove skip - skipped due to get at the end
+    it.skip('should delete a 0 bytes object', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -128,7 +129,8 @@ describe.skip('objectDelete API', () => {
         });
     });
 
-    it('should delete a multipart upload and send `uploadId` as `replayId` to deleteObject', done => {
+    // TODO CLDSRV-431 remove skip - skipped due to MPU call
+    it.skip('should delete a multipart upload and send `uploadId` as `replayId` to deleteObject', done => {
         bucketPut(authInfo, testBucketPutRequest, log, () => {
             mpuUtils.createMPU(namespace, bucketName, objectKey, log,
                 (err, testUploadId) => {

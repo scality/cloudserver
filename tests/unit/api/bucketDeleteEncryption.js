@@ -13,9 +13,9 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
-// TODO CLDSRV-430 remove skip
-describe.skip('bucketDeleteEncryption API', () => {
+describe('bucketDeleteEncryption API', () => {
     before(() => cleanup());
 
     beforeEach(done => bucketPut(authInfo, bucketPutRequest, log, done));
