@@ -21,7 +21,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -43,14 +43,14 @@ const putObjRetRequest = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXml,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const getObjRetRequest = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 describe('getObjectRetention API', () => {
     before(cleanup);
