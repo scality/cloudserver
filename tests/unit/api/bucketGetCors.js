@@ -16,6 +16,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 function _makeCorsRequest(xml) {
@@ -26,6 +27,7 @@ function _makeCorsRequest(xml) {
         },
         url: '/?cors',
         query: { cors: '' },
+        actionImplicitDenies: false,
     };
 
     if (xml) {
@@ -55,8 +57,7 @@ function _comparePutGetXml(sampleXml, done) {
         });
     });
 }
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketCors API', () => {
+describe('getBucketCors API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, done);

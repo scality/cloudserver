@@ -21,6 +21,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const testPutObjectRequest = new DummyRequest({
@@ -30,8 +31,8 @@ const testPutObjectRequest = new DummyRequest({
     headers: {},
     url: `/${bucketName}/${objectName}`,
 }, postBody);
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectTagging API', () => {
+
+describe('getObjectTagging API', () => {
     beforeEach(done => {
         cleanup();
         bucketPut(authInfo, testBucketPutRequest, log, err => {

@@ -17,9 +17,9 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketLifecycle API', () => {
+describe('getBucketLifecycle API', () => {
     before(() => cleanup());
     beforeEach(done => bucketPut(authInfo, testBucketPutRequest, log, done));
     afterEach(() => cleanup());

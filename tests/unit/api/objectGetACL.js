@@ -20,8 +20,7 @@ const otherAccountCanonicalID = otherAccountAuthInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
 const postBody = Buffer.from('I am a body', 'utf8');
-// TODO CLDSRV-429 remove skip
-describe.skip('objectGetACL API', () => {
+describe('objectGetACL API', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -36,6 +35,7 @@ describe.skip('objectGetACL API', () => {
             'x-amz-acl': 'public-read-write',
         },
         url: '/',
+        actionImplicitDenies: false,
     };
     const testGetACLRequest = {
         bucketName,
@@ -44,6 +44,7 @@ describe.skip('objectGetACL API', () => {
         objectKey: objectName,
         url: `/${bucketName}/${objectName}?acl`,
         query: { acl: '' },
+        actionImplicitDenies: false,
     };
 
     it('should get a canned private ACL', done => {

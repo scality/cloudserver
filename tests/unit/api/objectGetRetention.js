@@ -21,6 +21,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -42,15 +43,16 @@ const putObjRetRequest = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXml,
+    actionImplicitDenies: false,
 };
 
 const getObjRetRequest = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
+    actionImplicitDenies: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectRetention API', () => {
+describe('getObjectRetention API', () => {
     before(cleanup);
 
     describe('without Object Lock enabled on bucket', () => {

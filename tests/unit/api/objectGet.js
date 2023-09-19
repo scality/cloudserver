@@ -22,8 +22,7 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const objectName = 'objectName';
 const postBody = Buffer.from('I am a body', 'utf8');
-// TODO CLDSRV-429 remove skip
-describe.skip('objectGet API', () => {
+describe('objectGet API', () => {
     let testPutObjectRequest;
 
     beforeEach(() => {
@@ -47,6 +46,7 @@ describe.skip('objectGet API', () => {
         namespace,
         headers: {},
         url: `/${bucketName}`,
+        actionImplicitDenies: false,
     };
     const userMetadataKey = 'x-amz-meta-test';
     const userMetadataValue = 'some metadata';
@@ -56,6 +56,7 @@ describe.skip('objectGet API', () => {
         objectKey: objectName,
         headers: {},
         url: `/${bucketName}/${objectName}`,
+        actionImplicitDenies: false,
     };
 
     it('should get the object metadata', done => {
@@ -84,6 +85,7 @@ describe.skip('objectGet API', () => {
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: `/${bucketName}`,
+        actionImplicitDenies: false,
     };
 
     const createPutDummyRetention = (date, mode) => new DummyRequest({
@@ -236,7 +238,8 @@ describe.skip('objectGet API', () => {
         });
     });
 
-    it('should get the object data retrieval info for an object put by MPU',
+    // TODO CLDSRV-431 remove skip - skipped due to MPU call
+    it.skip('should get the object data retrieval info for an object put by MPU',
         done => {
             const partBody = Buffer.from('I am a part\n', 'utf8');
             const initiateRequest = {
@@ -245,6 +248,7 @@ describe.skip('objectGet API', () => {
                 objectKey: objectName,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 url: `/${objectName}?uploads`,
+                actionImplicitDenies: false,
             };
             async.waterfall([
                 next => bucketPut(authInfo, testPutBucketRequest, log, next),
@@ -321,6 +325,7 @@ describe.skip('objectGet API', () => {
                         headers: { host: `${bucketName}.s3.amazonaws.com` },
                         query: { uploadId: testUploadId },
                         post: completeBody,
+                        actionImplicitDenies: false,
                     };
                     completeMultipartUpload(authInfo, completeRequest,
                                             log, err => {

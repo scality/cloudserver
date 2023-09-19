@@ -14,8 +14,7 @@ const authInfo = makeAuthInfo(accessKey);
 const canonicalID = authInfo.getCanonicalID();
 const namespace = 'default';
 const bucketName = 'bucketname';
-// TODO CLDSRV-429 remove skip
-describe.skip('bucketGetACL API', () => {
+describe('bucketGetACL API', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -25,6 +24,7 @@ describe.skip('bucketGetACL API', () => {
         namespace,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        actionImplicitDenies: false,
     };
     const testGetACLRequest = {
         bucketName,
@@ -32,6 +32,7 @@ describe.skip('bucketGetACL API', () => {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/?acl',
         query: { acl: '' },
+        actionImplicitDenies: false,
     };
 
     it('should get a canned private ACL', done => {
@@ -44,6 +45,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -76,6 +78,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -119,6 +122,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -156,6 +160,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -194,6 +199,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -248,6 +254,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         const canonicalIDforSample1 =
             '79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be';
@@ -338,6 +345,7 @@ describe.skip('bucketGetACL API', () => {
                 },
                 url: '/?acl',
                 query: { acl: '' },
+                actionImplicitDenies: false,
             };
 
             async.waterfall([
@@ -377,6 +385,7 @@ describe.skip('bucketGetACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         async.waterfall([

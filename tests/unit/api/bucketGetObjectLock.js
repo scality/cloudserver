@@ -14,6 +14,7 @@ const bucketPutReq = {
         host: `${bucketName}.s3.amazonaws.com`,
     },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const testBucketPutReqWithObjLock = {
@@ -23,6 +24,7 @@ const testBucketPutReqWithObjLock = {
         'x-amz-bucket-object-lock-enabled': 'True',
     },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 function getObjectLockConfigRequest(bucketName, xml) {
@@ -33,6 +35,7 @@ function getObjectLockConfigRequest(bucketName, xml) {
             'x-amz-bucket-object-lock-enabled': 'true',
         },
         url: '/?object-lock',
+        actionImplicitDenies: false,
     };
     if (xml) {
         request.post = xml;
@@ -65,8 +68,7 @@ function getObjectLockXml(mode, type, time) {
     xmlStr += xml.objLockConfigClose;
     return xmlStr;
 }
-// TODO CLDSRV-429 remove skip
-describe.skip('bucketGetObjectLock API', () => {
+describe('bucketGetObjectLock API', () => {
     before(done => bucketPut(authInfo, bucketPutReq, log, done));
     after(cleanup);
 
@@ -79,8 +81,7 @@ describe.skip('bucketGetObjectLock API', () => {
         });
     });
 });
-// TODO CLDSRV-429 remove skip
-describe.skip('bucketGetObjectLock API', () => {
+describe('bucketGetObjectLock API', () => {
     before(cleanup);
     beforeEach(done => bucketPut(authInfo, testBucketPutReqWithObjLock, log, done));
     afterEach(cleanup);

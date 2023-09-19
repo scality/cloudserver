@@ -16,6 +16,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const testGetLocationRequest = {
@@ -25,6 +26,7 @@ const testGetLocationRequest = {
     },
     url: '/?location',
     query: { location: '' },
+    actionImplicitDenies: false,
 };
 
 const locationConstraints = config.locationConstraints;
@@ -37,8 +39,7 @@ function getBucketRequestObject(location) {
         '</CreateBucketConfiguration>' : undefined;
     return Object.assign({ post }, testBucketPutRequest);
 }
-// TODO CLDSRV-429 remove skip
-describe.skip('getBucketLocation API', () => {
+describe('getBucketLocation API', () => {
     Object.keys(locationConstraints).forEach(location => {
         if (location === 'us-east-1') {
             // if region us-east-1 should return empty string

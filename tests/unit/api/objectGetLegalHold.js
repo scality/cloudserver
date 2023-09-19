@@ -18,6 +18,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -37,15 +38,16 @@ const putObjectLegalHoldRequest = status => ({
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectLegalHoldXml(status),
+    actionImplicitDenies: false,
 });
 
 const getObjectLegalHoldRequest = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
+    actionImplicitDenies: false,
 };
-// TODO CLDSRV-429 remove skip
-describe.skip('getObjectLegalHold API', () => {
+describe('getObjectLegalHold API', () => {
     before(cleanup);
 
     describe('without Object Lock enabled on bucket', () => {
