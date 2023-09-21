@@ -106,7 +106,7 @@
             "azureStorageAccountName": "fakeaccountname",
             "azureStorageAccessKey": "Fake00Key123",
             "bucketMatch": true,
-            "azureContainerName": "s3createbucketonfly"
+            "azureContainerName": "s3test"
         }
     },
     "gcpbackend": {
