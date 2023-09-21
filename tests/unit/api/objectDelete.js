@@ -182,4 +182,24 @@ describe('objectDelete API', () => {
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
     });
+
+    it('should pass overheadField to metadata', done => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest,
+                undefined, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        sinon.assert.calledWith(
+                            metadataswitch.deleteObjectMD,
+                            bucketName,
+                            objectKey,
+                            sinon.match({ overheadField: sinon.match.array }),
+                            sinon.match.any,
+                            sinon.match.any
+                        );
+                        done();
+                    });
+                });
+        });
+    });
 });
