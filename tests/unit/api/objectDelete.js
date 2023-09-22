@@ -12,6 +12,7 @@ const objectDelete = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
+const metadataswitch = require('../metadataswitch');
 
 const any = sinon.match.any;
 const originalDeleteObject = services.deleteObject;
@@ -46,6 +47,8 @@ describe('objectDelete API', () => {
     before(() => {
         sinon.stub(services, 'deleteObject')
             .callsFake(originalDeleteObject);
+        sinon.spy(metadataswitch, 'putObjectMD');
+        sinon.spy(metadataswitch, 'deleteObjectMD');
     });
 
     beforeEach(() => {
@@ -137,10 +140,11 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         sinon.assert.calledWith(services.deleteObject,
                             any, any, any,
-                            { deleteData: true,
-                              replayId: testUploadId,
-                              doesNotNeedOpogUpdate: true,
-                            }, any, any, any);
+                            sinon.match({
+                                deleteData: true,
+                                replayId: testUploadId,
+                                doesNotNeedOpogUpdate: true,
+                            }), any, any, any);
                         done();
                     });
                 });

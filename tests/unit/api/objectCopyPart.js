@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const sinon = require('sinon');
 const { parseString } = require('xml2js');
 const { storage } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -8,6 +9,7 @@ const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
 const initiateMultipartUpload
 = require('../../../lib/api/initiateMultipartUpload');
 const { metadata } = storage.metadata.inMemory.metadata;
+const metadataswitch = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
@@ -67,6 +69,7 @@ describe('objectCopyPart', () => {
             objData);
     before(done => {
         cleanup();
+        sinon.spy(metadataswitch, 'putObjectMD');
         async.waterfall([
             callback => bucketPut(authInfo, putDestBucketRequest, log,
                 err => callback(err)),
@@ -87,7 +90,10 @@ describe('objectCopyPart', () => {
         });
     });
 
-    after(() => cleanup());
+    after(() => {
+        metadataswitch.putObjectMD.restore();
+        cleanup();
+    });
 
     it('should copy part even if legacy metadata without dataStoreName',
     done => {
@@ -113,5 +119,22 @@ describe('objectCopyPart', () => {
                     'zero-based offsets of the first and last bytes to copy');
                 done();
             });
+    });
+
+    it('should pass overheadField', done => {
+        const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
+        objectPutCopyPart(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert.ifError(err);
+            sinon.assert.calledWith(
+                metadataswitch.putObjectMD,
+                sinon.match.string, // MPU shadow bucket
+                objectKey,
+                sinon.match.any,
+                sinon.match({ overheadField: sinon.match.array }),
+                sinon.match.any,
+                sinon.match.any
+            );
+            done();
+        });
     });
 });

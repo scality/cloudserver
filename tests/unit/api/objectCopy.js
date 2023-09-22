@@ -150,9 +150,86 @@ describe('non-versioned objectCopy', () => {
                 undefined, log, err => {
                     assert.ifError(err);
                     sinon.assert.calledWith(metadata.putObjectMD,
-                        any, any, any, { oldReplayId: testUploadId }, any, any);
+                        any, any, any, sinon.match({ oldReplayId: testUploadId }), any, any);
                     done();
                 });
+        });
+    });
+});
+
+describe('objectCopy overheadField', () => {
+    beforeEach(done => {
+        cleanup();
+        sinon.stub(metadata, 'putObjectMD').callsFake(originalputObjectMD);
+        async.series([
+            next => bucketPut(authInfo, putSourceBucketRequest, log, next),
+            next => bucketPut(authInfo, putDestBucketRequest, log, next),
+        ], done);
+    });
+
+    afterEach(() => {
+        sinon.restore();
+        cleanup();
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a non-versioned request', done => {
+        const testPutObjectRequest =
+            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+            assert.ifError(err);
+            objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                        destBucketName, objectKey, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                    done();
+                }
+            );
+        });
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a versioned request', done => {
+        const testPutObjectRequest =
+            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+            assert.ifError(err);
+            bucketPutVersioning(authInfo, enableVersioningRequest, log, err => {
+                assert.ifError(err);
+                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            destBucketName, objectKey, any,
+                            sinon.match({ overheadField: sinon.match.array }), any, any
+                        );
+                        done();
+                    }
+                );
+            });
+        });
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a version-suspended request', done => {
+        const testPutObjectRequest =
+            versioningTestUtils.createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
+        const testObjectCopyRequest = _createObjectCopyRequest(destBucketName);
+        objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
+            assert.ifError(err);
+            bucketPutVersioning(authInfo, suspendVersioningRequest, log, err => {
+                assert.ifError(err);
+                objectCopy(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            destBucketName, objectKey, any,
+                            sinon.match({ overheadField: sinon.match.array }), any, any
+                        );
+                        done();
+                    }
+                );
+            });
         });
     });
 });
