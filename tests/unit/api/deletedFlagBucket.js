@@ -58,11 +58,13 @@ const baseTestRequest = {
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     query: {},
+    actionImplicitDenies: false,
 };
 const serviceGetRequest = {
     parsedHost: 's3.amazonaws.com',
     headers: { host: 's3.amazonaws.com' },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const userBucketOwner = 'admin';
@@ -103,8 +105,7 @@ function confirmDeleted(done) {
     });
 }
 
-// TODO CLDSRV-431 remove skip
-describe.skip('deleted flag bucket handling', () => {
+describe('deleted flag bucket handling', () => {
     beforeEach(done => {
         cleanup();
         const bucketMD = new BucketInfo(bucketName, canonicalID,

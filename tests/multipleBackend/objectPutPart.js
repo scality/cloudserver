@@ -37,8 +37,7 @@ const md5Hash2 = crypto.createHash('md5');
 const calculatedHash1 = md5Hash1.update(body1).digest('hex');
 const calculatedHash2 = md5Hash2.update(body2).digest('hex');
 
-// TODO CLDSRV-431 reenable
-// const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function _getOverviewKey(objectKey, uploadId) {
     return `overview${splitter}${objectKey}${splitter}${uploadId}`;
@@ -68,7 +67,7 @@ function putPart(bucketLoc, mpuLoc, requestHost, cb,
         objectKey: objectName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${objectName}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = {
@@ -169,9 +168,7 @@ function listAndAbort(uploadId, calculatedHash2, objectName, done) {
         });
     });
 }
-// TODO CLDSRV-431 remove skip
-// describeSkipIfE2E('objectPutPart API with multiple backends',
-describe.skip('objectPutPart API with multiple backends',
+describeSkipIfE2E('objectPutPart API with multiple backends',
     function testSuite() {
         this.timeout(5000);
 

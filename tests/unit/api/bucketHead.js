@@ -14,9 +14,9 @@ const testRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
-// TODO CLDSRV-431 remove skip
-describe.skip('bucketHead API', () => {
+describe('bucketHead API', () => {
     beforeEach(() => {
         cleanup();
     });

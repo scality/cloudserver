@@ -71,8 +71,7 @@ function copySetup(params, cb) {
             callback),
     ], err => cb(err));
 }
-// TODO CLDSRV-431 remove skip
-describe.skip('ObjectCopy API with multiple backends', () => {
+describe('ObjectCopy API with multiple backends', () => {
     before(() => {
         cleanup();
     });

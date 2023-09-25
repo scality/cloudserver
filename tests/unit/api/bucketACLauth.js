@@ -18,8 +18,7 @@ const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-// TODO CLDSRV-431 remove skip
-describe.skip('bucket authorization for bucketGet, bucketHead, ' +
+describe('bucket authorization for bucketGet, bucketHead, ' +
     'objectGet, and objectHead', () => {
     // Reset the bucket ACLs
     afterEach(() => {
@@ -107,7 +106,7 @@ describe.skip('bucket authorization for bucketGet, bucketHead, ' +
             }
             bucket.setCannedAcl(value.canned);
             const results = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, value.id, value.auth, log));
+                isBucketAuthorized(bucket, type, value.id, value.auth, false, log));
             assert.deepStrictEqual(results, value.response);
             done();
         });
@@ -129,13 +128,13 @@ describe('bucket authorization for bucketGetACL', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketGetACL',
-            ownerCanonicalId, authInfo);
+            ownerCanonicalId, authInfo, false);
         assert.strictEqual(result, true);
     });
 
     it('should allow access to user in bucket owner account', () => {
         const result = isBucketAuthorized(bucket, 'bucketGetACL',
-            ownerCanonicalId, userAuthInfo);
+            ownerCanonicalId, userAuthInfo, false);
         assert.strictEqual(result, true);
     });
 
@@ -158,7 +157,7 @@ describe('bucket authorization for bucketGetACL', () => {
     orders.forEach(value => {
         it(`should allow access to ${value.it}`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketGetACL',
-                                                    value.id);
+                                                    value.id, null, false);
             assert.strictEqual(noAuthResult, false);
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
@@ -166,7 +165,7 @@ describe('bucket authorization for bucketGetACL', () => {
                 bucket.setCannedAcl(value.canned);
             }
             const authorizedResult = isBucketAuthorized(bucket, 'bucketGetACL',
-                value.id, value.auth);
+                value.id, value.auth, false);
             assert.strictEqual(authorizedResult, true);
             done();
         });
@@ -188,13 +187,13 @@ describe('bucket authorization for bucketPutACL', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketPutACL',
-            ownerCanonicalId, authInfo);
+            ownerCanonicalId, authInfo, false);
         assert.strictEqual(result, true);
     });
 
     it('should allow access to user in bucket owner account', () => {
         const result = isBucketAuthorized(bucket, 'bucketPutACL',
-            ownerCanonicalId, userAuthInfo);
+            ownerCanonicalId, userAuthInfo, false);
         assert.strictEqual(result, true);
     });
 
@@ -203,11 +202,11 @@ describe('bucket authorization for bucketPutACL', () => {
         it('should allow access to account if ' +
            `account was granted ${value} right`, done => {
             const noAuthResult = isBucketAuthorized(bucket, 'bucketPutACL',
-                accountToVet, altAcctAuthInfo);
+                accountToVet, altAcctAuthInfo, false);
             assert.strictEqual(noAuthResult, false);
             bucket.setSpecificAcl(accountToVet, value);
             const authorizedResult = isBucketAuthorized(bucket, 'bucketPutACL',
-                accountToVet, altAcctAuthInfo);
+                accountToVet, altAcctAuthInfo, false);
             assert.strictEqual(authorizedResult, true);
             done();
         });
@@ -229,13 +228,13 @@ describe('bucket authorization for bucketOwnerAction', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
-            ownerCanonicalId, authInfo);
+            ownerCanonicalId, authInfo, false);
         assert.strictEqual(result, true);
     });
 
     it('should allow access to user in bucket owner account', () => {
         const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
-            ownerCanonicalId, userAuthInfo);
+            ownerCanonicalId, userAuthInfo, false);
         assert.strictEqual(result, true);
     });
 
@@ -257,7 +256,7 @@ describe('bucket authorization for bucketOwnerAction', () => {
             }
             bucket.setCannedAcl(value.canned);
             const result = isBucketAuthorized(bucket, 'bucketDeleteCors',
-                value.id, value.auth);
+                value.id, value.auth, false);
             assert.strictEqual(result, false);
             done();
         });
@@ -279,13 +278,13 @@ describe('bucket authorization for bucketDelete', () => {
 
     it('should allow access to bucket owner', () => {
         const result = isBucketAuthorized(bucket, 'bucketDelete',
-            ownerCanonicalId, authInfo);
+            ownerCanonicalId, authInfo, false);
         assert.strictEqual(result, true);
     });
 
     it('should allow access to user in bucket owner account', () => {
         const result = isBucketAuthorized(bucket, 'bucketDelete',
-            ownerCanonicalId, userAuthInfo);
+            ownerCanonicalId, userAuthInfo, false);
         assert.strictEqual(result, true);
     });
 
@@ -306,7 +305,7 @@ describe('bucket authorization for bucketDelete', () => {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             bucket.setCannedAcl(value.canned);
-            const result = isBucketAuthorized(bucket, 'bucketDelete', value.id, value.auth);
+            const result = isBucketAuthorized(bucket, 'bucketDelete', value.id, value.auth, false);
             assert.strictEqual(result, false);
             done();
         });
@@ -330,13 +329,13 @@ describe('bucket authorization for objectDelete and objectPut', () => {
 
     it('should allow access to bucket owner', () => {
         const results = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, ownerCanonicalId, authInfo));
+            isBucketAuthorized(bucket, type, ownerCanonicalId, authInfo, false));
         assert.deepStrictEqual(results, [true, true]);
     });
 
     it('should allow access to user in bucket owner account', () => {
         const results = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, ownerCanonicalId, userAuthInfo));
+            isBucketAuthorized(bucket, type, ownerCanonicalId, userAuthInfo, false));
         assert.deepStrictEqual(results, [true, true]);
     });
 
@@ -361,13 +360,13 @@ describe('bucket authorization for objectDelete and objectPut', () => {
         it(`should allow access to ${value.it}`, done => {
             bucket.setCannedAcl(value.canned);
             const noAuthResults = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, value.id, value.auth));
+                isBucketAuthorized(bucket, type, value.id, value.auth, false));
             assert.deepStrictEqual(noAuthResults, value.response);
             if (value.aclParam) {
                 bucket.setSpecificAcl(value.aclParam[1], value.aclParam[0]);
             }
             const authResults = requestTypes.map(type =>
-                isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo));
+                isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo, false));
             assert.deepStrictEqual(authResults, [true, true]);
             done();
         });
@@ -379,10 +378,10 @@ describe('bucket authorization for objectPutACL and objectGetACL', () => {
         'are done at object level', done => {
         const requestTypes = ['objectPutACL', 'objectGetACL'];
         const results = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo));
+            isBucketAuthorized(bucket, type, accountToVet, altAcctAuthInfo, false));
         assert.deepStrictEqual(results, [true, true]);
         const publicUserResults = requestTypes.map(type =>
-            isBucketAuthorized(bucket, type, constants.publicId));
+            isBucketAuthorized(bucket, type, constants.publicId, null, false));
         assert.deepStrictEqual(publicUserResults, [true, true]);
         done();
     });

@@ -49,6 +49,7 @@ const bucketPutRequest = {
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
     '<LocationConstraint>scality-internal-mem</LocationConstraint>' +
     '</CreateBucketConfiguration >',
+    actionImplicitDenies: false,
 };
 const lockEnabledBucketRequest = Object.assign({}, bucketPutRequest);
 lockEnabledBucketRequest.bucketName = lockedBucket;
@@ -62,6 +63,7 @@ const initiateRequest = {
     objectKey,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: `/${objectKey}?uploads`,
+    actionImplicitDenies: false,
 };
 const retentionInitiateRequest = Object.assign({}, initiateRequest);
 retentionInitiateRequest.bucketName = lockedBucket;
@@ -82,6 +84,7 @@ const getObjectLockInfoRequest = {
     namespace,
     objectKey,
     headers: { host: `${lockedBucket}.s3.amazonaws.com` },
+    actionImplicitDenies: false,
 };
 const expectedRetentionConfig = {
     $: { xmlns: 'http://s3.amazonaws.com/doc/2006-03-01/' },
@@ -106,6 +109,7 @@ function _createPutPartRequest(uploadId, partNumber, partBody) {
             uploadId,
         },
         calculatedHash,
+        actionImplicitDenies: false,
     }, partBody);
 }
 
@@ -128,11 +132,11 @@ function _createCompleteMpuRequest(uploadId, parts) {
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         query: { uploadId },
         post: completeBody,
+        actionImplicitDenies: false,
     };
 }
 
-// TODO CLDSRV-431 remove skip
-describe.skip('Multipart Upload API', () => {
+describe('Multipart Upload API', () => {
     beforeEach(() => {
         cleanup();
     });
@@ -542,6 +546,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    actionImplicitDenies: false,
                 };
                 const awsVerifiedETag =
                     '"953e9e776f285afc0bfcf1ab4668299d-1"';
@@ -630,6 +635,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    actionImplicitDenies: false,
                 };
                 const awsVerifiedETag =
                     '"953e9e776f285afc0bfcf1ab4668299d-1"';
@@ -702,6 +708,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo,
                     completeRequest, log, err => {
@@ -757,6 +764,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     assert(err.is.MalformedXML);
@@ -829,6 +837,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, err => {
@@ -887,6 +896,7 @@ describe.skip('Multipart Upload API', () => {
                     query: { uploadId: testUploadId },
                     post: completeBody,
                     calculatedHash,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, err => {
                     assert(err.is.InvalidPart);
@@ -958,6 +968,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
@@ -1040,6 +1051,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 3);
                     completeMultipartUpload(authInfo,
@@ -1122,6 +1134,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1153,6 +1166,7 @@ describe.skip('Multipart Upload API', () => {
                 'x-amz-acl': 'authenticated-read',
             },
             url: `/${objectKey}?uploads`,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -1221,6 +1235,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1255,6 +1270,7 @@ describe.skip('Multipart Upload API', () => {
                 'x-amz-grant-read': `emailAddress="${granteeEmail}"`,
             },
             url: `/${objectKey}?uploads`,
+            actionImplicitDenies: false,
         };
 
         async.waterfall([
@@ -1323,6 +1339,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     completeMultipartUpload(authInfo,
                         completeRequest, log, (err, result) => {
@@ -1375,6 +1392,7 @@ describe.skip('Multipart Upload API', () => {
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
+                    actionImplicitDenies: false,
                 };
                 assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                 multipartDelete(authInfo, deleteRequest, log, err => {
@@ -1425,6 +1443,7 @@ describe.skip('Multipart Upload API', () => {
                     url: `/${objectKey}?uploadId=${testUploadId}`,
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: 'non-existent-upload-id' },
+                    actionImplicitDenies: false,
                 };
                 assert.strictEqual(metadata.keyMaps.get(mpuBucket).size, 2);
                 multipartDelete(authInfo, deleteRequest, log, err => {
@@ -1504,6 +1523,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log,
                                         (err, result) => {
@@ -1557,6 +1577,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId: testUploadId },
                     post: completeBody,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
@@ -1628,6 +1649,7 @@ describe.skip('Multipart Upload API', () => {
                     headers: { host: `${bucketName}.s3.amazonaws.com` },
                     query: { uploadId },
                     post: completeBody,
+                    actionImplicitDenies: false,
                 };
                 completeMultipartUpload(authInfo, completeRequest, log, next);
             },
@@ -1698,6 +1720,7 @@ describe.skip('Multipart Upload API', () => {
                             headers: { host: `${bucketName}.s3.amazonaws.com` },
                             query: { uploadId },
                             post: completeBody,
+                            actionImplicitDenies: false,
                         };
                         completeMultipartUpload(authInfo, completeRequest, log, done);
                     },
@@ -1790,6 +1813,7 @@ describe.skip('Multipart Upload API', () => {
                         query: { uploadId: testUploadId },
                         post: completeBody,
                         calculatedHash,
+                        actionImplicitDenies: false,
                     };
                     // show that second part data is there
                     assert(ds[2]);
@@ -1869,8 +1893,8 @@ describe.skip('Multipart Upload API', () => {
         });
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('complete mpu with versioning', () => {
+
+describe('complete mpu with versioning', () => {
     const objData = ['foo0', 'foo1', 'foo2'].map(str =>
         Buffer.from(str, 'utf8'));
 
@@ -2100,8 +2124,8 @@ describe.skip('complete mpu with versioning', () => {
         });
     });
 });
-// TODO CLDSRV-431 remove skip
-describe.skip('multipart upload with object lock', () => {
+
+describe('multipart upload with object lock', () => {
     before(done => {
         cleanup();
         bucketPut(authInfo, lockEnabledBucketRequest, log, done);

@@ -33,8 +33,7 @@ const awsLocation2 = 'awsbackend2';
 const awsLocationMismatch = 'awsbackendmismatch';
 const partETag = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
 
-// TODO CLDSRV-431 reenable
-// const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
 function getSourceAndDestKeys() {
     const timestamp = Date.now();
@@ -79,7 +78,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = {
@@ -96,7 +95,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (srcObjLoc) {
         sourceObjPutParams.headers = {
@@ -175,9 +174,7 @@ function assertPartList(partList, uploadId) {
     assert.strictEqual(partList.Parts[0].Size, 11);
 }
 
-// TODO CLDSRV-431 remove skip
-// describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
-describe.skip('ObjectCopyPutPart API with multiple backends',
+describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
     function testSuite() {
         this.timeout(60000);
 

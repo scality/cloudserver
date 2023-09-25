@@ -53,11 +53,13 @@ const baseTestRequest = {
     url: '/',
     post: '',
     headers: { host: `${bucketName}.s3.amazonaws.com` },
+    actionImplicitDenies: false,
 };
 const serviceGetRequest = {
     parsedHost: 's3.amazonaws.com',
     headers: { host: 's3.amazonaws.com' },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const userBucketOwner = 'admin';
@@ -65,8 +67,8 @@ const creationDate = new Date().toJSON();
 const usersBucket = new BucketInfo(usersBucketName,
     userBucketOwner, userBucketOwner, creationDate);
 const locationConstraint = 'us-east-1';
-// TODO CLDSRV-431 remove skip
-describe.skip('transient bucket handling', () => {
+
+describe('transient bucket handling', () => {
     beforeEach(done => {
         cleanup();
         const bucketMD = new BucketInfo(bucketName, canonicalID,

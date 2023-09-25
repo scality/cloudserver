@@ -31,8 +31,8 @@ const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
 const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00003`;
 const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00004`;
 const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00005`;
-// TODO CLDSRV-431 remove skip
-describe.skip('List Parts API', () => {
+
+describe('List Parts API', () => {
     beforeEach(done => {
         cleanup();
         const creationDate = new Date().toJSON();
@@ -114,6 +114,7 @@ describe.skip('List Parts API', () => {
             url: `/${uploadKey}?uploadId=${uploadId}`,
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             query: { uploadId },
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -160,6 +161,7 @@ describe.skip('List Parts API', () => {
                 uploadId,
                 'encoding-type': 'url',
             },
+            actionImplicitDenies: false,
         };
         const urlEncodedObjectKey = '%24makememulti';
 
@@ -185,6 +187,7 @@ describe.skip('List Parts API', () => {
                 uploadId,
                 'max-parts': '4',
             },
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -226,6 +229,7 @@ describe.skip('List Parts API', () => {
                 uploadId,
                 'max-parts': '6',
             },
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -267,6 +271,7 @@ describe.skip('List Parts API', () => {
                 uploadId,
                 'part-number-marker': '2',
             },
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {
@@ -312,6 +317,7 @@ describe.skip('List Parts API', () => {
                 'part-number-marker': '2',
                 'max-parts': '2',
             },
+            actionImplicitDenies: false,
         };
 
         listParts(authInfo, listRequest, log, (err, xml) => {

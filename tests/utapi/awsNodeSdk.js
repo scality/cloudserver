@@ -191,8 +191,7 @@ function getObject(bucket, key, cb) {
     });
 }
 
-// TODO CLDSRV-431 remove skip
-describe.skip('utapi v2 metrics incoming and outgoing bytes', function t() {
+describe('utapi v2 metrics incoming and outgoing bytes', function t() {
     this.timeout(30000);
     const utapi = new MockUtapi();
 
