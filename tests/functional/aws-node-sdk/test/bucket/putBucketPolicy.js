@@ -47,6 +47,16 @@ function getPolicyParamsWithId(paramToChange, policyId) {
     };
 }
 
+function generateRandomString(length) {
+    // All allowed characters matching the regex in arsenal
+    const allowedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+=,.@ -/';
+    const allowedCharactersLength = allowedCharacters.length;
+
+    return [...Array(length)]
+      .map(() => allowedCharacters[~~(Math.random() * allowedCharactersLength)])
+      .join('');
+}
+
 // Check for the expected error response code and status code.
 function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
@@ -60,6 +70,7 @@ function assertError(err, expectedErr, cb) {
     }
     cb();
 }
+
 
 describe('aws-sdk test put bucket policy', () => {
     let s3;
@@ -132,6 +143,18 @@ describe('aws-sdk test put bucket policy', () => {
             const params = getPolicyParamsWithId(null, 'cd3ad3d9-2776-4ef1-a904-4c229d1642e');
             s3.putBucketPolicy(params, err =>
                 assertError(err, null, done));
+        });
+
+        it('should allow bucket policy with pincipal arn less than 2048 characters', done => {
+            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(150)}` } }); // eslint-disable-line max-len
+            s3.putBucketPolicy(params, err =>
+                assertError(err, null, done));
+        });
+
+        it('should not allow bucket policy with pincipal arn more than 2048 characters', done => {
+            const params = getPolicyParams({ key: 'Principal', value: { AWS: `arn:aws:iam::767707094035:user/${generateRandomString(2020)}` } }); // eslint-disable-line max-len
+            s3.putBucketPolicy(params, err =>
+                assertError(err, 'MalformedPolicy', done));
         });
     });
 });
