@@ -30,6 +30,23 @@ function getPolicyParams(paramToChange) {
     };
 }
 
+function getPolicyParamsWithId(paramToChange, policyId) {
+    const newParam = {};
+    const bucketPolicy = {
+        Version: '2012-10-17',
+        Id: policyId,
+        Statement: [basicStatement],
+    };
+    if (paramToChange) {
+        newParam[paramToChange.key] = paramToChange.value;
+        bucketPolicy.Statement[0] = Object.assign({}, basicStatement, newParam);
+    }
+    return {
+        Bucket: bucket,
+        Policy: JSON.stringify(bucketPolicy),
+    };
+}
+
 // Check for the expected error response code and status code.
 function assertError(err, expectedErr, cb) {
     if (expectedErr === null) {
@@ -101,6 +118,26 @@ describe('aws-sdk test put bucket policy', () => {
             const params = getPolicyParams({ key: 'Principal', value: '' });
             s3.putBucketPolicy(params, err =>
                 assertError(err, 'MalformedPolicy', done));
+        });
+
+        it('should return MalformedPolicy because Id is not a string',
+        done => {
+            const params = getPolicyParamsWithId(null, 59);
+            s3.putBucketPolicy(params, err =>
+                assertError(err, 'MalformedPolicy', done));
+        });
+
+        it('should put a bucket policy on bucket since Id is a string',
+        done => {
+            const params = getPolicyParamsWithId(null, 'cd3ad3d9-2776-4ef1-a904-4c229d1642e');
+            s3.putBucketPolicy(params, err =>
+                assertError(err, null, done));
+        });
+
+        it('should allow bucket policy with pincipal arn less than 2048', done => {
+            const params = getPolicyParams({ key: 'Principal', value: { AWS: 'arn:aws:iam::767707094035:user/user2/TENANT_USER/null/5417be27-8709-48bd-adfb-865ebc58b9f0/1a464be02ea631bdaf2a9ee884434233374a457460e925bf10d9e4665f8fa796/c1d83067-a3f3-41a4-bd45-d6bf47270bd0' } }); // eslint-disable-line max-len
+            s3.putBucketPolicy(params, err =>
+                assertError(err, null, done));
         });
     });
 });
