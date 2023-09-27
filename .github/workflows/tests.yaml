@@ -172,7 +172,6 @@ jobs:
     needs: build
     env:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
-      SPROXYD_IMAGE: registry.scality.com/federation/sproxyd:7.10.6.8
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple

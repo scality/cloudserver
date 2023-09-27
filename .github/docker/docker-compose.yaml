@@ -81,8 +81,7 @@ services:
   sproxyd:
     network_mode: "host"
     profiles: ['sproxyd']
-    image: ${SPROXYD_IMAGE}
+    image: sproxyd-standalone
+    build: ./sproxyd
     user: 0:0
     privileged: yes
-    volumes:
-      - ./sproxyd/conf:/conf:ro
