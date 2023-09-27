@@ -17,7 +17,6 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-const objectName = 'objectName';
 const fileLocation = 'scality-internal-file';
 const memLocation = 'scality-internal-mem';
 const sproxydLocation = 'scality-internal-sproxyd';
@@ -25,7 +24,7 @@ const sproxydLocation = 'scality-internal-sproxyd';
 const isCEPH = process.env.CI_CEPH !== undefined;
 const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
-function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
+function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -153,7 +152,7 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     putCases.forEach(testCase => {
         it(`should put an object to ${testCase.name}`, done => {
             async.series([
-                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', next),
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj1', next),
                 next => {
                     checkPut(testCase);
                     // Increase the probability of the first request having released
@@ -162,7 +161,13 @@ describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
                     setTimeout(next, 10);
                 },
                 // Second put should work as well
-                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', next),
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
+                next => {
+                    checkPut(testCase);
+                    setTimeout(next, 10);
+                },
+                // Overwriting PUT
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
                 next => {
                     checkPut(testCase);
                     next();
