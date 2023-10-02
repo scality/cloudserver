@@ -3,6 +3,7 @@ const async = require('async');
 const BucketUtility = require('../aws-node-sdk/lib/utility/bucket-util');
 const { removeAllVersions } = require('../aws-node-sdk/lib/utility/versioning-util');
 const { makeBackbeatRequest } = require('./utils');
+const { config } = require('../../../lib/Config');
 
 const testBucket = 'bucket-for-list-lifecycle-orphans-tests';
 const emptyBucket = 'empty-bucket-for-list-lifecycle-orphans-tests';
@@ -108,6 +109,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
 
             return done();
@@ -128,6 +130,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
 
             return done();
@@ -148,6 +151,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 0);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 0);
 
             return done();
@@ -159,6 +163,55 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             method: 'GET',
             bucket: testBucket,
             queryObj: { 'list-type': 'orphan', 'max-keys': 'a' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is invalid', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries': 'a' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 0', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries': '0' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument error if max-scanned-lifecycle-listing-entries is set to 2', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries': '2' },
+            authCredentials: credentials,
+        }, err => {
+            assert.strictEqual(err.code, 'InvalidArgument');
+            return done();
+        });
+    });
+
+    it('should return InvalidArgument if max-scanned-lifecycle-listing-entries exceeds the default value', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries':
+                (config.maxScannedLifecycleListingEntries + 1).toString() },
             authCredentials: credentials,
         }, err => {
             assert.strictEqual(err.code, 'InvalidArgument');
@@ -192,9 +245,89 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
 
             const contents = data.Contents;
             assert.strictEqual(contents.length, 8);
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should only return delete marker that passed the full keys evaluation to prevent false positives', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries': '4' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+
+            const data = JSON.parse(response.body);
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, 4);
+
+            // Depending on the metadata bucket key format, the orphan delete marker is denoted by 1 or 2 entries,
+            // which results in a difference in the number of keys scanned and, consequently,
+            // affects the value of the NextMarker and Contents.
+            const contents = data.Contents;
+            const nextMarker = data.NextMarker;
+
+            if (process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v1') {
+                // With v1 metadata bucket key format, master key is automaticaly deleted
+                // when the last version of an object is a delete marker
+                assert.strictEqual(nextMarker, 'key1old');
+                assert.strictEqual(contents.length, 3);
+                assert.strictEqual(contents[0].Key, 'key0');
+                assert.strictEqual(contents[1].Key, 'key0old');
+                assert.strictEqual(contents[2].Key, 'key1');
+            } else {
+                assert.strictEqual(nextMarker, 'key0old');
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key, 'key0');
+            }
+            checkContents(contents);
+
+            return done();
+        });
+    });
+
+    it('should return all the orphan delete markers before max scanned entries value is reached', done => {
+        makeBackbeatRequest({
+            method: 'GET',
+            bucket: testBucket,
+            queryObj: { 'list-type': 'orphan', 'max-scanned-lifecycle-listing-entries': '3' },
+            authCredentials: credentials,
+        }, (err, response) => {
+            assert.ifError(err);
+            assert.strictEqual(response.statusCode, 200);
+
+            const data = JSON.parse(response.body);
+            assert.strictEqual(data.IsTruncated, true);
+            assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, 3);
+
+            // Depending on the metadata bucket key format, the orphan delete marker is denoted by 1 or 2 entries,
+            // which results in a difference in the number of keys scanned and, consequently,
+            // affects the value of the NextMarker and Contents.
+            const contents = data.Contents;
+            const nextMarker = data.NextMarker;
+
+            if (process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v1') {
+                // With v1 metadata bucket key format, master key is automaticaly deleted
+                // when the last version of an object is a delete marker
+                assert.strictEqual(nextMarker, 'key1');
+                assert.strictEqual(contents.length, 2);
+                assert.strictEqual(contents[0].Key, 'key0');
+                assert.strictEqual(contents[1].Key, 'key0old');
+            } else {
+                assert.strictEqual(nextMarker, 'key0old');
+                assert.strictEqual(contents.length, 1);
+                assert.strictEqual(contents[0].Key, 'key0');
+            }
             checkContents(contents);
 
             return done();
@@ -217,6 +350,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Prefix, prefix);
 
             const contents = data.Contents;
@@ -246,6 +380,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, false);
             assert(!data.NextMarker);
             assert.strictEqual(data.MaxKeys, 1000);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 3);
             assert.strictEqual(data.BeforeDate, date);
 
@@ -277,6 +412,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.IsTruncated, true);
             assert.strictEqual(data.NextMarker, 'key0old');
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.Contents.length, 1);
 
@@ -303,6 +439,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             assert.strictEqual(data.Marker, 'key0old');
             assert.strictEqual(data.NextMarker, 'key1old');
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Contents.length, 1);
 
             const contents = data.Contents;
@@ -327,6 +464,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             const data = JSON.parse(response.body);
             assert.strictEqual(data.IsTruncated, true);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Marker, 'key1old');
             assert.strictEqual(data.BeforeDate, date);
             assert.strictEqual(data.NextMarker, 'key2old');
@@ -353,6 +491,7 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             const data = JSON.parse(response.body);
             assert.strictEqual(data.IsTruncated, false);
             assert.strictEqual(data.MaxKeys, 1);
+            assert.strictEqual(data.MaxScannedLifecycleListingEntries, config.maxScannedLifecycleListingEntries);
             assert.strictEqual(data.Marker, 'key2old');
             assert.strictEqual(data.BeforeDate, date);
 
