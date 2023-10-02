@@ -484,7 +484,7 @@ arraybuffer.slice@~0.0.7:
     bson "4.0.0"
     debug "~2.6.9"
     diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl#0.2.0"
+    fcntl "github:scality/node-fcntl#0.2.2"
     hdclient scality/hdclient#1.1.0
     https-proxy-agent "^2.2.0"
     ioredis "^4.28.5"
@@ -1846,6 +1846,14 @@ fast-levenshtein@~2.0.6:
 "fcntl@github:scality/node-fcntl#0.2.0":
   version "0.2.0"
   resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/ae7493da46fb353eff0c4cb79e2cce838197c066"
+  dependencies:
+    bindings "^1.1.1"
+    nan "^2.3.2"
+    node-gyp "^8.0.0"
+
+"fcntl@github:scality/node-fcntl#0.2.2":
+  version "0.2.1"
+  resolved "https://codeload.github.com/scality/node-fcntl/tar.gz/b1335ca204c6265cedc50c26020c4d63aabe920e"
   dependencies:
     bindings "^1.1.1"
     nan "^2.3.2"
