@@ -207,6 +207,7 @@ const constants = {
         ORPHAN_DM_TYPE: 'orphan',
     },
     multiObjectDeleteConcurrency: 50,
+    maxScannedLifecycleListingEntries: 10000,
 };
 
 module.exports = constants;
