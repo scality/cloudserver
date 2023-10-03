@@ -78,3 +78,10 @@ services:
     network_mode: "host"
     profiles: ['ceph']
     image: ghcr.io/scality/cloudserver/ci-ceph 
+  sproxyd:
+    network_mode: "host"
+    profiles: ['sproxyd']
+    image: sproxyd-standalone
+    build: ./sproxyd
+    user: 0:0
+    privileged: yes

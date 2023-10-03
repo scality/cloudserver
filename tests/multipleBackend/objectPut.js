@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const { storage } = require('arsenal');
 
 const { cleanup, DummyRequestLogger, makeAuthInfo }
@@ -16,13 +17,14 @@ const namespace = 'default';
 const bucketName = 'bucketname';
 const body = Buffer.from('I am a body', 'utf8');
 const correctMD5 = 'be747eb4b75517bf6b3cf7c5fbb62f3a';
-const objectName = 'objectName';
 const fileLocation = 'scality-internal-file';
 const memLocation = 'scality-internal-mem';
+const sproxydLocation = 'scality-internal-sproxyd';
 
-// const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
+const isCEPH = process.env.CI_CEPH !== undefined;
+const describeSkipIfE2E = process.env.S3_END_TO_END ? describe.skip : describe;
 
-function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
+function put(bucketLoc, objLoc, requestHost, objectName, cb, errorDescription) {
     const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
         '<CreateBucketConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -71,74 +73,106 @@ function put(bucketLoc, objLoc, requestHost, cb, errorDescription) {
     });
 }
 
-describe.skip('objectPutAPI with multiple backends', function testSuite() {
+describeSkipIfE2E('objectPutAPI with multiple backends', function testSuite() {
     this.timeout(5000);
+
+    const putCases = [
+        {
+            name: 'mem',
+            bucketLoc: fileLocation,
+            objLoc: memLocation,
+        },
+        {
+            name: 'file',
+            bucketLoc: memLocation,
+            objLoc: fileLocation,
+        },
+        {
+            name: 'AWS',
+            bucketLoc: memLocation,
+            objLoc: 'awsbackend',
+        },
+        {
+            name: 'azure',
+            bucketLoc: memLocation,
+            objLoc: 'azurebackend',
+        },
+        {
+            name: 'mem based on bucket location',
+            bucketLoc: memLocation,
+            objLoc: null,
+        },
+        {
+            name: 'file based on bucket location',
+            bucketLoc: fileLocation,
+            objLoc: null,
+        },
+        {
+            name: 'AWS based on bucket location',
+            bucketLoc: 'awsbackend',
+            objLoc: null,
+        },
+        {
+            name: 'Azure based on bucket location',
+            bucketLoc: 'azurebackend',
+            objLoc: null,
+        },
+        {
+            name: 'us-east-1 which is file based on bucket location if no locationConstraint provided',
+            bucketLoc: null,
+            objLoc: null,
+        },
+    ];
+
+    if (!isCEPH) {
+        putCases.push({
+            name: 'sproxyd',
+            bucketLoc: sproxydLocation,
+            objLoc: null,
+        });
+    }
+
+    function isDataStoredInMem(testCase) {
+        return testCase.objLoc === memLocation
+               || (testCase.objLoc === null && testCase.bucketLoc === memLocation);
+    }
+
+    function checkPut(testCase) {
+        if (isDataStoredInMem(testCase)) {
+            assert.deepStrictEqual(ds[ds.length - 1].value, body);
+        } else {
+            assert.deepStrictEqual(ds, []);
+        }
+    }
 
     afterEach(() => {
         cleanup();
     });
 
-    it('should put an object to mem', done => {
-        put(fileLocation, memLocation, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
-        });
-    });
-
-    it('should put an object to file', done => {
-        put(memLocation, fileLocation, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to AWS', done => {
-        put(memLocation, 'awsbackend', 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to mem based on bucket location', done => {
-        put(memLocation, null, 'localhost', () => {
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
-        });
-    });
-
-    it('should put an object to file based on bucket location', done => {
-        put(fileLocation, null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to AWS based on bucket location', done => {
-        put('awsbackend', null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to Azure based on bucket location', done => {
-        put('azurebackend', null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to Azure based on object location', done => {
-        put(memLocation, 'azurebackend', 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
-        });
-    });
-
-    it('should put an object to us-east-1 which is file based on bucket' +
-    ' location if no locationConstraint provided', done => {
-        put(null, null, 'localhost', () => {
-            assert.deepStrictEqual(ds, []);
-            done();
+    putCases.forEach(testCase => {
+        it(`should put an object to ${testCase.name}`, done => {
+            async.series([
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj1', next),
+                next => {
+                    checkPut(testCase);
+                    // Increase the probability of the first request having released
+                    // the socket, so that it can be reused for the next request.
+                    // This tests how HTTP connection reuse behaves.
+                    setTimeout(next, 10);
+                },
+                // Second put should work as well
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
+                next => {
+                    checkPut(testCase);
+                    setTimeout(next, 10);
+                },
+                // Overwriting PUT
+                next => put(testCase.bucketLoc, testCase.objLoc, 'localhost', 'obj2', next),
+                next => {
+                    checkPut(testCase);
+                    next();
+                },
+            ], done);
         });
     });
 });

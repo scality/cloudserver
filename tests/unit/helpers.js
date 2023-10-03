@@ -261,6 +261,10 @@ class DummyRequestLogger {
         return 'dummy:Serialized:Uids';
     }
 
+    getUids() {
+        return this.getSerializedUids().split(':');
+    }
+
     addDefaultFields(fields) {
         Object.assign(this.defaultFields, fields);
     }

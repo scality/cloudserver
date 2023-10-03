@@ -35,6 +35,19 @@
         "legacyAwsBehavior": false,
         "details": {}
     },
+    "scality-internal-sproxyd": {
+        "type": "scality",
+        "objectId": "scality-internal-sproxyd",
+        "legacyAwsBehavior": false,
+        "details": {
+            "connector": {
+                "sproxyd": {
+                    "bootstrap": ["127.0.0.1:81"],
+                    "path": "/proxy/dc1/"
+                }
+            }
+        }
+    },
     "awsbackendencryption": {
         "type": "aws_s3",
         "objectId": "awsbackendencryption",

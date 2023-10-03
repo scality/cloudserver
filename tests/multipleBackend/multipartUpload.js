@@ -325,7 +325,7 @@ function abortMultipleMpus(backendsInfo, callback) {
     });
 }
 
-describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
+describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     this.timeout(60000);
 
     beforeEach(done => {

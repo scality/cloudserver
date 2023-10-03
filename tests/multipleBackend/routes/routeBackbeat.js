@@ -12,6 +12,7 @@ const { makeRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility =
       require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 const {
+    describeSkipIfNotMultipleOrCeph,
     itSkipCeph,
     awsLocation,
     azureLocation,
@@ -29,7 +30,6 @@ const azureClient = getAzureClient();
 const containerName = getAzureContainerName(azureLocation);
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
-// const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
 
 const backbeatAuthCredentials = {
     accessKey: 'accessKey1',
@@ -193,7 +193,8 @@ function updateStorageClass(data, storageClass) {
     return { result };
 }
 
-describe.skip('backbeat DELETE routes', () => {
+// FIXME: does not pass for Ceph, see CLDSRV-443
+describeSkipIfNotMultipleOrCeph('backbeat DELETE routes', () => {
     it('abort MPU', done => {
         const awsKey = 'backbeat-mpu-test';
         async.waterfall([

@@ -14,13 +14,17 @@ const log = new DummyRequestLogger();
 const locConstraints = Object.keys(config.locationConstraints);
 const azureClient = getAzureClient();
 
-describe.skip('Healthcheck response', () => {
+describe('Healthcheck response', () => {
     it('should return result for every location constraint in ' +
     'locationConfig and every external locations with flightCheckOnStartUp ' +
     'set to true', done => {
         clientCheck(true, log, (err, results) => {
             const resultKeys = Object.keys(results);
             locConstraints.forEach(constraint => {
+                if (constraint === 'location-dmf-v1') {
+                    // FIXME: location-dmf-v1 is not in results, see CLDSRV-440
+                    return;
+                }
                 assert(resultKeys.includes(constraint), `constraint: ${constraint} not in results: ${resultKeys}`);
             });
             done();
@@ -40,6 +44,10 @@ describe.skip('Healthcheck response', () => {
         clientCheck(false, log, (err, results) => {
             assert.notStrictEqual(results.length, locConstraints.length);
             locConstraints.forEach(constraint => {
+                if (constraint === 'location-dmf-v1') {
+                    // FIXME: location-dmf-v1 is not in results, see CLDSRV-440
+                    return;
+                }
                 if (Object.keys(results).indexOf(constraint) === -1) {
                     const locationType = config
                         .locationConstraints[constraint].type;
@@ -52,7 +60,8 @@ describe.skip('Healthcheck response', () => {
         });
     });
 
-    describe('Azure container creation', () => {
+    // FIXME: does not pass, see CLDSRV-441
+    describe.skip('Azure container creation', () => {
         const containerName =
             getAzureContainerName(azureLocationNonExistContainer);
 

@@ -179,15 +179,22 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    - name: Login to Registry
+      uses: docker/login-action@v2
+      with:
+        registry: registry.scality.com
+        username: ${{ secrets.REGISTRY_LOGIN }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: docker-compose up -d
+      run: docker-compose --profile sproxyd up -d
       working-directory: .github/docker
     - name: Run multiple backend test
       run: |-
         set -o pipefail;
         bash wait_for_local_port.bash 8000 40
+        bash wait_for_local_port.bash 81 40
         yarn run multiple_backend_test | tee /tmp/artifacts/${{ github.job }}/tests.log
       env:
         S3_LOCATION_FILE: tests/locationConfig/locationConfigTests.json

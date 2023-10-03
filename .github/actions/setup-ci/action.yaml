@@ -38,3 +38,9 @@ runs:
       run: |
         sudo apt-get install -y libdigest-hmac-perl
         pip install 's3cmd==2.3.0'
+    - name: fix sproxyd.conf permissions
+      shell: bash
+      run: sudo chown root:root .github/docker/sproxyd/conf/sproxyd0.conf
+    - name: ensure fuse kernel module is loaded (for sproxyd)
+      shell: bash
+      run: sudo modprobe fuse
