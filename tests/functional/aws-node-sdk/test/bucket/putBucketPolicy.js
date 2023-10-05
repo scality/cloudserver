@@ -71,7 +71,6 @@ function assertError(err, expectedErr, cb) {
     cb();
 }
 
-
 describe('aws-sdk test put bucket policy', () => {
     let s3;
     let otherAccountS3;
