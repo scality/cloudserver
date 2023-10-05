@@ -279,13 +279,13 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             if (process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v1') {
                 // With v1 metadata bucket key format, master key is automaticaly deleted
                 // when the last version of an object is a delete marker
-                assert.strictEqual(nextMarker, 'key1old');
+                assert.strictEqual(nextMarker, 'key1');
                 assert.strictEqual(contents.length, 3);
                 assert.strictEqual(contents[0].Key, 'key0');
                 assert.strictEqual(contents[1].Key, 'key0old');
                 assert.strictEqual(contents[2].Key, 'key1');
             } else {
-                assert.strictEqual(nextMarker, 'key0old');
+                assert.strictEqual(nextMarker, 'key0');
                 assert.strictEqual(contents.length, 1);
                 assert.strictEqual(contents[0].Key, 'key0');
             }
@@ -319,12 +319,12 @@ describe('listLifecycleOrphanDeleteMarkers', () => {
             if (process.env.DEFAULT_BUCKET_KEY_FORMAT === 'v1') {
                 // With v1 metadata bucket key format, master key is automaticaly deleted
                 // when the last version of an object is a delete marker
-                assert.strictEqual(nextMarker, 'key1');
+                assert.strictEqual(nextMarker, 'key0old');
                 assert.strictEqual(contents.length, 2);
                 assert.strictEqual(contents[0].Key, 'key0');
                 assert.strictEqual(contents[1].Key, 'key0old');
             } else {
-                assert.strictEqual(nextMarker, 'key0old');
+                assert.strictEqual(nextMarker, 'key0');
                 assert.strictEqual(contents.length, 1);
                 assert.strictEqual(contents[0].Key, 'key0');
             }
