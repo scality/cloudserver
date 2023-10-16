@@ -4,6 +4,7 @@ const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
 const moment = require('moment');
+const sinon = require('sinon');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -22,6 +23,8 @@ const multipartDelete = require('../../../lib/api/multipartDelete');
 const objectPutPart = require('../../../lib/api/objectPutPart');
 const DummyRequest = require('../DummyRequest');
 const changeObjectLock = require('../../utilities/objectLock-util');
+const metadataswitch = require('../metadataswitch');
+
 
 const { metadata } = storage.metadata.inMemory.metadata;
 const metadataBackend = storage.metadata.inMemory.metastore;
@@ -2203,6 +2206,63 @@ describe('multipart upload with object lock', () => {
             assert.deepStrictEqual(json.LegalHold, expectedLegalHold);
             changeObjectLock(
                 [{ bucket: lockedBucket, key: objectKey, versionId }], '', done);
+        });
+    });
+});
+
+describe('multipart upload overheadField', () => {
+    const any = sinon.match.any;
+
+    beforeEach(() => {
+        cleanup();
+        sinon.spy(metadataswitch, 'putObjectMD');
+    });
+
+    after(() => {
+        metadataswitch.putObjectMD.restore();
+        cleanup();
+    });
+
+    it('should pass overheadField', done => {
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => {
+                const mpuKeys = metadata.keyMaps.get(mpuBucket);
+                assert.strictEqual(mpuKeys.size, 1);
+                assert(mpuKeys.keys().next().value
+                    .startsWith(`overview${splitter}${objectKey}`));
+                parseString(result, next);
+            },
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            assert.ifError(err);
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody = Buffer.from(postBody);
+            md5Hash.update(bufferBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                objectKey,
+                namespace,
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, postBody);
+            objectPutPart(authInfo, partRequest, undefined, log, err => {
+                assert.ifError(err);
+                sinon.assert.calledWith(metadataswitch.putObjectMD.lastCall,
+                    any, any, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                done();
+            });
         });
     });
 });

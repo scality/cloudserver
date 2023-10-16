@@ -102,13 +102,9 @@ describe('parseTagFromQuery', () => {
 });
 
 describe('objectPut API', () => {
-    before(() => {
-        sinon.stub(metadata, 'putObjectMD')
-            .callsFake(originalputObjectMD);
-    });
-
     beforeEach(() => {
         cleanup();
+        sinon.spy(metadata, 'putObjectMD');
         testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -118,9 +114,9 @@ describe('objectPut API', () => {
         }, postBody);
     });
 
-    after(() => {
-        metadata.putObjectMD = originalputObjectMD;
+    afterEach(() => {
         sinon.restore();
+        metadata.putObjectMD = originalputObjectMD;
     });
 
     it('should return an error if the bucket does not exist', done => {
@@ -540,7 +536,7 @@ describe('objectPut API', () => {
                     objectPut(authInfo, testPutObjectRequest, undefined, log, err => {
                         assert.ifError(err);
                         sinon.assert.calledWith(metadata.putObjectMD,
-                            any, any, any, { oldReplayId: testUploadId }, any, any);
+                            any, any, any, sinon.match({ oldReplayId: testUploadId }), any, any);
                         done();
                     });
                 });
@@ -613,6 +609,61 @@ describe('objectPut API', () => {
                     assert.strictEqual(err.is.InvalidStorageClass, true);
                     done();
                 });
+        });
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a non-versioned request', done => {
+        const testPutObjectRequest = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectName,
+            headers: {},
+            url: `/${bucketName}/${objectName}`,
+            contentMD5: correctMD5,
+        }, postBody);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest, undefined, log,
+                err => {
+                    assert.ifError(err);
+                    sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                        bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                    done();
+                });
+        });
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a versioned request', done => {
+        const testPutObjectRequest = versioningTestUtils
+            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            bucketPutVersioning(authInfo, enableVersioningRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                        done();
+                    }
+                );
+            });
+        });
+    });
+
+    it('should pass overheadField to metadata.putObjectMD for a version-suspended request', done => {
+        const testPutObjectRequest = versioningTestUtils
+            .createPutObjectRequest(bucketName, objectName, Buffer.from('I am another body', 'utf8'));
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            bucketPutVersioning(authInfo, suspendVersioningRequest, log, () => {
+                objectPut(authInfo, testPutObjectRequest, undefined, log,
+                    err => {
+                        assert.ifError(err);
+                        sinon.assert.calledWith(metadata.putObjectMD.lastCall,
+                            bucketName, objectName, any, sinon.match({ overheadField: sinon.match.array }), any, any);
+                        done();
+                    }
+                );
+            });
         });
     });
 });

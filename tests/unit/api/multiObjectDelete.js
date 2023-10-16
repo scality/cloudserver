@@ -12,6 +12,7 @@ const log = new DummyRequestLogger();
 
 const { metadata } = storage.metadata.inMemory.metadata;
 const { ds } = storage.data.inMemory.datastore;
+const metadataswitch = require('../metadataswitch');
 const sinon = require('sinon');
 
 const canonicalID = 'accessKey1';
@@ -42,6 +43,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
 
     beforeEach(done => {
         cleanup();
+        sinon.spy(metadataswitch, 'deleteObjectMD');
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
             namespace,
@@ -223,6 +225,32 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             assert.deepStrictEqual(successfullyDeleted[0].entry.key, objectKey2);
             return done();
         });
+    });
+
+    it('should pass overheadField to metadata', done => {
+        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
+            true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
+            (err, quietSetting, errorResults, numOfObjects) => {
+                assert.ifError(err);
+                assert.strictEqual(numOfObjects, 2);
+                sinon.assert.calledWith(
+                    metadataswitch.deleteObjectMD,
+                    bucketName,
+                    objectKey1,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                sinon.assert.calledWith(
+                    metadataswitch.deleteObjectMD,
+                    bucketName,
+                    objectKey2,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                done();
+            });
     });
 });
 
