@@ -208,6 +208,12 @@ const constants = {
     },
     multiObjectDeleteConcurrency: 50,
     maxScannedLifecycleListingEntries: 10000,
+    overheadField: [
+        'content-length',
+        'owner-id',
+        'versionId',
+        'isNull',
+    ],
 };
 
 module.exports = constants;
