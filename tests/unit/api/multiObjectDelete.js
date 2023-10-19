@@ -1,5 +1,6 @@
 const assert = require('assert');
 const { errors } = require('arsenal');
+const sinon = require('sinon');
 
 const { decodeObjectVersion, getObjMetadataAndDelete, initializeMultiObjectDeleteWithBatchingSupport }
     = require('../../../lib/api/multiObjectDelete');
@@ -7,10 +8,10 @@ const multiObjectDelete = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const metadataswitch = require('../metadataswitch');
 const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
-const sinon = require('sinon');
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
@@ -40,6 +41,7 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
 
     beforeEach(done => {
         cleanup();
+        sinon.spy(metadataswitch, 'deleteObjectMD');
         testPutObjectRequest1 = new DummyRequest({
             bucketName,
             namespace,
@@ -221,6 +223,32 @@ describe('getObjMetadataAndDelete function for multiObjectDelete', () => {
             assert.deepStrictEqual(successfullyDeleted[0].entry.key, objectKey2);
             return done();
         });
+    });
+
+    it('should pass overheadField to metadata', done => {
+        getObjMetadataAndDelete(authInfo, 'foo', request, bucketName, bucket,
+            true, [], [{ key: objectKey1 }, { key: objectKey2 }], log,
+            (err, quietSetting, errorResults, numOfObjects) => {
+                assert.ifError(err);
+                assert.strictEqual(numOfObjects, 2);
+                sinon.assert.calledWith(
+                    metadataswitch.deleteObjectMD,
+                    bucketName,
+                    objectKey1,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                sinon.assert.calledWith(
+                    metadataswitch.deleteObjectMD,
+                    bucketName,
+                    objectKey2,
+                    sinon.match({ overheadField: sinon.match.array }),
+                    sinon.match.any,
+                    sinon.match.any
+                );
+                done();
+            });
     });
 });
 
