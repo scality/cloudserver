@@ -12,6 +12,7 @@ const { objectDelete } = require('../../../lib/api/objectDelete');
 const objectGet = require('../../../lib/api/objectGet');
 const DummyRequest = require('../DummyRequest');
 const mpuUtils = require('../utils/mpuUtils');
+const metadataswitch = require('../metadataswitch');
 
 const any = sinon.match.any;
 const originalDeleteObject = services.deleteObject;
@@ -50,6 +51,8 @@ describe('objectDelete API', () => {
     before(() => {
         sinon.stub(services, 'deleteObject')
             .callsFake(originalDeleteObject);
+        sinon.spy(metadataswitch, 'putObjectMD');
+        sinon.spy(metadataswitch, 'deleteObjectMD');
     });
 
     beforeEach(() => {
@@ -140,10 +143,11 @@ describe('objectDelete API', () => {
                         assert.strictEqual(err, null);
                         sinon.assert.calledWith(services.deleteObject,
                             any, any, any,
-                            { deleteData: true,
-                              replayId: testUploadId,
-                              doesNotNeedOpogUpdate: true,
-                            }, any, any, any);
+                            sinon.match({
+                                deleteData: true,
+                                replayId: testUploadId,
+                                doesNotNeedOpogUpdate: true,
+                            }), any, any, any);
                         done();
                     });
                 });
@@ -184,6 +188,26 @@ describe('objectDelete API', () => {
         testBucketPutRequest.headers['x-amz-acl'] = 'public-read-write';
         testAuth(bucketOwner, authUser, testBucketPutRequest,
             testPutObjectRequest, testDeleteRequest, log, done);
+    });
+
+    it('should pass overheadField to metadata', done => {
+        bucketPut(authInfo, testBucketPutRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequest,
+                undefined, log, () => {
+                    objectDelete(authInfo, testDeleteRequest, log, err => {
+                        assert.strictEqual(err, null);
+                        sinon.assert.calledWith(
+                            metadataswitch.deleteObjectMD,
+                            bucketName,
+                            objectKey,
+                            sinon.match({ overheadField: sinon.match.array }),
+                            sinon.match.any,
+                            sinon.match.any
+                        );
+                        done();
+                    });
+                });
+        });
     });
 
     describe('with \'modified\' headers', () => {
