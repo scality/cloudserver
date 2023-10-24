@@ -19,7 +19,7 @@ const backbeatAuthCredentials = {
 const TEST_BUCKET = 'backbeatbucket';
 const TEST_ENCRYPTED_BUCKET = 'backbeatbucket-encrypted';
 const TEST_KEY = 'fookey';
-const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned';
+const NONVERSIONED_BUCKET = 'backbeatbucket-non-versioned3';
 const BUCKET_FOR_NULL_VERSION = 'backbeatbucket-null-version';
 
 const testArn = 'aws::iam:123456789012:user/bart';
@@ -63,9 +63,49 @@ const testMd = {
     },
 };
 
-function checkObjectData(s3, objectKey, dataValue, done) {
+const nonVersionedTestMd = {
+    'owner-display-name': 'Bart',
+    'owner-id': ('79a59df900b949e55d96a1e698fbaced' +
+                 'fd6e09d98eacf8f8d5218e7cd47ef2be'),
+    'content-length': testData.length,
+    'content-md5': testDataMd5,
+    'x-amz-version-id': 'null',
+    'x-amz-server-version-id': '',
+    'x-amz-storage-class': 'awsbackend',
+    'x-amz-server-side-encryption': '',
+    'x-amz-server-side-encryption-aws-kms-key-id': '',
+    'x-amz-server-side-encryption-customer-algorithm': '',
+    'acl': {
+        Canned: 'private',
+        FULL_CONTROL: [],
+        WRITE_ACP: [],
+        READ: [],
+        READ_ACP: [],
+    },
+    'location': null,
+    'isNull': '',
+    'nullVersionId': '',
+    'isDeleteMarker': false,
+    'tags': {},
+    'replicationInfo': {
+        status: '',
+        backends: [],
+        content: [],
+        destination: '',
+        storageClass: '',
+        role: '',
+        storageType: '',
+        dataStoreVersionId: '',
+        isNFS: null,
+    },
+    'dataStoreName': 'us-east-1',
+    'last-modified': '2018-12-18T01:22:15.986Z',
+    'md-model-version': 3,
+};
+
+function checkObjectData(s3, bucket, objectKey, dataValue, done) {
     s3.getObject({
-        Bucket: TEST_BUCKET,
+        Bucket: bucket,
         Key: objectKey,
     }, (err, data) => {
         assert.ifError(err);
@@ -197,6 +237,7 @@ describeSkipIfAWS('backbeat routes', () => {
             .then(() => s3.deleteBucket({ Bucket: TEST_BUCKET }).promise())
             .then(() => bucketUtil.empty(TEST_ENCRYPTED_BUCKET))
             .then(() => s3.deleteBucket({ Bucket: TEST_ENCRYPTED_BUCKET }).promise())
+            .then(() => bucketUtil.empty(NONVERSIONED_BUCKET))
             .then(() =>
                 s3.deleteBucket({ Bucket: NONVERSIONED_BUCKET }).promise())
             .then(() => done(), err => done(err))
@@ -1284,6 +1325,60 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
+        it('should PUT data and metadata for a non-versioned bucket', done => {
+            const bucket = NONVERSIONED_BUCKET;
+            const objectKey = 'non-versioned-key';
+            async.waterfall([
+                next =>
+                    makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket,
+                        objectKey,
+                        resourceType: 'data',
+                        queryObj: { v2: '' },
+                        headers: {
+                            'content-length': testData.length,
+                            'content-md5': testDataMd5,
+                            'x-scal-canonical-id': testArn,
+                        },
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: testData,
+                    }, (err, response) => {
+                        console.log('error!!!!', err);
+                        assert.ifError(err);
+                        const metadata = Object.assign({}, nonVersionedTestMd, {
+                            location: JSON.parse(response.body),
+                        });
+                        return next(null, metadata);
+                    }),
+                (metadata, next) =>
+                    makeBackbeatRequest({
+                        method: 'PUT',
+                        bucket,
+                        objectKey,
+                        resourceType: 'metadata',
+                        authCredentials: backbeatAuthCredentials,
+                        requestBody: JSON.stringify(metadata),
+                    }, (err, response) => {
+                        console.log('error2!!!!', err);
+                        assert.ifError(err);
+                        assert.strictEqual(response.statusCode, 200);
+                        next();
+                    }),
+                next =>
+                    s3.headObject({
+                        Bucket: bucket,
+                        Key: objectKey,
+                    }, (err, data) => {
+                        console.log('error3!!!!', err);
+                        assert.ifError(err);
+                        assert.strictEqual(data.StorageClass, 'awsbackend');
+                        next();
+                    }),
+                next => checkObjectData(s3, bucket, objectKey, testData, next),
+            ], done);
+        });
+
         it('PUT metadata with "x-scal-replication-content: METADATA"' +
         'header should replicate metadata only', done => {
             async.waterfall([next => {
@@ -1483,7 +1578,7 @@ describeSkipIfAWS('backbeat routes', () => {
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
-                setTimeout(() => checkObjectData(s3, testKey, testData, next),
+                setTimeout(() => checkObjectData(s3, TEST_BUCKET, testKey, testData, next),
                            1000);
             }, next => {
                 // check that the object copy referencing the old data
@@ -1571,7 +1666,7 @@ describeSkipIfAWS('backbeat routes', () => {
             }, (response, next) => {
                 assert.strictEqual(response.statusCode, 200);
                 // give some time for the async deletes to complete
-                setTimeout(() => checkObjectData(s3, testKey, '', next),
+                setTimeout(() => checkObjectData(s3, TEST_BUCKET, testKey, '', next),
                            1000);
             }, next => {
                 // check that the object copy referencing the old data
@@ -1871,6 +1966,28 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
     });
+
+    describe('GET Metadata route for non-versioned bucket', () => {
+        beforeEach(done => s3.putObject({
+            Bucket: NONVERSIONED_BUCKET,
+            Key: TEST_KEY,
+            Body: new Buffer('hello'),
+        }, done));
+
+        it('should return metadata blob for a versionId', done => {
+            makeBackbeatRequest({
+                method: 'GET', bucket: NONVERSIONED_BUCKET,
+                objectKey: TEST_KEY, resourceType: 'metadata',
+                authCredentials: backbeatAuthCredentials,
+            }, (err, data) => {
+                const parsedBody = JSON.parse(JSON.parse(data.body).Body);
+                assert.strictEqual(data.statusCode, 200);
+                assert.deepStrictEqual(parsedBody['content-length'], 5);
+                done();
+            });
+        });
+    });
+
     describe('Batch Delete Route', () => {
         it('should batch delete a location', done => {
             let versionId;
