@@ -5,6 +5,7 @@ const { config } = require('../../../../lib/Config');
 const INF_VID = versioning.VersionID.getInfVid(config.replicationGroupId);
 
 const { processVersioningState, getMasterState,
+        getVersionSpecificMetadataOptions,
         preprocessingVersioningDelete } =
       require('../../../../lib/api/apiUtils/object/versioning');
 
@@ -525,6 +526,68 @@ describe('versioning helpers', () => {
                     const expectedRes = testCase[resultName];
                     assert.deepStrictEqual(res, expectedRes);
                 }))));
+    });
+
+    describe('getVersionSpecificMetadataOptions', () => {
+        [
+            {
+                description: 'object put before versioning was first enabled',
+                objMD: {},
+                expectedRes: {},
+                expectedResCompat: {},
+            },
+            {
+                description: 'non-null object version',
+                objMD: {
+                    versionId: 'v1',
+                },
+                expectedRes: {
+                    versionId: 'v1',
+                    isNull: false,
+                },
+                expectedResCompat: {
+                    versionId: 'v1',
+                },
+            },
+            {
+                description: 'legacy null object version',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+                expectedRes: {
+                    versionId: 'vnull',
+                },
+                expectedResCompat: {
+                    versionId: 'vnull',
+                },
+            },
+            {
+                description: 'null object version in null key',
+                objMD: {
+                    versionId: 'vnull',
+                    isNull: true,
+                    isNull2: true,
+                },
+                expectedRes: {
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+                expectedResCompat: {
+                    versionId: 'vnull',
+                    isNull: true,
+                },
+            },
+        ].forEach(testCase =>
+            [false, true].forEach(nullVersionCompatMode =>
+                it(`${testCase.description}${nullVersionCompatMode ? ' (null compat)' : ''}`,
+                () => {
+                    const options = getVersionSpecificMetadataOptions(
+                        testCase.objMD, nullVersionCompatMode);
+                    const expectedResAttr = nullVersionCompatMode ?
+                          'expectedResCompat' : 'expectedRes';
+                    assert.deepStrictEqual(options, testCase[expectedResAttr]);
+                })));
     });
 
     describe('preprocessingVersioningDelete', () => {
