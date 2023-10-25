@@ -104,6 +104,16 @@ describe('generateExpirationHeaders', () => {
             {},
         ],
         [
+            'should provide correct headers for compatibility with legacy objects missing the tags property',
+            {
+                lifecycleConfig: lifecycleExpirationDays,
+                objectParams: { key: 'object', date: objectDate },
+            },
+            {
+                'x-amz-expiration': `expiry-date="${expectedDaysExpiryDate}", rule-id="test-days"`,
+            },
+        ],
+        [
             'should return correct headers for object (days)',
             {
                 lifecycleConfig: lifecycleExpirationDays,
