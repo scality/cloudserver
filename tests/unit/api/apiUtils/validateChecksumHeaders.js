@@ -1,7 +1,7 @@
 const assert = require('assert');
 
 const validateChecksumHeaders = require('../../../../lib/api/apiUtils/object/validateChecksumHeaders');
-const { possibleSignatureChecksums, supportedSignatureChecksums } = require('../../../../constants');
+const { unsupportedSignatureChecksums, supportedSignatureChecksums } = require('../../../../constants');
 
 const passingCases = [
     {
@@ -46,15 +46,13 @@ const failingCases = [
     },
 ];
 
-possibleSignatureChecksums.forEach(checksum => {
-    if (!supportedSignatureChecksums.has(checksum)) {
-        failingCases.push({
-            description: `should return BadRequest if ${checksum} is used`,
-            headers: {
-                'x-amz-content-sha256': checksum,
-            },
-        });
-    }
+unsupportedSignatureChecksums.forEach(checksum => {
+    failingCases.push({
+        description: `should return BadRequest if ${checksum} is used`,
+        headers: {
+            'x-amz-content-sha256': checksum,
+        },
+    });
 });
 
 
