@@ -184,10 +184,8 @@ const constants = {
     assumedRoleArnResourceType: 'assumed-role',
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
-    possibleSignatureChecksums: new Set([
-        'UNSIGNED-PAYLOAD',
+    unsupportedSignatureChecksums: new Set([
         'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
-        'STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER',
         'STREAMING-AWS4-ECDSA-P256-SHA256-PAYLOAD',
         'STREAMING-AWS4-ECDSA-P256-SHA256-PAYLOAD-TRAILER',
