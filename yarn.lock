@@ -494,9 +494,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.70.12":
-  version "7.70.12"
-  resolved "git+https://github.com/scality/arsenal#79b83a90678e0b9eea521f08b3a7ec9eb158d748"
+"arsenal@git+https://github.com/scality/arsenal#7.70.13":
+  version "7.70.13"
+  resolved "git+https://github.com/scality/arsenal#29ef2ef265e8cccb02b282be1c1316ab67f65a97"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
