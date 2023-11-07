@@ -74,6 +74,16 @@ describe('checkBucketAcls', () => {
             expected: true,
         },
         {
+            description: 'should return true for bucketHead if canned acl is public-read',
+            input: {
+                bucketAcl: { Canned: 'public-read' },
+                requestType: 'bucketHead',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
+            },
+            expected: true,
+        },
+        {
             description: 'should return true for bucketGet if canonicalID has FULL_CONTROL access',
             input: {
                 bucketAcl: { FULL_CONTROL: ['anyId'], READ: [] },
@@ -110,6 +120,26 @@ describe('checkBucketAcls', () => {
                 requestType: 'objectGetVersion',
                 canonicalID: 'anyId',
                 mainApiCall: 'objectGet',
+            },
+            expected: true,
+        },
+        {
+            description: 'should return true for objectPutACL',
+            input: {
+                bucketAcl: {},
+                requestType: 'objectPutACL',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
+            },
+            expected: true,
+        },
+        {
+            description: 'should return true for objectGetACL',
+            input: {
+                bucketAcl: {},
+                requestType: 'objectGetACL',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
             },
             expected: true,
         },
@@ -213,6 +243,9 @@ describe('checkObjectAcls', () => {
             aclList: ['anyId'], aclField: 'FULL_CONTROL', reqType: 'objectPutACL', id: 'anyId', expected: true,
         },
         {
+            aclList: ['anyId'], aclField: 'FULL_CONTROL', reqType: 'objectGetACL', id: 'anyId', expected: true,
+        },
+        {
             acl: '', reqType: 'objectGet', id: 'randomId', expected: false,
         },
     ];
@@ -233,4 +266,3 @@ describe('checkObjectAcls', () => {
         });
     });
 });
-
