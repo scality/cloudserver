@@ -196,6 +196,11 @@ const constants = {
         'user',
         'bucket',
     ],
+    arrayOfAllowed: [
+        'objectPutTagging',
+        'objectPutLegalHold',
+        'objectPutRetention',
+    ],
     allowedUtapiEventFilterStates: ['allow', 'deny'],
     allowedRestoreObjectRequestTierValues: ['Standard'],
     validStorageClasses: [
