@@ -244,7 +244,7 @@ describe('bucket policy authorization', () => {
     describe('isBucketAuthorized with no policy set', () => {
         it('should allow access to bucket owner', done => {
             const allowed = isBucketAuthorized(bucket, 'bucketPut',
-                bucketOwnerCanonicalId, null, false, log);
+                bucketOwnerCanonicalId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -252,7 +252,7 @@ describe('bucket policy authorization', () => {
         it('should deny access to non-bucket owner',
         done => {
             const allowed = isBucketAuthorized(bucket, 'bucketPut',
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -268,7 +268,7 @@ describe('bucket policy authorization', () => {
         it('should allow access to non-bucket owner if principal is set to "*"',
         done => {
             const allowed = isBucketAuthorized(bucket, bucAction,
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -276,7 +276,7 @@ describe('bucket policy authorization', () => {
         it('should allow access to public user if principal is set to "*"',
         done => {
             const allowed = isBucketAuthorized(bucket, bucAction,
-                constants.publicId, null, false, log);
+                constants.publicId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -287,7 +287,7 @@ describe('bucket policy authorization', () => {
                 newPolicy.Statement[0][t.keyToChange] = t.bucketValue;
                 bucket.setBucketPolicy(newPolicy);
                 const allowed = isBucketAuthorized(bucket, bucAction,
-                    t.bucketId, t.bucketAuthInfo, false, log);
+                    t.bucketId, t.bucketAuthInfo, log, null, false);
                 assert.equal(allowed, t.expected);
                 done();
             });
@@ -304,7 +304,7 @@ describe('bucket policy authorization', () => {
             };
             bucket.setBucketPolicy(newPolicy);
             const allowed = isBucketAuthorized(bucket, bucAction,
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -312,7 +312,7 @@ describe('bucket policy authorization', () => {
         it('should deny access to non-bucket owner with an unsupported action type',
         done => {
             const allowed = isBucketAuthorized(bucket, 'unsupportedAction',
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -325,7 +325,7 @@ describe('bucket policy authorization', () => {
 
         it('should allow access to object owner', done => {
             const allowed = isObjAuthorized(bucket, object, objAction,
-                objectOwnerCanonicalId, null, false, log);
+                objectOwnerCanonicalId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -333,7 +333,7 @@ describe('bucket policy authorization', () => {
         it('should deny access to non-object owner',
         done => {
             const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -352,7 +352,7 @@ describe('bucket policy authorization', () => {
         it('should allow access to non-object owner if principal is set to "*"',
         done => {
             const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -360,7 +360,7 @@ describe('bucket policy authorization', () => {
         it('should allow access to public user if principal is set to "*"',
         done => {
             const allowed = isObjAuthorized(bucket, object, objAction,
-                constants.publicId, null, false, log);
+                constants.publicId, null, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -371,7 +371,7 @@ describe('bucket policy authorization', () => {
                 newPolicy.Statement[0][t.keyToChange] = t.objectValue;
                 bucket.setBucketPolicy(newPolicy);
                 const allowed = isObjAuthorized(bucket, object, objAction,
-                    t.objectId, t.objectAuthInfo, false, log);
+                    t.objectId, t.objectAuthInfo, log, null, false);
                 assert.equal(allowed, t.expected);
                 done();
             });
@@ -383,7 +383,7 @@ describe('bucket policy authorization', () => {
             newPolicy.Statement[0].Action = ['s3:GetObject'];
             bucket.setBucketPolicy(newPolicy);
             const allowed = isObjAuthorized(bucket, object, 'objectHead',
-                                            altAcctCanonicalId, altAcctAuthInfo, false, log);
+                altAcctCanonicalId, altAcctAuthInfo, log, null, false);
             assert.equal(allowed, true);
             done();
         });
@@ -393,7 +393,7 @@ describe('bucket policy authorization', () => {
             newPolicy.Statement[0].Action = ['s3:PutObject'];
             bucket.setBucketPolicy(newPolicy);
             const allowed = isObjAuthorized(bucket, object, 'objectHead',
-                                            altAcctCanonicalId, altAcctAuthInfo, false, log);
+                altAcctCanonicalId, altAcctAuthInfo, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -408,7 +408,7 @@ describe('bucket policy authorization', () => {
             };
             bucket.setBucketPolicy(newPolicy);
             const allowed = isObjAuthorized(bucket, object, objAction,
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });
@@ -416,7 +416,7 @@ describe('bucket policy authorization', () => {
         it('should deny access to non-object owner with an unsupported action type',
         done => {
             const allowed = isObjAuthorized(bucket, object, 'unsupportedAction',
-                altAcctCanonicalId, null, false, log);
+                altAcctCanonicalId, null, log, null, false);
             assert.equal(allowed, false);
             done();
         });

@@ -1,5 +1,4 @@
 const assert = require('assert');
-const sinon = require('sinon');
 
 const { models } = require('arsenal');
 const { BucketInfo } = models;
@@ -14,8 +13,7 @@ const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-const { validateBucket, metadataGetObject } = require('../../../lib/metadata/metadataUtils');
-const metadata = require('../../../lib/metadata/wrapper');
+const { validateBucket } = require('../../../lib/metadata/metadataUtils');
 
 describe('validateBucket', () => {
     it('action bucketPutPolicy by bucket owner', () => {
@@ -23,7 +21,7 @@ describe('validateBucket', () => {
             authInfo,
             requestType: 'bucketPutPolicy',
             request: null,
-        }, false, log);
+        }, log, false);
         assert.ifError(validationResult);
     });
     it('action bucketPutPolicy by other than bucket owner', () => {
@@ -31,7 +29,7 @@ describe('validateBucket', () => {
             authInfo: otherAuthInfo,
             requestType: 'bucketPutPolicy',
             request: null,
-        }, false, log);
+        }, log, false);
         assert(validationResult);
         assert(validationResult.is.MethodNotAllowed);
     });
@@ -41,7 +39,7 @@ describe('validateBucket', () => {
             authInfo,
             requestType: 'bucketGet',
             request: null,
-        }, false, log);
+        }, log, false);
         assert.ifError(validationResult);
     });
 
@@ -50,7 +48,7 @@ describe('validateBucket', () => {
             authInfo: otherAuthInfo,
             requestType: 'bucketGet',
             request: null,
-        }, false, log);
+        }, log, false);
         assert(validationResult);
         assert(validationResult.is.AccessDenied);
     });

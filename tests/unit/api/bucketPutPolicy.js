@@ -15,7 +15,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 let expectedBucketPolicy = {};
@@ -26,7 +26,7 @@ function getPolicyRequest(policy) {
             host: `${bucketName}.s3.amazonaws.com`,
         },
         post: JSON.stringify(policy),
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
 }
 
@@ -78,7 +78,7 @@ describe('putBucketPolicy API', () => {
         });
     });
 
-    it.skip('should return error if policy contains conditions', done => {
+    it('should return error if policy contains conditions', done => {
         expectedBucketPolicy.Statement[0].Condition =
             { StringEquals: { 's3:x-amz-acl': ['public-read'] } };
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
