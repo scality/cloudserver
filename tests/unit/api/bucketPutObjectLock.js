@@ -15,7 +15,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const objectLockXml = '<ObjectLockConfiguration ' +
@@ -31,7 +31,7 @@ const putObjLockRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectLockXml,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const expectedObjectLockConfig = {

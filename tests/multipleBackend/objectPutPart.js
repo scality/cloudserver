@@ -67,7 +67,7 @@ function putPart(bucketLoc, mpuLoc, requestHost, cb,
         objectKey: objectName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${objectName}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = {

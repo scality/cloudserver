@@ -23,7 +23,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -69,7 +69,7 @@ const putObjRetRequestGovernance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernance,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceWithHeader = {
@@ -80,7 +80,7 @@ const putObjRetRequestGovernanceWithHeader = {
         'x-amz-bypass-governance-retention': 'true',
     },
     post: objectRetentionXmlGovernance,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestCompliance = {
@@ -88,7 +88,7 @@ const putObjRetRequestCompliance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlCompliance,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestComplianceShorter = {
@@ -96,7 +96,7 @@ const putObjRetRequestComplianceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlComplianceShorter,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceLonger = {
@@ -104,7 +104,7 @@ const putObjRetRequestGovernanceLonger = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceLonger,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceShorter = {
@@ -112,7 +112,7 @@ const putObjRetRequestGovernanceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceShorter,
-    iamAuthzResults: false,
+    actionImplicitDenies: false,
 };
 
 describe('putObjectRetention API', () => {
