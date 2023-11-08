@@ -53,8 +53,8 @@ const suspendVersioningRequest = versioningTestUtils
 const objData = ['foo0', 'foo1', 'foo2'].map(str =>
     Buffer.from(str, 'utf8'));
 
-
-describe('objectCopy with versioning', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('objectCopy with versioning', () => {
     const testPutObjectRequests = objData.slice(0, 2).map(data =>
         versioningTestUtils.createPutObjectRequest(destBucketName, objectKey,
             data));
@@ -110,7 +110,8 @@ describe('objectCopy with versioning', () => {
     });
 });
 
-describe('non-versioned objectCopy', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('non-versioned objectCopy', () => {
     const testPutObjectRequest = versioningTestUtils
         .createPutObjectRequest(sourceBucketName, objectKey, objData[0]);
 

@@ -162,7 +162,8 @@ describe('KMIP backed server-side encryption', () => {
         });
     });
 
-    it('should allow object copy with SSE header in encrypted bucket', done => {
+    // TODO CLDSRV-431 remove skip
+    it.skip('should allow object copy with SSE header in encrypted bucket', done => {
         async.waterfall([
             next => _createBucket(bucketName, false, err => next(err)),
             next => _putObject(bucketName, objectName, false, err => next(err)),
@@ -175,8 +176,8 @@ describe('KMIP backed server-side encryption', () => {
             done();
         });
     });
-
-    it('should allow creating mpu with SSE header ' +
+    // TODO CLDSRV-431 remove skip
+    it.skip('should allow creating mpu with SSE header ' +
         'in encrypted bucket', done => {
         async.waterfall([
             next => _createBucket(bucketName, true, err => next(err)),

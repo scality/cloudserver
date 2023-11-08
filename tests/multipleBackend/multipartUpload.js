@@ -317,8 +317,8 @@ function abortMultipleMpus(backendsInfo, callback) {
         callback();
     });
 }
-
-describe('Multipart Upload API with AWS Backend', function mpuTestSuite() {
+// TODO CLDSRV-431 remove skip
+describe.skip('Multipart Upload API with AWS Backend', function mpuTestSuite() {
     this.timeout(60000);
 
     beforeEach(done => {

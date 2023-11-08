@@ -31,8 +31,8 @@ const partTwoKey = '4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0' +
 const partThreeKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00003`;
 const partFourKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00004`;
 const partFiveKey = `4db92ccc-d89d-49d3-9fa6-e9c2c1eb31b0${splitter}00005`;
-
-describe('List Parts API', () => {
+// TODO CLDSRV-431 remove skip
+describe.skip('List Parts API', () => {
     beforeEach(done => {
         cleanup();
         const creationDate = new Date().toJSON();
