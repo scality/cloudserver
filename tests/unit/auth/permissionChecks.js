@@ -2,7 +2,7 @@ const assert = require('assert');
 const { checkBucketAcls, checkObjectAcls } = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 const constants = require('../../../constants');
 
-const { bucketOwnerActions,logId } = constants;
+const { bucketOwnerActions, logId } = constants;
 
 describe('checkBucketAcls', () => {
     const mockBucket = {
@@ -99,7 +99,7 @@ describe('checkBucketAcls', () => {
         {
             description: 'should return true for log-delivery-write ACL when canonicalID matches logId',
             input: {
-                bucketAcl: { Canned: 'log-delivery-write'},
+                bucketAcl: { Canned: 'log-delivery-write' },
                 requestType: 'bucketGetACL',
                 canonicalID: logId,
                 mainApiCall: 'anyApiCall',
