@@ -2,7 +2,7 @@ const assert = require('assert');
 const { checkBucketAcls, checkObjectAcls } = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 const constants = require('../../../constants');
 
-const { bucketOwnerActions } = constants;
+const { bucketOwnerActions,logId } = constants;
 
 describe('checkBucketAcls', () => {
     const mockBucket = {
@@ -82,6 +82,55 @@ describe('checkBucketAcls', () => {
                 mainApiCall: 'anyApiCall',
             },
             expected: true,
+        },
+        {
+            description: 'should return false for bucketPut even if canonicalID has FULL_CONTROL and write access ',
+            input: {
+                bucketAcl: {
+                    FULL_CONTROL: ['anyId'],
+                    WRITE: ['anyId'],
+                },
+                requestType: 'bucketPut',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
+            },
+            expected: false,
+        },
+        {
+            description: 'should return true for log-delivery-write ACL when canonicalID matches logId',
+            input: {
+                bucketAcl: { Canned: 'log-delivery-write'},
+                requestType: 'bucketGetACL',
+                canonicalID: logId,
+                mainApiCall: 'anyApiCall',
+            },
+            expected: true,
+        },
+        {
+            description: 'should return false when the canonicalID is not the owner and has no ACL permissions',
+            input: {
+                bucketAcl: {
+                    FULL_CONTROL: ['someOtherId'],
+                    WRITE: ['someOtherId'],
+                },
+                requestType: 'objectPut',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
+            },
+            expected: false,
+        },
+        {
+            description: 'should return false for bucketPutACL if canonicalID does not have ACL permissions',
+            input: {
+                bucketAcl: {
+                    FULL_CONTROL: ['someOtherId'],
+                    WRITE_ACP: ['someOtherId'],
+                },
+                requestType: 'bucketPutACL',
+                canonicalID: 'anyId',
+                mainApiCall: 'anyApiCall',
+            },
+            expected: false,
         },
         {
             description: 'should return true for bucketGet if canonicalID has FULL_CONTROL access',
