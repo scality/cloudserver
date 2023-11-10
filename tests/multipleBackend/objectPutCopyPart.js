@@ -78,7 +78,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = {
@@ -95,7 +95,7 @@ function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
-        iamAuthzResults: false,
+        actionImplicitDenies: false,
     };
     if (srcObjLoc) {
         sourceObjPutParams.headers = {
