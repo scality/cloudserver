@@ -42,6 +42,7 @@ EXPOSE 8002
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         jq \
+        tini \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
@@ -53,6 +54,6 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules/
 
 VOLUME ["/usr/src/app/localData","/usr/src/app/localMetadata"]
 
-ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+ENTRYPOINT ["tini", "--", "/usr/src/app/docker-entrypoint.sh"]
 
 CMD [ "yarn", "start" ]
