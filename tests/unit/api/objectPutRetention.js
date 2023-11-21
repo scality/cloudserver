@@ -23,6 +23,7 @@ const bucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -33,41 +34,42 @@ const putObjectRequest = new DummyRequest({
     url: `/${bucketName}/${objectName}`,
 }, postBody);
 
-const objectRetentionXmlGovernance = '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
-    `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
-    '</Retention>';
+const objectRetentionXmlGovernance = '<Retention '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + '<Mode>GOVERNANCE</Mode>'
+    + `<RetainUntilDate>${expectedDate}</RetainUntilDate>`
+    + '</Retention>';
 
-const objectRetentionXmlCompliance = '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>COMPLIANCE</Mode>' +
-    `<RetainUntilDate>${expectedDate}</RetainUntilDate>` +
-    '</Retention>';
+const objectRetentionXmlCompliance = '<Retention '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + '<Mode>COMPLIANCE</Mode>'
+    + `<RetainUntilDate>${expectedDate}</RetainUntilDate>`
+    + '</Retention>';
 
-const objectRetentionXmlGovernanceLonger = '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
-    `<RetainUntilDate>${moment().add(5, 'days').toISOString()}</RetainUntilDate>` +
-    '</Retention>';
+const objectRetentionXmlGovernanceLonger = '<Retention '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + '<Mode>GOVERNANCE</Mode>'
+    + `<RetainUntilDate>${moment().add(5, 'days').toISOString()}</RetainUntilDate>`
+    + '</Retention>';
 
-const objectRetentionXmlGovernanceShorter = '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>GOVERNANCE</Mode>' +
-    `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
-    '</Retention>';
+const objectRetentionXmlGovernanceShorter = '<Retention '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + '<Mode>GOVERNANCE</Mode>'
+    + `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>`
+    + '</Retention>';
 
-const objectRetentionXmlComplianceShorter = '<Retention ' +
-    'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-    '<Mode>COMPLIANCE</Mode>' +
-    `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>` +
-    '</Retention>';
+const objectRetentionXmlComplianceShorter = '<Retention '
+    + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+    + '<Mode>COMPLIANCE</Mode>'
+    + `<RetainUntilDate>${moment().add(1, 'days').toISOString()}</RetainUntilDate>`
+    + '</Retention>';
 
 const putObjRetRequestGovernance = {
     bucketName,
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernance,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceWithHeader = {
@@ -78,6 +80,7 @@ const putObjRetRequestGovernanceWithHeader = {
         'x-amz-bypass-governance-retention': 'true',
     },
     post: objectRetentionXmlGovernance,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestCompliance = {
@@ -85,6 +88,7 @@ const putObjRetRequestCompliance = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlCompliance,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestComplianceShorter = {
@@ -92,6 +96,7 @@ const putObjRetRequestComplianceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlComplianceShorter,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceLonger = {
@@ -99,6 +104,7 @@ const putObjRetRequestGovernanceLonger = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceLonger,
+    actionImplicitDenies: false,
 };
 
 const putObjRetRequestGovernanceShorter = {
@@ -106,6 +112,7 @@ const putObjRetRequestGovernanceShorter = {
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectRetentionXmlGovernanceShorter,
+    actionImplicitDenies: false,
 };
 
 describe('putObjectRetention API', () => {
@@ -144,12 +151,12 @@ describe('putObjectRetention API', () => {
             objectPutRetention(authInfo, putObjRetRequestGovernance, log, err => {
                 assert.ifError(err);
                 return metadata.getObjectMD(bucketName, objectName, {}, log,
-                (err, objMD) => {
-                    assert.ifError(err);
-                    assert.strictEqual(objMD.retentionMode, expectedMode);
-                    assert.strictEqual(objMD.retentionDate, expectedDate);
-                    return done();
-                });
+                    (err, objMD) => {
+                        assert.ifError(err);
+                        assert.strictEqual(objMD.retentionMode, expectedMode);
+                        assert.strictEqual(objMD.retentionDate, expectedDate);
+                        return done();
+                    });
             });
         });
 

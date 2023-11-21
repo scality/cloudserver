@@ -3,21 +3,19 @@ const async = require('async');
 const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
 
-const { cleanup, DummyRequestLogger, makeAuthInfo }
-    = require('../unit/helpers');
+const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../unit/helpers');
 const { ds } = require('arsenal').storage.data.inMemory.datastore;
 const { bucketPut } = require('../../lib/api/bucketPut');
-const initiateMultipartUpload
-    = require('../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
-const { metadata } = require('arsenal').storage.metadata.inMemory.metadata;
 const constants = require('../../constants');
 
 const s3 = new AWS.S3();
 
-const splitter = constants.splitter;
+const { splitter } = constants;
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
@@ -56,14 +54,14 @@ function getAwsParamsBucketMismatch(destObjName, uploadId) {
 }
 
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
-errorPutCopyPart) {
+    errorPutCopyPart) {
     const keys = getSourceAndDestKeys();
     const { sourceObjName, destObjName } = keys;
-    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
-        '</CreateBucketConfiguration>' : '';
+    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>'
+        + '<CreateBucketConfiguration '
+        + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        + `<LocationConstraint>${bucketLoc}</LocationConstraint>`
+        + '</CreateBucketConfiguration>' : '';
     const bucketPutReq = new DummyRequest({
         bucketName,
         namespace,
@@ -80,10 +78,13 @@ errorPutCopyPart) {
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
-        initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': `${mpuLoc}` };
+        initiateReq.headers = {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-meta-scal-location-constraint': `${mpuLoc}`,
+        };
     }
     if (requestHost) {
         initiateReq.parsedHost = requestHost;
@@ -94,10 +95,13 @@ errorPutCopyPart) {
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        actionImplicitDenies: false,
     };
     if (srcObjLoc) {
-        sourceObjPutParams.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': `${srcObjLoc}` };
+        sourceObjPutParams.headers = {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-meta-scal-location-constraint': `${srcObjLoc}`,
+        };
     }
     const sourceObjPutReq = new DummyRequest(sourceObjPutParams, body);
     if (requestHost) {
@@ -112,8 +116,7 @@ errorPutCopyPart) {
             });
         },
         next => {
-            objectPut(authInfo, sourceObjPutReq, undefined, log, err =>
-                next(err));
+            objectPut(authInfo, sourceObjPutReq, undefined, log, err => next(err));
         },
         next => {
             initiateMultipartUpload(authInfo, initiateReq, log, next);
@@ -130,8 +133,8 @@ errorPutCopyPart) {
         // Need to build request in here since do not have
         // uploadId until here
         assert.ifError(err, 'Error putting source object or initiate MPU');
-        const testUploadId = json.InitiateMultipartUploadResult.
-            UploadId[0];
+        const testUploadId = json.InitiateMultipartUploadResult
+            .UploadId[0];
         const copyPartParams = {
             bucketName,
             namespace,
@@ -172,137 +175,137 @@ function assertPartList(partList, uploadId) {
 }
 
 describeSkipIfE2E('ObjectCopyPutPart API with multiple backends',
-function testSuite() {
-    this.timeout(60000);
+    function testSuite() {
+        this.timeout(60000);
 
-    beforeEach(() => {
-        cleanup();
-    });
+        beforeEach(() => {
+            cleanup();
+        });
 
-    it('should copy part to mem based on mpu location', done => {
-        copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
+        it('should copy part to mem based on mpu location', done => {
+            copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
             // object info is stored in ds beginning at index one,
             // so an array length of two means only one object
             // was stored in mem
-            assert.strictEqual(ds.length, 2);
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
-        });
-    });
-
-    it('should copy part to file based on mpu location', done => {
-        copyPutPart(memLocation, fileLocation, null, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
-            done();
-        });
-    });
-
-    it('should copy part to AWS based on mpu location', done => {
-        copyPutPart(memLocation, awsLocation, null, 'localhost',
-        (keys, uploadId) => {
-            assert.strictEqual(ds.length, 2);
-            const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
+                assert.strictEqual(ds.length, 2);
+                assert.deepStrictEqual(ds[1].value, body);
+                done();
             });
         });
-    });
 
-    it('should copy part to mem from AWS based on mpu location', done => {
-        copyPutPart(awsLocation, memLocation, null, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
-            assert.deepStrictEqual(ds[1].value, body);
-            done();
+        it('should copy part to file based on mpu location', done => {
+            copyPutPart(memLocation, fileLocation, null, 'localhost', () => {
+                assert.strictEqual(ds.length, 2);
+                done();
+            });
         });
-    });
 
-    it('should copy part to mem based on bucket location', done => {
-        copyPutPart(memLocation, null, null, 'localhost', () => {
+        it('should copy part to AWS based on mpu location', done => {
+            copyPutPart(memLocation, awsLocation, null, 'localhost',
+                (keys, uploadId) => {
+                    assert.strictEqual(ds.length, 2);
+                    const awsReq = getAwsParams(keys.destObjName, uploadId);
+                    s3.listParts(awsReq, (err, partList) => {
+                        assertPartList(partList, uploadId);
+                        s3.abortMultipartUpload(awsReq, err => {
+                            assert.equal(err, null, `Error aborting MPU: ${err}. `
+                    + `You must abort MPU with upload ID ${uploadId} manually.`);
+                            done();
+                        });
+                    });
+                });
+        });
+
+        it('should copy part to mem from AWS based on mpu location', done => {
+            copyPutPart(awsLocation, memLocation, null, 'localhost', () => {
+                assert.strictEqual(ds.length, 2);
+                assert.deepStrictEqual(ds[1].value, body);
+                done();
+            });
+        });
+
+        it('should copy part to mem based on bucket location', done => {
+            copyPutPart(memLocation, null, null, 'localhost', () => {
             // ds length should be three because both source
             // and copied objects should be in mem
-            assert.strictEqual(ds.length, 3);
-            assert.deepStrictEqual(ds[2].value, body);
-            done();
+                assert.strictEqual(ds.length, 3);
+                assert.deepStrictEqual(ds[2].value, body);
+                done();
+            });
         });
-    });
 
-    it('should copy part to file based on bucket location', done => {
-        copyPutPart(fileLocation, null, null, 'localhost', () => {
+        it('should copy part to file based on bucket location', done => {
+            copyPutPart(fileLocation, null, null, 'localhost', () => {
             // ds should be empty because both source and
             // coped objects should be in file
-            assert.deepStrictEqual(ds, []);
-            done();
+                assert.deepStrictEqual(ds, []);
+                done();
+            });
         });
-    });
 
-    it('should copy part to AWS based on bucket location', done => {
-        copyPutPart(awsLocation, null, null, 'localhost', (keys, uploadId) => {
-            assert.deepStrictEqual(ds, []);
-            const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
+        it('should copy part to AWS based on bucket location', done => {
+            copyPutPart(awsLocation, null, null, 'localhost', (keys, uploadId) => {
+                assert.deepStrictEqual(ds, []);
+                const awsReq = getAwsParams(keys.destObjName, uploadId);
+                s3.listParts(awsReq, (err, partList) => {
+                    assertPartList(partList, uploadId);
+                    s3.abortMultipartUpload(awsReq, err => {
+                        assert.equal(err, null, `Error aborting MPU: ${err}. `
+                    + `You must abort MPU with upload ID ${uploadId} manually.`);
+                        done();
+                    });
                 });
             });
         });
-    });
 
-    it('should copy part an object on AWS location that has bucketMatch ' +
-    'equals false to a mpu with a different AWS location', done => {
-        copyPutPart(null, awsLocation, awsLocationMismatch, 'localhost',
-        (keys, uploadId) => {
-            assert.deepStrictEqual(ds, []);
-            const awsReq = getAwsParams(keys.destObjName, uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
+        it('should copy part an object on AWS location that has bucketMatch '
+    + 'equals false to a mpu with a different AWS location', done => {
+            copyPutPart(null, awsLocation, awsLocationMismatch, 'localhost',
+                (keys, uploadId) => {
+                    assert.deepStrictEqual(ds, []);
+                    const awsReq = getAwsParams(keys.destObjName, uploadId);
+                    s3.listParts(awsReq, (err, partList) => {
+                        assertPartList(partList, uploadId);
+                        s3.abortMultipartUpload(awsReq, err => {
+                            assert.equal(err, null, `Error aborting MPU: ${err}. `
+                    + `You must abort MPU with upload ID ${uploadId} manually.`);
+                            done();
+                        });
+                    });
                 });
+        });
+
+        it('should copy part an object on AWS to a mpu with a different '
+    + 'AWS location that has bucketMatch equals false', done => {
+            copyPutPart(null, awsLocationMismatch, awsLocation, 'localhost',
+                (keys, uploadId) => {
+                    assert.deepStrictEqual(ds, []);
+                    const awsReq = getAwsParamsBucketMismatch(keys.destObjName,
+                        uploadId);
+                    s3.listParts(awsReq, (err, partList) => {
+                        assertPartList(partList, uploadId);
+                        s3.abortMultipartUpload(awsReq, err => {
+                            assert.equal(err, null, `Error aborting MPU: ${err}. `
+                    + `You must abort MPU with upload ID ${uploadId} manually.`);
+                            done();
+                        });
+                    });
+                });
+        });
+
+        it('should return error 403 AccessDenied copying part to a '
+    + 'different AWS location without object READ access',
+        done => {
+            const errorPutCopyPart = { code: 'AccessDenied', statusCode: 403 };
+            copyPutPart(null, awsLocation, awsLocation2, 'localhost', done,
+                errorPutCopyPart);
+        });
+
+
+        it('should copy part to file based on request endpoint', done => {
+            copyPutPart(null, null, memLocation, 'localhost', () => {
+                assert.strictEqual(ds.length, 2);
+                done();
             });
         });
     });
-
-    it('should copy part an object on AWS to a mpu with a different ' +
-    'AWS location that has bucketMatch equals false', done => {
-        copyPutPart(null, awsLocationMismatch, awsLocation, 'localhost',
-        (keys, uploadId) => {
-            assert.deepStrictEqual(ds, []);
-            const awsReq = getAwsParamsBucketMismatch(keys.destObjName,
-                uploadId);
-            s3.listParts(awsReq, (err, partList) => {
-                assertPartList(partList, uploadId);
-                s3.abortMultipartUpload(awsReq, err => {
-                    assert.equal(err, null, `Error aborting MPU: ${err}. ` +
-                    `You must abort MPU with upload ID ${uploadId} manually.`);
-                    done();
-                });
-            });
-        });
-    });
-
-    it('should return error 403 AccessDenied copying part to a ' +
-    'different AWS location without object READ access',
-    done => {
-        const errorPutCopyPart = { code: 'AccessDenied', statusCode: 403 };
-        copyPutPart(null, awsLocation, awsLocation2, 'localhost', done,
-        errorPutCopyPart);
-    });
-
-
-    it('should copy part to file based on request endpoint', done => {
-        copyPutPart(null, null, memLocation, 'localhost', () => {
-            assert.strictEqual(ds.length, 2);
-            done();
-        });
-    });
-});
