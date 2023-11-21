@@ -340,6 +340,7 @@ class CorsConfigTester {
             },
             url: '/?cors',
             query: { cors: '' },
+            actionImplicitDenies: false,
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
@@ -381,6 +382,7 @@ const versioningTestUtils = {
             },
             url: '/?versioning',
             query: { versioning: '' },
+            actionImplicitDenies: false,
         };
         const xml = '<VersioningConfiguration ' +
         'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -431,6 +433,7 @@ class TaggingConfigTester {
             objectKey: objectName,
             url: '/?tagging',
             query: { tagging: '' },
+            actionImplicitDenies: false,
         };
         if (method === 'PUT') {
             request.post = body || this.constructXml();
