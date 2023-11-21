@@ -8,9 +8,11 @@ const { bucketPut } = require('../../../lib/api/bucketPut');
 const bucketPutObjectLock = require('../../../lib/api/bucketPutObjectLock');
 const bucketPutACL = require('../../../lib/api/bucketPutACL');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
+
 const { parseTagFromQuery } = s3middleware.tagging;
-const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
-    = require('../helpers');
+const {
+    cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils,
+} = require('../helpers');
 const metadata = require('../metadataswitch');
 const objectPut = require('../../../lib/api/objectPut');
 const { objectLockTestUtils } = require('../helpers');
@@ -21,7 +23,7 @@ const { lastModifiedHeader } = require('../../../constants');
 
 const { ds } = storage.data.inMemory.datastore;
 
-const any = sinon.match.any;
+const { any } = sinon.match;
 
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
@@ -51,10 +53,8 @@ const originalputObjectMD = metadata.putObjectMD;
 const objectName = 'objectName';
 
 let testPutObjectRequest;
-const enableVersioningRequest =
-    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
-const suspendVersioningRequest =
-    versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
+const enableVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
+const suspendVersioningRequest = versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Suspended');
 
 function testAuth(bucketOwner, authUser, bucketPutReq, log, cb) {
     bucketPut(bucketOwner, bucketPutReq, log, () => {
@@ -76,8 +76,10 @@ describe('parseTagFromQuery', () => {
     const allowedChar = '+- =._:/';
     const tests = [
         { tagging: 'key1=value1', result: { key1: 'value1' } },
-        { tagging: `key1=${encodeURIComponent(allowedChar)}`,
-            result: { key1: allowedChar } },
+        {
+            tagging: `key1=${encodeURIComponent(allowedChar)}`,
+            result: { key1: allowedChar },
+        },
         { tagging: 'key1=value1=value2', error: invalidArgument },
         { tagging: '=value1', error: invalidArgument },
         { tagging: 'key1%=value1', error: invalidArgument },
@@ -152,16 +154,14 @@ describe('objectPut API', () => {
     it('should put object if user has FULL_CONTROL grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
-        testPutBucketRequest.headers['x-amz-grant-full-control'] =
-            `id=${authUser.getCanonicalID()}`;
+        testPutBucketRequest.headers['x-amz-grant-full-control'] = `id=${authUser.getCanonicalID()}`;
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
 
     it('should put object if user has WRITE grant on bucket', done => {
         const bucketOwner = makeAuthInfo('accessKey2');
         const authUser = makeAuthInfo('accessKey3');
-        testPutBucketRequest.headers['x-amz-grant-write'] =
-            `id=${authUser.getCanonicalID()}`;
+        testPutBucketRequest.headers['x-amz-grant-write'] = `id=${authUser.getCanonicalID()}`;
 
         testAuth(bucketOwner, authUser, testPutBucketRequest, log, done);
     });
@@ -192,7 +192,7 @@ describe('objectPut API', () => {
                         {}, log, (err, md) => {
                             assert(md);
                             assert
-                            .strictEqual(md['content-md5'], correctMD5);
+                                .strictEqual(md['content-md5'], correctMD5);
                             done();
                         });
                 });
@@ -249,8 +249,8 @@ describe('objectPut API', () => {
     ];
     testObjectLockConfigs.forEach(config => {
         const { testMode, type, val } = config;
-        it('should put an object with default retention if object does not ' +
-            'have retention configuration but bucket has', done => {
+        it('should put an object with default retention if object does not '
+            + 'have retention configuration but bucket has', done => {
             const testPutObjectRequest = new DummyRequest({
                 bucketName,
                 namespace,
@@ -264,6 +264,7 @@ describe('objectPut API', () => {
                 bucketName,
                 headers: { host: `${bucketName}.s3.amazonaws.com` },
                 post: objectLockTestUtils.generateXml(testMode, val, type),
+                actionImplicitDenies: false,
             };
 
             bucketPut(authInfo, testPutBucketRequestLock, log, () => {
@@ -277,10 +278,8 @@ describe('objectPut API', () => {
                                     const mode = md.retentionMode;
                                     const retainDate = md.retentionDate;
                                     const date = moment();
-                                    const days
-                                        = type === 'Days' ? val : val * 365;
-                                    const expectedDate
-                                        = date.add(days, 'days');
+                                    const days = type === 'Days' ? val : val * 365;
+                                    const expectedDate = date.add(days, 'days');
                                     assert.ifError(err);
                                     assert.strictEqual(mode, testMode);
                                     assert.strictEqual(formatTime(retainDate),
@@ -374,11 +373,11 @@ describe('objectPut API', () => {
                         (err, md) => {
                             assert(md);
                             assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
+                                'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
-                                        'some more metadata');
+                                'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
-                                        'even more metadata');
+                                'even more metadata');
                             done();
                         });
                 });
@@ -447,7 +446,7 @@ describe('objectPut API', () => {
                         (err, md) => {
                             assert(md);
                             assert.strictEqual(md['x-amz-meta-x-scal-last-modified'],
-                                        imposedLastModified);
+                                imposedLastModified);
                             const lastModified = md['last-modified'];
                             const lastModifiedDate = lastModified.split('T')[0];
                             const currentTs = new Date().toJSON();
@@ -487,11 +486,11 @@ describe('objectPut API', () => {
                             assert(md);
                             assert.strictEqual(md.location, null);
                             assert.strictEqual(md['x-amz-meta-test'],
-                                        'some metadata');
+                                'some metadata');
                             assert.strictEqual(md['x-amz-meta-test2'],
-                                       'some more metadata');
+                                'some more metadata');
                             assert.strictEqual(md['x-amz-meta-test3'],
-                                       'even more metadata');
+                                'even more metadata');
                             done();
                         });
                 });
@@ -512,19 +511,19 @@ describe('objectPut API', () => {
                 undefined, log, () => {
                     objectPut(authInfo, testPutObjectRequest2, undefined,
                         log,
-                    () => {
+                        () => {
                         // orphan objects don't get deleted
                         // until the next tick
                         // in memory
-                        setImmediate(() => {
+                            setImmediate(() => {
                             // Data store starts at index 1
-                            assert.strictEqual(ds[0], undefined);
-                            assert.strictEqual(ds[1], undefined);
-                            assert.deepStrictEqual(ds[2].value,
-                                Buffer.from('I am another body', 'utf8'));
-                            done();
+                                assert.strictEqual(ds[0], undefined);
+                                assert.strictEqual(ds[1], undefined);
+                                assert.deepStrictEqual(ds[2].value,
+                                    Buffer.from('I am another body', 'utf8'));
+                                done();
+                            });
                         });
-                    });
                 });
         });
     });
@@ -543,8 +542,8 @@ describe('objectPut API', () => {
         });
     });
 
-    it('should not put object with retention configuration if object lock ' +
-        'is not enabled on the bucket', done => {
+    it('should not put object with retention configuration if object lock '
+        + 'is not enabled on the bucket', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -566,9 +565,7 @@ describe('objectPut API', () => {
         });
     });
     it('should forward a 400 back to client on metadata 408 response', () => {
-        metadata.putObjectMD =
-            (bucketName, objName, objVal, params, log, cb) =>
-                cb({ httpCode: 408 });
+        metadata.putObjectMD = (bucketName, objName, objVal, params, log, cb) => cb({ httpCode: 408 });
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
@@ -579,9 +576,7 @@ describe('objectPut API', () => {
     });
 
     it('should forward a 502 to the client for 4xx != 408', () => {
-        metadata.putObjectMD =
-            (bucketName, objName, objVal, params, log, cb) =>
-                cb({ httpCode: 412 });
+        metadata.putObjectMD = (bucketName, objName, objVal, params, log, cb) => cb({ httpCode: 412 });
 
         bucketPut(authInfo, testPutBucketRequest, log, () => {
             objectPut(authInfo, testPutObjectRequest, undefined, log,
@@ -673,13 +668,12 @@ describe('objectPut API with versioning', () => {
         cleanup();
     });
 
-    const objData = ['foo0', 'foo1', 'foo2'].map(str =>
-        Buffer.from(str, 'utf8'));
+    const objData = ['foo0', 'foo1', 'foo2'].map(str => Buffer.from(str, 'utf8'));
     const testPutObjectRequests = objData.map(data => versioningTestUtils
         .createPutObjectRequest(bucketName, objectName, data));
 
-    it('should delete latest version when creating new null version ' +
-    'if latest version is null version', done => {
+    it('should delete latest version when creating new null version '
+    + 'if latest version is null version', done => {
         async.series([
             callback => bucketPut(authInfo, testPutBucketRequest, log,
                 callback),
@@ -717,8 +711,7 @@ describe('objectPut API with versioning', () => {
     });
 
     describe('when null version is not the latest version', () => {
-        const objData = ['foo0', 'foo1', 'foo2'].map(str =>
-            Buffer.from(str, 'utf8'));
+        const objData = ['foo0', 'foo1', 'foo2'].map(str => Buffer.from(str, 'utf8'));
         const testPutObjectRequests = objData.map(data => versioningTestUtils
             .createPutObjectRequest(bucketName, objectName, data));
         beforeEach(done => {
@@ -746,23 +739,23 @@ describe('objectPut API with versioning', () => {
         });
 
         it('should still delete null version when creating new null version',
-        done => {
-            objectPut(authInfo, testPutObjectRequests[2], undefined,
-                log, err => {
-                    assert.ifError(err, `Unexpected err: ${err}`);
-                    setImmediate(() => {
+            done => {
+                objectPut(authInfo, testPutObjectRequests[2], undefined,
+                    log, err => {
+                        assert.ifError(err, `Unexpected err: ${err}`);
+                        setImmediate(() => {
                         // old null version should be deleted after putting
                         // new null version
-                        versioningTestUtils.assertDataStoreValues(ds,
-                            [undefined, objData[1], objData[2]]);
-                        done(err);
+                            versioningTestUtils.assertDataStoreValues(ds,
+                                [undefined, objData[1], objData[2]]);
+                            done(err);
+                        });
                     });
-                });
-        });
+            });
     });
 
-    it('should return BadDigest error and not leave orphans in data when ' +
-    'contentMD5 and completedHash do not match', done => {
+    it('should return BadDigest error and not leave orphans in data when '
+    + 'contentMD5 and completedHash do not match', done => {
         const testPutObjectRequest = new DummyRequest({
             bucketName,
             namespace,
@@ -781,11 +774,11 @@ describe('objectPut API with versioning', () => {
                 // in memory
                 setImmediate(() => {
                     // Data store starts at index 1
-                    assert.strictEqual(ds[0], undefined);
-                    assert.strictEqual(ds[1], undefined);
-                    done();
+                        assert.strictEqual(ds[0], undefined);
+                        assert.strictEqual(ds[1], undefined);
+                        done();
+                    });
                 });
-            });
         });
     });
 });

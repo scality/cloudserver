@@ -15,6 +15,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 let expectedBucketPolicy = {};
@@ -25,6 +26,7 @@ function getPolicyRequest(policy) {
             host: `${bucketName}.s3.amazonaws.com`,
         },
         post: JSON.stringify(policy),
+        actionImplicitDenies: false,
     };
 }
 

@@ -4,11 +4,9 @@ const { parseString } = require('xml2js');
 const AWS = require('aws-sdk');
 const { storage, errors } = require('arsenal');
 
-const { cleanup, DummyRequestLogger, makeAuthInfo }
-    = require('../unit/helpers');
+const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../unit/helpers');
 const { bucketPut } = require('../../lib/api/bucketPut');
-const initiateMultipartUpload
-    = require('../../lib/api/initiateMultipartUpload');
+const initiateMultipartUpload = require('../../lib/api/initiateMultipartUpload');
 const objectPut = require('../../lib/api/objectPut');
 const objectPutCopyPart = require('../../lib/api/objectPutCopyPart');
 const DummyRequest = require('../unit/DummyRequest');
@@ -18,7 +16,7 @@ const { ds } = storage.data.inMemory.datastore;
 
 const s3 = new AWS.S3();
 
-const splitter = constants.splitter;
+const { splitter } = constants;
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
@@ -63,14 +61,14 @@ function getAwsParamsBucketMismatch(destObjName, uploadId) {
 }
 
 function copyPutPart(bucketLoc, mpuLoc, srcObjLoc, requestHost, cb,
-errorPutCopyPart) {
+    errorPutCopyPart) {
     const keys = getSourceAndDestKeys();
     const { sourceObjName, destObjName } = keys;
-    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<CreateBucketConfiguration ' +
-        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
-        `<LocationConstraint>${bucketLoc}</LocationConstraint>` +
-        '</CreateBucketConfiguration>' : '';
+    const post = bucketLoc ? '<?xml version="1.0" encoding="UTF-8"?>'
+        + '<CreateBucketConfiguration '
+        + 'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'
+        + `<LocationConstraint>${bucketLoc}</LocationConstraint>`
+        + '</CreateBucketConfiguration>' : '';
     const bucketPutReq = new DummyRequest({
         bucketName,
         namespace,
@@ -87,10 +85,13 @@ errorPutCopyPart) {
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
-        initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': `${mpuLoc}` };
+        initiateReq.headers = {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-meta-scal-location-constraint': `${mpuLoc}`,
+        };
     }
     if (requestHost) {
         initiateReq.parsedHost = requestHost;
@@ -101,10 +102,13 @@ errorPutCopyPart) {
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        actionImplicitDenies: false,
     };
     if (srcObjLoc) {
-        sourceObjPutParams.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
-            'x-amz-meta-scal-location-constraint': `${srcObjLoc}` };
+        sourceObjPutParams.headers = {
+            'host': `${bucketName}.s3.amazonaws.com`,
+            'x-amz-meta-scal-location-constraint': `${srcObjLoc}`,
+        };
     }
     const sourceObjPutReq = new DummyRequest(sourceObjPutParams, body);
     if (requestHost) {
@@ -119,8 +123,7 @@ errorPutCopyPart) {
             });
         },
         next => {
-            objectPut(authInfo, sourceObjPutReq, undefined, log, err =>
-                next(err));
+            objectPut(authInfo, sourceObjPutReq, undefined, log, err => next(err));
         },
         next => {
             initiateMultipartUpload(authInfo, initiateReq, log, next);
@@ -137,8 +140,8 @@ errorPutCopyPart) {
         // Need to build request in here since do not have
         // uploadId until here
         assert.ifError(err, 'Error putting source object or initiate MPU');
-        const testUploadId = json.InitiateMultipartUploadResult.
-            UploadId[0];
+        const testUploadId = json.InitiateMultipartUploadResult
+            .UploadId[0];
         const copyPartParams = {
             bucketName,
             namespace,
@@ -182,12 +185,12 @@ describe.skip('ObjectCopyPutPart API with multiple backends',
 function testSuite() {
     this.timeout(60000);
 
-    beforeEach(() => {
-        cleanup();
-    });
+        beforeEach(() => {
+            cleanup();
+        });
 
-    it('should copy part to mem based on mpu location', done => {
-        copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
+        it('should copy part to mem based on mpu location', done => {
+            copyPutPart(fileLocation, memLocation, null, 'localhost', () => {
             // object info is stored in ds beginning at index one,
             // so an array length of two means only one object
             // was stored in mem

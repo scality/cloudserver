@@ -23,7 +23,7 @@ describe('validateBucket', () => {
             authInfo,
             requestType: 'bucketPutPolicy',
             request: null,
-        }, log);
+        }, log, false);
         assert.ifError(validationResult);
     });
     it('action bucketPutPolicy by other than bucket owner', () => {
@@ -31,7 +31,7 @@ describe('validateBucket', () => {
             authInfo: otherAuthInfo,
             requestType: 'bucketPutPolicy',
             request: null,
-        }, log);
+        }, log, false);
         assert(validationResult);
         assert(validationResult.is.MethodNotAllowed);
     });
@@ -41,7 +41,7 @@ describe('validateBucket', () => {
             authInfo,
             requestType: 'bucketGet',
             request: null,
-        }, log);
+        }, log, false);
         assert.ifError(validationResult);
     });
 
@@ -50,7 +50,7 @@ describe('validateBucket', () => {
             authInfo: otherAuthInfo,
             requestType: 'bucketGet',
             request: null,
-        }, log);
+        }, log, false);
         assert(validationResult);
         assert(validationResult.is.AccessDenied);
     });
