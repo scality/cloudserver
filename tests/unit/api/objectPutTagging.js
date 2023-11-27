@@ -25,6 +25,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const testPutObjectRequest = new DummyRequest({
@@ -172,8 +173,7 @@ describe('PUT object tagging :: helper validation functions ', () => {
 
         taggingTests.forEach(taggingTest => {
             it(taggingTest.it, done => {
-                const key = taggingTest.tag.key;
-                const value = taggingTest.tag.value;
+                const { tag: { key, value } } = taggingTest;
                 const xml = _generateSampleXml(key, value);
                 parseTagXml(xml, log, (err, result) => {
                     if (taggingTest.error) {
