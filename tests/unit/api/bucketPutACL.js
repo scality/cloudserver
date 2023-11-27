@@ -71,6 +71,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -89,6 +90,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
@@ -110,6 +112,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         const testACLRequest2 = {
             bucketName,
@@ -120,6 +123,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
@@ -148,6 +152,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         const testACLRequest2 = {
             bucketName,
@@ -158,6 +163,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -196,6 +202,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err, undefined);
@@ -237,6 +244,7 @@ describe('putBucketACL API', () => {
                 },
                 url: '/?acl',
                 query: { acl: '' },
+                actionImplicitDenies: false,
             };
             bucketPutACL(authInfo, testACLRequest, log, err => {
                 assert.strictEqual(err, undefined);
@@ -270,6 +278,7 @@ describe('putBucketACL API', () => {
                 },
                 url: '/?acl',
                 query: { acl: '' },
+                actionImplicitDenies: false,
             };
             return bucketPutACL(authInfo, testACLRequest, log, err => {
                 assert.strictEqual(err.is.InvalidArgument, true);
@@ -291,6 +300,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -350,6 +360,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -385,6 +396,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -417,6 +429,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -460,6 +473,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -492,6 +506,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         return bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -524,6 +539,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
         bucketPutACL(authInfo, testACLRequest, log, err => {
             assert.strictEqual(err.is.UnresolvableGrantByEmailAddress, true);
@@ -559,6 +575,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -604,6 +621,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -639,6 +657,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -673,6 +692,7 @@ describe('putBucketACL API', () => {
                 '</AccessControlPolicy>',
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {
@@ -694,6 +714,7 @@ describe('putBucketACL API', () => {
             },
             url: '/?acl',
             query: { acl: '' },
+            actionImplicitDenies: false,
         };
 
         bucketPutACL(authInfo, testACLRequest, log, err => {

@@ -176,6 +176,8 @@ const constants = {
         'objectDeleteTagging',
         'objectGetTagging',
         'objectPutTagging',
+        'objectPutLegalHold',
+        'objectPutRetention',
     ],
     // response header to be sent when there are invalid
     // user metadata in the object's metadata

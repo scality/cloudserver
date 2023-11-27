@@ -73,6 +73,7 @@ errorDescription) {
         objectKey: objectName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${objectName}?uploads`,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,

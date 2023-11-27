@@ -19,6 +19,7 @@ const putBucketRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 const putObjectRequest = new DummyRequest({
@@ -39,6 +40,7 @@ const putLegalHoldReq = status => ({
     objectKey: objectName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     post: objectLegalHoldXml(status),
+    actionImplicitDenies: false,
 });
 
 describe('putObjectLegalHold API', () => {

@@ -87,6 +87,7 @@ errorPutCopyPart) {
         objectKey: destObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: `/${destObjName}?uploads`,
+        actionImplicitDenies: false,
     };
     if (mpuLoc) {
         initiateReq.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
@@ -101,6 +102,7 @@ errorPutCopyPart) {
         objectKey: sourceObjName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         url: '/',
+        actionImplicitDenies: false,
     };
     if (srcObjLoc) {
         sourceObjPutParams.headers = { 'host': `${bucketName}.s3.amazonaws.com`,
