@@ -284,6 +284,56 @@ describe('veeam GET routes:', () => {
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
         ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
     ].forEach(key => {
+        it(`GET ${key[0]} should return the expected XML file for cors requests`, done => {
+            async.waterfall([
+                next => makeVeeamRequest({
+                    method: 'PUT',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'origin': 'http://localhost:8000',
+                        'content-length': key[1].length,
+                        'content-md5': key[2],
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                    requestBody: key[1],
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200);
+                    return next();
+                }),
+                next => makeVeeamRequest({
+                    method: 'GET',
+                    bucket: TEST_BUCKET,
+                    objectKey: key[0],
+                    headers: {
+                        'origin': 'http://localhost:8000',
+                        'x-scal-canonical-id': testArn,
+                    },
+                    authCredentials: veeamAuthCredentials,
+                }, (err, response) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    assert.strictEqual(response.statusCode, 200);
+                    assert.strictEqual(response.body.replaceAll(' ', ''), key[1].replaceAll(' ', ''));
+                    return next();
+                }),
+            ], err => {
+                assert.ifError(err);
+                return done();
+            });
+        });
+    });
+
+
+    [
+        ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/system.xml', testSystem, testSystemMd5],
+        ['.system-d26a9498-cb7c-4a87-a44a-8ae204f5ba6c/capacity.xml', testCapacity, testCapacityMd5],
+    ].forEach(key => {
         it(`GET ${key[0]} should fail if no data in bucket metadata`, done => makeVeeamRequest({
                 method: 'GET',
                 bucket: TEST_BUCKET,
