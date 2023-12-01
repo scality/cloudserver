@@ -15,6 +15,7 @@ const testBucketPutRequest = {
     bucketName,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 
 function _makeWebsiteRequest(xml) {
@@ -25,6 +26,7 @@ function _makeWebsiteRequest(xml) {
         },
         url: '/?website',
         query: { website: '' },
+        actionImplicitDenies: false,
     };
 
     if (xml) {
