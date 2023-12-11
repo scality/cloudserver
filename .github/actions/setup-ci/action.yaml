@@ -23,10 +23,3 @@ runs:
     - name: install dependencies
       shell: bash
       run: yarn install --ignore-engines --frozen-lockfile --network-concurrency 1
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-    - name: Install python deps
-      shell: bash
-      run: pip install docker-compose
