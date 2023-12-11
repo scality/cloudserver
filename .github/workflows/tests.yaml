@@ -184,7 +184,7 @@ jobs:
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: docker-compose up -d
+      run: docker compose up -d
       working-directory: .github/docker
     - name: Run multiple backend test
       run: |-
@@ -225,7 +225,7 @@ jobs:
         sudo apt-get install -y libdigest-hmac-perl
         pip install 's3cmd==2.3.0'
     - name: Setup CI services
-      run: docker-compose up -d
+      run: docker compose up -d
       working-directory: .github/docker
     - name: Run file ft tests
       run: |-
@@ -260,7 +260,7 @@ jobs:
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: docker-compose up -d
+      run: docker compose up -d
       working-directory: .github/docker
     - name: Run file utapi v2 tests
       run: |-
@@ -298,7 +298,7 @@ jobs:
       run: cp -r ./certs /tmp/ssl-kmip
       working-directory: .github/pykmip
     - name: Setup CI services
-      run: docker-compose --profile pykmip up -d
+      run: docker compose --profile pykmip up -d
       working-directory: .github/docker
     - name: Run file KMIP tests
       run: |-
