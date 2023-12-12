@@ -206,7 +206,7 @@ jobs:
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: docker-compose --profile mongo up -d
+      run: docker compose --profile mongo up -d
       working-directory: .github/docker
     - name: Run functional tests
       run: |-
@@ -244,7 +244,7 @@ jobs:
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
-      run: docker-compose --profile mongo up -d
+      run: docker compose --profile mongo up -d
       working-directory: .github/docker
     - name: Run functional tests
       run: |-
@@ -407,7 +407,7 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y --fix-missing default-jdk maven
     - name: Setup CI services
-      run: docker-compose --profile ceph up -d
+      run: docker compose --profile ceph up -d
       working-directory: .github/docker
       env: 
         S3METADATA: mongodb
