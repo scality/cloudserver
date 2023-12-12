@@ -30,9 +30,6 @@ runs:
     - uses: actions/setup-python@v4
       with:
         python-version: 3.9
-    - name: Install python deps
-      shell: bash
-      run: pip install docker-compose
     - name: Setup python2 test environment
       shell: bash
       run: |
