@@ -172,6 +172,7 @@ jobs:
     needs: build
     env:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
@@ -291,6 +292,7 @@ jobs:
       S3BACKEND: file
       S3VAULT: mem
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       MPU_TESTING: "yes"
       JOB_NAME: ${{ matrix.job-name }}
     steps:
@@ -329,6 +331,7 @@ jobs:
       S3BACKEND: mem 
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -361,6 +364,7 @@ jobs:
       S3VAULT: mem
       MPU_TESTING: "yes" 
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
