@@ -27,6 +27,7 @@ const testPutBucketRequest = new DummyRequest({
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 });
 const testDeleteRequest = new DummyRequest({
     bucketName,
@@ -34,6 +35,7 @@ const testDeleteRequest = new DummyRequest({
     objectKey: objectName,
     headers: {},
     url: `/${bucketName}/${objectName}`,
+    actionImplicitDenies: false,
 });
 
 function _createBucketPutVersioningReq(status) {
@@ -44,6 +46,7 @@ function _createBucketPutVersioningReq(status) {
         },
         url: '/?versioning',
         query: { versioning: '' },
+        actionImplicitDenies: false,
     };
     const xml = '<VersioningConfiguration ' +
     'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' +
@@ -61,6 +64,7 @@ function _createMultiObjectDeleteRequest(numObjects) {
         },
         url: '/?delete',
         query: { delete: '' },
+        actionImplicitDenies: false,
     };
     const xml = [];
     xml.push('<?xml version="1.0" encoding="UTF-8"?>');

@@ -29,6 +29,7 @@ function templateRequest(bucketName, { post }) {
         bucketName,
         headers: { host: `${bucketName}.s3.amazonaws.com` },
         post,
+        actionImplicitDenies: false,
     };
 }
 

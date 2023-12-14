@@ -13,6 +13,7 @@ const testRequest = {
     namespace,
     headers: { host: `${bucketName}.s3.amazonaws.com` },
     url: '/',
+    actionImplicitDenies: false,
 };
 describe('bucketHead API', () => {
     beforeEach(() => {
