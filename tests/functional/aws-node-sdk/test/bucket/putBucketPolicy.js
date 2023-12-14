@@ -214,6 +214,17 @@ describe('aws-sdk test put bucket policy', () => {
             s3.putBucketPolicy(params, err => assertError(err, null, done));
         });
 
+        it('should reject policy with a key that does not exist that does not start with aws:', done => {
+            const params = getPolicyParams({
+                key: 'Condition', value: {
+                    NumericGreaterThanEquals: {
+                        'have-a-nice-day': 'blabla', // Invalid value
+                    },
+                },
+            });
+            s3.putBucketPolicy(params, err => assertError(err, 'MalformedPolicy', done));
+        });
+
         it('should enforce policies with both SourceIp and s3:object-lock conditions together', done => {
             const params = getPolicyParams({
                 key: 'Condition', value: {
