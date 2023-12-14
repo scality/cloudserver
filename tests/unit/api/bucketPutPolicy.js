@@ -78,12 +78,12 @@ describe('putBucketPolicy API', () => {
         });
     });
 
-    it.skip('should return error if policy contains conditions', done => {
+    it('should not return error if policy contains conditions', done => {
         expectedBucketPolicy.Statement[0].Condition =
             { StringEquals: { 's3:x-amz-acl': ['public-read'] } };
         bucketPutPolicy(authInfo, getPolicyRequest(expectedBucketPolicy), log,
         err => {
-            assert.strictEqual(err.is.NotImplemented, true);
+            assert.ifError(err);
             done();
         });
     });
