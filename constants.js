@@ -197,6 +197,7 @@ const constants = {
         'owner-id',
         'versionId',
         'isNull',
+        'isDeleteMarker',
     ],
     unsupportedSignatureChecksums: new Set([
         'STREAMING-UNSIGNED-PAYLOAD-TRAILER',
