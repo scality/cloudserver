@@ -501,4 +501,123 @@ describe('bucket policy authorization', () => {
             done();
         });
     });
+
+    describe('bucketpolicy conditions', () => {
+        const newPolicyObjRetentionCondition = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: {
+                        CanonicalUser: [altAcctCanonicalId],
+                    },
+                    Action: 's3:*',
+                    Resource: [
+                        `arn:aws:s3:::${bucket.getName()}`,
+                        `arn:aws:s3:::${bucket.getName()}/*`,
+                    ],
+                },
+                {
+                    Effect: 'Deny',
+                    Principal: {
+                        CanonicalUser: [altAcctCanonicalId],
+                    },
+                    Action: [
+                        's3:PutObjectRetention',
+                    ],
+                    Resource: [
+                        `arn:aws:s3:::${bucket.getName()}`,
+                        `arn:aws:s3:::${bucket.getName()}/*`,
+                    ],
+                    Condition: {
+                        NumericGreaterThan: {
+                            's3:object-lock-remaining-retention-days': 10,
+                        },
+                    },
+                },
+            ],
+        };
+
+        const newPolicyObjIpCondition = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Allow',
+                    Principal: {
+                        CanonicalUser: [altAcctCanonicalId],
+                    },
+                    Action: 's3:*',
+                    Resource: [
+                        `arn:aws:s3:::${bucket.getName()}`,
+                        `arn:aws:s3:::${bucket.getName()}/*`,
+                    ],
+                    Condition: {
+                        IpAddress: {
+                            'aws:SourceIp': '123.123.123.123',
+                        },
+                    },
+                },
+            ],
+        };
+
+        const testSuite = [
+            {
+                name: 'should allow access when retention within condition limit',
+                testedCondition: 's3:object-lock-remaining-retention-days',
+                requestType: 'objectPutRetention',
+                requestConditionKey: 'objectLockRetentionDays',
+                conditionValue: 8,
+                bucketPolicy: newPolicyObjRetentionCondition,
+                expectedVerdict: true,
+            },
+            {
+                name: 'should not allow access when retention outside condition limit',
+                testedCondition: 's3:object-lock-remaining-retention-days',
+                requestType: 'objectPutRetention',
+                requestConditionKey: 'objectLockRetentionDays',
+                conditionValue: 12,
+                bucketPolicy: newPolicyObjRetentionCondition,
+                expectedVerdict: false,
+            },
+            {
+                name: 'should allow access when IP is in condition',
+                testedCondition: 'aws:SourceIp',
+                requestType: 'objectPut',
+                requestConditionKey: 'socket',
+                conditionValue: { remoteAddress: '123.123.123.123' },
+                bucketPolicy: newPolicyObjIpCondition,
+                expectedVerdict: true,
+            },
+            {
+                name: 'should not allow access when IP is not in condition',
+                testedCondition: 'aws:SourceIp',
+                requestType: 'objectPut',
+                requestConditionKey: 'requesterIp',
+                conditionValue: { remoteAddress: '124.124.124.124' },
+                bucketPolicy: newPolicyObjIpCondition,
+                expectedVerdict: false,
+            },
+        ];
+
+        testSuite.forEach(t => {
+            it(t.name, () => {
+                bucket.setBucketPolicy(t.bucketPolicy);
+                const requestParams = {
+                    socket: {
+                        remoteAddress: '1.1.1.1',
+                    },
+                    bucketName: bucket.getName(),
+                    generalResource: `arn:aws:s3:::${bucket.getName()}`,
+                    specificResource: `arn:aws:s3:::${bucket.getName()}/*`,
+                };
+                requestParams[t.requestConditionKey] = t.conditionValue;
+
+                const request = new DummyRequest(requestParams);
+                const results = isObjAuthorized(bucket, object, t.requestType,
+                    altAcctCanonicalId, altAcctAuthInfo, log, request);
+                assert.strictEqual(results, t.expectedVerdict);
+            }
+        );
+        });
+    });
 });
