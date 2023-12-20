@@ -4,6 +4,7 @@ const constants = require('../../../constants');
 const { isBucketAuthorized, isObjAuthorized, validatePolicyResource }
     = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 const { DummyRequestLogger, makeAuthInfo } = require('../helpers');
+const DummyRequest = require('../DummyRequest');
 
 const accessKey = 'accessKey1';
 const altAccessKey = 'accessKey2';
