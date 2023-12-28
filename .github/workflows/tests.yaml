@@ -394,7 +394,7 @@ jobs:
       if: always()
   
   ceph-backend-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04:20231211.1.0
     needs: build
     env:
       S3BACKEND: mem
