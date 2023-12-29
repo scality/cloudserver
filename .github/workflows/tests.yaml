@@ -8,6 +8,18 @@ on:
     branches-ignore:
       - 'development/**'
       - 'q/*/**'
+  workflow_call:
+    inputs:
+      connection-timeout-m:
+        type: number
+        required: false
+        description: Timeout for ssh connection to worker (minutes)
+        default: 30
+      debug:
+        description: Debug (enable the ability to SSH to runners)
+        type: boolean
+        required: false
+        default: true
 
 env:
   # Secrets
