@@ -375,7 +375,7 @@ jobs:
       if: always()
   
   ceph-backend-test:
-    runs-on: ubuntu-22.04:20231211.1.0
+    runs-on: ubuntu-latest
     needs: build
     env:
       S3BACKEND: mem
@@ -387,6 +387,16 @@ jobs:
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
+    - name: "Debug: SSH to runner"
+      uses: scality/actions/action-ssh-to-runner@1.6.0
+      timeout-minutes: ${{ fromJSON(github.event.inputs.connection-timeout-m) }}
+      continue-on-error: true
+      with:
+        tmate-server-host: ${{ secrets.TMATE_SERVER_HOST }}
+        tmate-server-port: ${{ secrets.TMATE_SERVER_PORT }}
+        tmate-server-rsa-fingerprint: ${{ secrets.TMATE_SERVER_RSA_FINGERPRINT }}
+        tmate-server-ed25519-fingerprint: ${{ secrets.TMATE_SERVER_ED25519_FINGERPRINT }}
+      if: ${{ ( github.event.inputs.debug == true || github.event.inputs.debug == 'true' ) }}
     - name: Checkout
       uses: actions/checkout@v3
     - name: Login to GitHub Registry
