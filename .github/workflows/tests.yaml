@@ -429,7 +429,7 @@ jobs:
     - name: Run Ruby tests
       run: |-
         set -ex -o pipefail;
-        rspec tests.rb | tee /tmp/artifacts/${{ github.job }}/ruby-tests.log
+        rspec -fd --backtrace tests.rb | tee /tmp/artifacts/${{ github.job }}/ruby-tests.log
       working-directory: tests/functional/fog
     - name: Run Javascript AWS SDK tests
       run: |-
