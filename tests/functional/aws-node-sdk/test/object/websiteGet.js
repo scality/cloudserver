@@ -581,7 +581,7 @@ describe('User visits bucket website endpoint', () => {
                                 Effect: 'Allow',
                                 Principal: '*',
                                 Action: ['s3:GetObject'],
-                                Resource: [`arn:aws:s3:::${bucket}/*`],
+                                Resource: [`arn:aws:s3:::${bucket}/index.html`],
                             }],
                         }
                     ) }, err => {
