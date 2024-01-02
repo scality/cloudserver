@@ -565,5 +565,52 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
         });
+
+        describe('with bucket policy', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    assert.strictEqual(err,
+                        null, `Found unexpected err ${err}`);
+                    s3.putBucketPolicy({ Bucket: bucket, Policy: JSON.stringify(
+                        {
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Sid: 'PublicReadGetObject',
+                                Effect: 'Allow',
+                                Principal: '*',
+                                Action: ['s3:GetObject'],
+                                Resource: [`arn:aws:s3:::${bucket}/index.html`],
+                            }],
+                        }
+                    ) }, err => {
+                        assert.strictEqual(err,
+                            null, `Found unexpected err ${err}`);
+                        s3.putObject({ Bucket: bucket, Key: 'index.html',
+                            Body: fs.readFileSync(path.join(__dirname,
+                                '/websiteFiles/index.html')),
+                            ContentType: 'text/html' },
+                            err => {
+                                assert.strictEqual(err, null);
+                                done();
+                            });
+                    });
+                });
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
+                err => done(err));
+            });
+
+            it('should serve indexDocument if no key requested', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: endpoint,
+                    responseType: 'index-user',
+                }, done);
+            });
+        });
     });
 });
