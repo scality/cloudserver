@@ -686,5 +686,46 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
         });
+
+        describe('with routing rule on index', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    KeyPrefixEquals: 'index.html',
+                };
+                const redirect = {
+                    ReplaceKeyWith: 'whatever.html',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    assert.strictEqual(err,
+                        null, `Found unexpected err ${err}`);
+                    s3.putObject({ Bucket: bucket, Key: 'index.html',
+                        ACL: 'public-read',
+                        Body: fs.readFileSync(path.join(__dirname,
+                            '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                    },
+                        err => {
+                            assert.strictEqual(err, null);
+                            done();
+                        });
+                });
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
+                err => done(err));
+            });
+
+            it('should not redirect if index key is not explicit', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: endpoint,
+                    responseType: 'index-user',
+                }, done);
+            });
+        });
     });
 });
