@@ -1,7 +1,11 @@
 const assert = require('assert');
+const async = require('async');
+
 const { errors } = require('arsenal');
+const AuthInfo = require('arsenal').auth.AuthInfo;
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const constants = require('../../../constants');
 const { cleanup,
     DummyRequestLogger,
@@ -475,6 +479,110 @@ describe('putObjectACL API', () => {
                         done();
                     });
                 });
+        });
+    });
+
+    describe('with bucket policy', () => {
+        function getPolicyRequest(policy) {
+            return {
+                bucketName,
+                headers: {
+                    host: `${bucketName}.s3.amazonaws.com`,
+                },
+                post: JSON.stringify(policy),
+                actionImplicitDenies: false,
+            };
+        }
+        /** Additional fields are required on existing request mocks */
+        const requestFix = {
+            connection: { encrypted: false },
+            destroy: () => {},
+        };
+
+        beforeEach(done => {
+            async.waterfall([
+                (next) => bucketPut(authInfo, testPutBucketRequest, log, next),
+                (cors, next) => objectPut(authInfo,
+                    testPutObjectRequest, undefined, log, next),
+            ], (err) => {
+                assert.ifError(err);
+                done();
+            });
+        });
+
+        it('should succeed with a deny on unrelated object as non root',
+        done => {
+            const bucketPutPolicyRequest = getPolicyRequest({
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Deny',
+                        Principal: '*',
+                        Action: ['s3:PutObjectAcl'],
+                        Resource: `arn:aws:s3:::${bucketName}/unrelated_obj`,
+                    },
+                ],
+            });
+            const testObjACLRequest = Object.assign({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-acl': 'public-read-write' },
+                url: `/${bucketName}/${objectName}?acl`,
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            }, requestFix);
+            /** root user doesn't check bucket policy */
+            const authNotRoot = makeAuthInfo(canonicalID, 'not-root');
+            async.waterfall([
+                (next) => bucketPutPolicy(authInfo,
+                    bucketPutPolicyRequest, log, next),
+                (cors, next) => objectPutACL(authNotRoot,
+                    testObjACLRequest, log, next),
+                (headers, next) => metadata.getObjectMD(bucketName,
+                    objectName, {}, log, next),
+            ], (err, md) => {
+                assert.ifError(err);
+                assert.strictEqual(md.acl.Canned, 'public-read-write');
+                done();
+            });
+        });
+
+        it('should fail with an allow on unrelated object as public',
+        done => {
+            const bucketPutPolicyRequest = getPolicyRequest({
+                Version: '2012-10-17',
+                Statement: [
+                    {
+                        Effect: 'Allow',
+                        Principal: '*',
+                        Action: ['s3:PutObjectAcl'],
+                        Resource: `arn:aws:s3:::${bucketName}/unrelated_obj`,
+                    },
+                ],
+            });
+            const testObjACLRequest = Object.assign({
+                bucketName,
+                namespace,
+                objectKey: objectName,
+                headers: { 'x-amz-acl': 'public-read-write' },
+                url: `/${bucketName}/${objectName}?acl`,
+                query: { acl: '' },
+                actionImplicitDenies: false,
+            }, requestFix);
+            const publicAuth = new AuthInfo({
+                canonicalID: constants.publicId,
+            });
+            async.waterfall([
+                (next) => bucketPutPolicy(authInfo,
+                    bucketPutPolicyRequest, log, next),
+                (cors, next) => objectPutACL(publicAuth,
+                    testObjACLRequest, log, next),
+            ], (err) => {
+                assert(err instanceof Error);
+                assert.strictEqual(err.code, errors.AccessDenied.code);
+                done();
+            });
         });
     });
 });

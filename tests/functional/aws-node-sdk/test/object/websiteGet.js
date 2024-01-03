@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const fs = require('fs');
 const path = require('path');
 
@@ -568,40 +569,65 @@ describe('User visits bucket website endpoint', () => {
 
         describe('with bucket policy', () => {
             beforeEach(done => {
-                const webConfig = new WebsiteConfigTester('index.html');
-                s3.putBucketWebsite({ Bucket: bucket,
-                    WebsiteConfiguration: webConfig }, err => {
-                    assert.strictEqual(err,
-                        null, `Found unexpected err ${err}`);
-                    s3.putBucketPolicy({ Bucket: bucket, Policy: JSON.stringify(
-                        {
+                const webConfig = new WebsiteConfigTester('index.html',
+                'error.html');
+
+                async.waterfall([
+                    (next) => s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, next),
+                    (data, next) => s3.putBucketPolicy({ Bucket: bucket,
+                        Policy: JSON.stringify({
                             Version: '2012-10-17',
                             Statement: [{
                                 Sid: 'PublicReadGetObject',
                                 Effect: 'Allow',
                                 Principal: '*',
                                 Action: ['s3:GetObject'],
-                                Resource: [`arn:aws:s3:::${bucket}/index.html`],
+                                Resource: [
+                                    `arn:aws:s3:::${bucket}/index.html`,
+                                    `arn:aws:s3:::${bucket}/error.html`,
+                                ],
+                            },
+                            {
+                                Sid: 'DenyUnrelatedObj',
+                                Effect: 'Deny',
+                                Principal: '*',
+                                Action: ['s3:GetObject'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucket}/unrelated_obj.html`,
+                                ],
                             }],
-                        }
-                    ) }, err => {
-                        assert.strictEqual(err,
-                            null, `Found unexpected err ${err}`);
-                        s3.putObject({ Bucket: bucket, Key: 'index.html',
-                            Body: fs.readFileSync(path.join(__dirname,
-                                '/websiteFiles/index.html')),
-                            ContentType: 'text/html' },
-                            err => {
-                                assert.strictEqual(err, null);
-                                done();
-                            });
-                    });
+                        }),
+                    }, next),
+                    (data, next) => s3.putObject({
+                        Bucket: bucket, Key: 'index.html',
+                        Body: fs.readFileSync(path.join(__dirname,
+                        '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                    }, next),
+                    (data, next) => s3.putObject({
+                        Bucket: bucket, Key: 'error.html',
+                        Body: fs.readFileSync(path.join(__dirname,
+                        '/websiteFiles/error.html')),
+                        ContentType: 'text/html',
+                    }, next),
+
+                ], (err) => {
+                    assert.ifError(err);
+                    done();
                 });
             });
 
             afterEach(done => {
-                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
-                err => done(err));
+                async.waterfall([
+                    (next) => s3.deleteObject({ Bucket: bucket,
+                        Key: 'index.html' }, next),
+                    (data, next) => s3.deleteObject({ Bucket: bucket,
+                            Key: 'error.html' }, next),
+                ], (err) => {
+                    assert.ifError(err);
+                    done();
+                });
             });
 
             it('should serve indexDocument if no key requested', done => {
@@ -609,6 +635,15 @@ describe('User visits bucket website endpoint', () => {
                     method: 'GET',
                     url: endpoint,
                     responseType: 'index-user',
+                }, done);
+            });
+
+            it('should serve custom error with deny on unrelated object',
+            done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: `${endpoint}/non_existing.html`,
+                    responseType: 'error-user',
                 }, done);
             });
         });
