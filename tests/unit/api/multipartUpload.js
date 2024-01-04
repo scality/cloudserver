@@ -2262,7 +2262,7 @@ describe('complete mpu with bucket policy', () => {
         const authNotRoot = makeAuthInfo(canonicalID, 'not-root');
 
         async.waterfall([
-            (next) => bucketPutPolicy(authInfo,
+            next => bucketPutPolicy(authInfo,
                 bucketPutPolicyRequest, log, next),
             (corsHeaders, next) => initiateMultipartUpload(authNotRoot,
                 initiateReqFixed, log, next),
@@ -2283,7 +2283,7 @@ describe('complete mpu with bucket policy', () => {
                     calculatedHash,
                 }, requestFix), partBody);
                 objectPutPart(authNotRoot, partRequest,
-                    undefined, log, (err) => next(err, testUploadId));
+                    undefined, log, err => next(err, testUploadId));
             },
             (testUploadId, next) => {
                 const completeRequest = new DummyRequest(Object.assign({
@@ -2301,7 +2301,7 @@ describe('complete mpu with bucket policy', () => {
                     log, next);
             },
         ],
-        (err) => {
+        err => {
             assert.ifError(err);
             done();
         });

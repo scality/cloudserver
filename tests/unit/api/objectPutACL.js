@@ -501,10 +501,10 @@ describe('putObjectACL API', () => {
 
         beforeEach(done => {
             async.waterfall([
-                (next) => bucketPut(authInfo, testPutBucketRequest, log, next),
+                next => bucketPut(authInfo, testPutBucketRequest, log, next),
                 (cors, next) => objectPut(authInfo,
                     testPutObjectRequest, undefined, log, next),
-            ], (err) => {
+            ], err => {
                 assert.ifError(err);
                 done();
             });
@@ -535,7 +535,7 @@ describe('putObjectACL API', () => {
             /** root user doesn't check bucket policy */
             const authNotRoot = makeAuthInfo(canonicalID, 'not-root');
             async.waterfall([
-                (next) => bucketPutPolicy(authInfo,
+                next => bucketPutPolicy(authInfo,
                     bucketPutPolicyRequest, log, next),
                 (cors, next) => objectPutACL(authNotRoot,
                     testObjACLRequest, log, next),
@@ -574,11 +574,11 @@ describe('putObjectACL API', () => {
                 canonicalID: constants.publicId,
             });
             async.waterfall([
-                (next) => bucketPutPolicy(authInfo,
+                next => bucketPutPolicy(authInfo,
                     bucketPutPolicyRequest, log, next),
                 (cors, next) => objectPutACL(publicAuth,
                     testObjACLRequest, log, next),
-            ], (err) => {
+            ], err => {
                 assert(err instanceof Error);
                 assert.strictEqual(err.code, errors.AccessDenied.code);
                 done();

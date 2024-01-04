@@ -573,7 +573,7 @@ describe('User visits bucket website endpoint', () => {
                 'error.html');
 
                 async.waterfall([
-                    (next) => s3.putBucketWebsite({ Bucket: bucket,
+                    next => s3.putBucketWebsite({ Bucket: bucket,
                         WebsiteConfiguration: webConfig }, next),
                     (data, next) => s3.putBucketPolicy({ Bucket: bucket,
                         Policy: JSON.stringify({
@@ -612,7 +612,7 @@ describe('User visits bucket website endpoint', () => {
                         ContentType: 'text/html',
                     }, next),
 
-                ], (err) => {
+                ], err => {
                     assert.ifError(err);
                     done();
                 });
@@ -620,11 +620,11 @@ describe('User visits bucket website endpoint', () => {
 
             afterEach(done => {
                 async.waterfall([
-                    (next) => s3.deleteObject({ Bucket: bucket,
+                    next => s3.deleteObject({ Bucket: bucket,
                         Key: 'index.html' }, next),
                     (data, next) => s3.deleteObject({ Bucket: bucket,
                             Key: 'error.html' }, next),
-                ], (err) => {
+                ], err => {
                     assert.ifError(err);
                     done();
                 });
