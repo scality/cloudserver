@@ -566,6 +566,45 @@ describe('User visits bucket website endpoint', () => {
             });
         });
 
+        describe('object redirect to /', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    assert.strictEqual(err,
+                        null, `Found unexpected err ${err}`);
+                    s3.putObject({ Bucket: bucket, Key: 'index.html',
+                        ACL: 'public-read',
+                        Body: fs.readFileSync(path.join(__dirname,
+                            '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                        Metadata: {
+                            test: 'value',
+                        },
+                        WebsiteRedirectLocation: '/',
+                    },
+                        err => {
+                            assert.strictEqual(err, null);
+                            done();
+                        });
+                });
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
+                err => done(err));
+            });
+
+            it('should redirect to /', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: `${endpoint}/index.html`,
+                    responseType: 'redirect',
+                    redirectUrl: '/',
+                }, done);
+            });
+        });
+
         describe('with bucket policy', () => {
             beforeEach(done => {
                 const webConfig = new WebsiteConfigTester('index.html');
