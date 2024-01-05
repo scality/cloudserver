@@ -7,6 +7,7 @@ const moment = require('moment');
 const { parseString } = require('xml2js');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const bucketPutPolicy = require('../../../lib/api/bucketPutPolicy');
 const bucketPutVersioning = require('../../../lib/api/bucketPutVersioning');
 const objectPut = require('../../../lib/api/objectPut');
 const completeMultipartUpload
@@ -2209,6 +2210,100 @@ describe('multipart upload with object lock', () => {
             assert.deepStrictEqual(json.LegalHold, expectedLegalHold);
             changeObjectLock(
                 [{ bucket: lockedBucket, key: objectKey, versionId }], '', done);
+        });
+    });
+});
+
+describe('complete mpu with bucket policy', () => {
+    function getPolicyRequest(policy) {
+        return {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            post: JSON.stringify(policy),
+            actionImplicitDenies: false,
+        };
+    }
+    /** Additional fields are required on existing request mocks */
+    const requestFix = {
+        connection: { encrypted: false },
+        destroy: () => {},
+    };
+    const initiateReqFixed = Object.assign({}, initiateRequest, requestFix);
+    const partBody = Buffer.from('I am a part\n', 'utf8');
+    const md5Hash = crypto.createHash('md5').update(partBody);
+    const calculatedHash = md5Hash.digest('hex');
+    const completeBody = '<CompleteMultipartUpload>' +
+    '<Part>' +
+    '<PartNumber>1</PartNumber>' +
+    `<ETag>"${calculatedHash}"</ETag>` +
+    '</Part>' +
+    '</CompleteMultipartUpload>';
+
+    beforeEach(done => {
+        cleanup();
+        bucketPut(authInfo, bucketPutRequest, log, done);
+    });
+
+    it('should complete with a deny on unrelated object as non root', done => {
+        const bucketPutPolicyRequest = getPolicyRequest({
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Effect: 'Deny',
+                    Principal: '*',
+                    Action: ['s3:PutObject'],
+                    Resource: `arn:aws:s3:::${bucketName}/unrelated_obj`,
+                },
+            ],
+        });
+        /** root user doesn't check bucket policy */
+        const authNotRoot = makeAuthInfo(canonicalID, 'not-root');
+
+        async.waterfall([
+            next => bucketPutPolicy(authInfo,
+                bucketPutPolicyRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authNotRoot,
+                initiateReqFixed, log, next),
+            (result, corsHeaders, next) => parseString(result, next),
+            (json, next) => {
+                const testUploadId =
+                json.InitiateMultipartUploadResult.UploadId[0];
+                const partRequest = new DummyRequest(Object.assign({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                    query: {
+                        partNumber: '1',
+                        uploadId: testUploadId,
+                    },
+                    calculatedHash,
+                }, requestFix), partBody);
+                objectPutPart(authNotRoot, partRequest,
+                    undefined, log, err => next(err, testUploadId));
+            },
+            (testUploadId, next) => {
+                const completeRequest = new DummyRequest(Object.assign({
+                    bucketName,
+                    namespace,
+                    objectKey,
+                    parsedHost: 's3.amazonaws.com',
+                    url: `/${objectKey}?uploadId=${testUploadId}`,
+                    headers: { host: `${bucketName}.s3.amazonaws.com` },
+                    query: { uploadId: testUploadId },
+                    post: completeBody,
+                    actionImplicitDenies: false,
+                }, requestFix));
+                completeMultipartUpload(authNotRoot, completeRequest,
+                    log, next);
+            },
+        ],
+        err => {
+            assert.ifError(err);
+            done();
         });
     });
 });
