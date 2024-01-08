@@ -177,8 +177,7 @@ describe('object acl authorization for objectGet and objectHead', () => {
 });
 
 describe('object authorization for objectPut and objectDelete', () => {
-    it('should allow access to anyone since checks ' +
-        'are done at bucket level', () => {
+    it('should allow access when no implicitDeny information is provided', () => {
         const requestTypes = ['objectPut', 'objectDelete'];
         const results = requestTypes.map(type =>
             isObjAuthorized(bucket, object, type, accountToVet, altAcctAuthInfo, log));
