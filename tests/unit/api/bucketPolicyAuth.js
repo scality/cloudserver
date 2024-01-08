@@ -45,6 +45,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { CanonicalUser: [altAcctCanonicalId] },
         objectValue: { CanonicalUser: [altAcctCanonicalId] },
+        impDenies: {},
         expected: true,
     },
     {
@@ -56,6 +57,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: user1AuthInfo.getArn() },
         objectValue: { AWS: user1AuthInfo.getArn() },
+        impDenies: {},
         expected: true,
     },
     {
@@ -67,6 +69,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: authInfo.getArn() },
         objectValue: { AWS: authInfo.getArn() },
+        impDenies: {},
         expected: true,
     },
     {
@@ -78,6 +81,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: accountId },
         objectValue: { AWS: accountId },
+        impDenies: {},
         expected: true,
     },
     {
@@ -90,6 +94,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: accountId },
         objectValue: { AWS: accountId },
+        impDenies: {},
         expected: true,
     },
     {
@@ -102,6 +107,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: altAcctId },
         objectValue: { AWS: altAcctId },
+        impDenies: {},
         expected: true,
     },
     {
@@ -114,6 +120,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: authInfo.getArn() },
         objectValue: { AWS: authInfo.getArn() },
+        impDenies: {},
         expected: true,
     },
     {
@@ -126,6 +133,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: altAcctUserAuthInfo.getArn() },
         objectValue: { AWS: altAcctUserAuthInfo.getArn() },
+        impDenies: {},
         expected: true,
     },
     {
@@ -138,6 +146,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: authInfo.getArn() },
         objectValue: { AWS: authInfo.getArn() },
+        impDenies: {},
         expected: false,
     },
     {
@@ -150,6 +159,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { AWS: user2AuthInfo.getArn() },
         objectValue: { AWS: user2AuthInfo.getArn() },
+        impDenies: {},
         expected: false,
     },
     {
@@ -161,6 +171,7 @@ const authTests = [
         keyToChange: 'Principal',
         bucketValue: { CanonicalUser: [bucketOwnerCanonicalId] },
         objectValue: { CanonicalUser: [objectOwnerCanonicalId] },
+        impDenies: {},
         expected: false,
     },
     {
@@ -173,6 +184,7 @@ const authTests = [
         keyToChange: 'Action',
         bucketValue: ['s3:ListBucket'],
         objectValue: ['s3:PutObject'],
+        impDenies: {},
         expected: true,
     },
     {
@@ -185,6 +197,7 @@ const authTests = [
         keyToChange: 'Action',
         bucketValue: ['s3:GetBucketLocation'],
         objectValue: ['s3:GetObject'],
+        impDenies: {},
         expected: false,
     },
     {
@@ -196,6 +209,7 @@ const authTests = [
         keyToChange: 'Effect',
         bucketValue: 'Deny',
         objectValue: 'Deny',
+        impDenies: {},
         expected: true,
     },
     {
@@ -207,6 +221,7 @@ const authTests = [
         keyToChange: 'Effect',
         bucketValue: 'Deny',
         objectValue: 'Deny',
+        impDenies: {},
         expected: false,
     },
 ];
@@ -371,7 +386,7 @@ describe('bucket policy authorization', () => {
                 newPolicy.Statement[0][t.keyToChange] = t.objectValue;
                 bucket.setBucketPolicy(newPolicy);
                 const allowed = isObjAuthorized(bucket, object, objAction,
-                    t.objectId, t.objectAuthInfo, log);
+                    t.objectId, t.objectAuthInfo, log, null, t.impDenies);
                 assert.equal(allowed, t.expected);
                 done();
             });
@@ -419,6 +434,48 @@ describe('bucket policy authorization', () => {
                 altAcctCanonicalId, null, log);
             assert.equal(allowed, false);
             done();
+        });
+
+        it('should allow access when implicitDeny true with Allow bucket policy', function itFn() {
+            const requestTypes = ['objectPut', 'objectDelete'];
+            const impDenies = {
+                objectPut: true,
+                objectDelete: true,
+            };
+            const newPolicy = this.test.basePolicy;
+            newPolicy.Statement[0].Action = ['s3:PutObject', 's3:DeleteObject'];
+            bucket.setBucketPolicy(newPolicy);
+
+            const results = requestTypes.map(type => {
+                const allowed = isObjAuthorized(bucket, object, type,
+                altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
+                return allowed;
+            });
+            assert.deepStrictEqual(results, [true, true]);
+        });
+
+        it('should deny access when implicitDeny true with Deny bucket policy', function itFn() {
+            const requestTypes = ['objectPut', 'objectDelete'];
+            const impDenies = {
+                objectPut: true,
+                objectDelete: true,
+            };
+            const newPolicy = this.test.basePolicy;
+            newPolicy.Statement[1] = {
+                Effect: 'Deny',
+                Principal: { CanonicalUser: [altAcctCanonicalId] },
+                Resource: `arn:aws:s3:::${bucket.getName()}/*`,
+                Action: 's3:*',
+            };
+            newPolicy.Statement[0].Action = ['s3:PutObject', 's3:DeleteObject'];
+            bucket.setBucketPolicy(newPolicy);
+
+            const results = requestTypes.map(type => {
+                const allowed = isObjAuthorized(bucket, object, type,
+                altAcctCanonicalId, altAcctAuthInfo, log, null, impDenies);
+                return allowed;
+            });
+            assert.deepStrictEqual(results, [false, false]);
         });
     });
 
