@@ -196,6 +196,8 @@ const constants = {
         'UNSIGNED-PAYLOAD',
         'STREAMING-AWS4-HMAC-SHA256-PAYLOAD',
     ]),
+    ipv4Regex: /^(\d{1,3}\.){3}\d{1,3}(\/(3[0-2]|[12]?\d))?$/,
+    ipv6Regex: /^([\da-f]{1,4}:){7}[\da-f]{1,4}$/i,
 };
 
 module.exports = constants;
