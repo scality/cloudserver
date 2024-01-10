@@ -625,6 +625,7 @@ describe('User visits bucket website endpoint', () => {
                                 Resource: [
                                     `arn:aws:s3:::${bucket}/index.html`,
                                     `arn:aws:s3:::${bucket}/error.html`,
+                                    `arn:aws:s3:::${bucket}/access.html`,
                                 ],
                             },
                             {
@@ -677,12 +678,21 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
 
-            it('should serve custom error with deny on unrelated object',
-            done => {
+            it('should serve custom error 403 with deny on unrelated object ' +
+            'and no access to key', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/non_existing.html`,
                     responseType: 'error-user',
+                }, done);
+            });
+
+            it('should serve custom error 404 with deny on unrelated object ' +
+            'and access to key', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: `${endpoint}/access.html`,
+                    responseType: 'error-user-404',
                 }, done);
             });
         });
