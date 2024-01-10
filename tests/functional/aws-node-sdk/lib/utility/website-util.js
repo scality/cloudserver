@@ -201,7 +201,8 @@ function _assertResponseHtmlIndexUser(response) {
         'extraordinary bucket website testing page');
 }
 
-function _assertResponseHtmlRedirect(response, type, redirectUrl, method) {
+function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
+    expectedHeaders) {
     if (type === 'redirect' || type === 'redirect-user') {
         assert.strictEqual(response.statusCode, 301);
         assert.strictEqual(response.body, '');
@@ -216,6 +217,28 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method) {
         'Best redirect link ever');
         _assertResponseHtml(response.body, 'h1',
         'Welcome to your redirection file');
+    } else if (type.startsWith('redirect-error')) {
+        assert.strictEqual(response.statusCode,
+            type === 'redirect-error-found' ? 302 : 301);
+        assert.strictEqual(response.headers.location, redirectUrl);
+        for (const [key, val] of Object.entries(expectedHeaders || {})) {
+            assert.strictEqual(response.headers[key], val);
+        }
+
+        if (type === 'redirect-error-found') {
+            assert.strictEqual(response.headers['x-amz-error-code'], 'Found');
+            assert.strictEqual(response.headers['x-amz-error-message'],
+            'Resource Found');
+            _assertContainsHtml(response.body);
+            _assertResponseHtml(response.body, 'title', '302 Moved Temporarily');
+            _assertResponseHtml(response.body, 'h1', '302 Moved Temporarily');
+            _assertResponseHtml(response.body, 'ul', [
+                'Code: Found',
+                'Message: Resource Found',
+            ]);
+        } else {
+            _assertResponseHtmlErrorUser(response, type);
+        }
     } else {
         throw new Error(`'${type}' is not a recognized redirect type ` +
         'checked in the WebsiteConfigTester.checkHTML function');
@@ -264,11 +287,14 @@ class WebsiteConfigTester {
     *   crendentials: 'valid credentials' or 'invalid credentials'
     * @param {string} [params.url] - request url
     * @param {string} [params.redirectUrl] - redirect
+    * @param {object} [params.expectedHeaders] - expected headers in response
+    * with expected values (e.g., {x-amz-error-code: AccessDenied})
     * @param {function} callback - callback
     * @return {undefined}
     */
     static checkHTML(params, callback) {
-        const { method, responseType, auth, url, redirectUrl } = params;
+        const { method, responseType, auth, url, redirectUrl, expectedHeaders }
+            = params;
         _makeWebsiteRequest(auth, method, url, (err, res) => {
             assert.strictEqual(err, null, `Unexpected request err ${err}`);
             if (responseType) {
@@ -280,7 +306,7 @@ class WebsiteConfigTester {
                     _assertResponseHtmlErrorUser(res, responseType);
                 } else if (responseType.startsWith('redirect')) {
                     _assertResponseHtmlRedirect(res, responseType, redirectUrl,
-                        method);
+                        method, expectedHeaders);
                     if (responseType === 'redirect-user') {
                         process.stdout.write('Following redirect location\n');
                         return this.checkHTML({ method,
