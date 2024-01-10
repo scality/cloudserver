@@ -221,9 +221,9 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
         assert.strictEqual(response.statusCode,
             type === 'redirect-error-found' ? 302 : 301);
         assert.strictEqual(response.headers.location, redirectUrl);
-        for (const [key, val] of Object.entries(expectedHeaders || {})) {
+        Object.entries(expectedHeaders || {}).forEach(([key, val]) => {
             assert.strictEqual(response.headers[key], val);
-        }
+        });
 
         if (type === 'redirect-error-found') {
             assert.strictEqual(response.headers['x-amz-error-code'], 'Found');
