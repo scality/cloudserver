@@ -301,6 +301,30 @@ describe('User visits bucket website endpoint', () => {
                     responseType: 'error-user',
                 }, done);
             });
+
+            it('should serve custom error document with redirect',
+            done => {
+                s3.putObject({ Bucket: bucket,
+                    Key: 'error.html',
+                    ACL: 'public-read',
+                    Body: fs.readFileSync(path.join(__dirname,
+                        '/websiteFiles/error.html')),
+                    ContentType: 'text/html',
+                    WebsiteRedirectLocation: 'https://scality.com/test',
+                }, err => {
+                    assert.ifError(err);
+                    WebsiteConfigTester.checkHTML({
+                        method: 'GET',
+                        url: endpoint,
+                        responseType: 'redirect-error',
+                        redirectUrl: 'https://scality.com/test',
+                        expectedHeaders: {
+                            'x-amz-error-code': 'AccessDenied',
+                            'x-amz-error-message': 'Access Denied',
+                        },
+                    }, done);
+                });
+            });
         });
 
         describe('unfound custom error document', () => {
