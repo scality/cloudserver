@@ -230,8 +230,8 @@ function _assertResponseHtmlRedirect(response, type, redirectUrl, method,
             assert.strictEqual(response.headers['x-amz-error-message'],
             'Resource Found');
             _assertContainsHtml(response.body);
-            _assertResponseHtml(response.body, 'title', '302 Moved Temporarily');
-            _assertResponseHtml(response.body, 'h1', '302 Moved Temporarily');
+            _assertResponseHtml(response.body, 'title', '302 Found');
+            _assertResponseHtml(response.body, 'h1', '302 Found');
             _assertResponseHtml(response.body, 'ul', [
                 'Code: Found',
                 'Message: Resource Found',
