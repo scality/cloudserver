@@ -649,6 +649,7 @@ describe('User visits bucket website endpoint', () => {
                                 Resource: [
                                     `arn:aws:s3:::${bucket}/index.html`,
                                     `arn:aws:s3:::${bucket}/error.html`,
+                                    `arn:aws:s3:::${bucket}/access.html`,
                                 ],
                             },
                             {
@@ -701,12 +702,62 @@ describe('User visits bucket website endpoint', () => {
                 }, done);
             });
 
-            it('should serve custom error with deny on unrelated object',
-            done => {
+            it('should serve custom error 403 with deny on unrelated object ' +
+            'and no access to key', done => {
                 WebsiteConfigTester.checkHTML({
                     method: 'GET',
                     url: `${endpoint}/non_existing.html`,
                     responseType: 'error-user',
+                }, done);
+            });
+
+            it('should serve custom error 404 with deny on unrelated object ' +
+            'and access to key', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: `${endpoint}/access.html`,
+                    responseType: 'error-user-404',
+                }, done);
+            });
+        });
+
+        describe('with routing rule on index', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    KeyPrefixEquals: 'index.html',
+                };
+                const redirect = {
+                    ReplaceKeyWith: 'whatever.html',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    assert.strictEqual(err,
+                        null, `Found unexpected err ${err}`);
+                    s3.putObject({ Bucket: bucket, Key: 'index.html',
+                        ACL: 'public-read',
+                        Body: fs.readFileSync(path.join(__dirname,
+                            '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                    },
+                        err => {
+                            assert.strictEqual(err, null);
+                            done();
+                        });
+                });
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
+                err => done(err));
+            });
+
+            it('should not redirect if index key is not explicit', done => {
+                WebsiteConfigTester.checkHTML({
+                    method: 'GET',
+                    url: endpoint,
+                    responseType: 'index-user',
                 }, done);
             });
         });

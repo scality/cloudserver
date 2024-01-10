@@ -620,7 +620,10 @@ describe('Head request on bucket website endpoint', () => {
                                 Effect: 'Allow',
                                 Principal: '*',
                                 Action: ['s3:GetObject'],
-                                Resource: [`arn:aws:s3:::${bucket}/index.html`],
+                                Resource: [
+                                    `arn:aws:s3:::${bucket}/index.html`,
+                                    `arn:aws:s3:::${bucket}/access.html`,
+                                ],
                             }],
                         }
                     ) }, err => {
@@ -648,6 +651,67 @@ describe('Head request on bucket website endpoint', () => {
 
             it('should return indexDocument headers if no key ' +
                 'requested', done => {
+                WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
+                    200, indexExpectedHeaders, done);
+            });
+
+            it('should serve error 403 with no access to key', done => {
+                const expectedHeaders = {
+                    'x-amz-error-code': 'AccessDenied',
+                    'x-amz-error-message': 'Access Denied',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/non_existing.html`, 403, expectedHeaders,
+                    done);
+            });
+
+            it('should serve error 404 with access to key', done => {
+                const expectedHeaders = {
+                    'x-amz-error-code': 'NoSuchKey',
+                    'x-amz-error-message': 'The specified key does not exist.',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/access.html`, 404, expectedHeaders,
+                    done);
+            });
+        });
+
+        describe('with routing rule on index', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const condition = {
+                    KeyPrefixEquals: 'index.html',
+                };
+                const redirect = {
+                    ReplaceKeyWith: 'whatever.html',
+                };
+                webConfig.addRoutingRule(redirect, condition);
+                s3.putBucketWebsite({ Bucket: bucket,
+                    WebsiteConfiguration: webConfig }, err => {
+                    assert.strictEqual(err,
+                        null, `Found unexpected err ${err}`);
+                    s3.putObject({ Bucket: bucket, Key: 'index.html',
+                        ACL: 'public-read',
+                        Body: fs.readFileSync(path.join(__dirname,
+                            '/websiteFiles/index.html')),
+                        ContentType: 'text/html',
+                        Metadata: {
+                            test: 'value',
+                        },
+                    },
+                        err => {
+                            assert.strictEqual(err, null);
+                            done();
+                        });
+                });
+            });
+
+            afterEach(done => {
+                s3.deleteObject({ Bucket: bucket, Key: 'index.html' },
+                err => done(err));
+            });
+
+            it('should not redirect if index key is not explicit', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
                     200, indexExpectedHeaders, done);
             });
