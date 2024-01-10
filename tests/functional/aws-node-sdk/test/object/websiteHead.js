@@ -620,7 +620,10 @@ describe('Head request on bucket website endpoint', () => {
                                 Effect: 'Allow',
                                 Principal: '*',
                                 Action: ['s3:GetObject'],
-                                Resource: [`arn:aws:s3:::${bucket}/index.html`],
+                                Resource: [
+                                    `arn:aws:s3:::${bucket}/index.html`,
+                                    `arn:aws:s3:::${bucket}/access.html`,
+                                ],
                             }],
                         }
                     ) }, err => {
@@ -650,6 +653,26 @@ describe('Head request on bucket website endpoint', () => {
                 'requested', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
                     200, indexExpectedHeaders, done);
+            });
+
+            it('should serve error 403 with no access to key', done => {
+                const expectedHeaders = {
+                    'x-amz-error-code': 'AccessDenied',
+                    'x-amz-error-message': 'Access Denied',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/non_existing.html`, 403, expectedHeaders,
+                    done);
+            });
+
+            it('should serve error 404 with access to key', done => {
+                const expectedHeaders = {
+                    'x-amz-error-code': 'NoSuchKey',
+                    'x-amz-error-message': 'The specified key does not exist.',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/access.html`, 404, expectedHeaders,
+                    done);
             });
         });
     });
