@@ -1237,7 +1237,6 @@ describeSkipIfAWS('backbeat routes', () => {
                             queryObj,
                             headers: {
                                 'content-length': testData.length,
-                                'content-md5': testDataMd5,
                                 'x-scal-canonical-id': testArn,
                             },
                             authCredentials: backbeatAuthCredentials,
@@ -1294,7 +1293,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     queryObj: { v2: '' },
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1354,7 +1352,6 @@ describeSkipIfAWS('backbeat routes', () => {
             queryObj: { v2: '' },
             headers: {
                 'content-length': testData.length,
-                'content-md5': testDataMd5,
                 'x-scal-canonical-id': testArn,
             },
             authCredentials: backbeatAuthCredentials,
@@ -1387,7 +1384,6 @@ describeSkipIfAWS('backbeat routes', () => {
                queryObj: { v2: '' },
                headers: {
                    'content-length': testData.length,
-                   'content-md5': testDataMd5,
                },
                authCredentials: backbeatAuthCredentials,
                requestBody: testData,
@@ -1396,23 +1392,6 @@ describeSkipIfAWS('backbeat routes', () => {
                assert.strictEqual(err.code, 'BadRequest');
                done();
            }));
-
-        it('should refuse PUT data if no content-md5 header is provided',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: TEST_BUCKET,
-            objectKey: testKey, resourceType: 'data',
-            queryObj: { v2: '' },
-            headers: {
-                'content-length': testData.length,
-                'x-scal-canonical-id': testArn,
-            },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: testData,
-        },
-        err => {
-            assert.strictEqual(err.code, 'BadRequest');
-            done();
-        }));
 
         it('should refuse PUT in metadata-only mode if object does not exist',
         done => {
@@ -1447,7 +1426,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1492,7 +1470,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1548,7 +1525,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1634,7 +1610,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1685,7 +1660,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1716,7 +1690,6 @@ describeSkipIfAWS('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
