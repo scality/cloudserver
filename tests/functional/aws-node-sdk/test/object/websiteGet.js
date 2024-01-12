@@ -852,11 +852,11 @@ describe('User visits bucket website endpoint', () => {
                 ].forEach(test =>
                     it(test.it, done => {
                         WebsiteConfigTester.checkHTML({
-                        method: 'GET',
-                        url: `${endpoint}/${test.key}`,
-                        responseType: '403-access-denied',
-                    }, done);
-                }));
+                            method: 'GET',
+                            url: `${endpoint}/${test.key}`,
+                            responseType: '403-access-denied',
+                        }, done);
+                    }));
             });
         });
     });
