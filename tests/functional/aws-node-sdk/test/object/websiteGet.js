@@ -849,8 +849,9 @@ describe('User visits bucket website endpoint', () => {
                         it: 'on no access with index',
                         key: 'no_access_file',
                     },
-                ].forEach(test => it(test.it, done => {
-                    WebsiteConfigTester.checkHTML({
+                ].forEach(test =>
+                    it(test.it, done => {
+                        WebsiteConfigTester.checkHTML({
                         method: 'GET',
                         url: `${endpoint}/${test.key}`,
                         responseType: '403-access-denied',
