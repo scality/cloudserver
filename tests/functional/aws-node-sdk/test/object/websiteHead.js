@@ -1,4 +1,5 @@
 const assert = require('assert');
+const async = require('async');
 const fs = require('fs');
 const path = require('path');
 
@@ -714,6 +715,109 @@ describe('Head request on bucket website endpoint', () => {
             it('should not redirect if index key is not explicit', done => {
                 WebsiteConfigTester.makeHeadRequest(undefined, endpoint,
                     200, indexExpectedHeaders, done);
+            });
+        });
+
+        describe('without trailing / for recursive index check', () => {
+            beforeEach(done => {
+                const webConfig = new WebsiteConfigTester('index.html');
+                const object = {
+                    Bucket: bucket,
+                    Body: fs.readFileSync(path.join(__dirname,
+                    '/websiteFiles/index.html')),
+                    ContentType: 'text/html',
+                };
+                async.waterfall([
+                    next => s3.putBucketWebsite({ Bucket: bucket,
+                        WebsiteConfiguration: webConfig }, next),
+                    (data, next) => s3.putBucketPolicy({ Bucket: bucket,
+                        Policy: JSON.stringify({
+                            Version: '2012-10-17',
+                            Statement: [{
+                                Sid: 'PublicReadGetObject',
+                                Effect: 'Allow',
+                                Principal: '*',
+                                Action: ['s3:GetObject'],
+                                Resource: [
+                                    `arn:aws:s3:::${bucket}/original_key_file`,
+                                    `arn:aws:s3:::${bucket}/original_key_nofile`,
+                                    `arn:aws:s3:::${bucket}/file/*`,
+                                    `arn:aws:s3:::${bucket}/nofile/*`,
+                                ],
+                            }],
+                        }),
+                    }, next),
+                    (data, next) => s3.putObject(Object.assign({}, object,
+                        { Key: 'original_key_file/index.html' }), next),
+                    (data, next) => s3.putObject(Object.assign({}, object,
+                        { Key: 'file/index.html' }), next), // the redirect 302
+                    (data, next) => s3.putObject(Object.assign({}, object,
+                        { Key: 'no_access_file/index.html' }), next),
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+
+            afterEach(done => {
+                async.waterfall([
+                    next => s3.deleteObject({ Bucket: bucket,
+                        Key: 'original_key_file/index.html' }, next),
+                    (data, next) => s3.deleteObject({ Bucket: bucket,
+                            Key: 'file/index.html' }, next),
+                    (data, next) => s3.deleteObject({ Bucket: bucket,
+                        Key: 'no_access_file/index.html' }, next),
+                ], err => {
+                    assert.ifError(err);
+                    done();
+                });
+            });
+
+            it('should redirect 302 with trailing / on folder with index', done => {
+                const expectedHeaders = {
+                    'location': '/file/',
+                    'x-amz-error-code': 'Found',
+                    'x-amz-error-message': 'Resource Found',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/file`, 302, expectedHeaders, done);
+            });
+
+            it('should return 404 on original key access without index',
+            done => {
+                const expectedHeaders = {
+                    'x-amz-error-code': 'NoSuchKey',
+                    'x-amz-error-message': 'The specified key does not exist.',
+                };
+                WebsiteConfigTester.makeHeadRequest(undefined,
+                    `${endpoint}/original_key_nofile`, 404,
+                    expectedHeaders, done);
+            });
+
+            describe('should return 403', () => {
+                [
+                    {
+                        it: 'on original key access with index no access',
+                        key: 'original_key_file',
+                    },
+                    {
+                        it: 'on folder access without index',
+                        key: 'nofile',
+                    },
+                    {
+                        it: 'on no access with index',
+                        key: 'no_access_file',
+                    },
+                ].forEach(test =>
+                    it(test.it, done => {
+                        const expectedHeaders = {
+                            'x-amz-error-code': 'AccessDenied',
+                            'x-amz-error-message': 'Access Denied',
+                        };
+                        WebsiteConfigTester.makeHeadRequest(undefined,
+                            `${endpoint}/${test.key}`, 403,
+                            expectedHeaders, done);
+                    }));
             });
         });
     });
