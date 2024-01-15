@@ -808,15 +808,16 @@ describe('Head request on bucket website endpoint', () => {
                         it: 'on no access with index',
                         key: 'no_access_file',
                     },
-                ].forEach(test => it(test.it, done => {
-                    const expectedHeaders = {
-                        'x-amz-error-code': 'AccessDenied',
-                        'x-amz-error-message': 'Access Denied',
-                    };
-                    WebsiteConfigTester.makeHeadRequest(undefined,
-                        `${endpoint}/${test.key}`, 403,
-                        expectedHeaders, done);
-                }));
+                ].forEach(test =>
+                    it(test.it, done => {
+                        const expectedHeaders = {
+                            'x-amz-error-code': 'AccessDenied',
+                            'x-amz-error-message': 'Access Denied',
+                        };
+                        WebsiteConfigTester.makeHeadRequest(undefined,
+                            `${endpoint}/${test.key}`, 403,
+                            expectedHeaders, done);
+                    }));
             });
         });
     });

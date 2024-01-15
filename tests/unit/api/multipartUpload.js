@@ -62,6 +62,9 @@ lockEnabledBucketRequest.headers = {
     'x-amz-bucket-object-lock-enabled': 'true',
 };
 const initiateRequest = {
+    socket: {
+        remoteAddress: '1.1.1.1',
+    },
     bucketName,
     namespace,
     objectKey,
@@ -2277,6 +2280,9 @@ describe('multipart upload overheadField', () => {
 describe('complete mpu with bucket policy', () => {
     function getPolicyRequest(policy) {
         return {
+            socket: {
+                remoteAddress: '1.1.1.1',
+            },
             bucketName,
             headers: {
                 host: `${bucketName}.s3.amazonaws.com`,
@@ -2331,6 +2337,9 @@ describe('complete mpu with bucket policy', () => {
                 const testUploadId =
                 json.InitiateMultipartUploadResult.UploadId[0];
                 const partRequest = new DummyRequest(Object.assign({
+                    socket: {
+                        remoteAddress: '1.1.1.1',
+                    },
                     bucketName,
                     namespace,
                     objectKey,
@@ -2347,6 +2356,9 @@ describe('complete mpu with bucket policy', () => {
             },
             (testUploadId, next) => {
                 const completeRequest = new DummyRequest(Object.assign({
+                    socket: {
+                        remoteAddress: '1.1.1.1',
+                    },
                     bucketName,
                     namespace,
                     objectKey,
