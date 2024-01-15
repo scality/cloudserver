@@ -633,6 +633,9 @@ describe('putObjectACL API', () => {
                 ],
             });
             const testObjACLRequest = Object.assign({
+                socket: {
+                    remoteAddress: '1.1.1.1',
+                },
                 bucketName,
                 namespace,
                 objectKey: objectName,
@@ -671,6 +674,9 @@ describe('putObjectACL API', () => {
                 ],
             });
             const testObjACLRequest = Object.assign({
+                socket: {
+                    remoteAddress: '1.1.1.1',
+                },
                 bucketName,
                 namespace,
                 objectKey: objectName,

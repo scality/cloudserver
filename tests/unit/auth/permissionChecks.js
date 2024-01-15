@@ -1,5 +1,9 @@
 const assert = require('assert');
-const { checkBucketAcls, checkObjectAcls } = require('../../../lib/api/apiUtils/authorization/permissionChecks');
+const {
+    checkBucketAcls,
+    checkObjectAcls,
+    validatePolicyConditions,
+} = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 const constants = require('../../../constants');
 
 const { bucketOwnerActions, logId } = constants;
@@ -312,6 +316,158 @@ describe('checkObjectAcls', () => {
                 checkObjectAcls(mockBucket, mockObjectMD, test.reqType, test.id, false, false, 'anyApiCall'),
                 test.expected,
             );
+        });
+    });
+});
+
+describe('validatePolicyConditions', () => {
+    const tests = [
+        {
+            description: 'should return null if conditions are empty',
+            inputPolicy: {},
+            expected: null,
+        },
+        {
+            description: 'Should return null if conditions have a valid IP address',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '192.168.1.1/24' },
+                    },
+                }],
+            },
+            expected: null,
+        },
+        {
+            description: 'Should return "Invalid IP address in Conditions" ' +
+            'if conditions have an invalid IP address',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '123' },
+                    },
+                }],
+            },
+            expected: 'Invalid IP address in Conditions',
+        },
+        {
+            description: 'Should return "Policy has an invalid condition key" if a' +
+            ' condition key does not start with \'aws:\' and is not recognized',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        NotARealCondition: { 's3:prefix': 'something' },
+                    },
+                }],
+            },
+            expected: 'Policy has an invalid condition key',
+        },
+        {
+            description: 'Should return null if a statement in the policy does not contain a \'Condition\' block',
+            inputPolicy: {
+                Statement: [{}],
+            },
+            expected: null,
+        },
+        {
+            description: 'Should return a relevant error message ' +
+            'if the condition value is an empty string',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '' },
+                    },
+                }],
+            },
+            expected: 'Invalid IP address in Conditions',
+        },
+        {
+            description: 'Should return a relevant error message if the ' +
+            'condition value type does not match the expected type',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': [] }, // IP should be a string, not an array
+                    },
+                }],
+            },
+            expected: 'Invalid IP address in Conditions',
+        },
+        {
+            description: 'Should return null or a relevant error message ' +
+            'if multiple conditions are provided in a single statement',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '192.168.1.1' },
+                        NotARealCondition: { 's3:prefix': 'something' },
+                    },
+                }],
+            },
+            expected: 'Policy has an invalid condition key',
+        },
+        {
+            description: 'Should test the function with multiple statements, each having various conditions',
+            inputPolicy: {
+                Statement: [
+                    {
+                        Condition: {
+                            IpAddress: { 'aws:SourceIp': '192.168.1.1' },
+                        },
+                    },
+                    {
+                        Condition: {
+                            NotARealCondition: { 's3:prefix': 'something' },
+                        },
+                    },
+                ],
+            },
+            expected: 'Policy has an invalid condition key',
+        },
+        {
+            description: 'Should return null if conditions have a valid IPv6 address',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:0000:8a2e:0370:7334' },
+                    },
+                }],
+            },
+            expected: null,
+        },
+        {
+            description: 'Should return "Invalid IP address in Conditions" if conditions have an invalid IPv6 address',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '2001:0db8:85a3:0000:XYZZ:8a2e:0370:7334' },
+                    },
+                }],
+            },
+            expected: 'Invalid IP address in Conditions',
+        },
+        {
+            description: 'Should return "Invalid IP address in Conditions" if conditions'
+            + ' have an IPv6 address with unusual and invalid notation',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: { 'aws:SourceIp': '2001::85a3::8a2e' },
+                    },
+                }],
+            },
+            expected: 'Invalid IP address in Conditions',
+        },
+    ];
+
+    tests.forEach(test => {
+        it(test.description, () => {
+            const result = validatePolicyConditions(test.inputPolicy);
+            if (test.expected === null) {
+                assert.strictEqual(result, test.expected);
+                return;
+            }
+            assert.strictEqual(result.description, test.expected);
         });
     });
 });
