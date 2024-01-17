@@ -147,7 +147,7 @@ function makeRequest(params, callback) {
  * @return {undefined} - and call callback
  */
 function makeS3Request(params, callback) {
-    const { method, queryObj, headers, bucket, objectKey, authCredentials }
+    const { method, queryObj, headers, bucket, objectKey, authCredentials, requestBody }
         = params;
     const options = {
         authCredentials,
@@ -157,6 +157,7 @@ function makeS3Request(params, callback) {
         queryObj,
         headers: headers || {},
         path: bucket ? `/${bucket}/` : '/',
+        requestBody,
     };
     if (objectKey) {
         options.path = `${options.path}${objectKey}`;
