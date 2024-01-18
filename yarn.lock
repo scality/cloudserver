@@ -488,9 +488,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.10.55":
+"arsenal@git+https://github.com/scality/arsenal#bugfix/S3C-8375/fix-generatev4headers":
   version "7.10.55"
-  resolved "git+https://github.com/scality/arsenal#4da59769d24ec0fa4590de1f826dd1dcab1872c6"
+  resolved "git+https://github.com/scality/arsenal#741f84a282eb0cb0f44f6dd045fa2dff63b47938"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
