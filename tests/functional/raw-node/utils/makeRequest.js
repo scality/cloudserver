@@ -111,18 +111,14 @@ function makeRequest(params, callback) {
     // decode path because signing code re-encodes it
     req.path = _decodeURI(encodedPath);
     if (authCredentials && !params.GCP) {
-        if (queryObj) {
-            auth.client.generateV4Headers(req, queryObj,
-                authCredentials.accessKey, authCredentials.secretKey, 's3');
-        // may update later if request may contain POST body
-        } else {
-            auth.client.generateV4Headers(req, '', authCredentials.accessKey,
-                authCredentials.secretKey, 's3');
-        }
+        auth.client.generateV4Headers(req, queryObj || '',
+            authCredentials.accessKey, authCredentials.secretKey, 's3', undefined, undefined, requestBody);
     }
     // restore original URL-encoded path
     req.path = encodedPath;
-    req.path = queryObj ? `${options.path}?${qs}` : req.path;
+    if (queryObj) {
+        req.path = `${options.path}?${qs}`;
+    }
     if (requestBody) {
         req.write(requestBody);
     }
