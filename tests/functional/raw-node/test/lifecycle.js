@@ -4,8 +4,8 @@ const { makeS3Request } = require('../utils/makeRequest');
 const { randomUUID } = require('crypto');
 
 const authCredentials = {
-    accessKey: process.env.AWS_ON_AIR ? 'awsAK' : 'accessKey1',
-    secretKey: process.env.AWS_ON_AIR ? 'awsSK' : 'verySecretKey1',
+    accessKey: process.env.AWS_ON_AIR ? process.env.AWS_ON_AIR_AK : 'accessKey1',
+    secretKey: process.env.AWS_ON_AIR ? process.env.AWS_ON_AIR_SK : 'verySecretKey1',
 };
 
 const bucket = `rawnodelifecyclebucket-${randomUUID()}`;

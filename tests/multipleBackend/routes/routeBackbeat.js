@@ -1341,7 +1341,6 @@ describe('backbeat routes', () => {
                             queryObj,
                             headers: {
                                 'content-length': testData.length,
-                                'content-md5': testDataMd5,
                                 'x-scal-canonical-id': testArn,
                             },
                             authCredentials: backbeatAuthCredentials,
@@ -1439,7 +1438,6 @@ describe('backbeat routes', () => {
                     queryObj: { v2: '' },
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1496,7 +1494,6 @@ describe('backbeat routes', () => {
                         queryObj: { operation: 'putobject' },
                         headers: {
                             'content-length': testData.length,
-                            'content-md5': testDataMd5,
                             'x-scal-canonical-id': testArn,
                             'x-scal-storage-type': 'aws_s3',
                             'x-scal-storage-class': awsLocation,
@@ -1531,7 +1528,6 @@ describe('backbeat routes', () => {
                queryObj: { v2: '' },
                headers: {
                    'content-length': testData.length,
-                   'content-md5': testDataMd5,
                },
                authCredentials: backbeatAuthCredentials,
                requestBody: testData,
@@ -1540,23 +1536,6 @@ describe('backbeat routes', () => {
                assert.strictEqual(err.code, 'BadRequest');
                done();
            }));
-
-        it('should refuse PUT data if no content-md5 header is provided',
-        done => makeBackbeatRequest({
-            method: 'PUT', bucket: TEST_BUCKET,
-            objectKey: testKey, resourceType: 'data',
-            queryObj: { v2: '' },
-            headers: {
-                'content-length': testData.length,
-                'x-scal-canonical-id': testArn,
-            },
-            authCredentials: backbeatAuthCredentials,
-            requestBody: testData,
-        },
-        err => {
-            assert.strictEqual(err.code, 'BadRequest');
-            done();
-        }));
 
         it('should refuse PUT in metadata-only mode if object does not exist',
         done => {
@@ -1588,7 +1567,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1633,7 +1611,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1689,7 +1666,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1778,7 +1754,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1829,7 +1804,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
@@ -1860,7 +1834,6 @@ describe('backbeat routes', () => {
                     resourceType: 'data',
                     headers: {
                         'content-length': testData.length,
-                        'content-md5': testDataMd5,
                         'x-scal-canonical-id': testArn,
                     },
                     authCredentials: backbeatAuthCredentials,
