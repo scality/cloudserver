@@ -237,4 +237,153 @@ describeSkipIfAWS('backbeat routes for replication', () => {
             return done();
         });
     });
+
+    it('should replicate a null solo master version an then replicate another version', done => {
+        let objMDNull;
+        let objMDNullAfterMigration;
+        let objMDVersion;
+        let versionId;
+        // Simulate a flow where a key, created before versioning, is replicated using the CRRexistingObjects script.
+        // Then, replicate another version of the same key.
+        return async.series([
+            // 1. Create null solo master key
+            next => s3.putObject({ Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, next),
+            next => s3.putBucketVersioning({ Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } },
+                next),
+            // 2. Check that the version is a null solo master key
+            next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: backbeatAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+
+                objMDNull = JSON.parse(data.body).Body;
+                assert.strictEqual(JSON.parse(objMDNull).versionId, undefined);
+                return next();
+            }),
+            // 3. Simulate the putMetadata with x-scal-migrate-null-solo-master to generate an internal null version
+            next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                headers: {
+                    'x-scal-migrate-null-solo-master': 'true',
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: objMDNull,
+            }, next),
+            // 4. Simulate the put metadata logic in Replication Queue Processor.
+            next => s3.putBucketVersioning({ Bucket: bucketDestination, VersioningConfiguration:
+                { Status: 'Enabled' } }, next),
+            next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: backbeatAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+
+                objMDNullAfterMigration = JSON.parse(data.body).Body;
+                // 5. Check that the migration worked and that a versionId representing
+                // the new internal version attached is set.
+                assert.notEqual(JSON.parse(objMDNullAfterMigration).versionId, undefined);
+                return next();
+            }),
+            next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: objMDNullAfterMigration,
+            }, next),
+            // 6. Put a new version in the source bucket to be replicated.
+            next => s3.putObject({ Bucket: bucketSource, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+
+                versionId = data.VersionId;
+                return next();
+            }),
+            // 7. Simulate the metadata replication of the version.
+            next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: backbeatAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+
+                objMDVersion = JSON.parse(data.body).Body;
+                return next();
+            }),
+            next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId,
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: objMDVersion,
+            }, next),
+            // 8. Check that the null version does not get overwritten.
+            next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: versionId }, next),
+            next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+        ], (err, data) => {
+            if (err) {
+                return done(err);
+            }
+            const headObjectNullRes = data[10];
+            assert.strictEqual(headObjectNullRes.VersionId, 'null');
+
+            const headObjectVersionRes = data[11];
+            assert.strictEqual(headObjectVersionRes.VersionId, versionId);
+
+            const listObjectVersionsRes = data[12];
+            const { Versions } = listObjectVersionsRes;
+
+            assert.strictEqual(Versions.length, 2);
+
+            const [currentVersion, nonCurrentVersion] = Versions;
+
+            assert.strictEqual(currentVersion.VersionId, versionId);
+            assert.strictEqual(currentVersion.IsLatest, true);
+
+            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+            assert.strictEqual(nonCurrentVersion.IsLatest, false);
+
+            return done();
+        });
+    });
 });

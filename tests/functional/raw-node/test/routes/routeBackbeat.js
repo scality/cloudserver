@@ -327,6 +327,253 @@ describeSkipIfAWS('backbeat routes', () => {
             });
         });
 
+        it('should migrate null version', done => {
+            let objMD;
+            return async.series([
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
+                    next),
+                next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    const { error, result } = updateStorageClass(data, storageClass);
+                    if (error) {
+                        return next(error);
+                    }
+                    objMD = result;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    headers: {
+                        'x-scal-migrate-null-solo-master': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD.getSerialized(),
+                }, next),
+                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                next => s3.listObjectVersions({ Bucket: bucket }, next),
+            ], (err, data) => {
+                if (err) {
+                    return done(err);
+                }
+                const headObjectRes = data[4];
+                assert.strictEqual(headObjectRes.VersionId, 'null');
+                assert.strictEqual(headObjectRes.StorageClass, storageClass);
+
+                const listObjectVersionsRes = data[5];
+                const { Versions } = listObjectVersionsRes;
+
+                assert.strictEqual(Versions.length, 1);
+
+                const [currentVersion] = Versions;
+                assertVersionIsNullAndUpdated(currentVersion);
+                return done();
+            });
+        });
+
+        it('should not migrate null version if not solo (has version)', done => {
+            let objMD;
+            return async.series([
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
+                    next),
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    objMD = JSON.parse(data.body).Body;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    headers: {
+                        'x-scal-migrate-null-solo-master': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD,
+                }, next),
+            ], err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                return done();
+            });
+        });
+
+        it('should not migrate a version that is not null', done => {
+            let objMD;
+            let versionId;
+            return async.series([
+                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
+                    next),
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    objMD = JSON.parse(data.body).Body;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId,
+                    },
+                    headers: {
+                        'x-scal-migrate-null-solo-master': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD,
+                }, next),
+            ], err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                return done();
+            });
+        });
+
+        it('should not migrate a null version that does not exist', done => {
+            let objMD;
+            let versionId;
+            return async.series([
+                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
+                    next),
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    versionId = data.VersionId;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId,
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    objMD = JSON.parse(data.body).Body;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    headers: {
+                        'x-scal-migrate-null-solo-master': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD,
+                }, next),
+            ], err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                return done();
+            });
+        });
+
+        // Skipping is necessary because non-versioned buckets are not supported by S3C backbeat routes.
+        it.skip('should not migrate an object from a non-versioned bucket', done => {
+            let objMD;
+            return async.series([
+                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    objMD = JSON.parse(data.body).Body;
+                    return next();
+                }),
+                next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    headers: {
+                        'x-scal-migrate-null-solo-master': 'true',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD,
+                }, next),
+            ], err => {
+                assert.notEqual(err, null, 'Expected failure but got success');
+                assert.strictEqual(err.code, 'InvalidArgument');
+                return done();
+            });
+        });
+
         // Skipping is necessary because non-versioned buckets are not supported by S3C backbeat routes.
         it.skip('should update metadata of a non-version object', done => {
             let objMD;
