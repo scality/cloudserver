@@ -1931,7 +1931,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__interval]))",
+          "expr": "sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -1944,7 +1944,7 @@
           "target": ""
         }
       ],
-      "title": "Request time",
+      "title": "Request duration",
       "tooltip": {
         "show": true,
         "showHistogram": true
