@@ -3,7 +3,7 @@ name: codeQL
 
 on:
   push:
-    branches: [development/*, stabilization/*, hotfix/*]
+    branches: [w/**, q/*]
   pull_request:
     branches: [development/*, stabilization/*, hotfix/*]
   workflow_dispatch:
