@@ -401,7 +401,7 @@ latenciesByAction = TimeSeries(
 )
 
 requestTime = Heatmap(
-    title="Request time",
+    title="Request duration",
     dataSource="${DS_PROMETHEUS}",
     dataFormat="tsbuckets",
     maxDataPoints=25,
@@ -409,7 +409,7 @@ requestTime = Heatmap(
     yAxis=YAxis(format=UNITS.DURATION_SECONDS),
     color=HeatmapColor(mode="opacity"),
     targets=[Target(
-        expr='sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__interval]))',  # noqa: E501
+        expr='sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
         format="heatmap",
         legendFormat="{{ le }}",
     )],
