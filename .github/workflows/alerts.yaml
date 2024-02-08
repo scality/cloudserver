@@ -1,7 +1,10 @@
 name: Test alerts
 
 on:
-  push
+  push:
+    branches-ignore:
+      - 'development/**'
+      - 'q/*/**'
 
 jobs:
   run-alert-tests:
