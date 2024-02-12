@@ -117,6 +117,7 @@ describe('deleted flag bucket handling', () => {
         bucketMD.setLocationConstraint(locationConstraint);
         metadata.createBucket(bucketName, bucketMD, log, () => {
             metadata.createBucket(usersBucketName, usersBucket, log, () => {
+                console.log('bucket created!!!!');
                 done();
             });
         });
@@ -439,13 +440,15 @@ describe('deleted flag bucket handling', () => {
         if (extraArgNeeded) {
             return apiAction(authInfo, mpuRequest, undefined,
                 log, err => {
+                    console.log(err);
                     assert.strictEqual(err.is.NoSuchUpload, true);
                     return done();
                 });
         }
         return apiAction(authInfo, mpuRequest,
             log, err => {
-                assert.strictEqual(err.is.NoSuchUpload, true);
+                    console.log(err);
+                    assert.strictEqual(err.is.NoSuchUpload, true);
                 return done();
             });
     }

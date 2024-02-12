@@ -46,6 +46,7 @@
         "new-parens": "off",
         "no-multi-spaces": "off",
         "quote-props": "off",
+        "no-console": "off",
         "mocha/no-exclusive-tests": "error",
     },
     "parserOptions": {

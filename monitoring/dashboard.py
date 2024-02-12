@@ -43,7 +43,7 @@ httpRequests = Stat(
     noValue="0",
     reduceCalc="mean",
     targets=[Target(
-        expr='sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
@@ -60,9 +60,9 @@ successRate = GaugePanel(
     noValue="-",
     targets=[Target(
         expr="\n".join([
-            'sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job", code=~"2.."}[$__rate_interval])) * 100',  # noqa: E501
+            'sum(rate(http_requests_total{namespace="${namespace}", job=~"$job", code=~"2.."}[$__rate_interval])) * 100',  # noqa: E501
             "   /",
-            'sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]) > 0)',  # noqa: E501
+            'sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]) > 0)',  # noqa: E501
         ]),
         legendFormat="Success rate",
     )],
@@ -86,7 +86,7 @@ dataIngestionRate = Stat(
     format="binBps",
     reduceCalc="mean",
     targets=[Target(
-        expr='-sum(deriv(s3_cloudserver_disk_available_bytes{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='-sum(deriv(cloud_server_data_disk_available{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -105,7 +105,7 @@ objectIngestionRate = Stat(
     format="O/s",
     reduceCalc="mean",
     targets=[Target(
-        expr='sum(deriv(s3_cloudserver_objects_count{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(deriv(cloud_server_number_of_objects{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("dark-purple", 0, 0.0),
@@ -125,7 +125,7 @@ bucketsCounter = Stat(
     noValue="-",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(s3_cloudserver_buckets_count{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+        expr='sum(cloud_server_number_of_buckets{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("#808080", 0, 0.0),
@@ -146,7 +146,7 @@ objectsCounter = Stat(
     noValue="-",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(s3_cloudserver_objects_count{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+        expr='sum(cloud_server_number_of_objects{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("#808080", 0, 0.0),
@@ -181,8 +181,8 @@ lastReport = Stat(
     targets=[Target(
         expr="\n".join([
             'time()',
-            '- max(s3_cloudserver_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
-            '+ (max(s3_cloudserver_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+            '- max(cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
+            '+ (max(cloud_server_last_report_timestamp{namespace="${namespace}", job="${reportJob}"})',  # noqa: E501
             '   - max(kube_cronjob_status_last_schedule_time{namespace="${namespace}", cronjob="${countItemsJob}"})',  # noqa: E501
             '   > 0 or vector(0))',
         ])
@@ -207,7 +207,7 @@ def http_status_panel(title, code):
         noValue="0",
         reduceCalc="mean",
         targets=[Target(
-            expr='sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval]))",  # noqa: E501
+            expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job",code=' + code + "}[$__rate_interval]))",  # noqa: E501
         )],
         thresholds=[Threshold("semi-dark-blue", 0, 0.)],
     )
@@ -222,7 +222,7 @@ activeRequests = Stat(
     dataSource="${DS_PROMETHEUS}",
     reduceCalc="lastNotNull",
     targets=[Target(
-        expr='sum(s3_cloudserver_http_active_requests{namespace="${namespace}", job=~"$job"})',  # noqa: E501
+        expr='sum(http_active_requests{namespace="${namespace}", job=~"$job"})',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 0.0),
@@ -242,7 +242,7 @@ oobDataIngestionRate = Stat(
     format="binBps",
     reduceCalc="mean",
     targets=[Target(
-        expr='sum(deriv(s3_cloudserver_ingested_bytes{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(deriv(cloud_server_data_ingested{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("purple", 0, 0.0),
@@ -261,7 +261,7 @@ oobObjectIngestionRate = Stat(
     format="O/s",
     reduceCalc="mean",
     targets=[Target(
-        expr='sum(deriv(s3_cloudserver_ingested_objects_count{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(deriv(cloud_server_number_of_ingested_objects{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
     )],
     thresholds=[
         Threshold("purple", 0, 0.0),
@@ -275,7 +275,7 @@ httpStatusCodes = TimeSeries(
     lineInterpolation="smooth",
     unit=UNITS.OPS_PER_SEC,
     targets=[Target(
-        expr='sum by (code) (rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum by (code) (rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
         legendFormat="{{code}}",
     )],
 )
@@ -284,7 +284,7 @@ httpStatusCodes = TimeSeries(
 def http_aggregated_request_target(title, code):
     # type: (str, str) -> Target
     return Target(
-        expr='sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval]))",  # noqa: E501
+        expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job", code=' + code + "}[$__rate_interval]))",  # noqa: E501
         legendFormat=title,
     )
 
@@ -331,7 +331,7 @@ requestsByAction = TimeSeries(
     unit=UNITS.OPS_PER_SEC,
     targets=[
         Target(
-            expr='sum(rate(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
+            expr='sum(rate(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
             legendFormat="{{action}}",
         )
     ]
@@ -345,7 +345,7 @@ requestsByMethod = PieChart(
     unit=UNITS.SHORT,
     targets=[
         Target(
-            expr='sum(round(increase(s3_cloudserver_http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
+            expr='sum(round(increase(http_requests_total{namespace="${namespace}", job=~"$job"}[$__rate_interval]))) by(method)',  # noqa: E501
             legendFormat="{{method}}",
         ),
     ],
@@ -358,9 +358,9 @@ def average_latency_target(title, action="", by=""):
     by = " by (" + by + ")" if by else ""
     return Target(
         expr="\n".join([
-            'sum(rate(s3_cloudserver_http_request_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
+            'sum(rate(http_request_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
             "   /",
-            'sum(rate(s3_cloudserver_http_request_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
+            'sum(rate(http_request_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
         ]),
         legendFormat=title,
     )
@@ -401,7 +401,7 @@ latenciesByAction = TimeSeries(
 )
 
 requestTime = Heatmap(
-    title="Request duration",
+    title="Request time",
     dataSource="${DS_PROMETHEUS}",
     dataFormat="tsbuckets",
     maxDataPoints=25,
@@ -409,7 +409,7 @@ requestTime = Heatmap(
     yAxis=YAxis(format=UNITS.DURATION_SECONDS),
     color=HeatmapColor(mode="opacity"),
     targets=[Target(
-        expr='sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum by(le) (increase(http_request_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__interval]))',  # noqa: E501
         format="heatmap",
         legendFormat="{{ le }}",
     )],
@@ -433,11 +433,11 @@ bandWidth = TimeSeries(
     unit="binBps",
     targets=[
         Target(
-            expr='sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+            expr='sum(rate(http_response_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
             legendFormat="Out"
         ),
         Target(
-            expr='sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+            expr='sum(rate(http_request_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
             legendFormat="In"
         )
     ],
@@ -461,7 +461,7 @@ uploadChunkSize = BarGauge(
     noValue="-",
     orientation="vertical",
     targets=[Target(
-        expr='avg(s3_cloudserver_http_request_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
+        expr='avg(http_request_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
         legendFormat='{{ quantile }}',
     )],
     thresholds=[
@@ -481,7 +481,7 @@ downloadChunkSize = BarGauge(
     noValue="-",
     orientation="vertical",
     targets=[Target(
-        expr='avg(s3_cloudserver_http_response_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
+        expr='avg(http_response_size_bytes{namespace="${namespace}", job=~"$job"}) by (quantile)',  # noqa: E501
         legendFormat='{{ quantile }}',
     )],
     thresholds=[
@@ -585,7 +585,7 @@ dashboard = (
                 label='Group',
                 multi=True,
                 name='job',
-                query='label_values(s3_cloudserver_http_active_requests{namespace="${namespace}", container="${container}"}, job)',  # noqa: E501
+                query='label_values(http_active_requests{namespace="${namespace}", container="${container}"}, job)',  # noqa: E501
                 regex='/(?<value>${zenkoName}-(?<text>\\w*).*)/',
             ),
             Template(
@@ -593,7 +593,7 @@ dashboard = (
                 hide=HIDE_VARIABLE,
                 label='pod',
                 name='pod',
-                query='label_values(s3_cloudserver_http_active_requests{namespace="${namespace}", container="${container}", job=~"$job"}, pod)',  # noqa: E501
+                query='label_values(http_active_requests{namespace="${namespace}", container="${container}", job=~"$job"}, pod)',  # noqa: E501
             )
         ]),
         panels=layout.column([
