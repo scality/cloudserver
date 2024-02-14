@@ -58,6 +58,33 @@ describe('checkBucketAcls', () => {
             expected: true,
         },
         {
+            description: 'should treat initiateMultipartUpload as objectPut',
+            input: {
+                bucketAcl: {
+                    Canned: 'public-read-write',
+                }, requestType: 'initiateMultipartUpload', canonicalID: 'any', mainApiCall: 'initiateMultipartUpload',
+            },
+            expected: true,
+        },
+        {
+            description: 'should treat objectPutPart as objectPut',
+            input: {
+                bucketAcl: {
+                    Canned: 'public-read-write',
+                }, requestType: 'objectPutPart', canonicalID: 'any', mainApiCall: 'objectPutPart',
+            },
+            expected: true,
+        },
+        {
+            description: 'should treat completeMultipartUpload as objectPut',
+            input: {
+                bucketAcl: {
+                    Canned: 'public-read-write',
+                }, requestType: 'completeMultipartUpload', canonicalID: 'any', mainApiCall: 'completeMultipartUpload',
+            },
+            expected: true,
+        },
+        {
             description: 'should return true for bucketGet if canned acl is public-read-write',
             input: {
                 bucketAcl: { Canned: 'public-read-write' },
@@ -291,6 +318,9 @@ describe('checkObjectAcls', () => {
             expected: true,
         },
         { reqType: 'objectPut', id: 'anyId', expected: true },
+        { reqType: 'initiateMultipartUpload', id: 'anyId', expected: true },
+        { reqType: 'objectPutPart', id: 'anyId', expected: true },
+        { reqType: 'completeMultipartUpload', id: 'anyId', expected: true },
         { reqType: 'objectDelete', id: 'anyId', expected: true },
         {
             aclList: ['anyId'], aclField: 'FULL_CONTROL', reqType: 'objectPutACL', id: 'anyId', expected: true,
