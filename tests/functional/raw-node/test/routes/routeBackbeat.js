@@ -5,7 +5,7 @@ const { models, versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
 const { ObjectMD } = models;
 
-const { makeRequest } = require('../../utils/makeRequest');
+const { makeRequest, makeBackbeatRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
 
 const ipAddress = process.env.IP ? process.env.IP : '127.0.0.1';
@@ -84,39 +84,6 @@ function checkVersionData(s3, bucket, objectKey, versionId, dataValue, done) {
         assert.strictEqual(data.Body.toString(), dataValue);
         return done();
     });
-}
-
-/** makeBackbeatRequest - utility function to generate a request going
- * through backbeat route
- * @param {object} params - params for making request
- * @param {string} params.method - request method
- * @param {string} params.bucket - bucket name
- * @param {string} params.objectKey - object key
- * @param {string} params.subCommand - subcommand to backbeat
- * @param {object} [params.headers] - headers and their string values
- * @param {object} [params.authCredentials] - authentication credentials
- * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - secret key
- * @param {string} [params.requestBody] - request body contents
- * @param {object} [params.queryObj] - query params
- * @param {function} callback - with error and response parameters
- * @return {undefined} - and call callback
- */
-function makeBackbeatRequest(params, callback) {
-    const { method, headers, bucket, objectKey, resourceType,
-            authCredentials, requestBody, queryObj } = params;
-    const options = {
-        authCredentials,
-        hostname: ipAddress,
-        port: 8000,
-        method,
-        headers,
-        path: `/_/backbeat/${resourceType}/${bucket}/${objectKey}`,
-        requestBody,
-        jsonResponse: true,
-        queryObj,
-    };
-    makeRequest(options, callback);
 }
 
 function updateStorageClass(data, storageClass) {
