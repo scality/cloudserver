@@ -41,9 +41,9 @@ function _decodeURI(uri) {
  * @param {object} [params.headers] - headers and their string values
  * @param {string} [params.path] - URL-encoded request path
  * @param {object} [params.authCredentials] - authentication credentials
- * @param {object} params.authCredentials.accessKey - access key
- * @param {object} params.authCredentials.secretKey - secret key
- * @param {object} params.GCP - flag to setup for GCP request
+ * @param {string} params.authCredentials.accessKey - access key
+ * @param {string} params.authCredentials.secretKey - secret key
+ * @param {boolean} params.GCP - flag to setup for GCP request
  * @param {string} [params.requestBody] - request body contents
  * @param {boolean} [params.jsonResponse] - if true, response is
  *   expected to be received in JSON format (including errors)
@@ -190,8 +190,42 @@ function makeGcpRequest(params, callback) {
     makeRequest(options, callback);
 }
 
+/** makeBackbeatRequest - utility function to generate a request going
+ * through backbeat route
+ * @param {object} params - params for making request
+ * @param {string} params.method - request method
+ * @param {string} params.bucket - bucket name
+ * @param {string} params.objectKey - object key
+ * @param {string} params.subCommand - subcommand to backbeat
+ * @param {object} [params.headers] - headers and their string values
+ * @param {object} [params.authCredentials] - authentication credentials
+ * @param {object} params.authCredentials.accessKey - access key
+ * @param {object} params.authCredentials.secretKey - secret key
+ * @param {string} [params.requestBody] - request body contents
+ * @param {object} [params.queryObj] - query params
+ * @param {function} callback - with error and response parameters
+ * @return {undefined} - and call callback
+ */
+function makeBackbeatRequest(params, callback) {
+    const { method, headers, bucket, objectKey, resourceType,
+            authCredentials, requestBody, queryObj } = params;
+    const options = {
+        authCredentials,
+        hostname: ipAddress,
+        port: 8000,
+        method,
+        headers,
+        path: `/_/backbeat/${resourceType}/${bucket}/${objectKey}`,
+        requestBody,
+        jsonResponse: true,
+        queryObj,
+    };
+    makeRequest(options, callback);
+}
+
 module.exports = {
     makeRequest,
     makeS3Request,
     makeGcpRequest,
+    makeBackbeatRequest,
 };
