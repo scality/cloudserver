@@ -61,6 +61,11 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
+"@js-sdsl/ordered-set@^4.4.2":
+  version "4.4.2"
+  resolved "https://registry.yarnpkg.com/@js-sdsl/ordered-set/-/ordered-set-4.4.2.tgz#ab857eb63cf358b5a0f74fdd458b4601423779b7"
+  integrity sha512-ieYQ8WlBPKYzEo81H3q0DFbd8WtFRXXABb4+vRCF0AO3WWtJZFxYvRGdipUXGrd6tlSySmqhcPuO3J6SCodCxg==
+
 "@npmcli/fs@^1.0.0":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@npmcli/fs/-/fs-1.1.1.tgz#72f719fe935e687c56a4faecf3c03d06ba593257"
@@ -494,10 +499,11 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.70.22":
-  version "7.70.22"
-  resolved "git+https://github.com/scality/arsenal#918c2c54735d5ccea7410e2f24f9fb2b8b33ba68"
+"arsenal@git+https://github.com/scality/arsenal#7.70.24":
+  version "7.70.24"
+  resolved "git+https://github.com/scality/arsenal#c72d8be2234feb3a1de53db582cce6f05aa5a28f"
   dependencies:
+    "@js-sdsl/ordered-set" "^4.4.2"
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
     JSONStream "^1.0.0"
