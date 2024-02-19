@@ -238,6 +238,11 @@ const constants = {
     assumedRoleArnResourceType: 'assumed-role',
     // Session name of the backbeat lifecycle assumed role session.
     backbeatLifecycleSessionName: 'backbeat-lifecycle',
+    actionsToConsiderAsObjectPut: [
+        'initiateMultipartUpload',
+        'objectPutPart',
+        'completeMultipartUpload',
+    ],
 };
 
 module.exports = constants;
