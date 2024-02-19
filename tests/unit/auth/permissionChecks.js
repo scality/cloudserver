@@ -412,16 +412,49 @@ describe('validatePolicyConditions', () => {
             expected: 'Invalid IP address in Conditions',
         },
         {
-            description: 'Should return a relevant error message if the ' +
-            'condition value type does not match the expected type',
+            description: 'Should accept arrays of IPs',
             inputPolicy: {
                 Statement: [{
                     Condition: {
-                        IpAddress: { 'aws:SourceIp': [] }, // IP should be a string, not an array
+                        IpAddress: {
+                            'aws:SourceIp': [
+                                '10.0.11.0/24',
+                                '10.0.1.0/24',
+                            ],
+                        },
+                    },
+                }],
+            },
+            expected: null,
+        },
+        {
+            description: 'Should return relevant error if one of the IPs in the array is invalid',
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: {
+                            'aws:SourceIp': [
+                                '10.0.11.0/24',
+                                '123',
+                            ],
+                        },
                     },
                 }],
             },
             expected: 'Invalid IP address in Conditions',
+        },
+        {
+            description: 'Should not return error if array value in IP condition is empty', // this is AWS behavior
+            inputPolicy: {
+                Statement: [{
+                    Condition: {
+                        IpAddress: {
+                            'aws:SourceIp': [],
+                        },
+                    },
+                }],
+            },
+            expected: null,
         },
         {
             description: 'Should return null or a relevant error message ' +
