@@ -438,6 +438,24 @@ class TaggingConfigTester {
         }
         return request;
     }
+
+    createBucketTaggingRequest(method, bucketName, body, implicitDeny = false) {
+        const request = {
+            bucketName,
+            headers: {
+                host: `${bucketName}.s3.amazonaws.com`,
+            },
+            url: '/?tagging',
+            query: { tagging: '' },
+            actionImplicitDenies: implicitDeny,
+        };
+        if (method === 'PUT') {
+            request.post = body || this.constructXml();
+            request.headers['content-md5'] = crypto.createHash('md5')
+                .update(request.post, 'utf8').digest('base64');
+        }
+        return request;
+    }
 }
 
 class AccessControlPolicy {
