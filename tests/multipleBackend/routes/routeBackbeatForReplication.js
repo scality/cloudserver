@@ -178,4 +178,73 @@ describeSkipIfAWS('backbeat routes for replication', () => {
             return done();
         });
     });
+
+    it('should successfully put object after replicating a null version', done => {
+        let objMD;
+        let expectedVersionId;
+
+        async.series({
+            putObjectSource: next => s3.putObject(
+                { Bucket: bucketSource, Key: keyName, Body: Buffer.from(testData) }, next),
+            enableVersioningSource: next => s3.putBucketVersioning(
+                { Bucket: bucketSource, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            enableVersioningDestination: next => s3.putBucketVersioning(
+                { Bucket: bucketDestination, VersioningConfiguration: { Status: 'Enabled' } }, next),
+            getMetadata: next => makeBackbeatRequest({
+                method: 'GET',
+                resourceType: 'metadata',
+                bucket: bucketSource,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: backbeatAuthCredentials,
+            }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                objMD = JSON.parse(data.body).Body;
+                return next();
+            }),
+            replicateMetadata: next => makeBackbeatRequest({
+                method: 'PUT',
+                resourceType: 'metadata',
+                bucket: bucketDestination,
+                objectKey: keyName,
+                queryObj: {
+                    versionId: 'null',
+                },
+                authCredentials: backbeatAuthCredentials,
+                requestBody: objMD,
+            }, next),
+            putObjectDestination: next => s3.putObject(
+            { Bucket: bucketDestination, Key: keyName, Body: Buffer.from(testData) }, (err, data) => {
+                if (err) {
+                    return next(err);
+                }
+                expectedVersionId = data.VersionId;
+                return next();
+            }),
+            headObject: next => s3.headObject({ Bucket: bucketDestination, Key: keyName, VersionId: 'null' }, next),
+            listObjectVersions: next => s3.listObjectVersions({ Bucket: bucketDestination }, next),
+        }, (err, results) => {
+            if (err) {
+                return done(err);
+            }
+
+            const headObjectRes = results.headObject;
+            assert.strictEqual(headObjectRes.VersionId, 'null');
+
+            const listObjectVersionsRes = results.listObjectVersions;
+            const { Versions } = listObjectVersionsRes;
+
+            assert.strictEqual(Versions.length, 2);
+
+            const [currentVersion, nonCurrentVersion] = Versions;
+            assert.strictEqual(currentVersion.VersionId, expectedVersionId);
+            assert.strictEqual(nonCurrentVersion.VersionId, 'null');
+
+            return done();
+        });
+    });
 });
