@@ -3,7 +3,7 @@ set -exo pipefail
 
 init_RS() {
   sleep 5
-  mongo --port 27018 /conf/initReplicaSet.js
+  mongosh --port 27018 /conf/initReplicaSet.js
 }
 init_RS &
 
