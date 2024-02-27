@@ -8,6 +8,8 @@ const {
 } = require('../../../../lib/api/apiUtils/object/coldStorage');
 const { DummyRequestLogger } = require('../../helpers');
 const { ObjectMD, ObjectMDArchive } = require('arsenal/build/lib/models');
+const { config } = require('../../../../lib/Config');
+const { scaledMsPerDay } = config.getTimeOptions();
 const log = new DummyRequestLogger();
 const oneDay = 24 * 60 * 60 * 1000;
 
@@ -227,8 +229,7 @@ describe('cold storage', () => {
 
                 assert.strictEqual(objectMd.archive.restoreCompletedAt, restoreCompletedAt);
                 assert.strictEqual(objectMd.archive.restoreWillExpireAt.getTime(),
-                    objectMd.archive.restoreRequestedAt.getTime() + 5 * oneDay
-                );
+                    objectMd.archive.restoreRequestedAt.getTime() + (5 * scaledMsPerDay));
                 assert.deepEqual(objectMd['x-amz-restore'], {
                     'ongoing-request': false,
                     'expiry-date': objectMd.archive.restoreWillExpireAt,
