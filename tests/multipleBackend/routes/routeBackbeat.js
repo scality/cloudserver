@@ -431,6 +431,132 @@ describe('backbeat routes', () => {
             });
         });
 
+        it('should update metadata of a suspended null version', done => {
+            let objMD;
+            return async.series({
+                suspendVersioning: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } }, next),
+                putObject: next => s3.putObject(
+                    { Bucket: bucket, Key: keyName, Body: Buffer.from(testData) }, next),
+                enableVersioning: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+                getMetadata: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    const { error, result } = updateStorageClass(data, storageClass);
+                    if (error) {
+                        return next(error);
+                    }
+                    objMD = result;
+                    return next();
+                }),
+                putUpdatedMetadata: next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD.getSerialized(),
+                }, next),
+                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+            }, (err, results) => {
+                if (err) {
+                    return done(err);
+                }
+                const headObjectRes = results.headObject;
+                assert.strictEqual(headObjectRes.VersionId, 'null');
+                assert.strictEqual(headObjectRes.StorageClass, storageClass);
+
+                const listObjectVersionsRes = results.listObjectVersions;
+                const { Versions } = listObjectVersionsRes;
+
+                assert.strictEqual(Versions.length, 1);
+
+                const [currentVersion] = Versions;
+                assertVersionIsNullAndUpdated(currentVersion);
+                return done();
+            });
+        });
+
+        it('should update metadata of a suspended null version with internal version id', done => {
+            let objMD;
+            return async.series({
+                suspendVersioning: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Suspended' } }, next),
+                putObject: next => s3.putObject(
+                    { Bucket: bucket, Key: keyName, Body: Buffer.from(testData) }, next),
+                enableVersioning: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+                putObjectTagging: next => s3.putObjectTagging({
+                    Bucket: bucket, Key: keyName, VersionId: 'null',
+                    Tagging: { TagSet: [{ Key: 'key1', Value: 'value1' }] },
+                }, next),
+                getMetadata: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, (err, data) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    const { error, result } = updateStorageClass(data, storageClass);
+                    if (error) {
+                        return next(error);
+                    }
+                    objMD = result;
+                    return next();
+                }),
+                putUpdatedMetadata: next => makeBackbeatRequest({
+                    method: 'PUT',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                    requestBody: objMD.getSerialized(),
+                }, next),
+                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+            }, (err, results) => {
+                if (err) {
+                    return done(err);
+                }
+                const headObjectRes = results.headObject;
+                assert.strictEqual(headObjectRes.VersionId, 'null');
+                assert.strictEqual(headObjectRes.StorageClass, storageClass);
+
+                const listObjectVersionsRes = results.listObjectVersions;
+                const { Versions } = listObjectVersionsRes;
+
+                assert.strictEqual(Versions.length, 1);
+
+                const [currentVersion] = Versions;
+                assertVersionIsNullAndUpdated(currentVersion);
+                return done();
+            });
+        });
+
         it('should update metadata of a non-version object', done => {
             let objMD;
             return async.series([
