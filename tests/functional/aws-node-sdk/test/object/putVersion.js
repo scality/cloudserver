@@ -434,7 +434,7 @@ describe('PUT object with x-scal-s3-version-id header', () => {
                 assert.deepStrictEqual(versionsAfter, versionsBefore);
 
                 checkObjMdAndUpdate(objMDBefore, objMDAfter, ['location', 'content-length', 'originOp',
-                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName']);
+                'content-md5', 'microVersionId', 'x-amz-restore', 'archive', 'dataStoreName', 'nullVersionId']);
                 assert.deepStrictEqual(objMDAfter, objMDBefore);
                 return done();
             });
