@@ -6,8 +6,6 @@ const { ObjectMD } = models;
 const { makeBackbeatRequest } = require('../../functional/raw-node/utils/makeRequest');
 const BucketUtility = require('../../functional/aws-node-sdk/lib/utility/bucket-util');
 
-const describeSkipIfAWS = process.env.AWS_ON_AIR ? describe.skip : describe;
-
 const backbeatAuthCredentials = {
     accessKey: 'accessKey1',
     secretKey: 'verySecretKey1',
@@ -15,7 +13,10 @@ const backbeatAuthCredentials = {
 
 const testData = 'testkey data';
 
-describeSkipIfAWS('backbeat routes for replication', () => {
+// Skip since Zenko/Artesca use cloud storage provider clients like AWS SDK
+// to replicate objects/versions rather than using the get and put metadata
+// functions of the Backbeat API.
+describe.skip('backbeat routes for replication', () => {
     const bucketUtil = new BucketUtility(
         'default', { signatureVersion: 'v4' });
     const s3 = bucketUtil.s3;
