@@ -2,7 +2,7 @@ const assert = require('assert');
 const async = require('async');
 const sinon = require('sinon');
 const { parseString } = require('xml2js');
-const { storage } = require('arsenal');
+const { storage, errors } = require('arsenal');
 const { bucketPut } = require('../../../lib/api/bucketPut');
 const objectPut = require('../../../lib/api/objectPut');
 const objectPutCopyPart = require('../../../lib/api/objectPutCopyPart');
@@ -14,6 +14,7 @@ const DummyRequest = require('../DummyRequest');
 const { cleanup, DummyRequestLogger, makeAuthInfo, versioningTestUtils }
     = require('../helpers');
 
+const { ds } = storage.data.inMemory.datastore;
 const log = new DummyRequestLogger();
 const canonicalID = 'accessKey1';
 const authInfo = makeAuthInfo(canonicalID);
@@ -134,6 +135,23 @@ describe('objectCopyPart', () => {
                 sinon.match.any,
                 sinon.match.any
             );
+            done();
+        });
+    });
+
+    it('should not create orphans in storage when copying a part with a failed metadata update', done => {
+        const testObjectCopyRequest = _createObjectCopyPartRequest(destBucketName, uploadId);
+        sinon.restore();
+        sinon.stub(metadataswitch, 'putObjectMD').callsArgWith(5, errors.InternalError);
+        const storedPartsBefore = ds.filter(obj => obj.keyContext.objectKey === objectKey
+            && obj.keyContext.uploadId === uploadId).length;
+
+        objectPutCopyPart(authInfo, testObjectCopyRequest, sourceBucketName, objectKey, undefined, log, err => {
+            assert(err.is.InternalError);
+            // ensure the number of stored parts is the same
+            const storedPartsAfter = ds.filter(obj => obj.keyContext.objectKey === objectKey
+                && obj.keyContext.uploadId === uploadId).length;
+            assert.strictEqual(storedPartsBefore, storedPartsAfter);
             done();
         });
     });

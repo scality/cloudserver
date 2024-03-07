@@ -1,7 +1,7 @@
 const assert = require('assert');
 const async = require('async');
 const moment = require('moment');
-const { s3middleware, storage } = require('arsenal');
+const { s3middleware, storage, errors } = require('arsenal');
 const sinon = require('sinon');
 
 const { bucketPut } = require('../../../lib/api/bucketPut');
@@ -18,6 +18,7 @@ const DummyRequest = require('../DummyRequest');
 const { maximumAllowedUploadSize } = require('../../../constants');
 const mpuUtils = require('../utils/mpuUtils');
 const { lastModifiedHeader } = require('../../../constants');
+const services = require('../../../lib/services');
 
 const { ds } = storage.data.inMemory.datastore;
 
@@ -48,9 +49,12 @@ const testPutBucketRequestLock = new DummyRequest({
 });
 
 const originalputObjectMD = metadata.putObjectMD;
+const originalMetadataStoreObject = services.metadataStoreObject;
 const objectName = 'objectName';
+const objectNameFailure = 'objectNameFailure';
 
 let testPutObjectRequest;
+let testPutObjectRequestFailure;
 const enableVersioningRequest =
     versioningTestUtils.createBucketPutVersioningReq(bucketName, 'Enabled');
 const suspendVersioningRequest =
@@ -112,11 +116,19 @@ describe('objectPut API', () => {
             headers: { host: `${bucketName}.s3.amazonaws.com` },
             url: '/',
         }, postBody);
+        testPutObjectRequestFailure = new DummyRequest({
+            bucketName,
+            namespace,
+            objectKey: objectNameFailure,
+            headers: { host: `${bucketName}.s3.amazonaws.com` },
+            url: '/',
+        }, postBody);
     });
 
     afterEach(() => {
         sinon.restore();
         metadata.putObjectMD = originalputObjectMD;
+        services.metadataStoreObject = originalMetadataStoreObject;
     });
 
     it('should return an error if the bucket does not exist', done => {
@@ -526,6 +538,18 @@ describe('objectPut API', () => {
                         });
                     });
                 });
+        });
+    });
+
+    it('should not leave orphans in data when the metadata storage step fails', done => {
+        sinon.stub(services, 'metadataStoreObject').callsArgWith(4, errors.InternalError);
+
+        bucketPut(authInfo, testPutBucketRequest, log, () => {
+            objectPut(authInfo, testPutObjectRequestFailure, undefined, log, err => {
+                assert(err.is.InternalError);
+                assert.strictEqual(ds.filter(obj => obj.keyContext.objectKey === objectNameFailure).length, 0);
+                done();
+            });
         });
     });
 

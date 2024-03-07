@@ -100,6 +100,7 @@ const expectedRetentionConfig = {
 const expectedLegalHold = {
     Status: ['ON'],
 };
+const originalPutObjectMD = metadataswitch.putObjectMD;
 
 function _createPutPartRequest(uploadId, partNumber, partBody) {
     const md5Hash = crypto.createHash('md5').update(partBody);
@@ -146,6 +147,10 @@ function _createCompleteMpuRequest(uploadId, parts) {
 describe('Multipart Upload API', () => {
     beforeEach(() => {
         cleanup();
+    });
+
+    afterEach(() => {
+        metadataswitch.putObjectMD = originalPutObjectMD;
     });
 
     it('mpuBucketPrefix should be a defined constant', () => {
@@ -268,6 +273,50 @@ describe('Multipart Upload API', () => {
             });
         });
     });
+
+    it('should not create orphans in storage when uplading a part with a failed metadata update', done => {
+        async.waterfall([
+            next => bucketPut(authInfo, bucketPutRequest, log, next),
+            (corsHeaders, next) => initiateMultipartUpload(authInfo,
+                initiateRequest, log, next),
+            (result, corsHeaders, next) => {
+                const mpuKeys = metadata.keyMaps.get(mpuBucket);
+                assert.strictEqual(mpuKeys.size, 1);
+                assert(mpuKeys.keys().next().value
+                    .startsWith(`overview${splitter}${objectKey}`));
+                parseString(result, next);
+            },
+        ],
+        (err, json) => {
+            // Need to build request in here since do not have uploadId
+            // until here
+            assert.ifError(err);
+            const testUploadId = json.InitiateMultipartUploadResult.UploadId[0];
+            const md5Hash = crypto.createHash('md5');
+            const bufferBody = Buffer.from(postBody);
+            md5Hash.update(bufferBody);
+            const calculatedHash = md5Hash.digest('hex');
+            const partRequest = new DummyRequest({
+                bucketName,
+                objectKey,
+                namespace,
+                url: `/${objectKey}?partNumber=1&uploadId=${testUploadId}`,
+                headers: { host: `${bucketName}.s3.amazonaws.com` },
+                query: {
+                    partNumber: '1',
+                    uploadId: testUploadId,
+                },
+                calculatedHash,
+            }, postBody);
+            sinon.stub(metadataswitch, 'putObjectMD').callsArgWith(5, errors.InternalError);
+            objectPutPart(authInfo, partRequest, undefined, log, err => {
+                assert(err.is.InternalError);
+                assert.strictEqual(ds.filter(obj => obj.keyContext.objectKey === objectKey).length, 0);
+                done();
+            });
+        });
+    });
+
 
     it('should upload a part even if the client sent a base 64 ETag ' +
     '(and the stored ETag in metadata should be hex)', done => {
