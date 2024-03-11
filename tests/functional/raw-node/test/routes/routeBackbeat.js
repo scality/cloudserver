@@ -1,9 +1,8 @@
 const assert = require('assert');
 const async = require('async');
 const crypto = require('crypto');
-const { models, versioning } = require('arsenal');
+const { versioning } = require('arsenal');
 const versionIdUtils = versioning.VersionID;
-const { ObjectMD } = models;
 
 const { makeRequest, makeBackbeatRequest } = require('../../utils/makeRequest');
 const BucketUtility = require('../../../aws-node-sdk/lib/utility/bucket-util');
@@ -87,17 +86,15 @@ function checkVersionData(s3, bucket, objectKey, versionId, dataValue, done) {
 }
 
 function updateStorageClass(data, storageClass) {
-    let parsedBody;
+    let result;
     try {
-        parsedBody = JSON.parse(data.body);
+        const parsedBody = JSON.parse(JSON.parse(data.body).Body);
+        parsedBody['x-amz-storage-class'] = storageClass;
+        result = JSON.stringify(parsedBody);
     } catch (err) {
         return { error: err };
     }
-    const { result, error } = ObjectMD.createFromBlob(parsedBody.Body);
-    if (error) {
-        return { error };
-    }
-    result.setAmzStorageClass(storageClass);
+
     return { result };
 }
 
@@ -202,11 +199,11 @@ describeSkipIfAWS('backbeat routes', () => {
 
         it('should update metadata of a current null version', done => {
             let objMD;
-            return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => makeBackbeatRequest({
+            return async.series({
+                putObject: next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                enableVersioningSource: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+                getMetadata: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
                     bucket,
@@ -226,7 +223,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     objMD = result;
                     return next();
                 }),
-                next => makeBackbeatRequest({
+                putMetadata: next => makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'metadata',
                     bucket,
@@ -235,19 +232,37 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
-            ], (err, data) => {
+                headObject: next => s3.headObject(
+                    { Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                getMetadataAfter: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, next),
+                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+            }, (err, results) => {
                 if (err) {
                     return done(err);
                 }
-                const headObjectRes = data[4];
+
+                const headObjectRes = results.headObject;
                 assert.strictEqual(headObjectRes.VersionId, 'null');
                 assert.strictEqual(headObjectRes.StorageClass, storageClass);
 
-                const listObjectVersionsRes = data[5];
+                const getMetadataAfterRes = results.getMetadataAfter;
+                const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
+                const expectedMd = JSON.parse(objMD);
+                expectedMd.isNull = true; // TODO remove the line once CLDSRV-509 is fixed
+                assert.deepStrictEqual(JSON.parse(objMDAfter), expectedMd);
+
+                const listObjectVersionsRes = results.listObjectVersions;
                 const { Versions } = listObjectVersionsRes;
 
                 assert.strictEqual(Versions.length, 1);
@@ -261,18 +276,20 @@ describeSkipIfAWS('backbeat routes', () => {
         it('should update metadata of a non-current null version', done => {
             let objMD;
             let expectedVersionId;
-            return async.series([
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
-                next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
-                    next),
-                next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
+            return async.series({
+                putObjectInitial: next => s3.putObject(
+                    { Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
+                enableVersioning: next => s3.putBucketVersioning(
+                    { Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }, next),
+                putObjectAgain: next => s3.putObject(
+                { Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, (err, data) => {
                     if (err) {
                         return next(err);
                     }
                     expectedVersionId = data.VersionId;
                     return next();
                 }),
-                next => makeBackbeatRequest({
+                getMetadata: next => makeBackbeatRequest({
                     method: 'GET',
                     resourceType: 'metadata',
                     bucket,
@@ -292,7 +309,7 @@ describeSkipIfAWS('backbeat routes', () => {
                     objMD = result;
                     return next();
                 }),
-                next => makeBackbeatRequest({
+                putMetadata: next => makeBackbeatRequest({
                     method: 'PUT',
                     resourceType: 'metadata',
                     bucket,
@@ -301,23 +318,36 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
-                next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
-                next => s3.listObjectVersions({ Bucket: bucket }, next),
-            ], (err, data) => {
+                headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                getMetadataAfter: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, next),
+                listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
+            }, (err, results) => {
                 if (err) {
                     return done(err);
                 }
-                const headObjectRes = data[5];
+                const headObjectRes = results.headObject;
                 assert.strictEqual(headObjectRes.VersionId, 'null');
                 assert.strictEqual(headObjectRes.StorageClass, storageClass);
 
-                const listObjectVersionsRes = data[6];
+                const getMetadataAfterRes = results.getMetadataAfter;
+                const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
+                assert.deepStrictEqual(JSON.parse(objMDAfter), JSON.parse(objMD));
+
+                const listObjectVersionsRes = results.listObjectVersions;
                 const { Versions } = listObjectVersionsRes;
 
                 assert.strictEqual(Versions.length, 2);
-
                 const currentVersion = Versions.find(v => v.IsLatest);
                 assertVersionHasNotBeenUpdated(currentVersion, expectedVersionId);
 
@@ -365,9 +395,19 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                getMetadataAfter: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, next),
                 listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
             }, (err, results) => {
                 if (err) {
@@ -376,6 +416,10 @@ describeSkipIfAWS('backbeat routes', () => {
                 const headObjectRes = results.headObject;
                 assert.strictEqual(headObjectRes.VersionId, 'null');
                 assert.strictEqual(headObjectRes.StorageClass, storageClass);
+
+                const getMetadataAfterRes = results.getMetadataAfter;
+                const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
+                assert.deepStrictEqual(JSON.parse(objMDAfter), JSON.parse(objMD));
 
                 const listObjectVersionsRes = results.listObjectVersions;
                 const { Versions } = listObjectVersionsRes;
@@ -430,9 +474,19 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 headObject: next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
+                getMetadataAfter: next => makeBackbeatRequest({
+                    method: 'GET',
+                    resourceType: 'metadata',
+                    bucket,
+                    objectKey: keyName,
+                    queryObj: {
+                        versionId: 'null',
+                    },
+                    authCredentials: backbeatAuthCredentials,
+                }, next),
                 listObjectVersions: next => s3.listObjectVersions({ Bucket: bucket }, next),
             }, (err, results) => {
                 if (err) {
@@ -441,6 +495,10 @@ describeSkipIfAWS('backbeat routes', () => {
                 const headObjectRes = results.headObject;
                 assert.strictEqual(headObjectRes.VersionId, 'null');
                 assert.strictEqual(headObjectRes.StorageClass, storageClass);
+
+                const getMetadataAfterRes = results.getMetadataAfter;
+                const objMDAfter = JSON.parse(getMetadataAfterRes.body).Body;
+                assert.deepStrictEqual(JSON.parse(objMDAfter), JSON.parse(objMD));
 
                 const listObjectVersionsRes = results.listObjectVersions;
                 const { Versions } = listObjectVersionsRes;
@@ -487,7 +545,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -549,7 +607,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -612,7 +670,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -683,7 +741,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -748,7 +806,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -808,7 +866,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -869,7 +927,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
@@ -932,7 +990,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
                     next),
@@ -1012,7 +1070,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -1087,7 +1145,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
                 next => s3.listObjectVersions({ Bucket: bucket }, next),
@@ -1159,7 +1217,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.putObject({ Bucket: bucket, Key: keyName, Body: new Buffer(testData) }, next),
                 next => s3.headObject({ Bucket: bucket, Key: keyName, VersionId: 'null' }, next),
@@ -1233,7 +1291,7 @@ describeSkipIfAWS('backbeat routes', () => {
                         versionId: 'null',
                     },
                     authCredentials: backbeatAuthCredentials,
-                    requestBody: objMD.getSerialized(),
+                    requestBody: objMD,
                 }, next),
                 next => s3.putBucketVersioning({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } },
                     next),
