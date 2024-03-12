@@ -488,9 +488,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.10.62":
-  version "7.10.62"
-  resolved "git+https://github.com/scality/arsenal#e9d815cc9d212932924a5388173548ff804edc6b"
+"arsenal@git+https://github.com/scality/arsenal#0466eb4d82624796190338e8892bc3ea2c0908e5":
+  version "7.10.59"
+  resolved "git+https://github.com/scality/arsenal#0466eb4d82624796190338e8892bc3ea2c0908e5"
   dependencies:
     "@types/async" "^3.2.12"
     "@types/utf8" "^3.0.1"
@@ -523,7 +523,7 @@ arraybuffer.slice@~0.0.7:
     sproxydclient "github:scality/sproxydclient#8.0.4"
     utf8 "2.1.2"
     uuid "^3.0.1"
-    werelogs scality/werelogs#8.1.4
+    werelogs scality/werelogs#8.1.0
     xml2js "~0.4.23"
   optionalDependencies:
     ioctl "^2.0.2"
