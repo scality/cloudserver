@@ -794,9 +794,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#8.1.125":
-  version "8.1.125"
-  resolved "git+https://github.com/scality/arsenal#a1dc2bd84d94c7fcae1ebcf3ff597264e073572b"
+"arsenal@git+https://github.com/scality/arsenal#8.1.127":
+  version "8.1.127"
+  resolved "git+https://github.com/scality/arsenal#c2ab4a2052e46a19504ba7014d3c4030aa04aa41"
   dependencies:
     "@azure/identity" "^3.1.1"
     "@azure/storage-blob" "^12.12.0"
@@ -832,7 +832,7 @@ arraybuffer.slice@~0.0.7:
     sproxydclient "git+https://github.com/scality/sproxydclient#8.0.10"
     utf8 "3.0.0"
     uuid "^3.0.1"
-    werelogs scality/werelogs#8.1.2
+    werelogs scality/werelogs#8.1.4
     xml2js "~0.4.23"
   optionalDependencies:
     ioctl "^2.0.2"
@@ -5978,6 +5978,13 @@ werelogs@scality/werelogs#8.1.0:
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/e8f828725642c54c511cdbe580b18f43d3589313"
   dependencies:
     safe-json-stringify "1.0.3"
+
+werelogs@scality/werelogs#8.1.4:
+  version "8.1.4"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/d6bec11df034c88a12959791eb7dd60913eb5f47"
+  dependencies:
+    fast-safe-stringify "^2.1.1"
+    safe-json-stringify "^1.2.0"
 
 whatwg-mimetype@^2.3.0:
   version "2.3.0"
