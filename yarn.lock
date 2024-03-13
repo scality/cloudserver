@@ -499,9 +499,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/arsenal#7.70.27":
-  version "7.70.27"
-  resolved "git+https://github.com/scality/arsenal#01409d690cd37e061e36a7bc4138d45511b063fd"
+"arsenal@git+https://github.com/scality/arsenal#7.70.29":
+  version "7.70.29"
+  resolved "git+https://github.com/scality/arsenal#a643a3e6ccbc49327339a285de1d4cb17afcd171"
   dependencies:
     "@js-sdsl/ordered-set" "^4.4.2"
     "@types/async" "^3.2.12"
@@ -535,7 +535,7 @@ arraybuffer.slice@~0.0.7:
     sproxydclient "github:scality/sproxydclient#8.0.4"
     utf8 "2.1.2"
     uuid "^3.0.1"
-    werelogs scality/werelogs#8.1.0
+    werelogs scality/werelogs#8.1.4
     xml2js "~0.4.23"
   optionalDependencies:
     ioctl "^2.0.2"
@@ -1959,6 +1959,11 @@ fast-levenshtein@~2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==
+
+fast-safe-stringify@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.1.1.tgz#c406a83b6e70d9e35ce3b30a81141df30aeba884"
+  integrity sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==
 
 "fcntl@github:scality/node-fcntl#0.2.0":
   version "0.2.0"
@@ -4628,7 +4633,7 @@ safe-json-stringify@1.0.3:
   resolved "https://registry.yarnpkg.com/safe-json-stringify/-/safe-json-stringify-1.0.3.tgz#3cb6717660a086d07cb5bd9b7a6875bcf67bd05e"
   integrity sha512-FspOTGvddR3ZE2k+NqHsywbCrnD7xow+r156P04MEMURbRF65Pdccpl2f4XU3KjXKsK5zdF03ScdKoL7Ti4Gpg==
 
-safe-json-stringify@^1.0.3:
+safe-json-stringify@^1.0.3, safe-json-stringify@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/safe-json-stringify/-/safe-json-stringify-1.2.0.tgz#356e44bc98f1f93ce45df14bcd7c01cda86e0afd"
   integrity sha512-gH8eh2nZudPQO6TytOvbxnuhYBOvDBBLW52tz5q6X58lJcd/tkmqFR+5Z9adS8aJtURSXWThWy/xJtJwixErvg==
@@ -5605,6 +5610,13 @@ werelogs@scality/werelogs#8.1.0:
   resolved "https://codeload.github.com/scality/werelogs/tar.gz/e8f828725642c54c511cdbe580b18f43d3589313"
   dependencies:
     safe-json-stringify "1.0.3"
+
+werelogs@scality/werelogs#8.1.4:
+  version "8.1.4"
+  resolved "https://codeload.github.com/scality/werelogs/tar.gz/d6bec11df034c88a12959791eb7dd60913eb5f47"
+  dependencies:
+    fast-safe-stringify "^2.1.1"
+    safe-json-stringify "^1.2.0"
 
 werelogs@scality/werelogs#GA7.2.0.5:
   version "7.2.0"
