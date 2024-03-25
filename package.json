@@ -1,7 +1,7 @@
 {
   "name": "s3",
   "version": "7.10.46",
-  "description": "S3 connector",
+  "description": "S3 connector TEST",
   "main": "index.js",
   "engines": {
     "node": ">=16"
