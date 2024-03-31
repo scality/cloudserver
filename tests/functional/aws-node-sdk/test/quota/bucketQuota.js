@@ -10,7 +10,7 @@ const sendRequest = async (method, host, path, body = '') => {
     request.method = method.toUpperCase();
     request.path = path;
     request.body = body;
-    request.headers.Host = host; // Use dot notation
+    request.headers.Host = "127.0.0.1:8000"
     request.headers['X-Amz-Date'] = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
     const sha256hash = AWS.util.crypto.sha256(request.body || '', 'hex');
     request.headers['X-Amz-Content-SHA256'] = sha256hash;
