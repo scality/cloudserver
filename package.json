@@ -74,7 +74,7 @@
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
-    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket/getBucketQuota.js", 
+    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket", 
     "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support",
     "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/versioning/",
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
