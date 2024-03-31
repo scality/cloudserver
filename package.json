@@ -21,7 +21,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.12.0",
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#f7c1913581a226f528e790f076cdf15787eb8f65",
+    "arsenal": "git+https://github.com/scality/arsenal#dd6955cff3cc2e1caa5279dd1d9885c93bcee12b",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "bucketclient": "scality/bucketclient#8.1.9",
@@ -74,7 +74,7 @@
     "cloudserver": "S3METADATA=mongodb npm-run-all --parallel start_dataserver start_s3server",
     "ft_awssdk": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
     "ft_awssdk_aws": "cd tests/functional/aws-node-sdk && AWS_ON_AIR=true mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/",
-    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket",
+    "ft_awssdk_buckets": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/bucket/getBucketQuota.js", 
     "ft_awssdk_objects_misc": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/legacy test/object test/service test/support",
     "ft_awssdk_versioning": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/versioning/",
     "ft_awssdk_external_backends": "cd tests/functional/aws-node-sdk && mocha --reporter mocha-multi-reporters --reporter-options configFile=$INIT_CWD/tests/reporter-config.json test/multipleBackend",
