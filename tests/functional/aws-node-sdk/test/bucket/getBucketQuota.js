@@ -1,46 +1,16 @@
-const { S3 , AWS } = require('aws-sdk');
+const AWS = require('aws-sdk');
+const S3 = AWS.S3;
+const fetch = require('node-fetch');
 
 const async = require('async');
 const assert = require('assert');
 const getConfig = require('../support/config');
+const sendRequest = require('../quota/tooling').sendRequest;
 
-const bucket = 'getquotatestbucket';
+const bucket = 'getquotatestbucket';   
+const quota = { quota: 1000 };
 
-const sendRequest = async (method, host, path, body = '') => {
-    const service = 's3';
-    const endpoint = new AWS.Endpoint(host);
-
-    const request = new AWS.HttpRequest(endpoint);
-    request.method = method.toUpperCase();
-    request.path = path;
-    request.body = body;
-    request.headers.Host = "127.0.0.1:8000"
-    request.headers['X-Amz-Date'] = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
-    const sha256hash = AWS.util.crypto.sha256(request.body || '', 'hex');
-    request.headers['X-Amz-Content-SHA256'] = sha256hash;
-    request.region = AWS.config.region;
-
-    const signer = new AWS.Signers.V4(request, service);
-    signer.addAuthorization(AWS.config.credentials, new Date());
-
-    const options = {
-        method: request.method,
-        headers: request.headers
-    };
-
-    if (method !== 'GET' && method !== 'HEAD') {
-        options.body = request.body;
-    }
-
-    try {
-        const response = await fetch(url, options);
-        const data = await response.text();
-    } catch (error) {
-       assert.ifError(error);
-    }
-};
-
-describe('aws-sdk test get bucket quota', () => {
+describe('Test get bucket quota', () => {
     let s3;
 
     before(() => {
@@ -52,15 +22,41 @@ describe('aws-sdk test get bucket quota', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should return the Quota', done => {
-        const quota = { quota: 1000 };
-        async.series([
-            next => sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), next),
-            next => sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`, {}, next),
-        ], (err, data) => {
-            assert.ifError(err);
-            assert.deepStrictEqual(data, quota);
+    it('should return the quota', (done) => {
+        sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), (error, data) => {
+            if (error) {
+                done(error);
+                return;
+            }
+            sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', (error, data) => {
+                if (error) {
+                    done(error);
+                    return;
+                }
+                assert.strictEqual(data.GetBucketQuota.Name[0], bucket);
+                assert.strictEqual(data.GetBucketQuota.Quota[0], '1000');
+                done();
+            });
+        });
+    });
+
+    it('should return no such bucket error', (done) => {
+        sendRequest('GET', '127.0.0.1:8000', `/test/?quota=true`, '' , err => {
+            assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
             done();
+        });
+    });
+
+    it('should return no such bucket quota', (done) => {
+        sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', (err , data) => {
+            if (err) {
+                done(err);
+                return;
+            };
+            sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', err => {
+            assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
+            done();
+            });
         });
     });
 });
