@@ -1,7 +1,5 @@
 const fetch = require('node-fetch');
 const AWS = require('aws-sdk');
-const commander = require('commander');
-const res = require('express/lib/response');
 const xml2js = require('xml2js');
 
 const sendRequest = async (method, host, path, body = '', callback) => {
@@ -16,7 +14,7 @@ const sendRequest = async (method, host, path, body = '', callback) => {
     request.headers['X-Amz-Date'] = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
     const sha256hash = AWS.util.crypto.sha256(request.body || '', 'hex');
     request.headers['X-Amz-Content-SHA256'] = sha256hash;
-    request.region = "us-east-1";
+    request.region = 'us-east-1';
 
     const signer = new AWS.Signers.V4(request, service);
     signer.addAuthorization(AWS.config.credentials, new Date());
