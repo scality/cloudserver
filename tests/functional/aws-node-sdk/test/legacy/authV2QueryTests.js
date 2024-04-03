@@ -43,7 +43,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     // ( seven days)
     itSkipAWS('should return an error code if expires header is too far ' +
         'in the future', done => {
-        const params = { Bucket: bucket, Expires: 604810 };
+        const params = { Bucket: bucket, Expires: 604800 };
         const url = s3.getSignedUrl('createBucket', params);
         provideRawOutput(['-verbose', '-X', 'PUT', url], httpCode => {
             assert.strictEqual(httpCode, '403 FORBIDDEN');
