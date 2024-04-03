@@ -3,7 +3,6 @@ const S3 = AWS.S3;
 const assert = require('assert');
 const getConfig = require('../support/config');
 const sendRequest = require('../quota/tooling').sendRequest;
-const logger = require('../../../../lib/utilities/logger');
 
 const bucket = 'getquotatestbucket';
 const quota = { quota: 1000 };
@@ -21,7 +20,7 @@ describe('Test get bucket quota', () => {
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
     it('should return the quota', done => {
-        logger.info('AWS config', { config: AWS.config });
+        console.log(`AWS CONFIG: ${JSON.stringify(AWS.config)}`);
         sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), error => {
             if (error) {
                 done(error);
