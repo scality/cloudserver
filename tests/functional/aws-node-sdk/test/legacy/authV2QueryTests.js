@@ -33,7 +33,7 @@ describe('aws-node-sdk v2auth query tests', function testSuite() {
     let s3;
 
     before(() => {
-        const config = getConfig('default');
+        const config = getConfig('default', { signatureVersion: 'v2' });
 
         s3 = new S3(config);
     });
