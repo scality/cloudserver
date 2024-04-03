@@ -13,6 +13,7 @@ describe('Test delete bucket quota', () => {
     before(() => {
         const config = getConfig('default', { signatureVersion: 'v4' });
         s3 = new S3(config);
+        AWS.config.update(config);
     });
 
     beforeEach(done => s3.createBucket({ Bucket: bucket }, done));
