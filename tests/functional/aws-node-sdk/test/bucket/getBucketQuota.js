@@ -21,7 +21,6 @@ describe('Test get bucket quota', () => {
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
     it('should return the quota', done => {
-        console.log(`AWS CONFIG: ${JSON.stringify(AWS.config)}`);
         sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), error => {
             if (error) {
                 done(error);

@@ -15,7 +15,7 @@ const sendRequest = async (method, host, path, body = '', callback) => {
     const sha256hash = AWS.util.crypto.sha256(request.body || '', 'hex');
     request.headers['X-Amz-Content-SHA256'] = sha256hash;
     request.region = 'us-east-1';
-    console.log(`AWS config 2 ${ JSON.stringify(AWS.config.credentials) }`);
+
     const signer = new AWS.Signers.V4(request, service);
     signer.addAuthorization(AWS.config.credentials, new Date());
 
