@@ -24,33 +24,38 @@ describe('Test update bucket quota', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should update the quota', done => {
-        sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), err => {
-            assert.strictEqual(err, null);
-            done();
-        });
+    it('should update the quota', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota));
+            assert.ok(true);
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
     });
 
-    it('should return no such bucket error', done => {
-        sendRequest('POST', '127.0.0.1:8000', `/${nonExistantBucket}/?quota=true`, JSON.stringify(quota), err => {
+    it('should return no such bucket error', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${nonExistantBucket}/?quota=true`, JSON.stringify(quota));
+        } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
-            done();
-        });
+        }
     });
 
-    it('should return error when quota is negative', done => {
-        sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(negativeQuota), err => {
+    it('should return error when quota is negative', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(negativeQuota));
+        } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
-            assert.strictEqual(err.Error.Message[0], 'Quota Value should be a positive number');
-            done();
-        });
+            assert.strictEqual(err.Error.Message[0], 'Quota value must be a positive number');
+        }
     });
 
-    it('should return error when quota is not in correct format', done => {
-        sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, wrongquotaFromat, err => {
+    it('should return error when quota is not in correct format', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, wrongquotaFromat);
+        } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'InvalidArgument');
             assert.strictEqual(err.Error.Message[0], 'Request body must be a JSON object');
-            done();
-        });
+        }
     });
 });

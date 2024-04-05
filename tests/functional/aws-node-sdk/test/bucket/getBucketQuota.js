@@ -20,41 +20,58 @@ describe('Test get bucket quota', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should return the quota', done => {
-        sendRequest('POST', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota), error => {
-            if (error) {
-                done(error);
-                return;
-            }
-            sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', (error, data) => {
-                if (error) {
-                    done(error);
-                    return;
-                }
-                assert.strictEqual(data.GetBucketQuota.Name[0], bucket);
-                assert.strictEqual(data.GetBucketQuota.Quota[0], '1000');
-                done();
-            });
-        });
+    it('should return the quota', async () => {
+        try {
+            await sendRequest('PUT', '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota));
+            const data = await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+            assert.strictEqual(data.GetBucketQuota.Name[0], bucket);
+            assert.strictEqual(data.GetBucketQuota.Quota[0], '1000');
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
     });
 
-    it('should return no such bucket error', done => {
-        sendRequest('GET', '127.0.0.1:8000', '/test/?quota=true', '', err => {
+    it('should return no such bucket error', async () => {
+        try {
+            await sendRequest('GET', '127.0.0.1:8000', '/test/?quota=true');
+        } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
-            done();
-        });
+        }
     });
 
-    it('should return no such bucket quota', done => {
-        sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', err => {
-            if (err) {
-                done(err);
-                return;
+    it('should return no such bucket quota', async () => {
+        try {
+            await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+            try {
+                await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+                assert.fail('Expected NoSuchBucketQuota error');
+            } catch (err) {
+                assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
             }
-            sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', err => {
-            assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
-            done();
-            });
-        });
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
+    });
+
+    it('should return no such bucket error', async () => {
+        try {
+            await sendRequest('GET', '127.0.0.1:8000', '/test/?quota=true');
+        } catch (err) {
+            assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
+        }
+    });
+
+    it('should return no such bucket quota', async () => {
+        try {
+            await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+            try {
+                await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+                assert.fail('Expected NoSuchBucketQuota error');
+            } catch (err) {
+                assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
+            }
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
     });
 });

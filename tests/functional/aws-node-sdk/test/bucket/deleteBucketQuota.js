@@ -20,17 +20,20 @@ describe('Test delete bucket quota', () => {
 
     afterEach(done => s3.deleteBucket({ Bucket: bucket }, done));
 
-    it('should delete the bucket quota', done => {
-        sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`, '', err => {
-            assert.strictEqual(err, null);
-            done();
-        });
+    it('should delete the bucket quota', async () => {
+        try {
+            await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
+            assert.ok(true);
+        } catch (err) {
+            assert.fail(`Expected no error, but got ${err}`);
+        }
     });
 
-    it('should return no such bucket error', done => {
-        sendRequest('DELETE', '127.0.0.1:8000', `/${nonExistantBucket}/?quota=true`, '', err => {
+    it('should return no such bucket error', async () => {
+        try {
+            await sendRequest('DELETE', '127.0.0.1:8000', `/${nonExistantBucket}/?quota=true`);
+        } catch (err) {
             assert.strictEqual(err.Error.Code[0], 'NoSuchBucket');
-            done();
-        });
+        }
     });
 });
