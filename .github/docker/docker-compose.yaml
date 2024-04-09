@@ -61,6 +61,6 @@ services:
   pykmip:
     network_mode: "host"
     profiles: ['pykmip']
-    image: registry.scality.com/cloudserver-dev/pykmip
+    image: ghcr.io/cloudserver/pykmip
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts

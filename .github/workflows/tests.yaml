@@ -135,13 +135,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Login to Registry
-        uses: docker/login-action@v1
-        with:
-          registry: registry.scality.com
-          username: ${{ secrets.REGISTRY_LOGIN }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          password: ${{ github.token }}
       - name: Build and push cloudserver image
         uses: docker/build-push-action@v3
         with:
@@ -149,18 +143,17 @@ jobs:
           context: .
           provenance: false
           tags: |
-            ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
-            registry.scality.com/cloudserver-dev/cloudserver:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
 
   build-federation-image:
-    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v2
     secrets: inherit
     with:
       push: true
-      registry: registry.scality.com
-      namespace: cloudserver-dev
+      registry: ghcr.io
+      namespace: scality
       name: cloudserver
       context: .
       file: images/svc-base/Dockerfile
@@ -170,7 +163,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     env:
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       S3BACKEND: mem
       S3_LOCATION_FILE: /usr/src/app/tests/locationConfig/locationConfigTests.json
       S3DATA: multiple
@@ -209,7 +202,7 @@ jobs:
     env:
       S3BACKEND: file
       S3VAULT: mem
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       MPU_TESTING: "yes"
       JOB_NAME: ${{ github.job }}
     steps:
@@ -249,7 +242,7 @@ jobs:
       ENABLE_UTAPI_V2: t
       S3BACKEND: mem 
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
@@ -284,7 +277,7 @@ jobs:
       S3BACKEND: file
       S3VAULT: mem
       MPU_TESTING: true
-      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
