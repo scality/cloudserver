@@ -1,0 +1,40 @@
+---
+name: migrate
+
+on:
+  push:
+    branches-ignore:
+    - development/**
+    - q/*/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Sync ${{ github.event.repository.name }}
+      run: |
+        docker run --rm quay.io/skopeo/stable:v1.15.0 sync \
+            --src docker --dest docker --all --preserve-digests --retry-times 5 \
+            --src-creds ${{ secrets.REGISTRY_LOGIN }}:${{ secrets.REGISTRY_PASSWORD }} \
+            --dest-creds ${{ github.repository_owner }}:${{ github.token }} \
+            registry.scality.com/${{ github.event.repository.name }}/${{ github.event.repository.name }} \
+            ghcr.io/scality/
+
+    - name: Sync ${{ github.event.repository.name }}-dashboards
+      run: |
+        docker run --rm quay.io/skopeo/stable:v1.15.0 sync \
+            --src docker --dest docker --all --preserve-digests --retry-times 5 \
+            --src-creds ${{ secrets.REGISTRY_LOGIN }}:${{ secrets.REGISTRY_PASSWORD }} \
+            --dest-creds ${{ github.repository_owner }}:${{ github.token }} \
+            registry.scality.com/${{ github.event.repository.name }}/${{ github.event.repository.name }}-dashboards \
+            ghcr.io/scality/${{ github.event.repository.name }}
+
+    - name: Sync pykmip
+      run: |
+        docker run --rm quay.io/skopeo/stable:v1.15.0 sync \
+            --src docker --dest docker --all --preserve-digests --retry-times 5 \
+            --src-creds ${{ secrets.REGISTRY_LOGIN }}:${{ secrets.REGISTRY_PASSWORD }} \
+            --dest-creds ${{ github.repository_owner }}:${{ github.token }} \
+            registry.scality.com/${{ github.event.repository.name }}-dev/pykmip \
+            ghcr.io/scality/${{ github.event.repository.name }}
