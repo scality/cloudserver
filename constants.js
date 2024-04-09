@@ -243,6 +243,9 @@ const constants = {
         'objectPutPart',
         'completeMultipartUpload',
     ],
+    // if requester is not bucket owner, bucket policy actions should be denied with
+    // MethodNotAllowed error
+    onlyOwnerAllowed: ['bucketDeletePolicy', 'bucketGetPolicy', 'bucketPutPolicy'],
 };
 
 module.exports = constants;
