@@ -350,6 +350,49 @@ describe('Config', () => {
         });
     });
 
+    describe('scuba option setup', () => {
+        let oldConfig;
+
+        before(() => {
+            oldConfig = process.env.S3_CONFIG_FILE;
+            process.env.S3_CONFIG_FILE =
+                'tests/unit/testConfigs/allOptsConfig/config.json';
+        });
+
+        after(() => {
+            process.env.S3_CONFIG_FILE = oldConfig;
+        });
+
+        it('should set up scuba', () => {
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.scuba,
+                {
+                    host: 'localhost',
+                    port: 8100,
+                },
+            );
+        });
+
+        it('should use environment variables for scuba', () => {
+            setEnv('SCUBA_HOST', 'scubahost');
+            setEnv('SCUBA_PORT', 1234);
+
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.scuba,
+                {
+                    host: 'scubahost',
+                    port: 1234,
+                },
+            );
+        });
+    });
+
     describe('utapi option setup', () => {
         let oldConfig;
 
