@@ -363,6 +363,40 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
+  scuba-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      S3BACKEND: mem
+      SCUBA_HOST: localhost
+      SCUBA_PORT: 8100
+      SCUBA_HEALTHCHECK_FREQUENCY: 100
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}/cloudserver:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker compose up -d
+      working-directory: .github/docker
+    - name: Run scuba tests
+      run: |-
+        set -ex -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run test_scuba | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v3
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
   kmip-ft-tests:
     runs-on: ubuntu-latest
     needs: build
