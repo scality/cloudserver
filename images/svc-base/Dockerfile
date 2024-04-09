@@ -1,4 +1,4 @@
-FROM registry.scality.com/federation/nodesvc-base:7.10.6.0
+FROM ghcr.io/scality/federation/nodesvc-base:7.10.6.0
 
 ENV S3_CONFIG_FILE=${CONF_DIR}/config.json
 ENV S3_LOCATION_FILE=${CONF_DIR}/locationConfig.json
