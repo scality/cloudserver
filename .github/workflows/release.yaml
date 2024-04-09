@@ -11,24 +11,24 @@ on:
 
 jobs:
   build-federation-image:
-    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v2
     secrets: inherit
     with:
       push: true
-      registry: registry.scality.com
-      namespace: ${{ github.event.repository.name }}
+      registry: ghcr.io
+      namespace: scality
       name: ${{ github.event.repository.name }}
       context: .
       file: images/svc-base/Dockerfile
       tag: ${{ github.event.inputs.tag }}-svc-base
 
   build-image:
-    uses: scality/workflows/.github/workflows/docker-build.yaml@v1
+    uses: scality/workflows/.github/workflows/docker-build.yaml@v2
     secrets: inherit
     with:
       push: true
-      registry: registry.scality.com
-      namespace: ${{ github.event.repository.name }}
+      registry: ghcr.io
+      namespace: scality
       name: ${{ github.event.repository.name }}
       context: .
       file: Dockerfile
@@ -38,9 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           name: Release ${{ github.event.inputs.tag }}
           tag_name: ${{ github.event.inputs.tag }}
