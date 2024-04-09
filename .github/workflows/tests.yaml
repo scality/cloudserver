@@ -146,6 +146,15 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha,scope=cloudserver
           cache-to: type=gha,mode=max,scope=cloudserver
+      - name: Build and push pykmip image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          context: .github/pykmip
+          tags: |
+            ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
+          cache-from: type=gha,scope=pykmip
+          cache-to: type=gha,mode=max,scope=pykmip
 
   build-federation-image:
     uses: scality/workflows/.github/workflows/docker-build.yaml@v2
@@ -278,6 +287,7 @@ jobs:
       S3VAULT: mem
       MPU_TESTING: true
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      PYKMIP_IMAGE: ghcr.io/${{ github.repository }}/pykmip:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
