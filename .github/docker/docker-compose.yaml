@@ -62,6 +62,6 @@ services:
   pykmip:
     network_mode: "host"
     profiles: ['pykmip']
-    image: ghcr.io/cloudserver/pykmip
+    image: ${PYKMIP_IMAGE:-ghcr.io/scality/cloudserver/pykmip}
     volumes:
       - /tmp/artifacts/${JOB_NAME}:/artifacts
