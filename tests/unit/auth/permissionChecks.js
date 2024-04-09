@@ -1,10 +1,13 @@
+const sinon = require('sinon');
 const assert = require('assert');
 const {
     checkBucketAcls,
     checkObjectAcls,
     validatePolicyConditions,
+    validateQuotas,
 } = require('../../../lib/api/apiUtils/authorization/permissionChecks');
 const constants = require('../../../constants');
+const { ScubaClientInstance } = require('../../../lib/scuba/wrapper');
 
 const { bucketOwnerActions, logId } = constants;
 
@@ -532,5 +535,131 @@ describe('validatePolicyConditions', () => {
             }
             assert.strictEqual(result.description, test.expected);
         });
+    });
+});
+
+describe('validateQuotas', () => {
+    const mockBucket = {
+        getQuota: () => 100,
+        getName: () => 'bucketName',
+        getCreationDate: () => '2022-01-01T00:00:00.000Z',
+    };
+
+    const mockLog = {
+        warn: sinon.stub(),
+        debug: sinon.stub(),
+    };
+
+    beforeEach(() => {
+        ScubaClientInstance.enabled = true;
+        ScubaClientInstance.getLatestMetrics = sinon.stub().resolves({});
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should return null if quota is <= 0 or scuba is disabled', async () => {
+        const result = await validateQuotas(mockBucket, [], false, mockLog);
+        assert.strictEqual(result, null);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.called, false);
+    });
+
+    it('should return null if scuba is disabled', async () => {
+        ScubaClientInstance.enabled = false;
+        const result = await validateQuotas(mockBucket, [], false, mockLog);
+        assert.strictEqual(result, null);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.called, false);
+    });
+
+    it('should return null if metrics retrieval fails', async () => {
+        ScubaClientInstance.enabled = true;
+        const error = new Error('Failed to get metrics');
+        ScubaClientInstance.getLatestMetrics.rejects(error);
+
+        const result = await validateQuotas(mockBucket, ['objectPut', 'getObject'], true, mockLog);
+        assert.strictEqual(result, null);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledOnce, true);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledWith(
+            'bucket',
+            'bucketName_1640995200000',
+            null,
+            {
+                action: 'objectPut',
+                inflight: true,
+            }
+        ), true);
+    });
+
+    it('should return errors.QuotaExceeded if quota is exceeded', async () => {
+        const result1 = {
+            bytesTotal: 150,
+        };
+        const result2 = {
+            bytesTotal: 120,
+        };
+        ScubaClientInstance.getLatestMetrics.resolves(result1);
+        ScubaClientInstance.getLatestMetrics.resolves(result2);
+
+        const result = await validateQuotas(mockBucket, ['objectPut', 'getObject'], true, mockLog);
+        assert.strictEqual(result.is.QuotaExceeded, true);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledOnce, true);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledWith(
+            'bucket',
+            'bucketName_1640995200000',
+            null,
+            {
+                action: 'objectPut',
+                inflight: true,
+            }
+        ), true);
+    });
+
+    it('should not return QuotaExceeded if the quotas are exceeded but operation is a delete', async () => {
+        const result1 = {
+            bytesTotal: 150,
+        };
+        const result2 = {
+            bytesTotal: 120,
+        };
+        ScubaClientInstance.getLatestMetrics.resolves(result1);
+        ScubaClientInstance.getLatestMetrics.resolves(result2);
+
+        const result = await validateQuotas(mockBucket, ['objectDelete'], -50, mockLog);
+        assert.strictEqual(result, null);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledOnce, true);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledWith(
+            'bucket',
+            'bucketName_1640995200000',
+            null,
+            {
+                action: 'objectDelete',
+                inflight: -50,
+            }
+        ), true);
+    });
+
+    it('should return null if quota is not exceeded', async () => {
+        const result1 = {
+            bytesTotal: 80,
+        };
+        const result2 = {
+            bytesTotal: 90,
+        };
+        ScubaClientInstance.getLatestMetrics.resolves(result1);
+        ScubaClientInstance.getLatestMetrics.resolves(result2);
+
+        const result = await validateQuotas(mockBucket, ['objectRestore', 'objectPut'], true, mockLog);
+        assert.strictEqual(result, null);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledTwice, true);
+        assert.strictEqual(ScubaClientInstance.getLatestMetrics.calledWith(
+            'bucket',
+            'bucketName_1640995200000',
+            null,
+            {
+                action: 'objectRestore',
+                inflight: true,
+            }
+        ), true);
     });
 });
