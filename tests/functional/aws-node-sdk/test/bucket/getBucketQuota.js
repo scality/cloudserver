@@ -44,9 +44,9 @@ describe('Test get bucket quota', () => {
             await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
             try {
                 await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
-                assert.fail('Expected NoSuchBucketQuota error');
+                assert.fail('Expected NoSuchQuota error');
             } catch (err) {
-                assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
+                assert.strictEqual(err.Error.Code[0], 'NoSuchQuota');
             }
         } catch (err) {
             assert.fail(`Expected no error, but got ${err}`);
@@ -66,9 +66,9 @@ describe('Test get bucket quota', () => {
             await sendRequest('DELETE', '127.0.0.1:8000', `/${bucket}/?quota=true`);
             try {
                 await sendRequest('GET', '127.0.0.1:8000', `/${bucket}/?quota=true`);
-                assert.fail('Expected NoSuchBucketQuota error');
+                assert.fail('Expected NoSuchQuota error');
             } catch (err) {
-                assert.strictEqual(err.Error.Code[0], 'NoSuchBucketQuota');
+                assert.strictEqual(err.Error.Code[0], 'NoSuchQuota');
             }
         } catch (err) {
             assert.fail(`Expected no error, but got ${err}`);
