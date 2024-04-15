@@ -23,6 +23,7 @@ RUN apt-get update \
 
 ENV PYTHON=python3
 COPY package.json yarn.lock /usr/src/app/
+RUN npm install typescript -g
 RUN yarn install --production --ignore-optional --frozen-lockfile --ignore-engines --network-concurrency 1
 
 ################################################################################
