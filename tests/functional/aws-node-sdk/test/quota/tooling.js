@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const AWS = require('aws-sdk');
 const xml2js = require('xml2js');
 
-const sendRequest = async (method, host, path, body = '') =>
+const sendRequest = async (method, host, path, body = '', config = null) =>
     new Promise(async (resolve, reject) => {
         const service = 's3';
         const endpoint = new AWS.Endpoint(host);
@@ -18,7 +18,10 @@ const sendRequest = async (method, host, path, body = '') =>
         request.region = 'us-east-1';
 
         const signer = new AWS.Signers.V4(request, service);
-        signer.addAuthorization(AWS.config.credentials, new Date());
+        const accessKeyId = config?.accessKey || AWS.config.credentials?.accessKeyId;
+        const secretAccessKey = config?.secretKey || AWS.config.credentials?.secretAccessKey;
+        const credentials = new AWS.Credentials(accessKeyId, secretAccessKey);
+        signer.addAuthorization(credentials, new Date());
 
         const url = `http://${host}${path}`;
         const options = {

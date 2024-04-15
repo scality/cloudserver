@@ -4,6 +4,7 @@ const { S3 } = require('aws-sdk');
 const getConfig = require('../functional/aws-node-sdk/test/support/config');
 const { Scuba: MockScuba, inflightFlushFrequencyMS } = require('../utilities/mock/Scuba');
 const sendRequest = require('../functional/aws-node-sdk/test/quota/tooling').sendRequest;
+const memCredentials = require('../functional/aws-node-sdk/lib/json/mem_credentials.json');
 
 let s3Client = null;
 const quota = { quota: 1000 };
@@ -205,6 +206,10 @@ describe('quota evaluation with scuba metrics', function t() {
     this.timeout(30000);
     const scuba = new MockScuba();
     const putQuotaVerb = 'PUT';
+    const config = {
+        accessKey: memCredentials.default.accessKey,
+        secretKey: memCredentials.default.secretKey,
+    };
 
     before(done => {
         const config = getConfig('default', { signatureVersion: 'v4' });
@@ -227,8 +232,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 1024;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, err => {
                 assert.strictEqual(err.code, 'QuotaExceeded');
                 return next();
@@ -243,8 +248,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 900;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, next),
             next => wait(inflightFlushFrequencyMS * 2, next),
             next => copyObject(bucket, key, err => {
@@ -264,8 +269,8 @@ describe('quota evaluation with scuba metrics', function t() {
         let uploadId = null;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => objectMPU(bucket, key, parts, partSize, (err, _uploadId) => {
                 uploadId = _uploadId;
                 assert.strictEqual(err.code, 'QuotaExceeded');
@@ -287,8 +292,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 300;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, err => {
                 assert.ifError(err);
                 return next();
@@ -305,8 +310,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 1024;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, err => {
                 assert.ifError(err);
                 return next();
@@ -330,7 +335,7 @@ describe('quota evaluation with scuba metrics', function t() {
         return async.series([
             next => createBucket(bucket, next),
             next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
-                JSON.stringify({ quota: Math.round(partSize * 2.5) }))
+                JSON.stringify({ quota: Math.round(partSize * 2.5) }), config)
                     .then(() => next()).catch(err => next(err)),
             next => putObject(bucket, keyToCopy, partSize, next),
             next => uploadPartCopy(bucket, key, parts, partSize, inflightFlushFrequencyMS * 2, keyToCopy,
@@ -351,8 +356,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 900;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, err => {
                 assert.ifError(err);
                 return next();
@@ -373,8 +378,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 400;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, `${key}1`, size, err => {
                 assert.ifError(err);
                 return next();
@@ -412,8 +417,8 @@ describe('quota evaluation with scuba metrics', function t() {
         const size = 400;
         return async.series([
             next => createBucket(bucket, next),
-            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`, JSON.stringify(quota))
-                .then(() => next()).catch(err => next(err)),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
             next => putObject(bucket, key, size, err => {
                 assert.ifError(err);
                 return next();
