@@ -45,8 +45,8 @@ then
     exit 1
 fi
 
-REGISTRY=${REGISTRY:-"registry.scality.com"}
-PROJECT=${PROJECT:-"cloudserver-dev"}
+REGISTRY=${REGISTRY:-"ghcr.io/scality"}
+PROJECT=${PROJECT:-"cloudserver"}
 
 set -x
 ${ORAS} push "${REGISTRY}/${PROJECT}/${NAME_TAG}" "${INPUT_FILE}:${MIME_TYPE}"
