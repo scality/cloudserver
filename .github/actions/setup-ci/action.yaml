@@ -16,7 +16,7 @@ runs:
       run: |-
         set -exu;
         mkdir -p /tmp/artifacts/${JOB_NAME}/;
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v4
       with:
         node-version: '16'
         cache: 'yarn'

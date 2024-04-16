@@ -2,11 +2,12 @@
 
 ## Docker Image Generation
 
-Docker images are hosted on [registry.scality.com](registry.scality.com).
-CloudServer has two namespaces there:
+Docker images are hosted on [ghcri.io](https://github.com/orgs/scality/packages).
+CloudServer has a few images there:
 
-* Production Namespace: registry.scality.com/cloudserver
-* Dev Namespace: registry.scality.com/cloudserver-dev
+* Cloudserver container image: ghcr.io/scality/cloudserver
+* Dashboard oras image: ghcr.io/scality/cloudserver/cloudser-dashboard
+* Policies oras image: ghcr.io/scality/cloudserver/cloudser-dashboard
 
 With every CI build, the CI will push images, tagging the
 content with the developer branch's short SHA-1 commit hash.
@@ -18,8 +19,8 @@ Tagged versions of cloudserver will be stored in the production namespace.
 ## How to Pull Docker Images
 
 ```sh
-docker pull registry.scality.com/cloudserver-dev/cloudserver:<commit hash>
-docker pull registry.scality.com/cloudserver/cloudserver:<tag>
+docker pull ghcr.io/scality/cloudserver:<commit hash>
+docker pull ghcr.io/scality/cloudserver:<tag>
 ```
 
 ## Release Process
