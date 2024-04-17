@@ -376,7 +376,7 @@ jobs:
       JOB_NAME: ${{ github.job }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Setup CI environment
       uses: ./.github/actions/setup-ci
     - name: Setup CI services
