@@ -202,6 +202,15 @@ function restoreObject(bucket, key, callback) {
     }, callback);
 }
 
+function multiObjectDelete(bucket, keys, callback) {
+    return s3Client.deleteObjects({
+        Bucket: bucket,
+        Delete: {
+            Objects: keys.map(key => ({ Key: key })),
+        },
+    }, callback);
+}
+
 describe('quota evaluation with scuba metrics', function t() {
     this.timeout(30000);
     const scuba = new MockScuba();
@@ -411,6 +420,7 @@ describe('quota evaluation with scuba metrics', function t() {
             next => deleteBucket(bucket, next),
         ], done);
     });
+
     it('should not increase the inflights when the object is being rewritten with a smaller object', done => {
         const bucket = 'quota-test-bucket9';
         const key = 'quota-test-object';
@@ -433,6 +443,36 @@ describe('quota evaluation with scuba metrics', function t() {
                 return next();
             },
             next => deleteObject(bucket, key, next),
+            next => deleteBucket(bucket, next),
+        ], done);
+    });
+
+    it('should decrease the inflights when performing multi object delete', done => {
+        const bucket = 'quota-test-bucket10';
+        const key = 'quota-test-object';
+        const size = 400;
+        return async.series([
+            next => createBucket(bucket, next),
+            next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
+            next => putObject(bucket, `${key}1`, size, err => {
+                assert.ifError(err);
+                return next();
+            }
+            ),
+            next => putObject(bucket, `${key}2`, size, err => {
+                assert.ifError(err);
+                return next();
+            }),
+            next => wait(inflightFlushFrequencyMS * 2, next),
+            next => multiObjectDelete(bucket, [`${key}1`, `${key}2`], err => {
+                assert.ifError(err);
+                return next();
+            }),
+            next => {
+                assert.strictEqual(scuba.getInflightsForBucket(bucket), 0);
+                return next();
+            },
             next => deleteBucket(bucket, next),
         ], done);
     });
