@@ -6,17 +6,17 @@ WORKDIR /usr/src/app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        curl \
-        git \
-        gnupg2 \
-        jq \
-        python3 \
-        ssh \
-        wget \
-        libffi-dev \
-        zlib1g-dev \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    gnupg2 \
+    jq \
+    python3 \
+    ssh \
+    wget \
+    libffi-dev \
+    zlib1g-dev \
     && apt-get clean \
     && mkdir -p /root/ssh \
     && ssh-keyscan -H github.com > /root/ssh/known_hosts
@@ -30,7 +30,7 @@ FROM node:${NODE_VERSION}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        jq \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NO_PROXY localhost,127.0.0.1
@@ -41,8 +41,9 @@ EXPOSE 8002
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        jq \
-        tini \
+    jq \
+    tini \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
