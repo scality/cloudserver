@@ -350,6 +350,92 @@ describe('Config', () => {
         });
     });
 
+    describe('scuba option setup', () => {
+        let oldConfig;
+
+        before(() => {
+            oldConfig = process.env.S3_CONFIG_FILE;
+            process.env.S3_CONFIG_FILE =
+                'tests/unit/testConfigs/allOptsConfig/config.json';
+        });
+
+        after(() => {
+            process.env.S3_CONFIG_FILE = oldConfig;
+        });
+
+        it('should set up scuba', () => {
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.scuba,
+                {
+                    host: 'localhost',
+                    port: 8100,
+                },
+            );
+        });
+
+        it('should use environment variables for scuba', () => {
+            setEnv('SCUBA_HOST', 'scubahost');
+            setEnv('SCUBA_PORT', 1234);
+
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.scuba,
+                {
+                    host: 'scubahost',
+                    port: 1234,
+                },
+            );
+        });
+    });
+
+    describe('quota option setup', () => {
+        let oldConfig;
+
+        before(() => {
+            oldConfig = process.env.S3_CONFIG_FILE;
+            process.env.S3_CONFIG_FILE =
+                'tests/unit/testConfigs/allOptsConfig/config.json';
+        });
+
+        after(() => {
+            process.env.S3_CONFIG_FILE = oldConfig;
+        });
+
+        it('should set up quota', () => {
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.quota,
+                {
+                    maxStaleness: 24 * 60 * 60 * 1000,
+                    enableInflights: true,
+                },
+            );
+        });
+
+        it('should use environment variables for scuba', () => {
+            setEnv('QUOTA_MAX_STALENESS_MS', 1234);
+            setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
+
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.quota,
+                {
+                    maxStaleness: 1234,
+                    enableInflights: true,
+                },
+            );
+        });
+    });
+
     describe('utapi option setup', () => {
         let oldConfig;
 

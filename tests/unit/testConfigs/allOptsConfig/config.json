@@ -100,6 +100,14 @@
         "name": "zenko",
         "sentinels": "localhost:6379"
     },
+    "scuba": {
+        "host": "localhost",
+        "port": 8100
+    },
+    "quota": {
+        "maxStalenessMS": 86400000,
+        "enableInflights": true
+    },
     "utapi": {
         "redis": {
             "host": "localhost",
