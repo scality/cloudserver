@@ -26,6 +26,9 @@ x-inputs:
   - name: deleteLatencyCriticalThreshold
     type: config
     value: 1.000
+  - name: quotaUnavailabilityThreshold
+    type: config
+    value: 0.500
 
 groups:
 - name: CloudServer
@@ -132,3 +135,42 @@ groups:
     annotations:
       description: "Latency of delete object operations is more than 1s"
       summary: "Very high delete latency"
+
+  # As a platform admin I want to be alerted (warning) when the utilization metrics service is enabled
+  # but not available for at least half of the S3 services during the last minute
+  - alert: QuotaMetricsNotAvailable
+    expr: |
+      avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"}[1m]))
+        < ${quotaUnavailabilityThreshold}
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      description: "The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled."
+      summary: "Utilization metrics service not available"
+
+  # As a platform admin I want to be alerted (critical) when the utilization metrics service is enabled
+  # but not available during the last 10 minutes
+  - alert: QuotaMetricsNotAvailable
+    expr: |
+      avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"}[1m]))
+        < ${quotaUnavailabilityThreshold}
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      description: "The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled."
+      summary: "Utilization metrics service not available"
+
+  # As a platform admin I want to be alerted (critical) when quotas were not honored due to metrics
+  # being unavailable
+  - alert: QuotaUnavailable
+    expr: |
+      sum(rate(s3_cloudserver_quota_request_with_metrics_unavailable{namespace="${namespace}",service="${service}"}[2m]))
+        > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      description: "Quotas were not honored due to metrics being unavailable. If the S3 Bucket or Account was created recently, the metrics may not be available yet."
+      summary: "High number of quota requests with metrics unavailable"
