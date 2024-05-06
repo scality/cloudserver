@@ -188,6 +188,7 @@ describe('validateQuotas (buckets)', () => {
                     null,
                     {
                         action: 'objectRestore',
+                        inflight: undefined,
                     }
                 ), true);
             done();
