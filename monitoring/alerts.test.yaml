@@ -234,7 +234,7 @@ tests:
   - name: Quota evaluation disabled
     interval: 1m
     input_series:
-      - series: s3_cloudserver_quota_request_with_metrics_unavailable{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
+      - series: s3_cloudserver_quota_unavailable_count{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
         values: 0+0x6 1+1x20 0+0x6
     alert_rule_test:
       - alertname: QuotaUnavailable

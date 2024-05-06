@@ -1931,7 +1931,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -2182,7 +2182,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2196,7 +2196,7 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -2914,7 +2914,7 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
+          "displayMode": "hidden",
           "placement": "bottom"
         },
         "tooltip": {
@@ -2924,34 +2924,20 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", code=~\"2..\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_quota_unavailable_count{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Success",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", code=\"429\", job=~\"$job\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Quota Exceeded",
+          "legendFormat": "",
           "metric": "",
           "refId": "",
           "step": 10,
           "target": ""
         }
       ],
-      "title": "Quota evaluation status code over time",
+      "title": "Operations with unavailable metrics",
       "transformations": [],
       "transparent": false,
       "type": "timeseries"
@@ -3027,7 +3013,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval])) by(action)",
+          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval])) by(action)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -3115,13 +3101,98 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 8,
         "w": 6,
         "x": 0,
         "y": 74
       },
       "hideTimeOverride": false,
       "id": 39,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace=\"${namespace}\",job=\"${job}\"}[$__rate_interval])) * 100",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Quota service uptime",
+      "transformations": [],
+      "transparent": false,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {},
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 74
+      },
+      "hideTimeOverride": false,
+      "id": 40,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -3137,20 +3208,137 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace=\"${namespace}\",job=~\"$job\"}[$__rate_interval])) * 100",
+          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", code=~\"2..\", job=\"${job}\"}[$__rate_interval]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "Success",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        },
+        {
+          "datasource": null,
+          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", code=\"429\", job=\"${job}\"}[$__rate_interval]))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "Quota Exceeded",
           "metric": "",
           "refId": "",
           "step": 10,
           "target": ""
         }
       ],
-      "title": "Quota service uptime",
+      "title": "Quota evaluation status code over time",
+      "transformations": [],
+      "transparent": false,
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "editable": true,
+      "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 180000,
+            "stacking": {},
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": []
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 74
+      },
+      "hideTimeOverride": false,
+      "id": 41,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": null,
+          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) by (type)\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) by (type)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{ type }} (success)",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        },
+        {
+          "datasource": null,
+          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", code=\"429\"}[$__rate_interval])) by (type)\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", code=\"429\"}[$__rate_interval])) by (type)",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{ type }} (exceeded)",
+          "metric": "",
+          "refId": "",
+          "step": 10,
+          "target": ""
+        }
+      ],
+      "title": "Average quota evaluation latencies",
       "transformations": [],
       "transparent": false,
       "type": "timeseries"
@@ -3182,16 +3370,16 @@
         }
       },
       "gridPos": {
-        "h": 5,
+        "h": 8,
         "w": 6,
         "x": 0,
-        "y": 79
+        "y": 82
       },
       "heatmap": {},
       "hideTimeOverride": false,
       "hideZeroBuckets": false,
       "highlightCards": true,
-      "id": 40,
+      "id": 42,
       "legend": {
         "show": false
       },
@@ -3201,7 +3389,7 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum by(le) (increase(s3_cloudserver_quota_evacdluation_duration_seconds_bucket{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
+          "expr": "sum by(le) (increase(s3_cloudserver_quota_evaluation_duration_seconds_bucket{namespace=\"${namespace}\", job=\"${job}\"}[$__rate_interval]))",
           "format": "heatmap",
           "hide": false,
           "instant": false,
@@ -3283,13 +3471,13 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 6,
+        "h": 8,
+        "w": 18,
         "x": 6,
-        "y": 74
+        "y": 82
       },
       "hideTimeOverride": false,
-      "id": 41,
+      "id": 43,
       "links": [],
       "maxDataPoints": 100,
       "options": {
@@ -3305,13 +3493,13 @@
       "targets": [
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", class=\"bucket\", code=~\"2..\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", class=\"bucket\", code=~\"2..\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) by (class)\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", code=~\"2..\"}[$__rate_interval])) by (class)",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Bucket (success)",
+          "legendFormat": "{{ class }} (success)",
           "metric": "",
           "refId": "",
           "step": 10,
@@ -3319,41 +3507,13 @@
         },
         {
           "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", class=\"account\", code=~\"2..\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", class=\"account\", code=~\"2..\"}[$__rate_interval]))",
+          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=\"${job}\", code=~\"4..|5..\"}[$__rate_interval])) by (class)\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=\"${job}\", code=~\"4..|5..\"}[$__rate_interval])) by (class)",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Account (success)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", class=\"bucket\", code=~\"4..|5..\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", class=\"bucket\", code=~\"4..|5..\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Bucket (error)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", class=\"account\", code=~\"4..|5..\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", class=\"account\", code=~\"4..|5..\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Account (error)",
+          "legendFormat": "{{ class }} (error)",
           "metric": "",
           "refId": "",
           "step": 10,
@@ -3361,193 +3521,6 @@
         }
       ],
       "title": "Average utilization metrics retrieval latencies",
-      "transformations": [],
-      "transparent": false,
-      "type": "timeseries"
-    },
-    {
-      "datasource": "${DS_PROMETHEUS}",
-      "editable": true,
-      "error": false,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": 180000,
-            "stacking": {},
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 74
-      },
-      "hideTimeOverride": false,
-      "id": 42,
-      "links": [],
-      "maxDataPoints": 100,
-      "options": {
-        "legend": {
-          "calcs": [
-            "min",
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Overall",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"bucket\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"bucket\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (bucket, success)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"bucket\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"bucket\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (bucket, exceeded)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"account\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"account\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (account, success)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"account\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"account\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (account, exceeded)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"bucket+account\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=~\"2..\", type=\"bucket+account\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (account & bucket, success)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"bucket+account\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", code=\"429\", type=\"bucket+account\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data write (account & bucket, exceeded)",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        },
-        {
-          "datasource": null,
-          "expr": "sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace=\"${namespace}\", job=~\"$job\", type=\"delete\"}[$__rate_interval]))\n   /\nsum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace=\"${namespace}\", job=~\"$job\", type=\"delete\"}[$__rate_interval]))",
-          "format": "time_series",
-          "hide": false,
-          "instant": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "Data deletion",
-          "metric": "",
-          "refId": "",
-          "step": 10,
-          "target": ""
-        }
-      ],
-      "title": "Average quota evaluation latencies",
       "transformations": [],
       "transparent": false,
       "type": "timeseries"
@@ -3652,5 +3625,5 @@
   "timezone": "",
   "title": "S3 service",
   "uid": null,
-  "version": 32
+  "version": 110
 }

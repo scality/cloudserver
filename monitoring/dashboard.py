@@ -366,36 +366,26 @@ def average_latency_target(title, action="", by=""):
     )
 
 
-def average_quota_latency_target(title, code="", type="", by=""):
-    # type: (str, str, str, str) -> Target
+def average_quota_latency_target(code="", by=""):
+    # type: (str, str) -> Target
     extra = ', code=' + code if code else ""
-    extra += ', type=' + type if type else ""
     by = " by (" + by + ")" if by else ""
-    return Target(
-        expr="\n".join([
-            'sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
-            "   /",
-            'sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
-        ]),
-        legendFormat=title,
-    )
+    return "\n".join([
+        'sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_sum{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
+        "   /",
+        'sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
+    ])
 
 
-def average_quota_retrieval_latency(
-        title, _class="", code="", codeExclude="", by=""):
-    # type: (str, str, str, str, str) -> Target
-    extra = ', class=' + _class if _class else ""
-    extra += ', code=' + code if code else ""
-    extra += ', code!=' + codeExclude if codeExclude else ""
+def average_quota_retrieval_latency(code="", by=""):
+    # type: (str, str) -> Target
+    extra = ', code=' + code if code else ""
     by = " by (" + by + ")" if by else ""
-    return Target(
-        expr="\n".join([
-            'sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
-            "   /",
-            'sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace="${namespace}", job=~"$job"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
-        ]),
-        legendFormat=title,
-    )
+    return "\n".join([
+        'sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_sum{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501
+        "   /",
+        'sum(rate(s3_cloudserver_quota_metrics_retrieval_duration_seconds_count{namespace="${namespace}", job="${job}"' + extra + "}[$__rate_interval]))" + by,  # noqa: E501,
+    ])
 
 
 averageLatencies = TimeSeries(
@@ -441,7 +431,7 @@ requestTime = Heatmap(
     yAxis=YAxis(format=UNITS.SECONDS),
     color=HeatmapColor(mode="opacity"),
     targets=[Target(
-        expr='sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum by(le) (increase(s3_cloudserver_http_request_duration_seconds_bucket{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
         format="heatmap",
         legendFormat="{{ le }}",
     )],
@@ -465,11 +455,11 @@ bandWidth = TimeSeries(
     unit="binBps",
     targets=[
         Target(
-            expr='sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+            expr='sum(rate(s3_cloudserver_http_response_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat="Out"
         ),
         Target(
-            expr='sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+            expr='sum(rate(s3_cloudserver_http_request_size_bytes_sum{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
             legendFormat="In"
         )
     ],
@@ -560,12 +550,13 @@ top10Error5xxByBucket = top10_errors_by_bucket(
 
 quotaHealth = TimeSeries(
     title="Quota service uptime",
+    legendDisplayMode="hidden",
     dataSource="${DS_PROMETHEUS}",
     lineInterpolation="stepAfter",
     fillOpacity=30,
     unit=UNITS.PERCENT_FORMAT,
     targets=[Target(
-        expr='avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",job=~"$job"}[$__rate_interval])) * 100',  # noqa: E501
+        expr='avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",job="${job}"}[$__rate_interval])) * 100',  # noqa: E501
     )],
     thresholds=[
         Threshold("green", 0, 95.0),
@@ -582,10 +573,10 @@ quotaStatusCode = TimeSeries(
     lineInterpolation="smooth",
     unit=UNITS.OPS_PER_SEC,
     targets=[Target(
-        expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", code=~"2..", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", code=~"2..", job="${job}"}[$__rate_interval]))',  # noqa: E501
         legendFormat="Success",
     ), Target(
-        expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", code="429", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", code="429", job="${job}"}[$__rate_interval]))',  # noqa: E501
         legendFormat="Quota Exceeded",
     )],
 )
@@ -600,7 +591,7 @@ quotaByAction = TimeSeries(
     unit=UNITS.OPS_PER_SEC,
     targets=[
         Target(
-            expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", job=~"$job"}[$__rate_interval])) by(action)',  # noqa: E501
+            expr='sum(rate(s3_cloudserver_quota_evaluation_duration_seconds_count{namespace="${namespace}", job="${job}"}[$__rate_interval])) by(action)',  # noqa: E501
             legendFormat="{{action}}",
         )
     ]
@@ -616,9 +607,22 @@ averageQuotaDuration = Heatmap(
     yAxis=YAxis(format=UNITS.SECONDS),
     color=HeatmapColor(mode="opacity"),
     targets=[Target(
-        expr='sum by(le) (increase(s3_cloudserver_quota_evacdluation_duration_seconds_bucket{namespace="${namespace}", job=~"$job"}[$__rate_interval]))',  # noqa: E501
+        expr='sum by(le) (increase(s3_cloudserver_quota_evaluation_duration_seconds_bucket{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
         format="heatmap",
         legendFormat="{{ le }}",
+    )],
+)
+
+
+operationsWithUnavailableMetrics = TimeSeries(
+    title="Operations with unavailable metrics",
+    dataSource="${DS_PROMETHEUS}",
+    fillOpacity=30,
+    lineInterpolation="smooth",
+    unit=UNITS.OPS_PER_SEC,
+    legendDisplayMode="hidden",
+    targets=[Target(
+        expr='sum(rate(s3_cloudserver_quota_unavailable_count{namespace="${namespace}", job="${job}"}[$__rate_interval]))',  # noqa: E501
     )],
 )
 
@@ -633,29 +637,14 @@ averageQuotaLatencies = TimeSeries(
     legendValues=["min", "mean", "max"],
     unit=UNITS.SECONDS,
     targets=[
-        average_quota_latency_target(title="Overall"),
-        average_quota_latency_target(
-            title="Data write (bucket, success)",
-            type='"bucket"', code='~"2.."'),
-        average_quota_latency_target(
-            title="Data write (bucket, exceeded)",
-            type='"bucket"', code='"429"'),
-        average_quota_latency_target(
-            title="Data write (account, success)",
-            type='"account"', code='~"2.."'),
-        average_quota_latency_target(
-            title="Data write (account, exceeded)",
-            type='"account"', code='"429"'),
-        average_quota_latency_target(
-            title="Data write (account & bucket, success)",
-            type='"bucket+account"',
-            code='~"2.."'),
-        average_quota_latency_target(
-            title="Data write (account & bucket, exceeded)",
-            type='"bucket+account"',
-            code='"429"'),
-        average_quota_latency_target(
-            title="Data deletion", type='"delete"'),
+        Target(
+            expr=average_quota_latency_target(code='~"2.."', by='type'),
+            legendFormat='{{ type }} (success)',
+        ),
+        Target(
+            expr=average_quota_latency_target(code='"429"', by='type'),
+            legendFormat='{{ type }} (exceeded)',
+        ),
     ],
 )
 
@@ -667,14 +656,17 @@ averageMetricsRetrievalLatencies = TimeSeries(
     spanNulls=3*60*1000,
     unit=UNITS.SECONDS,
     targets=[
-        average_quota_retrieval_latency(title="Bucket (success)",
-                                        _class='"bucket"', code='~"2.."'),
-        average_quota_retrieval_latency(title="Account (success)",
-                                        _class='"account"', code='~"2.."'),
-        average_quota_retrieval_latency(title="Bucket (error)",
-                                        _class='"bucket"', code='~"4..|5.."'),
-        average_quota_retrieval_latency(title="Account (error)",
-                                        _class='"account"', code='~"4..|5.."'),
+        Target(
+            expr=average_quota_retrieval_latency(code='~"2.."', by='class'),
+            legendFormat='{{ class }} (success)',
+        ),
+        Target(
+            expr=average_quota_retrieval_latency(
+                code='~"4..|5.."',
+                by='class'
+            ),
+            legendFormat='{{ class }} (error)',
+        ),
     ],
 )
 
@@ -834,17 +826,18 @@ dashboard = (
                     layout.resize([bucketQuotaCounter], width=6, height=4),
                     layout.resize([accountQuotaCounter], width=6, height=4),
                 ], height=8),
-                layout.resize([quotaStatusCode], width=6),
+                layout.resize([operationsWithUnavailableMetrics], width=6),
                 quotaByAction,
             ], height=8),
             layout.row([
-                layout.column([
-                    layout.resize([quotaHealth], width=6, height=5),
-                    layout.resize([averageQuotaDuration], width=6, height=5),
-                ], height=8),
-                layout.resize([averageMetricsRetrievalLatencies], width=6),
+                layout.resize([quotaHealth], width=6),
+                layout.resize([quotaStatusCode], width=6),
                 averageQuotaLatencies,
-            ], height=10),
+            ], height=8),
+            layout.row([
+                layout.resize([averageQuotaDuration], width=6),
+                averageMetricsRetrievalLatencies,
+            ], height=8),
         ]),
     )
     .auto_panel_ids()

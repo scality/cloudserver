@@ -166,7 +166,7 @@ groups:
   # being unavailable
   - alert: QuotaUnavailable
     expr: |
-      sum(rate(s3_cloudserver_quota_request_with_metrics_unavailable{namespace="${namespace}",service="${service}"}[2m]))
+      sum(increase(s3_cloudserver_quota_unavailable_count{namespace="${namespace}",service="${service}"}[2m]))
         > 0
     for: 5m
     labels:
