@@ -414,7 +414,7 @@ describe('Config', () => {
                 config.quota,
                 {
                     maxStaleness: 24 * 60 * 60 * 1000,
-                    enableInflights: true,
+                    enableInflights: false,
                 },
             );
         });
@@ -430,6 +430,22 @@ describe('Config', () => {
                 config.quota,
                 {
                     maxStaleness: 1234,
+                    enableInflights: true,
+                },
+            );
+        });
+
+        it('should use the default if the maxStaleness is not a number', () => {
+            setEnv('QUOTA_MAX_STALENESS_MS', 'notanumber');
+            setEnv('QUOTA_ENABLE_INFLIGHTS', 'true');
+
+            const { ConfigObject } = require('../../lib/Config');
+            const config = new ConfigObject();
+
+            assert.deepStrictEqual(
+                config.quota,
+                {
+                    maxStaleness: 24 * 60 * 60 * 1000,
                     enableInflights: true,
                 },
             );

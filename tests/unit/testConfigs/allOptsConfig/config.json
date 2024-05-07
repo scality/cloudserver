@@ -105,8 +105,7 @@
         "port": 8100
     },
     "quota": {
-        "maxStalenessMS": 86400000,
-        "enableInflights": true
+        "maxStalenessMS": 86400000
     },
     "utapi": {
         "redis": {

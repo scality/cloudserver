@@ -14,7 +14,11 @@ const bucket = new BucketInfo('niftyBucket', ownerCanonicalId,
     authInfo.getAccountDisplayName(), creationDate);
 const log = new DummyRequestLogger();
 
-const { validateBucket, metadataGetObjects, metadataGetObject } = require('../../../lib/metadata/metadataUtils');
+const {
+    validateBucket,
+    metadataGetObjects,
+    metadataGetObject,
+} = require('../../../lib/metadata/metadataUtils');
 const metadata = require('../../../lib/metadata/wrapper');
 
 describe('validateBucket', () => {
