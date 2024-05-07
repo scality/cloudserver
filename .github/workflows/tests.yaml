@@ -365,6 +365,50 @@ jobs:
         source: /tmp/artifacts
       if: always()
 
+  quota-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        inflights:
+          - name: "With Inflights"
+            value: "true"
+          - name: "Without Inflights"
+            value: "false"
+    env:
+      S3METADATA: mongodb
+      S3BACKEND: mem
+      S3QUOTA: scuba
+      QUOTA_ENABLE_INFLIGHTS: ${{ matrix.inflights.value }}
+      SCUBA_HOST: localhost
+      SCUBA_PORT: 8100
+      SCUBA_HEALTHCHECK_FREQUENCY: 100
+      CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      MONGODB_IMAGE: ghcr.io/${{ github.repository }}/ci-mongodb:${{ github.sha }}
+      JOB_NAME: ${{ github.job }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup CI environment
+      uses: ./.github/actions/setup-ci
+    - name: Setup CI services
+      run: docker compose --profile mongo up -d
+      working-directory: .github/docker
+    - name: Run quota tests
+      run: |-
+        set -ex -o pipefail;
+        bash wait_for_local_port.bash 8000 40
+        yarn run test_quota | tee /tmp/artifacts/${{ github.job }}/tests.log
+    - name: Upload logs to artifacts
+      uses: scality/action-artifacts@v4
+      with:
+        method: upload
+        url: https://artifacts.scality.net
+        user: ${{ secrets.ARTIFACTS_USER }}
+        password: ${{ secrets.ARTIFACTS_PASSWORD }}
+        source: /tmp/artifacts
+      if: always()
+
   kmip-ft-tests:
     runs-on: ubuntu-latest
     needs: build

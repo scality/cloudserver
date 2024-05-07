@@ -40,6 +40,11 @@ services:
       - DEFAULT_BUCKET_KEY_FORMAT
       - METADATA_MAX_CACHED_BUCKETS
       - ENABLE_NULL_VERSION_COMPAT_MODE
+      - SCUBA_HOST
+      - SCUBA_PORT
+      - SCUBA_HEALTHCHECK_FREQUENCY
+      - S3QUOTA
+      - QUOTA_ENABLE_INFLIGHTS
     env_file:
       - creds.env
     depends_on:
