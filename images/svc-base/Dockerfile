@@ -14,8 +14,10 @@ RUN rm -f ~/.gitconfig && \
     git config --global --add safe.directory . && \
     git lfs install && \
     GIT_LFS_SKIP_SMUDGE=1 && \
+    yarn global add typescript && \
     yarn install --frozen-lockfile --production --network-concurrency 1 && \
-    yarn cache clean --all
+    yarn cache clean --all && \
+    yarn global remove typescript
 
 # run symlinking separately to avoid yarn installation errors
 # we might have to check if the symlinking is really needed!
