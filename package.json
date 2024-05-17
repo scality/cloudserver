@@ -42,7 +42,7 @@
     "prom-client": "14.2.0",
     "request": "^2.81.0",
     "sql-where-parser": "~2.2.1",
-    "utapi": "git+https://github.com/scality/utapi#8.1.14",
+    "utapi": "github:scality/utapi#8.1.14",
     "utf-8-validate": "^5.0.8",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",
