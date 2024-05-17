@@ -1,6 +1,6 @@
 {
   "name": "@zenko/cloudserver",
-  "version": "8.8.23",
+  "version": "8.8.24",
   "description": "Zenko CloudServer, an open-source Node.js implementation of a server handling the Amazon S3 protocol",
   "main": "index.js",
   "engines": {
@@ -43,7 +43,7 @@
     "request": "^2.81.0",
     "scubaclient": "git+https://github.com/scality/scubaclient.git",
     "sql-where-parser": "~2.2.1",
-    "utapi": "git+https://github.com/scality/utapi#8.1.14",
+    "utapi": "github:scality/utapi#8.1.14",
     "utf-8-validate": "^5.0.8",
     "utf8": "~2.1.1",
     "uuid": "^8.3.2",

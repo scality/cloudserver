@@ -85,6 +85,25 @@ function putObject(bucket, key, size, cb) {
     });
 }
 
+function putObjectWithCustomHeader(bucket, key, size, vID, cb) {
+    const request = s3Client.putObject({
+        Bucket: bucket,
+        Key: key,
+        Body: Buffer.alloc(size),
+    });
+
+    request.on('build', () => {
+        request.httpRequest.headers['x-scal-s3-version-id'] = vID;
+    });
+
+    return request.send((err, data) => {
+        if (!err && !s3Config.isQuotaInflightEnabled()) {
+            mockScuba.incrementBytesForBucket(bucket, 0);
+        }
+        return cb(err, data);
+    });
+}
+
 function copyObject(bucket, key, sourceSize, cb) {
     return s3Client.copyObject({
         Bucket: bucket,
@@ -680,4 +699,87 @@ function multiObjectDelete(bucket, keys, size, callback) {
                 },
             ], done);
         });
+
+        it('should only evaluate quota and not update inflights for PutObject with the x-scal-s3-version-id header',
+            done => {
+                const bucket = 'quota-test-bucket13';
+                const key = 'quota-test-object';
+                const size = 100;
+                let vID = null;
+                return async.series([
+                    next => createBucket(bucket, true, next),
+                    next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                        JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
+                    next => putObject(bucket, key, size, (err, val) => {
+                        assert.ifError(err);
+                        vID = val.VersionId;
+                        return next();
+                    }),
+                    next => wait(inflightFlushFrequencyMS * 2, next),
+                    next => {
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        return next();
+                    },
+                    next => fakeMetadataArchive(bucket, key, vID, {
+                        archiveInfo: {},
+                        restoreRequestedAt: new Date(0).toISOString(),
+                        restoreRequestedDays: 7,
+                    }, next),
+                    // Simulate the real restore
+                    next => putObjectWithCustomHeader(bucket, key, size, vID, err => {
+                        assert.ifError(err);
+                        return next();
+                    }),
+                    next => {
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        return next();
+                    },
+                    next => deleteVersionID(bucket, key, vID, size, next),
+                    next => deleteBucket(bucket, next),
+                ], done);
+            });
+
+        it('should allow a restore if the quota is full but the objet fits with its reserved storage space',
+            done => {
+                const bucket = 'quota-test-bucket15';
+                const key = 'quota-test-object';
+                const size = 1000;
+                let vID = null;
+                return async.series([
+                    next => createBucket(bucket, true, next),
+                    next => sendRequest(putQuotaVerb, '127.0.0.1:8000', `/${bucket}/?quota=true`,
+                        JSON.stringify(quota), config).then(() => next()).catch(err => next(err)),
+                    next => putObject(bucket, key, size, (err, val) => {
+                        assert.ifError(err);
+                        vID = val.VersionId;
+                        return next();
+                    }),
+                    next => wait(inflightFlushFrequencyMS * 2, next),
+                    next => {
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        return next();
+                    },
+                    next => fakeMetadataArchive(bucket, key, vID, {
+                        archiveInfo: {},
+                        restoreRequestedAt: new Date(0).toISOString(),
+                        restoreRequestedDays: 7,
+                    }, next),
+                    // Put an object, the quota should be exceeded
+                    next => putObject(bucket, `${key}-2`, size, err => {
+                        assert.strictEqual(err.code, 'QuotaExceeded');
+                        return next();
+                    }),
+                    // Simulate the real restore
+                    next => putObjectWithCustomHeader(bucket, key, size, vID, err => {
+                        assert.ifError(err);
+                        return next();
+                    }),
+                    next => {
+                        assert.strictEqual(scuba.getInflightsForBucket(bucket), size);
+                        return next();
+                    },
+                    next => deleteVersionID(bucket, key, vID, size, next),
+                    next => deleteBucket(bucket, next),
+                ], done);
+            });
     });
