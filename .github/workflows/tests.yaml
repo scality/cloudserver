@@ -65,7 +65,8 @@ env:
   ENABLE_LOCAL_CACHE: "true"
   REPORT_TOKEN: "report-token-1"
   REMOTE_MANAGEMENT_DISABLE: "1"
-
+  # https://github.com/git-lfs/git-lfs/issues/5749
+  GIT_CLONE_PROTECTION_ACTIVE: 'false'
 jobs:
   linting-coverage:
     runs-on: ubuntu-latest
@@ -275,7 +276,7 @@ jobs:
     needs: build
     env:
       ENABLE_UTAPI_V2: t
-      S3BACKEND: mem 
+      S3BACKEND: mem
       BUCKET_DENY_FILTER: utapi-event-filter-deny-bucket
       CLOUDSERVER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
       JOB_NAME: ${{ github.job }}
