@@ -193,13 +193,15 @@ tests:
             exp_labels:
               severity: critical
 
-  # QuotaMetricsNotAvailable
+  # QuotaMetricsNotAvailable (case with bucket quota)
   ##################################################################################################
-  - name: Utilization service Latency
+  - name: Quota metrics not available (bucket quota)
     interval: 1m
     input_series:
       - series: s3_cloudserver_quota_utilization_service_available{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
         values: 1+1x6 0+0x20 1+1x6
+      - series: s3_cloudserver_quota_buckets_count{namespace="zenko",job="artesca-data-ops-report-handler"}
+        values: 1+1x32
     alert_rule_test:
       - alertname: QuotaMetricsNotAvailable
         eval_time: 6m
@@ -225,6 +227,105 @@ tests:
               summary: Utilization metrics service not available
             exp_labels:
               severity: critical
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 28m
+        exp_alerts: []
+
+  # QuotaMetricsNotAvailable (case with account quota)
+  ##################################################################################################
+  - name: Quota metrics not available (account quota)
+    interval: 1m
+    input_series:
+      - series: s3_cloudserver_quota_utilization_service_available{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
+        values: 1+1x6 0+0x20 1+1x6
+      - series: s3_cloudserver_quota_accounts_count{namespace="zenko",job="artesca-data-ops-report-handler"}
+        values: 1+1x32
+    alert_rule_test:
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 6m
+        exp_alerts: []
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: warning
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 20m
+        exp_alerts:
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: warning
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: critical
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 28m
+        exp_alerts: []
+
+  # QuotaMetricsNotAvailable (case with both quota quota)
+  ##################################################################################################
+  - name: Quota metrics not available (account quota)
+    interval: 1m
+    input_series:
+      - series: s3_cloudserver_quota_utilization_service_available{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
+        values: 1+1x6 0+0x20 1+1x6
+      - series: s3_cloudserver_quota_accounts_count{namespace="zenko",job="artesca-data-ops-report-handler"}
+        values: 1+1x32
+      - series: s3_cloudserver_quota_buckets_count{namespace="zenko",job="artesca-data-ops-report-handler"}
+        values: 1+1x32
+    alert_rule_test:
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 6m
+        exp_alerts: []
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 15m
+        exp_alerts:
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: warning
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 20m
+        exp_alerts:
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: warning
+          - exp_annotations:
+              description: The storage metrics required for Account or S3 Bucket Quota checks are not available, the quotas are disabled.
+              summary: Utilization metrics service not available
+            exp_labels:
+              severity: critical
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 28m
+        exp_alerts: []
+
+  # QuotaMetricsNotAvailable (case without quota)
+  ##################################################################################################
+  - name: Utilization service Latency
+    interval: 1m
+    input_series:
+      - series: s3_cloudserver_quota_utilization_service_available{namespace="zenko",service="artesca-data-connector-s3api-metrics"}
+        values: 1+1x6 0+0x20 1+1x6
+    alert_rule_test:
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 6m
+        exp_alerts: []
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 15m
+        exp_alerts: []
+      - alertname: QuotaMetricsNotAvailable
+        eval_time: 20m
+        exp_alerts: []
       - alertname: QuotaMetricsNotAvailable
         eval_time: 28m
         exp_alerts: []

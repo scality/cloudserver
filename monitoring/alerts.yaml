@@ -6,6 +6,9 @@ x-inputs:
   - name: service
     type: constant
     value: artesca-data-connector-s3api-metrics
+  - name: reportJob
+    type: constant
+    value: artesca-data-ops-report-handler
   - name: replicas
     type: constant
   - name: systemErrorsWarningThreshold
@@ -140,9 +143,10 @@ groups:
   # but not available for at least half of the S3 services during the last minute
   - alert: QuotaMetricsNotAvailable
     expr: |
-      avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"}[1m]))
-        < ${quotaUnavailabilityThreshold}
-    for: 1m
+      avg(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"})
+        < ${quotaUnavailabilityThreshold} and
+        (max(s3_cloudserver_quota_buckets_count{namespace="${namespace}", job="${reportJob}"}) > 0 or
+         max(s3_cloudserver_quota_accounts_count{namespace="${namespace}", job="${reportJob}"}) > 0)
     labels:
       severity: warning
     annotations:
@@ -153,8 +157,10 @@ groups:
   # but not available during the last 10 minutes
   - alert: QuotaMetricsNotAvailable
     expr: |
-      avg(avg_over_time(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"}[1m]))
-        < ${quotaUnavailabilityThreshold}
+      avg(s3_cloudserver_quota_utilization_service_available{namespace="${namespace}",service="${service}"})
+        < ${quotaUnavailabilityThreshold} and
+        (max(s3_cloudserver_quota_buckets_count{namespace="${namespace}", job="${reportJob}"}) > 0 or
+         max(s3_cloudserver_quota_accounts_count{namespace="${namespace}", job="${reportJob}"}) > 0)
     for: 10m
     labels:
       severity: critical
