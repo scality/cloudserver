@@ -20,11 +20,12 @@
   "homepage": "https://github.com/scality/S3#readme",
   "dependencies": {
     "@hapi/joi": "^17.1.0",
-    "arsenal": "git+https://github.com/scality/arsenal#7.70.29",
+    "arsenal": "git+https://github.com/scality/arsenal#a643a3e6ccbc49327339a285de1d4cb17afcd171",
     "async": "~2.5.0",
     "aws-sdk": "2.905.0",
     "azure-storage": "^2.1.0",
     "bucketclient": "scality/bucketclient#7.10.6",
+    "busboy": "^1.6.0",
     "commander": "^2.9.0",
     "cron-parser": "^2.11.0",
     "diskusage": "1.1.3",
