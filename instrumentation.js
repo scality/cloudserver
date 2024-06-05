@@ -7,8 +7,17 @@ const {
   PeriodicExportingMetricReader,
   ConsoleMetricExporter,
 } = require('@opentelemetry/sdk-metrics');
+const { Resource } = require('@opentelemetry/resources');
+const {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_VERSION,
+} = require('@opentelemetry/semantic-conventions');
 
 const sdk = new NodeSDK({
+    resource: new Resource({
+        [SEMRESATTRS_SERVICE_NAME]: 's3-cloudserver',
+        [SEMRESATTRS_SERVICE_VERSION]: '7.70.47',
+    }),
     traceExporter: new ConsoleSpanExporter(),
     metricReader: new PeriodicExportingMetricReader({
         exporter: new ConsoleMetricExporter(),
