@@ -1,0 +1,9 @@
+global:
+  scrape_interval: "10s"
+  evaluation_interval: "10s"
+
+scrape_configs:
+  - job_name: 'cloudserver-service-app'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:8002']
