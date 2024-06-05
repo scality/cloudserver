@@ -1,5 +1,12 @@
 services:
 
+  # endpoints
+  # prometheus: http://localhost:9090
+  # grafana: http://localhost:3000
+  # jaeger: http://localhost:16686
+  # zipkin: http://localhost:9411
+  # otel-collector-metrics: http://localhost:8889
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.102.0
     restart: always
@@ -15,6 +22,9 @@ services:
       - 4317:4317 # OTLP gRPC receiver
       - 4318:4318 # OTLP http receiver -> this should be configured in the service as otlp metrics exporter endpoint http://localhost:4318/v1/metrics
       - 55679:55679 # zpages extension
+    depends_on:
+      - jaeger-all-in-one
+      - zipkin-all-in-one
 
 
   prometheus:
@@ -35,3 +45,19 @@ services:
     container_name: grafana
     ports:
       - 3000:3000
+
+  # Jaeger
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    restart: always
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+
+  # Zipkin
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"

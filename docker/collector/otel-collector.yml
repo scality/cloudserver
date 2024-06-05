@@ -5,6 +5,7 @@ receivers:
         # endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+
 processors:
   batch:
 
@@ -19,6 +20,15 @@ exporters:
       # environment: dev
       label1: value1
 
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+    format: proto
+
+  jaeger:
+    endpoint: jaeger-all-in-one:14250
+    tls:
+      insecure: true
+
 extensions:
   # responsible for responding to health check calls on behalf of the collector.
   health_check:
@@ -30,10 +40,10 @@ extensions:
 service:
   extensions: [health_check, pprof, zpages]
   pipelines:
-    # traces:
-    #   receivers: [otlp]
-    #   processors: [batch]
-    #   exporters: [otlp]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger,zipkin]
     metrics:
       receivers: [otlp]
       processors: [batch]
