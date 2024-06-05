@@ -1,10 +1,28 @@
 services:
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.102.0
+    restart: always
+    command:
+      - --config=/etc/otelcol-contrib/config.yaml
+    volumes:
+      - ./docker/collector/otel-collector.yml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the Collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 4318:4318 # OTLP http receiver -> this should be configured in the service as otlp metrics exporter endpoint http://localhost:4318/v1/metrics
+      - 55679:55679 # zpages extension
+
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     restart: always
-    extra_hosts: 
-      - host.docker.internal:host-gateway
+    # extra_hosts: 
+    #   - host.docker.internal:host-gateway
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:

@@ -1,0 +1,44 @@
+receivers:
+  otlp:
+    protocols:
+      # grpc:
+        # endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  batch:
+
+exporters:
+  # otlp:
+  #   endpoint: otelcol:4317
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      # service: otel-collector
+      # host: otel-collector
+      # environment: dev
+      label1: value1
+
+extensions:
+  # responsible for responding to health check calls on behalf of the collector.
+  health_check:
+  # serves as an http endpoint that provides live debugging data about instrumented components.
+  pprof:
+  # serves as an http endpoint that provides live debugging data about instrumented components.
+  zpages:
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    # traces:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    # logs:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [otlp]
