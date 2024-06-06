@@ -2,7 +2,9 @@ receivers:
   otlp:
     protocols:
       http:
+        endpoint: 0.0.0.0:4318
       grpc:
+        endpoint: 0.0.0.0:4317
 
 processors:
   # batch metrics before sending to reduce API usage
@@ -20,10 +22,15 @@ exporters:
     const_labels:
       label1: value1
 
+  # config for tempo
+  # otlp:
+  #   endpoint: tempo:4317
+  #   tls:
+  #     insecure: true
   otlp:
-    endpoint: tempo:4317
-    tls:
-      insecure: true
+    endpoint: "api.eu1.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": ""
 
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
