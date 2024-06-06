@@ -1,24 +1,29 @@
 receivers:
   otlp:
     protocols:
-      # grpc:
-        # endpoint: 0.0.0.0:4317
       http:
-        endpoint: 0.0.0.0:4318
+      grpc:
 
 processors:
+  # batch metrics before sending to reduce API usage
   batch:
 
 exporters:
-  # otlp:
-  #   endpoint: otelcol:4317
+  logging:
+    loglevel: debug
+
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+
   prometheus:
     endpoint: "0.0.0.0:8889"
     const_labels:
-      # service: otel-collector
-      # host: otel-collector
-      # environment: dev
       label1: value1
+
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
 
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
@@ -29,10 +34,11 @@ exporters:
     tls:
       insecure: true
 
+# https://github.com/open-telemetry/opentelemetry-collector/blob/main/extension/README.md
 extensions:
   # responsible for responding to health check calls on behalf of the collector.
   health_check:
-  # serves as an http endpoint that provides live debugging data about instrumented components.
+  # fetches the collector’s performance data
   pprof:
   # serves as an http endpoint that provides live debugging data about instrumented components.
   zpages:
@@ -40,15 +46,14 @@ extensions:
 service:
   extensions: [health_check, pprof, zpages]
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [jaeger,zipkin]
     metrics:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus]
-    # logs:
-    #   receivers: [otlp]
-    #   processors: [batch]
-    #   exporters: [otlp]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger,zipkin,otlp]
+    logs:
+      receivers: [otlp]
+      exporters: [loki]
