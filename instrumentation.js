@@ -1,60 +1,59 @@
 const opentelemetry = require('@opentelemetry/sdk-node');
-const { ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-node');
-const {
-  getNodeAutoInstrumentations,
-} = require('@opentelemetry/auto-instrumentations-node');
-const {
-  PeriodicExportingMetricReader,
-  ConsoleMetricExporter,
-} = require('@opentelemetry/sdk-metrics');
+const { WebTracerProvider } = require('@opentelemetry/sdk-trace-web');
 const { Resource } = require('@opentelemetry/resources');
+const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
+const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const {
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_VERSION,
-} = require('@opentelemetry/semantic-conventions');
+    SEMRESATTRS_SERVICE_NAME,
+    SEMRESATTRS_SERVICE_VERSION,
+  } = require('@opentelemetry/semantic-conventions');
 
-//exporter
-
-const {
-  OTLPMetricExporter,
-} = require('@opentelemetry/exporter-metrics-otlp-proto');
-const {
-  OTLPTraceExporter,
-} = require('@opentelemetry/exporter-trace-otlp-proto');
-
-
-const sdk = new opentelemetry.NodeSDK({
-    traceExporter: new OTLPTraceExporter({
-        // optional - default url is http://localhost:4318/v1/traces
-        url: 'http://localhost:4318/v1/traces',
-        // optional - collection of custom headers to be sent with each request, empty by default
-        headers: {},
-    }),
-    resource: new Resource({
-        [SEMRESATTRS_SERVICE_NAME]: 's3-cloudserver',
-        [SEMRESATTRS_SERVICE_VERSION]: '7.70.47',
-    }),
-    // traceExporter: new ConsoleSpanExporter(),
-    // metricReader: new PeriodicExportingMetricReader({
-    //     exporter: new ConsoleMetricExporter(),
-    // }),
-    metricReader: new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter({
-            // url is optional and can be omitted - default is http://localhost:4318/v1/metrics
-            url: 'http://localhost:4318/v1/metrics',
-            // an optional object containing custom headers to be sent with each request
-            headers: {},
-            // an optional limit on pending requests
-            concurrencyLimit: 1,
-        }),
-    }),
-    instrumentations: [getNodeAutoInstrumentations({
-        // disabling fs automatic instrumentation because
-        // it can be noisy and expensive during startup
-        '@opentelemetry/instrumentation-fs': {
-            enabled: false,
-        },
-    })],
+// Define resource with service name and version
+const resource = new Resource({
+    [SEMRESATTRS_SERVICE_NAME]: 'cloudserver',
+    [SEMRESATTRS_SERVICE_VERSION]: '7.70.47',
 });
 
+// OTLP Trace Exporter configuration
+const traceExporter = new OTLPTraceExporter({
+    url: 'http://localhost:4318/v1/traces',
+    headers: {},
+});
+
+// Metric Reader configuration
+const metricReader = new PeriodicExportingMetricReader({
+    exporter: new OTLPMetricExporter({
+        url: 'http://localhost:4318/v1/metrics',
+        headers: {},
+        concurrencyLimit: 1,
+    }),
+});
+
+// Node SDK configuration
+const sdk = new opentelemetry.NodeSDK({
+    traceExporter,
+    resource,
+    metricReader,
+    instrumentations: [
+        getNodeAutoInstrumentations({
+            '@opentelemetry/instrumentation-fs': {
+                enabled: false,
+            },
+        }),
+    ],
+});
+
+// Additional WebTracerProvider configuration
+// This will initialize TracerProvider that will let us create a Tracers
+const webTracerProvider = new WebTracerProvider({ resource });
+// const webSpanExporter = new ConsoleSpanExporter();
+const webSpanProcessor = new BatchSpanProcessor(traceExporter);
+webTracerProvider.addSpanProcessor(webSpanProcessor);
+
+webTracerProvider.register();
+
+// Start the Node SDK
 sdk.start();
