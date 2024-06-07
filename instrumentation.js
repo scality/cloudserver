@@ -6,6 +6,7 @@ const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumenta
 const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+
 const {
     SEMRESATTRS_SERVICE_NAME,
     SEMRESATTRS_SERVICE_VERSION,
@@ -49,10 +50,8 @@ const sdk = new opentelemetry.NodeSDK({
 // Additional WebTracerProvider configuration
 // This will initialize TracerProvider that will let us create a Tracers
 const webTracerProvider = new WebTracerProvider({ resource });
-// const webSpanExporter = new ConsoleSpanExporter();
 const webSpanProcessor = new BatchSpanProcessor(traceExporter);
 webTracerProvider.addSpanProcessor(webSpanProcessor);
-
 webTracerProvider.register();
 
 // Start the Node SDK
