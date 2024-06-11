@@ -27,10 +27,10 @@ exporters:
     tls:
       insecure: true
 
-  # otlp/honeycomb:
-  #   endpoint: "api.eu1.honeycomb.io:443"
-  #   headers:
-  #     "x-honeycomb-team": ""
+  otlp:
+    endpoint: "api.eu1.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": ""
 
   otlphttp/jaeger:
     endpoint: "http://jaeger-all-in-one:4318"
@@ -39,7 +39,7 @@ exporters:
 
   # datadog:
   #  api: 
-  #    key: ""
+  #    key: "1bcdc6848991c87bb15f8d2ff84aa890"
 
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
@@ -65,7 +65,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/tempo,otlphttp/jaeger,zipkin]
+      exporters: [otlphttp/tempo,otlphttp/jaeger,otlp,zipkin]
       # exporters: [otlphttp/jaeger,zipkin]
     logs:
       receivers: [otlp]
