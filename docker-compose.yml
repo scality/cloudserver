@@ -9,7 +9,7 @@
 # version: '3'
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.82.0
+    image: otel/opentelemetry-collector-contrib:0.102.1
     restart: always
     command:
       - --config=/etc/otelcol-contrib/otel-collector.yml
@@ -52,6 +52,7 @@ services:
     ports:
       - "3200:3200"   # tempo
       - "4317"  # otlp grpc
+      - "4318"  # otlp http
 
   grafana:
     container_name: grafana
@@ -64,11 +65,13 @@ services:
   # Jaeger
   jaeger-all-in-one:
     image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     restart: always
     ports:
       - "16686:16686"
-      - "14268"
-      - "14250"
+      - "4318"
+      - "4317"
 
   # Zipkin
   zipkin-all-in-one:

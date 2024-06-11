@@ -22,24 +22,29 @@ exporters:
     const_labels:
       label1: value1
 
-  # config for tempo
-  # otlp:
-  #   endpoint: tempo:4317
+  otlphttp/tempo:
+    endpoint: "http://tempo:4318"
+    tls:
+      insecure: true
+
+  # otlp/honeycomb:
+  #   endpoint: "api.eu1.honeycomb.io:443"
+  #   headers:
+  #     "x-honeycomb-team": ""
+
+  # otlp/jaeger:
+  #   endpoint: "jaeger-all-in-one:4317"
   #   tls:
   #     insecure: true
-  otlp:
-    endpoint: "api.eu1.honeycomb.io:443"
-    headers:
-      "x-honeycomb-team": ""
+
+  # datadog:
+  #  api: 
+  #    key: ""
 
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
     format: proto
 
-  jaeger:
-    endpoint: jaeger-all-in-one:14250
-    tls:
-      insecure: true
 
 # https://github.com/open-telemetry/opentelemetry-collector/blob/main/extension/README.md
 extensions:
@@ -60,7 +65,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [jaeger,zipkin,otlp]
+      exporters: [otlphttp/tempo,zipkin]
+      # exporters: [otlphttp/jaeger,zipkin]
     logs:
       receivers: [otlp]
       exporters: [loki]
