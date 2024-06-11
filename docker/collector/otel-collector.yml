@@ -32,10 +32,10 @@ exporters:
   #   headers:
   #     "x-honeycomb-team": ""
 
-  # otlp/jaeger:
-  #   endpoint: "jaeger-all-in-one:4317"
-  #   tls:
-  #     insecure: true
+  otlphttp/jaeger:
+    endpoint: "http://jaeger-all-in-one:4318"
+    tls:
+      insecure: true
 
   # datadog:
   #  api: 
@@ -65,7 +65,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/tempo,zipkin]
+      exporters: [otlphttp/tempo,otlphttp/jaeger,zipkin]
       # exporters: [otlphttp/jaeger,zipkin]
     logs:
       receivers: [otlp]
