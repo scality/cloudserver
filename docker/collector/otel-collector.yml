@@ -39,7 +39,7 @@ exporters:
 
   # datadog:
   #  api: 
-  #    key: "1bcdc6848991c87bb15f8d2ff84aa890"
+  #    key: ""
 
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
