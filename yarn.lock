@@ -1598,9 +1598,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#bc08242d7bb8ff4de7dc7d34d17bc10ec10e7abc":
+"arsenal@git+https://github.com/scality/Arsenal#aba023878bdb4405f651554a540574014a8a2e56":
   version "7.70.31"
-  resolved "git+https://github.com/scality/Arsenal#bc08242d7bb8ff4de7dc7d34d17bc10ec10e7abc"
+  resolved "git+https://github.com/scality/Arsenal#aba023878bdb4405f651554a540574014a8a2e56"
   dependencies:
     "@js-sdsl/ordered-set" "^4.4.2"
     "@opentelemetry/api" "^1.9.0"
