@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const assert = require('assert');
 const { errors, storage } = require('arsenal');
 
@@ -7,6 +8,7 @@ const multiObjectDelete = require('../../../lib/api/multiObjectDelete');
 const { cleanup, DummyRequestLogger, makeAuthInfo } = require('../helpers');
 const DummyRequest = require('../DummyRequest');
 const { bucketPut } = require('../../../lib/api/bucketPut');
+const metadataWrapper = require('../../../lib/metadata/wrapper');
 const objectPut = require('../../../lib/api/objectPut');
 const log = new DummyRequestLogger();
 
@@ -25,6 +27,7 @@ const objectKey1 = 'objectName1';
 const objectKey2 = 'objectName2';
 const metadataUtils = require('../../../lib/metadata/metadataUtils');
 const services = require('../../../lib/services');
+const { BucketInfo } = require('arsenal/build/lib/models');
 const testBucketPutRequest = new DummyRequest({
     bucketName,
     namespace,
@@ -355,5 +358,45 @@ describe('decodeObjectVersion function helper', () => {
         const ret = decodeObjectVersion({});
         assert.ifError(ret[0]);
         assert.deepStrictEqual(ret[1], undefined);
+    });
+});
+
+describe('multiObjectDelete function', () => {
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should not authorize the bucket and initial IAM authorization results', done => {
+        const post = '<Delete><Object><Key>objectname</Key></Object></Delete>';
+        const request = new DummyRequest({
+            bucketName: 'bucketname',
+            objectKey: 'objectname',
+            parsedHost: 'localhost',
+            headers: {
+                'content-md5': crypto.createHash('md5').update(post, 'utf8').digest('base64')
+            },
+            post,
+            url: '/bucketname',
+        });
+        const authInfo = makeAuthInfo('123456');
+
+        sinon.stub(metadataWrapper, 'getBucket').callsFake((bucketName, log, cb) =>
+            cb(null, new BucketInfo(
+                'bucketname',
+                '123456',
+                'accountA',
+                new Date().toISOString(),
+                15,
+            )));
+
+        multiObjectDelete.multiObjectDelete(authInfo, request, log, (err, res) => {
+            // Expected result is an access denied on the object, and no error, as the API was authorized
+            assert.strictEqual(err, null);
+            assert.strictEqual(
+                res.includes('<Error><Key>objectname</Key><Code>AccessDenied</Code>'),
+                true
+            );
+            done();
+        });
     });
 });
