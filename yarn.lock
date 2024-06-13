@@ -1567,48 +1567,6 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#1d7baa4ce47b9479b576a5ec0bcad1c3133893aa":
-  version "7.70.31"
-  resolved "git+https://github.com/scality/Arsenal#1d7baa4ce47b9479b576a5ec0bcad1c3133893aa"
-  dependencies:
-    "@js-sdsl/ordered-set" "^4.4.2"
-    "@opentelemetry/api" "^1.9.0"
-    "@types/async" "^3.2.12"
-    "@types/utf8" "^3.0.1"
-    JSONStream "^1.0.0"
-    agentkeepalive "^4.1.3"
-    ajv "6.12.2"
-    async "~2.1.5"
-    aws-sdk "^2.1005.0"
-    azure-storage "~2.10.7"
-    backo "^1.1.0"
-    base-x "3.0.8"
-    base62 "2.0.1"
-    bson "4.0.0"
-    debug "~2.6.9"
-    diskusage "^1.1.1"
-    fcntl "github:scality/node-fcntl#0.2.2"
-    hdclient scality/hdclient#1.1.0
-    https-proxy-agent "^2.2.0"
-    ioredis "^4.28.5"
-    ipaddr.js "1.9.1"
-    joi "^17.6.0"
-    level "~5.0.1"
-    level-sublevel "~6.6.5"
-    mongodb "^3.0.1"
-    node-forge "^0.7.1"
-    prom-client "14.2.0"
-    simple-glob "^0.2"
-    socket.io "~4.6.1"
-    socket.io-client "~4.6.1"
-    sproxydclient "github:scality/sproxydclient#8.0.4"
-    utf8 "2.1.2"
-    uuid "^3.0.1"
-    werelogs scality/werelogs#8.1.4
-    xml2js "~0.4.23"
-  optionalDependencies:
-    ioctl "^2.0.2"
-
 "arsenal@git+https://github.com/scality/Arsenal#7.10.46":
   version "7.10.46"
   resolved "git+https://github.com/scality/Arsenal#bd76402586f1b5117ada9857a9e437727562d55a"
@@ -1645,6 +1603,48 @@ arraybuffer.slice@~0.0.7:
     utf8 "2.1.2"
     uuid "^3.0.1"
     werelogs scality/werelogs#8.1.0
+    xml2js "~0.4.23"
+  optionalDependencies:
+    ioctl "^2.0.2"
+
+"arsenal@git+https://github.com/scality/Arsenal#cfd8aebe6ca51f6a53b12017baa92097acf31207":
+  version "7.70.31"
+  resolved "git+https://github.com/scality/Arsenal#cfd8aebe6ca51f6a53b12017baa92097acf31207"
+  dependencies:
+    "@js-sdsl/ordered-set" "^4.4.2"
+    "@opentelemetry/api" "^1.9.0"
+    "@types/async" "^3.2.12"
+    "@types/utf8" "^3.0.1"
+    JSONStream "^1.0.0"
+    agentkeepalive "^4.1.3"
+    ajv "6.12.2"
+    async "~2.1.5"
+    aws-sdk "^2.1005.0"
+    azure-storage "~2.10.7"
+    backo "^1.1.0"
+    base-x "3.0.8"
+    base62 "2.0.1"
+    bson "4.0.0"
+    debug "~2.6.9"
+    diskusage "^1.1.1"
+    fcntl "github:scality/node-fcntl#0.2.2"
+    hdclient scality/hdclient#1.1.0
+    https-proxy-agent "^2.2.0"
+    ioredis "^4.28.5"
+    ipaddr.js "1.9.1"
+    joi "^17.6.0"
+    level "~5.0.1"
+    level-sublevel "~6.6.5"
+    mongodb "^3.0.1"
+    node-forge "^0.7.1"
+    prom-client "14.2.0"
+    simple-glob "^0.2"
+    socket.io "~4.6.1"
+    socket.io-client "~4.6.1"
+    sproxydclient "github:scality/sproxydclient#8.0.4"
+    utf8 "2.1.2"
+    uuid "^3.0.1"
+    werelogs scality/werelogs#8.1.4
     xml2js "~0.4.23"
   optionalDependencies:
     ioctl "^2.0.2"
