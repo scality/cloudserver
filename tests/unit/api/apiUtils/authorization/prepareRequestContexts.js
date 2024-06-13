@@ -15,13 +15,15 @@ const sourceObject = 'objectsource';
 const sourceVersionId = 'vid1';
 
 describe('prepareRequestContexts', () => {
-    it('should return null if multiObjectDelete method', () => {
+    it('should return s3:DeleteObject if multiObjectDelete method', () => {
         const apiMethod = 'multiObjectDelete';
         const request = makeRequest();
         const results = prepareRequestContexts(apiMethod, request, sourceBucket,
         sourceObject, sourceVersionId);
 
-        assert.strictEqual(results, null);
+        assert.strictEqual(results.length, 1);
+        const expectedAction = 's3:DeleteObject';
+        assert.strictEqual(results[0].getAction(), expectedAction);
     });
 
     it('should return s3:PutObjectVersion request context action for objectPut method with x-scal-s3-version-id' +
