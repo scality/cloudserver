@@ -14,7 +14,7 @@ const {
 
 // Define resource with service name and version
 const resource = new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'cloudserver',
+    [SEMRESATTRS_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME,
     [SEMRESATTRS_SERVICE_VERSION]: '7.70.47',
 });
 
