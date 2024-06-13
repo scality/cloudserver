@@ -1567,9 +1567,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#50669bd1502c118a1a704c07d0c6351aef4d8a92":
+"arsenal@git+https://github.com/scality/Arsenal#1abae5844aaf6a8a9782a30faffda5205760e3b2":
   version "7.70.31"
-  resolved "git+https://github.com/scality/Arsenal#50669bd1502c118a1a704c07d0c6351aef4d8a92"
+  resolved "git+https://github.com/scality/Arsenal#1abae5844aaf6a8a9782a30faffda5205760e3b2"
   dependencies:
     "@js-sdsl/ordered-set" "^4.4.2"
     "@opentelemetry/api" "^1.9.0"
