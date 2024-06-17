@@ -21,14 +21,15 @@ const resource = new Resource({
 
 // OTLP Trace Exporter configuration
 const traceExporter = new OTLPTraceExporter({
-    url: 'http://localhost:4318/v1/traces',
+    url: `http://${process.env.OPENTLEMETRY_COLLECTOR_HOST || 'localhost'}:${process.env.OPENTLEMETRY_COLLECTOR_PORT || 4318}/v1/traces`,
     headers: {},
 });
+
 
 // Metric Reader configuration
 const metricReader = new PeriodicExportingMetricReader({
     exporter: new OTLPMetricExporter({
-        url: 'http://localhost:4318/v1/metrics',
+        url: `http://${process.env.OPENTLEMETRY_COLLECTOR_HOST || 'localhost'}:${process.env.OPENTLEMETRY_COLLECTOR_PORT || 4318}/v1/metrics`,
         headers: {},
         concurrencyLimit: 1,
     }),
@@ -46,7 +47,7 @@ const sdk = new opentelemetry.NodeSDK({
             },
             '@opentelemetry/instrumentation-http': {
                 responseHook: (span, operations) => {
-                    span.updateName(`${operations.req.path.split('&')[0]}`);
+                    span.updateName(`${operations.req.protocol} ${operations.req.method} ${operations.req.path.split('&')[0]}`);
                 },
             },
         }),
