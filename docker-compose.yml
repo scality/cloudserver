@@ -67,6 +67,7 @@ services:
     image: jaegertracing/all-in-one:latest
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+      - JAEGER_QUERY_MAX_CLOCK_SKEW_ADJUSTMENT=0s
     restart: always
     ports:
       - "16686:16686"

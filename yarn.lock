@@ -437,6 +437,15 @@
     "@opentelemetry/redis-common" "^0.36.2"
     "@opentelemetry/semantic-conventions" "^1.0.0"
 
+"@opentelemetry/instrumentation-ioredis@^0.41.0":
+  version "0.41.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/instrumentation-ioredis/-/instrumentation-ioredis-0.41.0.tgz#41b60babdce893df7466b13a8896a71c81a80813"
+  integrity sha512-rxiLloU8VyeJGm5j2fZS8ShVdB82n7VNP8wTwfUQqDwRfHCnkzGr+buKoxuhGD91gtwJ91RHkjHA1Eg6RqsUTg==
+  dependencies:
+    "@opentelemetry/instrumentation" "^0.52.0"
+    "@opentelemetry/redis-common" "^0.36.2"
+    "@opentelemetry/semantic-conventions" "^1.23.0"
+
 "@opentelemetry/instrumentation-knex@^0.36.1":
   version "0.36.1"
   resolved "https://registry.yarnpkg.com/@opentelemetry/instrumentation-knex/-/instrumentation-knex-0.36.1.tgz#4c7de53bd63b081e473a44359edde33ed39c84af"
@@ -618,6 +627,18 @@
     "@opentelemetry/api-logs" "0.51.1"
     "@types/shimmer" "^1.0.2"
     import-in-the-middle "1.7.4"
+    require-in-the-middle "^7.1.1"
+    semver "^7.5.2"
+    shimmer "^1.2.1"
+
+"@opentelemetry/instrumentation@^0.52.0":
+  version "0.52.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/instrumentation/-/instrumentation-0.52.0.tgz#f8b790bfb1c61c27e0ba846bc6d0e377da195d1e"
+  integrity sha512-LPwSIrw+60cheWaXsfGL8stBap/AppKQJFE+qqRvzYrgttXFH2ofoIMxWadeqPTq4BYOXM/C7Bdh/T+B60xnlQ==
+  dependencies:
+    "@opentelemetry/api-logs" "0.52.0"
+    "@types/shimmer" "^1.0.2"
+    import-in-the-middle "1.8.0"
     require-in-the-middle "^7.1.1"
     semver "^7.5.2"
     shimmer "^1.2.1"
@@ -869,7 +890,7 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/semantic-conventions/-/semantic-conventions-1.24.1.tgz#d4bcebda1cb5146d47a2a53daaa7922f8e084dfb"
   integrity sha512-VkliWlS4/+GHLLW7J/rVBA00uXus1SWvwFvcUDxDwmFxYfg/2VI6ekwdXS28cjI8Qz2ky2BzG8OUHo+WeYIWqw==
 
-"@opentelemetry/semantic-conventions@1.25.0":
+"@opentelemetry/semantic-conventions@1.25.0", "@opentelemetry/semantic-conventions@^1.23.0":
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/semantic-conventions/-/semantic-conventions-1.25.0.tgz#390eb4d42a29c66bdc30066af9035645e9bb7270"
   integrity sha512-M+kkXKRAIAiAP6qYyesfrC5TOmDpDVtsxuGfPcqd9B/iBrac+E14jYwrgm0yZBUIbIP2OnqC3j+UgkXLm1vxUQ==
@@ -3796,6 +3817,16 @@ import-in-the-middle@1.7.4:
   version "1.7.4"
   resolved "https://registry.yarnpkg.com/import-in-the-middle/-/import-in-the-middle-1.7.4.tgz#508da6e91cfa84f210dcdb6c0a91ab0c9e8b3ebc"
   integrity sha512-Lk+qzWmiQuRPPulGQeK5qq0v32k2bHnWrRPFgqyvhw7Kkov5L6MOLOIU3pcWeujc9W4q54Cp3Q2WV16eQkc7Bg==
+  dependencies:
+    acorn "^8.8.2"
+    acorn-import-attributes "^1.9.5"
+    cjs-module-lexer "^1.2.2"
+    module-details-from-path "^1.0.3"
+
+import-in-the-middle@1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/import-in-the-middle/-/import-in-the-middle-1.8.0.tgz#c94d88d53701de9a248f9710b41f533e67f598a4"
+  integrity sha512-/xQjze8szLNnJ5rvHSzn+dcVXqCAU6Plbk4P24U/jwPmg1wy7IIp9OjKIO5tYue8GSPhDpPDiApQjvBUmWwhsQ==
   dependencies:
     acorn "^8.8.2"
     acorn-import-attributes "^1.9.5"

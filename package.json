@@ -24,6 +24,7 @@
     "@opentelemetry/auto-instrumentations-node": "^0.46.1",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.52.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.52.0",
+    "@opentelemetry/instrumentation-ioredis": "^0.41.0",
     "@opentelemetry/resources": "^1.24.1",
     "@opentelemetry/sdk-metrics": "^1.24.1",
     "@opentelemetry/sdk-node": "^0.51.1",
