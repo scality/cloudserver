@@ -1458,9 +1458,9 @@ arraybuffer.slice@~0.0.7:
   resolved "https://registry.yarnpkg.com/arraybuffer.slice/-/arraybuffer.slice-0.0.7.tgz#3bbc4275dd584cc1b10809b89d4e8b63a69e7675"
   integrity sha512-wGUIVQXuehL5TCqQun8OW81jGzAWycqzFF8lFp+GOM5BXLYj3bKNsYC4daB7n6XjCqxQA/qgTJ+8ANR3acjrog==
 
-"arsenal@git+https://github.com/scality/Arsenal#5af62b174d68cdfabba0ddae28b8cdcb18f24f84":
+"arsenal@git+https://github.com/scality/Arsenal#052113c0ffd6a36e69ae38834e1234617851e81a":
   version "7.70.31"
-  resolved "git+https://github.com/scality/Arsenal#5af62b174d68cdfabba0ddae28b8cdcb18f24f84"
+  resolved "git+https://github.com/scality/Arsenal#052113c0ffd6a36e69ae38834e1234617851e81a"
   dependencies:
     "@js-sdsl/ordered-set" "^4.4.2"
     "@types/async" "^3.2.12"
