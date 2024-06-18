@@ -1498,9 +1498,9 @@ arraybuffer.slice@~0.0.7:
   optionalDependencies:
     ioctl "^2.0.2"
 
-"arsenal@git+https://github.com/scality/Arsenal#831a2373d378f8be9fefa43b08928023cffc69ad":
+"arsenal@git+https://github.com/scality/Arsenal#b7122681c2642adec8ce5a87f4e0b20373e4d5d7":
   version "7.70.31"
-  resolved "git+https://github.com/scality/Arsenal#831a2373d378f8be9fefa43b08928023cffc69ad"
+  resolved "git+https://github.com/scality/Arsenal#b7122681c2642adec8ce5a87f4e0b20373e4d5d7"
   dependencies:
     "@js-sdsl/ordered-set" "^4.4.2"
     "@types/async" "^3.2.12"
